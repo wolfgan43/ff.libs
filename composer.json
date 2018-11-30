@@ -1,0 +1,18 @@
+{
+    "name": "phpformsframework/libs",
+    "description": "php FormsFramework libs",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Alessandro Stucchi",
+            "email": "wolfgan@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "php": "^7.1.3"
+    },
+    "autoload": {
+        "files": ["autoload.php"]
+    }
+}

@@ -7,6 +7,9 @@ class Debug extends vgCommon
     const STOPWATCH                         = CMS_START;
 
     private static $microtime               = STOPWATCH;
+
+    private static $debug                      = array();
+
     /**
      * @param null $start
      * @return mixed|string
@@ -70,7 +73,7 @@ class Debug extends vgCommon
                 case E_USER_DEPRECATED:
 
 
-                    $this->dump($GLOBALS["backtrace"]);
+                    self::dump($GLOBALS["backtrace"]);
 
                     if(function_exists("cache_sem_remove"))
                         cache_sem_remove($_SERVER["PATH_INFO"]);

@@ -5,7 +5,7 @@
     "minimum-stability": "dev",
     "authors": [
         {
-            "name": "Alessandro Stucchi",
+            "name": "Alessandro Stucchi", 
             "email": "wolfgan@gmail.com"
         }
     ],

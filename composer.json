@@ -2,6 +2,7 @@
     "name": "phpformsframework/libs",
     "description": "php FormsFramework libs",
     "type": "library",
+    "minimum-stability": "dev",
     "authors": [
         {
             "name": "Alessandro Stucchi",

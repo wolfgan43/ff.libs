@@ -67,6 +67,9 @@ spl_autoload_register(function ($class) {
         case "ffSmarty":
             require("ffSmarty.php");
             break;
+        case "frameworkCSS":
+            require("frameworkCSS.php");
+            break;
         default:
     }
 });

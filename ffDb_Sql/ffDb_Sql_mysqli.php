@@ -949,7 +949,7 @@ class ffDB_Sql
      * Conta il numero di righe
      * @return Il numero di righe
      */
-    function numRows()
+    function numRows($use_found_rows = false)
     {
         if (!$this->query_id)
         {
@@ -957,9 +957,17 @@ class ffDB_Sql
             return false;
         }
 
-        if ($this->num_rows === null)
-            $this->num_rows = @mysqli_num_rows($this->query_id);
-
+        if ($this->num_rows === null) {
+            if($use_found_rows) {
+                $db = new ffDB_Sql();
+                $db->query("SELECT FOUND_ROWS() AS found_rows");
+                if($db->nextRecord()) {
+                    $this->num_rows = $db->record["found_rows"];
+                }
+            } else {
+                $this->num_rows = @mysqli_num_rows($this->query_id);
+            }
+        }
         return $this->num_rows;
     }
 

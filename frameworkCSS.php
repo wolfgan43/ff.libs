@@ -1296,7 +1296,7 @@ class frameworkCSS
                     , "pane-item" => "tab-pane"
                     , "pane-current" => "active"
                     , "pane-item-effect" => "tab-pane fade"
-                    , "pane-current-effect" => "active in"
+                    , "pane-current-effect" => "active show"
                 )
                 , "collapse" => array(
                     "pane" 				=> "collapse"
@@ -1800,8 +1800,28 @@ class frameworkCSS
 
         return $res;
     }
-    public function getComponent($name) {
+    public function getComponent($name, $custom = array(), $out_tag = false) {
+        $arrName = explode(".", $name);
+        if($arrName[0]) {
+            if ($this::$components["override"][$arrName[0]] && $this::$components[$arrName[0]]) {
+                $this::$components[$arrName[0]] = array_replace_recursive($this::$components[$arrName[0]], $this::$components["override"][$arrName[0]]);
+                $this::$components["override"][$arrName[0]] = null;
+            }
 
+            $res = $this::$components;
+            foreach ($arrName as $item) {
+                if ($res[$item]) {
+                    $res = $res[$item];
+                } else {
+                    $res = null;
+                    break;
+                }
+            }
+            if (is_array($res) && count($res)) {
+                $res = $this->getClass($res, $custom, $out_tag);
+            }
+        }
+        return $res;
     }
     public function extend($data, $what) {
         if(is_array($data) && $what) {
@@ -1831,7 +1851,7 @@ class frameworkCSS
         self::$buttons = array_replace_recursive(self::$buttons, $buttons);
     }
     private function extendComponents($component, $key) {
-        self::$components[$key] = array_replace_recursive(self::$components[$key], $component);
+        self::$components[$key] = array_replace_recursive((array) self::$components[$key], $component);
     }
     private function getIcon($value, $type, $params, $addClass, $font_icon, $skip_default = false) {
         if(is_array($font_icon)) {

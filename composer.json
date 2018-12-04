@@ -1,5 +1,5 @@
 {
-    "name": "cmsff/libs",
+    "name": "phpformsframework/libs",
     "description": "php FormsFramework libs",
     "type": "library",
     "minimum-stability": "dev",

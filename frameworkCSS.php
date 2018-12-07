@@ -796,12 +796,14 @@ class frameworkCSS
 
                 $res = implode(" ", array_keys($res));
                 break;
-            case "icon":
-            case "icon-default":
             case "icon-tag":
             case "icon-link-tag":
             case "icon-link-tag-default":
-
+                if(substr($value, "0", 1) === "&") {
+                    return $value;
+                }
+            case "icon":
+            case "icon-default":
     /* Params:
         stack
         stack-equal

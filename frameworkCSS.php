@@ -34,6 +34,601 @@ class frameworkCSS
     private static $buttons                                 = null;
     private static $components                              = null;
 
+    public static function setResolution($resolution, $rev = false)
+    {
+        if($resolution)
+        {
+            if(is_array($resolution)) {
+                foreach($resolution AS $index => $num) {
+                    $res[self::$framework["resolution"][$index]] = ($rev ? 12 - $num : $num);
+                }
+                if(count(self::$framework["resolution"]) > count($res)) {
+                    for($i = count($res) + 1; $i <= count(self::$framework["resolution"]); $i++) {
+                        $res[$i] = ($rev ? 12 - $num : $num);
+                    }
+                }
+            } else {
+                $res = array_combine(self::$framework["resolution"], array_fill(0, count(self::$framework["resolution"]), ($rev ? 12 - $resolution : $resolution)));
+            }
+        }
+
+        return $res;
+    }
+
+    public static function extend($data, $what) {
+        if(is_array($data) && $what) {
+            switch ($what) {
+                case "framework":
+                    self::extendFramework($data);
+                    return self::$framework;
+                case "fonticon":
+                    self::extendFontIcon($data);
+                    return self::$fonticon;
+                case "buttons":
+                    self::extendButtons($data);
+                    return self::$buttons;
+                default:
+                    self::extendComponents($data, $what);
+                    return self::$components[$what];
+            }
+        }
+    }
+
+    public static function &findComponent($name) {
+        $ref = null;
+        $arrName = explode(".", $name);
+        if($arrName[0]) {
+            if (self::$components["override"][$arrName[0]] && self::$components[$arrName[0]]) {
+                self::$components[$arrName[0]] = array_replace_recursive(self::$components[$arrName[0]], self::$components["override"][$arrName[0]]);
+                self::$components["override"][$arrName[0]] = null;
+            }
+
+            $ref =& self::$components;
+            foreach ($arrName as $item) {
+                if (isset($ref[$item])) {
+                    $ref =& $ref[$item];
+                } else {
+                    $ref = null;
+                    break;
+                }
+            }
+        }
+
+        return $ref;
+    }
+
+    public static function setComponent($name, $data) {
+        $ref =& self::findComponent($name);
+
+        $ref = $data;
+
+        return $ref;
+    }
+
+    private static function extendFramework($framework) {
+        self::$framework = array_replace_recursive(self::$framework, $framework);
+    }
+    private static function extendFontIcon($fonticon) {
+        self::$fonticon = array_replace_recursive(self::$fonticon, $fonticon);
+    }
+    private static function extendButtons($buttons) {
+        self::$buttons = array_replace_recursive(self::$buttons, $buttons);
+    }
+    private static function extendComponents($component, $key) {
+        self::$components[$key] = array_replace_recursive((array) self::$components[$key], $component);
+    }
+    private static function getIcon($value, $type, $params, $addClass, $font_icon, $skip_default = false) {
+        if(is_array($font_icon)) {
+            $res = array();
+
+            if(!$skip_default)
+                $arrFFButton = self::getButtons();
+
+            if(!strlen($value)) {
+                $arrName = $params;
+                $skip_fix = true;
+            } elseif(is_array($params)) {
+                $arrName = array_merge(explode(" ", $value), $params);
+            } else {
+                $arrName = explode(" ", $value);
+            }
+
+            foreach($arrName AS $single_value) {
+                if(strlen($single_value)) {
+                    if(!$skip_default && isset($arrFFButton[$single_value])) {
+                        if(strpos($type, "-default") !== false)
+                            continue;
+
+                        $res[$font_icon["prepend"] . $arrFFButton[$single_value]["icon"] . $font_icon["append"]] = true;
+
+                        if($type == "icon" && strlen($arrFFButton[$single_value]["addClass"])) {
+                            $res[$arrFFButton[$single_value]["addClass"]] = true;
+                        }
+                    } else {
+                        $res[$font_icon["prepend"] . $single_value . $font_icon["append"]] = true;
+                    }
+
+                }
+            }
+            if(is_array($addClass) && count($addClass)) {
+                foreach($addClass AS $addClass_value) {
+                    $res[$addClass_value] = true;
+                }
+            }
+            if(!$skip_fix && count($res)) {
+                if(strlen($font_icon["prefix"])) {
+                    $res[$font_icon["prefix"]] = true;
+                    //$res = array_merge(array($font_icon["prefix"] => true), $res);
+                }
+                if(strlen($font_icon["postfix"])) {
+                    $res[$font_icon["postfix"]] = true;
+                }
+            }
+
+            $res = implode(" ", array_keys($res));
+        } else {
+            $res = $value;
+        }
+
+        if(strlen($res) && strpos($type, "-tag") !== false)
+            $res = '<i class="' . $res . '"></i>';
+
+        return $res;
+    }
+    private static function buttons() {
+        $arrFFButton = array(
+            //ffRecord
+            "ActionButtonInsert"     => array(
+                                            "default" => "success"
+                                            , "addClass" => ""
+                                            , "icon" => "check"
+                                            , "class" => "insert"
+                                        )
+            , "ActionButtonUpdate"    => array(
+                                            "default" => "success"
+                                            , "addClass" => ""
+                                            , "icon" => "check"
+                                            , "class" => "update"
+                                        )
+            , "ActionButtonDelete"    => array(
+                                            "default" => "danger"
+                                            , "addClass" => ""
+                                            , "icon" => "trash-o"
+                                            , "class" => "delete"
+                                        )
+            , "ActionButtonCancel"    => array(
+                                            "default" => "link"
+                                            , "addClass" => ""
+                                            , "icon" => ""
+                                            , "class" => "cancel"
+                                        )
+            , "insert"         => array(
+                                    "default" => "success"
+                                    , "addClass" => "activebuttons"
+                                    , "icon" => "check"
+                                )
+            , "update"         => array(
+                                    "default" => "success"
+                                    , "addClass" => "activebuttons"
+                                    , "icon" => "check"
+                                )
+            , "delete"         => array(
+                                    "default" => "danger"
+                                    , "addClass" => "activebuttons"
+                                    , "icon" => "trash-o"
+                                )
+            , "cancel"         => array(
+                                    "default" => "link"
+                                    , "addClass" => ""
+                                    , "icon" => "times"
+                                )
+            , "print"         => array(
+                                    "default" => "default"
+                                    , "addClass" => "print"
+                                    , "icon" => "print"
+                                )
+            //ffGrid
+            , "search"         => array(
+                                    "default" => "primary"
+                                    , "addClass" => "search"
+                                    , "icon" => "search"
+                                )
+            , "searchadv"         => array(
+                                    "default" => "primary"
+                                    , "addClass" => "search"
+                                    , "icon" => "search"
+                                )
+            , "searchdropdown"     => array(
+                                    "default" => "secondary"
+                                    , "addClass" => "more dropdown-toggle"
+                                )
+            , "more"         => array(
+                                    "default" => "link"
+                                    , "addClass" => "more"
+                                    , "icon" => "caret-down"
+                                )
+            , "export"         => array(
+                                    "default" => "default"
+                                    , "addClass" => "export"
+                                    , "icon" => "download"
+                                )
+            , "sort"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "sort"
+                                    , "icon" => "sort"
+                                )
+            , "sort-asc"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "sort asc"
+                                    , "icon" => "sort-asc"
+                                )
+            , "sort-desc"   => array(
+                                    "default" => "link"
+                                    , "addClass" => "sort desc"
+                                    , "icon" => "sort-desc"
+                                )
+            , "addnew"        => array(
+                                    "default" => "primary"
+                                    , "addClass" => "addnew"
+                                    , "icon" => "plus"
+                                )
+            , "editrow"     => array(
+                                    "default" => "link"
+                                    , "addClass" => "edit"
+                                    , "icon" => "pencil"
+                                )
+            , "deleterow"    => array(
+                                    "default" => "danger"
+                                    , "addClass" => "delete"
+                                    , "icon" => "trash-o"
+                                )
+            , "deletetabrow"    => array(
+                                    "default" => null
+                                    , "addClass" => "delete"
+                                    , "icon" => "trash-o"
+                                )
+            //ffDetail
+            , "addrow"         => array(
+                                    "default" => "primary"
+                                    , "addClass" => ""
+                                    , "icon" => "plus"
+                                )
+            //ffPageNavigator
+            , "first"         => array(
+                                    "default" => "link"
+                                    , "addClass" => "first"
+                                    , "icon" => "step-backward"
+                                )
+            , "last"         => array(
+                                    "default" => "link"
+                                    , "addClass" => "last"
+                                    , "icon" => "step-forward"
+                                )
+            , "prev"         => array(
+                                    "default" => "link"
+                                    , "addClass" => "prev"
+                                    , "icon" => "play"
+                                    , "params" => "flip-horizontal"
+                                )
+            , "next"         => array(
+                                    "default" => "link"
+                                    , "addClass" => "next"
+                                    , "icon" => "play"
+                                )
+            , "prev-frame"   => array(
+                                    "default" => "link"
+                                    , "addClass" => "prev-frame"
+                                    , "icon" => "backward"
+                                )
+            , "next-frame"   => array(
+                                    "default" => "link"
+                                    , "addClass" => "next-frame"
+                                    , "icon" => "forward"
+                                )
+
+           //other
+            , "pdf"          => array(
+                                    "default" => "link"
+                                    , "addClass" => "pdf"
+                                    , "icon" => "file-pdf-o"
+                                )
+            , "email"        => array(
+                                    "default" => "link"
+                                    , "addClass" => "email"
+                                    , "icon" => "envelope-o"
+                                )
+            , "preview"      => array(
+                                    "default" => "link"
+                                    , "addClass" => "preview"
+                                    , "icon" => "search"
+                                )
+            , "preview-email"=> array(
+                                    "default" => "link"
+                                    , "addClass" => "email"
+                                    , "icon" => "envelope-o"
+                                    , "params" => ""
+                                )
+            , "refresh"		=> array(
+                                    "default" => "link"
+                                    , "addClass" => "refresh"
+                                    , "icon" => "refresh"
+                                )
+            , "clone"        => array(
+                                    "default" => "link"
+                                    , "addClass" => "clone"
+                                    , "icon" => "copy"
+                                )
+            , "permissions"        => array(
+                                    "default" => "link"
+                                    , "addClass" => "permissions"
+                                    , "icon" => "lock"
+                                )
+            , "relationships"        => array(
+                                    "default" => "link"
+                                    , "addClass" => "relationships"
+                                    , "icon" => "share-alt"
+                                )
+            , "settings"        => array(
+                                    "default" => "link"
+                                    , "addClass" => "settings"
+                                    , "icon" => "cog"
+                                )
+            , "properties"      => array(
+                                    "default" => "link"
+                                    , "addClass" => "properties"
+                                    , "icon" => "object-group"
+                                )
+            , "help"            => array(
+                                    "default" => "link"
+                                    , "addClass" => "helper"
+                                    , "icon" => "question-circle"
+                                )
+            , "noimg"           => array(
+                                    "default" => "link"
+                                    , "addClass" => "noimg"
+                                    , "icon" => "picture-o"
+                                )
+            , "checked"        	=> array(
+                                    "default" => "link"
+                                    , "addClass" => "checked"
+                                    , "icon" => "check-circle-o"
+                                )
+            , "unchecked"       => array(
+                                    "default" => "link"
+                                    , "addClass" => "unchecked"
+                                    , "icon" => "circle-o"
+                                )
+            , "exanded"           => array(
+                                    "default" => "link"
+                                    , "addClass" => "exanded"
+                                    , "icon" => "minus-square-o"
+                                )
+            , "retracted"           => array(
+                                    "default" => "link"
+                                    , "addClass" => "retracted"
+                                    , "icon" => "plus-square-o"
+                                )
+
+
+            //CMS Ecommerce
+            , "history"      => array(
+                                    "default" => "link"
+                                    , "addClass" => "history"
+                                    , "icon" => "history"
+                                )
+            , "payments"     => array(
+                                    "default" => "link"
+                                    , "addClass" => "payments"
+                                    , "icon" => "credit-card"
+                                )
+            //CMS
+            , "vg-admin"     => array(
+                                    "default" => "link"
+                                    , "addClass" => "admin"
+                                    , "icon" => "cog"
+                                    , "params" => "2x"
+                                )
+            , "vg-restricted"=> array(
+                                    "default" => "link"
+                                    , "addClass" => "restricted"
+                                    , "icon" => "unlock-alt"
+                                    , "params" => "2x"
+                                )
+            , "vg-manage"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "manage"
+                                    , "icon" => "shopping-cart"
+                                    , "params" => "2x"
+                                )
+            , "vg-fontend"   => array(
+                                    "default" => "link"
+                                    , "addClass" => "fontend"
+                                    , "icon" => "desktop"
+                                    , "params" => "2x"
+                                )
+            , "vg-static-menu"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "static-menu"
+                                    , "icon" => "static-menu"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "vg-gallery-menu"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "gallery-menu"
+                                    , "icon" => "gallery-menu"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "vg-vgallery-menu"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "vgallery-menu"
+                                    , "icon" => "vgallery-menu"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "vg-vgallery-group"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "vgallery-group"
+                                    , "icon" => "vgallery-group"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "vg-gallery"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "gallery"
+                                    , "icon" => "gallery"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "vg-draft"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "draft"
+                                    , "icon" => "draft"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "vg-file"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "file"
+                                    , "icon" => "file"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "vg-virtual-gallery"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "virtual-gallery"
+                                    , "icon" => "virtual-gallery"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "vg-publishing"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "publishing"
+                                    , "icon" => "publishing"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "vg-vgallery-rel"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "vgallery-rel"
+                                    , "icon" => "vgallery-rel"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "vg-cart"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "cart"
+                                    , "icon" => "cart"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "vg-lang"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "lang"
+                                    , "icon" => "lang"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "vg-search"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "search"
+                                    , "icon" => "search"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "vg-login"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "login"
+                                    , "icon" => "login"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "vg-breadcrumb"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "breadcrumb"
+                                    , "icon" => "breadcrumb"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "vg-profile"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "profile"
+                                    , "icon" => "profile"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "vg-modules"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "module"
+                                    , "icon" => "module"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "vg-applets"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "applets"
+                                    , "icon" => "applets"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "lay-addnew"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "lay-addnew"
+                                    , "icon" => "lay-addnew"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "lay-addnew"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "lay-addnew"
+                                    , "icon" => "lay-addnew"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "lay"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "lay-unknown"
+                                    , "icon" => "lay"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "lay-31"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "lay-top"
+                                    , "icon" => "lay-31"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "lay-13"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "lay-left"
+                                    , "icon" => "lay-13"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "lay-3133"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "lay-right"
+                                    , "icon" => "lay-3133"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "lay-1333"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "lay-right"
+                                    , "icon" => "lay-1333"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "lay-2233"    => array(
+                                    "default" => "link"
+                                    , "addClass" => "lay-content"
+                                    , "icon" => "lay-2233"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "js"    => array(
+                                    "default" => "link"
+                                    , "icon" => "js"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "css"    => array(
+                                    "default" => "link"
+                                     , "icon" => "css"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+            , "seo"    => array(
+                                    "default" => "link"
+                                     , "icon" => "seo"
+                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
+                                )
+        );
+        return $arrFFButton;
+    }
+
+    private static function getButtons() {
+        if(!self::$buttons) {
+            self::$buttons = self::buttons();
+        }
+
+        return self::$buttons;
+    }
+
     public function __construct()
     {
         //if(!self::$config) {
@@ -42,10 +637,10 @@ class frameworkCSS
         //}
     }
 
-    public function set($framework, $fonticon) {
-        $this->getFramework($framework);
-        $this->getFontIcon($fonticon);
-        $this->getButtons();
+    public static function factory($framework, $fonticon) {
+        self::getFramework($framework);
+        self::getFontIcon($fonticon);
+        self::getButtons();
     }
     public function get($value, $type, $params = array(), $framework_css = null, $font_icon = null) {
         $res = "";
@@ -524,7 +1119,7 @@ class frameworkCSS
         return $res;
     }
 
-    public function frameworks($name = null) {
+    private static function frameworks($name = null) {
         $framework_css_setting = array(
             "base" => array(
                 "params" => array(
@@ -724,6 +1319,9 @@ class frameworkCSS
                     , "border" => "table-bordered"
                     , "oddeven" => "table-striped"
                     , "responsive" => "table-responsive"
+                    , "sorting" => "sorting"
+                    , "sorting_asc" => "sorting_asc"
+                    , "sorting_desc" => "sorting_desc"
                 )
                 , "tab" => array(
                     "menu" => "nav-tab"
@@ -1004,6 +1602,9 @@ class frameworkCSS
                     , "border" => "table-bordered"
                     , "oddeven" => "table-striped"
                     , "responsive" => "table-responsive"
+                    , "sorting" => "sorting"
+                    , "sorting_asc" => "sorting_asc"
+                    , "sorting_desc" => "sorting_desc"
                 )
                 , "tab" => array(
                     "menu" => "nav nav-tabs"
@@ -1131,16 +1732,18 @@ class frameworkCSS
                     , "skip-prepost" => "nopadding"
                 )
                 , "resolution" => array(
-                    "xs"
+                    ""
                     , "sm"
                     , "md"
                     , "lg"
+                    , "xl"
                 )
                 , "resolution-media" => array(
-                    "xs" => "(min-width:34em)"
+                    "" => "(min-width:34em)"
                     , "sm" => "(min-width:48em)"
                     , "md" => "(min-width:62em)"
                     , "lg" => "(min-width:75em)"
+                    , "xl" => "(min-width:85em)"
                 )
                 , "button" => array(
                     "base"              => "btn"
@@ -1284,6 +1887,9 @@ class frameworkCSS
                     , "border" => "table-bordered"
                     , "oddeven" => "table-striped"
                     , "responsive" => "table-responsive"
+                    , "sorting" => "sorting"
+                    , "sorting_asc" => "sorting_asc"
+                    , "sorting_desc" => "sorting_desc"
                 )
                 , "tab" => array(
                     "menu" => "nav nav-tabs"
@@ -1559,6 +2165,9 @@ class frameworkCSS
                     , "border" => "table-bordered"
                     , "oddeven" => "table-striped"
                     , "responsive" => ""
+                    , "sorting" => "sorting"
+                    , "sorting_asc" => "sorting_asc"
+                    , "sorting_desc" => "sorting_desc"
                 )
                 , "tab" => array(
                     "menu" => "tabs"
@@ -1662,14 +2271,14 @@ class frameworkCSS
 
     }
 
-    public function getFramework($name = null) {
+    public static function getFramework($name = null) {
         if(strlen($name)) {
             if($name === false) {
                 self::$framework = null;
             } else {
                 if(strpos($name, "-fluid") !== false) {
                     $arrFrameworkCss = explode("-fluid", $name);
-                    $framework_css_settings = $this->frameworks($arrFrameworkCss[0]);
+                    $framework_css_settings = self::frameworks($arrFrameworkCss[0]);
 
                     self::$framework = array(
                         "name" => $arrFrameworkCss[0]
@@ -1679,7 +2288,7 @@ class frameworkCSS
                     self::$framework = array_replace($framework_css_settings, self::$framework);
                 } elseif(strpos($name, "-") !== false) {
                     $arrFrameworkCss = explode("-", $name);
-                    $framework_css_settings = $this->frameworks($arrFrameworkCss[0]);
+                    $framework_css_settings = self::frameworks($arrFrameworkCss[0]);
 
                     self::$framework = array(
                         "name" => $arrFrameworkCss[0]
@@ -1688,7 +2297,7 @@ class frameworkCSS
                     );
                     self::$framework = array_replace($framework_css_settings, self::$framework);
                 } else {
-                    $framework_css_settings = $this->frameworks($name);
+                    $framework_css_settings = self::frameworks($name);
                     self::$framework = array(
                         "name" => $name
                         , "is_fluid" => false
@@ -1703,7 +2312,7 @@ class frameworkCSS
         return self::$framework;
     }
 
-    public function fontIcons($name = null) {
+    private static function fontIcons($name = null) {
         $font_icon_setting = array(
             "base" => array(
                  "css" => ""
@@ -1739,12 +2348,12 @@ class frameworkCSS
         );*/
     }
 
-    public function getFontIcon($name = null) {
+    public static function getFontIcon($name = null) {
         if(strlen($name)) {
             if($name === false) {
                 self::$fonticon = null;
             } else {
-                self::$fonticon = $this->fontIcons($name);
+                self::$fonticon = self::fontIcons($name);
                 self::$fonticon["name"] = $name;
             }
         }
@@ -1800,117 +2409,16 @@ class frameworkCSS
 
         return $res;
     }
+
     public function getComponent($name, $custom = array(), $out_tag = false) {
-        $arrName = explode(".", $name);
-        if($arrName[0]) {
-            if ($this::$components["override"][$arrName[0]] && $this::$components[$arrName[0]]) {
-                $this::$components[$arrName[0]] = array_replace_recursive($this::$components[$arrName[0]], $this::$components["override"][$arrName[0]]);
-                $this::$components["override"][$arrName[0]] = null;
-            }
-
-            $res = $this::$components;
-            foreach ($arrName as $item) {
-                if ($res[$item]) {
-                    $res = $res[$item];
-                } else {
-                    $res = null;
-                    break;
-                }
-            }
-            if (is_array($res) && count($res)) {
-                $res = $this->getClass($res, $custom, $out_tag);
-            }
+        $ref =& $this->findComponent($name);
+        if($ref) {
+            $res = $this->getClass($ref, $custom, $out_tag);
         }
-        return $res;
-    }
-    public function extend($data, $what) {
-        if(is_array($data) && $what) {
-            switch ($what) {
-                case "framework":
-                    $this->extendFramework($data);
-                    return self::$framework;
-                case "fonticon":
-                    $this->extendFontIcon($data);
-                    return self::$fonticon;
-                case "buttons":
-                    $this->extendButtons($data);
-                    return self::$buttons;
-                default:
-                    $this->extendComponents($data, $what);
-                    return self::$components[$what];
-            }
-        }
-    }
-    private function extendFramework($framework) {
-        self::$framework = array_replace_recursive(self::$framework, $framework);
-    }
-    private function extendFontIcon($fonticon) {
-        self::$fonticon = array_replace_recursive(self::$fonticon, $fonticon);
-    }
-    private function extendButtons($buttons) {
-        self::$buttons = array_replace_recursive(self::$buttons, $buttons);
-    }
-    private function extendComponents($component, $key) {
-        self::$components[$key] = array_replace_recursive((array) self::$components[$key], $component);
-    }
-    private function getIcon($value, $type, $params, $addClass, $font_icon, $skip_default = false) {
-        if(is_array($font_icon)) {
-            $res = array();
-
-            if(!$skip_default)
-                $arrFFButton = $this->getButtons();
-
-            if(!strlen($value)) {
-                $arrName = $params;
-                $skip_fix = true;
-            } elseif(is_array($params)) {
-                $arrName = array_merge(explode(" ", $value), $params);
-            } else {
-                $arrName = explode(" ", $value);
-            }
-
-            foreach($arrName AS $single_value) {
-                if(strlen($single_value)) {
-                    if(!$skip_default && isset($arrFFButton[$single_value])) {
-                        if(strpos($type, "-default") !== false)
-                            continue;
-
-                        $res[$font_icon["prepend"] . $arrFFButton[$single_value]["icon"] . $font_icon["append"]] = true;
-
-                        if($type == "icon" && strlen($arrFFButton[$single_value]["addClass"])) {
-                            $res[$arrFFButton[$single_value]["addClass"]] = true;
-                        }
-                    } else {
-                        $res[$font_icon["prepend"] . $single_value . $font_icon["append"]] = true;
-                    }
-
-                }
-            }
-            if(is_array($addClass) && count($addClass)) {
-                foreach($addClass AS $addClass_value) {
-                    $res[$addClass_value] = true;
-                }
-            }
-            if(!$skip_fix && count($res)) {
-                if(strlen($font_icon["prefix"])) {
-                    $res[$font_icon["prefix"]] = true;
-                    //$res = array_merge(array($font_icon["prefix"] => true), $res);
-                }
-                if(strlen($font_icon["postfix"])) {
-                    $res[$font_icon["postfix"]] = true;
-                }
-            }
-
-            $res = implode(" ", array_keys($res));
-        } else {
-            $res = $value;
-        }
-
-        if(strlen($res) && strpos($type, "-tag") !== false)
-            $res = '<i class="' . $res . '"></i>';
 
         return $res;
     }
+
     private function getCol($resolution = array(), $is_fluid = null, $params = array(), $framework_css = null, $prefix = "col") {
         $res = "";
 
@@ -1991,7 +2499,7 @@ class frameworkCSS
                                         && is_array($framework_css["resolution"]) && count($framework_css["resolution"])
                                         && array_key_exists($i, $framework_css["resolution"])
                                     ) {
-                                        $arrRes[$i] .= $framework_css["resolution"][$i] . ($res_num ? "-" : "");
+                                        $arrRes[$i] .= $framework_css["resolution"][$i] . ($framework_css["resolution"][$i] && $res_num ? "-" : "");
                                     }
                                 }
 
@@ -2032,458 +2540,5 @@ class frameworkCSS
         }
 
         return $res;
-    }
-    private function buttons() {
-        $arrFFButton = array(
-            //ffRecord
-            "ActionButtonInsert"     => array(
-                                            "default" => "success"
-                                            , "addClass" => ""
-                                            , "icon" => "check"
-                                            , "class" => "insert"
-                                        )
-            , "ActionButtonUpdate"    => array(
-                                            "default" => "success"
-                                            , "addClass" => ""
-                                            , "icon" => "check"
-                                            , "class" => "update"
-                                        )
-            , "ActionButtonDelete"    => array(
-                                            "default" => "danger"
-                                            , "addClass" => ""
-                                            , "icon" => "trash-o"
-                                            , "class" => "delete"
-                                        )
-            , "ActionButtonCancel"    => array(
-                                            "default" => "link"
-                                            , "addClass" => ""
-                                            , "icon" => ""
-                                            , "class" => "cancel"
-                                        )
-            , "insert"         => array(
-                                    "default" => "success"
-                                    , "addClass" => "activebuttons"
-                                    , "icon" => "check"
-                                )
-            , "update"         => array(
-                                    "default" => "success"
-                                    , "addClass" => "activebuttons"
-                                    , "icon" => "check"
-                                )
-            , "delete"         => array(
-                                    "default" => "danger"
-                                    , "addClass" => "activebuttons"
-                                    , "icon" => "trash-o"
-                                )
-            , "cancel"         => array(
-                                    "default" => "link"
-                                    , "addClass" => ""
-                                    , "icon" => "times"
-                                )
-            , "print"         => array(
-                                    "default" => "default"
-                                    , "addClass" => "print"
-                                    , "icon" => "print"
-                                )
-            //ffGrid
-            , "search"         => array(
-                                    "default" => "primary"
-                                    , "addClass" => "search"
-                                    , "icon" => "search"
-                                )
-            , "searchadv"         => array(
-                                    "default" => "primary"
-                                    , "addClass" => "search"
-                                    , "icon" => "search"
-                                )
-            , "searchdropdown"     => array(
-                                    "default" => "secondary"
-                                    , "addClass" => "more dropdown-toggle"
-                                )
-            , "more"         => array(
-                                    "default" => "link"
-                                    , "addClass" => "more"
-                                    , "icon" => "caret-down"
-                                )
-            , "export"         => array(
-                                    "default" => "default"
-                                    , "addClass" => "export"
-                                    , "icon" => "download"
-                                )
-            , "sort"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "sort"
-                                    , "icon" => "sort"
-                                )
-            , "sort-asc"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "sort asc"
-                                    , "icon" => "sort-asc"
-                                )
-            , "sort-desc"   => array(
-                                    "default" => "link"
-                                    , "addClass" => "sort desc"
-                                    , "icon" => "sort-desc"
-                                )
-            , "addnew"        => array(
-                                    "default" => "primary"
-                                    , "addClass" => "addnew"
-                                    , "icon" => "plus"
-                                )
-            , "editrow"     => array(
-                                    "default" => "link"
-                                    , "addClass" => "edit"
-                                    , "icon" => "pencil"
-                                )
-            , "deleterow"    => array(
-                                    "default" => "danger"
-                                    , "addClass" => "delete"
-                                    , "icon" => "trash-o"
-                                )
-            , "deletetabrow"    => array(
-                                    "default" => null
-                                    , "addClass" => "delete"
-                                    , "icon" => "trash-o"
-                                )
-            //ffDetail
-            , "addrow"         => array(
-                                    "default" => "primary"
-                                    , "addClass" => ""
-                                    , "icon" => "plus"
-                                )
-            //ffPageNavigator
-            , "first"         => array(
-                                    "default" => "link"
-                                    , "addClass" => "first"
-                                    , "icon" => "step-backward"
-                                )
-            , "last"         => array(
-                                    "default" => "link"
-                                    , "addClass" => "last"
-                                    , "icon" => "step-forward"
-                                )
-            , "prev"         => array(
-                                    "default" => "link"
-                                    , "addClass" => "prev"
-                                    , "icon" => "play"
-                                    , "params" => "flip-horizontal"
-                                )
-            , "next"         => array(
-                                    "default" => "link"
-                                    , "addClass" => "next"
-                                    , "icon" => "play"
-                                )
-            , "prev-frame"   => array(
-                                    "default" => "link"
-                                    , "addClass" => "prev-frame"
-                                    , "icon" => "backward"
-                                )
-            , "next-frame"   => array(
-                                    "default" => "link"
-                                    , "addClass" => "next-frame"
-                                    , "icon" => "forward"
-                                )
-
-           //other
-            , "pdf"          => array(
-                                    "default" => "link"
-                                    , "addClass" => "pdf"
-                                    , "icon" => "file-pdf-o"
-                                )
-            , "email"        => array(
-                                    "default" => "link"
-                                    , "addClass" => "email"
-                                    , "icon" => "envelope-o"
-                                )
-            , "preview"      => array(
-                                    "default" => "link"
-                                    , "addClass" => "preview"
-                                    , "icon" => "search"
-                                )
-            , "preview-email"=> array(
-                                    "default" => "link"
-                                    , "addClass" => "email"
-                                    , "icon" => "envelope-o"
-                                    , "params" => ""
-                                )
-            , "refresh"		=> array(
-                                    "default" => "link"
-                                    , "addClass" => "refresh"
-                                    , "icon" => "refresh"
-                                )
-            , "clone"        => array(
-                                    "default" => "link"
-                                    , "addClass" => "clone"
-                                    , "icon" => "copy"
-                                )
-            , "permissions"        => array(
-                                    "default" => "link"
-                                    , "addClass" => "permissions"
-                                    , "icon" => "lock"
-                                )
-            , "relationships"        => array(
-                                    "default" => "link"
-                                    , "addClass" => "relationships"
-                                    , "icon" => "share-alt"
-                                )
-            , "settings"        => array(
-                                    "default" => "link"
-                                    , "addClass" => "settings"
-                                    , "icon" => "cog"
-                                )
-            , "properties"      => array(
-                                    "default" => "link"
-                                    , "addClass" => "properties"
-                                    , "icon" => "object-group"
-                                )
-            , "help"            => array(
-                                    "default" => "link"
-                                    , "addClass" => "helper"
-                                    , "icon" => "question-circle"
-                                )
-            , "noimg"           => array(
-                                    "default" => "link"
-                                    , "addClass" => "noimg"
-                                    , "icon" => "picture-o"
-                                )
-            , "checked"        	=> array(
-                                    "default" => "link"
-                                    , "addClass" => "checked"
-                                    , "icon" => "check-circle-o"
-                                )
-            , "unchecked"       => array(
-                                    "default" => "link"
-                                    , "addClass" => "unchecked"
-                                    , "icon" => "circle-o"
-                                )
-            , "exanded"           => array(
-                                    "default" => "link"
-                                    , "addClass" => "exanded"
-                                    , "icon" => "minus-square-o"
-                                )
-            , "retracted"           => array(
-                                    "default" => "link"
-                                    , "addClass" => "retracted"
-                                    , "icon" => "plus-square-o"
-                                )
-
-
-            //CMS Ecommerce
-            , "history"      => array(
-                                    "default" => "link"
-                                    , "addClass" => "history"
-                                    , "icon" => "history"
-                                )
-            , "payments"     => array(
-                                    "default" => "link"
-                                    , "addClass" => "payments"
-                                    , "icon" => "credit-card"
-                                )
-            //CMS
-            , "vg-admin"     => array(
-                                    "default" => "link"
-                                    , "addClass" => "admin"
-                                    , "icon" => "cog"
-                                    , "params" => "2x"
-                                )
-            , "vg-restricted"=> array(
-                                    "default" => "link"
-                                    , "addClass" => "restricted"
-                                    , "icon" => "unlock-alt"
-                                    , "params" => "2x"
-                                )
-            , "vg-manage"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "manage"
-                                    , "icon" => "shopping-cart"
-                                    , "params" => "2x"
-                                )
-            , "vg-fontend"   => array(
-                                    "default" => "link"
-                                    , "addClass" => "fontend"
-                                    , "icon" => "desktop"
-                                    , "params" => "2x"
-                                )
-            , "vg-static-menu"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "static-menu"
-                                    , "icon" => "static-menu"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "vg-gallery-menu"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "gallery-menu"
-                                    , "icon" => "gallery-menu"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "vg-vgallery-menu"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "vgallery-menu"
-                                    , "icon" => "vgallery-menu"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "vg-vgallery-group"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "vgallery-group"
-                                    , "icon" => "vgallery-group"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "vg-gallery"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "gallery"
-                                    , "icon" => "gallery"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "vg-draft"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "draft"
-                                    , "icon" => "draft"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "vg-file"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "file"
-                                    , "icon" => "file"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "vg-virtual-gallery"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "virtual-gallery"
-                                    , "icon" => "virtual-gallery"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "vg-publishing"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "publishing"
-                                    , "icon" => "publishing"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "vg-vgallery-rel"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "vgallery-rel"
-                                    , "icon" => "vgallery-rel"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "vg-cart"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "cart"
-                                    , "icon" => "cart"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "vg-lang"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "lang"
-                                    , "icon" => "lang"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "vg-search"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "search"
-                                    , "icon" => "search"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "vg-login"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "login"
-                                    , "icon" => "login"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "vg-breadcrumb"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "breadcrumb"
-                                    , "icon" => "breadcrumb"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "vg-profile"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "profile"
-                                    , "icon" => "profile"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "vg-modules"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "module"
-                                    , "icon" => "module"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "vg-applets"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "applets"
-                                    , "icon" => "applets"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "lay-addnew"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "lay-addnew"
-                                    , "icon" => "lay-addnew"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "lay-addnew"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "lay-addnew"
-                                    , "icon" => "lay-addnew"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "lay"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "lay-unknown"
-                                    , "icon" => "lay"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "lay-31"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "lay-top"
-                                    , "icon" => "lay-31"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "lay-13"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "lay-left"
-                                    , "icon" => "lay-13"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "lay-3133"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "lay-right"
-                                    , "icon" => "lay-3133"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "lay-1333"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "lay-right"
-                                    , "icon" => "lay-1333"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "lay-2233"    => array(
-                                    "default" => "link"
-                                    , "addClass" => "lay-content"
-                                    , "icon" => "lay-2233"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "js"    => array(
-                                    "default" => "link"
-                                    , "icon" => "js"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "css"    => array(
-                                    "default" => "link"
-                                     , "icon" => "css"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-            , "seo"    => array(
-                                    "default" => "link"
-                                     , "icon" => "seo"
-                                    , "font_icon" => array("prepend" => "vg-", "prefix" => "vg")
-                                )
-        );
-        return $arrFFButton;
-    }
-
-    private function getButtons() {
-        if(!self::$buttons) {
-            self::$buttons = $this->buttons();
-        }
-
-        return self::$buttons;
     }
 }

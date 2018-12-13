@@ -70,6 +70,9 @@ spl_autoload_register(function ($class) {
         case "frameworkCSS":
             require("frameworkCSS.php");
             break;
+        case "Validator":
+            require("validator.php");
+            break;
         default:
     }
 });

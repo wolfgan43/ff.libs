@@ -355,6 +355,18 @@ class ffTemplate
 		}
 	}
 
+    function isset_block($sName)
+    {
+        if (isset($this->ParsedBlocks[$sName]))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
 	function set_regexp_var($sPattern, $sValue)
 	{
 		$rc = false;

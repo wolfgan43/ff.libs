@@ -100,6 +100,16 @@ class ffTemplate
 	 * @param string $template_root
 	 * @return ffTemplate
 	 */
+
+    public static function fetch($template_file)
+    {
+        $tmp = new ffTemplate(dirname($template_file));
+        $tmp->load_file(basename($template_file));
+
+        return $tmp;
+    }
+
+
 	public static function factory($template_root = null)
 	{
         $tmp = new ffTemplate($template_root);
@@ -110,6 +120,7 @@ class ffTemplate
 
             $res = self::doEvent("on_factory_done", array($tmp));
         }
+
 		return $tmp;
 	}
 

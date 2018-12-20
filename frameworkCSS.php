@@ -641,6 +641,8 @@ class frameworkCSS
         self::getFramework($framework);
         self::getFontIcon($fonticon);
         self::getButtons();
+
+        return new frameworkCSS();
     }
     public function get($value, $type, $params = array(), $framework_css = null, $font_icon = null) {
         $res = "";
@@ -2419,43 +2421,45 @@ class frameworkCSS
         );*/
 
     }
-
+    public static function getFrameworkName() {
+        return self::$framework["name"];
+    }
     public static function getFramework($name = null) {
-        if(strlen($name)) {
-            if($name === false) {
-                self::$framework = null;
+        if(is_array($name)) {
+            self::$framework = $name;
+        } else if($name === false) {
+            self::$framework = null;
+        } elseif(strlen($name)) {
+            if(strpos($name, "-fluid") !== false) {
+                $arrFrameworkCss = explode("-fluid", $name);
+                $framework_css_settings = self::frameworks($arrFrameworkCss[0]);
+
+                self::$framework = array(
+                    "name" => $arrFrameworkCss[0]
+                    , "is_fluid" => true
+                    , "class" => $framework_css_settings["class-fluid"]
+                );
+                self::$framework = array_replace($framework_css_settings, self::$framework);
+            } elseif(strpos($name, "-") !== false) {
+                $arrFrameworkCss = explode("-", $name);
+                $framework_css_settings = self::frameworks($arrFrameworkCss[0]);
+
+                self::$framework = array(
+                    "name" => $arrFrameworkCss[0]
+                    , "is_fluid" => false
+                    , "class" => $framework_css_settings["class"]
+                );
+                self::$framework = array_replace($framework_css_settings, self::$framework);
             } else {
-                if(strpos($name, "-fluid") !== false) {
-                    $arrFrameworkCss = explode("-fluid", $name);
-                    $framework_css_settings = self::frameworks($arrFrameworkCss[0]);
-
-                    self::$framework = array(
-                        "name" => $arrFrameworkCss[0]
-                        , "is_fluid" => true
-                        , "class" => $framework_css_settings["class-fluid"]
-                    );
-                    self::$framework = array_replace($framework_css_settings, self::$framework);
-                } elseif(strpos($name, "-") !== false) {
-                    $arrFrameworkCss = explode("-", $name);
-                    $framework_css_settings = self::frameworks($arrFrameworkCss[0]);
-
-                    self::$framework = array(
-                        "name" => $arrFrameworkCss[0]
-                        , "is_fluid" => false
-                        , "class" => $framework_css_settings["class"]
-                    );
-                    self::$framework = array_replace($framework_css_settings, self::$framework);
-                } else {
-                    $framework_css_settings = self::frameworks($name);
-                    self::$framework = array(
-                        "name" => $name
-                        , "is_fluid" => false
-                        , "class" => $framework_css_settings["class"]
-                    );
-                    self::$framework = array_replace($framework_css_settings, self::$framework);
-                }
-                unset(self::$framework["class-fluid"]);
+                $framework_css_settings = self::frameworks($name);
+                self::$framework = array(
+                    "name" => $name
+                    , "is_fluid" => false
+                    , "class" => $framework_css_settings["class"]
+                );
+                self::$framework = array_replace($framework_css_settings, self::$framework);
             }
+            unset(self::$framework["class-fluid"]);
         }
 
         return self::$framework;
@@ -2497,14 +2501,17 @@ class frameworkCSS
         );*/
     }
 
+    public static function getFontIconName() {
+        return self::$fonticon["name"];
+    }
     public static function getFontIcon($name = null) {
-        if(strlen($name)) {
-            if($name === false) {
-                self::$fonticon = null;
-            } else {
-                self::$fonticon = self::fontIcons($name);
-                self::$fonticon["name"] = $name;
-            }
+        if(is_array($name)) {
+            self::$fonticon = $name;
+        } elseif($name === false) {
+            self::$fonticon = null;
+        } elseif(strlen($name)) {
+            self::$fonticon = self::fontIcons($name);
+            self::$fonticon["name"] = $name;
         }
 
         return self::$fonticon;

@@ -1,14 +1,22 @@
 <?php
 
-if(!defined("CMS_START"))               define("CMS_START", 0);
+if(!defined("APP_START"))               define("APP_START", microtime(true));
+
+
+Logs::extend("profiling", Logs::TYPE_DEBUG, array(
+    "bucket"        => "profiling"
+    , "write_if"    => vgCommon::PROFILING
+    , "override"    => true
+    , "format"      => Logs::FORMAT_CLE
+));
 
 class Debug extends vgCommon
 {
-    const STOPWATCH                         = CMS_START;
+    const STOPWATCH                         = APP_START;
 
-    private static $microtime               = STOPWATCH;
+    private static $microtime               = self::STOPWATCH;
 
-    private static $debug                      = array();
+    private static $debug                   = array();
 
     /**
      * @param null $start
@@ -29,7 +37,7 @@ class Debug extends vgCommon
                                             : microtime(true)
                                         ) - self::$microtime;
 
-        self::$microtime                = STOPWATCH;
+        self::$microtime                = self::STOPWATCH;
         return number_format($duration, 2, '.', '');
     }
 
@@ -47,7 +55,8 @@ class Debug extends vgCommon
             switch ($error['type']) {
                 case E_NOTICE:
                 case E_USER_NOTICE:
-                    Logs::write($error, "notice");
+                    Logs::warning($error);
+                    //Logs::write($error, "notice");
                     break;
                 case E_WARNING:
                 case E_DEPRECATED:
@@ -223,7 +232,6 @@ class Debug extends vgCommon
 
     /**
      * @param bool $end
-     * @param bool $isXHR
      * @return mixed
      */
     public static function benchmark($end = false) {
@@ -232,10 +240,6 @@ class Debug extends vgCommon
         if(function_exists("getrusage"))
         {
             $ru = getrusage();
-            $isXHR = ($_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest"
-                ? true
-                : false
-            );
             if ($end) {
                 $res["mem"] 			= number_format(memory_get_usage(true) - $res["mem"], 0, ',', '.');
                 $res["mem_peak"] 		= number_format(memory_get_peak_usage(true) - $res["mem_peak"], 0, ',', '.');
@@ -257,7 +261,7 @@ class Debug extends vgCommon
                     );
                     $profiler_namespace = str_replace(array(".", "&", "?", "__nocache__"), array(",", "", "", ""), "[" . round($res["exTime"], 2) . "s] "
                         . str_replace("/", "_", trim($path_info, "/"))
-                        . ($isXHR
+                        . (Debug::isXHR()
                             ? ($xhr_path_info != $path_info && $xhr_path_info
                                 ? " (" . str_replace("/", "_", trim($xhr_path_info, "/")) . ")"
                                 : ""
@@ -272,12 +276,13 @@ class Debug extends vgCommon
                     $xhprof_data = xhprof_disable();
                     $xhprof_runs = new XHProfRuns_Default();
                     $run_id = $xhprof_runs->save_run($xhprof_data, $profiler_namespace);
-                    $profiler_url = sprintf('https://www.paginemediche.info/xhprof_html/index.php?run=%s&source=%s', $run_id, $profiler_namespace);
+                    $profiler_url = sprintf("http" . ($_SERVER["HTTPS"] ? "s" : "") . "://" . $_SERVER["HTTP_HOST"] . '/xhprof_html/index.php?run=%s&source=%s', $run_id, $profiler_namespace);
 
                     //  printf('nbsp;<a href="%s" target="_blank">Profiler output</a><br>', $profiler_url);
                 }
 
-                Logs::write("URL: " . $_SERVER["REQUEST_URI"] . " (" . $end . ") Benchmark: " . print_r($res, true) . "Profiler: " . $profiler_url, "benchmark" .  ($isXHR ? "_xhr" : ""));
+                Logs::write($res, "profiling", "benckmark", (Debug::isXHR() ? "xhr" : "page"), $profiler_url);
+                //Logs::write("URL: " . $_SERVER["REQUEST_URI"] . " (" . $end . ") Benchmark: " . print_r($res, true) . "Profiler: " . $profiler_url, "benchmark" .  (Debug::isXHR() ? "_xhr" : ""));
                 return $res;
             } else {
                 $res["mem"]             = memory_get_usage(true);
@@ -296,6 +301,11 @@ class Debug extends vgCommon
 
     }
     public static function page($page) {
+        Logs::debugging(array(
+            "page"      => $page
+            , "isXHR"   => Debug::isXHR()
+        ), "Dump", "page");
+        /*
         if(self::$debug) {
             Logs::write(array(
                   "\n*********************************************\n"
@@ -308,7 +318,7 @@ class Debug extends vgCommon
                 + self::$debug
             , "benchmark_page"
             , true);
-        }
+        }*/
 
     }
 }

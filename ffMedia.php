@@ -78,11 +78,13 @@ class ffMedia {
     const STRICT                                                    = false;
 
     const DISK_PATH                                                 = FF_DISK_PATH;
+    const SITE_PATH                                                 = FF_SITE_PATH;
     const TOP_DIR                                                   = __TOP_DIR__;
     const PRJ_DIR                                                   = __PRJ_DIR__;
     const UPLOADS_DIR                                               = FF_UPDIR;
     const CACHE_DIR                                                 = CM_CACHE_PATH;
-    const MODIFY_PATH                                               = FF_SITE_PATH . "/restricted/media/modify";
+    const MEDIA_PATH                                                = self::SITE_PATH . "/media";
+    const MODIFY_PATH                                               = self::SITE_PATH . "/restricted/media/modify";
 
 
 
@@ -101,12 +103,13 @@ class ffMedia {
     const STORING_BASE_PATH                                         = CM_CACHE_DISK_PATH . "/" . ffMedia::STORING_BASE_NAME;
     const STORING_SITE_PATH                                         = FF_SITE_PATH . ffMedia::CACHE_DIR . "/" . ffMedia::STORING_BASE_NAME;
 
+    const THEME_BASE_PATH                                           = ffMedia::DISK_PATH . ffMedia::THEME_DIR;
     const STATIC_DEFAULT_PATH                                       = ffMedia::TOP_DIR . ffMedia::THEME_DIR . "/" . ffMedia::THEME_DEFAULT . "/images";
-    const STATIC_BASE_PATH                                          = ffMedia::DISK_PATH . ffMedia::THEME_DIR . "/" . ffMedia::THEME . "/images";
+    const STATIC_BASE_PATH                                          = ffMedia::THEME_BASE_PATH . "/" . ffMedia::THEME . "/images";
     const UPLOAD_BASE_PATH                                          = FF_DISK_UPDIR;
 
     const ICON_DEFAULT_PATH                                         = __DIR__ . "/ffImage/icons";
-    const ICON_BASE_PATH                                            = self::STATIC_BASE_PATH . "/icons";
+    const ICON_BASE_PATH                                            = ffMedia::THEME_BASE_PATH . "/" . ffMedia::THEME . "/icons";
 
 
     const MIMETYPE                                                  = array(
@@ -589,7 +592,7 @@ class ffMedia {
     private $final                                                  = null;
 
     public $headers                                                 = array(
-                                                                        "max_age"           => 60 * 60 * 24 * 7
+                                                                        "max_age"           => null
                                                                         , "disposition"     => "inline"
                                                                         , "fake_filename"   => null
                                                                     );
@@ -629,22 +632,36 @@ class ffMedia {
                                     );
 
         $arrFile                    = pathinfo($file);
+        if(substr($arrFile["dirname"], 0, 1) !== "/") {
+            $arrFile["dirname"]     = "/";
+            $arrFile["filename"]    = "";
+            $arrFile["extension"]   = "png";
+
+        }
+        if(!$arrFile["extension"]) {
+            $arrFile["dirname"]     = "/";
+            $arrFile["filename"]    = "unknown";
+            $arrFile["extension"]   = "png";
+        }
 
         switch($arrFile["extension"]) {
             case "svg";
                 $mode               = null;
-                $showfiles          = "";
+                $showfiles          = self::SITE_PATH;
                 break;
             case "jpg";
             case "jpeg";
             case "png";
             case "gif";
             default:
-                $showfiles          = self::SHOWFILES;
+                $showfiles          = (strpos($arrFile["dirname"], self::THEME_DIR) === 0
+                                        ? self::MEDIA_PATH
+                                        : $showfiles      = self::SHOWFILES
+                                    );
         }
 
         $dirfilename                = $showfiles . ($arrFile["dirname"] == "/" ? "" : $arrFile["dirname"]) . "/" . $arrFile["filename"];
-        $url                        = $dirfilename . ($mode ? "-" . $mode : "") . "." . $arrFile["extension"];
+        $url                        = $dirfilename . ($arrFile["filename"] && $mode ? "-" : "") . $mode . "." . $arrFile["extension"];
         $pathinfo                   = array(
             "url"                   => $url
             , "abs_url"             => (strpos($url, "://") === false
@@ -707,7 +724,7 @@ class ffMedia {
                 $content_type .= "; charset=UTF-8";
                 header("Vary: Accept-Encoding");
             } elseif (strpos($mimetype, "image/") === 0) {
-                $days = 30;
+                $days = 365;
                 $hours = 24;
             }
 
@@ -754,12 +771,20 @@ class ffMedia {
                     header('Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
                     header("Pragma: no-cache");
                 } else {
-                    if ($expires !== false)
+                    if ($expires !== false && $expires !== null) {
+                        if ($expires < 0) {
+                            $expires = time() - $expires;
+                        }
+                        $exp_gmt = gmdate("D, d M Y H:i:s", $expires) . " GMT";
+                        header("Expires: $exp_gmt");
+                    }
+
+                    /*if ($expires !== false)
                     {
                         if ($expires === null)
                         {
                             //$expires = filemtime($file) + (60 * 60 * 24 * 7);
-                            $expires = time() + (60 * 60 * 24 * $days);
+                            //$expires = time() + (60 * 60 * 24 * $days);
                         }
                         elseif ($expires < 0)
                         {
@@ -767,20 +792,18 @@ class ffMedia {
                         }
                         $exp_gmt = gmdate("D, d M Y H:i:s", $expires) . " GMT";
                         header("Expires: $exp_gmt");
-                    }
+                    }*/
 
-                    if ($max_age !== false)
-                    {
+                    if ($max_age !== false) {
                         $mod_gmt = gmdate("D, d M Y H:i:s", filemtime($file)) . " GMT";
                         header("Last-Modified: $mod_gmt");
 
-                        if ($max_age === null)
-                        {
-                            $max_age = 60 * 60 * $hours;
+                        if ($max_age === null) {
+                            //$max_age = 60 * 60 * $hours;
+                            $max_age = 60 * 60 * 24 * $days;
                             header("Cache-Control: public, max-age=$max_age");
                         }
-                        else
-                        {
+                        else {
                             header("Cache-Control: public, max-age=$max_age");
                         }
                     }
@@ -1847,7 +1870,10 @@ class ffMedia {
             }
         }
 
-        return $setting;
+        return ($setting
+            ? $setting
+            : false
+        );
     }
 
 
@@ -1872,6 +1898,10 @@ class ffMedia {
                     ) {
                         $this->createImage($mode);
                         $this::optimize($final_file);
+                    }
+                } elseif($this->mode === false && is_file($this->basepath . $this->filesource)) {
+                    if(!is_file($final_file)) {
+                        link($this->basepath . $this->filesource, $final_file);
                     }
                 } else {
                     $icon = $this->getIconPath(basename($this->filesource), true);
@@ -1929,14 +1959,20 @@ class ffMedia {
             */
             $source["dirname"] 			                            = ($image["dirname"] == "/" ? "" : $image["dirname"]);
             $source["extension"] 		                            = $image["extension"];
+            $source["filename"] 	                                = $image["filename"];
 
-            if (strpos($source["dirname"], ffMedia::THEME_DIR . "/" . ffMedia::THEME . "/images") === 0) {
+            if (strpos($source["dirname"], ffMedia::THEME_DIR . "/") === 0) {
+                $basepath = ffMedia::THEME_BASE_PATH;
+                $source["dirname"] = substr($source["dirname"], strlen(ffMedia::THEME_DIR));
+            }
+
+            /*if (strpos($source["dirname"], ffMedia::THEME_DIR . "/" . ffMedia::THEME . "/images") === 0) {
                 $basepath = ffMedia::STATIC_BASE_PATH;
                 $source["dirname"] = substr($source["dirname"], strlen(ffMedia::THEME_DIR . "/" . ffMedia::THEME . "/images"));
             } elseif (strpos($source["dirname"], ffMedia::THEME_DIR . "/" . ffMedia::THEME_DEFAULT . "/images") === 0) {
                 $basepath = ffMedia::STATIC_DEFAULT_PATH;
                 $source["dirname"] = substr($source["dirname"], strlen(ffMedia::THEME_DIR . "/" . ffMedia::THEME_DEFAULT . "/images"));
-            }
+            }*/
 
             if(strpos($image["filename"], "-png-") !== false) {
                 $file 					                            = explode("-png-", $image["filename"]);
@@ -1963,11 +1999,12 @@ class ffMedia {
                 $source["extension"] 	                            = "jpeg";
                 $source["filename"] 	                            = $file[0];
             } elseif(!$mode) {
-
                 $res = $this->getModeByFile($basepath . $source["dirname"] . "/" . $image["filename"] . "." . $source["extension"]);
                 if($res) {
                     $source["filename"]                             = $res["filename"];
                     $mode                                           = $res["mode"];
+                } else {
+                    $mode                                           = false;
                 }
             }
 

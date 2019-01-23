@@ -34,6 +34,70 @@ class frameworkCSS
     private static $buttons                                 = null;
     private static $components                              = null;
 
+    private static $singleton                               = null;
+
+
+    public static function colsWrapper($bucket, &$buffer, $col, $content, $count) {
+        static $cache = null;
+
+        if(!$cache[$bucket]) {
+            $cache[$bucket]         = array(
+                "col"               => null
+                , "is_first"        => true
+                , "is_wrapped"      => false
+                , "count_contents"  => 0
+                , "wrapper_count"   => 0
+                , "wrapper"         => (strpos($bucket, "row-") === 0
+                    ? self::getInstance()->get("", "row")
+                    : self::getInstance()->get("wrap", "form")
+                )
+            );
+        }
+
+        $cache[$bucket]["count_contents"]++;
+        if($content) {
+            if ($col) {
+                $cache[$bucket]["is_wrapped"] = false;
+                $cache[$bucket]["col"] = $cache[$bucket]["col"] + $col;
+                if ($cache[$bucket]["col"] > 12) {
+                    $buffer[] = '</div>';
+                    $buffer[] = '<div class="' . $cache[$bucket]["wrapper"] . '">';
+                    $cache[$bucket]["is_wrapped"] = true;
+                    $cache[$bucket]["wrapper_count"]++;
+                    $cache[$bucket]["col"] = 0;
+                } elseif ($cache[$bucket]["is_first"] && $cache[$bucket]["col"] == $col) { //first
+                    $buffer[] = '<div class="' . $cache[$bucket]["wrapper"] . '">';
+                    $cache[$bucket]["is_wrapped"] = true;
+                    $cache[$bucket]["is_first"] = false;
+                } elseif ($cache[$bucket]["col"] == 12 && $cache[$bucket]["wrapper_count"]) {
+                    $buffer[] = '</div>';
+                    $buffer[] = '<div class="' . $cache[$bucket]["wrapper"] . '">';
+                    $cache[$bucket]["is_wrapped"] = true;
+                    $cache[$bucket]["wrapper_count"]++;
+                    $cache[$bucket]["col"] = 0;
+                } elseif ($cache[$bucket]["col"]) {
+                    $cache[$bucket]["is_wrapped"] = true;
+                }
+
+                $buffer[] = $content;
+                if ($cache[$bucket]["is_wrapped"] && $cache[$bucket]["count_contents"] == $count) {
+                    $buffer[] = '</div>';
+                    $cache[$bucket]["is_wrapped"] = false;
+                    $cache[$bucket]["wrapper_count"]++;
+                    $cache[$bucket]["col"] = 0;
+                }
+            } else {
+                if ($cache[$bucket]["col"] > 0 || $cache[$bucket]["is_wrapped"]) {
+                    $buffer[] = '</div>';
+                    $cache[$bucket]["wrapper_count"]++;
+                    $cache[$bucket]["col"] = 0;
+                }
+                $buffer[] = $content;
+            }
+        }
+    }
+
+
     public static function setResolution($resolution, $rev = false)
     {
         if($resolution)
@@ -44,7 +108,7 @@ class frameworkCSS
                 }
                 if(count(self::$framework["resolution"]) > count($res)) {
                     for($i = count($res) + 1; $i <= count(self::$framework["resolution"]); $i++) {
-                        $res[$i] = ($rev ? 12 - $num : $num);
+                        $res[self::$framework["resolution"][$i]] = ($rev ? 12 - $num : $num);
                     }
                 }
             } else {
@@ -636,13 +700,17 @@ class frameworkCSS
            // self::$config                                   = $fs->read(dirname(__DIR__) . "/conf/frameworkcss.xml");
         //}
     }
-
+    public static function getInstance() {
+        return self::$singleton;
+    }
     public static function factory($framework, $fonticon) {
         self::getFramework($framework);
         self::getFontIcon($fonticon);
         self::getButtons();
 
-        return new frameworkCSS();
+        self::$singleton = new frameworkCSS();
+
+        return self::$singleton;
     }
     public function get($value, $type, $params = array(), $framework_css = null, $font_icon = null) {
         $res = "";
@@ -1108,7 +1176,7 @@ class frameworkCSS
                 }
 
                 $res = (is_array($res) && count($res)
-                    ? " " . implode(" ", array_keys($res))
+                    ? implode(" ", array_keys($res))
                     : ""
                 );
                 break;
@@ -1230,6 +1298,8 @@ class frameworkCSS
                     "component" => ""
                     , "component-inline" => ""
                     , "row" => "row"
+                    , "row-inline" => "row inline"
+                    , "row-check" => "row check"
                     , "row-padding" => "row padding"
                     , "row-full" => "row"
                     , "group" => "row-smart"
@@ -1237,7 +1307,9 @@ class frameworkCSS
                     , "group-padding" => "row-smart padding"
                     , "label" => ""
                     , "label-inline" => "inline"
+                    , "label-check" => "inline-check"
                     , "control" => ""
+                    , "control-check" => ""
                     , "control-sm" => ""
                     , "control-exclude" => array()
                     , "control-check-position" => "_pre_label"
@@ -1245,7 +1317,9 @@ class frameworkCSS
                     , "control-postfix" => "postfix"
                     , "control-text" => ""
                     , "control-feedback" => "postfix-feedback"
-                    , "wrap-addon" => false
+                    , "wrap" => "row"
+                    , "wrap-padding" => "row padding"
+                    //, "wrap-addon" => false
                 )
                 , "bar" => array(
                     "topbar" => "topbar"
@@ -1352,6 +1426,7 @@ class frameworkCSS
                 )
                 , "table" => array(
                     "container" => ""
+                    , "inverse" => "table-dark"
                     , "compact" => "table-condensed"
                     , "small" => "table table-sm"
                     , "hover" => "table-hover"
@@ -1364,10 +1439,14 @@ class frameworkCSS
                 )
                 , "tab" => array(
                     "menu" => "nav-tab"
+                    , "menu-pills" => "nav nav-pills"
+                    , "menu-pills-justified" => "nav nav-pills nav-justified"
+                    , "menu-bordered" => "nav nav-tabs nav-bordered"
+                    , "menu-bordered-justified" => "nav nav-tabs nav-bordered nav-justified"
                     , "menu-vertical" => "nav-tab vertical"
                     , "menu-vertical-right" => "nav-tab vertical right"
-                    , "menu-vertical-wrap" => false
                     , "menu-item" => ""
+                    , "menu-item-link" => ""
                     , "menu-current" => "current"
                     , "pane" => "tab-content"
                     , "pane-item" => "tab-pane"
@@ -1561,14 +1640,18 @@ class frameworkCSS
                     "component" => ""
                     , "component-inline" => "form-horizontal"
                     , "row" => "form-group clearfix"
+                    , "row-inline" => "form-group row"
+                    , "row-check" => "form-check"
                     , "row-padding" => "form-group clearfix padding"
                     , "row-full" => "form-group clearfix"
                     , "group" => "input-group"
                     , "group-sm" => "input-group input-group-sm"
                     , "group-padding" => "input-group padding"
                     , "label" => ""
-                    , "label-inline" => "control-label"
+                    , "label-inline" => "col-form-label"
+                    , "label-check" => "form-check-label"
                     , "control" => "form-control"
+                    , "control-check" => "form-check-control"
                     , "control-sm" => "form-control form-control-sm"
                     , "control-exclude" => array("checkbox", "radio")
                     , "control-check-position" => "_in_label"
@@ -1576,7 +1659,9 @@ class frameworkCSS
                     , "control-postfix" => "input-group-addon"
                     , "control-text" => "input-group-text"
                     , "control-feedback" => "form-control-feedback"
-                    , "wrap-addon" => false
+                    , "wrap" => "row"
+                    , "wrap-padding" => "row padding"
+                    //, "wrap-addon" => false
                 )
                 , "bar" => array(
                     "topbar" => "nav navbar-nav"
@@ -1667,6 +1752,7 @@ class frameworkCSS
                 )
                 , "table" => array(
                     "container" => "table"
+                    , "inverse" => "table-dark"
                     , "compact" => "table-condensed"
                     , "small" => "table table-sm"
                     , "hover" => "table-hover"
@@ -1679,10 +1765,14 @@ class frameworkCSS
                 )
                 , "tab" => array(
                     "menu" => "nav nav-tabs"
+                    , "menu-pills" => "nav nav-pills"
+                    , "menu-pills-justified" => "nav nav-pills nav-justified"
+                    , "menu-bordered" => "nav nav-tabs nav-bordered"
+                    , "menu-bordered-justified" => "nav nav-tabs nav-bordered nav-justified"
                     , "menu-vertical" => "nav nav-tabs tabs-left"
                     , "menu-vertical-right" => "nav nav-tabs tabs-right"
-                    , "menu-vertical-wrap" => true
                     , "menu-item" => ""
+                    , "menu-item-link" => ""
                     , "menu-current" => "active"
                     , "pane" => "tab-content"
                     , "pane-item" => "tab-pane"
@@ -1876,16 +1966,20 @@ class frameworkCSS
                 )
                 , "form" => array(
                     "component" => ""
-                    , "component-inline" => "form-horizontal"
-                    , "row" => "form-group clearfix"
-                    , "row-padding" => "form-group clearfix padding"
-                    , "row-full" => "form-group clearfix"
+                    , "component-inline" => ""
+                    , "row" => "form-group"
+                    , "row-inline" => "form-group row"
+                    , "row-check" => "form-check"
+                    , "row-padding" => "form-group padding"
+                    , "row-full" => "form-group"
                     , "group" => "input-group"
                     , "group-sm" => "input-group input-group-sm"
                     , "group-padding" => "input-group padding"
                     , "label" => ""
-                    , "label-inline" => "control-label"
+                    , "label-inline" => "col-form-label"
+                    , "label-check" => "form-check-label"
                     , "control" => "form-control"
+                    , "control-check" => "form-check-control"
                     , "control-sm" => "form-control form-control-sm"
                     , "control-exclude" => array("checkbox", "radio")
                     , "control-check-position" => "_in_label"
@@ -1893,7 +1987,9 @@ class frameworkCSS
                     , "control-postfix" => "input-group-append"
                     , "control-text" => "input-group-text"
                     , "control-feedback" => "form-control-feedback"
-                    , "wrap-addon" => false
+                    , "wrap" => "form-row"
+                    , "wrap-padding" => "form-row pl-1 pr-2"
+                    //, "wrap-addon" => false
                 )
                 , "bar" => array(
                     "topbar" => "nav navbar-nav"
@@ -1965,12 +2061,12 @@ class frameworkCSS
                     , "danger"      => "badge badge-danger"
                 )
                 , "callout" => array(
-                    "default"       => "bs-callout"
-                    , "primary"     => "bs-callout bs-callout-primary"
-                    , "success"     => "bs-callout bs-callout-success"
-                    , "info"        => "bs-callout bs-callout-info"
-                    , "warning"     => "bs-callout bs-callout-warning"
-                    , "danger"      => "bs-callout bs-callout-danger"
+                    "default"       => "alert alert-secondary"
+                    , "primary"     => "alert alert-primary"
+                    , "success"     => "alert alert-success"
+                    , "info"        => "alert alert-info"
+                    , "warning"     => "alert alert-warning"
+                    , "danger"      => "alert alert-danger"
                 )
                 , "pagination" => array(
                     "align-left" => "text-left"
@@ -1984,8 +2080,9 @@ class frameworkCSS
                 )
                 , "table" => array(
                     "container" => "table"
+                    , "inverse" => "table-dark"
                     , "compact" => "table-condensed"
-                    , "small" => "table table-sm"
+                    , "small" => "table-sm"
                     , "hover" => "table-hover"
                     , "border" => "table-bordered"
                     , "oddeven" => "table-striped"
@@ -1996,14 +2093,19 @@ class frameworkCSS
                 )
                 , "tab" => array(
                     "menu" => "nav nav-tabs"
-                    , "menu-vertical" => "nav nav-tabs tabs-left"
-                    , "menu-vertical-right" => "nav nav-tabs tabs-right"
-                    , "menu-vertical-wrap" => true
-                    , "menu-item" => ""
-                    , "menu-current" => "active"
+                    , "menu-pills" => "nav nav-pills"
+                    , "menu-pills-justified" => "nav nav-pills nav-justified"
+                    , "menu-bordered" => "nav nav-tabs nav-bordered"
+                    , "menu-bordered-justified" => "nav nav-tabs nav-bordered nav-justified"
+                    , "menu-vertical" => "nav flex-column nav-pills"
+                    , "menu-vertical-right" => "nav flex-column nav-pills"
+                   // , "menu-vertical-wrap" => true
+                    , "menu-item" => "nav-item"
+                    , "menu-item-link" => "nav-link"
+                    , "menu-current" => "active show"
                     , "pane" => "tab-content"
                     , "pane-item" => "tab-pane"
-                    , "pane-current" => "active"
+                    , "pane-current" => "active show"
                     , "pane-item-effect" => "tab-pane fade"
                     , "pane-current-effect" => "active show"
                 )
@@ -2191,6 +2293,8 @@ class frameworkCSS
                     "component" => ""
                     , "component-inline" => ""
                     , "row" => "row"
+                    , "row-inline" => "row"
+                    , "row-check" => "row"
                     , "row-padding" => "row padding"
                     , "row-full" => "columns"
                     , "group" => "row collapse"
@@ -2198,7 +2302,9 @@ class frameworkCSS
                     , "group-padding" => "row collapse padding"
                     , "label" => ""
                     , "label-inline" => "inline right"
+                    , "label-check" => "inline"
                     , "control" => ""
+                    , "control-check" => ""
                     , "control-sm" => ""
                     , "control-exclude" => array()
                     , "control-check-position" => "_pre_label"
@@ -2206,7 +2312,9 @@ class frameworkCSS
                     , "control-postfix" => "postfix"
                     , "control-text" => ""
                     , "control-feedback" => "postfix-feedback"
-                    , "wrap-addon" => true
+                    , "wrap" => "row"
+                    , "wrap-padding" => "row padding"
+                    //, "wrap-addon" => true
                 )
                 , "bar" => array(
                     "topbar" => "top-bar top-bar-section"
@@ -2294,6 +2402,7 @@ class frameworkCSS
                 )
                 , "table" => array(
                     "container" => ""
+                    , "inverse" => "table-dark"
                     , "compact" => "table-condensed"
                     , "small" => "table table-sm"
                     , "hover" => "table-hover"
@@ -2306,10 +2415,14 @@ class frameworkCSS
                 )
                 , "tab" => array(
                     "menu" => "tabs"
+                    , "menu-pills" => "pills"
+                    , "menu-pills-justified" => "pills justified"
+                    , "menu-bordered" => "tabs bordered"
+                    , "menu-bordered-justified" => "tabs bordered justified"
                     , "menu-vertical" => "tabs vertical"
                     , "menu-vertical-right" => "tabs vertical right"
-                    , "menu-vertical-wrap" => false
                     , "menu-item" => "tabs-title"
+                    , "menu-item-link" => ""
                     , "menu-current" => "is-active"
                     , "pane" => "tabs-content"
                     , "pane-item" => "tabs-panel"

@@ -26,7 +26,7 @@ if(!defined("FF_TEMPLATE_ENABLE_TPL_JS"))       define("FF_TEMPLATE_ENABLE_TPL_J
 
 class ffTemplate
 {
-    const REGEXP                            = '/\{([\w\:\=\-\|\.]+)\}/U';
+    const REGEXP                            = '/\{([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)\}/U';
     const APPLET                            = '/\{\[(.+)\]\}/U';
     const COMMENTHTML                       = '/\{\{([\w\[\]\:\=\-\|\.]+)\}\}/U';
     const LANG                              = FF_LOCALE;
@@ -368,7 +368,7 @@ class ffTemplate
 
     function isset_block($sName)
     {
-        if (isset($this->ParsedBlocks[$sName]))
+        if ((bool)($this->ParsedBlocks[$sName]))
         {
             return true;
         }

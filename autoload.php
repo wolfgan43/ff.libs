@@ -61,6 +61,9 @@ spl_autoload_register(function ($class) {
         case "ffMedia":
             require("ffMedia.php");
             break;
+        case "ffOptimizer":
+            require("ffOptimizer.php");
+            break;
         case "ffTemplate":
             require("ffTemplate.php");
             break;

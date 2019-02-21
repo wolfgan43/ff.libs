@@ -25,29 +25,31 @@
  */
 
 if(!defined("FF_PREFIX"))                       define("FF_PREFIX", "ff_");
-if(!defined("FF_LOCALE"))                       define("FF_LOCALE", "ITA");
-if(!defined("LANGUAGE_DEFAULT"))                define("LANGUAGE_DEFAULT", "ITA");
+//if(!defined("FF_LOCALE"))                       define("FF_LOCALE", "ITA");
+if(!defined("LANGUAGE_DEFAULT"))                define("LANGUAGE_DEFAULT", "ita");
 if(!defined("DEBUG_MODE"))                      define("DEBUG_MODE", false);
 if(!defined("FF_TRANSLATOR_ADAPTER"))           define("FF_TRANSLATOR_ADAPTER", false);
 
 class ffTranslator
 {
-    const ADAPTER                                       = false;
+    private const ADAPTER                               = false;
 
-    const REGEXP                                        = "/\{_([\w\[\]\:\=\-\|\.]+)\}/U";
+    private const REGEXP                                = "/\{_([\w\[\]\:\=\-\|\.]+)\}/U";
 
-    const DB_TABLE_LANG                                 = FF_PREFIX . "languages";
-    const DB_TABLE_INTERNATIONAL                        = FF_PREFIX . "international";
-    const LANG                                          = FF_LOCALE;
-    const LANG_DEFAULT                                  = LANGUAGE_DEFAULT;
+    private const DB_TABLE_LANG                         = FF_PREFIX . "languages";
 
-    const DEBUG                                         = DEBUG_MODE;
-    const INSERT_EMPTY                                  = true;
+    private const DB_TABLE_INTERNATIONAL                = FF_PREFIX . "international";
+    //const LANG                                          = FF_LOCALE;
+    private const LANG_DEFAULT                          = LANGUAGE_DEFAULT;
+    private const DEBUG                                 = DEBUG_MODE;
 
-    const BUCKET_PREFIX                                 = "ffcms/translations/";
-    const DICTIONARY_PREFIX                             = "dictionary/translations/";
+    private const INSERT_EMPTY                          = true;
+    private const BUCKET_PREFIX                         = "ffcms/translations/";
+
+    private const DICTIONARY_PREFIX                     = "dictionary/translations/";
 
     private static $singletons                          = null;
+    private static $lang                                = self::LANG_DEFAULT;
 
     private static $cache                               = null;
     private static $translation                         = array();
@@ -56,7 +58,7 @@ class ffTranslator
      *
      * @param type $eType
      */
-    static public function getInstance($eType = ffTranslator::ADAPTER, $auth = null)
+    public static function getInstance($eType = self::ADAPTER, $auth = null)
     {
         if($eType) {
             if (!isset(self::$singletons[$eType])) {
@@ -71,24 +73,30 @@ class ffTranslator
         return self::$singletons[$eType];
     }
 
-    public static function dump($language = self::LANG) {
-        $language                                       = strtolower($language);
-
-        return self::$cache[$language];
+    public static function setLang($lang_code = null) {
+        self::$lang                                     = strtolower($lang_code
+                                                            ? $lang_code
+                                                            : self::LANG_DEFAULT
+                                                        );
     }
-    public static function clear($language = self::LANG) {
-        $language                                       = strtolower($language);
 
-        self::$cache[$language]                         = null;
-        ffCache::getInstance()->clear(self::BUCKET_PREFIX . $language);
+    public static function dump($language = null) {
+        $lang_code                                       = self::getLang($language);
+
+        return self::$cache[$lang_code];
+    }
+    public static function clear($language = null) {
+        $lang_code                                       = self::getLang($language);
+
+        self::$cache[$lang_code]                         = null;
+        ffCache::getInstance()->clear(self::BUCKET_PREFIX . $lang_code);
 
         return true;
     }
-    public static function process($content, $language = ffTranslator::LANG) {
+    public static function process($content, $language = null) {
         $matches                                        = array();
-        $rc                                             = preg_match_all (ffTranslator::REGEXP, $content, $matches);
+        $rc                                             = preg_match_all (self::REGEXP, $content, $matches);
         if ($rc) {
-            $language                                   = strtoupper($language);
             $vars                                       = $matches[1];
             foreach ($vars as $code) {
                 $replace["keys"][]                      = "{_" . $code . "}";
@@ -100,34 +108,34 @@ class ffTranslator
 
         return $content;
     }
-    public static function get_word_by_code($code, $language = self::LANG) {
+    public static function get_word_by_code($code, $language = null) {
         if(!$code)                                      { return null; }
-        $language                                       = strtolower($language);
+        $lang_code                                      = self::getLang($language);
 
-        if(!self::$cache[$language][$code]) {
+        if(!self::$cache[$lang_code][$code]) {
             $cache                                      = ffCache::getInstance();
-            self::$cache[$language][$code]              = $cache->get($code, self::BUCKET_PREFIX . $language);
-            if(!self::$cache[$language][$code]) {
-                self::$cache[$language][$code]          = self::getWordByCodeFromDB($code, $language);
+            self::$cache[$lang_code][$code]              = $cache->get($code, self::BUCKET_PREFIX . $lang_code);
+            if(!self::$cache[$lang_code][$code]) {
+                self::$cache[$lang_code][$code]          = self::getWordByCodeFromDB($code, $lang_code);
 
-                $cache->set($code, self::$cache[$language][$code], self::BUCKET_PREFIX . $language);
+                $cache->set($code, self::$cache[$lang_code][$code], self::BUCKET_PREFIX . $lang_code);
             }
         }
 
-        return (self::$cache[$language][$code]["cache"]
-            ? self::$cache[$language][$code]["word"]
+        return (self::$cache[$lang_code][$code]["cache"]
+            ? self::$cache[$lang_code][$code]["word"]
             : (self::DEBUG
-                ? "{" . self::$cache[$language][$code]["word"] . "}"
-                : self::$cache[$language][$code]["word"]
+                ? "{" . self::$cache[$lang_code][$code]["word"] . "}"
+                : self::$cache[$lang_code][$code]["word"]
             )
         );
     }
 
-    private static function getWordByCodeFromDB($code, $language = self::LANG) {
+    private static function getWordByCodeFromDB($code, $language = null) {
         $db                                             = new ffDB_Sql();
         $i18n                                           = array(
                                                             "code"      => $code
-                                                            , "lang"    => $language
+                                                            , "lang"    => self::getLang($language)
                                                             , "cache"   => false
                                                             , "word"    => $code
                                                         );
@@ -173,11 +181,13 @@ class ffTranslator
 
         return $i18n;
     }
-
-
-    private function __construct()
-    {
+    private static function getLang($lang_code = null) {
+        return ($lang_code
+            ? strtolower($lang_code)
+            : self::$lang
+        );
     }
+
 
     protected function save($words, $toLang, $fromLang, $words_translated) {
         $fromto                                                 = strtoupper($fromLang . "|" . $toLang);
@@ -188,8 +198,8 @@ class ffTranslator
         return ffTranslator::$translation[$fromto][$words];
     }
 
-    public function translate($words, $toLang = ffTranslator::LANG, $fromLang = ffTranslator::LANG_DEFAULT) {
-        $fromto                                                 = strtoupper($fromLang . "|" . $toLang);
+    public function translate($words, $toLang = null, $fromLang = ffTranslator::LANG_DEFAULT) {
+        $fromto                                                 = strtoupper($fromLang . "|" . $this::getLang($toLang));
 
         if(!isset(ffTranslator::$translation[$fromto][$words])) {
             $cache                                              = ffCache::getInstance();

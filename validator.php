@@ -23,10 +23,18 @@
  * @link https://bitbucket.org/cmsff/vgallery
  */
 
+
+//namespace phpformsframework\libs;
+
+//namespace ff;
+
+if(!defined("DEBUG_MODE"))                          define("DEBUG_MODE", false);
+
+
 class Validator
 {
     const TYPE                                              = "validator";
-
+    const DEBUG                                             = DEBUG_MODE;
     /**
      * cmsSchemaorg constructor.
      * @param $cms
@@ -40,7 +48,10 @@ class Validator
         $res                                                            = false;
         switch($rule) {
             default:
-                $regex                                              = '/^([.0-9a-z_-]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,4})$/i';
+                $regex                                              = (self::DEBUG
+                                                                        ? '/^([.0-9a-z_-\+]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,12})$/i'
+                                                                        : '/^([.0-9a-z_-]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,12})$/i'
+                                                                    );
                 $res                                                = preg_match($regex, $value);
         }
 
@@ -82,7 +93,7 @@ class Validator
                     if (!preg_match("#[0-9]+#", $value))             $error[] = "Password must include at least one number!";
                     if (!preg_match("#[a-z]+#", $value))             $error[] = "Password must include at least one letter!";
                     if (!preg_match("#[A-Z]+#", $value))             $error[] = "Password must include at least one upper letter!";
-                    if (!preg_match("#[^a-zA-Z0-9]+#", $value)) $error[] = "Password must include at least one Special Character!";
+                    if (!preg_match("#[^a-zA-Z0-9]+#", $value))     $error[] = "Password must include at least one Special Character!";
 
                     /*$pspell_link                                            = pspell_new(vgCommon::LANG_CODE_TINY); //todo: non funziona il controllo
                     $word                                                   = preg_replace("#[^a-zA-Z]+#", "", $value);

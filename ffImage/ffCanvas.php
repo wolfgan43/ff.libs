@@ -39,7 +39,7 @@ class ffCanvas
 	 *			jpg
 	 */
 
-	function ffCanvas($dim_x = NULL, $dim_y = NULL)
+	function __construct($dim_x = NULL, $dim_y = NULL)
 	{
 		$this->cvs_res_dim_x = $dim_x;
 		$this->cvs_res_dim_y = $dim_y;

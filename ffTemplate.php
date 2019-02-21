@@ -1,4 +1,5 @@
 <?php
+
 /**
 * @package Forms PHP Framework
 * @category Common Functions Class
@@ -26,7 +27,9 @@ if(!defined("FF_TEMPLATE_ENABLE_TPL_JS"))       define("FF_TEMPLATE_ENABLE_TPL_J
 
 class ffTemplate
 {
-    const REGEXP                            = '/\{([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)\}/U';
+    //const REGEXP                            = '/\{([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)\}/U';
+    const REGEXP                            = '/\{([\w\:\=\-\|\.]+)\}/U';
+
     const APPLET                            = '/\{\[(.+)\]\}/U';
     const COMMENTHTML                       = '/\{\{([\w\[\]\:\=\-\|\.]+)\}\}/U';
     const LANG                              = FF_LOCALE;
@@ -171,7 +174,8 @@ class ffTemplate
 				if ($this->useFormsFramework) {
                     ffErrorHandler::raise("Unable to find the template", E_USER_ERROR, null, get_defined_vars());
                 } else {
-                    die("<br><b><u><font color=\"red\">Unable to find the template</font></u></b><br>");
+				    return $template_path . ": Unable to load template";
+                    //die("<br><b><u><font color=\"red\">Unable to find the template</font></u></b><br>");
                 }
 			}
 

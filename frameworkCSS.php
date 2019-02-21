@@ -1,4 +1,5 @@
 <?php
+
 /**
  * VGallery: CMS based on FormsFramework
  * Copyright (C) 2004-2015 Alessandro Stucchi <wolfgan@gmail.com>
@@ -43,7 +44,7 @@ class frameworkCSS
         if(!$cache[$bucket]) {
             $cache[$bucket]         = array(
                 "col"               => null
-                , "is_first"        => true
+                //, "is_first"        => true
                 , "is_wrapped"      => false
                 , "count_contents"  => 0
                 , "wrapper_count"   => 0
@@ -57,7 +58,7 @@ class frameworkCSS
         $cache[$bucket]["count_contents"]++;
         if($content) {
             if ($col) {
-                $cache[$bucket]["is_wrapped"] = false;
+                //$cache[$bucket]["is_wrapped"] = false;
                 $cache[$bucket]["col"] = $cache[$bucket]["col"] + $col;
                 if ($cache[$bucket]["col"] > 12) {
                     $buffer[] = '</div>';
@@ -65,30 +66,35 @@ class frameworkCSS
                     $cache[$bucket]["is_wrapped"] = true;
                     $cache[$bucket]["wrapper_count"]++;
                     $cache[$bucket]["col"] = 0;
-                } elseif ($cache[$bucket]["is_first"] && $cache[$bucket]["col"] == $col) { //first
+                } elseif (!$cache[$bucket]["wrapper_count"] && $cache[$bucket]["col"] == $col) { //first
                     $buffer[] = '<div class="' . $cache[$bucket]["wrapper"] . '">';
                     $cache[$bucket]["is_wrapped"] = true;
-                    $cache[$bucket]["is_first"] = false;
-                } elseif ($cache[$bucket]["col"] == 12 && $cache[$bucket]["wrapper_count"]) {
+                    //$cache[$bucket]["is_first"] = false;
+                } elseif ($cache[$bucket]["col"] == 12 && $cache[$bucket]["wrapper_count"] && !$cache[$bucket]["is_wrapped"]) {
                     $buffer[] = '</div>';
                     $buffer[] = '<div class="' . $cache[$bucket]["wrapper"] . '">';
                     $cache[$bucket]["is_wrapped"] = true;
                     $cache[$bucket]["wrapper_count"]++;
                     $cache[$bucket]["col"] = 0;
-                } elseif ($cache[$bucket]["col"]) {
-                    $cache[$bucket]["is_wrapped"] = true;
+                } elseif ($cache[$bucket]["col"]/* && $cache[$bucket]["wrapper_count"]*/) {
+                    if(!$cache[$bucket]["is_wrapped"]) {
+                        $buffer[] = '<div class="' . $cache[$bucket]["wrapper"] . '">';
+                        $cache[$bucket]["is_wrapped"] = true;
+                    }
+                    //$cache[$bucket]["is_wrapped"] = true;
                 }
 
                 $buffer[] = $content;
                 if ($cache[$bucket]["is_wrapped"] && $cache[$bucket]["count_contents"] == $count) {
                     $buffer[] = '</div>';
                     $cache[$bucket]["is_wrapped"] = false;
-                    $cache[$bucket]["wrapper_count"]++;
+                    //$cache[$bucket]["wrapper_count"]++;
                     $cache[$bucket]["col"] = 0;
                 }
             } else {
                 if ($cache[$bucket]["col"] > 0 || $cache[$bucket]["is_wrapped"]) {
                     $buffer[] = '</div>';
+                    $cache[$bucket]["is_wrapped"] = false;
                     $cache[$bucket]["wrapper_count"]++;
                     $cache[$bucket]["col"] = 0;
                 }
@@ -1310,9 +1316,11 @@ class frameworkCSS
                     , "label-check" => "inline-check"
                     , "control" => ""
                     , "control-check" => ""
-                    , "control-sm" => ""
+                    , "control-file" => ""
+                    , "control-plaintext" => "label"
+                    , "size-sm" => "small"
+                    , "size-lg" => "large"
                     , "control-exclude" => array()
-                    , "control-check-position" => "_pre_label"
                     , "control-prefix" => "prefix"
                     , "control-postfix" => "postfix"
                     , "control-text" => ""
@@ -1465,15 +1473,16 @@ class frameworkCSS
                 , "dialog" => array(
                     "overlay" => "modal"
                     , "window" => "modal-dialog"
+                    , "window-center" => "modal-dialog-centered"
                     , "window-small" => "modal-sm"
-                    , "window-medium" => "modal-md"
                     , "window-large" => "modal-lg"
                     , "window-huge" => "modal-full"
-                    , "inner-wrap" => "modal-content"
+                    , "container" => "modal-content"
                     , "header" => "modal-header"
-                    , "header-title" => "modal-header"
                     , "content" => "modal-body"
                     , "footer" => "modal-footer"
+                    , "title" => "modal-title"
+                    , "subtitle" => "modal-subtitle"
                     , "button" => "close"
                     , "effect" => "fade"
                 )
@@ -1652,9 +1661,11 @@ class frameworkCSS
                     , "label-check" => "form-check-label"
                     , "control" => "form-control"
                     , "control-check" => "form-check-control"
-                    , "control-sm" => "form-control form-control-sm"
+                    , "control-file" => "form-control-file"
+                    , "control-plaintext" => "form-control-plaintext"
+                    , "size-sm" => "form-control-sm"
+                    , "size-lg" => "form-control-lg"
                     , "control-exclude" => array("checkbox", "radio")
-                    , "control-check-position" => "_in_label"
                     , "control-prefix" => "input-group-addon"
                     , "control-postfix" => "input-group-addon"
                     , "control-text" => "input-group-text"
@@ -1791,15 +1802,16 @@ class frameworkCSS
                 , "dialog" => array(
                     "overlay" => "modal"
                     , "window" => "modal-dialog"
+                    , "window-center" => "modal-dialog-centered"
                     , "window-small" => "modal-sm"
-                    , "window-medium" => "modal-md"
                     , "window-large" => "modal-lg"
                     , "window-huge" => "modal-full"
-                    , "inner-wrap" => "modal-content"
+                    , "container" => "modal-content"
                     , "header" => "modal-header"
-                    , "header-title" => "modal-header"
                     , "content" => "modal-body"
                     , "footer" => "modal-footer"
+                    , "title" => "modal-title"
+                    , "subtitle" => "modal-subtitle"
                     , "button" => "close"
                     , "effect" => "fade"
                 )
@@ -1969,7 +1981,7 @@ class frameworkCSS
                     , "component-inline" => ""
                     , "row" => "form-group"
                     , "row-inline" => "form-group row"
-                    , "row-check" => "form-check"
+                    , "row-check" => "form-group form-check"
                     , "row-padding" => "form-group padding"
                     , "row-full" => "form-group"
                     , "group" => "input-group"
@@ -1980,9 +1992,11 @@ class frameworkCSS
                     , "label-check" => "form-check-label"
                     , "control" => "form-control"
                     , "control-check" => "form-check-control"
-                    , "control-sm" => "form-control form-control-sm"
+                    , "control-file" => "form-control-file"
+                    , "control-plaintext" => "form-control-plaintext"
+                    , "size-sm" => "form-control-sm"
+                    , "size-lg" => "form-control-lg"
                     , "control-exclude" => array("checkbox", "radio")
-                    , "control-check-position" => "_in_label"
                     , "control-prefix" => "input-group-prepend"
                     , "control-postfix" => "input-group-append"
                     , "control-text" => "input-group-text"
@@ -2120,15 +2134,16 @@ class frameworkCSS
                 , "dialog" => array(
                     "overlay" => "modal"
                     , "window" => "modal-dialog"
+                    , "window-center" => "modal-dialog-centered"
                     , "window-small" => "modal-sm"
-                    , "window-medium" => "modal-md"
                     , "window-large" => "modal-lg"
-                    , "window-huge" => "modal-full"
-                    , "inner-wrap" => "modal-content"
+                    , "window-huge" => "modal-xl"
+                    , "container" => "modal-content"
                     , "header" => "modal-header"
-                    , "header-title" => "modal-header"
-                    , "content" => "modal-body"
+                    , "body" => "modal-body"
                     , "footer" => "modal-footer"
+                    , "title" => "modal-title"
+                    , "subtitle" => "modal-subtitle"
                     , "button" => "close"
                     , "effect" => "fade"
                 )
@@ -2305,9 +2320,11 @@ class frameworkCSS
                     , "label-check" => "inline"
                     , "control" => ""
                     , "control-check" => ""
-                    , "control-sm" => ""
+                    , "control-file" => ""
+                    , "control-plaintext" => ""
+                    , "size-sm" => "small"
+                    , "size-lg" => "large"
                     , "control-exclude" => array()
-                    , "control-check-position" => "_pre_label"
                     , "control-prefix" => "prefix"
                     , "control-postfix" => "postfix"
                     , "control-text" => ""
@@ -2441,15 +2458,16 @@ class frameworkCSS
                 , "dialog" => array(			//da trovare analogo per foundation
                     "overlay" => "reveal-overlay"
                     , "window" => "reveal"
+                    , "window-center" => "centered"
                     , "window-small" => "tiny"
-                    , "window-medium" => "small"
                     , "window-large" => "large"
                     , "window-huge" => "full"
-                    , "inner-wrap" => "modal-content"
+                    , "container" => "modal-content"
                     , "header" => "modal-header"
-                    , "header-title" => "modal-header"
                     , "content" => "modal-body"
                     , "footer" => "modal-footer"
+                    , "title" => "modal-title"
+                    , "subtitle" => "modal-subtitle"
                     , "button" => "close"
                     , "effect" => "fade"
                 )

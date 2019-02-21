@@ -29,6 +29,8 @@ if (!defined("__TOP_DIR__"))	                            define("__TOP_DIR__", F
 if (!defined("__PRJ_DIR__"))	                            define("__PRJ_DIR__", FF_DISK_PATH);
 if (!defined("FF_UPDIR"))                                 define("FF_UPDIR", "/uploads");
 
+if (!defined("FF_DISK_UPDIR"))                             define("FF_DISK_UPDIR", FF_DISK_PATH . FF_UPDIR);
+
 
 if (!defined("FF_THEME_DIR"))	                            define("FF_THEME_DIR", "/themes");
 if (!defined("CM_DEFAULT_THEME"))	                        define("CM_DEFAULT_THEME", "responsive");
@@ -40,8 +42,9 @@ if (!defined("CM_SHOWFILES_THUMB_NAME"))	                define("CM_SHOWFILES_TH
 if (!defined("CM_CACHE_PATH"))	                            define("CM_CACHE_PATH", "/cache");
 if (!defined("CM_CACHE_DISK_PATH"))	                    define("CM_CACHE_DISK_PATH", FF_DISK_PATH . "/cache");
 
+if (!defined("FF_MEDIA_TABLE_MODES"))	                    define("FF_MEDIA_TABLE_MODES", "cm_showfiles_modes");
+
 if (!defined("CM_SHOWFILES"))	                            define("CM_SHOWFILES", FF_SITE_PATH . "/media"); // /cm/showfiles
-if (!defined("CM_TABLE_PREFIX"))	                        define("CM_TABLE_PREFIX", "cm_");
 
 define("FF_DISABLE_CACHE", defined("DEBUG_MODE") && isset($_REQUEST["__nocache__"]));
 
@@ -95,7 +98,7 @@ class ffMedia {
     const THEME_DEFAULT                                             = CM_DEFAULT_THEME;
     const SHOWFILES                                                 = CM_SHOWFILES;
 
-    const DB_TABLE_MODES                                            = CM_TABLE_PREFIX . "showfiles_modes";
+    const DB_TABLE_MODES                                            = FF_MEDIA_TABLE_MODES;
 
     const OPTIMIZE                                                  = CM_SHOWFILES_OPTIMIZE;
 
@@ -664,7 +667,7 @@ class ffMedia {
         $url                        = $dirfilename . ($arrFile["filename"] && $mode ? "-" : "") . $mode . "." . $arrFile["extension"];
         $pathinfo                   = array(
             "url"                   => $url
-            , "abs_url"             => (strpos($url, "://") === false
+            , "web_url"             => (strpos($url, "://") === false
                                         ? "http" . ($_SERVER["HTTPS"] ? "s": "") . "://" . $_SERVER["HTTP_HOST"] . $url
                                         : $url
                                     )
@@ -981,9 +984,11 @@ class ffMedia {
     public static function getModes($mode = null) {
         static $loaded_modes = null;
 
+        if(!self::DB_TABLE_MODES)                                   { return array(); }
+
         if(!is_array($loaded_modes)) {
-            $cache = ffCache::getInstance();
-            $loaded_modes = $cache->get("/cm/showfiles/modes");
+            $cache                                                  = ffCache::getInstance();
+            $loaded_modes                                           = $cache->get("/cm/showfiles/modes");
 
             if (!$loaded_modes) {
                 $loaded_modes                                       = array();
@@ -1327,6 +1332,7 @@ class ffMedia {
         $this->clear();
         $this->waterMark();
         $final_file                                                 = $this->findSource($mode);
+
         if(!$final_file) {
             if (!$this->filesource && !$this::STRICT)               { $this->findSourceOld($mode); }
             if (!is_file($this->basepath . $this->filesource))  { $noimg = $this->setNoImg($mode); }
@@ -1439,9 +1445,9 @@ class ffMedia {
         */
         if($is_symlink) {
             if(!is_file($this::STORING_BASE_PATH . $this->pathinfo["orig"])) {
-                if(!is_dir($this::STORING_BASE_PATH . $this->pathinfo["dirname"]))
+                if(!is_dir($this::STORING_BASE_PATH . $this->pathinfo["dirname"])) {
                     mkdir($this::STORING_BASE_PATH . $this->pathinfo["dirname"], 0777, true);
-
+                }
                 link($this->basepath . $this->filesource, $this::STORING_BASE_PATH . $this->pathinfo["orig"]);
             }
 

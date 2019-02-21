@@ -476,7 +476,7 @@ class ffDB_Sql
             return false;
         }
 
-        $res = @mysqli_fetch_all($this->query_id, MYSQLI_ASSOC);
+        $res = $this->fetch_all();
         if ($res === null && $this->checkError())
         {
             $this->errorHandler("fetch_assoc_error");
@@ -526,7 +526,7 @@ class ffDB_Sql
         if ($obj != null) {
             $res = @mysqli_fetch_object($this->query_id, $obj);
         } else {
-            $res = @mysqli_fetch_all($this->query_id, MYSQLI_ASSOC);
+            $res = $this->fetch_all();
         }
 
         if ($res === null && $this->checkError())
@@ -1287,5 +1287,27 @@ class ffDB_Sql
                 die("ffDb_sql - Error: Script Halted.\n");
         }
         return;
+    }
+
+
+    private function fetch_all()
+    {
+        $res = null;
+        if (function_exists('mysqli_fetch_all')) {
+            $res = @mysqli_fetch_all($this->query_id, MYSQLI_ASSOC);
+        } else {
+            if($this->field_primary) {
+                while ($record = @mysqli_fetch_assoc($this->query_id)) {
+                    $res[$record[$this->field_primary]] = $record;
+                }
+            } else {
+                $row = 0;
+                while ($record = @mysqli_fetch_assoc($this->query_id)) {
+                    $res[$row++] = $record;
+                }
+            }
+        }
+
+        return $res;
     }
 }

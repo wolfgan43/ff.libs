@@ -61,9 +61,9 @@ spl_autoload_register(function ($class) {
         case "ffMedia":
             require("ffMedia.php");
             break;
-        case "ffOptimizer":
-            require("ffOptimizer.php");
-            break;
+        //case "ffOptimizer":
+        //    require("ffOptimizer.php");
+        //    break;
         case "ffTemplate":
             require("ffTemplate.php");
             break;
@@ -75,6 +75,12 @@ spl_autoload_register(function ($class) {
             break;
         case "Validator":
             require("validator.php");
+            break;
+        case "Locale":
+            require("locale.php");
+            break;
+        case "errorManager":
+            require("errorManager.php");
             break;
         default:
     }

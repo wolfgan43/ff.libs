@@ -2,7 +2,7 @@
 
 //namespace phpformsframework\libs;
 
-class Locale {
+class localeManager {
 
     private static $lang                                    = null;
     private static $country                                 = null;

@@ -76,8 +76,8 @@ spl_autoload_register(function ($class) {
         case "Validator":
             require("validator.php");
             break;
-        case "Locale":
-            require("locale.php");
+        case "localeManager":
+            require("localeManager.php");
             break;
         case "errorManager":
             require("errorManager.php");

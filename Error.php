@@ -24,8 +24,11 @@
  *  @link https://github.com/wolfgan43/vgallery
  */
 
-class errorManager {
-    const TYPE                                                  = "errormanager";
+namespace phpformsframework\libs;
+
+
+class Error {
+    const TYPE                                                  = "Error";
     private static $rules                                       = array(
                                                                     "path" => array(
                                                                         "/static"   => "media"

@@ -23,10 +23,7 @@
  * @link https://bitbucket.org/cmsff/vgallery
  */
 
-
-//namespace phpformsframework\libs;
-
-//namespace ff;
+namespace phpformsframework\libs;
 
 if(!defined("DEBUG_MODE"))                          define("DEBUG_MODE", false);
 

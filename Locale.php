@@ -1,8 +1,8 @@
 <?php
 
-//namespace phpformsframework\libs;
+namespace phpformsframework\libs;
 
-class localeManager {
+class Locale {
 
     private static $lang                                    = null;
     private static $country                                 = null;
@@ -265,6 +265,7 @@ class localeManager {
                                                             );
         } else {
             $acceptLanguage                                 = self::acceptLanguage();
+
             $lang_tiny_code                                 = $acceptLanguage["lang"];
             $country_tiny_code                              = $acceptLanguage["country"];
         }
@@ -292,7 +293,7 @@ class localeManager {
              */
             if(is_array($config["lang"]) && count($config["lang"])) {
                 foreach ($config["lang"] AS $code => $lang) {
-                    $attr                                               = Filemanager::getAttr($lang);
+                    $attr                                               = \Filemanager::getAttr($lang);
                     self::$locale["lang"][$code]                        = $attr;
 
                     //self::$locale["rev"]["lang"][$attr["tiny_code"]]    = $code;
@@ -304,7 +305,7 @@ class localeManager {
              */
             if(is_array($config["country"]) && count($config["country"])) {
                 foreach ($config["country"] AS $code => $country) {
-                    $attr                                               = Filemanager::getAttr($country);
+                    $attr                                               = \Filemanager::getAttr($country);
                     self::$locale["country"][$code]                     = $attr;
 
                     //self::$locale["rev"]["country"][$code]              = $attr["lang"];
@@ -342,17 +343,18 @@ class localeManager {
     }
 
     private static function setLang($lang_tiny_code = null) {
-        if(!isset(self::$locale["lang"][$lang_tiny_code]))  { $lang_tiny_code = Kernel::env("LANG_TINY_CODE"); }
+        if(!isset(self::$locale["lang"][$lang_tiny_code]))  { $lang_tiny_code = \Kernel::env("LANG_TINY_CODE"); }
 
         self::$lang                                         = self::$locale["lang"][$lang_tiny_code];
+        self::$lang["tiny_code"]                            = $lang_tiny_code;
 
-        ffTranslator::setLang(self::$lang["code"]);
+        \ffTranslator::setLang(self::$lang["code"]);
     }
     private static function setCountry($country_tiny_code = null) {
         if(!isset(self::$locale["country"][$country_tiny_code])) {
             $country_tiny_code                              = (isset(self::$lang["country"])
                 ? self::$lang["country"]
-                : Kernel::env("COUNTRY_TINY_CODE")
+                : \Kernel::env("COUNTRY_TINY_CODE")
             );
         }
 

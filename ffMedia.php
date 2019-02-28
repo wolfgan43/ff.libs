@@ -1316,6 +1316,7 @@ class ffMedia {
 
     public function setPathInfo($pathinfo = null) {
         if($pathinfo) {
+            $pathinfo                                               = parse_url($pathinfo, PHP_URL_PATH);
             $this->pathinfo                                         = pathinfo($pathinfo);
             $this->pathinfo["orig"]                                 = $pathinfo;
 

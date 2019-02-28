@@ -25,8 +25,17 @@
  */
 spl_autoload_register(function ($class) {
     switch ($class) {
+        case "phpformsframework\libs\App":
+            require("App.php");
+            break;
+        case "phpformsframework\libs\Event":
+            require("Event.php");
+            break;
         case "Debug":
             require("Debug.php");
+            break;
+        case "Request":
+            require("Request.php");
             break;
         case "ffDB_Sql":
         case "ffDb_Sql":
@@ -73,14 +82,14 @@ spl_autoload_register(function ($class) {
         case "frameworkCSS":
             require("frameworkCSS.php");
             break;
-        case "Validator":
-            require("validator.php");
+        case "phpformsframework\libs\Validator":
+            require("Validator.php");
             break;
-        case "localeManager":
-            require("localeManager.php");
+        case 'phpformsframework\libs\Locale':
+            require("Locale.php");
             break;
-        case "errorManager":
-            require("errorManager.php");
+        case 'phpformsframework\libs\Error':
+            require("Error.php");
             break;
         default:
     }

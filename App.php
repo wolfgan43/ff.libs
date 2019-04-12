@@ -28,7 +28,7 @@ namespace phpformsframework\libs;
 use phpformsframework\libs\tpl\Widget;
 
 if(!defined("DOCUMENT_ROOT"))                               { define("DOCUMENT_ROOT", $_SERVER["DOCUMENT_ROOT"]); }
-if(!defined("SITE_PATH"))                                   { define("SITE_PATH", $_SERVER["SITE_PATH"]); }
+if(!defined("SITE_PATH"))                                   { define("SITE_PATH", str_replace(array(DOCUMENT_ROOT, "/vendor/phpformsframework/libs"), "", __DIR__)); }
 if(!defined("CONF_PATH"))                                   { define("CONF_PATH", "/conf"); }
 if(!defined("LIBS_PATH"))                                   { define("LIBS_PATH", "/vendor"); }
 

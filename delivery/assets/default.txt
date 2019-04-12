@@ -1,0 +1,5 @@
+{pre_body}
+<!--BeginSezOwner-->{owner}<!--EndSezOwner-->
+<!--BeginSezFields--><!--BeginSezGroups-->{group_name}
+		<!--BeginSezField-->{fields_label} {fields_value}<!--EndSezField--><!--EndSezGroups--><!--EndSezFields-->
+{post_body}

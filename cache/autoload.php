@@ -23,43 +23,26 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
+
 spl_autoload_register(function ($class) {
     switch ($class) {
-        case "phpformsframework\libs\App":
-            require("App.php");
+        case 'phpformsframework\libs\cache\Mem':
+            require ('Mem.php');
             break;
-        case "phpformsframework\libs\DirStruct":
-            require("App.php");
+        case 'phpformsframework\libs\cache\memApc':
+            require ('adapters\apc.php');
             break;
-        case "phpformsframework\libs\Env":
-            require("App.php");
+        case 'phpformsframework\libs\cache\memFs':
+            require ('adapters\fs.php');
             break;
-        case "phpformsframework\libs\Hook":
-            require("App.php");
+        case 'phpformsframework\libs\cache\memMemcached':
+            require ('adapters\memcached.php');
             break;
-        case "phpformsframework\libs\Debug":
-            require("Debug.php");
+        case 'phpformsframework\libs\cache\memRedis':
+            require ('adapters\redis.php');
             break;
-        case 'phpformsframework\libs\Error':
-            require("Error.php");
+        case 'phpformsframework\libs\cache\Globals':
+            require ('Globals.php');
             break;
-        case 'phpformsframework\libs\Log':
-            require("Log.php");
-            break;
-        case "phpformsframework\libs\Request":
-            require_once("Request.php");
-            break;
-        case "phpformsframework\libs\Response":
-            require_once("Request.php");
-            break;
-        case "phpformsframework\libs\Router":
-            require_once("Router.php");
-            break;
-        case 'phpformsframework\libs\Validator':
-            require("Validator.php");
-            break;
-        default:
     }
 });
-
-

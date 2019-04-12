@@ -23,27 +23,34 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-if(!defined("APP_START"))               define("APP_START", microtime(true));
+namespace phpformsframework\libs;
 
+use phpformsframework\libs\storage\Database;
 
-Logs::extend("profiling", Logs::TYPE_DEBUG, array(
+if(!defined("APP_START"))               { define("APP_START", microtime(true)); }
+if(!defined("DEBUG_PROFILING"))         { define("DEBUG_PROFILING", false); }
+if(!defined("DEBUG_MODE"))              { define("DEBUG_MODE", false); }
+
+Log::extend("profiling", Log::TYPE_DEBUG, array(
     "bucket"        => "profiling"
-    , "write_if"    => vgCommon::PROFILING
+    , "write_if"    => DEBUG_PROFILING
     , "override"    => true
-    , "format"      => Logs::FORMAT_CLE
+    , "format"      => Log::FORMAT_CLE
 ));
 
-class Debug extends vgCommon
+class Debug extends DirStruct
 {
     const STOPWATCH                         = APP_START;
+    const PROFILING                         = DEBUG_PROFILING;
+    const ACTIVE                            = DEBUG_MODE;
 
     private static $microtime               = self::STOPWATCH;
 
     private static $debug                   = array();
 
     /**
-     * @param null $start
-     * @return mixed|string
+     * @param null $microtime
+     * @return string
      */
     public static function startWatch($microtime = null)
     {
@@ -78,8 +85,7 @@ class Debug extends vgCommon
             switch ($error['type']) {
                 case E_NOTICE:
                 case E_USER_NOTICE:
-                    Logs::warning($error);
-                    //Logs::write($error, "notice");
+                    Log::warning($error);
                     break;
                 case E_WARNING:
                 case E_DEPRECATED:
@@ -103,13 +109,10 @@ class Debug extends vgCommon
                 case E_USER_WARNING:
 
                 case E_USER_DEPRECATED:
-
-
                     self::dump($GLOBALS["backtrace"]);
-
-                    if(function_exists("cache_sem_remove"))
+                    if(function_exists("cache_sem_remove")) {
                         cache_sem_remove($_SERVER["PATH_INFO"]);
-
+                    }
                     break;
                 default:
             }
@@ -120,6 +123,7 @@ class Debug extends vgCommon
         //exit;
     }
     public static function dumpLog($filename, $data = null) {
+        $trace = array();
         $debug_backtrace = debug_backtrace();
 
         foreach($debug_backtrace AS $i => $value) {
@@ -134,8 +138,9 @@ class Debug extends vgCommon
                 $trace = $value;
             }
         }
-
-        unset($trace["object"]);
+        if(isset($trace["object"])) {
+            unset($trace["object"]);
+        }
         if (is_array($trace["args"]) && count($trace["args"])) {
             foreach ($trace["args"] AS $key => $value) {
                 if (is_object($value)) {
@@ -156,35 +161,34 @@ class Debug extends vgCommon
         }
 
         $data["source"] = $trace;
-        Logs::write($data, $filename);
+        Log::write($data, $filename);
     }
 
     public static function dumpCaller($note = null, $backtrace = null) {
-        $disk_path                          = (defined("FF_DISK_PATH")
-                                                ? FF_DISK_PATH
-                                                : str_replace(vgCommon::BASE_PATH, "", __DIR__)
-                                            );
-        $debug_backtrace                    = (is_array($backtrace)
-                                                ? $backtrace
-                                                : debug_backtrace()
-                                            );
-        foreach($debug_backtrace AS $i => $trace) {
-            if($i) {
-                if (basename($trace["file"]) == "vgCommon.php") {
-                    continue;
-                }
-                if (basename($trace["file"]) == "cm.php") {
-                    break;
-                }
+        if(self::PROFILING) {
+            $disk_path                          = self::$disk_path;
+            $debug_backtrace                    = (is_array($backtrace)
+                                                    ? $backtrace
+                                                    : debug_backtrace()
+                                                );
+            foreach($debug_backtrace AS $i => $trace) {
+                if($i) {
+                    if (basename($trace["file"]) == "vgCommon.php") {
+                        continue;
+                    }
+                    if (basename($trace["file"]) == "cm.php") {
+                        break;
+                    }
 
-                if($trace["file"]) {
-                    $res = $trace["line"] . ' Line in: ' . str_replace($disk_path, "", $trace["file"]);
-                } else {
-                    $res = 'Func: ' . $trace["function"];
-                }
-                if($res) {
-                    self::$debug[] = $res . "\n" . str_repeat(" ", 8) . (is_array($note) ? print_r($note, true) : $note);
-                    break;
+                    if($trace["file"]) {
+                        $res = $trace["line"] . ' Line in: ' . str_replace($disk_path, "", $trace["file"]);
+                    } else {
+                        $res = 'Func: ' . $trace["function"];
+                    }
+                    if($res) {
+                        self::$debug[] = $res . "\n" . str_repeat(" ", 8) . (is_array($note) ? print_r($note, true) : $note);
+                        break;
+                    }
                 }
             }
         }
@@ -192,11 +196,7 @@ class Debug extends vgCommon
 
     public static function dump($backtrace = null) {
         $html                               = "";
-        $disk_path                          = (defined("FF_DISK_PATH")
-            ? FF_DISK_PATH
-            : str_replace(vgCommon::BASE_PATH, "", __DIR__)
-        );
-
+        $disk_path                          = self::$disk_path;
         $debug_backtrace                    = (is_array($backtrace)
                                                 ? $backtrace
                                                 : debug_backtrace()
@@ -269,7 +269,7 @@ class Debug extends vgCommon
                 $res["cpu"] 			= number_format(abs(($ru['ru_utime.tv_usec'] + $ru['ru_stime.tv_usec']) - $res["cpu"]), 0, ',', '.');
                 $res["includes"] 		= get_included_files();
                 $res["classes"] 		= get_declared_classes();
-                $res["db"] 				= Storage::$cache;
+                $res["db"] 				= Database::dumpCache();
                 $res["exTime"] 			= microtime(true) - $res["exTime"];
 
                 if (extension_loaded('xhprof') && is_dir(FF_DISK_PATH . "/xhprof_lib") && class_exists("XHProfRuns_Default")) {
@@ -284,7 +284,7 @@ class Debug extends vgCommon
                     );
                     $profiler_namespace = str_replace(array(".", "&", "?", "__nocache__"), array(",", "", "", ""), "[" . round($res["exTime"], 2) . "s] "
                         . str_replace("/", "_", trim($path_info, "/"))
-                        . (Debug::isXHR()
+                        . (Request::isAjax()
                             ? ($xhr_path_info != $path_info && $xhr_path_info
                                 ? " (" . str_replace("/", "_", trim($xhr_path_info, "/")) . ")"
                                 : ""
@@ -304,8 +304,8 @@ class Debug extends vgCommon
                     //  printf('nbsp;<a href="%s" target="_blank">Profiler output</a><br>', $profiler_url);
                 }
 
-                Logs::write($res, "profiling", null, (Debug::isXHR() ? "xhr" : "page"));
-                //Logs::write("URL: " . $_SERVER["REQUEST_URI"] . " (" . $end . ") Benchmark: " . print_r($res, true) . "Profiler: " . $profiler_url, "benchmark" .  (Debug::isXHR() ? "_xhr" : ""));
+                Log::write($res, "profiling", null, (Request::isAjax() ? "xhr" : "page"));
+
                 return $res;
             } else {
                 $res["mem"]             = memory_get_usage(true);
@@ -314,27 +314,57 @@ class Debug extends vgCommon
                 $res["exTime"] 			= microtime(true);
 
                 if (extension_loaded('xhprof') && is_dir(FF_DISK_PATH . "/xhprof_lib")) {
-                    include_once FF_DISK_PATH . '/xhprof_lib/utils/xhprof_lib.php';
-                    include_once FF_DISK_PATH . '/xhprof_lib/utils/xhprof_runs.php';
+                    self::autoload(self::$disk_path . '/xhprof_lib/utils/xhprof_lib.php', true);
+                    self::autoload(self::$disk_path . '/xhprof_lib/utils/xhprof_runs.php', true);
 
                     xhprof_enable(XHPROF_FLAGS_NO_BUILTINS | XHPROF_FLAGS_CPU | XHPROF_FLAGS_MEMORY);
                 }
             }
         }
-
+        return null;
     }
+
+    public static function stackTraceOnce($key = "file") {
+        $debug_backtrace                = debug_backtrace();
+        $trace                          = $debug_backtrace[2];
+        switch ($key) {
+            case "file":
+                $res                    = str_replace(self::$disk_path, "", $trace["file"]);
+                break;
+            default:
+                $res                    = $trace[$key];
+        }
+
+        return $res;
+    }
+
+    public static function stackTrace($plainText = false) {
+        $res                                = null;
+        $debug_backtrace                    = debug_backtrace();
+        unset($debug_backtrace[0]);
+
+        foreach ($debug_backtrace AS $i => $trace) {
+            $res[]                          = $trace["file"] . " on line " . $trace["line"];
+        }
+
+        return ($plainText
+            ? implode(", ", $res)
+            : $res
+        );
+    }
+
     public static function page($page) {
-        Logs::debugging(array(
+        Log::debugging(array(
             "page"      => $page
-            , "isXHR"   => Debug::isXHR()
+            , "isXHR"   => Request::isAjax()
         ), "Dump", "page");
         /*
         if(self::$debug) {
-            Logs::write(array(
+            Log::write(array(
                   "\n*********************************************\n"
                 . print_r(
                       (array) $page
-                    + array("isXHR" => Cms::isXHR())
+                    + array("isXHR" => Request::isAjax())
                     , true)
                 . "*********************************************"
                 )

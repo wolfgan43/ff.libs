@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configdata>
+    <env>
+        <MAILER_ADAPTER value="localhost" />
+    </env>
+
+    <dirstruct>
+        <mail type="app" path="/app/views/mail" />
+    </dirstruct>
+</configdata>

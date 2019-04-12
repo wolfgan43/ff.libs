@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs;
 
+use phpformsframework\libs\storage\Filemanager;
 use Thread;
 
 if(!defined("LOG_SERVICES"))                                define("LOG_SERVICE", "fs");
@@ -486,7 +487,7 @@ class Log extends DirStruct {
             , $status
             , $response
         );
-        if($format["strip"])                                    { $content = str_replace($format["strip"], "", $content); }
+        if(isset($format["strip"]) && $format["strip"])         { $content = str_replace($format["strip"], "", $content); }
 
         return $content . self::fetchMessage($message, $format["message"], $format["encode"]);
     }

@@ -35,13 +35,13 @@ spl_autoload_register(function ($class) {
         case 'phpformsframework\libs\storage\Thumb':
             require ('drivers\image\Thumb.php');
             break;
-        case 'Array2XML':
+        case 'phpformsframework\libs\storage\Array2XML':
             require ('drivers\array2xml.php');
             break;
-        case 'MySqli':
+        case 'phpformsframework\libs\storage\MySqli':
             require ('drivers\MySqli.php');
             break;
-        case 'MongoDB':
+        case 'phpformsframework\libs\storage\MongoDB':
             require ('drivers\MongoDB.php');
             break;
         case 'phpformsframework\libs\storage\filemanagerHtml':
@@ -67,6 +67,12 @@ spl_autoload_register(function ($class) {
             break;
         case 'phpformsframework\libs\storage\Database':
             require ('Database.php');
+            break;
+        case 'phpformsframework\libs\storage\Media':
+            require ('Media.php');
+            break;
+        case 'phpformsframework\libs\storage\Orm':
+            require ('Orm.php');
             break;
         default:
     }

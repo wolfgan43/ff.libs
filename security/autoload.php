@@ -23,27 +23,18 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-
 spl_autoload_register(function ($class) {
     switch ($class) {
-        case 'phpformsframework\libs\cache\Mem':
-            require ('Mem.php');
+        case 'phpformsframework\libs\security\Buckler':
+            require ('Buckler.php');
             break;
-        case 'phpformsframework\libs\cache\memApc':
-            require ('adapters\apc.php');
+        case 'phpformsframework\libs\security\Discover':
+            require ('Discover.php');
             break;
-        case 'phpformsframework\libs\cache\memFs':
-            require ('adapters\fs.php');
-            break;
-        case 'phpformsframework\libs\cache\memMemcached':
-            require ('adapters\memcached.php');
-            break;
-        case 'phpformsframework\libs\cache\memRedis':
-            require ('adapters\redis.php');
-            break;
-        case 'phpformsframework\libs\cache\Globals':
-            require ('Globals.php');
-            break;
+        /*case 'phpformsframework\libs\security\Auth':
+            require ('Auth.php');
+            break;*/
         default:
     }
 });
+

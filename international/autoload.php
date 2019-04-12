@@ -32,6 +32,12 @@ spl_autoload_register(function ($class) {
         case 'phpformsframework\libs\international\Translator':
             require ('Translator.php');
             break;
+        case 'phpformsframework\libs\international\Data':
+            require ('Data.php');
+            break;
+        case 'phpformsframework\libs\international\dataLang':
+            require ('Data.php');
+            break;
         case 'phpformsframework\libs\international\translatorGoogle':
             require ('adapters\google.php');
             break;

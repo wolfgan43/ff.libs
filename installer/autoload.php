@@ -26,24 +26,6 @@
 
 spl_autoload_register(function ($class) {
     switch ($class) {
-        case 'phpformsframework\libs\cache\Mem':
-            require ('Mem.php');
-            break;
-        case 'phpformsframework\libs\cache\memApc':
-            require ('adapters\apc.php');
-            break;
-        case 'phpformsframework\libs\cache\memFs':
-            require ('adapters\fs.php');
-            break;
-        case 'phpformsframework\libs\cache\memMemcached':
-            require ('adapters\memcached.php');
-            break;
-        case 'phpformsframework\libs\cache\memRedis':
-            require ('adapters\redis.php');
-            break;
-        case 'phpformsframework\libs\cache\Globals':
-            require ('Globals.php');
-            break;
         default:
     }
 });

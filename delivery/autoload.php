@@ -23,46 +23,41 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
+
 spl_autoload_register(function ($class) {
     switch ($class) {
-        case "phpformsframework\libs\App":
-            require("App.php");
+        case 'phpformsframework\libs\delivery\mailerLocalhost':
+            require ('adapters\mailer_localhost.php');
             break;
-        case "phpformsframework\libs\DirStruct":
-            require("App.php");
+        case 'phpformsframework\libs\delivery\mailerSendgrid':
+            require ('adapters\mailer_sendgrid.php');
             break;
-        case "phpformsframework\libs\Env":
-            require("App.php");
+        case 'phpformsframework\libs\delivery\mailerSparkpost':
+            require ('adapters\mailer_sparkpost.php');
             break;
-        case "phpformsframework\libs\Hook":
-            require("App.php");
+        case 'phpformsframework\libs\delivery\noticeAdapterEmail':
+            require ('adapters\notice_email.php');
             break;
-        case "phpformsframework\libs\Config":
-            require("Config.php");
+        case 'phpformsframework\libs\delivery\noticeAdapterSms':
+            require ('adapters\notice_sms.php');
             break;
-        case "phpformsframework\libs\Debug":
-            require("Debug.php");
+        case 'phpformsframework\libs\delivery\smsAdapter':
+            require ('drivers\Sms.php');
             break;
-        case 'phpformsframework\libs\Error':
-            require("Error.php");
+        case 'phpformsframework\libs\delivery\Sms':
+            require ('drivers\Sms.php');
             break;
-        case 'phpformsframework\libs\Log':
-            require("Log.php");
+        case 'phpformsframework\libs\delivery\mailerAdapter':
+            require ('drivers\Mailer.php');
             break;
-        case "phpformsframework\libs\Request":
-            require_once("Request.php");
+        case 'phpformsframework\libs\delivery\Mailer':
+            require ('drivers\Mailer.php');
             break;
-        case "phpformsframework\libs\Response":
-            require_once("Request.php");
+        case 'phpformsframework\libs\delivery\noticeAdapter':
+            require ('Notice.php');
             break;
-        case "phpformsframework\libs\Router":
-            require_once("Router.php");
+        case 'phpformsframework\libs\delivery\Notice':
+            require ('Notice.php');
             break;
-        case 'phpformsframework\libs\Validator':
-            require("Validator.php");
-            break;
-        default:
     }
 });
-
-

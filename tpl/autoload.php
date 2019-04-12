@@ -35,6 +35,9 @@ spl_autoload_register(function ($class) {
         case 'phpformsframework\libs\tpl\Gridsystem':
             require ('Gridsystem.php');
             break;
+        case 'phpformsframework\libs\tpl\Widget':
+            require ('Widget.php');
+            break;
         default:
     }
 });

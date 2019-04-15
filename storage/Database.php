@@ -1177,7 +1177,7 @@ abstract class databaseAdapter {
 }
 
 class Database {
-    const TYPE                                                              = "database";
+    const TYPE                                                              = 'phpformsframework\\libs\\storage\\database';
     const ENABLE_CACHE                                                      = true;
     const ADAPTER                                                           = "mysqli";
 

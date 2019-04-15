@@ -278,7 +278,7 @@ abstract class filemanagerAdapter extends DirStruct
 
 class Filemanager extends DirStruct
 {
-    const TYPE                                                          = "filemanager";
+    const TYPE                                                          = 'phpformsframework\\libs\\storage\\filemanager';
 
     private static $singletons                                          = null;
     private static $storage                                             = null;

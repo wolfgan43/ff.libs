@@ -109,6 +109,7 @@ abstract class memAdapter
 
 class Mem // apc | memcached | redis | globals
 {
+    const TYPE                      = 'phpformsframework\\libs\\cache\\mem';
     const ADAPTER                   = FF_CACHE_ADAPTER;
 
     private static $singletons = null;
@@ -123,7 +124,7 @@ class Mem // apc | memcached | redis | globals
     {
         if($memAdapter) {
             if (!isset(self::$singletons[$memAdapter])) {
-                $class_name = "mem" . ucfirst($memAdapter);
+                $class_name = self::TYPE . ucfirst($memAdapter);
                 self::$singletons[$memAdapter] = new $class_name($auth);
             }
         } else {

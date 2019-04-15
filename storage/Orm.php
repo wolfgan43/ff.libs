@@ -234,7 +234,7 @@ Orm::getInstance("anagraph", "rawData")
 */
 
 class Orm {
-    const TYPE                                                                              = "ormModel";
+    const TYPE                                                                              = 'phpformsframework\\libs\\storage\\ormModel';
 
     private static $singleton                                                               = null;
     private static $data                                                                    = array();

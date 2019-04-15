@@ -113,7 +113,7 @@ abstract class mailerAdapter {
 }
 
 class Mailer {
-    const TYPE                                              = "mailer";
+    const TYPE                                              = 'phpformsframework\\libs\\delivery\\mailer';
 
     const ADAPTER                                           = MAILER_ADAPTER;
 

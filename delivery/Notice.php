@@ -84,7 +84,7 @@ abstract class noticeAdapter extends App {
 
 class Notice
 {
-    const TYPE                                              = "notice";
+    const TYPE                                              = 'phpformsframework\\libs\\delivery\\notice';
 
     private static $singleton                               = null;
 

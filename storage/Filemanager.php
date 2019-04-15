@@ -758,16 +758,16 @@ class Filemanager extends DirStruct
                 : ''
             );
 
-        $flag = ($what["flag"]
+        $flag = (isset($what["flag"]) && $what["flag"]
             ? $what["flag"]
             : $what
         );
 
 
-        if($what["filter"] && isset($what["filter"][0])) {
+        if(isset($what["filter"]) && $what["filter"] && isset($what["filter"][0])) {
             $what["filter"] = array_combine($what["filter"], $what["filter"]);
         }
-        if($what["name"] && isset($what["name"][0])) {
+        if(isset($what["name"]) && $what["name"] && isset($what["name"][0])) {
             $what["name"] = array_combine($what["name"], $what["name"]);
         }
 

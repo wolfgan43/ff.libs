@@ -292,10 +292,14 @@ class Request {
             foreach (headers_list() as $header)
                 header_remove(explode(":", $header)[0]);
         }*/
-        $origin = (isset($_SERVER["HTTP_ORIGIN"]) && filter_var($_SERVER["HTTP_ORIGIN"], FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME)
-            ? str_replace("https://", "http://", "", $_SERVER["HTTP_ORIGIN"])
-            : parse_url($_SERVER["HTTP_REFERER"], PHP_URL_HOST)
-        );
+        if(isset($_SERVER["HTTP_ORIGIN"]) && filter_var($_SERVER["HTTP_ORIGIN"], FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME)) {
+            $origin = str_replace("https://", "http://", "", $_SERVER["HTTP_ORIGIN"]);
+        } elseif (isset($_SERVER["HTTP_REFERER"])) {
+            $origin = parse_url($_SERVER["HTTP_REFERER"], PHP_URL_HOST);
+        } else {
+            $origin = null;
+        }
+
         //todo: remove TRACE request method
         //todo: remove serverSignature
         header_remove("X-Powered-By");

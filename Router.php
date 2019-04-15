@@ -78,7 +78,7 @@ class Router extends App
     }
 
 	public function check($path, $source = null) {
-        if(!self::$cache[$path . ":" . $source]) {
+        if(!isset(self::$cache[$path . ":" . $source])) {
             self::$cache[$path . ":" . $source] = ($source
                 ? preg_match($this->regexp($source), $path)
                 : $this->find($path)

@@ -23,5 +23,96 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
+namespace phpformsframework\libs\security;
 
+use phpformsframework\libs\DirStruct;
+use phpformsframework\libs\Error;
+use phpformsframework\libs\Log;
+use phpformsframework\libs\Response;
+use phpformsframework\libs\Hook;
+use phpformsframework\libs\Config;
+
+
+Hook::register("app_on_init", "Shield::protectMyAss");
+
+
+class Buckler extends DirStruct {
+    public static function protectMyAss($rules = null) {
+        self::checkLoadAvg();
+        if($rules) {
+            self::checkAllowedPath($rules);
+        }
+    }
+    private static function checkLoadAvg() {
+        $load = sys_getloadavg();
+        if ($load[0] > 80) {
+            Error::send(503);
+            Log::emergency("server busy");
+            //Logs::write($_SERVER, "error_server_busy");
+            exit;
+        }
+    }
+    private static function checkAllowedPath($rules = null, $path_info = null, $do_redirect = true) {
+        $rules = Config::getSchema("badpath");
+
+
+        $path_info                                          = ($path_info
+                                                                ? $path_info
+                                                                : self::getPathInfo()
+                                                            );
+        $matches                                            = array();
+        if(is_array($rules) && count($rules)) {
+            foreach($rules AS $source => $rule) {
+                $src                                        = self::regexp($source);
+                if(preg_match($src, $path_info, $matches)) {
+                    if(is_numeric($rule["destination"]) || ctype_digit($rule["destination"])) {
+                        //sleep(mt_rand(floor($this::BADPATH_DELAY / 2), $this::BADPATH_DELAY));
+
+                        Response::code($rule["destination"]);
+
+                        if($rule["log"]) {
+                            Log::write(
+                                array(
+                                    "RULE"          => $source
+                                    , "ACTION"      => $rule["destination"]
+                                    , "URL"         => $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]
+                                    , "REFERER"     => $_SERVER["HTTP_REFERER"]
+                                )
+                                , "shield"
+                                , $rule["destination"]
+                                , "BadPath"
+                            );
+
+                            /*Logs::write(array(
+                                "RULE"          => $source
+                                , "ACTION"      => $rule["destination"]
+                                , "URL"         => $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]
+                                , "REFERER"     => $_SERVER["HTTP_REFERER"]
+                            ), "error_badpath");*/
+                        }
+                        exit;
+                    } elseif($do_redirect && $rule["destination"]) {
+                        $redirect                           = $rule["destination"];
+                        if(strpos($src, "(") !== false && strpos($rule["destination"], "$") !== false) {
+                            $redirect                       = preg_replace($src, $rule["destination"], $path_info);
+                        }
+
+                        Response::redirect($_SERVER["HTTP_HOST"] . $redirect);
+                    }
+                }
+            }
+        }
+
+        return $path_info;
+    }
+    private static function antiFlood() { //todo: da fare
+
+    }
+    private static function regexp($rule) {
+        return "#" . (strpos($rule, "[") === false && strpos($rule, "(") === false && strpos($rule, '$') === false
+                ? str_replace("\*", "(.*)", preg_quote($rule, "#"))
+                : $rule
+            ) . "#i";
+    }
+}
 

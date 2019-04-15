@@ -48,7 +48,7 @@ abstract class App extends DirStruct {
     protected static function hook($name, $func, $priority = null) {
         Hook::register($name, $func, $priority);
     }
-    protected static function doHook($name, &$ref, $params = null) {
+    protected static function doHook($name, &$ref = null, $params = null) {
         return Hook::handle($name, $ref, $params);
     }
 
@@ -312,11 +312,11 @@ class Hook {
     /**
      * DoEvent
      * @param $name
-     * @param $ref
+     * @param null|$ref
      * @param null $params
      * @return array|null
      */
-    public static function handle($name, &$ref, $params = null) {
+    public static function handle($name, &$ref = null, $params = null) {
         $res                                                        = null;
         if(is_array(self::$events[$name])) {
             krsort(self::$events[$name], SORT_NUMERIC);

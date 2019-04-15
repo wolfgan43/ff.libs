@@ -455,13 +455,13 @@ class Log extends DirStruct {
     }
 
     private static function getRoutine($name = null) {
-        return (self::$routine[$name]
+        return (isset(self::$routine[$name])
             ? self::$routine[$name]
             : self::getRule($name)
         );
     }
     private static function getRule($name = null) {
-        if(self::$rules[$name]) {
+        if(isset(self::$rules[$name])) {
             $rule                                               = self::$rules[$name];
         } else {
             $rule                                               = self::$rules[self::TYPE_DEFAULT];
@@ -539,7 +539,6 @@ class Log extends DirStruct {
             ]
             , $content
         );
-
         return $content;
     }
     private static function encodeMessage($message, $encode = null) {

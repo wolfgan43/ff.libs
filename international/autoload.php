@@ -39,55 +39,55 @@ spl_autoload_register(function ($class) {
             require ('Data.php');
             break;
         case 'phpformsframework\libs\international\translatorGoogle':
-            require ('adapters\google.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'google.php');
             break;
         case 'phpformsframework\libs\international\translatorTranslated':
-            require ('adapters\translated.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'translated.php');
             break;
         case 'phpformsframework\libs\international\translatorTransltr':
-            require ('adapters\transltr.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'transltr.php');
             break;
         case 'phpformsframework\libs\international\datalang_ara':
-            require ('adapters\datalang_ara.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'datalang_ara.php');
             break;
         case 'phpformsframework\libs\international\datalang_chn':
-            require ('adapters\datalang_chn.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'datalang_chn.php');
             break;
         case 'phpformsframework\libs\international\datalang_dan':
-            require ('adapters\datalang_dan.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'datalang_dan.php');
             break;
         case 'phpformsframework\libs\international\datalang_deu':
-            require ('adapters\datalang_deu.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'datalang_deu.php');
             break;
         case 'phpformsframework\libs\international\datalang_eng':
-            require ('adapters\datalang_eng.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'datalang_eng.php');
             break;
         case 'phpformsframework\libs\international\datalang_esp':
-            require ('adapters\datalang_esp.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'datalang_esp.php');
             break;
         case 'phpformsframework\libs\international\datalang_fra':
-            require ('adapters\datalang_fra.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'datalang_fra.php');
             break;
         case 'phpformsframework\libs\international\datalang_iso9075':
-            require ('adapters\datalang_iso9075.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'datalang_iso9075.php');
             break;
         case 'phpformsframework\libs\international\datalang_ita':
-            require ('adapters\datalang_ita.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'datalang_ita.php');
             break;
         case 'phpformsframework\libs\international\datalang_jpn':
-            require ('adapters\datalang_jpn.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'datalang_jpn.php');
             break;
         case 'phpformsframework\libs\international\datalang_mssql':
-            require ('adapters\datalang_mssql.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'datalang_mssql.php');
             break;
         case 'phpformsframework\libs\international\datalang_ned':
-            require ('adapters\datalang_ned.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'datalang_ned.php');
             break;
         case 'phpformsframework\libs\international\datalang_por':
-            require ('adapters\datalang_por.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'datalang_por.php');
             break;
         case 'phpformsframework\libs\international\datalang_rus':
-            require ('adapters\datalang_rus.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'datalang_rus.php');
             break;
     }
 });

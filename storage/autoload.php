@@ -27,40 +27,40 @@
 spl_autoload_register(function ($class) {
     switch ($class) {
         case 'phpformsframework\libs\storage\Canvas':
-            require ('drivers\image\Canvas.php');
+            require ('drivers' . DIRECTORY_SEPARATOR . 'image' . DIRECTORY_SEPARATOR . 'Canvas.php');
             break;
         case 'phpformsframework\libs\storage\Render':
-            require ('drivers\image\Canvas.php');
+            require ('drivers' . DIRECTORY_SEPARATOR . 'image' . DIRECTORY_SEPARATOR . 'Canvas.php');
             break;
         case 'phpformsframework\libs\storage\Thumb':
-            require ('drivers\image\Thumb.php');
+            require ('drivers' . DIRECTORY_SEPARATOR . 'image' . DIRECTORY_SEPARATOR . 'Thumb.php');
             break;
         case 'phpformsframework\libs\storage\Array2XML':
-            require ('drivers\array2xml.php');
+            require ('drivers' . DIRECTORY_SEPARATOR . 'array2xml.php');
             break;
         case 'phpformsframework\libs\storage\MySqli':
-            require ('drivers\MySqli.php');
+            require ('drivers' . DIRECTORY_SEPARATOR . 'MySqli.php');
             break;
         case 'phpformsframework\libs\storage\MongoDB':
-            require ('drivers\MongoDB.php');
+            require ('drivers' . DIRECTORY_SEPARATOR . 'MongoDB.php');
             break;
         case 'phpformsframework\libs\storage\filemanagerHtml':
-            require ('adapters\filemanager_html.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'filemanager_html.php');
             break;
         case 'phpformsframework\libs\storage\filemanagerJson':
-            require ('adapters\filemanager_json.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'filemanager_json.php');
             break;
         case 'phpformsframework\libs\storage\filemanagerPhp':
-            require ('adapters\filemanager_php.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'filemanager_php.php');
             break;
         case 'phpformsframework\libs\storage\filemanagerXml':
-            require ('adapters\filemanager_xml.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'filemanager_xml.php');
             break;
         case 'phpformsframework\libs\storage\databaseMongodb':
-            require ('adapters\database_mongodb.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'database_mongodb.php');
             break;
         case 'phpformsframework\libs\storage\databaseMysqli':
-            require ('adapters\database_mysqli.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'database_mysqli.php');
             break;
         case 'phpformsframework\libs\storage\Filemanager':
             require ('Filemanager.php');

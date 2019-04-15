@@ -27,31 +27,31 @@
 spl_autoload_register(function ($class) {
     switch ($class) {
         case 'phpformsframework\libs\delivery\mailerLocalhost':
-            require ('adapters\mailer_localhost.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'mailer_localhost.php');
             break;
         case 'phpformsframework\libs\delivery\mailerSendgrid':
-            require ('adapters\mailer_sendgrid.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'mailer_sendgrid.php');
             break;
         case 'phpformsframework\libs\delivery\mailerSparkpost':
-            require ('adapters\mailer_sparkpost.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'mailer_sparkpost.php');
             break;
         case 'phpformsframework\libs\delivery\noticeAdapterEmail':
-            require ('adapters\notice_email.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'notice_email.php');
             break;
         case 'phpformsframework\libs\delivery\noticeAdapterSms':
-            require ('adapters\notice_sms.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'notice_sms.php');
             break;
         case 'phpformsframework\libs\delivery\smsAdapter':
-            require ('drivers\Sms.php');
+            require ('drivers' . DIRECTORY_SEPARATOR . 'Sms.php');
             break;
         case 'phpformsframework\libs\delivery\Sms':
-            require ('drivers\Sms.php');
+            require ('drivers' . DIRECTORY_SEPARATOR . 'Sms.php');
             break;
         case 'phpformsframework\libs\delivery\mailerAdapter':
-            require ('drivers\Mailer.php');
+            require ('drivers' . DIRECTORY_SEPARATOR . 'Mailer.php');
             break;
         case 'phpformsframework\libs\delivery\Mailer':
-            require ('drivers\Mailer.php');
+            require ('drivers' . DIRECTORY_SEPARATOR . 'Mailer.php');
             break;
         case 'phpformsframework\libs\delivery\noticeAdapter':
             require ('Notice.php');

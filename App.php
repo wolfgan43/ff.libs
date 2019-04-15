@@ -206,7 +206,7 @@ abstract class DirStruct {
     const PHP_EXT                                                   = "php";
     const SITE_PATH                                                 = SITE_PATH;
 
-    public static $disk_path                                        = DOCUMENT_ROOT;
+    public static $disk_path                                        = DOCUMENT_ROOT . SITE_PATH;
     protected static $dirstruct                                     = array(
                                                                         "libs"              => array(
                                                                             "path"          => LIBS_PATH

@@ -30,16 +30,16 @@ spl_autoload_register(function ($class) {
             require ('Mem.php');
             break;
         case 'phpformsframework\libs\cache\memApc':
-            require ('adapters\apc.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'apc.php');
             break;
         case 'phpformsframework\libs\cache\memFs':
-            require ('adapters\fs.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'fs.php');
             break;
         case 'phpformsframework\libs\cache\memMemcached':
-            require ('adapters\memcached.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'memcached.php');
             break;
         case 'phpformsframework\libs\cache\memRedis':
-            require ('adapters\redis.php');
+            require ('adapters' . DIRECTORY_SEPARATOR . 'redis.php');
             break;
         case 'phpformsframework\libs\cache\Globals':
             require ('Globals.php');

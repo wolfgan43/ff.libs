@@ -27,258 +27,14 @@
 namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\DirStruct;
-use phpformsframework\libs\Error;
-use phpformsframework\libs\Debug;
+use phpformsframework\libs\storage\filemanager\Adapter;
 
 if(!defined("FTP_USERNAME"))                                        define("FTP_USERNAME", null);
 if(!defined("FTP_PASSWORD"))                                        define("FTP_PASSWORD", null);
 
-abstract class filemanagerAdapter extends DirStruct
-{
-    const EXT                                                           = null;
-    const SEARCH_IN_KEY                                                 = 1;
-    const SEARCH_IN_VALUE                                               = 2;
-    const SEARCH_IN_BOTH                                                = 3;
-    const SEARCH_DEFAULT                                                = self::SEARCH_IN_KEY;
-
-    private $file_path                                                  = null;
-    private $var                                                        = null;
-
-    public function __construct($file_path = null, $var = null, $expire = null) {
-        if($file_path)                                                  { $this->setFilePath($file_path); }
-        if($var)                                                        { $this->setVar($var); }
-    }
-
-    /**
-     * @param null|string $file_path
-     * @param null|string $search_keys
-     * @param int $search_flag
-     * @return array
-     */
-    public abstract function read($file_path = null, $search_keys = null, $search_flag = self::SEARCH_DEFAULT);
-
-
-    /**
-     * @param array $data
-     * @param null|string $var
-     * @param null|string $file_path
-     * @return bool
-     */
-    public abstract function write($data, $var = null, $file_path = null);
-
-    /**
-     * @param array $data
-     * @param null|string $var
-     * @param null|string $file_path
-     * @return bool
-     */
-    public function update($data, $var = null, $file_path = null)
-    {
-        $res                                                            = (is_array($data)
-                                                                            ? array_replace($this->read(), $data)
-                                                                            : $data
-                                                                        );
-
-        return $this->write($res, $file_path, $var);
-    }
-
-    /**
-     * @param array|string $search_keys
-     * @param int $search_flag
-     * @param null|string $file_path
-     * @return bool
-     */
-    public function delete($search_keys, $search_flag = self::SEARCH_DEFAULT, $file_path = null)
-    {
-        $res                                                            = $this->read($file_path, $search_keys, $search_flag);
-
-        return $this->write($res, $file_path);
-    }
-
-    /**
-     * @param string $buffer
-     * @param null|string $file_path
-     * @param null|int $expire
-     * @return bool
-     */
-    public function save($buffer, $file_path = null, $expire = null)
-    {
-        $rc                                                             = false;
-        if(!Error::check("filemanager")) {
-            if(!$file_path)                                             { $file_path = $this->getFilePath(); }
-            $rc                                                         = $this->makeDir(dirname($file_path));
-            if ($rc) {
-                if (Filemanager::fsave($buffer, $file_path)) {
-                    if ($expire !== null)                              { $this->touch($expire, $file_path); }
-                }
-            }
-        }
-        return $rc;
-    }
-
-    /**
-     * @param string $buffer
-     * @param null|string $file_path
-     * @param null|int $expires
-     * @return bool
-     */
-    public function saveAppend($buffer, $file_path = null, $expires = null)
-    {
-        if(!$file_path)                                                 { $file_path = $this->getFilePath(); }
-        $rc                                                             = $this->makeDir(dirname($file_path));
-        if ($rc) {
-            if(Filemanager::fappend($buffer, $file_path)) {
-                if($expires !== null)                                   { $this->touch($expires, $file_path); }
-            }
-        }
-
-        return $rc;
-    }
-
-    /**
-     * @param string $file_path
-     * @param null|string $var
-     * @return filemanagerAdapter
-     */
-    public function fetch($file_path, $var = null) {
-        $this->setFilePath($file_path);
-        if($var)                                                        { $this->setVar($var); }
-
-        return $this;
-    }
-    /**
-     * @param null|string $path
-     * @return bool
-     */
-    public function makeDir($path = null)
-    {
-        $rc                                                             = true;
-        if(!$path)                                                      { $path = dirname($this->file_path); }
-        if(!is_dir($path))                                              { $rc = @mkdir($path, 0777, true); }
-
-        return $rc;
-    }
-
-
-
-
-    /**
-     * @param int $expires
-     * @param null|string $file_path
-     * @return bool
-     */
-    public function touch($expires, $file_path = null)
-    {
-        if(!$file_path)                                                 { $file_path = $this->getFilePath(); }
-        $rc                                                             = @touch($file_path, $expires);
-
-        return $rc;
-    }
-
-    /**
-     * @param null|string $file_path
-     * @return bool
-     */
-    public function isExpired($file_path = null)
-    {
-        if(!$file_path)                                                 { $file_path = $this->getFilePath(); }
-        return (filemtime($file_path) >= filectime($file_path)
-            ? false
-            : true
-        );
-    }
-
-    /**
-     * @param null|string $file_path
-     * @return bool
-     */
-    public function exist($file_path = null) {
-        $file_path                                                      = ($file_path
-                                                                            ? $file_path
-                                                                            : $this->getFilePath()
-                                                                        );
-
-        return strpos(realpath($file_path), $this::$disk_path) === 0;
-    }
-
-    /**
-     * @return null|string
-     */
-    public function getFilePath() {
-        return $this->file_path;
-    }
-
-    /**
-     * @param string $file_path
-     * @param null|string $ext
-     */
-    public function setFilePath($file_path, $ext = null) {
-        Error::clear("filemanager");
-        if(!$ext)                                                       { $ext = $this::EXT; }
-
-        $abs_path                                                       = dirname($file_path) . "/" . basename($file_path, "." . $ext) . "." . $ext;
-        if(strpos($file_path, $this::$disk_path) !== 0)                 { $abs_path = $this::$disk_path . $abs_path; }
-
-        if($this->exist($abs_path)) {
-            $this->file_path                                            = $abs_path;
-        } else {
-            Error::register("File not found" . (Debug::ACTIVE ? ": " . $abs_path : ""), "filemanager");
-        }
-    }
-
-    /**
-     * @return null|string
-     */
-    public function getVar() {
-        return $this->var;
-    }
-
-    /**
-     * @param string $var
-     */
-    public function setVar($var) {
-        $this->var                                                      = $var;
-    }
-
-    /**
-     * @param array $data
-     * @param string $search_keys
-     * @param int $search_flag
-     * @return array
-     */
-    protected function search($data, $search_keys, $search_flag = self::SEARCH_DEFAULT) {
-        if(!is_array($search_keys))                                     { $search_keys = array($search_keys); }
-
-        foreach($search_keys AS $key) {
-            if($search_flag == $this::SEARCH_IN_KEY || $search_flag == $this::SEARCH_IN_BOTH) {
-                unset($data[$key]);
-            }
-            if($search_flag == $this::SEARCH_IN_VALUE || $search_flag == $this::SEARCH_IN_BOTH) {
-                $arrToDel                                               = array_flip(array_keys($data, $key));
-                $data                                                   = array_diff_key($data, $arrToDel);
-            }
-        }
-
-        return $data;
-    }
-
-    /**
-     * @param array $result
-     * @return array
-     */
-    protected function getResult($result)
-    {
-        return (Error::check("filemanager")
-            ? Error::raise("filemanager")
-            : $result
-        );
-    }
-}
-
-
 class Filemanager extends DirStruct
 {
-    const TYPE                                                          = 'phpformsframework\\libs\\storage\\filemanager';
+    const NAME_SPACE                                                    = 'phpformsframework\\libs\\storage\\filemanager\\';
 
     private static $singletons                                          = null;
     private static $storage                                             = null;
@@ -299,13 +55,13 @@ class Filemanager extends DirStruct
      * @param null|string $file
      * @param null|string $var
      * @param null|integer $expire
-     * @return filemanagerAdapter
+     * @return Adapter
      */
     static public function getInstance($filemanagerAdapter, $file = null, $var = null, $expire = null)
     {
         if($filemanagerAdapter) {
             if (!isset(self::$singletons[$filemanagerAdapter])) {
-                $class_name                                             = self::TYPE . ucfirst($filemanagerAdapter);
+                $class_name                                             = static::NAME_SPACE . ucfirst($filemanagerAdapter);
                 self::$singletons[$filemanagerAdapter]                  = new $class_name($file, $var, $expire);
             }
         }
@@ -721,10 +477,10 @@ class Filemanager extends DirStruct
     private static function scanAddItem($file, $opt = null) {
         if(is_callable(self::$storage["scan"]["callback"])) {
             $file_info = pathinfo($file);
-            if($opt["filter"] && !$opt["filter"][$file_info["extension"]]) {
+            if(isset($opt["filter"]) && !isset($opt["filter"][$file_info["extension"]])) {
                 return;
             }
-            if($opt["name"] && !$opt["name"][$file_info["basename"]]) {
+            if(isset($opt["name"]) && !isset($opt["name"][$file_info["basename"]])) {
                 return;
             }
 
@@ -734,14 +490,14 @@ class Filemanager extends DirStruct
             self::$storage["scan"]["rawdata"][] = $file;
         } else {
             $file_info = pathinfo($file);
-            if($opt["filter"] && !$opt["filter"][$file_info["extension"]]) {
+            if(isset($opt["filter"]) && !isset($opt["filter"][$file_info["extension"]])) {
                 return;
             }
-            if($opt["name"] && !$opt["name"][$file_info["basename"]]) {
+            if(isset($opt["name"]) && !isset($opt["name"][$file_info["basename"]])) {
                 return;
             }
 
-            if($opt["rules"] && !self::setStorage($file_info, $opt["rules"])) {
+            if(isset($opt["rules"]) && !self::setStorage($file_info, $opt["rules"])) {
                 self::$storage["unknowns"][$file_info["basename"]] = $file;
             }
         }

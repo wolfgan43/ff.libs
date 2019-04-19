@@ -26,9 +26,7 @@
 
 namespace phpformsframework\libs;
 
-use phpformsframework\libs\international\Translator;
-
-class Request {
+class Request implements Configurable {
     const TYPE                                                                                  = "request";
     const MAX_SIZE                                                                              = array(
                                                                                                     "GET"       => 256
@@ -43,12 +41,11 @@ class Request {
 
     public static function loadSchema() {
         $config                                                                                 = Config::rawData("request", true);
-        $schema                                                                                 = Config::getSchema("request");
+        $schema                                                                                 = array();
         if(is_array($config["page"]) && count($config["page"])) {
             foreach ($config["page"] AS $request) {
                 $page_attr                                                                      = DirStruct::getXmlAttr($request);
-
-                $schema = self::setSchema($request, $page_attr["path"], $schema);
+                $schema                                                                         = self::setSchema($request, $page_attr["path"], $schema);
                 /*if(is_array($request["header"]) && count($request["header"])) {
                     foreach($request["header"] AS $header) {
                         self::setRequestMapping($schema, DirStruct::getXmlAttr($header), $page_attr["path"], true);
@@ -66,7 +63,7 @@ class Request {
 
             }
         }
-        $schema = self::setSchema($config, "/", $schema);
+        $schema                                                 = self::setSchema($config, "/", $schema);
 
        /* if(is_array($config["header"]) && count($config["header"])) {
             foreach ($config["header"] AS $header) {
@@ -78,8 +75,8 @@ class Request {
                 self::setRequestMapping($schema, DirStruct::getXmlAttr($get), "/");
             }
         }*/
-        self::loadPatterns($config["pattern"]);
-        self::loadAccessControl($config["accesscontrol"]);
+        if(isset($config["pattern"]))                           { self::loadPatterns($config["pattern"]); }
+        if(isset($config["accesscontrol"]))                     { self::loadAccessControl($config["accesscontrol"]); }
 
         Config::setSchema($schema, "request");
     }
@@ -119,12 +116,12 @@ class Request {
         }
     }
     public static function setSchema($rawdata, $path, $request = array()) {
-        if(is_array($rawdata["header"]) && count($rawdata["header"])) {
+        if(isset($rawdata["header"]) && is_array($rawdata["header"]) && count($rawdata["header"])) {
             foreach ($rawdata["header"] AS $header) {
                 self::setRequestMapping($request, DirStruct::getXmlAttr($header), $path, true);
             }
         }
-        if(is_array($rawdata["get"]) && count($rawdata["get"])) {
+        if(isset($rawdata["get"]) && is_array($rawdata["get"]) && count($rawdata["get"])) {
             foreach ($rawdata["get"] AS $get) {
                 self::setRequestMapping($request, DirStruct::getXmlAttr($get), $path);
             }
@@ -132,15 +129,15 @@ class Request {
         return $request;
     }
     private static function setRequestMapping(&$request, $attr, $path, $isHeader = false) {
-        $bucket                                     = ($isHeader
-                                                        ? "header"
-                                                        : "body"
-                                                    );
-        $key                                        = (isset($attr["scope"])
-                                                        ? $attr["scope"] . "."
-                                                        : ""
-                                                    ) . $attr["name"];
-        $request[$path][$bucket][$key]    = $attr;
+        $bucket                                                 = ($isHeader
+                                                                    ? "header"
+                                                                    : "body"
+                                                                );
+        $key                                                    = (isset($attr["scope"])
+                                                                    ? $attr["scope"] . "."
+                                                                    : ""
+                                                                ) . $attr["name"];
+        $request[$path][$bucket][$key]                          = $attr;
     }
 
     public static function get($key = null, $toArray = false) {
@@ -156,7 +153,7 @@ class Request {
         return self::body($key, $toArray, "session");
     }
     public static function headers($key = null) {
-        $res                                                                                    = self::captureHeaders();
+        $res                                                    = self::captureHeaders();
         return ($key
             ? $res[$key]
             :  $res
@@ -170,9 +167,9 @@ class Request {
      * @return array|null|object
      */
     private static function body($key = null, $toArray = false, $method = null) {
-        if(!$key)                                                                               { $toArray = true; }
+        if(!$key)                                               { $toArray = true; }
 
-        $res                                                                                    = self::captureBody($key, $method);
+        $res                                                    = self::captureBody($key, $method);
         return ($toArray
             ? $res
             : (object) $res
@@ -195,30 +192,40 @@ class Request {
      */
 
     public static function setRulesByPage($page) {
-        $rules                                              = array();
-        $request                                            = Config::getSchema("request");
-        $request_path                                       = rtrim($page["alias"] . $page["user_path"], "/");
-        if(!$request_path)                                  { $request_path = "/"; }
+        $rules                                                  = array();
+        $request                                                = Config::getSchema("request");
+        $request_path                                           = (isset($page["alias"])
+                                                                    ? rtrim($page["alias"] . $page["user_path"], "/")
+                                                                    : $page["user_path"]
+                                                                );
+        if(!$request_path)                                      { $request_path = "/"; }
 
-        $rules["body"]                                      = array();
-        $rules["header"]                                    = array();
-        $rules["access_control"]                            = Config::getSchema("accesscontrol");
+        $rules["body"]                                          = array();
+        $rules["header"]                                        = array();
+        $rules["access_control"]                                = Config::getSchema("accesscontrol");
 
         do {
             if(isset($request[$request_path])) {
-                $rules["body"]                              = array_replace((array) $request[$request_path]["body"], $rules["body"]);
-                $rules["header"]                            = array_replace((array) $request[$request_path]["header"], $rules["header"]);
+                if(isset($request[$request_path]["body"]) && is_array($request[$request_path]["body"])) {
+                    $rules["body"]                              = array_replace($request[$request_path]["body"], $rules["body"]);
+                }
+                if(isset($request[$request_path]["header"]) && is_array($request[$request_path]["header"])) {
+                    $rules["header"]                            = array_replace((array) $request[$request_path]["header"], $rules["header"]);
+                }
             }
         } while($request_path != DIRECTORY_SEPARATOR && $request_path = dirname($request_path));
 
-        $rules["https"]                                     = $page["https"];
-        $rules["method"]                                    = ($page["method"]
-                                                                ? strtoupper($page["method"])
-                                                                : $_SERVER["REQUEST_METHOD"]
-                                                            );
-        self::$rules                                                                            = $rules;
+        $rules["https"]                                         = (isset($page["https"])
+                                                                    ? $page["https"]
+                                                                    : null
+                                                                );
+        $rules["method"]                                        = (isset($page["method"])
+                                                                    ? strtoupper($page["method"])
+                                                                    : $_SERVER["REQUEST_METHOD"]
+                                                                );
+        self::$rules                                            = $rules;
 
-        self::$rules["last_update"]                                                             = microtime(true);
+        self::$rules["last_update"]                             = microtime(true);
     }
 
     public static function isAjax() {
@@ -230,12 +237,12 @@ class Request {
      * @return string
      */
     public static function getQuery($with_unknown = false) {
-        if(!self::$request)                                                                     { self::captureBody(); }
+        if(!self::$request)                                     { self::captureBody(); }
 
-        $res                                                                                    = ($with_unknown
-                                                                                                    ? self::$request["rawdata"]
-                                                                                                    : self::$request["valid"]
-                                                                                                );
+        $res                                                    = ($with_unknown
+                                                                    ? self::$request["rawdata"]
+                                                                    : self::$request["valid"]
+                                                                );
 
         return http_build_query($res);
     }
@@ -243,10 +250,11 @@ class Request {
     private static function getAccessControl($origin, $key = null) {
         $access_control = false;
         if(isset(self::$rules["access_control"])) {
-            $access_control = (isset(self::$rules["access_control"][$origin])
-                ? self::$rules["access_control"][$origin]
-                : self::$rules["access_control"]["*"]
-            );
+            if(isset(self::$rules["access_control"][$origin])) {
+                $access_control                                 = self::$rules["access_control"][$origin];
+            } elseif (isset(self::$rules["access_control"]["*"])) {
+                $access_control                                 = self::$rules["access_control"]["*"];
+            }
         }
         return ($key && $access_control
             ? $access_control[$key]
@@ -356,6 +364,10 @@ class Request {
             case "POST":
             case "PATCH":
             case "DELETE":
+                if(!isset($_POST)) {
+                    print_r(self::$request);
+                    print_r(debug_backtrace());
+                }
                 $req                                                                            = $_POST;
                 break;
             case "GET":
@@ -377,9 +389,7 @@ class Request {
     }
 
     private static function isAllowedSize($req, $method) {
-        $request_size                                                                           = strlen(implode("", array_keys($req))
-                                                                                                    . implode("", $req)
-                                                                                                );
+        $request_size                                                                           = strlen(http_build_query($req, '', ''));
         $request_max_size                                                                       = (isset(self::MAX_SIZE[$method])
                                                                                                     ? self::MAX_SIZE[$method]
                                                                                                     : self::MAX_SIZE["DEFAULT"]
@@ -389,32 +399,42 @@ class Request {
     }
 
     private static function captureHeaders() {
-        static $last_update                                                                     = null;
+        static $last_update                                                                     = 0;
 
         if(!self::$headers || $last_update < self::$rules["last_update"]) {
             if(is_array(self::$rules["header"]) && count(self::$rules["header"])) {
                 $errors                                                                         = null;
+                $last_update                                                                    = microtime(true);
+
                 if(self::isAllowedSize(getallheaders(), "HEAD")) {
                     foreach(self::$rules["header"] AS $rule_key => $rule) {
-                        $header_key                                                                 = str_replace("-", "_", $rule["name"]);
+                        $header_key                                                             = str_replace("-", "_", $rule["name"]);
                         switch($rule["name"]) {
                             case "Authorization":
-                                $header_name                                                        = "Authorization";
+                                $header_name                                                    = "Authorization";
                                 break;
                             default:
-                                $header_name                                                        = "HTTP_" . strtoupper($header_key);
+                                $header_name                                                    = "HTTP_" . strtoupper($header_key);
                         }
-                        if($rule["required"] && !$_SERVER[$header_name]) {
-                            $errors[400][]                                                               = $rule["name"] . " is required";
+                        if(isset($rule["required"]) && !isset($_SERVER[$header_name])) {
+                            $errors[400][]                                                      = $rule["name"] . " is required";
                         } elseif(isset($_SERVER[$header_name])) {
-                            $validator                                                              = Validator::is($_SERVER[$header_name], $rule["validator"], array("fakename" => $header_key . " (in header)", "range" => $rule["validator_range"]));
-                            if ($validator["status"] !== 0)                                         { $errors[400][] = $validator["error"]; }
+                            $validator_rule                                                     = (isset($rule["validator"])
+                                                                                                    ? $rule["validator"]
+                                                                                                    : null
+                                                                                                );
+                            $validator_range                                                    = (isset($rule["validator_range"])
+                                                                                                    ? $rule["validator_range"]
+                                                                                                    : null
+                                                                                                );
+                            $validator                                                          = Validator::is($_SERVER[$header_name], $validator_rule, array("fakename" => $header_key . " (in header)", "range" => $validator_range));
+                            if ($validator["status"] !== 0)                                     { $errors[400][] = $validator["error"]; }
 
-                            self::$headers[$header_key]                                             = $_SERVER[$header_name];
+                            self::$headers[$header_key]                                         = $_SERVER[$header_name];
                         }
                     }
                 } else {
-                    $errors[413][]                                                                  = "Headers Max Size Exeeded";
+                    $errors[413][]                                                              = "Headers Max Size Exeeded";
                 }
 
                 if($errors) {
@@ -440,6 +460,7 @@ class Request {
         if(self::security()) {
             if(!self::$request || $last_update < self::$rules["last_update"]) {
                 $errors                                                                         = null;
+                $last_update                                                                    = microtime(true);
 
                 if(!$method)                                                                    { $method = self::$rules["method"]; }
                 $request                                                                        = self::getReq($method);
@@ -448,16 +469,24 @@ class Request {
                     //Mapping Request by Rules
                     if(is_array(self::$rules["body"]) && count(self::$rules["body"]) && is_array($request) && count($request)) {
                         foreach(self::$rules["body"] AS $rule) {
-                            if($rule["required"] && !isset($request[$rule["name"]])) {
+                            if(isset($rule["required"]) && $rule["required"] === true && !isset($request[$rule["name"]])) {
                                 $errors[400][]                                                  = $rule["name"] . " is required";
                             } elseif(isset($request[$rule["name"]])) {
-                                $validator                                                      = Validator::is($request[$rule["name"]], $rule["validator"], array("fakename" => $rule["name"], "range" => $rule["validator_range"]));
-                                if($validator["status"] !== 0)                                  { $errors[$validator["status"]][] = $validator["error"]; }
+                                $validator_rule                                                 = (isset($rule["validator"])
+                                                                                                    ? $rule["validator"]
+                                                                                                    : null
+                                                                                                );
+                                $validator_range                                                = (isset($rule["validator_range"])
+                                                                                                    ? $rule["validator_range"]
+                                                                                                    : null
+                                                                                                );
+                                $validator                                                      = Validator::is($request[$rule["name"]], $validator_rule, array("fakename" => $rule["name"], "range" => $validator_range));
+                                if(isset($validator["status"]) && $validator["status"] !== 0)   { $errors[$validator["status"]][] = $validator["error"]; }
 
-                                if($rule["scope"]) {
+                                if(isset($rule["scope"])) {
                                     self::$request[$rule["scope"]][$rule["name"]]               = $request[$rule["name"]];
                                 }
-                                if(!$rule["hide"]) {
+                                if(!isset($rule["hide"]) || $rule["hide"] === false) {
                                     self::$request["valid"][$rule["name"]]                      = $request[$rule["name"]];
                                 } else {
                                     unset($request[$rule["name"]]);
@@ -468,7 +497,7 @@ class Request {
                         self::$request["rawdata"]                                               = $request;
                         self::$request["unknown"]                                               = array_diff_key($request, self::$request["valid"]);
 
-                        if(is_array(self::$request["unknown"]) && count(self::$request["unknown"])) {
+                        if(isset(self::$request["unknown"]) && is_array(self::$request["unknown"]) && count(self::$request["unknown"])) {
                             foreach (self::$request["unknown"] as $unknown_key => $unknown) {
                                 $validator                                                      = Validator::is($unknown, null, array("fakename" => $unknown_key));
                                 if($validator["status"] !== 0)                                  { $errors[$validator["status"]][] = $validator["error"]; }
@@ -538,230 +567,5 @@ class Request {
             "status" => $status
             , "error" => $error
         ));
-    }
-}
-
-class Response {
-     public static function error($status = 404, $response = null, $headers = null, $type = null) {
-        self::send($response, $headers, $type, $status);
-    }
-    public static function send($response = null, $headers = null, $type = null, $status = null) {
-        Log::request($response["error"], $response["status"], strlen($response["data"]));
-
-        if(!$status) {
-            $status = (isset($response["status"])
-                ? $response["status"]
-                : 200
-            );
-        }
-
-        Response::code($status);
-        if (is_array($headers) && count($headers)) {
-            foreach ($headers AS $header) {
-                header($header);
-            }
-        }
-
-        if(!$type) {
-            switch ($_SERVER["HTTP_ACCEPT"]) {
-                case "application/xml":
-                case "text/xml":
-                    $type = "xml";
-                    break;
-                case "application/json":
-                case "text/json":
-                    $type = "json";
-                    break;
-                case "application/soap+xml":
-                    $type = "soap";
-                    break;
-                case "text/html":
-                    $type = "html";
-                    break;
-                default:
-            }
-            if(!$type) {
-                if (is_array($response)) {
-                    if (isset($response["html"])) {
-                        $type = "html";
-                    } else {
-                        $type = "json";
-                    }
-                } else {
-                    $type = "text";
-                }
-            }
-        }
-
-        if(isset($response["status"]))                                                      { $response["status"] = (int) $response["status"]; }
-        if($response["error"])                                                              { $response["error"] = Translator::get_word_by_code($response["error"]); }
-        switch($type) {
-            case "xml":
-                header("Content-type: application/xml");
-                echo $response;
-                break;
-            case "soap":
-                header("Content-type: application/soap+xml");
-                //todo: self::soap_client($response["url"], $response["headers"], $response["action"], $response["data"], $response["auth"]);
-                break;
-            case "html":
-                header("Content-type: text/html");
-                echo '<!DOCTYPE html>
-                    <html>
-                    <head>
-                        <script defer async>' . $response["data"]["js"] . '</script>
-                        <style type="text/css">' . $response["data"]["css"] . '</style>
-                    </head>
-                    <body>
-                    ' . $response["data"]["html"] . '
-                    </body>
-                    </html>';
-                break;
-            case "text":
-                header("Content-type: text/plain");
-                echo $response;
-                break;
-            case "json":
-            default:
-                header("Content-type: application/json");
-                echo json_encode((array) $response);
-        }
-
-        exit;
-    }
-
-    public static function redirect($destination, $http_response_code = null, $headers = null)
-    {
-        if($http_response_code === null) {
-            $http_response_code = 301;
-        }
-        Log::write("REFERER: " . $_SERVER["HTTP_REFERER"], "redirect", $http_response_code, $destination);
-
-        self::sendHeaders(array(
-            "cache" => "must-revalidate"
-        ));
-
-        if(strpos($destination, "/") !== 0 && strpos($destination, "http") !== 0) {
-            $destination = "http" . ($_SERVER["HTTPS"] ? "s" : "") . "://" . $destination;
-        }
-        if("http" . ($_SERVER["HTTPS"] ? "s": "") . "://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"] != $destination) {
-            header("Location: " . $destination, true, $http_response_code);
-            if(is_array($headers) && count($headers)) {
-                foreach ($headers AS $key => $value) {
-                    header(ucfirst(str_replace(array(" ", "_"), "-", $key)) . ": " . $value);
-                }
-            }
-        } else {
-            Response::code(400);
-        }
-
-        exit;
-    }
-
-    public static function code($code = null) {
-         return ($code
-             ? http_response_code($code)
-             : http_response_code()
-         );
-
-    }
-    public static function sendHeaders($params = null) {
-        //header_remove();
-        $days                       = 7;
-
-        $keep_alive			        = $params["keep_alive"]		    ? $params["keep_alive"]			: false;
-        $max_age				    = $params["max_age"]            ? $params["max_age"]            : null;
-        $expires				    = $params["expires"]            ? $params["expires"]            : null;
-        $compress			        = $params["compress"]           ? $params["compress"]           : false;
-        $cache					    = $params["cache"]			    ? $params["cache"]				: "public";
-        $disposition			    = $params["disposition"]		? $params["disposition"]		: "inline";
-        $filename			        = $params["filename"]           ? $params["filename"]           : null;
-        $mtime			            = $params["mtime"]              ? $params["mtime"]              : null;
-        $mimetype			        = $params["mimetype"]		    ? $params["mimetype"]			: null;
-        $size				        = $params["size"]               ? $params["size"]               : null;
-        $etag				        = $params["etag"]				? $params["etag"]				: true;
-
-        if($size)                   { header("Content-Length: " . $size); }
-        if(strlen($etag))           { header("ETag: " . $etag); }
-
-        if($mimetype) {
-            $content_type = $mimetype;
-            if ($mimetype == "text/css" || $mimetype == "application/x-javascript") {
-                header("Vary: Accept-Encoding");
-            } elseif ($mimetype == "text/html") {
-                $content_type .= "; charset=UTF-8";
-                header("Vary: Accept-Encoding");
-            } elseif (strpos($mimetype, "image/") === 0) {
-                $days = 365;
-            }
-
-            header("Content-type: $content_type");
-        }
-
-        if($disposition) {
-            $content_disposition = $disposition;
-            if ($filename) {
-                $content_disposition .= "; filename=" . rawurlencode($filename);
-            }
-            header("Content-Disposition: " . $content_disposition);
-        }
-
-
-        if($keep_alive) {
-            header("Connection: Keep-Alive");
-        }
-        if($compress) {
-            header("Content-encoding: " . ($compress === true ? "gzip" : $compress));
-        }
-
-        switch($cache) {
-            case "no-store":
-                header('Cache-Control: no-store');
-                header("Pragma: no-cache");
-                break;
-            case "no-cache":
-                header('Cache-Control: no-cache');
-                header("Pragma: no-cache");
-                break;
-            case "must-revalidate":
-                $expires = time() - 1;
-                $exp_gmt = gmdate("D, d M Y H:i:s", $expires) . " GMT";
-
-                header("Expires: $exp_gmt");
-                header('Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
-                header("Pragma: no-cache");
-                break;
-            case "public":
-            default:
-                if($expires === false && $max_age === false) {
-                    header('Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
-                    header("Pragma: no-cache");
-                } else {
-                    if ($expires !== false && $expires !== null) {
-                        if ($expires < 0) {
-                            $expires = time() - $expires;
-                        }
-                        $exp_gmt = gmdate("D, d M Y H:i:s", $expires) . " GMT";
-                        header("Expires: $exp_gmt");
-                    }
-
-                    if ($max_age !== false) {
-                        if($mtime) {
-                            $mod_gmt = gmdate("D, d M Y H:i:s", $mtime) . " GMT";
-                            header("Last-Modified: $mod_gmt");
-                        }
-                        if ($max_age === null) {
-                            //$max_age = 60 * 60 * $hours;
-                            $max_age = 60 * 60 * 24 * $days;
-                            header("Cache-Control: public, max-age=$max_age");
-                        }
-                        else {
-                            header("Cache-Control: public, max-age=$max_age");
-                        }
-                    }
-                }
-
-                header("Pragma: !invalid");
-        }
     }
 }

@@ -23,9 +23,11 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\international;
+namespace phpformsframework\libs\international\translator;
 
-class translatorTransltr extends translatorAdapter
+use phpformsframework\libs\international\Translator;
+
+class Transltr extends Adapter
 {
     private $code                                       = null;
 

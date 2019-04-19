@@ -23,9 +23,9 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\international;
+namespace phpformsframework\libs\international\data;
 
-class datalang_deu implements dataLang {
+class Iso9075 implements Adapter {
     private static $format = array(
         "Number" 		=> ""
         , "DateTime" 	=> ""
@@ -41,21 +41,21 @@ class datalang_deu implements dataLang {
     }
 
     public static function SetDateTime($oData, $value) {
-        preg_match_all("/((\d+):(\d+)(:(\d+))*\s+(\d+)[-\/](\d+)[-\/](\d+))|((\d+)[-\/](\d+)[-\/](\d+)\s+(\d+):(\d+)(:(\d+))*)/", $value, $matches);
-        $oData->value_date_day = $matches[6][0] ? $matches[6][0] : $matches[10][0];
-        $oData->value_date_month = $matches[7][0] ? $matches[7][0] : $matches[11][0];
-        $oData->value_date_year = $matches[8][0] ? $matches[8][0] : $matches[12][0];
-        $oData->value_date_hours = $matches[2][0] ? $matches[2][0] : $matches[13][0];
-        $oData->value_date_minutes = $matches[3][0] ? $matches[3][0] : $matches[14][0];
-        $oData->value_date_seconds = $matches[5][0] ? $matches[5][0] : $matches[16][0];
+        preg_match_all("/(\d+)-(\d+)-(\d+)\s(\d+):(\d+):(\d+)/", $value, $matches);
+        $oData->value_date_day = $matches[3][0];
+        $oData->value_date_month = $matches[2][0];
+        $oData->value_date_year = $matches[1][0];
+        $oData->value_date_hours = $matches[4][0];
+        $oData->value_date_minutes = $matches[5][0];
+        $oData->value_date_seconds = $matches[6][0];
 
         self::NormalizeDate($oData);
     }
     public static function SetDate($oData, $value) {
-        preg_match_all("/(\d+)[-\/\s]*(\d+)[-\/\s]*(\d+)/", $value, $matches);
-        $oData->value_date_day = $matches[1][0];
+        preg_match_all("/(\d+)-(\d+)-(\d+)/", $value, $matches);
+        $oData->value_date_day = $matches[3][0];
         $oData->value_date_month = $matches[2][0];
-        $oData->value_date_year = $matches[3][0];
+        $oData->value_date_year = $matches[1][0];
 
         self::NormalizeDate($oData);
     }
@@ -66,34 +66,32 @@ class datalang_deu implements dataLang {
         $oData->value_date_seconds = $matches[3][0];
     }
     public static function NormalizeDate($oData) {
-        if (strlen($oData->value_date_year) == 2) {
+        if (strlen($oData->value_date_year) == 2)
+        {
             $tmp = substr($oData->value_date_year, 0, 1);
-            if (intval($tmp) >= 5) {
+            if (intval($tmp) >= 5)
                 $oData->value_date_year = "19" . $oData->value_date_year;
-            } else {
+            else
                 $oData->value_date_year = "20" . $oData->value_date_year;
-            }
         }
     }
     public static function GetDateTime($oData) {
-        if ($oData->value_date_year == 0 || $oData->value_date_month == 0 || $oData->value_date_day == 0
-            || !strlen($oData->ori_value)) {
+        if ($oData->value_date_year == 0 || $oData->value_date_month == 0 || $oData->value_date_day == 0) {
             return "";
         } else {
-            return sprintf("%02d", intval($oData->value_date_day)) . "/" . sprintf("%02d", intval($oData->value_date_month)) . "/" . sprintf("%04d", intval($oData->value_date_year)) .
-                " " . sprintf("%02d", intval($oData->value_date_hours)) . ":" . sprintf("%02d", intval($oData->value_date_minutes)) . ":" . sprintf("%02d", intval($oData->value_date_seconds));
+            return sprintf("%'04u", $oData->value_date_year) . "-" . sprintf("%'02u", $oData->value_date_month) . "-" . sprintf("%'02u", $oData->value_date_day) . " " .
+                sprintf("%'02u", $oData->value_date_hours) . ":" . sprintf("%'02u", $oData->value_date_minutes) . ":" . sprintf("%'02u", $oData->value_date_seconds);
         }
     }
     public static function GetDate($oData) {
-        if ($oData->value_date_year == 0 || $oData->value_date_month == 0 || $oData->value_date_day == 0
-            || !strlen($oData->ori_value)) {
+        if ($oData->value_date_year == 0 || $oData->value_date_month == 0 || $oData->value_date_day == 0) {
             return "";
         } else {
-            return sprintf("%02d", intval($oData->value_date_day)) . "/" . sprintf("%02d", intval($oData->value_date_month)) . "/" . sprintf("%04d", intval($oData->value_date_year));
+            return sprintf("%'04u", $oData->value_date_year) . "-" . sprintf("%'02u", $oData->value_date_month) . "-" . sprintf("%'02u", $oData->value_date_day);
         }
     }
     public static function GetTime($oData) {
-        return $oData->value_date_hours . ":" . $oData->value_date_minutes /*. ":" . $oData->value_date_seconds*/;
+        return sprintf("%'02u", $oData->value_date_hours) . ":" . sprintf("%'02u", $oData->value_date_minutes) . ":" . sprintf("%'02u", $oData->value_date_seconds);
     }
     public static function SetCurrency($oData, $value) {
         $oData->value_text = $value;
@@ -190,29 +188,28 @@ class datalang_deu implements dataLang {
             return $oData->value_numeric_integer * $sign;
         }
     }
+
     public static function GetTimestamp($oData) {
-        if($oData->value_date_hours == 0
-            && $oData->value_date_hours == 0
-            && $oData->value_date_minutes == 0
-            && $oData->value_date_seconds == 0
-            && $oData->value_date_month == 0
-            && $oData->value_date_day == 0
-            && $oData->value_date_year == 0
+        if(intval($oData->value_date_hours) == 0
+            && intval($oData->value_date_minutes) == 0
+            && intval($oData->value_date_seconds) == 0
+            && intval($oData->value_date_month) == 0
+            && intval($oData->value_date_day) == 0
+            && intval($oData->value_date_year) == 0
         ) {
             return 0;
         } else {
-            return mktime($oData->value_date_hours, $oData->value_date_minutes, $oData->value_date_seconds,
-                $oData->value_date_month, $oData->value_date_day, $oData->value_date_year);
+            return mktime(intval($oData->value_date_hours), intval($oData->value_date_minutes), intval($oData->value_date_seconds), intval($oData->value_date_month), intval($oData->value_date_day), intval($oData->value_date_year));
         }
     }
     public static function SetTimestamp($oData, $value) {
         if(is_numeric($value) && $value > 0) {
-            $oData->value_date_day = date("d", $value);
-            $oData->value_date_month = date("m", $value);
-            $oData->value_date_year = date("Y", $value);
-            $oData->value_date_hours = date("H", $value);
-            $oData->value_date_minutes = date("i", $value);
-            $oData->value_date_seconds = date("s", $value);
+            $oData->value_date_day = intval(date("d", $value));
+            $oData->value_date_month = intval(date("m", $value));
+            $oData->value_date_year = intval(date("Y", $value));
+            $oData->value_date_hours = intval(date("H", $value));
+            $oData->value_date_minutes = intval(date("i", $value));
+            $oData->value_date_seconds = intval(date("s", $value));
         }
     }
     public static function GetTimeToSec($oData) {
@@ -253,14 +250,14 @@ class datalang_deu implements dataLang {
         }
     }
     public static function CheckDate($raw_value) {
-        if (!preg_match("/\\d{1,2}\\/\\d{1,2}\\/\\d{4}/", $raw_value)) {
+        if (!preg_match("/\\d{1,4}\\-\\d{1,2}\\-\\d{2}/", $raw_value)) {
             return FALSE;
         } else {
             return true;
         }
     }
     public static function CheckDateTime($raw_value) {
-        if (!preg_match("/\\d{1,2}\\/\\d{1,2}\\/\\d{4}\\s*\\d{1,2}:\\d{1,2}(:\\d{1,2}){0,1}/", $raw_value)) {
+        if (!preg_match("/\\d{1,4}\\-\\d{1,2}\\-\\d{2}\\s*\\d{1,2}:\\d{1,2}(:\\d{1,2}){0,1}/", $raw_value)) {
             return FALSE;
         } else {
             return true;

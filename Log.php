@@ -432,18 +432,16 @@ class Log extends DirStruct {
                     }
 
 
-                    if(!$routine)                                   { $routine = $caller_parent['class']; }
-                    if($caller['class'])                            { $bucket = $routine_caller = $caller['class']; }
-
-                    $action                                         = ($action
-                        ? $action
-                        : ($caller_parent['class'] == $caller_true['class']
-                            ? $caller_true['function']
-                            : $caller_parent['function']
-                        )
-                    );
+                    if(!$routine && isset($caller_parent['class'])) { $routine  = $caller_parent['class']; }
+                    if($caller['class'])                            { $bucket   = $routine_caller = $caller['class']; }
+                    if(!$action) {
+                        if(isset($caller_parent['function']) && isset($caller_parent['class']) && isset($caller_true['class']) && $caller_parent['class'] != $caller_true['class']) {
+                            $action                                 = $caller_parent['function'];
+                        } elseif(isset($caller_true['function'])) {
+                            $action                                 = $caller_true['function'];
+                        }
+                    }
                 }
-
             }
         }
         return array(

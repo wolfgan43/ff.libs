@@ -25,39 +25,37 @@
  */
 namespace phpformsframework\libs\delivery\notice;
 
+use phpformsframework\libs\App;
 use phpformsframework\libs\Error;
-use phpformsframework\libs\Validator;
-use phpformsframework\libs\delivery\NoticeAdapter;
 
+abstract class Adapter extends App {
+    protected $recipients                                   = array();
+    protected $connection                                   = null;
+    protected $actions                                      = null;
 
-class Sms extends NoticeAdapter {
-    private $content                        = null;
-
-    public  function checkRecipient($target)
+    public function __construct($connection = null)
     {
-        return Validator::isTel($target);
-    }
-    public function send($message) {
-        $this->content                      = $message;
-
-        return $this->process();
-    }
-    public function sendLongMessage($title, $fields = null, $template = null) {
-        $this->content                      = $title;
-
-        return $this->process();
+        $this->connection                                   = $connection;
     }
 
-    protected function process()
-    {
-        Sms::getInstance($this->connection)
-            ->addAddresses($this->recipients)
-            ->setMessage($this->content)
-            ->send();
+    public abstract function checkRecipient($target);
+    public abstract function send($message);
+    public abstract function sendLongMessage($title, $fields = null, $template = null);
 
-        Error::transfer("sms", "notice");
+    protected abstract function process();
 
-        return $this->getResult();
+    public function addAction($name, $url) {
+        $this->actions[$url]                                = $name;
+    }
+    public function addRecipient($target, $name = null) {
+        if($this->checkRecipient($target)) {
+            $this->recipients[$target]                      = ($name ? $name : $target);
+        }
+    }
+    protected function getResult() {
+        return (Error::check("notice")
+            ? Error::raise("notice")
+            : false
+        );
     }
 }
-

@@ -26,16 +26,16 @@
 
 spl_autoload_register(function ($class) {
     switch ($class) {
-        case 'phpformsframework\libs\tpl\ffTemplate':
+        case 'phpformsframework\\libs\\tpl\\ffTemplate':
             require ('ffTemplate.php');
             break;
-        case 'phpformsframework\libs\tpl\ffSmarty':
+        case 'phpformsframework\\libs\\tpl\\ffSmarty':
             require ('ffSmarty.php');
             break;
-        case 'phpformsframework\libs\tpl\Gridsystem':
+        case 'phpformsframework\\libs\\tpl\\Gridsystem':
             require ('Gridsystem.php');
             break;
-        case 'phpformsframework\libs\tpl\Widget':
+        case 'phpformsframework\\libs\\tpl\\Widget':
             require ('Widget.php');
             break;
         default:

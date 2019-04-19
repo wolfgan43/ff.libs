@@ -23,9 +23,9 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\international;
+namespace phpformsframework\libs\international\data;
 
-class datalang_mssql implements dataLang {
+class Eng implements Adapter {
     private static $format = array(
         "Number" 		=> ""
         , "DateTime" 	=> ""
@@ -42,8 +42,8 @@ class datalang_mssql implements dataLang {
 
     public static function SetDateTime($oData, $value) {
         preg_match_all("/((\d+):(\d+)(:(\d+))*\s+(\d+)[-\/](\d+)[-\/](\d+))|((\d+)[-\/](\d+)[-\/](\d+)\s+(\d+):(\d+)(:(\d+))*)/", $value, $matches);
-        $oData->value_date_day = $matches[6][0] ? $matches[6][0] : $matches[10][0];
-        $oData->value_date_month = $matches[7][0] ? $matches[7][0] : $matches[11][0];
+        $oData->value_date_day = $matches[7][0] ? $matches[7][0] : $matches[11][0];
+        $oData->value_date_month = $matches[6][0] ? $matches[6][0] : $matches[10][0];
         $oData->value_date_year = $matches[8][0] ? $matches[8][0] : $matches[12][0];
         $oData->value_date_hours = $matches[2][0] ? $matches[2][0] : $matches[13][0];
         $oData->value_date_minutes = $matches[3][0] ? $matches[3][0] : $matches[14][0];
@@ -53,8 +53,8 @@ class datalang_mssql implements dataLang {
     }
     public static function SetDate($oData, $value) {
         preg_match_all("/(\d+)[-\/\s]*(\d+)[-\/\s]*(\d+)/", $value, $matches);
-        $oData->value_date_day = $matches[1][0];
-        $oData->value_date_month = $matches[2][0];
+        $oData->value_date_day = $matches[2][0];
+        $oData->value_date_month = $matches[1][0];
         $oData->value_date_year = $matches[3][0];
 
         self::NormalizeDate($oData);
@@ -66,13 +66,13 @@ class datalang_mssql implements dataLang {
         $oData->value_date_seconds = $matches[3][0];
     }
     public static function NormalizeDate($oData) {
-        if (strlen($oData->value_date_year) == 2)
-        {
+        if (strlen($oData->value_date_year) == 2) {
             $tmp = substr($oData->value_date_year, 0, 1);
-            if (intval($tmp) >= 5)
+            if (intval($tmp) >= 5) {
                 $oData->value_date_year = "19" . $oData->value_date_year;
-            else
+            } else {
                 $oData->value_date_year = "20" . $oData->value_date_year;
+            }
         }
     }
     public static function GetDateTime($oData) {
@@ -80,16 +80,17 @@ class datalang_mssql implements dataLang {
             || !strlen($oData->ori_value)) {
             return "";
         } else {
-            return sprintf("%02d", intval($oData->value_date_day)) . "/" . sprintf("%02d", intval($oData->value_date_month)) . "/" . sprintf("%04d", intval($oData->value_date_year)) .
+            return  sprintf("%02d", intval($oData->value_date_month)) . "/" . sprintf("%02d", intval($oData->value_date_day)) . "/" . sprintf("%04d", intval($oData->value_date_year)) .
                 " " . sprintf("%02d", intval($oData->value_date_hours)) . ":" . sprintf("%02d", intval($oData->value_date_minutes)) . ":" . sprintf("%02d", intval($oData->value_date_seconds));
         }
     }
     public static function GetDate($oData) {
         if ($oData->value_date_year == 0 || $oData->value_date_month == 0 || $oData->value_date_day == 0
-            || !strlen($oData->ori_value))
+            || !strlen($oData->ori_value)) {
             return "";
-        else
-            return sprintf("%02d", intval($oData->value_date_day)) . "/" . sprintf("%02d", intval($oData->value_date_month)) . "/" . sprintf("%04d", intval($oData->value_date_year));
+        } else {
+            return sprintf("%02d", intval($oData->value_date_month)) . "/" . sprintf("%02d", intval($oData->value_date_day)) . "/" . sprintf("%04d", intval($oData->value_date_year));
+        }
     }
     public static function GetTime($oData) {
         return $oData->value_date_hours . ":" . $oData->value_date_minutes /*. ":" . $oData->value_date_seconds*/;

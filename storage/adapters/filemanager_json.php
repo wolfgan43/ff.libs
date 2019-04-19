@@ -23,12 +23,9 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\storage;
+namespace phpformsframework\libs\storage\filemanager;
 
-//use phpformsframework\libs\Error;
-//use phpformsframework\libs\Debug;
-
-class filemanagerJson extends filemanagerAdapter //todo: da finire
+class Json extends Adapter //todo: da finire
 {
     const EXT                                                   = "json";
 

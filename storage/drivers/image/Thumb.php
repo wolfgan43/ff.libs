@@ -24,7 +24,9 @@
  *  @link https://github.com/wolfgan43/vgallery
  */
 
-namespace phpformsframework\libs\storage;
+namespace phpformsframework\libs\storage\drivers;
+
+use phpformsframework\libs\storage\Media;
 
 class Thumb extends Render
 {

@@ -23,9 +23,11 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\international;
+namespace phpformsframework\libs\international\translator;
 
-class translatorGoogle extends translatorAdapter
+use phpformsframework\libs\international\Translator;
+
+class Translated extends Adapter
 {
     private $code                                       = null;
 
@@ -43,14 +45,15 @@ class translatorGoogle extends translatorAdapter
         } else {
             $res                                        = parent::translate($words, $toLang, $fromLang);
             if(!$res) {
-                $transalted                             = file_get_contents("https://translation.googleapis.com/language/translate/v2?q=" . urlencode($words) . "&target=" . substr($toLang, 0, 2) . "&source=" . substr($fromLang, 0, 2) . ($this->code ? "&key=" . $this->code : ""));
-                if ($transalted) {
+                $transalted                             = file_get_contents("http://api.mymemory.translated.net/get?q=" . urlencode($words) . "&langpair=" . $fromLang . "|" . $toLang . ($this->code ? "&key=" . $this->code : ""));
+                if($transalted) {
                     $buffer                             = json_decode($transalted, true);
-                    if (!$buffer["error"] && $buffer["responseData"]["translatedText"])
+                    if ($buffer["responseStatus"] == 200 && $buffer["responseData"]["translatedText"])
                         $res                            = $this->save($words, $toLang, $fromLang, $buffer["responseData"]["translatedText"]);
                 }
             }
         }
+
         return $res;
     }
 

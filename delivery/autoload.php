@@ -26,37 +26,46 @@
 
 spl_autoload_register(function ($class) {
     switch ($class) {
-        case 'phpformsframework\libs\delivery\mailerLocalhost':
+        case 'phpformsframework\\libs\\delivery\\mailer\\Localhost':
             require ('adapters' . DIRECTORY_SEPARATOR . 'mailer_localhost.php');
             break;
-        case 'phpformsframework\libs\delivery\mailerSendgrid':
+        case 'phpformsframework\\libs\\delivery\\mailer\\Sendgrid':
             require ('adapters' . DIRECTORY_SEPARATOR . 'mailer_sendgrid.php');
             break;
-        case 'phpformsframework\libs\delivery\mailerSparkpost':
+        case 'phpformsframework\\libs\\delivery\\mailer\\Sparkpost':
             require ('adapters' . DIRECTORY_SEPARATOR . 'mailer_sparkpost.php');
             break;
-        case 'phpformsframework\libs\delivery\noticeAdapterEmail':
+        case 'phpformsframework\\libs\\delivery\\notice\\Email':
             require ('adapters' . DIRECTORY_SEPARATOR . 'notice_email.php');
             break;
-        case 'phpformsframework\libs\delivery\noticeAdapterSms':
+        case 'phpformsframework\\libs\\delivery\\notice\\Sms':
             require ('adapters' . DIRECTORY_SEPARATOR . 'notice_sms.php');
             break;
-        case 'phpformsframework\libs\delivery\smsAdapter':
+        case 'phpformsframework\\libs\\delivery\\sms\\Adapter':
+            require ('drivers' . DIRECTORY_SEPARATOR . 'SmsAdapter.php');
+            break;
+        case 'phpformsframework\\libs\\delivery\\drivers\\Sms':
             require ('drivers' . DIRECTORY_SEPARATOR . 'Sms.php');
             break;
-        case 'phpformsframework\libs\delivery\Sms':
-            require ('drivers' . DIRECTORY_SEPARATOR . 'Sms.php');
+        case 'phpformsframework\\libs\\delivery\\mailer\\Adapter':
+            require ('drivers' . DIRECTORY_SEPARATOR . 'MailerAdapter.php');
             break;
-        case 'phpformsframework\libs\delivery\mailerAdapter':
+        case 'phpformsframework\\libs\\delivery\\drivers\\Mailer':
             require ('drivers' . DIRECTORY_SEPARATOR . 'Mailer.php');
             break;
-        case 'phpformsframework\libs\delivery\Mailer':
-            require ('drivers' . DIRECTORY_SEPARATOR . 'Mailer.php');
+        case 'phpformsframework\\libs\\delivery\\drivers\\Sender':
+            require ('drivers' . DIRECTORY_SEPARATOR . 'Sender.php');
             break;
-        case 'phpformsframework\libs\delivery\noticeAdapter':
-            require ('Notice.php');
+        case 'phpformsframework\\libs\\delivery\\drivers\\SenderSimple':
+            require ('drivers' . DIRECTORY_SEPARATOR . 'SenderSimple.php');
             break;
-        case 'phpformsframework\libs\delivery\Notice':
+        case 'phpformsframework\\libs\\delivery\\drivers\\SenderTemplate':
+            require ('drivers' . DIRECTORY_SEPARATOR . 'SenderTemplate.php');
+            break;
+        case 'phpformsframework\\libs\\delivery\\notice\\Adapter':
+            require ('NoticeAdapter.php');
+            break;
+        case 'phpformsframework\\libs\\delivery\\Notice':
             require ('Notice.php');
             break;
     }

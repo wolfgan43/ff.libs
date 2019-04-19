@@ -24,17 +24,19 @@
  * @link https://github.com/wolfgan43/vgallery
  */
 
-namespace phpformsframework\libs\storage;
+namespace phpformsframework\libs\storage\database;
 
+use MongoDB\BSON\ObjectId;
 use phpformsframework\libs\Error;
+use phpformsframework\libs\storage\drivers\MongoDB AS DB;
 
-class databaseMongodb extends databaseAdapter {
+class Mongodb extends Adapter {
     const PREFIX                                        = "MONGO_DATABASE_";
     const TYPE                                          = "nosql";
     const KEY                                           = "_id";
 
     /**
-     * @var MongoDB
+     * @var DB
      */
     private $driver                                     = null;
 
@@ -198,7 +200,7 @@ class databaseMongodb extends databaseAdapter {
     protected function loadDriver() {
         $connector                                                                  = $this->getConnector();
         if($connector) {
-            $this->driver                                                               = new MongoDB();
+            $this->driver                                                               = new DB();
             if ($this->driver->connect(
                 $connector["name"]
                 , $connector["host"]
@@ -490,15 +492,15 @@ class databaseMongodb extends databaseAdapter {
 
 /**
      * @param $value
-     * @return bool|\MongoDB\BSON\ObjectID
+     * @return bool|ObjectId
      */
     private function getObjectID($value)
 	{
-		if ($value instanceof \MongoDB\BSON\ObjectID) {
+		if ($value instanceof ObjectId) {
 			$res = $value;
 		} else {
 			try {
-				$res = new \MongoDB\BSON\ObjectID($value);
+				$res = new ObjectId($value);
 			} catch (\Exception $e) {
 				return false;
 			}
@@ -508,7 +510,7 @@ class databaseMongodb extends databaseAdapter {
 
     /**
      * @param $keys
-     * @return array|bool|\MongoDB\BSON\ObjectID
+     * @return array|bool|ObjectId
      */
     private function convertID($keys) {
         $res = null;

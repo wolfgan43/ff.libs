@@ -23,9 +23,9 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\international;
+namespace phpformsframework\libs\international\data;
 
-class datalang_ita implements dataLang {
+class Deu implements Adapter {
     private static $format = array(
         "Number" 		=> ""
         , "DateTime" 	=> ""
@@ -66,13 +66,13 @@ class datalang_ita implements dataLang {
         $oData->value_date_seconds = $matches[3][0];
     }
     public static function NormalizeDate($oData) {
-        if (strlen($oData->value_date_year) == 2)
-        {
+        if (strlen($oData->value_date_year) == 2) {
             $tmp = substr($oData->value_date_year, 0, 1);
-            if (intval($tmp) >= 5)
+            if (intval($tmp) >= 5) {
                 $oData->value_date_year = "19" . $oData->value_date_year;
-            else
+            } else {
                 $oData->value_date_year = "20" . $oData->value_date_year;
+            }
         }
     }
     public static function GetDateTime($oData) {
@@ -86,19 +86,20 @@ class datalang_ita implements dataLang {
     }
     public static function GetDate($oData) {
         if ($oData->value_date_year == 0 || $oData->value_date_month == 0 || $oData->value_date_day == 0
-            || !strlen($oData->ori_value))
+            || !strlen($oData->ori_value)) {
             return "";
-        else
+        } else {
             return sprintf("%02d", intval($oData->value_date_day)) . "/" . sprintf("%02d", intval($oData->value_date_month)) . "/" . sprintf("%04d", intval($oData->value_date_year));
+        }
     }
     public static function GetTime($oData) {
-        return sprintf("%02d", intval($oData->value_date_hours)) . ":" . sprintf("%02d", intval($oData->value_date_minutes)) /*. ":" . sprintf("%02d", intval($oData->value_date_seconds)) */;
+        return $oData->value_date_hours . ":" . $oData->value_date_minutes /*. ":" . $oData->value_date_seconds*/;
     }
     public static function SetCurrency($oData, $value) {
         $oData->value_text = $value;
 
-        $value = str_replace(".", "", $value);
-        preg_match_all("/^(\-){0,1}\s*(\d+)(,(\d+)){0,1}$/", $value, $matches);
+        $value = str_replace(",", "", $value);
+        preg_match_all("/^(\-){0,1}\s*(\d+)(.(\d+)){0,1}$/", $value, $matches);
 
         if (strlen($matches[1][0])) {
             $oData->value_sign = true;
@@ -112,8 +113,8 @@ class datalang_ita implements dataLang {
     public static function SetExtCurrency($oData, $value) {
         $oData->value_text = $value;
 
-        $value = str_replace(".", "", $value);
-        preg_match_all("/^(\-){0,1}\s*(\d+)(,(\d+)){0,5}$/", $value, $matches);
+        $value = str_replace(",", "", $value);
+        preg_match_all("/^(\-){0,1}\s*(\d+)(.(\d+)){0,5}$/", $value, $matches);
 
         if (strlen($matches[1][0])) {
             $oData->value_sign = true;
@@ -147,8 +148,8 @@ class datalang_ita implements dataLang {
     public static function SetNumber($oData, $value) {
         $oData->value_text = $value;
 
-        $value = str_replace(".", "", $value);
-        preg_match_all("/^\\s*(\\-){0,1}\\s*(\\d+)\\s*(\\,\\s*(\\d+)){0,1}\\s*$/", $value, $matches);
+        $value = str_replace(",", "", $value);
+        preg_match_all("/^\\s*(\\-){0,1}\\s*(\\d+)\\s*(\\.\\s*(\\d+)){0,1}\\s*$/", $value, $matches);
 
         if (strlen($matches[1][0])) {
             $oData->value_sign = true;
@@ -162,8 +163,8 @@ class datalang_ita implements dataLang {
     public static function SetExtNumber($oData, $value) {
         $oData->value_text = $value;
 
-        $value = str_replace(".", "", $value);
-        preg_match_all("/^\\s*(\\-){0,1}\\s*(\\d+)\\s*(\\,\\s*(\\d+)){0,5}\\s*$/", $value, $matches);
+        $value = str_replace(",", "", $value);
+        preg_match_all("/^\\s*(\\-){0,1}\\s*(\\d+)\\s*(\\.\\s*(\\d+)){0,5}\\s*$/", $value, $matches);
 
         if (strlen($matches[1][0])) {
             $oData->value_sign = true;
@@ -266,41 +267,42 @@ class datalang_ita implements dataLang {
         }
     }
     public static function CheckCurrency($raw_value) {
-        if (!preg_match("/^\\s*\\-{0,1}\\s*\\d{1,3}(\\.{0,1}\\d{3})*\\s*(\\,\\s*\\d{1,2}){0,1}\\s*$/", $raw_value)) {
+        if (!preg_match("/^\\s*\\-{0,1}\\s*\\d{1,3}(\\,{0,1}\\d{3})*\\s*(\\.\\s*\\d{1,2}){0,1}\\s*$/", $raw_value)) {
             return FALSE;
         } else {
             return true;
         }
     }
     public static function CheckExtCurrency($raw_value) {
-        if (!preg_match("/^\\s*\\-{0,1}\\s*\\d{1,3}(\\.{0,1}\\d{3})*\\s*(\\,\\s*\\d{1,5}){0,1}\\s*$/", $raw_value)) {
+        if (!preg_match("/^\\s*\\-{0,1}\\s*\\d{1,3}(\\,{0,1}\\d{3})*\\s*(\\.\\s*\\d{1,5}){0,1}\\s*$/", $raw_value)) {
             return FALSE;
         } else {
             return true;
         }
     }
     public static function CheckNumber($raw_value) {
-        if (!preg_match("/^\\s*\\-{0,1}\\s*\\d+\\s*(\\,\\s*\\d+){0,1}\\s*$/", $raw_value)) {
+        if (!preg_match("/^\\s*\\-{0,1}\\s*\\d+\\s*(\\.\\s*\\d+){0,1}\\s*$/", $raw_value)) {
             return FALSE;
         } else {
             return true;
         }
     }
     public static function CheckExtNumber($raw_value) {
-        if (!preg_match("/^\\s*(\\-){0,1}\\s*(\\d+)\\s*(\\,\\s*(\\d+)){0,5}\\s*$/", $raw_value)) {
+        if (!preg_match("/^\\s*(\\-){0,1}\\s*(\\d+)\\s*(\\.\\s*(\\d+)){0,5}\\s*$/", $raw_value)) {
             return FALSE;
         } else {
             return true;
         }
     }
     public static function GetEmptyCurrency() {
-        return "0,00";
+        return "0.00";
     }
+
     public static function GetEmptyDate() {
-        return "00-00-00";
+        return "0000-00-00";
     }
 
     public static function GetEmptyDateTime() {
-        return "00-00-0000 00:00:00";
+        return "0000-00-00 00:00:00";
     }
 }

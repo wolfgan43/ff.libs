@@ -24,11 +24,12 @@
  *  @link https://github.com/wolfgan43/vgallery
  */
 
-namespace phpformsframework\libs\cache;
-use phpformsframework\libs\Debug;
-use APCIterator;
+namespace phpformsframework\libs\cache\mem;
 
-class memApc extends memAdapter
+use phpformsframework\libs\Debug;
+use APCIterator AS MC;
+
+class Apc extends Adapter
 {
 	function __construct($auth = null)
 	{
@@ -71,7 +72,7 @@ class memApc extends memAdapter
             );
         } else {
 	        $prefix = $this->getBucket($bucket);
-            foreach (new APCIterator('user', '#^' . preg_quote($prefix) . '\.#') as $item) {
+            foreach (new MC('user', '#^' . preg_quote($prefix) . '\.#') as $item) {
                 $res[$item["key"]] = $item["value"];
             }
 	    }

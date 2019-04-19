@@ -26,22 +26,22 @@
 
 spl_autoload_register(function ($class) {
     switch ($class) {
-        case 'phpformsframework\libs\cache\Mem':
+        case 'phpformsframework\\libs\\cache\\Mem':
             require ('Mem.php');
             break;
-        case 'phpformsframework\libs\cache\memApc':
+        case 'phpformsframework\\libs\\cache\\mem\\Apc':
             require ('adapters' . DIRECTORY_SEPARATOR . 'apc.php');
             break;
-        case 'phpformsframework\libs\cache\memFs':
+        case 'phpformsframework\\libs\\cache\\mem\\Fs':
             require ('adapters' . DIRECTORY_SEPARATOR . 'fs.php');
             break;
-        case 'phpformsframework\libs\cache\memMemcached':
+        case 'phpformsframework\\libs\\cache\\mem\\Memcached':
             require ('adapters' . DIRECTORY_SEPARATOR . 'memcached.php');
             break;
-        case 'phpformsframework\libs\cache\memRedis':
+        case 'phpformsframework\\libs\\cache\\mem\\Redis':
             require ('adapters' . DIRECTORY_SEPARATOR . 'redis.php');
             break;
-        case 'phpformsframework\libs\cache\Globals':
+        case 'phpformsframework\\libs\\cache\\Globals':
             require ('Globals.php');
             break;
         default:

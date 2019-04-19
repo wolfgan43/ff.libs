@@ -29,6 +29,8 @@ namespace phpformsframework\libs\storage;
 use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Response;
+use phpformsframework\libs\storage\drivers\Canvas;
+use phpformsframework\libs\storage\drivers\Thumb;
 
 if (!defined("FF_DISK_PATH"))	                            define("FF_DISK_PATH", dirname(dirname(__DIR__)));
 if (!defined("__TOP_DIR__"))	                            define("__TOP_DIR__", FF_DISK_PATH);

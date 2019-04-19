@@ -23,9 +23,9 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\delivery;
+namespace phpformsframework\libs\delivery\mailer;
 
-class mailerLocalhost extends mailerAdapter
+class Localhost extends Adapter
 {
     const PREFIX                                            = "LOCALHOST";
     private $config                                         = null;

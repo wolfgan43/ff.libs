@@ -23,41 +23,31 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\delivery\notice;
+namespace phpformsframework\libs\delivery\drivers;
 
-use phpformsframework\libs\Error;
-use phpformsframework\libs\Validator;
-use phpformsframework\libs\delivery\NoticeAdapter;
+use phpformsframework\libs\international\Translator;
 
+final class SenderSimple extends Sender {
+    private $content                                        = null;
 
-class Sms extends NoticeAdapter {
-    private $content                        = null;
+    public function setMessage($content) {
+        $this->content                                      = $content;
 
-    public  function checkRecipient($target)
+        return $this;
+    }
+
+    protected function processSubject()
     {
-        return Validator::isTel($target);
-    }
-    public function send($message) {
-        $this->content                      = $message;
-
-        return $this->process();
-    }
-    public function sendLongMessage($title, $fields = null, $template = null) {
-        $this->content                      = $title;
-
-        return $this->process();
+        return Translator::get_word_by_code($this->subject);
     }
 
-    protected function process()
+    protected function processBody()
     {
-        Sms::getInstance($this->connection)
-            ->addAddresses($this->recipients)
-            ->setMessage($this->content)
-            ->send();
+        return $this->content;
+    }
 
-        Error::transfer("sms", "notice");
-
-        return $this->getResult();
+    protected function processBodyAlt()
+    {
+        return '';
     }
 }
-

@@ -23,15 +23,15 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
+namespace phpformsframework\libs\cache\mem;
 
-namespace phpformsframework\libs\cache;
 use phpformsframework\libs\Debug;
-use Memcached;
+use Memcached AS MC;
 
 if (!defined("FF_CACHE_MEMCACHED_SERVER")) define("FF_CACHE_MEMCACHED_SERVER", "localhost");
 if (!defined("FF_CACHE_MEMCACHED_PORT")) define("FF_CACHE_MEMCACHED_PORT", 11211);
 
-class memMemcached extends memAdapter{
+class Memcached extends Adapter{
     const SERVER            = FF_CACHE_MEMCACHED_SERVER;
     const PORT              = FF_CACHE_MEMCACHED_PORT;
 
@@ -39,10 +39,10 @@ class memMemcached extends memAdapter{
 
 	function __construct($auth = null)
 	{
-		$this->conn = new Memcached(self::APPID);
+		$this->conn = new MC(self::APPID);
 
 		if($auth) {
-            $this->conn->setOption(Memcached::OPT_BINARY_PROTOCOL, true);
+            $this->conn->setOption(MC::OPT_BINARY_PROTOCOL, true);
             $this->conn->addServer($this::SERVER, $this::PORT);
             $this->conn->setSaslAuthData(self::APPID, $auth);
         } else {
@@ -80,7 +80,7 @@ class memMemcached extends memAdapter{
         $res = null;
         if($name) {
             $res = $this->conn->get($this->getKey($name, $bucket));
-            $res = ($this->conn->getResultCode() === Memcached::RES_SUCCESS
+            $res = ($this->conn->getResultCode() === MC::RES_SUCCESS
                 ? $this->getValue($res)
                 : false
             );

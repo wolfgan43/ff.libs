@@ -24,4 +24,8 @@
  *  @link https://github.com/wolfgan43/vgallery
  */
 
+namespace phpformsframework\libs\delivery\sms;
 
+class Twilio extends Adapter {
+
+}

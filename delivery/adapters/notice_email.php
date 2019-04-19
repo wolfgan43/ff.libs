@@ -23,12 +23,13 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\delivery;
+namespace phpformsframework\libs\delivery\notice;
 
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Validator;
+use phpformsframework\libs\delivery\drivers\Mailer;
 
-class noticeAdapterEmail extends noticeAdapter {
+class Email extends Adapter {
     private $title                          = null;
     private $fields                         = null;
     private $template                       = null;

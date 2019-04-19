@@ -23,9 +23,9 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\delivery;
+namespace phpformsframework\libs\delivery\mailer;
 
-class mailerSendgrid extends mailerAdapter
+class Sendgrid extends Adapter
 {
     const PREFIX                                            = "SENDGRID";
     private $config                                         = null;

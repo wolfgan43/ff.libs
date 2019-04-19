@@ -25,41 +25,47 @@
  */
 spl_autoload_register(function ($class) {
     switch ($class) {
-        case "phpformsframework\libs\App":
-            require("App.php");
+        case 'phpformsframework\\libs\\App':
+            require('App.php');
             break;
-        case "phpformsframework\libs\DirStruct":
-            require("App.php");
+        case 'phpformsframework\\libs\\DirStruct':
+            require('DirStruct.php');
             break;
-        case "phpformsframework\libs\Env":
-            require("App.php");
+        case 'phpformsframework\\libs\\Env':
+            require('Env.php');
             break;
-        case "phpformsframework\libs\Hook":
-            require("App.php");
+        case 'phpformsframework\\libs\\Hook':
+            require('Hook.php');
             break;
-        case "phpformsframework\libs\Config":
-            require("Config.php");
+        case 'phpformsframework\\libs\\Config':
+            require('Config.php');
             break;
-        case "phpformsframework\libs\Debug":
-            require("Debug.php");
+        case 'phpformsframework\\libs\\Configurable':
+            require('Configurable.php');
             break;
-        case 'phpformsframework\libs\Error':
-            require("Error.php");
+        case 'phpformsframework\\libs\\Debug':
+            require('Debug.php');
             break;
-        case 'phpformsframework\libs\Log':
-            require("Log.php");
+        case 'phpformsframework\\libs\\Error':
+            require('Error.php');
             break;
-        case "phpformsframework\libs\Request":
-            require_once("Request.php");
+        case 'phpformsframework\\libs\\ErrorHandler':
+            require('ErrorHandler.php');
             break;
-        case "phpformsframework\libs\Response":
-            require_once("Request.php");
+        case 'phpformsframework\\libs\\Log':
+            require('Log.php');
             break;
-        case "phpformsframework\libs\Router":
-            require_once("Router.php");
+        case 'phpformsframework\\libs\\Request':
+            require_once('Request.php');
             break;
-        case 'phpformsframework\libs\Validator':
-            require("Validator.php");
+        case 'phpformsframework\\libs\\Response':
+            require_once('Response.php');
+            break;
+        case 'phpformsframework\\libs\\Router':
+            require_once('Router.php');
+            break;
+        case 'phpformsframework\\libs\\Validator':
+            require('Validator.php');
             break;
         default:
     }

@@ -23,15 +23,15 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
+namespace phpformsframework\libs\cache\mem;
 
-namespace phpformsframework\libs\cache;
 use phpformsframework\libs\Debug;
-use Redis;
+use Redis AS MC;
 
 if (!defined("FF_CACHE_REDIS_SERVER")) define("FF_CACHE_REDIS_SERVER", "127.0.0.1");
 if (!defined("FF_CACHE_REDIS_PORT")) define("FF_CACHE_REDIS_PORT", 6379);
 
-class memRedis extends memAdapter {
+class Redis extends Adapter {
     const SERVER            = FF_CACHE_REDIS_SERVER;
     const PORT              = FF_CACHE_REDIS_PORT;
 
@@ -39,25 +39,25 @@ class memRedis extends memAdapter {
 
 	function __construct($auth = null)
 	{
-        $this->conn = new Redis();
+        $this->conn = new MC();
         $this->conn->pconnect($this::SERVER, $this::PORT, $this->getTTL(), self::APPID); // x is sent as persistent_id and would be another connection than the three before.
         if($auth)
             $this->conn->auth($auth);
 
         switch (self::SERIALIZER) {
             case "PHP":
-                $this->conn->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_PHP);	// use built-in serialize/unserialize
+                $this->conn->setOption(MC::OPT_SERIALIZER, MC::SERIALIZER_PHP);	// use built-in serialize/unserialize
                 break;
             case "IGBINARY":
-                $this->conn->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_IGBINARY);	// use igBinary serialize/unserialize
+                $this->conn->setOption(MC::OPT_SERIALIZER, MC::SERIALIZER_IGBINARY);	// use igBinary serialize/unserialize
                 break;
             default:
-                $this->conn->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_NONE);	// don't serialize data
+                $this->conn->setOption(MC::OPT_SERIALIZER, MC::SERIALIZER_NONE);	// don't serialize data
 
         }
 
 
-        //$this->conn->setOption(Redis::OPT_PREFIX, self::APPID . ':');	// use custom prefix on all keys
+        //$this->conn->setOption(MC::OPT_PREFIX, self::APPID . ':');	// use custom prefix on all keys
 
 
     }

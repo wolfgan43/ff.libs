@@ -23,7 +23,7 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\storage;
+namespace phpformsframework\libs\storage\drivers;
 
 use phpformsframework\libs\international\Data;
 use phpformsframework\libs\Debug;
@@ -497,13 +497,13 @@ class MySqli
         if ($obj != null) {
             $res = @mysqli_fetch_object($this->query_id, $obj);
         } else {
-            $row = 0;
-            $record = @mysqli_fetch_assoc($this->query_id);
-            while ($record) {
+            $res = mysqli_fetch_all($this->query_id, MYSQLI_ASSOC);
+            /*$row = 0;
+            while ($record = @mysqli_fetch_assoc($this->query_id)) {
                 $res[($record[$this->field_primary] ? $record[$this->field_primary] : $row++)] = $record;
-            }
-
+            }*/
         }
+        mysqli_free_result($this->query_id);
 
         if ($res === null && $this->checkError())
         {
@@ -545,19 +545,12 @@ class MySqli
         }
 
 
-        if ($Query_String == "")
+        if ($Query_String == "") {
             $this->errorHandler("Query invoked With blank Query String");
-
-        if (!$this->link_id)
-        {
-            if (!$this->connect())
-                return false;
         }
-        /*else
-        {
-            if (!$this->selectDb())
-                return false;
-        }*/
+        if (!$this->link_id && !$this->connect()) {
+            return false;
+        }
 
         Debug::dumpCaller($Query_String);
 
@@ -573,18 +566,14 @@ class MySqli
         {
             $this->fields = array();
             $this->fields_names = array();
-            if (is_object($this->query_id))
-            {
-                $meta = mysqli_fetch_field($this->query_id);
-                while($meta)
-                {
-                    $this->fields[$meta->name] = $meta;
-                    $this->fields_names[] = $meta->name;
-                    if ($meta->flags & MYSQLI_PRI_KEY_FLAG) {
-                        $this->field_primary = $meta->name;
-                    }
+
+            $finfo = mysqli_fetch_fields($this->query_id);
+            foreach ($finfo as $meta) {
+                $this->fields[$meta->name] = $meta;
+                $this->fields_names[] = $meta->name;
+                if ($meta->flags & MYSQLI_PRI_KEY_FLAG) {
+                    $this->field_primary = $meta->name;
                 }
-                mysqli_field_seek($this->query_id, 0);
             }
         }
 

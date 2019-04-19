@@ -36,31 +36,31 @@ class Validator
                                                                 )
                                                                 , "domain" => array(
                                                                     "filter"        => FILTER_VALIDATE_DOMAIN
-                                                                    //, "flags"     => FILTER_VALIDATE_DOMAIN
+                                                                    , "flags"       => null //FILTER_VALIDATE_DOMAIN
                                                                     , "options"     => array("default" => null)
                                                                     , "length"      => 24
                                                                 )
                                                                 , "email" => array(
                                                                     "filter"        => FILTER_VALIDATE_EMAIL
-                                                                    //, "flags"     => FILTER_FLAG_EMAIL_UNICODE
+                                                                    , "flags"       => null //FILTER_FLAG_EMAIL_UNICODE
                                                                     , "options"     => array("default" => null)
                                                                     , "length"      => 32
                                                                 )
                                                                 , "float" => array(
                                                                     "filter"        => FILTER_VALIDATE_FLOAT
-                                                                    //, "flags"     => FILTER_FLAG_ALLOW_THOUSAND
+                                                                    , "flags"       => null //FILTER_FLAG_ALLOW_THOUSAND
                                                                     , "options"     => array("default" => null)
                                                                     , "length"      => 32
                                                                 )
                                                                 , "int" => array(
                                                                     "filter"        => FILTER_VALIDATE_INT
-                                                                    //, "flags"     => FILTER_FLAG_ALLOW_OCTAL | FILTER_FLAG_ALLOW_HEX
+                                                                    , "flags"       => null //FILTER_FLAG_ALLOW_OCTAL | FILTER_FLAG_ALLOW_HEX
                                                                     , "options"     => array("default" => null)
                                                                     , "length"      => 16
                                                                 )
                                                                 , "ip" => array(
                                                                     "filter"        => FILTER_VALIDATE_IP
-                                                                    //, "flags"     => FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+                                                                    , "flags"       => null //FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
                                                                     , "options"     => array("default" => null)
                                                                     , "length"      => 15
                                                                 )
@@ -82,55 +82,65 @@ class Validator
                                                                 , "username" => array(
                                                                     "filter"        => FILTER_SANITIZE_STRING
                                                                     , "flags"       => FILTER_FLAG_STRIP_LOW
+                                                                    , "options"     => null
                                                                     , "callback"    => "\phpformsframework\libs\Validator::checkSpecialChars"
-                                                                    , "length"      => 16
+                                                                    , "length"      => 24
                                                                 )
                                                                 , "string" => array(
                                                                     "filter"        => FILTER_SANITIZE_STRING
                                                                     , "flags"       => FILTER_FLAG_NO_ENCODE_QUOTES | FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH
+                                                                    , "options"     => null
                                                                     , "callback"    => "\phpformsframework\libs\Validator::checkSpecialChars"
                                                                     , "length"      => 128
                                                                 )
                                                                 , "array" => array(
                                                                     "filter"        => FILTER_SANITIZE_STRING
                                                                     , "flags"       => FILTER_REQUIRE_ARRAY | FILTER_FLAG_NO_ENCODE_QUOTES | FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH
+                                                                    , "options"     => null
                                                                     , "callback"    => "\phpformsframework\libs\Validator::checkSpecialChars"
                                                                     , "length"      => 128
                                                                 )
                                                                 , "arrayint" => array(
                                                                     "filter"        => FILTER_VALIDATE_INT
                                                                     , "flags"       => FILTER_REQUIRE_ARRAY
+                                                                    , "options"     => null
                                                                     , "length"      => 16
                                                                 )
                                                                 , "password" => array(
                                                                     "filter"        => FILTER_CALLBACK
+                                                                    , "flags"       => null
                                                                     , "options"     => '\phpformsframework\libs\Validator::isPassword'
                                                                     , "length"      => 16
                                                                 )
                                                                 , "tel" => array(
                                                                     "filter"        => FILTER_CALLBACK
+                                                                    , "flags"       => null
                                                                     , "options"     => '\phpformsframework\libs\Validator::isTel'
                                                                     , "length"      => 16
                                                                 )
                                                                 , "file" => array(
                                                                     "filter"        => FILTER_CALLBACK
+                                                                    , "flags"       => null
                                                                     , "options"     => '\phpformsframework\libs\Validator::isFile'
                                                                     , "length"      => 1024000
                                                                 )
                                                                 , "encode" => array(
                                                                     "filter"        => FILTER_SANITIZE_ENCODED
                                                                     , "flags"       => FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH
+                                                                    , "options"     => null
                                                                     , "normalize"   => true
                                                                     , "length"      => 192
                                                                 )
                                                                 , "slug" => array(
                                                                     "filter"        => FILTER_CALLBACK
+                                                                    , "flags"       => null
                                                                     , "options"     => '\phpformsframework\libs\Validator::urlRewrite'
                                                                     , "normalize"   => true
                                                                     , "length"      => 128
                                                                 )
                                                                 , "text" => array(
                                                                     "filter"        => FILTER_CALLBACK
+                                                                    , "flags"       => null
                                                                     , "options"     => "nl2br"
                                                                     , "normalize"   => true
                                                                     , "length"      => 128000
@@ -178,11 +188,10 @@ class Validator
         if(!self::isAllowedSize($what, $rule["length"])) {
             $res                                        = self::isError(self::getErrorName($what) . " Max Length Exeeded", $type, 413);
         } else {
-            self::setRuleOptions($rule, $option["range"]);
-
+            if(isset($option["range"]))                 { self::setRuleOptions($rule, $option["range"]); }
             $validation                                 = filter_var($what, $rule["filter"], array(
-                                                            "flags" => $rule["flags"]
-                                                            , "options" => $rule["options"]
+                                                            "flags"         => $rule["flags"]
+                                                            , "options"     => $rule["options"]
                                                         ));
 
             if($validation === null) {
@@ -197,14 +206,14 @@ class Validator
                     $res                                = self::isError(self::getErrorName($what) . " is malformed");
                 }
             } elseif($validation != $what) {
-                if($rule["normalize"]) {
+                if(isset($rule["normalize"])) {
                     $what                               = $validation;
                 } else {
                     $res                                = self::isError(self::getErrorName($what) . " is not a valid " . $type . ($validation ? ". (" . $validation . " is valid!)" : ""), $type);
                 }
             }
 
-            if($rule["callback"]) {
+            if(isset($rule["callback"])) {
                 $error                                  = call_user_func($rule["callback"], $what);
                 if($error) {
                     $res                                = self::isError($error, $type);

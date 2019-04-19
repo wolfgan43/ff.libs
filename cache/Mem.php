@@ -26,91 +26,17 @@
 
 namespace phpformsframework\libs\cache;
 
+use phpformsframework\libs\cache\mem\Adapter;
+
 if (!defined("FF_PHP_EXT"))                         define("FF_PHP_EXT", "php");
 if (!defined("FF_CACHE_ADAPTER"))                   define("FF_CACHE_ADAPTER", false);
 if (!defined("FF_CACHE_SERIALIZER"))                define("FF_CACHE_SERIALIZER", "PHP");
 if (!defined("APPID"))                              define("APPID", $_SERVER["HTTP_HOST"]);
 
-abstract class memAdapter
-{
-    const SERIALIZER                = FF_CACHE_SERIALIZER;
-    const TTL                       = 0;
-    const APPID                     = APPID;
-
-    private $ttl                    = self::TTL;
-
-	public abstract function set($name, $value = null, $bucket = self::APPID);
-	public abstract function get($name, $bucket = self::APPID);
-    public abstract function del($name, $bucket = self::APPID);
-	public abstract function clear($bucket = self::APPID);
-
-
-	protected function setTTL($val) {
-	    $this->ttl = $val;
-
-    }
-    protected function getTTL() {
-        return $this->ttl;
-    }
-
-    protected function getBucket($name = null) {
-	    return ($name
-            ? (substr($name, 0, 1) == "/"
-                ? self::APPID
-                : ""
-            ) . $name
-            : ""
-        );
-    }
-    protected function getKey($name, $bucket = null) {
-        return ($bucket
-            ? $this->getBucket($bucket) . "/" . ltrim($name, "/")
-            : $name
-        );
-    }
-
-    protected function setValue($value) {
-        if(is_array($value)) {
-            switch (self::SERIALIZER) {
-                case "PHP":
-                    $value = serialize($value);
-                    break;
-                case "JSON":
-                    $value = json_encode($value);
-                    break;
-                case "IGBINARY":
-                    break;
-                default:
-            }
-        }
-	    return $value;
-    }
-    protected function getValue($value) {
-        switch (self::SERIALIZER) {
-            case "PHP":
-                $data = unserialize($value);
-                break;
-            case "JSON":
-                $data = json_decode($value);
-                break;
-            case "IGBINARY":
-                $data = null;
-                break;
-            default:
-                $data = null;
-        }
-        return ($data === false
-            ? $value
-            : $data
-        );
-    }
-
-}
-
 class Mem // apc | memcached | redis | globals
 {
-    const TYPE                      = 'phpformsframework\\libs\\cache\\mem';
-    const ADAPTER                   = FF_CACHE_ADAPTER;
+    const NAME_SPACE                      = 'phpformsframework\\libs\\cache\\mem\\';
+    const ADAPTER                           = FF_CACHE_ADAPTER;
 
     private static $singletons = null;
 
@@ -118,13 +44,13 @@ class Mem // apc | memcached | redis | globals
     /**
      * @param bool|string $memAdapter
      * @param null $auth
-     * @return memAdapter
+     * @return Adapter
      */
     public static function getInstance($memAdapter = self::ADAPTER, $auth = null)
     {
         if($memAdapter) {
             if (!isset(self::$singletons[$memAdapter])) {
-                $class_name = self::TYPE . ucfirst($memAdapter);
+                $class_name = static::NAME_SPACE . ucfirst($memAdapter);
                 self::$singletons[$memAdapter] = new $class_name($auth);
             }
         } else {

@@ -23,9 +23,9 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\international;
+namespace phpformsframework\libs\international\data;
 
-class datalang_dan implements dataLang {
+class Mssql implements Adapter {
     private static $format = array(
         "Number" 		=> ""
         , "DateTime" 	=> ""
@@ -66,13 +66,13 @@ class datalang_dan implements dataLang {
         $oData->value_date_seconds = $matches[3][0];
     }
     public static function NormalizeDate($oData) {
-        if (strlen($oData->value_date_year) == 2) {
+        if (strlen($oData->value_date_year) == 2)
+        {
             $tmp = substr($oData->value_date_year, 0, 1);
-            if (intval($tmp) >= 5) {
+            if (intval($tmp) >= 5)
                 $oData->value_date_year = "19" . $oData->value_date_year;
-            } else {
+            else
                 $oData->value_date_year = "20" . $oData->value_date_year;
-            }
         }
     }
     public static function GetDateTime($oData) {
@@ -86,11 +86,10 @@ class datalang_dan implements dataLang {
     }
     public static function GetDate($oData) {
         if ($oData->value_date_year == 0 || $oData->value_date_month == 0 || $oData->value_date_day == 0
-            || !strlen($oData->ori_value)) {
+            || !strlen($oData->ori_value))
             return "";
-        } else {
+        else
             return sprintf("%02d", intval($oData->value_date_day)) . "/" . sprintf("%02d", intval($oData->value_date_month)) . "/" . sprintf("%04d", intval($oData->value_date_year));
-        }
     }
     public static function GetTime($oData) {
         return $oData->value_date_hours . ":" . $oData->value_date_minutes /*. ":" . $oData->value_date_seconds*/;

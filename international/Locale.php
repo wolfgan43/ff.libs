@@ -25,10 +25,12 @@
  */
 namespace phpformsframework\libs\international;
 
+use phpformsframework\libs\Configurable;
 use phpformsframework\libs\DirStruct;
 use phpformsframework\libs\Config;
+use phpformsframework\libs\Env;
 
-class Locale {
+class Locale implements Configurable {
     private static $lang                                    = null;
     private static $country                                 = null;
     private static $langDefault                             = null;
@@ -324,9 +326,12 @@ class Locale {
 
     }
 
-    public static function loadSchema($lang_tiny_code, $country_tiny_code) {
+    public static function loadSchema() {
         $config                                                         = Config::rawData("locale", true);
         if(is_array($config)) {
+            $lang_tiny_code                                             = Env::get("LANG_TINY_CODE");
+            $country_tiny_code                                          = Env::get("COUNTRY_TINY_CODE");
+
             /**
              * Lang
              */
@@ -360,7 +365,7 @@ class Locale {
     private static function acceptLanguage($key = null) {
         static $res                                                     = null;
 
-        if(!$res) {
+        if(!$res && isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
             foreach (explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE']) as $locale) {
                 $pattern                                                = '/^(?P<primarytag>[a-zA-Z]{2,8})'.
                     '(?:-(?P<subtag>[a-zA-Z]{2,8}))?(?:(?:;q=)'.
@@ -396,7 +401,7 @@ class Locale {
             $country_tiny_code                              = self::$lang["country"];
         }
 
-        self::$country                                      = (self::$locale["country"][$country_tiny_code]
+        self::$country                                      = (isset(self::$locale["country"][$country_tiny_code])
                                                                 ? self::$locale["country"][$country_tiny_code]
                                                                 : self::$countryDefault
                                                             );

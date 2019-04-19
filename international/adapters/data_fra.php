@@ -23,9 +23,9 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\international;
+namespace phpformsframework\libs\international\data;
 
-class datalang_eng implements dataLang {
+class Fra implements Adapter {
     private static $format = array(
         "Number" 		=> ""
         , "DateTime" 	=> ""
@@ -42,8 +42,8 @@ class datalang_eng implements dataLang {
 
     public static function SetDateTime($oData, $value) {
         preg_match_all("/((\d+):(\d+)(:(\d+))*\s+(\d+)[-\/](\d+)[-\/](\d+))|((\d+)[-\/](\d+)[-\/](\d+)\s+(\d+):(\d+)(:(\d+))*)/", $value, $matches);
-        $oData->value_date_day = $matches[7][0] ? $matches[7][0] : $matches[11][0];
-        $oData->value_date_month = $matches[6][0] ? $matches[6][0] : $matches[10][0];
+        $oData->value_date_day = $matches[6][0] ? $matches[6][0] : $matches[10][0];
+        $oData->value_date_month = $matches[7][0] ? $matches[7][0] : $matches[11][0];
         $oData->value_date_year = $matches[8][0] ? $matches[8][0] : $matches[12][0];
         $oData->value_date_hours = $matches[2][0] ? $matches[2][0] : $matches[13][0];
         $oData->value_date_minutes = $matches[3][0] ? $matches[3][0] : $matches[14][0];
@@ -53,8 +53,8 @@ class datalang_eng implements dataLang {
     }
     public static function SetDate($oData, $value) {
         preg_match_all("/(\d+)[-\/\s]*(\d+)[-\/\s]*(\d+)/", $value, $matches);
-        $oData->value_date_day = $matches[2][0];
-        $oData->value_date_month = $matches[1][0];
+        $oData->value_date_day = $matches[1][0];
+        $oData->value_date_month = $matches[2][0];
         $oData->value_date_year = $matches[3][0];
 
         self::NormalizeDate($oData);
@@ -80,7 +80,7 @@ class datalang_eng implements dataLang {
             || !strlen($oData->ori_value)) {
             return "";
         } else {
-            return  sprintf("%02d", intval($oData->value_date_month)) . "/" . sprintf("%02d", intval($oData->value_date_day)) . "/" . sprintf("%04d", intval($oData->value_date_year)) .
+            return sprintf("%02d", intval($oData->value_date_day)) . "/" . sprintf("%02d", intval($oData->value_date_month)) . "/" . sprintf("%04d", intval($oData->value_date_year)) .
                 " " . sprintf("%02d", intval($oData->value_date_hours)) . ":" . sprintf("%02d", intval($oData->value_date_minutes)) . ":" . sprintf("%02d", intval($oData->value_date_seconds));
         }
     }
@@ -89,7 +89,7 @@ class datalang_eng implements dataLang {
             || !strlen($oData->ori_value)) {
             return "";
         } else {
-            return sprintf("%02d", intval($oData->value_date_month)) . "/" . sprintf("%02d", intval($oData->value_date_day)) . "/" . sprintf("%04d", intval($oData->value_date_year));
+            return sprintf("%02d", intval($oData->value_date_day)) . "/" . sprintf("%02d", intval($oData->value_date_month)) . "/" . sprintf("%04d", intval($oData->value_date_year));
         }
     }
     public static function GetTime($oData) {

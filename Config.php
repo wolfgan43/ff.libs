@@ -27,15 +27,24 @@ namespace phpformsframework\libs;
 
 use phpformsframework\libs\storage\Filemanager;
 
-abstract class Config  {
+class Config  {
     private static $config = null;
     private static $schema = null;
     private static $engine = null;
+    private static $rules = null;
 
     public static function addEngine($bucket, $callback) {
         self::$engine[$bucket]                                      = $callback;
 
     }
+    public static function addRule($key, $method, $callback = null) {
+        self::$rules[$key]                                          = array(
+                                                                        "method"        => $method
+                                                                        , "callback"    => $callback
+                                                                    );
+
+    }
+
     public static function rawData($key = null, $remove = false, $sub_key = null) {
         $res                                                        = ($key
                                                                         ? self::$config[$key]
@@ -49,33 +58,49 @@ abstract class Config  {
         );
     }
 
-    public static function loadRawData($paths, $actions = null) {
-        Filemanager::scan($paths, function ($file) use ($actions) {
+    public static function loadRawData($paths) {
+        Filemanager::scan($paths, function ($file) {
             $configs                                                = Filemanager::getInstance("xml")->read($file);
             foreach($configs AS $key => $config) {
-                switch ($actions[$key]["method"]) {
+                if(!isset(self::$config[$key]))                     { self::$config[$key] = array(); }
+                $method                                             = (isset(self::$rules[$key]["method"])
+                                                                        ? self::$rules[$key]["method"]
+                                                                        : null
+                                                                    );
+                /*$callback                                           = (isset(self::$rules[$key]["callback"])
+                                                                            ? self::$rules[$key]["callback"]
+                                                                            : null
+                                                                        );*/
+
+
+                switch ($method) {
                     case "replace":
-                        self::$config[$key]                        = array_replace((array)self::$config[$key], (array)$config);
+                        self::$config[$key]                         = array_replace(self::$config[$key], (array)$config);
                         break;
                     case "merge":
                         if (is_array($config) && count($config)) {
                             if (!isset($config[0]))                 { $config = array($config); }
-                            self::$config[$key]                    = array_merge((array)self::$config[$key], $config);
+                            self::$config[$key]                     = array_merge(self::$config[$key], $config);
                         }
                         break;
                     case "mergesub":
                         if (is_array($config) && count($config)) {
                             foreach ($config AS $sub_key => $sub_config) {
                                 if (!isset($sub_config[0]))         { $sub_config = array($sub_config); }
-                                self::$config[$key][$sub_key]      = array_merge((array)self::$config[$key][$sub_key], $sub_config);
+                                if(isset(self::$config[$key][$sub_key]))   {
+                                    self::$config[$key][$sub_key]   = array_merge(self::$config[$key][$sub_key], $sub_config);
+                                } else {
+                                    self::$config[$key][$sub_key]   = $sub_config;
+                                }
+
                             }
                         }
                         break;
                     default:
-                        self::$config[$key]                        = $config;
+                        self::$config[$key]                         = $config;
                 }
 
-                self::addEngine($key, $actions[$key]["callback"]);
+                //if($callback)                                       { self::addEngine($key, $callback); }
             }
         });
     }
@@ -84,18 +109,27 @@ abstract class Config  {
     public static function setSchema($data, $bucket = null) {
         if(is_array($data)) {
             if($bucket) {
-                self::$schema[$bucket]                              = array_replace((array) self::$schema[$bucket], $data);
+                if(isset(self::$schema[$bucket])) {
+                    self::$schema[$bucket]                          = array_replace(self::$schema[$bucket], $data);
+                } else {
+                    self::$schema[$bucket]                          = $data;
+                }
             } else {
                 self::$schema                                       = $data;
             }
         }
     }
-    public static function getSchema($bucket) {
+    public static function getSchema($bucket = null) {
         if($bucket && !isset(self::$schema[$bucket])) {
             self::$schema[$bucket]                                  = array();
+            if(isset(self::$config[$bucket])) {
 
-            $callback                                               = self::$engine[$bucket]["callback"];
-            if(is_callable($callback))                              { $callback(); }
+                $callback                                           = (isset(self::$rules[$bucket]["callback"])
+                                                                        ? self::$rules[$bucket]["callback"]
+                                                                        : null //ucfirst($bucket) . "::loadSchema"
+                                                                    );
+                if(is_callable($callback))                          { $callback(); }
+            }
         }
 
         return (array) ($bucket

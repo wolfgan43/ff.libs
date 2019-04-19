@@ -32,16 +32,27 @@ use phpformsframework\libs\Response;
 use phpformsframework\libs\Hook;
 use phpformsframework\libs\Config;
 
-
-Hook::register("app_on_init", "Shield::protectMyAss");
+Hook::register("app_on_rawconfig_loaded", "Shield::protectMyAss");
 
 
 class Buckler extends DirStruct {
-    public static function protectMyAss($rules = null) {
-        self::checkLoadAvg();
-        if($rules) {
-            self::checkAllowedPath($rules);
+    public static function loadSchema() {
+        $config                                                 = Config::rawData("badpath", true, "rule");
+        if(is_array($config) && count($config)) {
+            $schema                                             = Config::getSchema("badpath");
+            foreach($config AS $badpath) {
+                $attr                                           = self::getXmlAttr($badpath);
+                $key                                            = $attr["source"];
+                unset($attr["source"]);
+                $schema[$key]                                   = $attr;
+            }
+
+            Config::setSchema($schema, "badpath");
         }
+    }
+    public static function protectMyAss() {
+        self::checkLoadAvg();
+        self::checkAllowedPath();
     }
     private static function checkLoadAvg() {
         $load = sys_getloadavg();
@@ -52,10 +63,8 @@ class Buckler extends DirStruct {
             exit;
         }
     }
-    private static function checkAllowedPath($rules = null, $path_info = null, $do_redirect = true) {
-        $rules = Config::getSchema("badpath");
-
-
+    private static function checkAllowedPath($path_info = null, $do_redirect = true) {
+        $rules                                              = Config::getSchema("badpath");
         $path_info                                          = ($path_info
                                                                 ? $path_info
                                                                 : self::getPathInfo()

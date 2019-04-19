@@ -23,17 +23,18 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\storage;
+namespace phpformsframework\libs\storage\database;
 
 use phpformsframework\libs\Error;
+use phpformsframework\libs\storage\drivers\MySqli AS DB;
 
-class databaseMysqli extends databaseAdapter {
+class Mysqli extends Adapter {
     const PREFIX                                        = "FF_DATABASE_";
     const TYPE                                          = "sql";
     const KEY                                           = "ID";
 
     /**
-     * @var MySqli
+     * @var DB
      */
     private $driver                                     = null;
 
@@ -72,17 +73,17 @@ class databaseMysqli extends databaseAdapter {
 
     protected function processRead($query) {
         $sSQL                                           = "SELECT "
-                                                            . ($query["limit"]["calc_found_rows"]
+                                                            . (isset($query["limit"]) && is_array($query["limit"]) && isset($query["limit"]["calc_found_rows"])
                                                                 ? " SQL_CALC_FOUND_ROWS "
                                                                 : ""
                                                             ) . $query["select"] . "  
                                                             FROM " .  $query["from"] . "
                                                             WHERE " . $query["where"]
-                                                            . ($query["sort"]
+                                                            . (isset($query["sort"])
                                                                 ? " ORDER BY " . $query["sort"]
                                                                 : ""
                                                             )
-                                                            . ($query["limit"]
+                                                            . (isset($query["limit"])
                                                                 ? " LIMIT " . (is_array($query["limit"])
                                                                     ? $query["limit"]["skip"] . ", " . $query["limit"]["limit"]
                                                                     : $query["limit"]
@@ -91,7 +92,7 @@ class databaseMysqli extends databaseAdapter {
                                                             );
         $res                                            = $this->processRawQuery($sSQL);
         if($res) {
-            if($query["limit"]["calc_found_rows"]) {
+            if(isset($query["limit"]) && is_array($query["limit"]) && isset($query["limit"]["calc_found_rows"])) {
                 $this->driver->query("SELECT FOUNT_ROWS() AS tot_row");
                 if ($this->driver->nextRecord()) {
                     $res["count"]                       = $this->driver->getField("tot_row", "Number", true);
@@ -223,7 +224,7 @@ class databaseMysqli extends databaseAdapter {
     protected function loadDriver() {
         $connector                                                                  = $this->getConnector();
         if($connector) {
-            $this->driver                                                               = new MySqli();
+            $this->driver                                                               = new DB();
             if ($this->driver->connect(
                 $connector["name"]
                 , $connector["host"]
@@ -248,7 +249,7 @@ class databaseMysqli extends databaseAdapter {
 		if(is_array($fields) && count($fields))
 		{
             $fields                                                                 = $this->convertKey("_id", $fields);
-		    if($action == "where" && is_array($fields['$or'])) {
+		    if($action == "where" && isset($fields['$or']) && is_array($fields['$or'])) {
                 $or                                                                 = $this->convertFields($fields['$or'], "where_OR");
                 if($or)                                                             { $res['$or'] = $or; }
             }
@@ -471,7 +472,7 @@ class databaseMysqli extends databaseAdapter {
                         $result["select"]                                           = "`" . implode("`, `", $res) . "`";
 					    if($result["select"] != "*" && !$this->rawdata) {
                             $key_name                                               = $this->getFieldAlias($this->key_name);
-                            if($key_name && !$res[$key_name])                       { $result["select"] .= ", `" . $key_name . "`"; }
+                            if($key_name && !isset($res[$key_name]))                { $result["select"] .= ", `" . $key_name . "`"; }
                         }
 						break;
 					case "insert":
@@ -555,7 +556,7 @@ class databaseMysqli extends databaseAdapter {
                 if(is_array($value)) {
                     $res                                                            = array();
                     foreach($value AS $i => $v) {
-                        $res[$i]                                                    = $uFunc . "(" . $this->driver->toSql($value) . ")";
+                        $res[$i]                                                    = $uFunc . "(" . $this->driver->toSql($v) . ")";
                     }
                     $res                                                            = implode(",", $res);
                 } else {

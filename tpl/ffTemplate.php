@@ -85,8 +85,8 @@ class ffTemplate extends Hook
 	 */
     public static function fetch($template_file)
     {
-        $tmp = new ffTemplate(dirname($template_file));
-        $tmp->load_file(basename($template_file));
+        $tmp = new ffTemplate();
+        $tmp->load_file($template_file);
 
         return $tmp;
     }

@@ -23,7 +23,7 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\delivery;
+namespace phpformsframework\libs\delivery\drivers;
 
 //todo: da fare tutto
 class Sms {

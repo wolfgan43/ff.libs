@@ -27,38 +27,14 @@
 namespace phpformsframework\libs\international;
 use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\Debug;
+use phpformsframework\libs\storage\drivers\MySqli;
 
 if(!defined("FF_PREFIX"))                       define("FF_PREFIX", "ff_");
 if(!defined("FF_TRANSLATOR_ADAPTER"))           define("FF_TRANSLATOR_ADAPTER", false);
 
-abstract class translatorAdapter {
-    const DICTIONARY_PREFIX                             = "dictionary/translations/";
-
-    private static $translation                         = array();
-
-    protected function save($words, $toLang, $fromLang, $words_translated) {
-        $fromto                                         = strtoupper($fromLang . "|" . $toLang);
-
-        self::$translation[$fromto][$words]             = $words_translated;
-        Mem::getInstance()->set($words, self::$translation[$fromto][$words], self::DICTIONARY_PREFIX . $fromto);
-
-        return self::$translation[$fromto][$words];
-    }
-
-    public function translate($words, $toLang = null, $fromLang = null) {
-        $fromto                                         = strtoupper(Translator::getLangDefault($fromLang)  . "|" . Translator::getLang($toLang));
-
-        if(!isset(self::$translation[$fromto][$words])) {
-            $cache                                      = Mem::getInstance();
-            self::$translation[$fromto][$words]         = $cache->get($words, self::DICTIONARY_PREFIX . $fromto);
-        }
-
-        return self::$translation[$fromto][$words];
-    }
-}
-
 class Translator
 {
+    const NAME_SPACE                                    = 'phpformsframework\\libs\\international\\translator\\';
     const ADAPTER                                       = false;
 
     const REGEXP                                        = "/\{_([\w\[\]\:\=\-\|\.]+)\}/U";
@@ -76,29 +52,25 @@ class Translator
     private static $cache                               = null;
 
 
-    public static function getInstance($eType = self::ADAPTER, $auth = null)
+    public static function getInstance($translatorAdapter, $auth = null)
     {
-        if($eType) {
-            if (!isset(self::$singletons[$eType])) {
-                $classname = "translator" . ucfirst($eType);
-                self::$singletons[$eType] = new $classname($auth);
-            }
-        } else {
-            self::$singletons[$eType] = false;
+        if (!isset(self::$singletons[$translatorAdapter])) {
+            $class_name                                 = static::NAME_SPACE . ucfirst($translatorAdapter);
+            self::$singletons[$translatorAdapter]       = new $class_name($auth);
         }
 
-        return self::$singletons[$eType];
+        return self::$singletons[$translatorAdapter];
     }
 
     public static function dump($language = null) {
-        $lang_code                                       = self::getLang($language);
+        $lang_code                                      = self::getLang($language);
 
         return self::$cache[$lang_code];
     }
     public static function clear($language = null) {
-        $lang_code                                       = self::getLang($language);
+        $lang_code                                      = self::getLang($language);
 
-        self::$cache[$lang_code]                         = null;
+        self::$cache[$lang_code]                        = null;
         Mem::getInstance()->clear(self::BUCKET_PREFIX . $lang_code);
 
         return true;
@@ -143,7 +115,7 @@ class Translator
     }
 
     private static function getWordByCodeFromDB($code, $language = null) {
-        $db                                             = new ffDB_Sql();
+        $db                                             = new MySqli();
         $i18n                                           = array(
                                                             "code"      => $code
                                                             , "lang"    => self::getLang($language)

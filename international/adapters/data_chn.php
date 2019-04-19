@@ -23,9 +23,9 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\international;
+namespace phpformsframework\libs\international\data;
 
-class datalang_jpn implements dataLang {
+class Chn implements Adapter {
     private static $format = array(
         "Number" 		=> ""
         , "DateTime" 	=> ""
@@ -65,7 +65,6 @@ class datalang_jpn implements dataLang {
         $oData->value_date_minutes = $matches[2][0];
         $oData->value_date_seconds = $matches[3][0];
     }
-
     public static function NormalizeDate($oData) {
         if (strlen($oData->value_date_year) == 2) {
             $tmp = substr($oData->value_date_year, 0, 1);

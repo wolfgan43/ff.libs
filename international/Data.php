@@ -27,43 +27,11 @@
 namespace phpformsframework\libs\international;
 
 use phpformsframework\libs\Error;
-
-interface dataLang {
-    public static function Format($key);
-    public static function SetDateTime($oData, $value);
-    public static function SetDate($oData, $value);
-    public static function SetTime($oData, $value);
-    public static function NormalizeDate($oData);
-    public static function GetDateTime($oData);
-    public static function GetDate($oData);
-    public static function GetTime($oData);
-    public static function SetCurrency($oData, $value);
-    public static function GetCurrency($oData);
-    public static function SetExtCurrency($oData, $value);
-    public static function GetExtCurrency($oData);
-    public static function SetNumber($oData, $value);
-    public static function GetNumber($oData);
-    public static function SetExtNumber($oData, $value);
-    public static function GetExtNumber($oData);
-    public static function GetTimestamp($oData);
-    public static function SetTimestamp($oData, $value);
-    public static function GetTimeToSec($oData);
-    public static function SetTimeToSec($oData, $value);
-    public static function CheckTime($raw_value);
-    public static function CheckDate($raw_value);
-    public static function CheckDateTime($raw_value);
-    public static function CheckCurrency($raw_value);
-    public static function CheckExtCurrency($raw_value);
-    public static function CheckNumber($raw_value);
-    public static function CheckExtNumber($raw_value);
-    public static function GetEmptyCurrency();
-    public static function GetEmptyDate();
-    public static function GetEmptyDateTime();
-}
-
+use phpformsframework\libs\international\data\Adapter;
 
 class Data
 {
+    const NAME_SPACE = 'phpformsframework\\libs\\international\\data\\';
 	/**
 	 * il valore originale del dato, memorizzato non modificato
 	 * @var mixed
@@ -187,7 +155,7 @@ class Data
     }
     /**
      * @param null $locale
-     * @return dataLang
+     * @return Adapter
      */
     private static function getClass($locale = null) {
         if ($locale === null) {
@@ -198,8 +166,8 @@ class Data
             Error::dump("You must specify a locale settings", E_USER_ERROR, null, get_defined_vars());
         }
 
-        $class_name = "datalang_" . strtolower($locale);
-        return $class_name();
+        $class_name = static::NAME_SPACE . ucfirst($locale);
+        return new $class_name();
     }
 	/**
 	 * crea un oggetto Data

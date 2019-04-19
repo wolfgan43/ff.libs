@@ -55,7 +55,7 @@ class Router extends App
     public static function loadSchema() {
         $config                                             = Config::rawData("router", true, "rule");
         if(is_array($config) && count($config)) {
-            $schema                                         = Config::getSchema("router");
+            $schema                                         = array();
             foreach($config AS $rule) {
                 $attr                                       = self::getXmlAttr($rule);
                 $key                                        = ($attr["path"]
@@ -68,10 +68,11 @@ class Router extends App
         }
     }
 
-    public function __construct($default = null)
+    public function __construct()
 	{
         $this->addRules(Config::getSchema("router"));
 
+        $default = $this::getDiskPath("webroot", true);
 	    if($default) {
             $this->addRule("*", $default);
         }
@@ -130,16 +131,12 @@ class Router extends App
                                             : null
                                         );
 
-
-            $priority                   = ($priority
-                                            ? $priority
-                                            : $params["priority"]
-                                        );
-
-            $redirect                   = ($redirect
-                                            ? $redirect
-                                            : $params["redirect"]
-                                        );
+            if(!$priority && isset($params["priority"])) {
+                $priority               = $params["priority"];
+            }
+            if(!$redirect && isset($params["redirect"])) {
+                $redirect               = $params["redirect"];
+            }
         }
 
         if($path) {

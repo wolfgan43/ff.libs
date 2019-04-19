@@ -23,9 +23,9 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\international;
+namespace phpformsframework\libs\international\data;
 
-class datalang_esp implements dataLang {
+class Esp implements Adapter {
     private static $format = array(
         "Number" 		=> ""
         , "DateTime" 	=> ""

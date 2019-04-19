@@ -23,11 +23,11 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
+namespace phpformsframework\libs\cache\mem;
 
-namespace phpformsframework\libs\cache;
 use phpformsframework\libs\Debug;
 
-class memFs extends memAdapter
+class Fs extends Adapter
 {
 	/**
 	 * Inserisce un elemento nella cache

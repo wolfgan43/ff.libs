@@ -25,8 +25,7 @@
  */
 namespace phpformsframework\libs\delivery;
 
-use phpformsframework\libs\App;
-use phpformsframework\libs\Error;
+use phpformsframework\libs\delivery\notice\Adapter;
 
 /*
 Notice::getInstance(array("email", "sms", "push"))
@@ -49,47 +48,14 @@ Notice::getInstance(array("email", "sms", "push"))
 
 */
 
-
-abstract class noticeAdapter extends App {
-    protected $recipients                                   = array();
-    protected $connection                                   = null;
-    protected $actions                                      = null;
-
-    public function __construct($connection = null)
-    {
-        $this->connection                                   = $connection;
-    }
-
-    public abstract function checkRecipient($target);
-    public abstract function send($message);
-    public abstract function sendLongMessage($title, $fields = null, $template = null);
-
-    protected abstract function process();
-
-    public function addAction($name, $url) {
-        $this->actions[$url]                                = $name;
-    }
-    public function addRecipient($target, $name = null) {
-        if($this->checkRecipient($target)) {
-            $this->recipients[$target]                      = ($name ? $name : $target);
-        }
-    }
-    protected function getResult() {
-        return (Error::check("notice")
-            ? Error::raise("notice")
-            : false
-        );
-    }
-}
-
 class Notice
 {
-    const TYPE                                              = 'phpformsframework\\libs\\delivery\\notice';
+    const NAME_SPACE                                        = 'phpformsframework\\libs\\delivery\\notice\\';
 
     private static $singleton                               = null;
 
     /**
-     * @var noticeAdapter[]
+     * @var Adapter[]
      */
     protected $adapters                                     = null;
 
@@ -137,11 +103,11 @@ class Notice
                     $connection                             = null;
                 }
 
-                $class_name                                 = self::TYPE . ucfirst($adapter);
+                $class_name                                 = static::NAME_SPACE . ucfirst($adapter);
                 $this->adapters[$adapter]                   = new $class_name($connection);
             }
         } elseif($noticeAdapters) {
-            $class_name                                     = self::TYPE . ucfirst($noticeAdapters);
+            $class_name                                     = static::NAME_SPACE . ucfirst($noticeAdapters);
             $this->adapters[$noticeAdapters]                = new $class_name();
         }
 

@@ -118,22 +118,28 @@ abstract class App extends DirStruct {
         return Config::getSchema($bucket);
     }
 
+    /**
+     * @return App
+     */
+    private static function getCalledClass() {
+        return get_called_class();
+    }
     public static function widget($name, $config = null, $user_path = null) {
         $schema                         = self::getSchema("widgets");
-        $class_name                     = get_called_class();
-
+        $class_name                     = self::getCalledClass();
         if(!$user_path)                 { $user_path = self::getPathInfo(); }
 
-        if(is_array($schema[$user_path])) {
+        if(isset($schema[$user_path]) && is_array($schema[$user_path])) {
             $config                     = array_replace_recursive($config, $schema[$user_path]);
-        } elseif(is_array($schema[$name])) {
+        } elseif(isset($schema[$name]) && is_array($schema[$name])) {
             $config                     = array_replace_recursive($config, $schema[$name]);
         }
 
         Log::registerProcedure($class_name, "widget:" . $name);
 
-        return Widget::getInstance($name, $class_name)
-            ->setConfig($config)->process();
+        return Widget::getInstance($name, $class_name::NAME_SPACE)
+            ->setConfig($config)
+            ->process("page");
     }
 /*
     public static function getSchema($key = null) {

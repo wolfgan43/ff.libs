@@ -371,14 +371,14 @@ class Log extends DirStruct {
 
     protected static function set($data, $filename = null, $override = false) {
         $log_path                                                   = self::getLogDir();
-        if(!is_dir($log_path))                                      { mkdir($log_path, 0777, true); }
+        if(is_dir($log_path)) {
+            $file                                                   = $log_path . '/' . date("Y-m-d") . "_" . $filename . '.txt';
 
-        $file                                                       = $log_path . '/' . date("Y-m-d") . "_" . $filename . '.txt';
-
-        if($override) {
-            Filemanager::fsave($data, $file);
-        } else {
-            Filemanager::fappend($data, $file);
+            if($override) {
+                Filemanager::fsave($data, $file);
+            } else {
+                Filemanager::fappend($data, $file);
+            }
         }
     }
 

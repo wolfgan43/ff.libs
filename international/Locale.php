@@ -339,13 +339,14 @@ class Locale implements Configurable {
                 foreach ($config["lang"] AS $code => $lang) {
                     $attr                                               = DirStruct::getXmlAttr($lang);
                     self::$locale["lang"][$code]                        = $attr;
-                    self::$locale["lang"]["tiny_code"]                  = $code;
+                    self::$locale["lang"][$code]["tiny_code"]           = $code;
                 }
 
                 if(isset(self::$locale["lang"][$lang_tiny_code])) {
                     self::$langDefault                                  = self::$locale["lang"][$lang_tiny_code];
                 }
             }
+
             /**
              * Country
              */

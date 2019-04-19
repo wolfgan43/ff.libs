@@ -895,7 +895,7 @@ class Gridsystem
                 if(is_array($params)) {
                     $is_stack = array_search("stack", $params) !== false;
                     $is_stack_equal = array_search("stack-equal", $params) !== false;
-                    if($params["class"]) {
+                    if(isset($params["class"])) {
                         $addClass[] = $params["class"];
                         unset($params["class"]);
                     }

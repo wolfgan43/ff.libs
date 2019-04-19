@@ -604,7 +604,10 @@ class ffTemplate extends Hook
 			reset($vars);
 			foreach($vars as $key => $value)
 			{
-				$tmp = $this->ParsedBlocks[$value];
+				$tmp = (isset($this->ParsedBlocks[$value])
+                    ? $this->ParsedBlocks[$value]
+                    : null
+                );
 				if (is_object($tmp))
 				{
 					if ($this->useFormsFramework) {

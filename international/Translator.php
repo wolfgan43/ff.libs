@@ -95,7 +95,7 @@ class Translator
         if(!$code)                                      { return null; }
         $lang_code                                      = self::getLang($language);
 
-        if(!self::$cache[$lang_code][$code]) {
+        if(!isset(self::$cache[$lang_code][$code])) {
             $cache                                      = Mem::getInstance();
             self::$cache[$lang_code][$code]              = $cache->get($code, self::BUCKET_PREFIX . $lang_code);
             if(!self::$cache[$lang_code][$code]) {

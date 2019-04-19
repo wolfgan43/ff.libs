@@ -32,7 +32,7 @@ class Response {
         self::send($response, $headers, $type, $status);
     }
     public static function send($response = null, $headers = null, $type = null, $status = null) {
-        if(is_array($response["data"])) {
+        if(isset($response["data"]) && is_array($response["data"])) {
             $size                                   = strlen(http_build_query($response["data"], '', ''));
         } elseif(isset($response["data"])) {
             $size                                   = strlen($response["data"]);
@@ -87,8 +87,7 @@ class Response {
             }
         }
 
-        if(isset($response["status"]))              { $response["status"] = (int) $response["status"]; }
-        if($response["error"])                      { $response["error"] = Translator::get_word_by_code($response["error"]); }
+        if(isset($response["error"]))               { $response["error"] = Translator::get_word_by_code($response["error"]); }
         switch($type) {
             case "xml":
                 header("Content-type: application/xml");
@@ -100,16 +99,7 @@ class Response {
                 break;
             case "html":
                 header("Content-type: text/html");
-                echo '<!DOCTYPE html>
-                    <html>
-                    <head>
-                        <script defer async>' . $response["data"]["js"] . '</script>
-                        <style type="text/css">' . $response["data"]["css"] . '</style>
-                    </head>
-                    <body>
-                    ' . $response["data"]["html"] . '
-                    </body>
-                    </html>';
+                echo $response["html"];
                 break;
             case "text":
                 header("Content-type: text/plain");

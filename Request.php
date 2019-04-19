@@ -364,10 +364,6 @@ class Request implements Configurable {
             case "POST":
             case "PATCH":
             case "DELETE":
-                if(!isset($_POST)) {
-                    print_r(self::$request);
-                    print_r(debug_backtrace());
-                }
                 $req                                                                            = $_POST;
                 break;
             case "GET":
@@ -389,7 +385,10 @@ class Request implements Configurable {
     }
 
     private static function isAllowedSize($req, $method) {
-        $request_size                                                                           = strlen(http_build_query($req, '', ''));
+        $request_size                                                                           = strlen((is_array($req)
+                                                                                                    ? http_build_query($req, '', '')
+                                                                                                    : $req
+                                                                                                ));
         $request_max_size                                                                       = (isset(self::MAX_SIZE[$method])
                                                                                                     ? self::MAX_SIZE[$method]
                                                                                                     : self::MAX_SIZE["DEFAULT"]
@@ -401,10 +400,11 @@ class Request implements Configurable {
     private static function captureHeaders() {
         static $last_update                                                                     = 0;
 
-        if(!self::$headers || $last_update < self::$rules["last_update"]) {
+        if(self::$headers === null || $last_update < self::$rules["last_update"]) {
+            self::$headers                                                                      = array();
             if(is_array(self::$rules["header"]) && count(self::$rules["header"])) {
                 $errors                                                                         = null;
-                $last_update                                                                    = microtime(true);
+                $last_update                                                                    = self::$rules["last_update"];
 
                 if(self::isAllowedSize(getallheaders(), "HEAD")) {
                     foreach(self::$rules["header"] AS $rule_key => $rule) {
@@ -458,9 +458,10 @@ class Request implements Configurable {
         static $last_update                                                                     = 0;
 
         if(self::security()) {
-            if(!self::$request || $last_update < self::$rules["last_update"]) {
+            if(self::$request === null || $last_update < self::$rules["last_update"]) {
+                self::$request                                                                  = array();
                 $errors                                                                         = null;
-                $last_update                                                                    = microtime(true);
+                $last_update                                                                    = self::$rules["last_update"];
 
                 if(!$method)                                                                    { $method = self::$rules["method"]; }
                 $request                                                                        = self::getReq($method);
@@ -531,7 +532,9 @@ class Request implements Configurable {
                 }
             }
         }
-
+        if($key && !isset(self::$request[$key])) {
+            self::$request[$key] = null;
+        }
         return ($key
             ? self::$request[$key]
             : self::$request

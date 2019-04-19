@@ -30,27 +30,54 @@ use phpformsframework\libs\Request;
 use phpformsframework\libs\Response;
 
 abstract class Widget extends DirStruct {
-    const TYPE                                  = "Widget";
+    const NAME_SPACE_BASIC                      = "widgets\\";
     const FRAMEWORK_CSS                         = "bootstrap4";
     const FONT_ICON                             = "fontawesome";
+    const DIR                                   = null;
+
     private static $singleton                   = null;
     private static $grid_system                 = null;
     private static $tpl                         = null;
 
     protected $config                           = array();
-    protected $output                           = null;
+    protected $js                               = null;
+    protected $css                              = null;
+    protected $html                             = null;
 
     protected abstract function getConfigDefault();
-    public abstract function process();
 
-    public function getJson() {
-        $this->process();
-        return $this->output;
+    /**
+     * @param string $filename
+     * @param null|array $config
+     * @return ffTemplate
+     */
+    protected abstract function processTemplate($filename, $config = null);
+
+    private function getSnippet() {
+
+
+
     }
-    public function getSnippet() {
+    private function getPage() {
+        if(is_array($this->js) && count($this->js)) {
+            $scripts = '<script defer async src="' . implode('"></script><script defer async src="', $this->js) . '"></script>';
+        }
+        if(is_array($this->css) && count($this->css)) {
+            $links = '<link rel="stylesheet" type="text/css" href="' . implode('" /><link rel="stylesheet" type="text/css" href="', $this->css) . '" />';
+        }
 
 
-        $output = $this->process();
+        return '<!DOCTYPE html>
+                <html>
+                <head>
+                    ' . $scripts . '
+                    ' . $links . '
+                </head>
+                <body>
+                ' . $this->html . '
+                </body>
+                </html>';
+
 
     }
     /**
@@ -60,7 +87,7 @@ abstract class Widget extends DirStruct {
      */
     public static function getInstance($name, $bucket = null) {
 
-        $class_name                             = ucfirst($bucket . self::TYPE) . ucfirst($name);
+        $class_name                             = $bucket . self::NAME_SPACE_BASIC . ucfirst($name);
         if(!isset(self::$singleton[$class_name])) {
             self::$singleton[$class_name]       = new $class_name();
         }
@@ -68,11 +95,70 @@ abstract class Widget extends DirStruct {
         return self::$singleton[$class_name];
     }
 
+    public function process($return = null) {
+        $widget_name                            = basename(static::DIR);
+        $config                                 = $this->getConfig();
+        $path                                   = $this::getDiskPath("tpl") . ($config["tpl_path"]
+                                                    ? $config["tpl_path"]
+                                                    : "/" . $widget_name
+                                                );
+        $html_name                              = "/index.html";
+        $css_name                               = "/style.css";
+        $script_name                            = "/script.js";
+
+        $filename                               = (is_file($path . $html_name)
+                                                    ? $path . $html_name
+                                                    : static::DIR . $html_name
+                                                );
+
+       /* $framework = $this->gridSystem()->getFramework();
+        $fonticon = $this->gridSystem()->getFontIcon();
+        print_r($framework);
+        print_r($fonticon);
+        die();*/
+
+        $tpl                                    = $this->processTemplate($filename, $config);
+        $this->html                             = $tpl->rpparse("main", false);
+        $this->addCss($widget_name              , (is_file($path . $css_name)
+                                                    ? $path . $css_name
+                                                    : static::DIR . $css_name
+                                                ));
+        $this->addJs($widget_name               , (is_file($path . $script_name)
+                                                    ? $path . $script_name
+                                                    : static::DIR . $script_name
+                                                ));
+
+        switch ($return) {
+            case "snippet":
+                $output                         = array("html" => $this->getSnippet());
+                break;
+            case "page":
+                $output                         = array("html" => $this->getPage());
+                break;
+            default:
+                $output                         = array(
+                                                    "html"  => $tpl->rpparse("main", false)
+                                                    , "css" => $this->css
+                                                    , "js"  => $this->js
+                                                );
+        }
+
+        return $output;
+    }
+
+    protected function addJs($key, $url) {
+        $this->js[$key] = str_replace($this::$disk_path, $this::SITE_PATH, $url);
+    }
+    protected function addCss($key, $url) {
+        $this->css[$key] = str_replace($this::$disk_path, $this::SITE_PATH, $url);
+
+    }
+
     /**
      * @return null|Gridsystem
      */
     protected function gridSystem() {
-        if(!self::$grid_system)         { self::$grid_system = Gridsystem::factory("bootstrap4", "fontawesome"); }
+        if(!self::$grid_system)         { self::$grid_system = Gridsystem::factory(static::FRAMEWORK_CSS, static::FONT_ICON); }
 
         return self::$grid_system;
     }
@@ -87,11 +173,11 @@ abstract class Widget extends DirStruct {
     }
 
     public function setConfig($config) {
-        $this->config = (array) $config;
+        $this->config = array_replace_recursive($this->getConfigDefault(), (array) $config) ;
 
         return $this;
     }
     public function getConfig() {
-        return array_replace_recursive($this->getConfigDefault(), $this->config);
+        return $this->config;
     }
 }

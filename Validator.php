@@ -328,23 +328,18 @@ class Validator
         }
         return (bool) $res;
     }
-    public static function isEmail($value, $rule = null) {
-        switch($rule) {
-            default:
-                $regex                                                      = (Debug::ACTIVE
+    public static function isEmail($value) {
+        $regex                                                              = (Debug::ACTIVE
                                                                                 ? '/^([.0-9a-z_-\+]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,12})$/i'
                                                                                 : '/^([.0-9a-z_-]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,12})$/i'
                                                                             );
-                $res                                                        = preg_match($regex, $value);
-        }
+        $res                                                                = preg_match($regex, $value);
+
 
         return $res;
     }
-    public static function isTel($value, $rule = null) {
-        switch($rule) {
-            default:
-                $res                                                        = is_numeric(ltrim(str_replace(array(" ", ".", ",", "-"), array(""), $value), "+"));
-        }
+    public static function isTel($value) {
+        $res                                                                = is_numeric(ltrim(str_replace(array(" ", ".", ",", "-"), array(""), $value), "+"));
 
         return $res;
     }

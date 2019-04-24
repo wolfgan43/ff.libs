@@ -193,7 +193,6 @@ class Jpn implements Adapter {
     }
     public static function GetTimestamp($oData) {
         if($oData->value_date_hours == 0
-            && $oData->value_date_hours == 0
             && $oData->value_date_minutes == 0
             && $oData->value_date_seconds == 0
             && $oData->value_date_month == 0

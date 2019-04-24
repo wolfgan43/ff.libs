@@ -25,7 +25,188 @@
  */
 namespace phpformsframework\libs\tpl;
 
-class Gridsystem
+use phpformsframework\libs\tpl\gridsystem\FrameworkCssAdapter;
+
+if(!defined("FRAMEWORK_CSS"))                           { define("FRAMEWORK_CSS", "bootstrap4"); }
+if(!defined("FONT_ICON"))                               { define("FONT_ICON", "fontawesome4"); }
+
+class Gridsystem {
+    const NAME_SPACE                                        = "phpformsframework\\libs\\tpl\\gridsystem\\";
+    const FRAMEWORK_CSS                                     = FRAMEWORK_CSS;
+    const FONT_ICON                                         = FONT_ICON;
+
+    private static $singleton                               = null;
+    private static $buttons                                 = null;
+    private static $components                              = null;
+
+    public static function colsWrapper($bucket, &$buffer, $col, $content, $count) {
+        static $cache = null;
+
+        if(!$cache[$bucket]) {
+            $cache[$bucket]         = array(
+                "col"               => null
+                //, "is_first"        => true
+                , "is_wrapped"      => false
+                , "count_contents"  => 0
+                , "wrapper_count"   => 0
+                , "wrapper"         => (strpos($bucket, "row-") === 0
+                    ? self::getInstance()->row()
+                    : self::getInstance()->form("wrap")
+                )
+            );
+        }
+
+        $cache[$bucket]["count_contents"]++;
+        if($content) {
+            if ($col) {
+                //$cache[$bucket]["is_wrapped"] = false;
+                $cache[$bucket]["col"] = $cache[$bucket]["col"] + $col;
+                if ($cache[$bucket]["col"] > 12) {
+                    $buffer[] = '</div>';
+                    $buffer[] = '<div class="' . $cache[$bucket]["wrapper"] . '">';
+                    $cache[$bucket]["is_wrapped"] = true;
+                    $cache[$bucket]["wrapper_count"]++;
+                    $cache[$bucket]["col"] = 0;
+                } elseif (!$cache[$bucket]["wrapper_count"] && $cache[$bucket]["col"] == $col) { //first
+                    $buffer[] = '<div class="' . $cache[$bucket]["wrapper"] . '">';
+                    $cache[$bucket]["is_wrapped"] = true;
+                    //$cache[$bucket]["is_first"] = false;
+                } elseif ($cache[$bucket]["col"] == 12 && $cache[$bucket]["wrapper_count"] && !$cache[$bucket]["is_wrapped"]) {
+                    $buffer[] = '</div>';
+                    $buffer[] = '<div class="' . $cache[$bucket]["wrapper"] . '">';
+                    $cache[$bucket]["is_wrapped"] = true;
+                    $cache[$bucket]["wrapper_count"]++;
+                    $cache[$bucket]["col"] = 0;
+                } elseif ($cache[$bucket]["col"]/* && $cache[$bucket]["wrapper_count"]*/) {
+                    if(!$cache[$bucket]["is_wrapped"]) {
+                        $buffer[] = '<div class="' . $cache[$bucket]["wrapper"] . '">';
+                        $cache[$bucket]["is_wrapped"] = true;
+                    }
+                    //$cache[$bucket]["is_wrapped"] = true;
+                }
+
+                $buffer[] = $content;
+                if ($cache[$bucket]["is_wrapped"] && $cache[$bucket]["count_contents"] == $count) {
+                    $buffer[] = '</div>';
+                    $cache[$bucket]["is_wrapped"] = false;
+                    //$cache[$bucket]["wrapper_count"]++;
+                    $cache[$bucket]["col"] = 0;
+                }
+            } else {
+                if ($cache[$bucket]["col"] > 0 || $cache[$bucket]["is_wrapped"]) {
+                    $buffer[] = '</div>';
+                    $cache[$bucket]["is_wrapped"] = false;
+                    $cache[$bucket]["wrapper_count"]++;
+                    $cache[$bucket]["col"] = 0;
+                }
+                $buffer[] = $content;
+            }
+        }
+    }
+
+    public static function setResolution($resolution, $rev = false)
+    {
+        $res = null;
+        if($resolution) {
+            $resolutions = self::getInstance()->resolutions();
+
+            if(is_array($resolution)) {
+                $num = 0;
+
+                foreach($resolution AS $index => $num) {
+                    $res[$resolutions[$index]] = ($rev ? 12 - $num : $num);
+                }
+                if(count($resolutions) > count($res)) {
+                    for($i = count($res) + 1; $i <= count($resolutions); $i++) {
+                        $res[$resolutions[$i]] = ($rev ? 12 - $num : $num);
+                    }
+                }
+            } else {
+                $res = array_combine($resolutions, array_fill(0, count($resolutions), ($rev ? 12 - $resolution : $resolution)));
+            }
+        }
+
+        return $res;
+    }
+
+    public static function &findComponent($name) {
+        $ref = null;
+        $arrName = explode(".", $name);
+        if($arrName[0]) {
+            if (self::$components["override"][$arrName[0]] && self::$components[$arrName[0]]) {
+                self::$components[$arrName[0]] = array_replace_recursive(self::$components[$arrName[0]], self::$components["override"][$arrName[0]]);
+                self::$components["override"][$arrName[0]] = null;
+            }
+
+            $ref =& self::$components;
+            foreach ($arrName as $item) {
+                if (isset($ref[$item])) {
+                    $ref =& $ref[$item];
+                } else {
+                    $ref = null;
+                    break;
+                }
+            }
+        }
+
+        return $ref;
+    }
+
+    public static function setComponent($name, $data) {
+        $ref =& self::findComponent($name);
+
+        $ref = $data;
+
+        return $ref;
+    }
+
+    public static function extend($data, $what) {
+        if(is_array($data) && $what) {
+            switch ($what) {
+                case "buttons":
+                    self::extendButtons($data);
+                    return self::$buttons;
+                default:
+                    self::extendComponents($data, $what);
+                    return self::$components[$what];
+            }
+        }
+
+        return null;
+    }
+
+    private static function extendButtons($buttons) {
+        self::$buttons = array_replace_recursive(self::$buttons, $buttons);
+    }
+    private static function extendComponents($component, $key) {
+        self::$components[$key] = array_replace_recursive((array) self::$components[$key], $component);
+    }
+
+    /**
+     * @param null|string $frameworkCss
+     * @param null|string $fontIcon
+     * @return FrameworkCssAdapter
+     */
+    public static function getInstance($frameworkCss = self::FRAMEWORK_CSS, $fontIcon = self::FONT_ICON) {
+        if(!self::$singleton) {
+            $class_name                                     = static::NAME_SPACE . ucfirst($frameworkCss);
+            self::$singleton                                = new $class_name($fontIcon, self::$buttons);
+        }
+
+        return self::$singleton;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+class Gridsystem2
 {
     const TYPE                                              = "gridsystem";
 
@@ -903,21 +1084,16 @@ class Gridsystem
 
                 if($value === null && is_array($params)) {
                     $real_params = $params;
-
-                    switch($font_icon["name"]) {
-                        case "base":
-                            if($is_stack_equal !== false)
+                    if($is_stack_equal !== false) {
+                        switch($font_icon["name"]) {
+                            case "base":
+                            case "fontawesome":
+                            case "glyphicons":
                                 $real_params[$is_stack_equal] = "stack";
-                            break;
-                        case "fontawesome":
-                            if($is_stack_equal !== false)
-                                $real_params[$is_stack_equal] = "stack";
-                            break;
-                        case "glyphicons":
-                            if($is_stack_equal !== false)
-                                $real_params[$is_stack_equal] = "stack";
-                            break;
-                        default:
+                                break;
+                            default:
+                                $real_params[$is_stack_equal] = false;
+                        }
                     }
 
                     $res = $this->getIcon(null, $type, $real_params, $addClass, $font_icon, $default_loaded);

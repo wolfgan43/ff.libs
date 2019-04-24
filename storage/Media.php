@@ -32,27 +32,27 @@ use phpformsframework\libs\Response;
 use phpformsframework\libs\storage\drivers\Canvas;
 use phpformsframework\libs\storage\drivers\Thumb;
 
-if (!defined("FF_DISK_PATH"))	                            define("FF_DISK_PATH", dirname(dirname(__DIR__)));
-if (!defined("__TOP_DIR__"))	                            define("__TOP_DIR__", FF_DISK_PATH);
-if (!defined("__PRJ_DIR__"))	                            define("__PRJ_DIR__", FF_DISK_PATH);
-if (!defined("FF_UPDIR"))                                 define("FF_UPDIR", "/uploads");
+if (!defined("FF_DISK_PATH"))	                            { define("FF_DISK_PATH", dirname(dirname(__DIR__))); }
+if (!defined("__TOP_DIR__"))	                            { define("__TOP_DIR__", FF_DISK_PATH); }
+if (!defined("__PRJ_DIR__"))	                            { define("__PRJ_DIR__", FF_DISK_PATH); }
+if (!defined("FF_UPDIR"))                                 { define("FF_UPDIR", "/uploads"); }
 
-if (!defined("FF_DISK_UPDIR"))                             define("FF_DISK_UPDIR", FF_DISK_PATH . FF_UPDIR);
+if (!defined("FF_DISK_UPDIR"))                            { define("FF_DISK_UPDIR", FF_DISK_PATH . FF_UPDIR); }
 
 
-if (!defined("FF_THEME_DIR"))	                            define("FF_THEME_DIR", "/themes");
-if (!defined("CM_DEFAULT_THEME"))	                        define("CM_DEFAULT_THEME", "responsive");
-if (!defined("FRONTEND_THEME"))                           define("FRONTEND_THEME", "site");
+if (!defined("FF_THEME_DIR"))	                            { define("FF_THEME_DIR", "/themes"); }
+if (!defined("CM_DEFAULT_THEME"))	                        { define("CM_DEFAULT_THEME", "responsive"); }
+if (!defined("FRONTEND_THEME"))                           { define("FRONTEND_THEME", "site"); }
 
-if (!defined("CM_SHOWFILES_OPTIMIZE"))		                define("CM_SHOWFILES_OPTIMIZE", true);
-if (!defined("CM_SHOWFILES_THUMB_NAME"))	                define("CM_SHOWFILES_THUMB_NAME", ".thumbs");
+if (!defined("CM_SHOWFILES_OPTIMIZE"))		                { define("CM_SHOWFILES_OPTIMIZE", true); }
+if (!defined("CM_SHOWFILES_THUMB_NAME"))	                { define("CM_SHOWFILES_THUMB_NAME", ".thumbs"); }
 
-if (!defined("CM_CACHE_PATH"))	                            define("CM_CACHE_PATH", "/cache");
-if (!defined("CM_CACHE_DISK_PATH"))	                    define("CM_CACHE_DISK_PATH", FF_DISK_PATH . "/cache");
+if (!defined("CM_CACHE_PATH"))	                            { define("CM_CACHE_PATH", "/cache"); }
+if (!defined("CM_CACHE_DISK_PATH"))	                    { define("CM_CACHE_DISK_PATH", FF_DISK_PATH . "/cache"); }
 
-if (!defined("FF_MEDIA_TABLE_MODES"))	                    define("FF_MEDIA_TABLE_MODES", "cm_showfiles_modes");
+if (!defined("FF_MEDIA_TABLE_MODES"))	                    { define("FF_MEDIA_TABLE_MODES", "cm_showfiles_modes"); }
 
-if (!defined("CM_SHOWFILES"))	                            define("CM_SHOWFILES", FF_SITE_PATH . "/media"); // /cm/showfiles
+if (!defined("CM_SHOWFILES"))	                            { define("CM_SHOWFILES", FF_SITE_PATH . "/media"); }
 
 /**
  * Immagine Originale

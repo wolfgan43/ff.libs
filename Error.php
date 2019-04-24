@@ -134,11 +134,14 @@ class Error {
                         exit;
                     }
                     break;
+                case "html":
+                    self::send("403");
+                    break;
                 default:
+                    self::send("404");
             }
         }
 
-        self::send("404");
         exit;
     }
 

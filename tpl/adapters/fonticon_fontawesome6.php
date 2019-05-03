@@ -27,7 +27,14 @@ namespace phpformsframework\libs\tpl\gridsystem;
 
 class Fontawesome5 extends FontIconAdapter {
     protected $css          = array(
-                                "fontawesome" => "https://use.fontawesome.com/releases/v5.8.1/css/all.css"
+                                "fontawesome" => "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.1/css/all.min.css"
+                            );
+    protected $fonts        = array(
+                                /*"fontawesome.eot"       => "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.1/webfonts/fa-solid-900.eot"
+                                , "fontawesome.svg"     => "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.1/webfonts/fa-solid-900.svg"
+                                , "fontawesome.ttf"     => "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.1/webfonts/fa-solid-900.ttf"
+                                , "fontawesome.woff"    => "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.1/webfonts/fa-solid-900.woff"
+                                , "fontawesome.woff2"   => "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.1/webfonts/fa-solid-900.woff2"*/
                             );
     protected $prefix       = "fas";
     protected $suffix       = null;

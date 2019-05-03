@@ -27,8 +27,17 @@ namespace phpformsframework\libs\tpl\gridsystem;
 
 class Fontawesome4 extends FontIconAdapter {
     protected $css          = array(
-                                "fontawesome" => "https://netdna.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.css"
+                                "fontawesome"           => "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
                             );
+    protected $fonts        = array(
+                              /*  "fontawesome.otf"       => "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/fonts/FontAwesome.otf"
+                                , "fontawesome.eot"     => "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/fonts/FontAwesome.eot"
+                                , "fontawesome.svg"     => "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/fonts/FontAwesome.svg"
+                                , "fontawesome.ttf"     => "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/fonts/FontAwesome.ttf"
+                                , "fontawesome.woff"    => "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/fonts/FontAwesome.woff"
+                                , "fontawesome.woff2"   => "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/fonts/FontAwesome.woff2"*/
+                            );
+
     protected $prefix       = "fa";
     protected $suffix       = null;
     protected $append       = null;

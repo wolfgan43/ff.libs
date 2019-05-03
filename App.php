@@ -54,8 +54,16 @@ abstract class App extends DirStruct {
             try {
                 self::setRunner($class_name);
 
-                $obj                                                = new $class_name();
-                $output                                             = call_user_func_array(array(new $obj, $method), $params);
+                //$obj = new $class_name();
+                //$output = $obj->$method($params[0]);
+                if(is_callable($class_name . "::" . $method)) {
+                    $output                                         = call_user_func_array($class_name . "::" . $method, $params);
+                } else {
+                    $obj                                            = new $class_name();
+                    $output                                         = call_user_func_array(array(new $obj, $method), $params);
+                }
+                //todo: da verificare benchmark
+
                 /*if(!$output) { // todo: da finire
                     $page = Cms::getInstance("page");
                     $page->addContent($output);

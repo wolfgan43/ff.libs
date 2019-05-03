@@ -497,64 +497,71 @@ class Filemanager extends DirStruct
                 return;
             }
 
-            if(isset($opt["rules"]) && !self::setStorage($file_info, $opt["rules"])) {
-                self::$storage["unknowns"][$file_info["basename"]] = $file;
+            if(isset($opt["type"])) {
+                self::setStorage($file_info, $opt["type"]);
+            } else {
+                self::$storage["scan"]["rawdata"][] = $file;
             }
         }
     }
 
     private static function scanRun($pattern, $what = null) {
-        $pattern = (strpos($pattern, self::$disk_path) === 0
-                ? ""
-                : self::$disk_path
-            )
-            . $pattern
-            . (strpos($pattern, "*") === false
-                ? '/*'
-                : ''
+        if($pattern) {
+            $pattern = (strpos($pattern, self::$disk_path) === 0
+                    ? ""
+                    : self::$disk_path
+                )
+                . $pattern
+                . (strpos($pattern, "*") === false
+                    ? '/*'
+                    : ''
+                );
+
+            $flag = (isset($what["flag"]) && $what["flag"]
+                ? $what["flag"]
+                : $what
             );
 
-        $flag = (isset($what["flag"]) && $what["flag"]
-            ? $what["flag"]
-            : $what
-        );
 
+            if(isset($what["filter"]) && $what["filter"] && isset($what["filter"][0])) {
+                $what["filter"] = array_combine($what["filter"], $what["filter"]);
+            }
+            if(isset($what["name"]) && $what["name"] && isset($what["name"][0])) {
+                $what["name"] = array_combine($what["name"], $what["name"]);
+            }
 
-        if(isset($what["filter"]) && $what["filter"] && isset($what["filter"][0])) {
-            $what["filter"] = array_combine($what["filter"], $what["filter"]);
-        }
-        if(isset($what["name"]) && $what["name"] && isset($what["name"][0])) {
-            $what["name"] = array_combine($what["name"], $what["name"]);
-        }
-
-        switch ($flag) {
-            case Filemanager::SCAN_DIR:
-                if(self::$storage["scan"]["callback"]) {
-                    self::glob_dir_callback($pattern);
-                } else {
-                    self::glob_dir($pattern);
-                }
-                break;
-            case Filemanager::SCAN_DIR_RECURSIVE:
-                self::rglob_dir($pattern);
-                break;
-            case Filemanager::SCAN_ALL:
-                self::glob($pattern, false);
-                break;
-            case Filemanager::SCAN_ALL_RECURSIVE:
-                self::rglobfilter($pattern, false);
-                break;
-            case Filemanager::SCAN_FILE:
-                self::glob($pattern, $what);
-                break;
-            case Filemanager::SCAN_FILE_RECURSIVE:
-                self::rglobfilter($pattern);
-                break;
-            case null;
-                self::rglob($pattern);
-                break;
-            default:
-                self::rglobfilter($pattern, $what);
+            switch ($flag) {
+                case Filemanager::SCAN_DIR:
+                    if(self::$storage["scan"]["callback"]) {
+                        self::glob_dir_callback($pattern);
+                    } else {
+                        self::glob_dir($pattern);
+                    }
+                    break;
+                case Filemanager::SCAN_DIR_RECURSIVE:
+                    self::rglob_dir($pattern);
+                    break;
+                case Filemanager::SCAN_ALL:
+                    self::glob($pattern, false);
+                    break;
+                case Filemanager::SCAN_ALL_RECURSIVE:
+                    self::rglobfilter($pattern, false);
+                    break;
+                case Filemanager::SCAN_FILE:
+                    self::glob($pattern, $what);
+                    break;
+                case Filemanager::SCAN_FILE_RECURSIVE:
+                    self::rglobfilter($pattern);
+                    break;
+                case null;
+                    self::rglob($pattern);
+                    break;
+                default:
+                    if(isset($what["filter"])) {
+                        $what["filter"] = array_fill_keys($what["filter"], true);
+                    }
+                    self::rglobfilter($pattern, $what);
+            }
         }
     }
 
@@ -579,11 +586,12 @@ class Filemanager extends DirStruct
         if(is_array($opt["filter"])) {
             $flags = GLOB_BRACE;
             $limit = ".{" . implode(",", $opt["filter"]) . "}";
+            unset($opt["filter"]);
         }
 
         foreach(glob($pattern . $limit, $flags) AS $file) {
             if($opt === false || is_file($file)) {
-                self::scanAddItem($file, $opt["rules"]);
+                self::scanAddItem($file, $opt);
             }
         }
     }
@@ -614,7 +622,16 @@ class Filemanager extends DirStruct
         }
     }
 
-    private static function setStorage($file_info, $rules) {
+    private static function setStorage($file_info, $type = null) {
+        $key = $file_info["filename"];
+        $file = $file_info["dirname"] . "/" . $file_info["basename"];
+        if($type) {
+            self::$storage[$type][$key] = $file;
+        } else {
+            self::$storage["unknowns"][$key] = $file;
+        }
+
+/*
         if(is_array($rules) && count($rules)) {
             $key = $file_info["filename"];
             $file = $file_info["dirname"] . "/" . $file_info["basename"];
@@ -631,7 +648,7 @@ class Filemanager extends DirStruct
                     return true;
                 }
             }
-        }
-        return false;
+        }*/
+        //return false;
     }
 }

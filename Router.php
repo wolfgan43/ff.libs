@@ -90,6 +90,7 @@ class Router extends App
     }
     public function run($path = null) {
         $rule                                               = $this->check($path);
+
         if(is_array($rule)) {
             $destination                                    = $rule["destination"];
             if($destination) {

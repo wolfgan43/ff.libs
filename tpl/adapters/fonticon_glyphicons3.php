@@ -27,7 +27,13 @@ namespace phpformsframework\libs\tpl\gridsystem;
 
 class Glyphicons3 extends FontIconAdapter {
     protected $css          = array(
-                                "glyphicons" => "https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"
+                            );
+    protected $fonts        = array(
+                                "glyphicons.eot"        => "https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/fonts/glyphicons-halflings-regular.eot"
+                                , "glyphicons.svg"      => "https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/fonts/glyphicons-halflings-regular.svg"
+                                , "glyphicons.ttf"      => "https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/fonts/glyphicons-halflings-regular.ttf"
+                                , "glyphicons.woff"     => "https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/fonts/glyphicons-halflings-regular.woff"
+                                , "glyphicons.woff2"    => "https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/fonts/glyphicons-halflings-regular.woff2"
                             );
     protected $prefix       = "glyphicons";
     protected $suffix       = null;

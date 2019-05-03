@@ -27,6 +27,7 @@ namespace phpformsframework\libs\tpl\gridsystem;
 
 abstract class FontIconAdapter {
     protected $css          = array();
+    protected $fonts        = array();
     protected $prefix       = null;
     protected $suffix       = null;
     protected $append       = null;
@@ -493,13 +494,11 @@ abstract class FontIconAdapter {
         if(is_array($buttons))   { $this->buttons       = array_replace($this->buttons, $buttons); }
     }
 
-    public function css($return_tag = false) {
-        $res                                            = $this->css;
-        if($return_tag && is_array($this->css) && count($this->css)) {
-            $res                                        = '<link rel="stylesheet" type="text/css" href="' . implode('" /><link rel="stylesheet" type="text/css" href="', $this->css) . '" />';
-        }
-
-        return $res;
+    public function css() {
+        return $this->css;
+    }
+    public function fonts() {
+        return $this->fonts;
     }
 
     public function action($params, $use_source = false) {

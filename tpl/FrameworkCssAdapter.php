@@ -30,6 +30,7 @@ abstract class FrameworkCssAdapter {
 
     protected $css                                          = array();
     protected $js                                           = array();
+    protected $fonts                                        = array();
     protected $skip_resolution                              = true;
     protected $skip_resolution_full                         = true;
     protected $skip_prepost                                 = "nopadding";
@@ -337,25 +338,18 @@ abstract class FrameworkCssAdapter {
         $this->font_icon    = new $class_name($this->button, $buttons);
 
         $this->css          = array_replace($this->css(), $this->font_icon->css());
+        $this->fonts        = array_replace($this->fonts(), $this->font_icon->fonts());
     }
 
-    public function css($return_tag = false) {
-        $res                = $this->css;
-        if($return_tag && is_array($this->css) && count($this->css)) {
-            $res            = '<link rel="stylesheet" type="text/css" href="' . implode('" /><link rel="stylesheet" type="text/css" href="', $this->css) . '" />';
-        }
-
-        return $res;
+    public function css() {
+        return $this->css;
     }
-    public function js($return_tag = false) {
-        $res                = $this->js;
-        if($return_tag && is_array($this->js) && count($this->js)) {
-            $res            = '<script defer async src="' . implode('"></script><script defer async src="', $this->js) . '"></script>';
-        }
-
-        return $res;
+    public function js() {
+        return $this->js;
     }
-
+    public function fonts() {
+        return $this->fonts;
+    }
     /**
      * @param null|string $value
      * @param null|string $additional_class

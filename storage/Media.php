@@ -28,31 +28,15 @@ namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\Debug;
+use phpformsframework\libs\DirStruct;
+use phpformsframework\libs\Error;
 use phpformsframework\libs\Response;
 use phpformsframework\libs\storage\drivers\Canvas;
 use phpformsframework\libs\storage\drivers\Thumb;
 
-if (!defined("FF_DISK_PATH"))	                            { define("FF_DISK_PATH", dirname(dirname(__DIR__))); }
-if (!defined("__TOP_DIR__"))	                            { define("__TOP_DIR__", FF_DISK_PATH); }
-if (!defined("__PRJ_DIR__"))	                            { define("__PRJ_DIR__", FF_DISK_PATH); }
-if (!defined("FF_UPDIR"))                                 { define("FF_UPDIR", "/uploads"); }
-
-if (!defined("FF_DISK_UPDIR"))                            { define("FF_DISK_UPDIR", FF_DISK_PATH . FF_UPDIR); }
-
-
-if (!defined("FF_THEME_DIR"))	                            { define("FF_THEME_DIR", "/themes"); }
-if (!defined("CM_DEFAULT_THEME"))	                        { define("CM_DEFAULT_THEME", "responsive"); }
-if (!defined("FRONTEND_THEME"))                           { define("FRONTEND_THEME", "site"); }
-
 if (!defined("CM_SHOWFILES_OPTIMIZE"))		                { define("CM_SHOWFILES_OPTIMIZE", true); }
-if (!defined("CM_SHOWFILES_THUMB_NAME"))	                { define("CM_SHOWFILES_THUMB_NAME", ".thumbs"); }
-
-if (!defined("CM_CACHE_PATH"))	                            { define("CM_CACHE_PATH", "/cache"); }
-if (!defined("CM_CACHE_DISK_PATH"))	                    { define("CM_CACHE_DISK_PATH", FF_DISK_PATH . "/cache"); }
-
 if (!defined("FF_MEDIA_TABLE_MODES"))	                    { define("FF_MEDIA_TABLE_MODES", "cm_showfiles_modes"); }
 
-if (!defined("CM_SHOWFILES"))	                            { define("CM_SHOWFILES", FF_SITE_PATH . "/media"); }
 
 /**
  * Immagine Originale
@@ -82,42 +66,19 @@ if (!defined("CM_SHOWFILES"))	                            { define("CM_SHOWFILES
  * @example Da impostazioni DB (showfiles_modes): http://xoduslab.com/test/demo/domains/skeleton/static/thumb/mod_article/32/img/tiroide-malfunzionamento-esami.jpg
  * @example Cambiando il mime dell'immagine: http://xoduslab.com/test/demo/domains/skeleton/static/thumb-jpg/mod_article/32/img/tiroide-malfunzionamento-esami.png
  */
-class Media {
+class Media extends DirStruct {
     const STRICT                                                    = false;
+    const RENDER_MEDIA_PATH                                         = "/media";
+    const RENDER_ASSETS_PATH                                        = "/assets";
 
-    const DISK_PATH                                                 = FF_DISK_PATH;
-    const SITE_PATH                                                 = FF_SITE_PATH;
-    const TOP_DIR                                                   = __TOP_DIR__;
-    const PRJ_DIR                                                   = __PRJ_DIR__;
-    const UPLOADS_DIR                                               = FF_UPDIR;
-    const CACHE_DIR                                                 = CM_CACHE_PATH;
-    const MEDIA_PATH                                                = self::SITE_PATH . "/media";
     const MODIFY_PATH                                               = self::SITE_PATH . "/restricted/media/modify";
-
-
-
-
-    const THEME_DIR                                                 = FF_THEME_DIR;
-    const THEME                                                     = FRONTEND_THEME;
-    const THEME_DEFAULT                                             = CM_DEFAULT_THEME;
-    const SHOWFILES                                                 = CM_SHOWFILES;
 
     const DB_TABLE_MODES                                            = FF_MEDIA_TABLE_MODES;
 
     const OPTIMIZE                                                  = CM_SHOWFILES_OPTIMIZE;
 
-    const STORING_BASE_NAME                                         = CM_SHOWFILES_THUMB_NAME;
-    const STORING_BASE_PATH                                         = CM_CACHE_DISK_PATH . "/" . self::STORING_BASE_NAME;
-    const STORING_SITE_PATH                                         = FF_SITE_PATH . self::CACHE_DIR . "/" . self::STORING_BASE_NAME;
-
-    const THEME_BASE_PATH                                           = self::DISK_PATH . self::THEME_DIR;
-    const STATIC_DEFAULT_PATH                                       = self::TOP_DIR . self::THEME_DIR . "/" . self::THEME_DEFAULT . "/images";
-    const STATIC_BASE_PATH                                          = self::THEME_BASE_PATH . "/" . self::THEME . "/images";
-    const UPLOAD_BASE_PATH                                          = FF_DISK_UPDIR;
-
-    const ICON_DEFAULT_PATH                                         = __DIR__ . "/ffImage/icons";
-    const ICON_BASE_PATH                                            = self::THEME_BASE_PATH . "/" . self::THEME . "/icons";
-
+    const ASSET_DISK_PATH                                           = __DIR__ . "/assets";
+    const ICON_DISK_PATH                                            = __DIR__ . "/assets/images";
 
     const MIMETYPE                                                  = array(
                                                                         "3dm" => "x-world/x-3dmf"
@@ -621,6 +582,17 @@ class Media {
         return self::$singleton;
     }
 
+    public static function get($pathinfo) {
+        Media::getInstance($pathinfo)->process();
+
+        if(Error::check("storage")) {
+            Response::code(404);
+            header('Content-Type: image/png');
+            echo base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII=');
+            exit;
+        }
+    }
+
     public static function getIcon($name, $mode = null) {
         $icon = new Media(false);
         $icon->setNoImg($mode, $name);
@@ -635,16 +607,18 @@ class Media {
     }
 
     public static function getUrl($file, $mode = null, $key = null) {
-        $file                                                       = str_replace(array(
-                                                                            self::DISK_PATH . self::UPLOADS_DIR . "/"
-                                                                            , self::UPLOADS_DIR . "/"
-                                                                            , self::CACHE_DIR . "/"
+        $file_relative                                             = str_replace(array(
+                                                                            self::getDiskPath("uploads") . "/"
+                                                                            , self::getDiskPath("uploads", true) . "/"
+                                                                            , self::getDiskPath("cache-assets", true) . "/"
+                                                                            , self::getDiskPath("cache-thumbs", true) . "/"
+                                                                            , self::$disk_path . "/"
                                                                         )
                                                                         , "/"
                                                                         , $file
                                                                     );
 
-        $arrFile                                                    = pathinfo($file);
+        $arrFile                                                    = pathinfo($file_relative);
         if(substr($arrFile["dirname"], 0, 1) !== "/") {
             $arrFile["dirname"]                                     = "/";
             $arrFile["filename"]                                    = "";
@@ -659,18 +633,20 @@ class Media {
 
         switch($arrFile["extension"]) {
             case "svg";
-                $mode                                               = null;
-                $showfiles                                          = self::SITE_PATH;
+                return self::image2base64($file, $arrFile["extension"]);
                 break;
             case "jpg";
             case "jpeg";
             case "png";
             case "gif";
             default:
-                $showfiles                                          = (strpos($arrFile["dirname"], self::THEME_DIR) === 0
-                                                                        ? self::MEDIA_PATH
-                                                                        : $showfiles      = self::SHOWFILES
-                                                                    );
+                if(strpos($arrFile["dirname"], self::getDiskPath("libs", true)) === 0 && strpos($arrFile["dirname"], static::RENDER_ASSETS_PATH) !== false) {
+                    $arrFile["dirname"]                             = substr($arrFile["dirname"] , strpos($arrFile["dirname"] , static::RENDER_ASSETS_PATH));
+                    $showfiles                                      = self::SITE_PATH;
+                } else {
+                    $showfiles                                      = self::SITE_PATH . static::RENDER_MEDIA_PATH;
+
+                }
         }
 
         $dirfilename                                                = $showfiles . ($arrFile["dirname"] == "/" ? "" : $arrFile["dirname"]) . "/" . $arrFile["filename"];
@@ -693,6 +669,12 @@ class Media {
 
     }
 
+
+    private static function image2base64($path, $ext = "svg") {
+        $data = file_get_contents($path);
+
+        return 'data:image/' . $ext . ';base64,' . base64_encode($data);
+    }
 
     /**
      * @param string|array $file
@@ -730,7 +712,7 @@ class Media {
         return $filename_min;
     }
     public static function optimize($filename, $params = null) { //todo: da spostare in optimizer
-        if(!self::OPTIMIZE)                                         { return null; }
+        if(!static::OPTIMIZE)                                       { return null; }
 
         $filename_min                                               = ($params["filename_min"]
                                                                         ? $params["filename_min"]
@@ -890,7 +872,7 @@ class Media {
     public static function getModes($mode = null) {
         static $loaded_modes = null;
 
-        if(!self::DB_TABLE_MODES)                                   { return array(); }
+        if(!static::DB_TABLE_MODES)                                 { return array(); }
 
         if(!is_array($loaded_modes)) {
             $cache                                                  = Mem::getInstance();
@@ -943,7 +925,7 @@ class Media {
                                                                         )
                                                                         , "indexes"                         => array()
                                                                         , "relationship"                    => array()
-                                                                        , "table"                           => self::DB_TABLE_MODES
+                                                                        , "table"                           => static::DB_TABLE_MODES
                                                                         , "alias"                           => array()
                                                                         , "connectors"                      => false
                                                                     );
@@ -951,7 +933,7 @@ class Media {
 */
                 //todo: da tramutare tutto in xml con implementazione config facile
                 $db = new Database("mysqli");
-                $modes = $db->rawQuery( "SELECT * FROM " . self::DB_TABLE_MODES . " ORDER BY name", "recordset");
+                $modes = $db->rawQuery( "SELECT * FROM " . static::DB_TABLE_MODES . " ORDER BY name", "recordset");
                 if(is_array($modes) && count($modes)) {
                     foreach($modes AS $params) {
                         $ID_mode                                        = $params["ID"];
@@ -959,24 +941,6 @@ class Media {
 
                         $loaded_modes["thumbs"][$mode_key]              = $params;
                         $loaded_modes["keys"][$ID_mode]                 = $mode_key;
-
-                        //if(!$loaded_modes["thumb"][$mode_key]["format"])
-                        //    $loaded_modes["thumb"][$mode_key]["format"]                    = "jpg";
-
-                       /* if ($loaded_modes["thumb"][$mode_key]["wmk_enable"])
-                        {
-                            $loaded_modes["thumb"][$mode_key]["wmk_enable"] = false;
-                            if(strlen($loaded_modes["thumb"][$mode_key]["wmk_image"]))
-                            {
-                                if(is_file(FF_DISK_UPDIR . "/showfiles/" . $ID_mode . "//" . $loaded_modes["thumb"][$mode_key]["wmk_image"]))
-                                {
-                                    $loaded_modes["thumb"][$mode_key]["wmk_file"] 			= FF_DISK_UPDIR . "/showfiles/" . $ID_mode . "/watermarks/" . $loaded_modes["thumb"][$mode_key]["wmk_image"];
-                                    $loaded_modes["thumb"][$mode_key]["wmk_enable"] 		= true;
-                                }
-                            }
-                        }*/
-
-                        //$imgParams["keys"][$ID_mode]                                    = $mode_key;
                     }
 
                     $cache->set("/cm/showfiles/modes", $loaded_modes);
@@ -1001,7 +965,7 @@ class Media {
     }
 
     public static function getMimeTypeByExtension($ext, $default = "text/plain") {
-        $mime                                                       = self::MIMETYPE[strtolower($ext)];
+        $mime                                                       = static::MIMETYPE[strtolower($ext)];
 
         return ($mime
             ? $mime
@@ -1010,13 +974,14 @@ class Media {
     }
 
     public static function getExtensionByMimeType($mime, $default = null) {
-        $ext                                                       = array_search(strtolower($mime), self::MIMETYPE);
+        $ext                                                       = array_search(strtolower($mime), static::MIMETYPE);
 
         return ($ext
             ? $ext
             : $default
         );
     }
+
     public static function getIconPath($ext = null, $abs = false) {
         //deve renderizzare l'icona
         //da fare con la gestione delle iconde di ffImafge
@@ -1024,7 +989,7 @@ class Media {
 
 
         if($ext === false) {
-            $res                                                    = self::ICON_DEFAULT_PATH;
+            $res                                                    = static::ICON_DISK_PATH;
         } elseif($ext) {
             $arrExt                                                 = explode(".", $ext);
             $filename                                               = $arrExt[0];
@@ -1057,15 +1022,17 @@ class Media {
                     $basename                                       = $filename . ".png";
 
             }
-            $abs_path                                               = (is_file(self::ICON_BASE_PATH . "/" . $basename)
-                                                                        ? self::ICON_BASE_PATH
-                                                                        : self::ICON_DEFAULT_PATH
+
+            $icon_base_path                                         = self::getDiskPath("icons");
+            $abs_path                                               = ($icon_base_path && is_file($icon_base_path . "/" . $basename)
+                                                                        ? $icon_base_path
+                                                                        : static::ICON_DISK_PATH
                                                                     );
 
-            if(!is_file($abs_path . "/" . $basename))             $basename = "error.png";
+            if(!is_file($abs_path . "/" . $basename))       { $basename = "error.png"; }
 
             if($abs === false) {
-                $res                                                = self::SHOWFILES . "/" . $basename;
+                $res                                                = self::SITE_PATH . static::RENDER_ASSETS_PATH . "/" . $basename;
             } elseif($abs === true) {
                 $res                                                = $abs_path . "/" . $basename;
             } else {
@@ -1073,26 +1040,13 @@ class Media {
             }
         } else {
             $res                                                    = ($abs
-                                                                        ? self::ICON_DEFAULT_PATH
-                                                                        : self::SHOWFILES
+                                                                        ? static::ICON_DISK_PATH
+                                                                        : self::SITE_PATH . static::RENDER_ASSETS_PATH
                                                                     ) . "/" . "unknown.png";
         }
 
         return $res;
     }
-
-
-
-    /*
-    public static function getNoImg($filename, $mode) {
-        $ext                                                        = pathinfo($filename, PATHINFO_EXTENSION);
-        $mode                                                       = self::getModeByNoImg($filename);
-
-        $res                                                        = self::noImg($ext);
-
-        $final_file                                                 = $res["basepath"] . "/" . $res["filesource"];
-        exit;
-    }*/
 
     private static function getModeByNoImg($basename) {
         $mode                                                       = null;
@@ -1110,25 +1064,25 @@ class Media {
         }
         if(!$mode) {
             if($offset >= 2 && is_numeric($arrFilename[$offset]) && is_numeric($arrFilename[$offset - 1])) {
-                $mode                                                   = $arrFilename[$offset - 1] . "-" . $arrFilename[$offset];
+                $mode                                               = $arrFilename[$offset - 1] . "-" . $arrFilename[$offset];
             } else if(/*$offset >= 1 &&*/ is_numeric(str_replace("x", "", $arrFilename[$offset])) && substr_count($arrFilename[$offset], "x") == 1) {
-                $mode                                                   = $arrFilename[$offset];
+                $mode                                               = $arrFilename[$offset];
             } else if(/*$offset >= 1 &&*/ is_numeric(str_replace("q", "", $arrFilename[$offset])) && substr_count($arrFilename[$offset], "q") == 1) {
-                $mode                                                   = $arrFilename[$offset];
+                $mode                                               = $arrFilename[$offset];
             } else if(/*$offset >= 1 &&*/ is_numeric(str_replace("w", "", $arrFilename[$offset])) && substr_count($arrFilename[$offset], "w") == 1) {
-                $mode                                                   = $arrFilename[$offset];
+                $mode                                               = $arrFilename[$offset];
             } else if(/*$offset >= 1 &&*/ is_numeric(str_replace("e", "", $arrFilename[$offset])) && substr_count($arrFilename[$offset], "e") == 1) {
-                $mode                                                   = $arrFilename[$offset];
+                $mode                                               = $arrFilename[$offset];
             } else if(/*$offset >= 1 &&*/ is_numeric(str_replace("a", "", $arrFilename[$offset])) && substr_count($arrFilename[$offset], "a") == 1) {
-                $mode                                                   = $arrFilename[$offset];
+                $mode                                               = $arrFilename[$offset];
             } else if(/*$offset >= 1 &&*/ is_numeric(str_replace("s", "", $arrFilename[$offset])) && substr_count($arrFilename[$offset], "s") == 1) {
-                $mode                                                   = $arrFilename[$offset];
+                $mode                                               = $arrFilename[$offset];
             } else if(/*$offset >= 1 &&*/ is_numeric(str_replace("d", "", $arrFilename[$offset])) && substr_count($arrFilename[$offset], "d") == 1) {
-                $mode                                                   = $arrFilename[$offset];
+                $mode                                               = $arrFilename[$offset];
             } else if(/*$offset >= 1 &&*/ is_numeric(str_replace("z", "", $arrFilename[$offset])) && substr_count($arrFilename[$offset], "z") == 1) {
-                $mode                                                   = $arrFilename[$offset];
+                $mode                                               = $arrFilename[$offset];
             } else if(/*$offset >= 1 &&*/ is_numeric(str_replace("c", "", $arrFilename[$offset])) && substr_count($arrFilename[$offset], "c") == 1) {
-                $mode                                                   = $arrFilename[$offset];
+                $mode                                               = $arrFilename[$offset];
             }
         }
 
@@ -1145,20 +1099,6 @@ class Media {
             $res["filename"]                                        = str_replace("-". $mode . "." . $source["extension"], "", $source["basename"]);
             $res["basename"]                                        = $res["filename"] . "." . $source["extension"];
         }
-
-        /*
-        $arrFilename   			                                    = explode("-", $source["filename"]);
-        if(count($arrFilename)) {
-            for($i = 0; $i<=2; $i++) {
-                $res["mode"]                                        = array_pop($arrFilename) . ($res["mode"] ? "-" : "") . $res["mode"];
-                $filename                                           = implode("-", $arrFilename);
-
-                if(is_file( $source["dirname"] . "/" . $filename . "." . $source["extension"])) {
-                    $res["filename"]                                = $filename;
-                    break;
-                }
-            }
-        }*/
 
         return ($key
             ? $res[$key]
@@ -1181,7 +1121,7 @@ class Media {
     }
 
     public function process($mode = null) {
-        return $this->renderProcess($mode,false);
+        return $this->renderProcess($mode);
     }
 
     public function render($mode = null, $compress = false) {
@@ -1221,52 +1161,64 @@ class Media {
         exit;
     }
 
-    public function setPathInfo($pathinfo = null) {
-        if($pathinfo) {
-            $pathinfo                                               = parse_url($pathinfo, PHP_URL_PATH);
-            $this->pathinfo                                         = pathinfo($pathinfo);
-            $this->pathinfo["orig"]                                 = $pathinfo;
-
-            //todo: deprecato da togliere una volta adeguato i percorsi obsoleti
-            if(substr_count($this->pathinfo["orig"], "/") >= 2) {
-                $old = explode("/", ltrim($this->pathinfo["orig"], "/"), "2");
-                $this->pathinfo["mode"] = $old[0];
-                $this->pathinfo["old"] = "/" . $old[1];
+    public function setPathInfo($path = null) {
+        if($path) {
+            if(strpos($path, $this::RENDER_MEDIA_PATH) === 0) {
+                $path                                               = substr($path, strlen($this::RENDER_MEDIA_PATH));
+                $render                                             = $this::RENDER_MEDIA_PATH;
+            } elseif(strpos($path, $this::RENDER_ASSETS_PATH) === 0) {
+                $path                                               = substr($path, strlen($this::RENDER_ASSETS_PATH));
+                $render                                             = $this::RENDER_ASSETS_PATH;
+            } else {
+                $render                                             = $this::RENDER_MEDIA_PATH;
             }
+
+            $path                                                   = parse_url($path, PHP_URL_PATH);
+            $this->pathinfo                                         = pathinfo($path);
+            $this->pathinfo["render"]                               = $render;
+            $this->pathinfo["orig"]                                 = $path;
         }
     }
 
-    private function renderProcess($mode = null, $render = true) {
+    private function renderProcess($mode = null) {
         $this->clear();
         $this->waterMark();
-        $final_file                                                 = $this->findSource($mode);
-        $noimg                                                      = null;
-        if(!$final_file) {
-            if (!$this->filesource && !$this::STRICT)               { $this->findSourceOld($mode); }
-            if (!is_file($this->basepath . $this->filesource))  { $noimg = $this->setNoImg($mode); }
+        $this->findSource($mode);
 
-            $final_file                                             = $this->processFinalFile($noimg);
-        }
+        $status                                                     = null;
+        $final_file                                                 = null;
+        if($this->filesource && $this->basepath && is_file($this->basepath . $this->filesource)) {
+            if ($this->mode) {
+                $final_file                                         = $this->processFinalFile();
+            } else {
+                $cache_base_path                                    = $this->basepathCache();
+                if($cache_base_path && !is_file($cache_base_path . $this->pathinfo["orig"])) {
+                    $this->makeDirs($cache_base_path . $this->pathinfo["dirname"]);
+                    if(link($this->basepath . $this->filesource, $cache_base_path . $this->pathinfo["orig"])) {
+                        Error::register("Link Failed. Check write permission on: " . $this->basepath . $this->filesource . " and if directory exist and have write permission on " . $cache_base_path . $this->pathinfo["orig"]);
+                    }
 
-        //se noimg renderizza ed esce
-        if($noimg) {
-            $pathinfo                                               = null;
-            if($this->pathinfo["dirname"] == "/") {
-                $pathinfo                                           = $this->pathinfo["filename"];
-                if($this->mode) {
-                    $pathinfo                                       = str_replace(array("-" . $this->mode, $this->mode), "", $pathinfo);
-                    if(!$pathinfo)                                  $pathinfo = $this->pathinfo["extension"];
+                    $final_file                                     = $cache_base_path . $this->pathinfo["orig"];
                 }
             }
+        }
+
+        if(!$final_file) {
+            $pathinfo                                               = $this->pathinfo["filename"];
+            if($this->mode) {
+                $pathinfo                                           = str_replace(array("-" . $this->mode, $this->mode), "", $pathinfo);
+                if(!$pathinfo)                                      { $pathinfo = $this->pathinfo["extension"]; }
+            }
+
+            $final_file                                             = $this->processFinalFile($this->setNoImg($this->mode));
             if($pathinfo != pathinfo($this->filesource, PATHINFO_FILENAME)) {
-                $this->renderNoImg($final_file, 404);
+                $status = 404;
             }
         }
 
-        return ($render
-            ? $final_file
-            : substr($final_file, strlen($this::STORING_BASE_PATH))
-        );
+        if($final_file && !Error::check("storage")) {
+            $this->renderNoImg($final_file, $status);
+        }
     }
 
     private function clear() {
@@ -1288,7 +1240,7 @@ class Media {
             {
                 foreach($arrWmk AS $arrWmk_file)
                 {
-                    $wmk_abs_file                                   = $this::UPLOAD_BASE_PATH . $arrWmk_file;
+                    $wmk_abs_file                                   = $this::getDiskPath("uploads") . $arrWmk_file;
                     if(strlen($arrWmk_file) && is_file($wmk_abs_file))
                     {
                         $this->wmk[]["file"]                        = $wmk_abs_file;
@@ -1300,203 +1252,40 @@ class Media {
         }
     }
 
+    private function basepathAsset() {
+        $base_path                                                  = $this::getDiskPath("assets");
+        if(!$base_path || !is_file($base_path . $this->filesource)) {
+            $base_path                                              = static::ASSET_DISK_PATH;
+        }
 
+        return $base_path;
+    }
+    private function basepathMedia() {
+        $base_path                                                  = $this::getDiskPath("uploads");
+
+        if(!$base_path || !is_file($base_path . $this->filesource)) {
+            $base_path                                              = $this::documentRoot();
+        }
+
+        return $base_path;
+    }
     private function findSource($mode = null) {
-        $is_symlink                                                 = false;
-        $this->basepath                                             = $this::UPLOAD_BASE_PATH;
-
-        if(strpos($this->pathinfo["dirname"], "/" . $this::THEME) === 0)
-        {
-            /*
-            * quando il path inizia con il nome del tema frontend se la trova nel fs
-            * Abilita una compia simbolica dell'immagine
-            *
-            * Non supporta il sistema di ridimensionamento dinamico
-            */
-            $this->basepath                                         = $this::DISK_PATH;
-            $this->filesource                                       = $this::THEME_DIR . $this->pathinfo["orig"];
-            $is_symlink                                             = true;
+        $this->resolveSourcePath($mode);
+        if($this->filesource) {
+            $this->basepath                                         = ($this->pathinfo["render"] == static::RENDER_ASSETS_PATH
+                                                                        ? $this->basepathAsset()
+                                                                        : $this->basepathMedia()
+                                                                    );
         }
-        elseif(is_file($this::UPLOAD_BASE_PATH . $this->pathinfo["orig"]))
-        {
-            /*
-             * l'immagine renderizzata e quella originale
-             * Abilita una compia simbolica dell'immagine
-             */
-            $this->filesource                                       = $this->pathinfo["orig"];
-            $is_symlink                                             = true;
-        }
-        elseif($this->pathinfo["old"] && is_file($this::UPLOAD_BASE_PATH . $this->pathinfo["old"]))
-        {  //todo: deprecato da togliere una volta adeguato i percorsi obsoleti
-            $this->filesource                                       = $this->pathinfo["old"];
-            $this->mode                                             = $this->pathinfo["mode"];
-        }
-        else {
-            $this->resolveSourcePath($mode);
-        }
-
-        /*
-        * Se non riesce a recuperare il file di origine tenta di recuperarlo da /themes/[theme]/images
-        * Abilita una compia simbolica dell'immagine
-        *
-        * Non supporta il sistema di ridimensionamento dinamico
-        */
-        if(!$this->filesource && is_file($this::STATIC_BASE_PATH . $this->pathinfo["orig"]))
-        {
-            $this->basepath                                         = $this::STATIC_BASE_PATH;
-            $this->filesource                                       = $this->pathinfo["orig"];
-            $is_symlink                                             = true;
-        }
-
-        /*
-        * fa una compia simbolica dell'immagine
-        * processa l'immagine se richiesto
-        */
-        if($is_symlink) {
-            if(!is_file($this::STORING_BASE_PATH . $this->pathinfo["orig"])) {
-                if(!is_dir($this::STORING_BASE_PATH . $this->pathinfo["dirname"])) {
-                    mkdir($this::STORING_BASE_PATH . $this->pathinfo["dirname"], 0777, true);
-                }
-                link($this->basepath . $this->filesource, $this::STORING_BASE_PATH . $this->pathinfo["orig"]);
-            }
-
-            return $this::STORING_BASE_PATH . $this->pathinfo["orig"];
-        }
-
-        return null;
     }
 
-    private function findSourceOld($mode = null) {
-        $fake_filename                                              = null;
-        $fake_dirname                                               = null;
-        $mode_source                                                = null;
-        $path_parts                                                 = explode("/", trim($this->pathinfo["orig"], "/"));
-
-        /**
-         * Remove Fake Name resolved by strpos(dirname, basename) === 0
-         */
-        if(strpos($path_parts[count($path_parts) - 1], $path_parts[count($path_parts) - 2] . "-") === 0) {
-            $fake_filename                                          = $path_parts[count($path_parts) - 1];
-            $fake_dirname                                           = $path_parts[count($path_parts) - 2];
-            $path_parts[count($path_parts) - 1]                     = str_replace($fake_dirname . "-", "", $fake_filename);
-            array_splice($path_parts, count($path_parts) - 2, 1);
-        }
-
-        if(strpos($path_parts[count($path_parts) - 1], ".") === false) {
-            $source["filename"]                                     = $path_parts[count($path_parts) - 1];
-            $source["extension"]                                    = "";
-        } else {
-            $source_file                                            = explode(".", $path_parts[count($path_parts) - 1]);
-            $source["extension"]                                    = $source_file[count($source_file) - 1];
-            unset($source_file[count($source_file) - 1]);
-            $source["filename"]                                     = implode(".", $source_file);
-        }
-
-        if(count($path_parts) > 1)
-        {
-            $tmp_ext                                                = null;
-            if(strpos($path_parts[0], "-") !== false)
-                $tmp_ext                                            = substr($path_parts[0], strrpos($path_parts[0], "-") + 1);
-
-            if($tmp_ext
-                && ($tmp_ext == "jpg"
-                    || $tmp_ext == "jpeg"
-                    || $tmp_ext == "png"
-                    || $tmp_ext == "gif"
-                )
-            ) {
-                $mode_source                                        = substr($path_parts[0], 0, strrpos($path_parts[0], "-"));
-                $source["extension"]                                = $tmp_ext;
-            } else {
-                $mode_source                                        = $path_parts[0];
-            }
-            unset($path_parts[0]);
-        }
-        $source["dirname"]                                          = dirname(implode("/", $path_parts));
-        if(strlen($source["dirname"]))                              $source["dirname"]  = "/" . $source["dirname"];
-
-        $source["filename"]                                         = str_replace("+", " ", $source["filename"]);
-        $source["basename"]                                         = $source["filename"] . ($source["extension"]
-                                                                        ? "." . $source["extension"]
-                                                                        : ""
-                                                                    );
-        if(is_file($this->basepath . $source["dirname"] . "/" . $source["basename"])) {
-            $this->filesource                                       = $source["dirname"] . "/" . $source["basename"];
-            $this->mode                                             = ($mode
-                                                                        ? $mode
-                                                                        : $mode_source
-                                                                    );
-        } elseif($mode_source && is_file($this->basepath . "/" . $mode_source . $source["dirname"] . "/" . $source["basename"])) {
-            $this->filesource                                       = "/" . $mode_source . $source["dirname"] . "/" . $source["basename"];
-            $this->mode                                             = $mode;
-        } elseif($fake_filename && is_file($this->basepath . $source["dirname"] . "/" . $fake_dirname . "/" . $fake_filename)) {
-            $this->filesource                                       = $source["dirname"] . "/" . $fake_dirname . "/" . $fake_filename;
-            $this->mode                                             = ($mode
-                                                                        ? $mode
-                                                                        : $mode_source
-                                                                    );
-        } elseif($mode_source && $fake_filename && is_file($this->basepath . "/" . $mode_source . $source["dirname"] . "/" . $fake_dirname . "/" . $fake_filename)) {
-            $this->filesource                                       = "/" . $mode_source . $source["dirname"] . "/" . $fake_dirname . "/" . $fake_filename;
-            $this->mode                                             = $mode;
-        } elseif(is_file($this->basepath . dirname($source["dirname"]) . "/" . $source["basename"])) {
-            $this->filesource                                       = dirname($source["dirname"]) . "/" . $source["basename"];
-            $this->mode                                             = ($mode
-                                                                        ? $mode
-                                                                        : $mode_source
-                                                                    );
-        } else {
-            if(is_file($this::DISK_PATH . $this::THEME_DIR . $this->pathinfo["orig"]))
-            {
-                $this->basepath                                     = $this::DISK_PATH;
-                $this->filesource                                   = $this::THEME_DIR . $this->pathinfo["orig"];
-                $this->mode                                         = $mode;
-            }
-            elseif(is_file($this::DISK_PATH . $this::THEME_DIR . substr($this->pathinfo["orig"], strpos($this->pathinfo["orig"], "/", 1))))
-            {
-                $this->basepath                                     = $this::DISK_PATH;
-                $this->filesource                                   = substr($this->pathinfo["orig"], strpos($this->pathinfo["orig"], "/", 1));
-                $this->mode                                         = ($mode
-                                                                        ? $mode
-                                                                        : basename(substr($this->pathinfo["orig"], 0, strpos($this->pathinfo["orig"], "/", 1)))
-                                                                    );
-            } else {
-                $mode_source                                        = basename(substr($this->pathinfo["orig"], 0, strpos($this->pathinfo["orig"], "/", 1)));
-                $source_path                                        = substr($this->pathinfo["orig"], strpos($this->pathinfo["orig"], "/", 1));
-                if(strpos($mode_source, "png") !== false) {
-                    $source_path                                    = substr($source_path, 0, strrpos($source_path, ".")) . ".png";
-                    $mode_source                                    = str_replace("-png", "", $mode_source);
-                } elseif(strpos($mode_source, "jpg") !== false) {
-                    $source_path                                    = substr($source_path, 0, strrpos($source_path, ".")) . ".jpg";
-                    $mode_source                                    = str_replace("-jpg", "", $mode_source);
-                } elseif(strpos($mode_source, "jpeg") !== false) {
-                    $source_path                                    = substr($source_path, 0, strrpos($source_path, ".")) . ".jpeg";
-                    $mode_source                                    = str_replace("-jpeg", "", $mode_source);
-                }
-
-                if(is_file($this->basepath . $source_path))
-                {
-                    $this->mode                                     = ($mode
-                                                                        ? $mode
-                                                                        : $mode_source
-                                                                    );
-                    $this->filesource                               = $source_path;
-                }
-            }
-        }
-
-        if($this->filesource)
-            $this->source                                           = $source;
-    }
-      private function makeFinalFile($ext = null) {
-        if($this->filesource)
-        {
+    private function makeFinalFile($ext = null) {
+        if($this->filesource) {
             $str_wmk_file                                           = "";
-            if(is_array($this->wmk) && count($this->wmk))
-            {
+            if(is_array($this->wmk) && count($this->wmk)) {
                 $str_wmk_file_time                                  = "";
                 $str_wmk_file_path                                  = "";
-                foreach($this->wmk AS $wmk_key => $wmk_file)
-                {
+                foreach($this->wmk AS $wmk_key => $wmk_file) {
                     $str_wmk_file_time                              .= filectime($wmk_file);
                     $str_wmk_file_path                              .= $wmk_file;
                 }
@@ -1517,26 +1306,6 @@ class Media {
                 $this->final["extension"]                           = ($ext ? $ext : $this->pathinfo["extension"]);
 
                 $this->final["exist"]                               = is_file($this->getFinalFile());
-
-                /*if(!$this->final["exist"] && $format_is_different) { //e sbagliato il final. qui dovrebbe fare il check sul source al massimo
-                    $final_ext                                      = null;
-                    switch($this->final["extension"]) {
-                        case "jpg":
-                        case "jpeg":
-                            $final_ext                              = "png";
-                            break;
-                        case "png":
-                            $final_ext                              = "jpg";
-                            break;
-                        default:
-
-                    }
-
-                    if($final_ext) {
-                        $this->final["extension"]                       = $final_ext;
-                        $this->final["exist"]                           = is_file($this->getFinalFile());
-                    }
-                }*/
             } else {
                 $this->final                                        = pathinfo($this->filesource);
                 $this->final["exist"]                               = is_file($this->getFinalFile());
@@ -1547,13 +1316,23 @@ class Media {
     }
 
     private function getFinalFile($abs = true) {
-        return ($this->final
-            ? ($abs
-                ? $this::STORING_BASE_PATH
-                : ""
-            ) . $this->final["dirname"] . ($this->final["dirname"] == "/" ? "" : "/") . $this->final["filename"] . "." . $this->final["extension"]
-            : false
-        );
+        $final                                                      = false;
+
+        if($this->final) {
+            $final                                                  = ($abs
+                                                                            ? $this->basepathCache()
+                                                                            : ""
+                                                                        )
+                                                                        . $this->final["dirname"]
+                                                                        . ($this->final["dirname"] == "/"
+                                                                            ? ""
+                                                                            : "/"
+                                                                        )
+                                                                        . $this->final["filename"]
+                                                                        . "." . $this->final["extension"];
+        }
+
+        return $final;
     }
 
     private function createImage($params) {
@@ -1574,7 +1353,7 @@ class Media {
         if($extend)
         {
             $params["filesource"]                                   = ($params["force_icon"]
-                                                                        ? $this::DISK_PATH . $params["force_icon"]
+                                                                        ? $this::documentRoot() . $params["force_icon"]
                                                                         : $this->basepath . $this->filesource
                                                                     );
 
@@ -1712,12 +1491,33 @@ class Media {
 
         $final_file                                                 = $this->getFinalFile();
 
-        @mkdir(dirname($final_file), 0777, true);
+        $this->makeDirs(dirname($final_file));
+
         $cCanvas->process($final_file);
+    }
+    private function basepathCache() {
+        return ($this->pathinfo["render"] == static::RENDER_ASSETS_PATH
+            ? $this::getDiskPath("cache-assets")
+            : $this::getDiskPath("cache-thumbs")
+        );
+    }
+    private function makeDirs($path) {
+        $cache_base_path                                            = $this->basepathCache();
+        $path                                                       = str_replace($cache_base_path, "", $path);
+
+        if($path && $path != "/" && !is_dir($cache_base_path . $path) && mkdir($cache_base_path . $path, 0775, true)) {
+            while ($path != DIRECTORY_SEPARATOR) {
+                if (is_dir($cache_base_path . $path)) {
+                    chmod($cache_base_path . $path, 0775);
+                }
+
+                $path                                               = dirname($path);
+            }
+        }
     }
 
     private function getMode() {
-        if(!$this->modes)                                           $this->modes = $this->getModes();
+        if(!$this->modes)                                           { $this->modes = $this->getModes(); }
 
         $setting                                                    = $this->modes[$this->mode];
         if(!$setting) {
@@ -1777,12 +1577,13 @@ class Media {
 
             if(count($this->wizard["mode"]) == 2 && is_numeric($this->wizard["mode"][0]) && is_numeric($this->wizard["mode"][1])) {
                 $setting                                            = array(
-                                                                        "dim_x"     => $this->wizard["mode"][0]
-                                                                        , "dim_y"   => $this->wizard["mode"][1]
-                                                                        , "format"  => $this->final["extension"]
-                                                                        , "alignment"  => $this->wizard["alignment"]
-                                                                        , "mode"    => $this->wizard["method"]
-                                                                        , "resize"  => $this->wizard["resize"]
+                                                                        "dim_x"             => $this->wizard["mode"][0]
+                                                                        , "dim_y"           => $this->wizard["mode"][1]
+                                                                        , "format"          => $this->final["extension"]
+                                                                        , "alignment"       => $this->wizard["alignment"]
+                                                                        , "mode"            => $this->wizard["method"]
+                                                                        , "resize"          => $this->wizard["resize"]
+                                                                        , "last_update"     => time()
                                                                     );
             }
         }
@@ -1797,33 +1598,42 @@ class Media {
     private function processFinalFile($isIcon = false) {
         $final_file                                                 = null;
         if($this->filesource) {
-            if(!$this->final)                                       $this->makeFinalFile($isIcon ? "png" : null);
-            if($this->final) {
+            if(!$this->final)                                       { $this->makeFinalFile($isIcon ? "png" : null); }
+               if($this->final) {
                 $final_file                                         = $this->getFinalFile();
 
                 $mode                                               = $this->getMode();
                 //$mode["format"]                                     = $this->final["extension"];
                 if (is_array($mode)) {
-                    $fctime                                         = ($this->final["exist"]
-                                                                        ? filectime($final_file)
+                    $fmtime                                         = ($this->final["exist"]
+                                                                        ? filemtime($final_file)
                                                                         : "-1"
                                                                     );
-
                     if (Debug::ACTIVE
-                        || $fctime      <= $mode["last_update"]
-                        || $fctime      <= filectime($this->basepath . $this->filesource)
+                        || !$this->final["exist"]
+                        || $fmtime      <= $mode["last_update"]
+                        || $fmtime      <= filemtime($this->basepath . $this->filesource)
                     ) {
                         $this->createImage($mode);
                         $this::optimize($final_file);
                     }
                 } elseif($this->mode === false && is_file($this->basepath . $this->filesource)) {
                     if(!is_file($final_file)) {
-                        link($this->basepath . $this->filesource, $final_file);
+                        $this->makeDirs(dirname($final_file));
+
+                        if(!link($this->basepath . $this->filesource, $final_file)) {
+                            Error::register("Link Failed. Check write permission on: " . $this->basepath . $this->filesource . " and if directory exist and have write permission on " . $this->basepath . $this->filesource);
+                        };
                     }
                 } else {
-                    $icon = $this->getIconPath(basename($this->filesource), true);
+                    $icon                                           = $this->getIconPath(basename($this->filesource), true);
+
                     if(!is_file($final_file) && $icon) {
-                        link($icon, $final_file);
+                        $this->makeDirs(dirname($final_file));
+
+                        if(!link($icon, $final_file)) {
+                            Error::register("Link Failed. Check write permission on: " . $icon . " and if directory exist and have write permission on " . $final_file);
+                        };
                     }
                 }
             }
@@ -1849,7 +1659,7 @@ class Media {
                                                                         ? $mode
                                                                         : self::getModeByNoImg($this->pathinfo["basename"])
                                                                     );
-            return true;
+            return false;
         }
 
         return null;
@@ -1868,75 +1678,51 @@ class Media {
     }
 
     private function resolveSourcePath($mode = null) {
-        if(!$this->filesource) {
-            $image                                                  = $this->pathinfo;
-            $basepath                                               = $this->basepath;
+        $image                                                      = $this->pathinfo;
 
-            /*
-            * default: cerca l'immagine di origine in uploads
-            * supporta il sistema di ridimensionamento dinamico
-            */
-            $source["dirname"] 			                            = ($image["dirname"] == "/" ? "" : $image["dirname"]);
-            $source["extension"] 		                            = $image["extension"];
-            $source["filename"] 	                                = $image["filename"];
+        $source["dirname"] 			                                = ($image["dirname"] == "/" ? "" : $image["dirname"]);
+        $source["extension"] 		                                = $image["extension"];
+        $source["filename"] 	                                    = $image["filename"];
 
-            if (strpos($source["dirname"], $this::THEME_DIR . "/") === 0) {
-                $basepath = $this::THEME_BASE_PATH;
-                $source["dirname"] = substr($source["dirname"], strlen($this::THEME_DIR));
-            }
-
-            /*if (strpos($source["dirname"], $this::THEME_DIR . "/" . $this::THEME . "/images") === 0) {
-                $basepath = $this::STATIC_BASE_PATH;
-                $source["dirname"] = substr($source["dirname"], strlen($this::THEME_DIR . "/" . $this::THEME . "/images"));
-            } elseif (strpos($source["dirname"], $this::THEME_DIR . "/" . $this::THEME_DEFAULT . "/images") === 0) {
-                $basepath = $this::STATIC_DEFAULT_PATH;
-                $source["dirname"] = substr($source["dirname"], strlen($this::THEME_DIR . "/" . $this::THEME_DEFAULT . "/images"));
-            }*/
-
-            if(strpos($image["filename"], "-png-") !== false) {
-                $file 					                            = explode("-png-", $image["filename"]);
-                $mode 					                            = ($mode
+        if(strpos($image["filename"], "-png-") !== false) {
+            $file 					                                = explode("-png-", $image["filename"]);
+            $mode 					                                = ($mode
                                                                         ? $mode
                                                                         : $file[1]
                                                                     );
-                $source["extension"] 	                            = "png";
-                $source["filename"] 	                            = $file[0];
-            } elseif(strpos($image["filename"], "-jpg-") !== false) {
-                $file 					                            = explode("-jpg-", $image["filename"]);
-                $mode 					                            = ($mode
+            $source["extension"] 	                                = "png";
+            $source["filename"] 	                                = $file[0];
+        } elseif(strpos($image["filename"], "-jpg-") !== false) {
+            $file 					                                = explode("-jpg-", $image["filename"]);
+            $mode 					                                = ($mode
                                                                         ? $mode
                                                                         : $file[1]
                                                                     );
-                $source["extension"] 	                            = "jpg";
-                $source["filename"] 	                            = $file[0];
-            } elseif(strpos($image["filename"], "-jpeg-") !== false) {
-                $file 					                            = explode("-jpeg-", $image["filename"]);
-                $mode 					                            = ($mode
+            $source["extension"] 	                                = "jpg";
+            $source["filename"] 	                                = $file[0];
+        } elseif(strpos($image["filename"], "-jpeg-") !== false) {
+            $file 					                                = explode("-jpeg-", $image["filename"]);
+            $mode 					                                = ($mode
                                                                         ? $mode
                                                                         : $file[1]
                                                                     );
-                $source["extension"] 	                            = "jpeg";
-                $source["filename"] 	                            = $file[0];
-            } elseif(!$mode) {
-                $res = $this->getModeByFile($basepath . $source["dirname"] . "/" . $image["filename"] . "." . $source["extension"]);
-                if($res) {
-                    $source["filename"]                             = $res["filename"];
-                    $mode                                           = $res["mode"];
-                } else {
-                    $mode                                           = false;
-                }
-            }
-
-            if($source["filename"] && $source["extension"]) {
-                $source["basename"] 	                            = $source["filename"] . "." . $source["extension"];
-                $this->source                                       = $source;
-                $this->mode                                         = $mode;
-                $this->filesource 				                    = $source["dirname"] . "/" . $source["basename"];
-                $this->basepath                                     = $basepath;
-
-                return true;
+            $source["extension"] 	                                = "jpeg";
+            $source["filename"] 	                                = $file[0];
+        } elseif(!$mode) {
+            $res                                                    = $this->getModeByFile($source["dirname"] . "/" . $image["filename"] . "." . $source["extension"]);
+            if($res) {
+                $source["filename"]                                 = $res["filename"];
+                $mode                                               = $res["mode"];
+            } else {
+                $mode                                               = false;
             }
         }
-        return null;
+
+        if($source["filename"] && $source["extension"]) {
+            $source["basename"] 	                                = $source["filename"] . "." . $source["extension"];
+            $this->source                                           = $source;
+            $this->mode                                             = $mode;
+            $this->filesource 				                        = $source["dirname"] . "/" . $source["basename"];
+        }
     }
 }

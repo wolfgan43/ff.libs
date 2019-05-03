@@ -121,18 +121,10 @@ class Error {
         if($rule) { //todo:: da finire la gestione con hook e inizializzazione delle casistiche
             //self::doHook("on_error_" . $rule["type"], $path_info);
 
-
             switch ($rule["type"]) {
                 case "media":
-                    $redirect                           = Media::getInstance($rule["path"])->process();
-                    if ($redirect) {
-                        $status                         = ($redirect == $path_info
-                                                            ? 302
-                                                            : 301
-                                                        );
-                        header("Location:" . $rule["base_path"] . $redirect, null, $status);
-                        exit;
-                    }
+                    self::send("404");
+                    break;
                     break;
                 case "html":
                     self::send("403");

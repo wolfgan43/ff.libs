@@ -32,24 +32,25 @@ class Response {
         self::send($response, $headers, $type, $status);
     }
     public static function send($response = null, $headers = null, $type = null, $status = null) {
-        if(isset($response["data"]) && is_array($response["data"])) {
-            $size                                   = strlen(http_build_query($response["data"], '', ''));
-        } elseif(isset($response["data"])) {
-            $size                                   = strlen($response["data"]);
-        } else {
-            $size                                   = 0;
-        }
-
-        Log::request($response["error"], $response["status"], $size);
-
         if(!$status) {
             $status                                 = (isset($response["status"])
                                                         ? $response["status"]
                                                         : 200
                                                     );
         }
-
         Response::code($status);
+
+        if(Debug::ACTIVE) {
+            if(isset($response["data"]) && is_array($response["data"])) {
+                $size                               = strlen(http_build_query($response["data"], '', ''));
+            } elseif(isset($response["data"])) {
+                $size                               = strlen($response["data"]);
+            } else {
+                $size                               = 0;
+            }
+            Log::request($response["error"], $status, $size);
+        }
+
         if (is_array($headers) && count($headers)) {
             foreach ($headers AS $header) {
                 header($header);

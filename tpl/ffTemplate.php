@@ -37,8 +37,8 @@ if(!defined("FF_TEMPLATE_ENABLE_TPL_JS"))       define("FF_TEMPLATE_ENABLE_TPL_J
 
 class ffTemplate extends Hook
 {
-    //const REGEXP                            = '/\{([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)\}/U';
-    const REGEXP                            = '/\{([\w\:\=\-\|\.]+)\}/U';
+    const REGEXP                            = '/\{([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)\}/U';
+    //const REGEXP                            = '/\{([\w\:\=\-\|\.]+)\}/U';
 
     const APPLET                            = '/\{\[(.+)\]\}/U';
     const COMMENTHTML                       = '/\{\{([\w\[\]\:\=\-\|\.]+)\}\}/U';
@@ -575,10 +575,11 @@ class ffTemplate extends Hook
             {
                 if (substr($nName, 0, 1) == "_")
                 {
-                    if ($this->MultiLang)
+                    if ($this->MultiLang) {
                         $this->set_var($nName, $this->get_word_by_code(substr($nName, 1)));
-                    else
+                    } else {
                         $this->set_var($nName, "{" . substr($nName, 1) . "}");
+                    }
                 }
             }
             reset($vars);

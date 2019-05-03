@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configdata>
+    <pages>
+        <page path="/media"     engine="media"  />
+        <page path="/assets"    engine="media"  />
+    </pages>
+    <engine>
+        <media source="(.*)" obj="phpformsframework\libs\storage\Media" method="get" params="$1" />
+    </engine>
+    <dirstruct>
+        <cache-thumbs type="cache" path="/cache/.thumbs" />
+        <cache-assets type="cache" path="/cache/assets" />
+        <icons type="asset" path="/assets/images" />
+        <uploads type="app" path="/uploads" />
+    </dirstruct>
+</configdata>

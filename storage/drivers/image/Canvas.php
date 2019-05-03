@@ -26,6 +26,8 @@
 
 namespace phpformsframework\libs\storage\drivers;
 
+use phpformsframework\libs\Error;
+
 class Canvas
 {
     public $cvs_max_dim_x					= NULL;
@@ -240,21 +242,25 @@ class Canvas
 		switch ($this->format)
 		{
 			case "jpg":
-				if ($filename === NULL)
-					header("Content-Type: image/jpg");
-				
-				if(@imagejpeg($this->cvs_res, $filename) === false) {
-					die("Permission Denied: " . $filename);
-				}
+				if ($filename === NULL) {
+                    header("Content-Type: image/jpg");
+                }
+				if(imagejpeg($this->cvs_res, $filename) === false) {
+					Error::register("Permission Denied: " . $filename, "storage");
+				} else {
+				    chmod($filename, 0664);
+                }
 				break;
 
 			case "png":
 			default:
-				if ($filename === NULL)
-					header("Content-Type: image/png");
-
-				if(@imagepng($this->cvs_res, $filename) === false) {
-					die("Permission Denied: " . $filename);
+				if ($filename === NULL) {
+                    header("Content-Type: image/png");
+                }
+				if(imagepng($this->cvs_res, $filename) === false) {
+                    Error::register("Permission Denied: " . $filename, "storage");
+                } else {
+                    chmod($filename, 0664);
 				}
 		}
 	}

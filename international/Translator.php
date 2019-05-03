@@ -37,7 +37,8 @@ class Translator
     const NAME_SPACE                                    = 'phpformsframework\\libs\\international\\translator\\';
     const ADAPTER                                       = false;
 
-    const REGEXP                                        = "/\{_([\w\[\]\:\=\-\|\.]+)\}/U";
+    const REGEXP                                        = '/\{_([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)\}/U';
+    //const REGEXP                                        = "/\{_([\w\[\]\:\=\-\|\.]+)\}/U";
 
     const DB_TABLE_LANG                                 = FF_PREFIX . "languages";
 
@@ -78,6 +79,7 @@ class Translator
     public static function process($content, $language = null) {
         $matches                                        = array();
         $rc                                             = preg_match_all (self::REGEXP, $content, $matches);
+
         if ($rc) {
             $replace                                    = null;
             $vars                                       = $matches[1];

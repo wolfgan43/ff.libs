@@ -27,10 +27,11 @@ namespace phpformsframework\libs\tpl\gridsystem;
 
 class Bootstrap3 extends FrameworkCssAdapter {
     protected $css          = array(
-                                "bootstrap"                 => "http://netdna.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css"
+                                "bootstrap"                 => "https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css"
                             );
     protected $js           = array(
-                                "bootstrap"                 => "http://netdna.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js"
+                                "jquery"                    => "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.0/jquery.min.js"
+                                , "bootstrap"               => "https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js"
                             );
     protected $skip_resolution                              = true;
     protected $skip_resolution_full                         = true;

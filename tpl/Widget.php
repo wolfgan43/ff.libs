@@ -26,13 +26,10 @@
 namespace phpformsframework\libs\tpl;
 
 use phpformsframework\libs\DirStruct;
-use phpformsframework\libs\Request;
-use phpformsframework\libs\Response;
+use phpformsframework\libs\tpl\gridsystem\FrameworkCssAdapter;
 
 abstract class Widget extends DirStruct {
     const NAME_SPACE_BASIC                      = "widgets\\";
-    const FRAMEWORK_CSS                         = "bootstrap4";
-    const FONT_ICON                             = "fontawesome";
     const DIR                                   = null;
 
     private static $singleton                   = null;
@@ -59,26 +56,11 @@ abstract class Widget extends DirStruct {
 
     }
     private function getPage() {
-        if(is_array($this->js) && count($this->js)) {
-            $scripts = '<script defer async src="' . implode('"></script><script defer async src="', $this->js) . '"></script>';
-        }
-        if(is_array($this->css) && count($this->css)) {
-            $links = '<link rel="stylesheet" type="text/css" href="' . implode('" /><link rel="stylesheet" type="text/css" href="', $this->css) . '" />';
-        }
-
-
-        return '<!DOCTYPE html>
-                <html>
-                <head>
-                    ' . $scripts . '
-                    ' . $links . '
-                </head>
-                <body>
-                ' . $this->html . '
-                </body>
-                </html>';
-
-
+        return Page::getInstance("html")
+            ->addAssets($this->js, $this->css)
+            //->setLayout("empty")
+            ->addContent($this->html)
+            ->process();
     }
     /**
      * @param string $name
@@ -155,10 +137,10 @@ abstract class Widget extends DirStruct {
     }
 
     /**
-     * @return null|Gridsystem
+     * @return null|FrameworkCssAdapter
      */
     protected function gridSystem() {
-        if(!self::$grid_system)         { self::$grid_system = Gridsystem::factory(static::FRAMEWORK_CSS, static::FONT_ICON); }
+        if(!self::$grid_system)         { self::$grid_system = Gridsystem::getInstance(); }
 
         return self::$grid_system;
     }

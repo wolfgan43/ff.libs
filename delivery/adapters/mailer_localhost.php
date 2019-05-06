@@ -37,27 +37,27 @@ class Localhost extends Adapter
                                                                 : "SMTP_"
                                                             );
             $this->config["host"]                           = "localhost";
-                $this->config["username"]                   = (defined($prefix . "USER")
+            $this->config["username"]                       = (defined($prefix . "USER")
                                                                 ? constant($prefix . "USER")
                                                                 : ""
                                                             );
-                $this->config["username"]                   = (defined($prefix . "PASSWORD")
+            $this->config["username"]                       = (defined($prefix . "PASSWORD")
                                                                 ? constant($prefix . "PASSWORD")
                                                                 : ""
                                                             );
-                $this->config["auth"]                       = (defined($prefix . "AUTH")
+            $this->config["auth"]                           = (defined($prefix . "AUTH")
                                                                 ? constant($prefix . "AUTH")
                                                                 : ""
                                                             );
-                $this->config["port"]                       = (defined($prefix . "PORT")
+            $this->config["port"]                           = (defined($prefix . "PORT")
                                                                 ? constant($prefix . "PORT")
                                                                 : "25"
                                                             );
-                $this->config["secure"]                     = (defined($prefix . "SECURE")
+            $this->config["secure"]                         = (defined($prefix . "SECURE")
                                                                 ? constant($prefix . "SECURE")
                                                                 : ""
                                                             );
-                $this->config["autoTLS"]                     = (defined($prefix . "AUTOTLS")
+            $this->config["autoTLS"]                        = (defined($prefix . "AUTOTLS")
                                                                 ? constant($prefix . "AUTOTLS")
                                                                 : false
                                                             );

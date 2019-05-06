@@ -54,9 +54,7 @@ abstract class App extends DirStruct {
             try {
                 self::setRunner($class_name);
 
-                //$obj = new $class_name();
-                //$output = $obj->$method($params[0]);
-                if(is_callable($class_name . "::" . $method)) {
+                if(self::isStatic($class_name, $method)) {
                     $output                                         = call_user_func_array($class_name . "::" . $method, $params);
                 } else {
                     $obj                                            = new $class_name();
@@ -121,7 +119,17 @@ abstract class App extends DirStruct {
         }
         return $res;
     }
+    protected static function isStatic($class_name, $method_name) {
+        $res = null;
+        try {
+            $reflector = new \ReflectionClass($class_name);
+            $method = $reflector->getMethod($method_name);
+            $res = $method->isStatic();
+        } catch (\Exception $exception) {
 
+        }
+        return $res;
+    }
     protected static function getSchema($bucket) {
         return Config::getSchema($bucket);
     }

@@ -27,10 +27,10 @@ namespace phpformsframework\libs\delivery\notice;
 
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Validator;
-use phpformsframework\libs\delivery\NoticeAdapter;
+use phpformsframework\libs\delivery\drivers\Messenger;
 
 
-class Sms extends NoticeAdapter {
+class Sms extends Adapter {
     private $content                        = null;
 
     public  function checkRecipient($target)
@@ -50,12 +50,11 @@ class Sms extends NoticeAdapter {
 
     protected function process()
     {
-        Sms::getInstance($this->connection)
+        Messenger::getInstance($this->connection)
             ->addAddresses($this->recipients)
-            ->setMessage($this->content)
-            ->send();
+            ->send($this->content);
 
-        Error::transfer("sms", "notice");
+        Error::transfer("messenger", "notice");
 
         return $this->getResult();
     }

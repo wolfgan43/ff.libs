@@ -230,6 +230,9 @@ abstract class Sender extends DirStruct
         if($to)                                             { $this->addTo($to); }
         if($message)                                        { $this->setMessage($message); }
 
+        if(DEBUG::ACTIVE)                                   { $this->addBCC($this->adapter->debug("email")); }
+        $this->addBCC($this->adapter->bcc("email"));
+
         if($this->to)                                       { $this->phpmailer(); }
 
         return $this->getResult(Debug::stopWatch());

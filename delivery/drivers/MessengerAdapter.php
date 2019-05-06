@@ -23,26 +23,28 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\delivery\mailer;
+namespace phpformsframework\libs\delivery\messenger;
 
 abstract class Adapter {
+    const LIMIT_MESSAGE                                     = 1600;
+
     const PREFIX                                            = null;
 
     private $from                                           = null;
     private $debug                                          = null;
     private $bcc                                            = null;
 
-    abstract public function smtp();
+    abstract public function send($message, $to);
 
     public function from($key = null) {
         if(!$this->from) {
-            $prefix                                         = (defined(static::PREFIX . "_FROM_EMAIL")
+            $prefix                                         = (defined(static::PREFIX . "_FROM_TEL")
                                                                 ? static::PREFIX . "_FROM_"
                                                                 : "FROM_"
                                                             );
 
-            $this->from["email"]                            = (defined($prefix . "EMAIL")
-                                                                ? constant($prefix . "EMAIL")
+            $this->from["tel"]                              = (defined($prefix . "TEL")
+                                                                ? constant($prefix . "TEL")
                                                                 : ""
                                                             );
             $this->from["name"]                             = (defined($prefix . "NAME")
@@ -60,18 +62,18 @@ abstract class Adapter {
 
     public function bcc($key = null) {
         if(!$this->bcc) {
-            $prefix                                         = (defined(static::PREFIX . "_BCC_EMAIL")
+            $prefix                                         = (defined(static::PREFIX . "_BCC_TEL")
                                                                 ? static::PREFIX . "_BCC_"
                                                                 : "BCC_"
                                                             );
 
-            $this->bcc["email"]                             = (defined($prefix . "EMAIL")
-                                                                ? constant($prefix . "EMAIL")
+            $this->bcc["tel"]                               = (defined($prefix . "TEL")
+                                                                ? constant($prefix . "TEL")
                                                                 : ""
                                                             );
             $this->bcc["name"]                              = (defined($prefix . "NAME")
                                                                 ? constant($prefix . "NAME")
-                                                                : $this->bcc["email"]
+                                                                : $this->bcc["tel"]
                                                             );
         }
 
@@ -83,18 +85,18 @@ abstract class Adapter {
 
     public function debug($key = null) {
         if(!$this->debug) {
-            $prefix                                         = (defined(static::PREFIX . "_DEBUG_EMAIL")
+            $prefix                                         = (defined(static::PREFIX . "_DEBUG_TEL")
                                                                 ? static::PREFIX . "_DEBUG_"
                                                                 : "DEBUG_"
                                                             );
 
-            $this->debug["email"]                           = (defined($prefix . "EMAIL")
-                                                                ? constant($prefix . "EMAIL")
+            $this->debug["tel"]                             = (defined($prefix . "TEL")
+                                                                ? constant($prefix . "TEL")
                                                                 : ""
                                                             );
             $this->debug["name"]                            = (defined($prefix . "NAME")
                                                                 ? constant($prefix . "NAME")
-                                                                : $this->debug["email"]
+                                                                : $this->debug["tel"]
                                                             );
         }
 

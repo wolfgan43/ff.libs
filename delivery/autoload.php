@@ -26,6 +26,9 @@
 
 spl_autoload_register(function ($class) {
     switch ($class) {
+        case 'phpformsframework\\libs\\delivery\\messenger\\Twilio':
+            require ('adapters' . DIRECTORY_SEPARATOR . 'messenger_twilio.php');
+            break;
         case 'phpformsframework\\libs\\delivery\\mailer\\Localhost':
             require ('adapters' . DIRECTORY_SEPARATOR . 'mailer_localhost.php');
             break;
@@ -41,11 +44,11 @@ spl_autoload_register(function ($class) {
         case 'phpformsframework\\libs\\delivery\\notice\\Sms':
             require ('adapters' . DIRECTORY_SEPARATOR . 'notice_sms.php');
             break;
-        case 'phpformsframework\\libs\\delivery\\sms\\Adapter':
-            require ('drivers' . DIRECTORY_SEPARATOR . 'SmsAdapter.php');
+        case 'phpformsframework\\libs\\delivery\\messenger\\Adapter':
+            require ('drivers' . DIRECTORY_SEPARATOR . 'MessengerAdapter.php');
             break;
-        case 'phpformsframework\\libs\\delivery\\drivers\\Sms':
-            require ('drivers' . DIRECTORY_SEPARATOR . 'Sms.php');
+        case 'phpformsframework\\libs\\delivery\\drivers\\Messenger':
+            require ('drivers' . DIRECTORY_SEPARATOR . 'Messenger.php');
             break;
         case 'phpformsframework\\libs\\delivery\\mailer\\Adapter':
             require ('drivers' . DIRECTORY_SEPARATOR . 'MailerAdapter.php');

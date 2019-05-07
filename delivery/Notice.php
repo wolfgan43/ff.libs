@@ -88,9 +88,18 @@ class Notice
     }
 
     public function send($message) {
+        $error                                              = array();
         $res                                                = null;
-        foreach ($this->adapters as $key => $adapter)       { $res[$key] = $adapter->send($message); }
+        foreach ($this->adapters as $key => $adapter)       {
+            $error[$key]                                    = $adapter->send($message);
+            $res[$key]                                      = $error[$key] === false;
+        }
 
+        $res["error"]                                       = implode(" " , $error);
+        $res["status"]                                      = ($res["error"]
+                                                                ? 502
+                                                                : 200
+                                                            );
         return $res;
     }
 

@@ -3,7 +3,35 @@
     <env>
         <MAILER_ADAPTER value="localhost" />
     </env>
-
+    <media>
+        <thumb
+            name="thumb"
+            dim_x="200"
+            dim_y="200"
+            max_x="200"
+            max_y="200"
+            bgcolor="FFFFFF"
+            alpha="0"
+            mode="proportional"
+            when="ever"
+            alignment="center"
+            format="jpg"
+            wmk_enable="false"
+            wmk_alignment="center"
+            transparent="true"
+            resize="true"
+            frame_size="0"
+            frame_color="null"
+            shortdesc=""
+            enable_thumb_word_dir="false"
+            enable_thumb_word_file="false"
+            word_color="null"
+            word_type="null"
+            word_align="center"
+            word_size="0"
+            force_icon="false"
+        />
+    </media>
     <dirstruct>
         <mail type="app" path="/app/views/mail" />
     </dirstruct>

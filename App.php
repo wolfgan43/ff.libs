@@ -54,7 +54,7 @@ abstract class App extends DirStruct {
             try {
                 self::setRunner($class_name);
 
-                if(self::isStatic($class_name, $method)) {
+                if(0 && self::isStatic($class_name, $method)) { //todo: deprecato. le classi statiche non discendono nei namespace
                     $output                                         = call_user_func_array($class_name . "::" . $method, $params);
                 } else {
                     $obj                                            = new $class_name();

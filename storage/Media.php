@@ -26,7 +26,7 @@
 
 namespace phpformsframework\libs\storage;
 
-use phpformsframework\libs\cache\Mem;
+use phpformsframework\libs\Config;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\DirStruct;
 use phpformsframework\libs\Error;
@@ -35,7 +35,6 @@ use phpformsframework\libs\storage\drivers\Canvas;
 use phpformsframework\libs\storage\drivers\Thumb;
 
 if (!defined("CM_SHOWFILES_OPTIMIZE"))		                { define("CM_SHOWFILES_OPTIMIZE", true); }
-if (!defined("FF_MEDIA_TABLE_MODES"))	                    { define("FF_MEDIA_TABLE_MODES", "cm_showfiles_modes"); }
 
 
 /**
@@ -70,10 +69,10 @@ class Media extends DirStruct {
     const STRICT                                                    = false;
     const RENDER_MEDIA_PATH                                         = "/media";
     const RENDER_ASSETS_PATH                                        = "/assets";
+    const RENDER_SCRIPT_PATH                                        = "/js";
+    const RENDER_STYLE_PATH                                         = "/css";
 
     const MODIFY_PATH                                               = self::SITE_PATH . "/restricted/media/modify";
-
-    const DB_TABLE_MODES                                            = FF_MEDIA_TABLE_MODES;
 
     const OPTIMIZE                                                  = CM_SHOWFILES_OPTIMIZE;
 
@@ -543,7 +542,8 @@ class Media extends DirStruct {
                                                                         , "svg" => "image/svg+xml"
                                                                         , "rss" => "application/rss+xml"
                                                                         , "json" => "application/json"
-                                                                        );
+                                                                        , "webp" => "image/webp"
+                                                                    );
     /**
      * @var Media
      */
@@ -582,14 +582,18 @@ class Media extends DirStruct {
         return self::$singleton;
     }
 
-    public static function get($pathinfo) {
-        Media::getInstance($pathinfo)->process();
+    public function get($pathinfo) {
+        $this->setPathInfo($pathinfo);
+        $res = $this->process();
 
         if(Error::check("storage")) {
             Response::code(404);
             header('Content-Type: image/png');
             echo base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII=');
             exit;
+        } else {
+            $_SERVER["HTTP_ACCEPT"]                                 = static::MIMETYPE[$this->pathinfo["extension"]];
+            return $res;
         }
     }
 
@@ -607,7 +611,9 @@ class Media extends DirStruct {
     }
 
     public static function getUrl($file, $mode = null, $key = null) {
-        $file_relative                                             = str_replace(array(
+        if($mode === null && $key === null)                         { $key = "url"; }
+        $query                                                      = null;
+        $file_relative                                              = str_replace(array(
                                                                             self::getDiskPath("uploads") . "/"
                                                                             , self::getDiskPath("uploads", true) . "/"
                                                                             , self::getDiskPath("cache-assets", true) . "/"
@@ -630,7 +636,7 @@ class Media extends DirStruct {
             $arrFile["filename"]                                    = "unknown";
             $arrFile["extension"]                                   = "png";
         }
-
+        $libs_path                                                  = self::getDiskPath("libs", true);
         switch($arrFile["extension"]) {
             case "svg";
                 return self::image2base64($file, $arrFile["extension"]);
@@ -639,18 +645,34 @@ class Media extends DirStruct {
             case "jpeg";
             case "png";
             case "gif";
-            default:
-                if(strpos($arrFile["dirname"], self::getDiskPath("libs", true)) === 0 && strpos($arrFile["dirname"], static::RENDER_ASSETS_PATH) !== false) {
+                if(strpos($arrFile["dirname"], $libs_path) === 0 && strpos($arrFile["dirname"], static::RENDER_ASSETS_PATH) !== false) {
                     $arrFile["dirname"]                             = substr($arrFile["dirname"] , strpos($arrFile["dirname"] , static::RENDER_ASSETS_PATH));
                     $showfiles                                      = self::SITE_PATH;
                 } else {
                     $showfiles                                      = self::SITE_PATH . static::RENDER_MEDIA_PATH;
-
                 }
+                break;
+            case "js":
+                $showfiles                                          = self::SITE_PATH . static::RENDER_ASSETS_PATH . static::RENDER_SCRIPT_PATH;
+                if(strpos($arrFile["dirname"], $libs_path) === 0) {
+                    $arrFile["filename"]                            = str_replace("/", "_", ltrim(substr($arrFile["dirname"] , strlen($libs_path)), "/"));
+                    $arrFile["dirname"]                             = "/";
+                    $query                                          = "?" . filemtime($file); //todo:: genera redirect con Kernel::urlVerify
+                }
+                break;
+            case "css":
+                $showfiles                                          = self::SITE_PATH . static::RENDER_ASSETS_PATH . static::RENDER_STYLE_PATH;
+                if(strpos($arrFile["dirname"], $libs_path) === 0) {
+                    $arrFile["filename"]                            = str_replace("/", "_", ltrim(substr($arrFile["dirname"] , strlen($libs_path)), "/"));
+                    $arrFile["dirname"]                             = "/";
+                    $query                                          = "?" . filemtime($file); //todo:: genera redirect con Kernel::urlVerify
+                }
+                break;
+            default:
         }
 
         $dirfilename                                                = $showfiles . ($arrFile["dirname"] == "/" ? "" : $arrFile["dirname"]) . "/" . $arrFile["filename"];
-        $url                                                        = $dirfilename . ($arrFile["filename"] && $mode ? "-" : "") . $mode . "." . $arrFile["extension"];
+        $url                                                        = $dirfilename . ($arrFile["filename"] && $mode ? "-" : "") . $mode . "." . $arrFile["extension"] . $query;
         $pathinfo                                                   = array(
                                                                         "url"                   => $url
                                                                         , "web_url"             => (strpos($url, "://") === false
@@ -687,11 +709,11 @@ class Media extends DirStruct {
         }
 
         if($file) {
-            if(!$params["mimetype"])        { $params["mimetype"]   = self::getMimeTypeByFilename($file); }
-            if(!$params["filename"])        { $params["filename"]   = basename($file); }
-            if(!$params["size"])            { $params["size"]       = filesize($file); }
-            if(!$params["etag"])            { $params["etag"]       = md5($file . filemtime($file)); }
-            if(!$params["mtime"])           { $params["mtime"]      = filemtime($file); }
+            if(!isset($params["mimetype"])) { $params["mimetype"]   = self::getMimeTypeByFilename($file); }
+            if(!isset($params["filename"])) { $params["filename"]   = basename($file); }
+            if(!isset($params["size"]))     { $params["size"]       = filesize($file); }
+            if(!isset($params["etag"]))     { $params["etag"]       = md5($file . filemtime($file)); }
+            if(!isset($params["mtime"]))    { $params["mtime"]      = filemtime($file); }
         }
 
         Response::sendHeaders($params);
@@ -865,97 +887,33 @@ class Media extends DirStruct {
 		return null;
 	}
 
+	public static function loadSchema()
+    {
+        $config                                                     = Config::rawData("media", true, "thumb");
+        if(is_array($config) && count($config)) {
+            $schema                                                 = array();
+            foreach($config AS $thumb) {
+                $attr                                               = self::getXmlAttr($thumb);
+                $key                                                = $attr["name"];
+                unset($attr["name"]);
+                $schema[$key]                                       = $attr;
+            }
+
+            Config::setSchema($schema, "media");
+        }
+    }
+
     /**
      * @param null $mode
      * @return mixed
      */
     public static function getModes($mode = null) {
-        static $loaded_modes = null;
+        $loaded_modes                                               = Config::getSchema("media");
 
-        if(!static::DB_TABLE_MODES)                                 { return array(); }
-
-        if(!is_array($loaded_modes)) {
-            $cache                                                  = Mem::getInstance();
-            $loaded_modes                                           = $cache->get("/cm/showfiles/modes");
-
-            if (!$loaded_modes) {
-                $loaded_modes                                       = array();
-/*
-                $services                                           = array(
-                                                                        "sql" => null
-                                                                        //, "nosql" => null
-                                                                    );
-                $def                                                = array(
-                                                                        "struct" => array(
-                                                                            "ID"                            => "primary"
-                                                                            , "name"                        => "string"
-                                                                            , "last_update"                 => "number"
-                                                                            , "dim_x"                       => "number"
-                                                                            , "dim_y"                       => "number"
-                                                                            , "max_x"                       => "number"
-                                                                            , "max_y"                       => "number"
-                                                                            , "bgcolor"                     => "string"
-                                                                            , "alpha"                       => "number"
-                                                                            , "mode"                        => "string"
-                                                                            , "when"                        => "string"
-                                                                            , "alignment"                   => "string"
-                                                                            , "theme"                       => "string"
-                                                                            , "format"                      => "string"
-                                                                            , "wmk_enable"                  => "boolean"
-                                                                            , "wmk_image"                   => "string"
-                                                                            , "wmk_alignment"               => "string"
-                                                                            , "transparent"                 => "boolean"
-                                                                            , "resize"                      => "boolean"
-                                                                            , "frame_size"                  => "number"
-                                                                            , "frame_color"                 => "string"
-                                                                            , "enable_thumb_image_dir"      => "boolean"
-                                                                            , "enable_thumb_image_file"     => "boolean"
-                                                                            , "wmk_alpha"                   => "number"
-                                                                            , "wmk_mode"                    => "string"
-                                                                            , "shortdesc"                   => "string"
-                                                                            , "enable_thumb_word_dir"       => "boolean"
-                                                                            , "enable_thumb_word_file"      => "boolean"
-                                                                            , "word_color"                  => "string"
-                                                                            , "word_type"                   => "string"
-                                                                            , "word_align"                  => "string"
-                                                                            , "word_size"                   => "number"
-                                                                            , "max_upload"                  => "number"
-                                                                            , "force_icon"                  => "string"
-                                                                            , "allowed_ext"                 => "string"
-                                                                        )
-                                                                        , "indexes"                         => array()
-                                                                        , "relationship"                    => array()
-                                                                        , "table"                           => static::DB_TABLE_MODES
-                                                                        , "alias"                           => array()
-                                                                        , "connectors"                      => false
-                                                                    );
-                $modes = Storage::getInstance($services, $def)->read(true);
-*/
-                //todo: da tramutare tutto in xml con implementazione config facile
-                $db = new Database("mysqli");
-                $modes = $db->rawQuery( "SELECT * FROM " . static::DB_TABLE_MODES . " ORDER BY name", "recordset");
-                if(is_array($modes) && count($modes)) {
-                    foreach($modes AS $params) {
-                        $ID_mode                                        = $params["ID"];
-                        $mode_key                                       = strtolower(str_replace(array(" ", "_"), "-", $params["name"]));
-
-                        $loaded_modes["thumbs"][$mode_key]              = $params;
-                        $loaded_modes["keys"][$ID_mode]                 = $mode_key;
-                    }
-
-                    $cache->set("/cm/showfiles/modes", $loaded_modes);
-                }
-            }
-        }
-
-        if($mode) {
-            return ($loaded_modes["thumbs"][$loaded_modes["keys"][$mode]]
-                ? $loaded_modes["thumbs"][$loaded_modes["keys"][$mode]]
-                : $loaded_modes["thumbs"][$mode]
-            );
-        } else {
-            return $loaded_modes["thumbs"];
-        }
+        return ($loaded_modes[$mode]
+            ? $loaded_modes[$mode]
+            : $loaded_modes
+        );
     }
 
     public static function getMimeTypeByFilename($filename, $default = "text/plain") {
@@ -1023,9 +981,9 @@ class Media extends DirStruct {
 
             }
 
-            $icon_base_path                                         = self::getDiskPath("icons");
-            $abs_path                                               = ($icon_base_path && is_file($icon_base_path . "/" . $basename)
-                                                                        ? $icon_base_path
+            $icon_basepath                                         = self::getDiskPath("icons");
+            $abs_path                                               = ($icon_basepath && is_file($icon_basepath . "/" . $basename)
+                                                                        ? $icon_basepath
                                                                         : static::ICON_DISK_PATH
                                                                     );
 
@@ -1111,7 +1069,7 @@ class Media extends DirStruct {
         return !empty($return);
     }
 
-    public function __construct($pathinfo)
+    public function __construct($pathinfo = null)
     {
         $this->setPathInfo($pathinfo);
     }
@@ -1121,7 +1079,21 @@ class Media extends DirStruct {
     }
 
     public function process($mode = null) {
-        return $this->renderProcess($mode);
+         switch ($this->pathinfo["extension"]) {
+            case "js":
+                $source_file                                        = str_replace(static::RENDER_SCRIPT_PATH, "", $this->pathinfo["dirname"]) . "/" . str_replace("_", "/", $this->pathinfo["filename"]) . "/script.js";
+                break;
+            case "css":
+                $source_file                                        = str_replace(static::RENDER_STYLE_PATH, "", $this->pathinfo["dirname"]) . "/" . str_replace("_", "/", $this->pathinfo["filename"]) . "/style.css";
+                break;
+            default:
+                $source_file                                        = null;
+        }
+
+        return ($source_file
+            ? $this->staticProcess($source_file)
+            : $this->renderProcess($mode)
+        );
     }
 
     public function render($mode = null, $compress = false) {
@@ -1179,7 +1151,20 @@ class Media extends DirStruct {
             $this->pathinfo["orig"]                                 = $path;
         }
     }
-
+    private function staticProcess($source_file) {
+        $res                                                        = null;
+        $libs_disk_path                                             = self::getDiskPath("libs");
+        if(is_file($libs_disk_path . $source_file)) {
+            $cache_final_file                                       = $this->basepathCache() . $this->pathinfo["orig"];
+            $this->makeDirs(dirname($cache_final_file));
+            if(copy($libs_disk_path . $source_file, $cache_final_file)) {
+                $res = file_get_contents($cache_final_file);
+            } else {
+                Error::register("Link Failed. Check write permission on: " . $source_file . " and if directory exist and have write permission on " . $this->pathinfo["orig"]);
+            }
+        }
+        return $res;
+    }
     private function renderProcess($mode = null) {
         $this->clear();
         $this->waterMark();
@@ -1191,14 +1176,14 @@ class Media extends DirStruct {
             if ($this->mode) {
                 $final_file                                         = $this->processFinalFile();
             } else {
-                $cache_base_path                                    = $this->basepathCache();
-                if($cache_base_path && !is_file($cache_base_path . $this->pathinfo["orig"])) {
-                    $this->makeDirs($cache_base_path . $this->pathinfo["dirname"]);
-                    if(link($this->basepath . $this->filesource, $cache_base_path . $this->pathinfo["orig"])) {
-                        Error::register("Link Failed. Check write permission on: " . $this->basepath . $this->filesource . " and if directory exist and have write permission on " . $cache_base_path . $this->pathinfo["orig"]);
+                $cache_basepath                                    = $this->basepathCache();
+                if($cache_basepath && !is_file($cache_basepath . $this->pathinfo["orig"])) {
+                    $this->makeDirs($cache_basepath . $this->pathinfo["dirname"]);
+                    if(!link($this->basepath . $this->filesource, $cache_basepath . $this->pathinfo["orig"])) {
+                        Error::register("Link Failed. Check write permission on: " . $this->basepath . $this->filesource . " and if directory exist and have write permission on " . $cache_basepath . $this->pathinfo["orig"]);
                     }
 
-                    $final_file                                     = $cache_base_path . $this->pathinfo["orig"];
+                    $final_file                                     = $cache_basepath . $this->pathinfo["orig"];
                 }
             }
         }
@@ -1253,21 +1238,21 @@ class Media extends DirStruct {
     }
 
     private function basepathAsset() {
-        $base_path                                                  = $this::getDiskPath("assets");
-        if(!$base_path || !is_file($base_path . $this->filesource)) {
-            $base_path                                              = static::ASSET_DISK_PATH;
+        $basepath                                                  = $this::getDiskPath("assets");
+        if(!$basepath || !is_file($basepath . $this->filesource)) {
+            $basepath                                              = static::ASSET_DISK_PATH;
         }
 
-        return $base_path;
+        return $basepath;
     }
     private function basepathMedia() {
-        $base_path                                                  = $this::getDiskPath("uploads");
+        $basepath                                                  = $this::getDiskPath("uploads");
 
-        if(!$base_path || !is_file($base_path . $this->filesource)) {
-            $base_path                                              = $this::documentRoot();
+        if(!$basepath || !is_file($basepath . $this->filesource)) {
+            $basepath                                              = $this::documentRoot();
         }
 
-        return $base_path;
+        return $basepath;
     }
     private function findSource($mode = null) {
         $this->resolveSourcePath($mode);
@@ -1340,19 +1325,25 @@ class Media extends DirStruct {
                                                                         "dim_x"                     => null
                                                                         , "dim_y"                   => null
                                                                         , "resize"                  => false
+                                                                        , "when"                    => "ever"
                                                                         , "alignment"               => "center"
                                                                         , "mode"                    => "proportional"
                                                                         , "transparent"             => true
                                                                         , "bgcolor"                 => "FFFFFF"
-                                                                        , "alpha"                   =>  0
+                                                                        , "alpha"                   => 0
                                                                         , "format"                  => "jpg"
+                                                                        , "frame_size"              => 0
+                                                                        , "frame_color"             => "FFFFFF"
+                                                                        , "wmk_enable"              => false
+                                                                        , "enable_thumb_word_dir"   => false
+                                                                        , "enable_thumb_word_file"  => false
                                                                     );
         $params                                                     = array_replace_recursive($default_params, $params);
         $extend                                                     = true;
 
         if($extend)
         {
-            $params["filesource"]                                   = ($params["force_icon"]
+            $params["filesource"]                                   = (isset($params["force_icon"]) && $params["force_icon"]
                                                                         ? $this::documentRoot() . $params["force_icon"]
                                                                         : $this->basepath . $this->filesource
                                                                     );
@@ -1502,13 +1493,13 @@ class Media extends DirStruct {
         );
     }
     private function makeDirs($path) {
-        $cache_base_path                                            = $this->basepathCache();
-        $path                                                       = str_replace($cache_base_path, "", $path);
+        $cache_basepath                                            = $this->basepathCache();
+        $path                                                       = str_replace($cache_basepath, "", $path);
 
-        if($path && $path != "/" && !is_dir($cache_base_path . $path) && mkdir($cache_base_path . $path, 0775, true)) {
+        if($path && $path != "/" && !is_dir($cache_basepath . $path) && mkdir($cache_basepath . $path, 0775, true)) {
             while ($path != DIRECTORY_SEPARATOR) {
-                if (is_dir($cache_base_path . $path)) {
-                    chmod($cache_base_path . $path, 0775);
+                if (is_dir($cache_basepath . $path)) {
+                    chmod($cache_basepath . $path, 0775);
                 }
 
                 $path                                               = dirname($path);
@@ -1519,7 +1510,10 @@ class Media extends DirStruct {
     private function getMode() {
         if(!$this->modes)                                           { $this->modes = $this->getModes(); }
 
-        $setting                                                    = $this->modes[$this->mode];
+        $setting                                                    = (isset($this->modes[$this->mode])
+                                                                        ? $this->modes[$this->mode]
+                                                                        : false
+                                                                    );
         if(!$setting) {
             if(!$this->wizard["mode"]) {
                 if(stripos($this->mode, "x") !== false) {

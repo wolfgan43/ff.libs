@@ -141,6 +141,10 @@ class Error {
         return (bool) self::raise($bucket);
     }
     public static function raise($bucket = null) {
+        if($bucket && !isset(self::$errors[$bucket])) {
+            return null;
+        }
+
         return ($bucket === false
             ? self::$errors
             : self::$errors[$bucket]

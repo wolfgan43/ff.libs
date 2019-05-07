@@ -469,6 +469,7 @@ class Request implements Configurable {
                 if(self::isAllowedSize($request, $method) && self::isAllowedSize(getallheaders(), "HEAD")) {
                     //Mapping Request by Rules
                     if(is_array(self::$rules["body"]) && count(self::$rules["body"]) && is_array($request) && count($request)) {
+                        self::$request["valid"]                                                 = array();
                         foreach(self::$rules["body"] AS $rule) {
                             if(isset($rule["required"]) && $rule["required"] === true && !isset($request[$rule["name"]])) {
                                 $errors[400][]                                                  = $rule["name"] . " is required";

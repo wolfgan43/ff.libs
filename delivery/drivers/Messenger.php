@@ -112,7 +112,8 @@ class Messenger {
         if(Error::check("messenger") || Debug::ACTIVE) {
             $dump = array(
                 "source" => Debug::stackTrace()
-                , "URL" => $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"] . " REFERER: " . $_SERVER["HTTP_REFERER"]
+                , "URL" => $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]
+                , "REFERER" => (isset($_SERVER["HTTP_REFERER"]) ? $_SERVER["HTTP_REFERER"] : "")
                 , " content" => $this->content
                 , " from" => $this->adapter->from("tel")
                 , " error" => Error::raise("messenger")
@@ -159,12 +160,6 @@ class Messenger {
         return $this;
     }
 
-    private function clearResult()
-    {
-        $this->to       = null;
-
-        Error::clear("messenger");
-    }
     /**
      * @param null|string $messengerAdapter
      */

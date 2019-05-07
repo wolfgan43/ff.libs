@@ -254,18 +254,24 @@ class PageHtml extends DirStruct {
     }
 
     public function addJs($key, $url = null) {
-        $this->js[$key]                         = str_replace($this::$disk_path, $this::SITE_PATH, $url);
-
+        $this->js[$key]                         = (strpos($url, $this::$disk_path) === 0
+                                                    ? Media::getUrl($url)
+                                                    : $url
+                                                );
         return $this;
     }
     public function addCss($key, $url = null) {
-        $this->css[$key]                        = str_replace($this::$disk_path, $this::SITE_PATH, $url);
-
+        $this->css[$key]                        = (strpos($url, $this::$disk_path) === 0
+                                                    ? Media::getUrl($url)
+                                                    : $url
+                                                );
         return $this;
     }
     public function addFont($key, $url) {
-        $this->fonts[$key]                      = str_replace($this::$disk_path, $this::SITE_PATH, $url);
-
+        $this->fonts[$key]                      = (strpos($url, $this::$disk_path) === 0
+                                                    ? Media::getUrl($url)
+                                                    : $url
+                                                );
         return $this;
     }
     public function addMeta($key, $content, $type = "name") {

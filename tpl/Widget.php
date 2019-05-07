@@ -129,10 +129,10 @@ abstract class Widget extends DirStruct {
     }
 
     protected function addJs($key, $url) {
-        $this->js[$key] = str_replace($this::$disk_path, $this::SITE_PATH, $url);
+        $this->js[$key] = $url;
     }
     protected function addCss($key, $url) {
-        $this->css[$key] = str_replace($this::$disk_path, $this::SITE_PATH, $url);
+        $this->css[$key] = $url;
 
     }
 

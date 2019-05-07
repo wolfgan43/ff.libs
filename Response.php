@@ -59,13 +59,19 @@ class Response {
 
         if(!$type) {
             switch ($_SERVER["HTTP_ACCEPT"]) {
-                case "application/xml":
-                case "text/xml":
-                    $type                           = "xml";
-                    break;
                 case "application/json":
                 case "text/json":
                     $type                           = "json";
+                    break;
+                case "application/x-javascript":
+                    $type                           = "js";
+                    break;
+                case "text/css":
+                    $type                           = "css";
+                    break;
+                case "application/xml":
+                case "text/xml":
+                    $type                           = "xml";
                     break;
                 case "application/soap+xml":
                     $type                           = "soap";
@@ -90,6 +96,18 @@ class Response {
 
         if(isset($response["error"]))               { $response["error"] = Translator::get_word_by_code($response["error"]); }
         switch($type) {
+            case "js":
+                header("Content-type: application/x-javascript");
+                echo $response;
+                break;
+            case "css":
+                header("Content-type: text/css");
+                echo $response;
+                break;
+            case "html":
+                header("Content-type: text/html");
+                echo $response["html"];
+                break;
             case "xml":
                 header("Content-type: application/xml");
                 echo $response;
@@ -97,10 +115,6 @@ class Response {
             case "soap":
                 header("Content-type: application/soap+xml");
                 //todo: self::soap_client($response["url"], $response["headers"], $response["action"], $response["data"], $response["auth"]);
-                break;
-            case "html":
-                header("Content-type: text/html");
-                echo $response["html"];
                 break;
             case "text":
                 header("Content-type: text/plain");
@@ -152,17 +166,17 @@ class Response {
         //header_remove();
         $days                       = 7;
 
-        $keep_alive			        = $params["keep_alive"]		    ? $params["keep_alive"]			: false;
-        $max_age				    = $params["max_age"]            ? $params["max_age"]            : null;
-        $expires				    = $params["expires"]            ? $params["expires"]            : null;
-        $compress			        = $params["compress"]           ? $params["compress"]           : false;
-        $cache					    = $params["cache"]			    ? $params["cache"]				: "public";
-        $disposition			    = $params["disposition"]		? $params["disposition"]		: "inline";
-        $filename			        = $params["filename"]           ? $params["filename"]           : null;
-        $mtime			            = $params["mtime"]              ? $params["mtime"]              : null;
-        $mimetype			        = $params["mimetype"]		    ? $params["mimetype"]			: null;
-        $size				        = $params["size"]               ? $params["size"]               : null;
-        $etag				        = $params["etag"]				? $params["etag"]				: true;
+        $keep_alive			        = isset($params["keep_alive"])  ? $params["keep_alive"]			: false;
+        $max_age				    = isset($params["max_age"])     ? $params["max_age"]            : null;
+        $expires				    = isset($params["expires"])     ? $params["expires"]            : null;
+        $compress			        = isset($params["compress"])    ? $params["compress"]           : false;
+        $cache					    = isset($params["cache"])		? $params["cache"]				: "public";
+        $disposition			    = isset($params["disposition"])	? $params["disposition"]		: "inline";
+        $filename			        = isset($params["filename"])    ? $params["filename"]           : null;
+        $mtime			            = isset($params["mtime"])       ? $params["mtime"]              : null;
+        $mimetype			        = isset($params["mimetype"])	? $params["mimetype"]			: null;
+        $size				        = isset($params["size"])        ? $params["size"]               : null;
+        $etag				        = isset($params["etag"])		? $params["etag"]				: true;
 
         if($size)                   { header("Content-Length: " . $size); }
         if(strlen($etag))           { header("ETag: " . $etag); }

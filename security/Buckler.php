@@ -39,7 +39,7 @@ class Buckler extends DirStruct {
     public static function loadSchema() {
         $config                                                 = Config::rawData("badpath", true, "rule");
         if(is_array($config) && count($config)) {
-            $schema                                             = Config::getSchema("badpath");
+            $schema                                             = array();
             foreach($config AS $badpath) {
                 $attr                                           = self::getXmlAttr($badpath);
                 $key                                            = $attr["source"];

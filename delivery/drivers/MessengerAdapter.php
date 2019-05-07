@@ -49,7 +49,7 @@ abstract class Adapter {
                                                             );
             $this->from["name"]                             = (defined($prefix . "NAME")
                                                                 ? constant($prefix . "NAME")
-                                                                : $this->from["email"]
+                                                                : $this->from["tel"]
                                                             );
         }
 

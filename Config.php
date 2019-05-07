@@ -59,7 +59,7 @@ class Config  {
     }
 
     public static function loadRawData($paths) {
-        $paths[__DIR__]                                             = array("filter" => array("xml"));
+        $paths                                                      = array_replace(array(__DIR__ => array("filter" => array("xml"))), $paths);
 
         Filemanager::scan($paths, function ($file) {
             $configs                                                = Filemanager::getInstance("xml")->read($file);

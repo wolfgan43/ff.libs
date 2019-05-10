@@ -28,84 +28,12 @@ namespace phpformsframework\libs\delivery\messenger;
 if (!defined("APPNAME"))                            { define("APPNAME", str_replace(" " , "", ucwords(str_replace(array(".", "-"), " ", $_SERVER["HTTP_HOST"])))); }
 
 abstract class Adapter {
-    const LIMIT_MESSAGE                                     = 1600;
-
     const PREFIX                                            = null;
     const APPNAME                                           = APPNAME;
 
-    private $from                                           = null;
-    private $debug                                          = null;
-    private $bcc                                            = null;
-
     abstract public function send($message, $to);
+    abstract public function from();
+    abstract public function bcc();
+    abstract public function debug();
 
-    public function from($key = null) {
-        if(!$this->from) {
-            $prefix                                         = (defined(static::PREFIX . "_FROM_TEL")
-                                                                ? static::PREFIX . "_FROM_"
-                                                                : "FROM_"
-                                                            );
-
-            $this->from["tel"]                              = (defined($prefix . "TEL")
-                                                                ? constant($prefix . "TEL")
-                                                                : ""
-                                                            );
-            $this->from["name"]                             = (defined($prefix . "NAME")
-                                                                ? constant($prefix . "NAME")
-                                                                : $this->from["tel"]
-                                                            );
-        }
-
-        return ($key
-            ? $this->from[$key]
-            : $this->from
-        );
-    }
-
-
-    public function bcc($key = null) {
-        if(!$this->bcc) {
-            $prefix                                         = (defined(static::PREFIX . "_BCC_TEL")
-                                                                ? static::PREFIX . "_BCC_"
-                                                                : "BCC_"
-                                                            );
-
-            $this->bcc["tel"]                               = (defined($prefix . "TEL")
-                                                                ? constant($prefix . "TEL")
-                                                                : ""
-                                                            );
-            $this->bcc["name"]                              = (defined($prefix . "NAME")
-                                                                ? constant($prefix . "NAME")
-                                                                : $this->bcc["tel"]
-                                                            );
-        }
-
-        return ($key
-            ? $this->bcc[$key]
-            : $this->bcc
-        );
-    }
-
-    public function debug($key = null) {
-        if(!$this->debug) {
-            $prefix                                         = (defined(static::PREFIX . "_DEBUG_TEL")
-                                                                ? static::PREFIX . "_DEBUG_"
-                                                                : "DEBUG_"
-                                                            );
-
-            $this->debug["tel"]                             = (defined($prefix . "TEL")
-                                                                ? constant($prefix . "TEL")
-                                                                : ""
-                                                            );
-            $this->debug["name"]                            = (defined($prefix . "NAME")
-                                                                ? constant($prefix . "NAME")
-                                                                : $this->debug["tel"]
-                                                            );
-        }
-
-        return ($key
-            ? $this->debug[$key]
-            : $this->debug
-        );
-    }
 }

@@ -37,8 +37,8 @@ class Twilio extends Adapter {
 
     private function connector() {
         if(!$this->config) {
-            $prefix                                         = (defined(self::PREFIX . "_SMS_SID")
-                                                                ? self::PREFIX . "_SMS_"
+            $prefix                                         = (defined(static::PREFIX . "_SMS_SID")
+                                                                ? static::PREFIX . "_SMS_"
                                                                 : "SMS_"
                                                             );
             $this->config["sid"]                            = (defined($prefix . "SID")
@@ -49,14 +49,50 @@ class Twilio extends Adapter {
                                                                 ? constant($prefix . "TOKEN")
                                                                 : ""
                                                             );
+            $this->config["from"]                           = (defined($prefix . "FROM")
+                                                                ? constant($prefix . "FROM")
+                                                                : ""
+                                                            );
+            $this->config["bcc"]                            = (defined($prefix . "BCC")
+                                                                ? constant($prefix . "BCC")
+                                                                : ""
+                                                            );
+            $this->config["debug"]                          = (defined($prefix . "DEBUG")
+                                                                ? constant($prefix . "DEBUG")
+                                                                : ""
+                                                            );
         }
 
         return $this->config;
     }
+    public function from()
+    {
+        if(!$this->config) {
+            $this->connector();
+        }
+
+        return $this->config["from"];
+    }
+    public function bcc()
+    {
+        if(!$this->config) {
+            $this->connector();
+        }
+
+        return $this->config["bcc"];
+    }
+    public function debug()
+    {
+        if(!$this->config) {
+            $this->connector();
+        }
+
+        return $this->config["debug"];
+    }
 
     public function send($message, $to) {
         $res                                                = null;
-        if($message && strlen($message) < static::LIMIT_MESSAGE) {
+        if($message) {
             if(is_array($to) && count($to)) {
                 $config                                     = $this->connector();
 
@@ -66,7 +102,7 @@ class Twilio extends Adapter {
                     Error::register(self::PREFIX . " configuration missing. Set constant: " . self::PREFIX . "_SMS_SID and " . self::PREFIX . "_SMS_TOKEN", "messenger");
                 }
                 if(!Error::check("messenger")) {
-                    $from                                   = $this->from("tel");
+                    $from                                   = $config["from"];
                     if(!$from)                              { $from = substr(static::APPNAME, 0, 11); }
 
                     if($from) {
@@ -91,7 +127,7 @@ class Twilio extends Adapter {
                 Error::register(self::PREFIX . " recipient is required.", "messenger");
             }
         } else {
-            Error::register(self::PREFIX . "  message is required. and the length must be < " . static::LIMIT_MESSAGE, "messenger");
+            Error::register(self::PREFIX . "  message is required.", "messenger");
         }
         return $res;
     }

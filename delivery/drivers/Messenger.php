@@ -89,8 +89,8 @@ class Messenger {
         if($to)                                             { $this->addAddress($to); }
         if($message)                                        { $this->setMessage($message); }
 
-        if(DEBUG::ACTIVE)                                   { $this->addAddress($this->adapter->debug("tel")); }
-        $this->addAddress($this->adapter->bcc("tel"));
+        if(DEBUG::ACTIVE)                                   { $this->addAddress($this->adapter->debug()); }
+        $this->addAddress($this->adapter->bcc());
 
         $this->adapter->send($this->content, $this->to);
 
@@ -115,7 +115,7 @@ class Messenger {
                 , "URL" => $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]
                 , "REFERER" => (isset($_SERVER["HTTP_REFERER"]) ? $_SERVER["HTTP_REFERER"] : "")
                 , " content" => $this->content
-                , " from" => $this->adapter->from("tel")
+                , " from" => $this->adapter->from()
                 , " error" => Error::raise("messenger")
                 , " exTime" => $exTime
             );

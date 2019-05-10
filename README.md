@@ -9,12 +9,18 @@
 | Redis    |     Last Stable |    No    |
 | Convert  |     Last Stable |    No    |
 
+
+## DNS settings
+Set SPF record (Sender Policy Framework)
+
 ##Apache settings
 
 Disable /modules
 Disable /icons
 Disable Request Method TRACE
 
+ServerSignature Off
+ServerTokens Prod
 
 
 ##Php settings

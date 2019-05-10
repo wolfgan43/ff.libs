@@ -30,9 +30,14 @@ use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\storage\Media;
 
+if (!defined("APPNAME"))                 { define("APPNAME", str_replace(" " , "", ucwords(str_replace(array(".", "-"), " ", $_SERVER["HTTP_HOST"])))); }
+if (!defined("ENCODING"))                { define("ENCODING", "uft-8"); }
+
 class PageHtml extends DirStruct {
     const NL                                    = "\n";
+    const APPNAME                               = APPNAME;
 
+    private $encoding                           = ENCODING;
     private $path                               = null;
     private $css                                = array();
     private $js                                 = array();
@@ -232,7 +237,11 @@ class PageHtml extends DirStruct {
                                                 );
         $this->loadResources();
     }
+    public function setEncoding($encoding) {
+        $this->encoding = $encoding;
 
+        return $this;
+    }
     public function addAssets($js = null, $css = null, $fonts = null) {
         if(is_array($js) && count($js)) {
             foreach ($js as $key => $url) {
@@ -254,26 +263,28 @@ class PageHtml extends DirStruct {
     }
 
     public function addJs($key, $url = null) {
-        $this->js[$key]                         = (strpos($url, $this::$disk_path) === 0
-                                                    ? Media::getUrl($url)
-                                                    : $url
-                                                );
+        $this->js[$key]                         = $this->mask($url);
+
         return $this;
     }
     public function addCss($key, $url = null) {
-        $this->css[$key]                        = (strpos($url, $this::$disk_path) === 0
-                                                    ? Media::getUrl($url)
-                                                    : $url
-                                                );
+        $this->css[$key]                        = $this->mask($url);
+
         return $this;
     }
     public function addFont($key, $url) {
-        $this->fonts[$key]                      = (strpos($url, $this::$disk_path) === 0
-                                                    ? Media::getUrl($url)
-                                                    : $url
-                                                );
+        $this->fonts[$key]                      = $this->mask($url);
+
         return $this;
     }
+
+    private function mask($url) {
+        return (strpos($url, $this::$disk_path) === 0
+            ? Media::getUrl($url)
+            : $url
+        );
+    }
+
     public function addMeta($key, $content, $type = "name") {
         $this->meta[$key]                       = array(
                                                     $type => $key
@@ -295,12 +306,34 @@ class PageHtml extends DirStruct {
         return $this;
     }
 
+    private function getTitle($include_appname = true) {
+        $title                                  = ($this->title
+                                                    ? $this->title
+                                                    : ucfirst(basename($this->path))
+                                                );
+        if($include_appname) {
+            $title                              .= " - " . static::APPNAME;
+        }
+        return $title;
+    }
     private function parseTitle() {
-        return $this::NL . '<title>' . $this->title . '</title>';
+        return $this::NL . '<title>' . $this->getTitle() . '</title>';
     }
+
     private function parseDescription() {
-        return $this::NL .'<meta name="description" content="' . $this->description . '" />';
+        $description                            = ($this->description
+                                                    ? $this->description
+                                                    : $this->getTitle(false)
+                                                );
+
+
+        return $this::NL .'<meta name="description" content="' . $description . '" />';
     }
+
+    private function parseEncoding() {
+        return '<meta http-equiv="Content-Type" content="text/html; charset=' . $this->encoding . '"/>';
+    }
+
     private function parseMeta() {
         $res                                    = "";
         if(is_array($this->meta) && count($this->meta)) {
@@ -337,7 +370,9 @@ class PageHtml extends DirStruct {
         return $res;
     }
     private function parseCss() {
-        return $this::NL . '<link rel="stylesheet" type="text/css" crossorigin="anonymous" href="' . implode('" />' . $this::NL . '<link rel="stylesheet" type="text/css" crossorigin="anonymous" href="', $this->css) . '" />';
+        $css_tag                                = $this::NL . '<link rel="stylesheet" type="text/css" crossorigin="anonymous" href="';
+
+        return $css_tag . implode('" />' . $css_tag, $this->css) . '" />';
     }
     private function parseJs($async = false, $defer = true) {
         $async_attr                             = ($async
@@ -349,7 +384,10 @@ class PageHtml extends DirStruct {
                                                     ? "defer "
                                                     : ""
                                                 );
-        return $this::NL . '<script ' . $async_attr . $defer_attr . 'crossorigin="anonymous" src="' . implode('"></script>' . $this::NL . '<script ' . $async_attr . $defer_attr . 'crossorigin="anonymous" src="', $this->js) . '"></script>';
+
+        $script_tag                             = $this::NL . '<script ' . $async_attr . $defer_attr . 'crossorigin="anonymous" src="';
+
+        return $script_tag . implode('"></script>' . $script_tag, $this->js) . '"></script>';
     }
 
     private function parseLayout() {
@@ -364,6 +402,7 @@ class PageHtml extends DirStruct {
         return $this->doctype
             . $this::NL . '<html lang="' . $this->lang . '">'
             . $this::NL . '<head>'
+                . $this->parseEncoding()
                 . $this->parseTitle()
                 . $this->parseDescription()
                 . $this->parseMeta()

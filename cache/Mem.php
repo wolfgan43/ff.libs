@@ -28,10 +28,7 @@ namespace phpformsframework\libs\cache;
 
 use phpformsframework\libs\cache\mem\Adapter;
 
-if (!defined("FF_PHP_EXT"))                         define("FF_PHP_EXT", "php");
-if (!defined("FF_CACHE_ADAPTER"))                   define("FF_CACHE_ADAPTER", false);
-if (!defined("FF_CACHE_SERIALIZER"))                define("FF_CACHE_SERIALIZER", "PHP");
-if (!defined("APPID"))                              define("APPID", $_SERVER["HTTP_HOST"]);
+if (!defined("FF_CACHE_ADAPTER"))                   { define("FF_CACHE_ADAPTER", false); }
 
 class Mem // apc | memcached | redis | globals
 {

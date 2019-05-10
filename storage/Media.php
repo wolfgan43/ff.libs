@@ -669,6 +669,7 @@ class Media extends DirStruct {
                 }
                 break;
             default:
+                $showfiles                                          = null;
         }
 
         $dirfilename                                                = $showfiles . ($arrFile["dirname"] == "/" ? "" : $arrFile["dirname"]) . "/" . $arrFile["filename"];
@@ -757,17 +758,17 @@ class Media extends DirStruct {
                                                                                                             )
                                                                                                         )
                                                                         , "image/png"                   => array(
-                                                                                                            "convert"       => array( //https://www.imagemagick.org/script/index.php
-                                                                                                                "bin"       => "convert"
-                                                                                                                , "cmd" 	=> 'convert ' . $filename . ' -strip ' . $filename
-                                                                                                            )
-                                                                                                            , "OptiPng"     => array( //http://optipng.sourceforge.net/
+                                                                                                            "OptiPng"     => array( //http://optipng.sourceforge.net/
                                                                                                                 "bin"       => "optipng"
-                                                                                                                , "cmd" 	=> 'optipng -i0 -o2 ' . $filename
+                                                                                                                , "cmd" 	=> 'optipng -o2 ' . $filename
                                                                                                             )
                                                                                                             , "PngOut"      => array(
                                                                                                                 "bin"       => "pngout"
                                                                                                                 , "cmd" 	=> 'pngout -s0 -q -y ' . $filename
+                                                                                                            )
+                                                                                                            , "convert"       => array( //https://www.imagemagick.org/script/index.php
+                                                                                                                "bin"       => "convert"
+                                                                                                                , "cmd" 	=> 'convert ' . $filename . ' -strip ' . $filename
                                                                                                             )
                                                                                                         )
                                                                         , "image/gif"                   => array(
@@ -809,7 +810,7 @@ class Media extends DirStruct {
                     break;
                 }
             }
-            if($cmd) {
+            if($cmd) { //todo: da testare se funziona veramente
                 $nowait_cmd                                         = ($params["wait"]
                                                                         ? ''
                                                                         : ' > /dev/null 2>/dev/null & '
@@ -817,8 +818,6 @@ class Media extends DirStruct {
                 $shell_cmd                                          = 'nice -n 13 ' . $cmd . $nowait_cmd;
 
                 //@shell_exec("(" . $shell_cmd . ") > /dev/null 2>/dev/null &");
-                //echo $shell_cmd;
-                //exit;
                 //@shell_exec("nohup nice -n 13 " . $shell_cmd . " > /dev/null 2>&1");
 
                 @shell_exec($shell_cmd);

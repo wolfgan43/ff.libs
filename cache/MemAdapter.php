@@ -25,6 +25,9 @@
  */
 namespace phpformsframework\libs\cache\mem;
 
+if (!defined("FF_CACHE_SERIALIZER"))                { define("FF_CACHE_SERIALIZER", "PHP"); }
+if (!defined("APPID"))                              { define("APPID", $_SERVER["HTTP_HOST"]); }
+
 abstract class Adapter
 {
     const SERIALIZER                = FF_CACHE_SERIALIZER;

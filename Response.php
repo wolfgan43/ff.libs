@@ -26,6 +26,7 @@
 namespace phpformsframework\libs;
 
 use phpformsframework\libs\international\Translator;
+use phpformsframework\libs\storage\Media;
 
 class Response {
      public static function error($status = 404, $response = null, $headers = null, $type = null) {
@@ -38,6 +39,7 @@ class Response {
                                                         : 200
                                                     );
         }
+
         Response::code($status);
 
         if(Debug::ACTIVE) {
@@ -95,34 +97,29 @@ class Response {
         }
 
         if(isset($response["error"]))               { $response["error"] = Translator::get_word_by_code($response["error"]); }
+
+        self::sendHeadersByType($type);
         switch($type) {
             case "js":
-                header("Content-type: application/x-javascript");
                 echo $response;
                 break;
             case "css":
-                header("Content-type: text/css");
                 echo $response;
                 break;
             case "html":
-                header("Content-type: text/html");
                 echo $response["html"];
                 break;
             case "xml":
-                header("Content-type: application/xml");
                 echo $response;
                 break;
             case "soap":
-                header("Content-type: application/soap+xml");
                 //todo: self::soap_client($response["url"], $response["headers"], $response["action"], $response["data"], $response["auth"]);
                 break;
             case "text":
-                header("Content-type: text/plain");
                 echo $response;
                 break;
             case "json":
             default:
-                header("Content-type: application/json");
                 echo json_encode((array) $response);
         }
 
@@ -156,12 +153,23 @@ class Response {
     }
 
     public static function code($code = null) {
-         return ($code
+        return ($code
              ? http_response_code($code)
              : http_response_code()
          );
 
     }
+
+    private static function sendHeadersByType($type) {
+        $mimetype = Media::MIMETYPE[$type];
+         if(0) {
+
+             self::sendHeaders(array("mimetype" => $mimetype));
+         } else {
+             header("Content-type: " . $mimetype);
+         }
+    }
+
     public static function sendHeaders($params = null) {
         //header_remove();
         $days                       = 7;
@@ -195,11 +203,9 @@ class Response {
             header("Content-type: $content_type");
         }
 
-        if($disposition) {
+        if($disposition && $filename) {
             $content_disposition = $disposition;
-            if ($filename) {
-                $content_disposition .= "; filename=" . rawurlencode($filename);
-            }
+            $content_disposition .= "; filename=" . rawurlencode($filename);
             header("Content-Disposition: " . $content_disposition);
         }
 
@@ -208,7 +214,20 @@ class Response {
             header("Connection: Keep-Alive");
         }
         if($compress) {
-            header("Content-encoding: " . ($compress === true ? "gzip" : $compress));
+            $accept_encoding    = (isset($_SERVER["HTTP_ACCEPT_ENCODING"])
+                                    ? explode("," , str_replace(" ", "", $_SERVER["HTTP_ACCEPT_ENCODING"]))
+                                    : false
+                                );
+            if($accept_encoding) {
+                if ($compress === true) {
+                    $compress   = $accept_encoding[0];
+                } elseif (array_search($compress, $accept_encoding) === false) {
+                    $compress = false;
+                }
+                if($compress) {
+                    header("Content-encoding: " . $compress);
+                }
+            }
         }
 
         switch($cache) {
@@ -248,9 +267,7 @@ class Response {
                             header("Last-Modified: $mod_gmt");
                         }
                         if ($max_age === null) {
-                            //$max_age = 60 * 60 * $hours;
-                            $max_age = 60 * 60 * 24 * $days;
-                            header("Cache-Control: public, max-age=$max_age");
+                            header("Cache-Control: public");
                         }
                         else {
                             header("Cache-Control: public, max-age=$max_age");

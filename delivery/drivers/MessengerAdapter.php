@@ -25,10 +25,13 @@
  */
 namespace phpformsframework\libs\delivery\messenger;
 
+if (!defined("APPNAME"))                            { define("APPNAME", str_replace(" " , "", ucwords(str_replace(array(".", "-"), " ", $_SERVER["HTTP_HOST"])))); }
+
 abstract class Adapter {
     const LIMIT_MESSAGE                                     = 1600;
 
     const PREFIX                                            = null;
+    const APPNAME                                           = APPNAME;
 
     private $from                                           = null;
     private $debug                                          = null;

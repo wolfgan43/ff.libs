@@ -165,7 +165,7 @@ class Validator
     private static $errorName                               = null;
 
     /**
-     * @param $what
+     * @param string $what
      * @param null $type
      * @param array[range, fakename] $option
      * @return array[status, error]
@@ -181,19 +181,18 @@ class Validator
                                                             : "string"
                                                         );
         }
-
+        $what                                           = urldecode($what);
         $rule                                           = self::RULES[$type];
 
         self::setErrorName($option["fakename"]);
+        if(isset($option["range"]))                     { self::setRuleOptions($rule, $option["range"]); }
         if(!self::isAllowedSize($what, $rule["length"])) {
             $res                                        = self::isError(self::getErrorName($what) . " Max Length Exeeded", $type, 413);
         } else {
-            if(isset($option["range"]))                 { self::setRuleOptions($rule, $option["range"]); }
             $validation                                 = filter_var($what, $rule["filter"], array(
                                                             "flags"         => $rule["flags"]
                                                             , "options"     => $rule["options"]
                                                         ));
-
             if($validation === null) {
                 $res                                    = self::isError(self::getErrorName($what) . " is not a valid " . $type . ($option["range"] ? ". The permitted values are [" . $option["range"] . "]" : ""), $type);
             } elseif(is_array($validation)) {
@@ -685,17 +684,31 @@ class Validator
 
     private static function setRuleOptions(&$rule, $option) {
         if($option) {
-            if(strpos($option, ":") !== false) {
-                $arrOpt                                 = explode(":", $option);
-                if(is_numeric($arrOpt[0])) {
-                    $rule["options"]["min_range"]       = $arrOpt[0];
+            if($rule["filter"] == FILTER_VALIDATE_INT || $rule["filter"] == FILTER_VALIDATE_FLOAT) {
+                if(strpos($option, ":") !== false) {
+                    $arrOpt                                 = explode(":", $option);
+                    if(is_numeric($arrOpt[0])) {
+                        $rule["options"]["min_range"]       = $arrOpt[0];
+                    }
+                    if(is_numeric($arrOpt[1])) {
+                        $rule["options"]["max_range"]       = $arrOpt[1];
+                    }
+                } elseif(is_numeric($option)) {
+                    $rule["options"]["decimal"]             = $option;
                 }
-                if(is_numeric($arrOpt[1])) {
-                    $rule["options"]["max_range"]       = $arrOpt[1];
-                }
-            } elseif(is_numeric($option)) {
-                $rule["options"]["decimal"]             = $option;
+            } else {
+                self::setRuleOptionsString($rule, $option);
             }
+        }
+    }
+    private static function setRuleOptionsString(&$rule, $option) {
+        if(strpos($option, ":") !== false) {
+            $arrOpt                                 = explode(":", $option);
+            if(is_numeric($arrOpt[1])) {
+                $rule["length"]                     = $arrOpt[1];
+            }
+        } elseif(is_numeric($option)) {
+            $rule["length"]                         = $option;
         }
     }
     private static function setErrorName($name) {

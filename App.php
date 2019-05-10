@@ -49,7 +49,7 @@ abstract class App extends DirStruct {
     }
 
     public static function caller($class_name, $method, $params) {
-        $output = null;
+        $output                                                     = null;
         if($class_name) {
             try {
                 self::setRunner($class_name);

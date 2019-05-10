@@ -67,7 +67,7 @@ class Twilio extends Adapter {
                 }
                 if(!Error::check("messenger")) {
                     $from                                   = $this->from("tel");
-                    if(!$from)                              { $from = substr(str_replace(" " , "", ucwords(str_replace(array(".", "-"), " ", $_SERVER["HTTP_HOST"]))), 0, 11); }
+                    if(!$from)                              { $from = substr(static::APPNAME, 0, 11); }
 
                     if($from) {
                         foreach ($to as $tel => $name) {

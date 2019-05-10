@@ -327,7 +327,14 @@ class Log extends DirStruct {
     }
 
     public static function getLogDir() {
-        return self::getDiskPath("cache") . str_replace("HTTP_HOST", $_SERVER["HTTP_HOST"], self::LOG_DIR);
+        $cache_disk_path = self::getDiskPath("cache");
+        if($cache_disk_path) {
+            $log_dir = $cache_disk_path . str_replace("HTTP_HOST", $_SERVER["HTTP_HOST"], self::LOG_DIR);
+            if(is_dir($log_dir)) {
+                return $log_dir;
+            }
+        }
+        return null;
     }
 
     private static function run($message, $type = null, $routine = null, $action = null, $status = null, $response = null) {
@@ -371,7 +378,7 @@ class Log extends DirStruct {
 
     protected static function set($data, $filename = null, $override = false) {
         $log_path                                                   = self::getLogDir();
-        if(is_dir($log_path)) {
+        if($log_path) {
             $file                                                   = $log_path . '/' . date("Y-m-d") . "_" . $filename . '.txt';
 
             if($override) {

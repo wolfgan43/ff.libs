@@ -439,7 +439,7 @@ class Media extends DirStruct {
                                                                         , "tex" => "application/x-tex"
                                                                         , "texi" => "application/x-texinfo"
                                                                         , "texinfo" => "application/x-texinfo"
-                                                                        , "text" => "application/plain"
+                                                                        , "text" => "text/plain"
                                                                         , "tgz" => "application/gnutar"
                                                                         , "tif" => "image/tiff"
                                                                         , "tiff" => "image/tiff"

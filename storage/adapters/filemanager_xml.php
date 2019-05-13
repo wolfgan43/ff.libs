@@ -43,7 +43,7 @@ class Xml extends Adapter
             $return                                             = Array2XML::XML_TO_ARR($xmlstring);
             if($return) {
                 if($search_keys) {
-                    $res                                        = $this->search($res, $search_keys, $search_flag);
+                    $res                                        = $this->search($return, $search_keys, $search_flag);
                 } else {
                     $res                                        = $return;
                 }

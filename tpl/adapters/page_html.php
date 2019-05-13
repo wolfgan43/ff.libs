@@ -399,6 +399,26 @@ class PageHtml extends DirStruct {
     }
 
     public function process() {
+        $seo = new Seo($this->doctype
+            . $this::NL . '<html lang="' . $this->lang . '">'
+            . $this::NL . '<head>'
+            . $this->parseEncoding()
+            . $this->parseTitle()
+            . $this->parseDescription()
+            . $this->parseMeta()
+            . $this->parseFavicons()
+            . $this->parseFonts()
+            . $this->parseCss()
+            . $this->parseJs()
+            . $this::NL . '</head>'
+            . $this::NL . '<body>'
+            . $this->parseLayout()
+            . $this::NL . '</body>'
+            . $this::NL . '</html>');
+
+        var_dump($seo->extractKeywords());
+        die("arrivo");
+
         return $this->doctype
             . $this::NL . '<html lang="' . $this->lang . '">'
             . $this::NL . '<head>'

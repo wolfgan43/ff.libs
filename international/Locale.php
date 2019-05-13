@@ -261,6 +261,12 @@ class Locale implements Configurable {
             : self::$lang
         );
     }
+    public static function getLangs($key = null) {
+        return ($key
+            ? self::$locale["lang"][$key]
+            : self::$locale["lang"]
+        );
+    }
     public static function getCountryDefault($key = null) {
         return ($key
             ? self::$countryDefault[$key]

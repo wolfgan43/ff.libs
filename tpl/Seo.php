@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\tpl;
 
+use phpformsframework\libs\Error;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\Validator;
@@ -32,39 +33,133 @@ use phpformsframework\libs\Validator;
 if (!defined("ENCODING"))                { define("ENCODING", "uft-8"); }
 
 class Seo {
-    private $title                              = null;
-    private $description                        = null;
     private $content                            = null;
     private $lang                               = null;
     private $encoding                           = ENCODING;
     private $stopwords                          = null;
     private $unwantedwords                      = array();
+
+    private $meta                               = null;
+    private $title                              = null;
+    private $description                        = null;
+    private $h1                                 = null;
+    private $h2                                 = null;
+    private $h3                                 = null;
+    private $p                                  = null;
+    private $strong                             = null; //b
+    private $em                                 = null;  //i
+    private $alt                                = null;
+    private $a                                  = null;
+
+    private $page_rules                         = array(
+                                                    "keyword_density"   => array(
+                                                        "min"           => "2"
+                                                        , "max"         => "5"
+                                                    )
+                                                    , "page_speed"      => array(
+                                                        "first_byte"    => "0.4"
+                                                        , "DOM_loaded"  => "4"
+                                                    )
+                                                );
+    private $container_rules                    = array(
+                                                    "title"             => array(
+                                                        "required"      => true
+                                                        , "limit"       => 1
+                                                        , "min"         => 10
+                                                        , "max"         => 60
+                                                        , "truncate"    => 75
+                                                        , "result"      => "first"
+                                                        , "prototype"   => "Primary Keyword - Secondary Keyword | Brand Name"
+                                                        , "score"      => 0.3
+                                                    )
+                                                    , "description"     => array(
+                                                        "required"      => true
+                                                        , "limit"       => 1
+                                                        , "min"         => 50
+                                                        , "truncate"    => 160
+                                                        , "result"      => "first"
+                                                        , "prototype"   => "Primary Keyword ... Secondary Keyword"
+                                                        , "score"      => 0.1
+                                                    )
+                                                    , "h1"              => array(
+                                                        "required"      => true
+                                                        , "limit"       => 1
+                                                        , "result"      => "first"
+                                                        , "prototype"   => "Primary Keyword"
+                                                        , "score"      => 0.4
+                                                    )
+                                                    , "h2"              => array(
+                                                        "required"      => false
+                                                        , "limit"       => null
+                                                        , "result"      => "merge"
+                                                        , "prototype"   => "Primary Keyword || Secondary Keyword"
+                                                        , "score"      => 0.1
+                                                    )
+                                                    , "h3"              => array(
+                                                        "required"      => false
+                                                        , "limit"       => null
+                                                        , "result"      => "merge"
+                                                        , "prototype"   => "Primary Keyword || Secondary Keyword"
+                                                        , "score"      => 0.01
+                                                    )
+                                                    , "p" => array(
+                                                        "required"      => true
+                                                        , "limit"       => null
+                                                        , "min"         => 300
+                                                        , "result"      => "merge"
+                                                        , "prototype"   => "Primary Keyword ... Secondary Keyword"
+                                                        , "score"      => 0.5
+                                                    )
+                                                    , "strong" => array(
+                                                        "required"      => false
+                                                        , "limit"       => null
+                                                        , "result"      => "merge"
+                                                        , "prototype"   => "Primary Keyword || Secondary Keyword"
+                                                        , "score"      => 0.01
+                                                    )
+                                                    , "em" => array(
+                                                        "required"      => false
+                                                        , "limit"       => null
+                                                        , "result"      => "merge"
+                                                        , "prototype"   => "Primary Keyword || Secondary Keyword"
+                                                        , "score"      => 0.01
+                                                    )
+                                                    , "alt" => array(
+                                                        "required"      => false
+                                                        , "limit"       => null
+                                                        , "result"      => "merge"
+                                                        , "prototype"   => "Primary Keyword || Secondary Keyword"
+                                                        , "score"      => 0.01
+                                                    )
+                                                    , "a" => array(
+                                                        "required"      => false
+                                                        , "limit"       => null
+                                                        , "result"      => "merge"
+                                                        , "prototype"   => "Primary Keyword || Secondary Keyword"
+                                                        , "score"      => 0.01
+                                                    )
+                                                );
+
+    private $error                              = 0;
+    private $warning                            = 0;
+    private $success                            = 0;
+
+    /**
+     * @var \Wamania\Snowball\Stemmer'
+     */
     private $stemmer                            = null;
-    private $containers                         = array(
-        '<title></title>' => "0.1"
-        , '<meta name="description" />' => "0.4"
-        , '<h1></h1>' => "0.5"
-        , '<h2></h2>' => "0.1"
-        , '<h3></h3>' => "0.1"
-        , '<p></p>' => "0.1"
-        , '<img alt="" />' => "0.1"
-        , '<a> <a/>' => "0.1"
-    );
 
-    public function __construct($content, $title = null, $description = null)
+    public function __construct($html = null)
     {
-        $this->title                            = $title;
-        $this->description                      = $description;
-
-        if(Validator::is($content, "url")) {
-            $content                            =  $this->get_content_by_web_page($content);
+        if($html) {
+            $this->setContainers($html);
         }
-
-        $this->lang                             = $this->detectLang($content);
-        $this->stopwords                        = $this->loadConf("stopwords/" . $this->lang);
-        $this->content                          = $this->html2text($content);
     }
+    public function loadHtmlByUrl($url) {
+        $html = $this->get_content_by_web_page($url);
 
+        return $this->setContainers($html);
+    }
     public function setEncoding($encoding) {
         $this->encoding                         = $encoding;
 
@@ -76,51 +171,105 @@ class Seo {
         return $this;
     }
     public function extractKeywords() {
-        $text                                   = $this->content;
-        $text                                   = $this->strip_punctuation($text);
-        $text                                   = $this->strip_symbols($text);
-        $text                                   = $this->strip_numbers($text);
-        $text                                   = mb_strtolower( $text, $this->encoding );
+        $keywords                               = array();
+        $sentence                               = $this->keywordSentence($this->content, $this->encoding, $this->stopwords, $this->unwantedwords);
+        $uniqueKeywords                         = array_keys( $sentence );
 
-        mb_regex_encoding( $this->encoding );
-        $words                                  = mb_split( ' +', $text );
-
-        foreach ( $words as $key => $word ) {
-            $words[$key]                        = $this->Stemmer($word);
+        foreach ($sentence  as $word => $frequency) {
+            $density                            = $this->keywordDensity($frequency, $sentence);
+            $prominence                         = $this->keywordProminence($word, $sentence);
+            $containers                         = $this->keywordContainers($word);
+            //        %  0.x ~ 5  %  0.x ~ 100      index
+            $keywords[$word]                    = array_sum($containers) * $prominence / 100;
         }
-        $words = array_diff( $words, $this->stopwords );
-        $words = array_diff( $words, $this->unwantedwords );
+        return $keywords;
+    }
 
-        $keywordCounts = array_count_values( $words );
-        arsort( $keywordCounts, SORT_NUMERIC );
-        $uniqueKeywords = array_keys( $keywordCounts );
+    private function setContainers($html) {
+        $this->lang                             = $this->detectLang($html);
+        $this->stopwords                        = $this->loadConf("stopwords/" . $this->lang);
+        $this->meta                             = get_meta_tags($html);
+        $this->content                          = $this->html2text($html);
+        $this->title                            = $this->title($html);
+        $this->description                      = $this->description($html);
+        $this->h1                               = $this->h1($html);
+        $this->h2                               = $this->h2($html);
+        $this->h3                               = $this->h3($html);
+        $this->p                                = $this->p($html);
+        $this->strong                           = $this->strong($html);
+        $this->em                               = $this->em($html);
+        $this->alt                              = $this->alt($html);
+        $this->a                                = $this->a($html);
 
-        foreach ($keywordCounts  as $frequency) {
-            $density = $frequency / count ($words) * 100;
+        return $this;
+    }
 
-            $keys = array_keys ($words, $word); // $word is the word we're currently at in the loop
-            $positionSum = array_sum ($keys) + count ($keys);
-            $prominence = (count ($words) - (($positionSum - 1) / count ($keys))) * (100 /   count ($words));
-            $value = (double) ((1 + $density) * ( $prominence) * (1 + $this->containers[""]));
+    private function keywordContainers($word) {
+        $containers                             = array();
+        foreach ($this->container_rules as $container_name => $container_rule) {
+            $pos                                = strpos($this->$container_name, $word);
+            if($pos !== false) {
+                $containers[$container_name]    = $container_rule["score"] - ($container_rule["score"] * 100 * $pos / strlen($this->$container_name));
+            }
+        }
 
-                                     // 0.x ~ 5        0.x ~ 100
-         }
+        return $containers;
+    }
 
+    private function keywordSentence($text, $encoding = null, $stopwords = null, $unwantedwords = null) {
+        $keywordCounts                          = array();
+        if($text) {
+            $text                               = $this->strip_punctuation($text);
+            $text                               = $this->strip_symbols($text);
+            $text                               = $this->strip_numbers($text);
 
+            $text                               = mb_strtolower( $text/*,  strtoupper($encoding)*/ );
 
+            mb_regex_encoding( $encoding );
+            $words                              = mb_split( ' +', trim($text) );
+
+            foreach ( $words as $key => $word ) {
+                $words[$key]                    = $this->Stemmer($word);
+            }
+
+            if($stopwords) {
+                $words                          = array_diff($words, $stopwords);
+            }
+            if($unwantedwords) {
+                $words                          = array_diff($words, $unwantedwords);
+            }
+            $keywordCounts                      = array_count_values( $words );
+            arsort( $keywordCounts, SORT_NUMERIC );
+        }
+
+        return $keywordCounts;
+    }
+    private function keywordDensity($frequency, $words) {
+        return $frequency / count ($words) * 100;
+    }
+
+    private function keywordProminence($word, $words) {
+        $keys                               = array_keys ($words, $word); // $word is the word we're currently at in the loop
+        $positionSum                        = array_sum ($keys) + count ($keys);
+
+        return (count ($words) - (($positionSum - 1) / count ($keys))) * (100 /   count ($words));
     }
 
     private function Stemmer($word) {
         if(!$this->stemmer) {
-            $lang = Locale::getLang($this->lang);
+            $lang = Locale::getLangs($this->lang);
             $class_name = '\\Wamania\\Snowball\\' . $lang["description"];
             $this->stemmer = new $class_name();
         }
 
-        return ($this->stemmer
-            ? $this->stemmer->stem($word)
-            : $word
-        );
+        if($this->stemmer) {
+            try {
+                $word = $this->stemmer->stem($word);
+            } catch (\Exception $exception) {
+                Error::register($exception->getMessage(), "seo");
+            }
+        }
+        return $word;
     }
 
     private function detectLang($raw_text) {
@@ -159,9 +308,141 @@ class Seo {
     }
     private function html2text($encoded_text) {
         /* Strip HTML tags and invisible text */
-        $encoded_text                           = $this->strip_html_tags($encoded_text);
+        preg_match("/<body[^>]*>(.*?)<\/body>/is", $encoded_text, $matches);
+        $body                                   = (isset($matches[1])
+                                                    ? $matches[1]
+                                                    : $encoded_text
+                                                );
+        $text                                   = $this->strip_html_tags($body);
         /* Decode HTML entities */
-        return html_entity_decode( $encoded_text, ENT_QUOTES, strtoupper($this->encoding) );
+        return html_entity_decode( $text, ENT_QUOTES, strtoupper($this->encoding) );
+    }
+    private function getTagbyRegExp($regexp, $encoded_text) {
+        $res                                    = array();
+        $matches                                = array();
+
+        preg_match_all($regexp, $encoded_text, $matches);
+        if(is_array($matches) && count($matches) && isset($matches[1])) {
+            $res = $matches[1];
+        }
+
+        return $res;
+    }
+    private function getRule($what, $key) {
+        return (isset($this->container_rules[$what]) && isset($this->container_rules[$what][$key])
+            ? $this->container_rules[$what][$key]
+            : false
+        );
+    }
+
+    private function checkRule($values, $rule) {
+        $res                                    = null;
+        $error                                  = 0;
+        $warning                                = 0;
+        $count                                  = count($values);
+        if($count) {
+            $limit                              = $this->getRule($rule, "limit");
+            if ($limit && $count > $limit) {
+                $error++;
+                Error::register("<" . $rule . "> must be one!", "seo");
+            }
+            $length                             = strlen($values[0]);
+            $min                                = $this->getRule($rule, "min");
+            if($min && $length < $min) {
+                $warning++;
+                Error::register("<" . $rule . "> min length must be " . $min . ". Now is " . $length, "seo");
+            }
+            $max                                = $this->getRule($rule, "max");
+            if($max && $length > $max) {
+                $warning++;
+                Error::register("<" . $rule . "> max length must be " . $max . ". Now is " . $length, "seo");
+            }
+
+            $truncate                           = $this->getRule($rule, "truncate");
+            if($truncate && $length > $truncate) {
+                $error++;
+                Error::register("<" . $rule . "> is too long. The max is " . $truncate . ". Now is " . $length, "seo");
+            }
+        } elseif($this->getRule($rule, "required")) {
+            $error++;
+            Error::register("<" . $rule . "> not found!", "seo");
+        } else {
+            $warning++;
+            Error::register("<" . $rule . "> not found! (optional)", "seo");
+        }
+
+        if(!$error && !$warning)                { $this->success++; }
+        if($error)                              { $this->error++; }
+        if($warning)                            { $this->warning++; }
+    }
+    private function getResult($values, $rule, $check = true) {
+        if($check)                              { $this->checkRule($values, $rule); }
+        if($this->getRule($rule, "limit")) {
+            $res                                = (isset($values[0])
+                                                    ? $values[0]
+                                                    : ""
+                                                );
+        } else {
+            $res                                = implode(" " , $values);
+        }
+
+        return $this->strip_html_tags($res);
+    }
+    private function title($encoded_text) {
+        $regexp                                 = '/<title[^>]*>(.*?)<\/title>/is';
+        $res                                    = $this->getTagbyRegExp($regexp, $encoded_text);
+        return $this->getResult($res, "title");
+    }
+    private function description($encoded_text) {
+        $regexp                                 = '@<meta\s+name="description"\s+content="([^\"]+)"@i';
+        $res                                    = $this->getTagbyRegExp($regexp, $encoded_text);
+        return $this->getResult($res, "description");
+    }
+    private function h1($encoded_text) {
+        $regexp                                 = '/<h1[^>]*>(.*?)<\/h1>/is';
+        $res                                    = $this->getTagbyRegExp($regexp, $encoded_text);
+        return $this->getResult($res, "h1");
+    }
+    private function h2($encoded_text) {
+        $regexp                                 = '/<h2[^>]*>(.*?)<\/h2>/is';
+        $res                                    = $this->getTagbyRegExp($regexp, $encoded_text);
+        return $this->getResult($res, "h2");
+    }
+    private function h3($encoded_text) {
+        $regexp                                 = '/<h3[^>]*>(.*?)<\/h3>/is';
+        $res                                    = $this->getTagbyRegExp($regexp, $encoded_text);
+        return $this->getResult($res, "h3");
+    }
+    private function p($encoded_text) {
+        $regexp                                 = '/<p[^>]*>(.*?)<\/p>/is';
+        $res                                    = $this->getTagbyRegExp($regexp, $encoded_text);
+        return $this->getResult($res, "p");
+    }
+    private function strong($encoded_text) {
+        $regexp                                 = '/<strong[^>]*>(.*?)<\/strong>/is';
+        $res                                    = array_merge($this->getTagbyRegExp($regexp, $encoded_text), $this->b($encoded_text));
+        return $this->getResult($res, "strong");
+    }
+    private function b($encoded_text) {
+        $regexp                                 = '/<b[^>]*>(.*?)<\/b>/is';
+        $res                                    = $this->getTagbyRegExp($regexp, $encoded_text);
+        return $this->getResult($res, "strong");
+    }
+
+    private function em($encoded_text) {
+        $regexp                                 = '/<em[^>]*>(.*?)<\/em>/is';
+        $res                                    = $this->getTagbyRegExp($regexp, $encoded_text);
+        return $this->getResult($res, "em");
+    }
+    private function alt($encoded_text) {
+        $regexp                                 = '@alt="([^"]+)"@';
+        $res                                    = $this->getTagbyRegExp($regexp, $encoded_text);
+        return $this->getResult($res, "alt");
+    }
+    private function a($encoded_text) {
+        $regexp                                 = '/<a[^>]*>(.*?)<\/a>/is';
+        $res                                    = $this->getTagbyRegExp($regexp, $encoded_text);
+        return $this->getResult($res, "a");
     }
     private function get_content_by_web_page($url) {
         $res                                    = null;
@@ -182,6 +463,7 @@ class Seo {
      * script code, and embedded objects.  Add line breaks around
      * block-level tags to prevent word joining after tag removal.
      * @param string $text
+     * @return string
      */
     private function strip_html_tags( $text )
     {
@@ -213,10 +495,13 @@ class Seo {
                                                     ),
                                                     $text
                                                 );
+        $text                                   = str_replace("<", " <", $text);
         return strip_tags( $text );
     }
     /**
      * Strip punctuation from text.
+     * @param string $text
+     * @return string
      */
     function strip_punctuation( $text )
     {
@@ -265,6 +550,8 @@ class Seo {
 
     /**
      * Strip symbols from text.
+     * @param string $text
+     * @return string
      */
     function strip_symbols( $text )
     {
@@ -311,6 +598,8 @@ class Seo {
 
     /**
      * Strip numbers from text.
+     * @param string $text
+     * @return string
      */
     function strip_numbers( $text )
     {

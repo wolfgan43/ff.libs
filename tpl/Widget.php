@@ -68,7 +68,6 @@ abstract class Widget extends DirStruct {
      * @return Widget
      */
     public static function getInstance($name, $bucket = null) {
-
         $class_name                             = $bucket . self::NAME_SPACE_BASIC . ucfirst($name);
         if(!isset(self::$singleton[$class_name])) {
             self::$singleton[$class_name]       = new $class_name();
@@ -101,6 +100,7 @@ abstract class Widget extends DirStruct {
 
         $tpl                                    = $this->processTemplate($filename, $config);
         $this->html                             = $tpl->rpparse("main", false);
+
         $this->addCss($widget_name              , (is_file($path . $css_name)
                                                     ? $path . $css_name
                                                     : static::DIR . $css_name

@@ -25,16 +25,54 @@
  */
 namespace phpformsframework\libs\storage\filemanager;
 
+use phpformsframework\libs\Debug;
+use phpformsframework\libs\Error;
+
 class Json extends Adapter //todo: da finire
 {
     const EXT                                                   = "json";
 
     public function read($file_path = null, $search_keys = null, $search_flag = self::SEARCH_DEFAULT)
     {
+        $res                                                    = array();
+        if($file_path)                                          { $this->setFilePath($file_path); }
+        $file_path                                              = $this->getFilePath();
+
+        $json                                                   = file_get_contents($file_path);
+        if($json) {
+            $return                                             = json_decode($json, true);
+            if($return) {
+                if($search_keys) {
+                    $res                                        = $this->search($return, $search_keys, $search_flag);
+                } else {
+                    $res                                        = $return;
+                }
+            } elseif($return === false) {
+                Error::register("syntax errors into file" . (Debug::ACTIVE ? ": " . $file_path : ""));
+            } else {
+                $res                                            = null;
+            }
+        } else {
+            Error::register("syntax errors into file" . (Debug::ACTIVE ? ": " . $file_path : ""), "filemanager");
+        }
+
+        return $this->getResult($res);
     }
 
     public function write($data, $file_path = null, $var = null)
     {
+        if($file_path)                                          { $this->setFilePath($file_path); }
+        if($var)                                                { $this->setVar($var); }
+
+        $file_path                                              = $this->getFilePath();
+        $var                                                    = $this->getVar();
+
+        $root_node                                              = ($var
+                                                                    ? array($var => $data)
+                                                                    : $data
+                                                                );
+
+        return $this->save(json_encode($root_node), $file_path);
     }
 
 }

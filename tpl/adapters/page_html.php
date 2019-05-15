@@ -31,7 +31,7 @@ use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\storage\Media;
 
 if (!defined("APPNAME"))                 { define("APPNAME", str_replace(" " , "", ucwords(str_replace(array(".", "-"), " ", $_SERVER["HTTP_HOST"])))); }
-if (!defined("ENCODING"))                { define("ENCODING", "uft-8"); }
+if (!defined("ENCODING"))                { define("ENCODING", "utf-8"); }
 
 class PageHtml extends DirStruct {
     const NL                                    = "\n";
@@ -399,7 +399,7 @@ class PageHtml extends DirStruct {
     }
 
     public function process() {
-        $seo = new Seo($this->doctype
+        $seo = new Seo(/*$this->doctype
             . $this::NL . '<html lang="' . $this->lang . '">'
             . $this::NL . '<head>'
             . $this->parseEncoding()
@@ -414,9 +414,9 @@ class PageHtml extends DirStruct {
             . $this::NL . '<body>'
             . $this->parseLayout()
             . $this::NL . '</body>'
-            . $this::NL . '</html>');
+            . $this::NL . '</html>'*/);
 
-        var_dump($seo->extractKeywords());
+        var_dump($seo->loadHtmlByUrl("https://www.miodottore.it/ginecologo/milano")->keywordsAnalyzer());
         die("arrivo");
 
         return $this->doctype

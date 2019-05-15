@@ -28,18 +28,32 @@ namespace phpformsframework\libs\tpl;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\storage\Filemanager;
-use phpformsframework\libs\Validator;
 
-if (!defined("ENCODING"))                { define("ENCODING", "uft-8"); }
+if (!defined("ENCODING"))                { define("ENCODING", "utf-8"); }
 
 class Seo {
+    const SCORE_BODY                            = 0.01;
+    const KEYWORDS_ANALYSIS_FREQUENCY           = 1;
+    const KEYWORDS_ANALYSIS_DENSITY             = 2;
+    const KEYWORDS_ANALYSIS_SCORE               = 3;
+    const KEYWORDS_ANALYSIS_QUALIFIED           = 4;
+    const KEYWORDS_ANALYSIS_CONTAINER           = 5;
+
     private $content                            = null;
     private $lang                               = null;
     private $encoding                           = ENCODING;
     private $stopwords                          = null;
     private $unwantedwords                      = array();
 
-    private $meta                               = null;
+    private $keywords                           = array();
+    private $keywordsFrequency                  = array();
+    private $keywordsDensity                    = array();
+    private $keywordsScore                      = array();
+    private $keywordsQualify                    = array();
+    private $keywordsContainer                  = array();
+    private $keywordsText                       = array();
+    private $keywordsStem                       = array();
+
     private $title                              = null;
     private $description                        = null;
     private $h1                                 = null;
@@ -53,12 +67,12 @@ class Seo {
 
     private $page_rules                         = array(
                                                     "keyword_density"   => array(
-                                                        "min"           => "2"
-                                                        , "max"         => "5"
+                                                        "min"           => 2
+                                                        , "max"         => 5
                                                     )
                                                     , "page_speed"      => array(
-                                                        "first_byte"    => "0.4"
-                                                        , "DOM_loaded"  => "4"
+                                                        "first_byte"    => 0.4
+                                                        , "DOM_loaded"  => 4
                                                     )
                                                 );
     private $container_rules                    = array(
@@ -170,103 +184,271 @@ class Seo {
 
         return $this;
     }
-    public function extractKeywords() {
-        $keywords                               = array();
-        $sentence                               = $this->keywordSentence($this->content, $this->encoding, $this->stopwords, $this->unwantedwords);
-        $uniqueKeywords                         = array_keys( $sentence );
 
-        foreach ($sentence  as $word => $frequency) {
-            $density                            = $this->keywordDensity($frequency, $sentence);
-            $prominence                         = $this->keywordProminence($word, $sentence);
-            $containers                         = $this->keywordContainers($word);
-            //        %  0.x ~ 5  %  0.x ~ 100      index
-            $keywords[$word]                    = array_sum($containers) * $prominence / 100;
+    public function keywordsAnalyzer($number_of_words = 1, $return = self::KEYWORDS_ANALYSIS_QUALIFIED) {
+        $this->clear();
+
+        $words                                  = $this->getKeywords($this->content);
+        $this->keywordsFrequency                = $this->keywordsFrequency($words);
+        foreach ($this->keywordsFrequency  as $word => $frequency) {
+            $density                            = $this->keywordDensity($frequency, $this->keywordsFrequency);
+            $containers                         = $this->keywordContainers($word, $number_of_words);
+
+            $score                              = array_sum($containers);
+            if(!$score)                         { $score = static::SCORE_BODY * $this->keywordProminence($word, $words) / 100; }
+            $this->keywordsScore[$word]         =  $score;
+            $this->keywordsDensity[$word]       =  $density;
+
+            $this->keywordsQualify[$word]       = $score + ($score * $density / 100);
+            $this->keywordsContainer[$word]     = $containers;
         }
+
+        $this->keywordsContainer                = array_filter($this->keywordsContainer);
+
+        switch ($return) {
+            case self::KEYWORDS_ANALYSIS_FREQUENCY:
+                arsort( $this->keywordsFrequency, SORT_NUMERIC );
+                $res = $this->keywordsFrequency;
+                break;
+            case self::KEYWORDS_ANALYSIS_DENSITY:
+                arsort( $this->keywordsDensity, SORT_NUMERIC );
+                $res = $this->keywordsDensity;
+                break;
+            case self::KEYWORDS_ANALYSIS_SCORE:
+                arsort( $this->keywordsScore, SORT_NUMERIC );
+                $res = $this->keywordsScore;
+                break;
+            case self::KEYWORDS_ANALYSIS_QUALIFIED:
+                arsort( $this->keywordsQualify, SORT_NUMERIC );
+                $res = $this->keywordsQualify;
+                break;
+            case self::KEYWORDS_ANALYSIS_CONTAINER:
+                arsort( $this->keywordsContainer, SORT_NUMERIC );
+                $res = $this->keywordsContainer;
+                break;
+            default:
+                $res = array(
+                    "stem"          => $this->keywordsStem
+                    , "frequency"   => $this->keywordsFrequency
+                    , "density"     => $this->keywordsDensity
+                    , "score"       => $this->keywordsScore
+                    , "qualify"     => $this->keywordsQualify
+                    , "container"   => array_filter($this->keywordsContainer)
+                );
+        }
+
+        print_r($res);
+
+        die();
+
+        return $res;
+    }
+
+    private function clear() {
+        $this->keywords                     = array();
+        $this->keywordsFrequency            = array();
+        $this->keywordsDensity              = array();
+        $this->keywordsQualify              = array();
+        $this->keywordsContainer            = array();
+        $this->keywordsText                 = array();
+        $this->keywordsStem                 = array();
+    }
+
+    private function keywordsFrequency($words) {
+        $keywords                      = array_count_values( $words );
+        arsort( $keywords, SORT_NUMERIC );
+
         return $keywords;
     }
 
     private function setContainers($html) {
-        $this->lang                             = $this->detectLang($html);
-        $this->stopwords                        = $this->loadConf("stopwords/" . $this->lang);
-        $this->meta                             = get_meta_tags($html);
-        $this->content                          = $this->html2text($html);
-        $this->title                            = $this->title($html);
-        $this->description                      = $this->description($html);
-        $this->h1                               = $this->h1($html);
-        $this->h2                               = $this->h2($html);
-        $this->h3                               = $this->h3($html);
-        $this->p                                = $this->p($html);
-        $this->strong                           = $this->strong($html);
-        $this->em                               = $this->em($html);
-        $this->alt                              = $this->alt($html);
-        $this->a                                = $this->a($html);
+        $this->lang                                 = $this->detectLang($html);
+        $this->stopwords                            = $this->loadConf("stopwords/" . $this->lang);
+        $this->content                              = $this->html2text($html);
+        $this->title                                = $this->title($html);
+        $this->description                          = $this->description($html);
+        $this->h1                                   = $this->h1($html);
+        $this->h2                                   = $this->h2($html);
+        $this->h3                                   = $this->h3($html);
+        $this->p                                    = $this->p($html);
+        $this->strong                               = $this->strong($html);
+        $this->em                                   = $this->em($html);
+        $this->alt                                  = $this->alt($html);
+        $this->a                                    = $this->a($html);
 
         return $this;
     }
 
-    private function keywordContainers($word) {
+    private function keywordContainers($word, $number_of_words = 1) {
         $containers                             = array();
+       // print_r($this->container_rules);
+
         foreach ($this->container_rules as $container_name => $container_rule) {
-            $pos                                = strpos($this->$container_name, $word);
-            if($pos !== false) {
-                $containers[$container_name]    = $container_rule["score"] - ($container_rule["score"] * 100 * $pos / strlen($this->$container_name));
+            $container                          = $this->$container_name;
+
+            if(strpos($container, $word) !== false) {
+                $words                              = $this->getKeywords($container, $number_of_words);
+                $prominence                         = $this->keywordProminence($word, $words);
+
+                $score                              = $container_rule["score"] * $prominence / 100;
+                $containers[$container_name]        = $score;
             }
         }
 
         return $containers;
     }
 
-    private function keywordSentence($text, $encoding = null, $stopwords = null, $unwantedwords = null) {
-        $keywordCounts                          = array();
-        if($text) {
-            $text                               = $this->strip_punctuation($text);
-            $text                               = $this->strip_symbols($text);
-            $text                               = $this->strip_numbers($text);
+    public function getKeywords($text, $number_of_words = 1) {
+        $keywords                                   = array();
+        $words                                      = $this->keywordsExtract($text);
+        $min                                        = ($number_of_words > 1
+                                                        ? 1
+                                                        : 3
+                                                    );
 
-            $text                               = mb_strtolower( $text/*,  strtoupper($encoding)*/ );
-
-            mb_regex_encoding( $encoding );
-            $words                              = mb_split( ' +', trim($text) );
-
-            foreach ( $words as $key => $word ) {
-                $words[$key]                    = $this->Stemmer($word);
+        for($i = 0; $i < count($words) - $number_of_words; $i++) {
+            if(strlen($words[$i]) < $min) {
+                continue;
             }
-
-            if($stopwords) {
-                $words                          = array_diff($words, $stopwords);
-            }
-            if($unwantedwords) {
-                $words                          = array_diff($words, $unwantedwords);
-            }
-            $keywordCounts                      = array_count_values( $words );
-            arsort( $keywordCounts, SORT_NUMERIC );
+            $keywords[]                             = implode(" " , array_slice($words, $i, $number_of_words));
         }
 
-        return $keywordCounts;
+        return $keywords;
     }
+
+    private function kText($text) {
+        $kText                                      = crc32($text);
+        if(!isset($this->keywordsText[$kText])) {
+            $this->keywordsText[$kText]             = $text;
+        }
+
+        return $kText;
+    }
+
+    private function keywordsExtract($text, $proximity = false) {
+        $kText                                      = $this->kText($text);
+        if(!isset($this->keywords[$kText])) {
+            $this->keywords[$kText]                 = array();
+            if($text) {
+                //$sentence =  explode("\n", preg_replace('/\s\s+/', "\n", (trim($text))));
+                //print_r($sentence);
+                $text                               = $this->strip_punctuation($text);
+                $text                               = $this->strip_symbols($text);
+                $text                               = $this->strip_numbers($text);
+
+                $text                               = mb_strtolower( $text, strtoupper($this->encoding));
+                mb_regex_encoding( $this->encoding );
+
+                //$words                            = mb_split( ' +', trim($text) );
+                $words                              = str_word_count($text, 2);
+
+                foreach ( $words as $key => $word ) {
+                    $stem                           = $this->Stemmer($word);
+                    $this->keywords[$kText][$key]   = $stem;
+                    $this->keywordsStem[$stem][$word]++;
+                }
+
+                if($this->stopwords) {
+                    $this->keywords[$kText]         = array_diff($this->keywords[$kText], $this->stopwords);
+                }
+                if($this->unwantedwords) {
+                    $this->keywords[$kText]         = array_diff($this->keywords[$kText], $this->unwantedwords);
+                }
+            }
+
+
+        }
+
+        return ($proximity
+            ? $this->keywords[$kText]
+            : array_values($this->keywords[$kText])
+        );
+    }
+
+
+    /**
+     * @param int $frequency how many times you repeated a specific keyword
+     * @param array $words words in the analyzed text
+     * @return float % keyword density
+     */
     private function keywordDensity($frequency, $words) {
         return $frequency / count ($words) * 100;
     }
 
-    private function keywordProminence($word, $words) {
-        $keys                               = array_keys ($words, $word); // $word is the word we're currently at in the loop
-        $positionSum                        = array_sum ($keys) + count ($keys);
+    /**
+     * @param int $frequency how many times you repeated a specific key-sentence
+     * @param array $sentence words in your key-sentence
+     * @param array $words words in the analyzed text
+     * @return float % keyword density in sentence
+     */
+    private function keywordDensitySentence($frequency, $sentence, $words) {
+        return  ( $frequency / ( count($words) - ( $frequency * ( count($sentence) - 1 ) ) ) ) * 100;
+    }
 
-        return (count ($words) - (($positionSum - 1) / count ($keys))) * (100 /   count ($words));
+    private function keywordProminence($word, $words) {
+        $score                              = 0;
+        $count                              = count($words);
+        $keys                               = array_keys ($words, $word); // $word is the word we're currently at in the loop
+
+        foreach ($keys as $i => $key) {
+            $score                          += (($count - $key ) / $count) / pow(10 , $i);
+        }
+
+        return 99 + $score;
     }
 
     private function Stemmer($word) {
         if(!$this->stemmer) {
             $lang = Locale::getLangs($this->lang);
-            $class_name = '\\Wamania\\Snowball\\' . $lang["description"];
-            $this->stemmer = new $class_name();
-        }
 
-        if($this->stemmer) {
-            try {
-                $word = $this->stemmer->stem($word);
-            } catch (\Exception $exception) {
-                Error::register($exception->getMessage(), "seo");
+            switch ($lang["tiny_code"]) {
+                case "it":
+                    $class_name = '\\Wamania\\Snowball\\Italian';
+                    break;
+                case "en":
+                    $class_name = '\\Wamania\\Snowball\\English';
+                    break;
+                case "fr":
+                    $class_name = '\\Wamania\\Snowball\\French';
+                    break;
+                case "de":
+                    $class_name = '\\Wamania\\Snowball\\German';
+                    break;
+                case "es":
+                    $class_name = '\\Wamania\\Snowball\\Spanish';
+                    break;
+                case "pt":
+                    $class_name = '\\Wamania\\Snowball\\Portuguese';
+                    break;
+                case "ro":
+                    $class_name = '\\Wamania\\Snowball\\Romanian';
+                    break;
+                case "nl":
+                    $class_name = '\\Wamania\\Snowball\\Dutch';
+                    break;
+                case "sv":
+                    $class_name = '\\Wamania\\Snowball\\Swedish';
+                    break;
+                case "no":
+                    $class_name = '\\Wamania\\Snowball\\Norwegian';
+                    break;
+                case "da":
+                    $class_name = '\\Wamania\\Snowball\\Danish';
+                    break;
+                case "ru":
+                    $class_name = '\\Wamania\\Snowball\\Russian';
+                    break;
+                default:
+                    $class_name = null;
+            }
+
+            if($class_name) {
+                try {
+                    $this->stemmer = new $class_name();
+                    $word = $this->stemmer->stem($word);
+                } catch (\Exception $exception) {
+                    Error::register($exception->getMessage(), "seo");
+                }
             }
         }
         return $word;

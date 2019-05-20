@@ -11,21 +11,24 @@
 
 
 ## DNS settings
-Set SPF record (Sender Policy Framework)
+- Set SPF record (Sender Policy Framework)
 
 ##Apache settings
 
-Disable /modules
-Disable /icons
-Disable Request Method TRACE
+- Disable /modules
+- Disable /icons
+- Disable Request Method TRACE
 
 ServerSignature Off
 ServerTokens Prod
 
 
 ##Php settings
-session_save_path /tmp (outside of virtual host)
-request_order GPC
+- session_save_path /tmp (outside of virtual host)
+- request_order GPC
+
+>Ambiente Dev: Installazione di Xhprof https://www.php.net/manual/en/book.xhprof.php
+
 
 
 #### browscap

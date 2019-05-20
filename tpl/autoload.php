@@ -68,9 +68,6 @@ spl_autoload_register(function ($class) {
         case 'phpformsframework\\libs\\tpl\\Page':
             require ('Page.php');
             break;
-        case 'phpformsframework\\libs\\tpl\\Seo':
-            require ('Seo.php');
-            break;
         default:
     }
 });

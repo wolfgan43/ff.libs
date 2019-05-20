@@ -45,6 +45,7 @@ class PageHtml extends DirStruct {
     private $title                              = null;
     private $description                        = null;
     private $lang                               = null;
+    private $region                             = null;
     private $hreflang                           = null;
     private $canonical                          = null;
     private $next                               = null;
@@ -227,7 +228,7 @@ class PageHtml extends DirStruct {
     {
         $this->GridSystem                       = Gridsystem::getInstance();
         $this->lang                             = Locale::getLang("tiny_code");
-
+        $this->region                           = Locale::getCountry("tiny_code");
         $this->js                               = $this->GridSystem->js();
         $this->css                              = $this->GridSystem->css();
         $this->fonts                            = $this->GridSystem->fonts();
@@ -398,10 +399,8 @@ class PageHtml extends DirStruct {
         );
     }
 
-    public function process() {
-        $seo = new Seo(/*$this->doctype
-            . $this::NL . '<html lang="' . $this->lang . '">'
-            . $this::NL . '<head>'
+    private function parseHead() {
+        return /** @lang text */ '<head>'
             . $this->parseEncoding()
             . $this->parseTitle()
             . $this->parseDescription()
@@ -410,34 +409,37 @@ class PageHtml extends DirStruct {
             . $this->parseFonts()
             . $this->parseCss()
             . $this->parseJs()
-            . $this::NL . '</head>'
-            . $this::NL . '<body>'
+            . $this::NL
+        . '</head>';
+    }
+    private function parseBody() {
+        return '<body>'
             . $this->parseLayout()
-            . $this::NL . '</body>'
-            . $this::NL . '</html>'*/);
+            . $this::NL
+        . '</body>';
+    }
 
-        var_dump($seo->loadHtmlByUrl("https://www.miodottore.it/ginecologo/milano")->keywordsAnalyzer());
-        die("arrivo");
-
-        return $this->doctype
-            . $this::NL . '<html lang="' . $this->lang . '">'
-            . $this::NL . '<head>'
-                . $this->parseEncoding()
-                . $this->parseTitle()
-                . $this->parseDescription()
-                . $this->parseMeta()
-                . $this->parseFavicons()
-                . $this->parseFonts()
-                . $this->parseCss()
-                . $this->parseJs()
-            . $this::NL . '</head>'
-            . $this::NL . '<body>'
-                . $this->parseLayout()
-            . $this::NL . '</body>'
+    private function parseHtml() {
+        $lang                                   = ($this->lang
+                                                    ? ' lang="' . $this->lang . '"'
+                                                    : ""
+                                                );
+        $region                                 = ($this->region
+                                                    ? ' region="' . $this->region . '"'
+                                                    : ""
+                                                );
+        return /** @lang text */ $this->doctype
+            . $this::NL . '<html ' . $lang . $region . '>'
+            . $this::NL . $this->parseHead()
+            . $this::NL . $this->parseBody()
             . $this::NL . '</html>'
-        ;
+            ;
+    }
 
+    public function process() {
+        \phpformsframework\cms\Cm::widget("SeoCheckUp", array("url" => "https://www.miodottore.it/ginecologo/milano"));
 
+        return $this->parseHtml();
     }
 
 
@@ -461,6 +463,7 @@ class PageHtml extends DirStruct {
     }
 
     private function resource($name, $type) {
+        $file = null;
         $pathinfo = $this->path;
         if($pathinfo) {
             do {
@@ -480,6 +483,7 @@ class PageHtml extends DirStruct {
         return $file;
     }
     private function getAsset($what, $type) {
+        $asset = null;
         foreach((array) $what AS $name) {
             $asset = $this->resource($name, $type);
             if($asset) {

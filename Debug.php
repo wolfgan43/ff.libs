@@ -38,6 +38,11 @@ Log::extend("profiling", Log::TYPE_DEBUG, array(
     , "format"      => Log::FORMAT_CLE
 ));
 
+if(DEBUG_MODE) {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+}
+
 class Debug extends DirStruct
 {
     const STOPWATCH                         = APP_START;
@@ -204,10 +209,10 @@ class Debug extends DirStruct
 
         foreach($debug_backtrace AS $i => $trace) {
             if($i) {
-                if(basename($trace["file"]) == "vgCommon.php") {
+                if(isset($trace["file"]) && basename($trace["file"]) == "vgCommon.php") {
                     continue;
                 }
-                if(basename($trace["file"]) == "cm.php") {
+                if(isset($trace["file"]) && basename($trace["file"]) == "cm.php") {
                     break;
                 }
 
@@ -229,7 +234,7 @@ class Debug extends DirStruct
 
                         }
                     }
-                    if($trace["file"]) {
+                    if(isset($trace["file"])) {
                         $label = 'Line in: ' . '<b>' . str_replace($disk_path, "", $trace["file"])  . '</b>';
                         $list_start = '<ol start="' . $trace["line"] . '">';
                         $list_end = '</ol>';

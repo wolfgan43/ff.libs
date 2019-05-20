@@ -360,6 +360,7 @@ class Locale implements Configurable {
                 foreach ($config["country"] AS $code => $country) {
                     $attr                                               = DirStruct::getXmlAttr($country);
                     self::$locale["country"][$code]                     = $attr;
+                    self::$locale["country"][$code]["tiny_code"]        = strtolower($code);
                 }
 
                 if(isset(self::$locale["lang"][$lang_tiny_code])) {
@@ -412,5 +413,6 @@ class Locale implements Configurable {
                                                                 ? self::$locale["country"][$country_tiny_code]
                                                                 : self::$countryDefault
                                                             );
+
     }
 }

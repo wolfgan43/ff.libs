@@ -79,7 +79,7 @@ abstract class Widget extends DirStruct {
     public function process($return = null) {
         $widget_name                            = basename(static::DIR);
         $config                                 = $this->getConfig();
-        $path                                   = $this::getDiskPath("tpl") . ($config["tpl_path"]
+        $path                                   = $this::getDiskPath("tpl") . (isset($config["tpl_path"])
                                                     ? $config["tpl_path"]
                                                     : "/" . $widget_name
                                                 );

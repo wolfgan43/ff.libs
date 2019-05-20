@@ -63,8 +63,8 @@ class Error {
         $type                                           = self::findByHost();
         if($type) {
             $rule                                       = array(
-                                                            "type" => $type
-                                                            , "path" => $path_info
+                                                            "type"      => $type
+                                                            , "path"    => $path_info
                                                         );
         } else {
             $rule                                       = self::findByPath($path_info);
@@ -103,9 +103,9 @@ class Error {
 
                 if($rule) {
                     $res                                = array(
-                                                            "type" => $rule
-                                                            , "base_path" => $base_path
-                                                            , "path" => substr($path_info, strlen($base_path))
+                                                            "type"          => $rule
+                                                            , "base_path"   => $base_path
+                                                            , "path"        => substr($path_info, strlen($base_path))
                                                         );
                 }
             }

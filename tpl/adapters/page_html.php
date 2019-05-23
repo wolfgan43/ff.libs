@@ -26,6 +26,7 @@
 namespace phpformsframework\libs\tpl;
 
 use phpformsframework\libs\DirStruct;
+use phpformsframework\libs\Env;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\storage\Media;
@@ -221,7 +222,7 @@ class PageHtml extends DirStruct {
 
     private $GridSystem                         = null;
     private $doctype                            = '<!DOCTYPE html>';
-    private $layout                             = "{content}";
+    private $layout                             = "<main>{content}</main>";
     private $contents                           = null;
 
     public function __construct($path = null)
@@ -280,6 +281,12 @@ class PageHtml extends DirStruct {
     }
 
     private function mask($url) {
+        $env                                    = Env::get();
+        $env["{"]                               = "";
+        $env["}"]                               = "";
+
+        $url                                    = str_ireplace(array_keys($env), array_values($env), $url);
+
         return (strpos($url, $this::$disk_path) === 0
             ? Media::getUrl($url)
             : $url
@@ -437,7 +444,8 @@ class PageHtml extends DirStruct {
     }
 
     public function process() {
-        \phpformsframework\cms\Cm::widget("SeoCheckUp", array("url" => "https://www.miodottore.it/ginecologo/milano"));
+ //       \phpformsframework\cms\Cm::widget("SeoCheckUp", array("url" => "http://miodottore.it/ginecologo/milano"));
+//        \phpformsframework\cms\Cm::widget("SeoCheckUp", array("url" => "https://paginemediche.it/medici-online/search/ginecologo/lombardia/mi/milano"));
 
         return $this->parseHtml();
     }
@@ -467,8 +475,8 @@ class PageHtml extends DirStruct {
         $pathinfo = $this->path;
         if($pathinfo) {
             do {
-                $file = $this->resources[$type][$name . str_replace("/", "_", $pathinfo)];
-                if ($file) {
+                if(isset($this->resources[$type][$name . str_replace("/", "_", $pathinfo)])) {
+                    $file = $this->resources[$type][$name . str_replace("/", "_", $pathinfo)];
                     break;
                 }
 

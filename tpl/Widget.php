@@ -75,51 +75,54 @@ abstract class Widget extends DirStruct {
 
         return self::$singleton[$class_name];
     }
-
-    public function process($return = null) {
+    protected function inject($widget_data) {
+        $this->js                               = $widget_data["js"];
+        $this->css                              = $widget_data["css"];
+        $this->html                             = $widget_data["html"];
+    }
+    protected function loadTemplate() {
         $widget_name                            = basename(static::DIR);
         $config                                 = $this->getConfig();
         $path                                   = $this::getDiskPath("tpl") . (isset($config["tpl_path"])
-                                                    ? $config["tpl_path"]
-                                                    : "/" . $widget_name
-                                                );
+                ? $config["tpl_path"]
+                : "/" . $widget_name
+            );
         $html_name                              = "/index.html";
         $css_name                               = "/style.css";
         $script_name                            = "/script.js";
 
         $filename                               = (is_file($path . $html_name)
-                                                    ? $path . $html_name
-                                                    : static::DIR . $html_name
-                                                );
+            ? $path . $html_name
+            : static::DIR . $html_name
+        );
 
-       /* $framework = $this->gridSystem()->getFramework();
-        $fonticon = $this->gridSystem()->getFontIcon();
-        print_r($framework);
-        print_r($fonticon);
-        die();*/
 
         $tpl                                    = $this->processTemplate($filename, $config);
         $this->html                             = $tpl->rpparse("main", false);
 
         $this->addCss($widget_name              , (is_file($path . $css_name)
-                                                    ? $path . $css_name
-                                                    : static::DIR . $css_name
-                                                ));
+            ? $path . $css_name
+            : static::DIR . $css_name
+        ));
         $this->addJs($widget_name               , (is_file($path . $script_name)
-                                                    ? $path . $script_name
-                                                    : static::DIR . $script_name
-                                                ));
+            ? $path . $script_name
+            : static::DIR . $script_name
+        ));
+    }
+
+    public function process($return = null) {
+        $this->loadTemplate();
 
         switch ($return) {
             case "snippet":
                 $output                         = array("html" => $this->getSnippet());
                 break;
             case "page":
-                $output                         = array("html" => $this->getPage());
+                $output                         = array("html" =>  $this->getPage());
                 break;
             default:
                 $output                         = array(
-                                                    "html"  => $tpl->rpparse("main", false)
+                                                    "html"  => $this->html
                                                     , "css" => $this->css
                                                     , "js"  => $this->js
                                                 );

@@ -53,7 +53,7 @@ class PageHtml extends DirStruct {
     private $prev                               = null;
     private $author                             = null;
     private $manifest                           = null;
-    private $resources                          = array();
+    private $resources                          = null;
     private $meta                               = array(
                                                     "viewport"          => array(
                                                         "name"          => "viewport"
@@ -237,7 +237,6 @@ class PageHtml extends DirStruct {
                                                     ? $path
                                                     : $_SERVER["PATH_INFO"]
                                                 );
-        $this->loadResources();
     }
     public function setEncoding($encoding) {
         $this->encoding = $encoding;
@@ -467,12 +466,15 @@ class PageHtml extends DirStruct {
         Filemanager::scanExclude($excludeDirname);
 //print_r($patterns);
 //die();
-        $this->resources = Filemanager::scan($patterns);
+        $this->resources                        = Filemanager::scan($patterns);
+
     }
 
     private function resource($name, $type) {
-        $file = null;
-        $pathinfo = $this->path;
+        $file                                   = null;
+        $pathinfo                               = $this->path;
+        if(!$this->resources)                   { $this->loadResources(); }
+
         if($pathinfo) {
             do {
                 if(isset($this->resources[$type][$name . str_replace("/", "_", $pathinfo)])) {

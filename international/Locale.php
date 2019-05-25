@@ -324,11 +324,11 @@ class Locale implements Configurable {
 //        self::$locale["country"]["current"]                 = self::$locale["country"][$country];
 //        self::$locale["country"]["current"]["code"]         = $country;
 
-        define("LANGUAGE_INSET_TINY", self::$lang["tiny_code"]);
+        /*define("LANGUAGE_INSET_TINY", self::$lang["tiny_code"]);
         define("LANGUAGE_INSET", self::$lang["code"]);
         define("LANGUAGE_INSET_ID", self::$lang["id"]);
         define("FF_LOCALE", self::$lang["code"]);
-        define("FF_LOCALE_ID", self::$lang["id"]);
+        define("FF_LOCALE_ID", self::$lang["id"]);*/
 
     }
 

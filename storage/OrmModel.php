@@ -73,11 +73,12 @@ abstract class Model {
 
     private function setConnector($adapter) {
         $res                                                                                = null;
-        if(isset(static::CONNECTORS[$adapter])) {
-            $res                                                                            = static::CONNECTORS[$adapter];
+        $connectors                                                                         = static::CONNECTORS;
+        if(isset($connectors[$adapter])) {
+            $res                                                                            = $connectors[$adapter];
             //, "prefix"			=> "DB_" . self::BUCKET . "_" . strtoupper($adapter)
         } else {
-            Error::register("Adapter not found. The adapters available are: " . implode(", ", array_keys(static::CONNECTORS)), "orm");
+            Error::register("Adapter not found. The adapters available are: " . implode(", ", array_keys($connectors)), "orm");
         }
 
         return $res;
@@ -93,7 +94,11 @@ abstract class Model {
         $res                                                                                = array(
                                                                                                 "mainTable"   => static::MAIN_TABLE
                                                                                             );
-        $res["table"]                                                                       = $this->tables[$table_name];
+
+        $res["table"]                                                                       = (isset($this->tables[$table_name])
+                                                                                                ? $this->tables[$table_name]
+                                                                                                : null
+                                                                                            );
         if(!isset($table["name"]))                                                          { $table["name"]    = $table_name; }
         $res["struct"]                                                                      = (isset($this->struct[$table_name])
                                                                                                 ? $this->struct[$table_name]

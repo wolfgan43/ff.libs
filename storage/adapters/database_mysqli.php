@@ -293,7 +293,6 @@ class Mysqli extends Adapter {
 				}
 
 				$field 																= $this->normalizeField($name, $value);
-
                 if($field == "special") {
                     if($action == "where" || $action == "where_OR") {
                         foreach($value AS $op => $subvalue) {
@@ -406,14 +405,16 @@ class Mysqli extends Adapter {
                             if($field["name"] == $this->key_name) {
                                 $value 												= $this->convertID($value);
                             }
-
-                            if(is_array($struct[$field["name"]])) {
-                                $struct_type 										= "array";
+                            if(isset($struct[$field["name"]])) {
+                                if(is_array($struct[$field["name"]])) {
+                                    $struct_type 								    = "array";
+                                } else {
+                                    $arrStructType 									= explode(":", $struct[$field["name"]], 2);
+                                    $struct_type 									= $arrStructType[0];
+                                }
                             } else {
-                                $arrStructType 										= explode(":", $struct[$field["name"]], 2);
-                                $struct_type 										= $arrStructType[0];
+                                $struct_type                                        = null;
                             }
-
                             switch ($struct_type) {
                                 case "arrayIncremental":                                                                     //array
                                 case "arrayOfNumber":                                                                        //array

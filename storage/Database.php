@@ -52,7 +52,17 @@ class Database {
      * @return Adapter
      */
     public static function getInstance($databaseAdapters, $params = null) {
-        $key                                                                = crc32(serialize($databaseAdapters) . "-" . $params["table"]["name"]);
+        $key                                                                = crc32(serialize($databaseAdapters)
+                                                                                . "-" . $params["table"]["name"]
+                                                                                . (isset($params["rawdata"]) && $params["rawdata"]
+                                                                                    ? "-rawdata"
+                                                                                    : ""
+                                                                                )
+                                                                                . (isset($params["exts"]) && $params["exts"]
+                                                                                    ? "-exts"
+                                                                                    : ""
+                                                                                )
+                                                                            );
         if(!isset(self::$singletons[$key]))                                 { self::$singletons[$key] = new Database($databaseAdapters, $params); }
 
         return self::$singletons[$key];
@@ -260,7 +270,10 @@ class Database {
         if(self::ENABLE_CACHE) {
             $cache_key                              = Database::getCacheKey($query["from"], $query["select"], $query["where"]);
             if(Debug::ACTIVE) {
-                self::$cache[$cache_key]["count"]++;
+                self::$cache[$cache_key]["count"]   = (isset(self::$cache[$cache_key])
+                                                        ? self::$cache[$cache_key]["count"] + 1
+                                                        : 1
+                                                    );
                 if (self::$cache[$cache_key]["count"] > self::MAX_RECURSION) {
                     Debug::dump("Max Recursion: " . print_r($query, true));
                     exit;

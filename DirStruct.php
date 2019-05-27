@@ -71,7 +71,7 @@ abstract class DirStruct implements Configurable {
         );
     }
 
-    public static function loadSchema() {
+    public static function loadSchema() { //todo: da togliere e mettere in un solo punto. ora si eredita ovunque
         $config                                                     = Config::rawData("dirstruct", true);
         if(is_array($config) && count($config)) {
             foreach ($config AS $dir_key => $dir) {

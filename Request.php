@@ -31,7 +31,7 @@ class Request implements Configurable {
     const MAX_SIZE                                                                              = array(
                                                                                                     "GET"       => 256
                                                                                                     , "POST"    => 10240
-                                                                                                    , "HEAD"    => 1024
+                                                                                                    , "HEAD"    => 2048
                                                                                                     , "DEFAULT" => 128
                                                                                                     , "FILES"   => 1024000
                                                                                                 );
@@ -389,9 +389,11 @@ class Request implements Configurable {
                                                                                                     ? http_build_query($req, '', '')
                                                                                                     : $req
                                                                                                 ));
-        $request_max_size                                                                       = (isset(self::MAX_SIZE[$method])
-                                                                                                    ? self::MAX_SIZE[$method]
-                                                                                                    : self::MAX_SIZE["DEFAULT"]
+
+        $max_size                                                                               = static::MAX_SIZE;
+        $request_max_size                                                                       = (isset($max_size[$method])
+                                                                                                    ? $max_size[$method]
+                                                                                                    : $max_size["DEFAULT"]
                                                                                                 );
 
         return $request_size < $request_max_size;
@@ -417,6 +419,8 @@ class Request implements Configurable {
                                 $header_name                                                    = "HTTP_" . strtoupper($header_key);
                         }
                         if(isset($rule["required"]) && !isset($_SERVER[$header_name])) {
+                            $errors[400][]                                                      = $rule["name"] . " is required";
+                        } elseif(isset($rule["required_ifnot"]) && !isset($_SERVER["HTTP_" . strtoupper($rule["required_ifnot"])]) && !isset($_SERVER[$header_name])) {
                             $errors[400][]                                                      = $rule["name"] . " is required";
                         } elseif(isset($_SERVER[$header_name])) {
                             $validator_rule                                                     = (isset($rule["validator"])
@@ -458,6 +462,7 @@ class Request implements Configurable {
         static $last_update                                                                     = 0;
 
         if(self::security()) {
+
             if(self::$request === null || $last_update < self::$rules["last_update"]) {
                 self::$request                                                                  = array();
                 $errors                                                                         = null;
@@ -472,6 +477,8 @@ class Request implements Configurable {
                         self::$request["valid"]                                                 = array();
                         foreach(self::$rules["body"] AS $rule) {
                             if(isset($rule["required"]) && $rule["required"] === true && !isset($request[$rule["name"]])) {
+                                $errors[400][]                                                  = $rule["name"] . " is required";
+                            } elseif(isset($rule["required_ifnot"]) && !isset($_SERVER[$rule["required_ifnot"]]) && !isset($request[$rule["name"]])) {
                                 $errors[400][]                                                  = $rule["name"] . " is required";
                             } elseif(isset($request[$rule["name"]])) {
                                 $validator_rule                                                 = (isset($rule["validator"])

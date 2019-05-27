@@ -627,30 +627,19 @@ class Media extends DirStruct {
         $arrFile                                                    = pathinfo($file_relative);
         if(substr($arrFile["dirname"], 0, 1) !== "/") {
             $arrFile["dirname"]                                     = "/";
-            $arrFile["filename"]                                    = "";
-            $arrFile["extension"]                                   = "png";
+           // $arrFile["filename"]                                    = $arrFile["filename"];
+            //$arrFile["extension"]                                   = "png";
 
         }
-        if(!$arrFile["extension"]) {
-            $arrFile["dirname"]                                     = "/";
-            $arrFile["filename"]                                    = "unknown";
-            $arrFile["extension"]                                   = "png";
+        if(!isset($arrFile["extension"])) {
+            //$arrFile["dirname"]                                     = "/";
+            //$arrFile["filename"]                                    = "unknown";
+            $arrFile["extension"]                                   = null;
         }
         $libs_path                                                  = self::getDiskPath("libs", true);
         switch($arrFile["extension"]) {
             case "svg";
                 return self::image2base64($file, $arrFile["extension"]);
-                break;
-            case "jpg";
-            case "jpeg";
-            case "png";
-            case "gif";
-                if(strpos($arrFile["dirname"], $libs_path) === 0 && strpos($arrFile["dirname"], static::RENDER_ASSETS_PATH) !== false) {
-                    $arrFile["dirname"]                             = substr($arrFile["dirname"] , strpos($arrFile["dirname"] , static::RENDER_ASSETS_PATH));
-                    $showfiles                                      = self::SITE_PATH;
-                } else {
-                    $showfiles                                      = self::SITE_PATH . static::RENDER_MEDIA_PATH;
-                }
                 break;
             case "js":
                 $showfiles                                          = self::SITE_PATH . static::RENDER_ASSETS_PATH . static::RENDER_SCRIPT_PATH;
@@ -668,12 +657,21 @@ class Media extends DirStruct {
                     $query                                          = "?" . filemtime($file); //todo:: genera redirect con Kernel::urlVerify
                 }
                 break;
+            case "jpg";
+            case "jpeg";
+            case "png";
+            case "gif";
             default:
-                $showfiles                                          = null;
+                if(strpos($arrFile["dirname"], $libs_path) === 0 && strpos($arrFile["dirname"], static::RENDER_ASSETS_PATH) !== false) {
+                    $arrFile["dirname"]                             = substr($arrFile["dirname"] , strpos($arrFile["dirname"] , static::RENDER_ASSETS_PATH));
+                    $showfiles                                      = self::SITE_PATH;
+                } else {
+                    $showfiles                                      = self::SITE_PATH . static::RENDER_MEDIA_PATH;
+                }
         }
 
         $dirfilename                                                = $showfiles . ($arrFile["dirname"] == "/" ? "" : $arrFile["dirname"]) . "/" . $arrFile["filename"];
-        $url                                                        = $dirfilename . ($arrFile["filename"] && $mode ? "-" : "") . $mode . "." . $arrFile["extension"] . $query;
+        $url                                                        = $dirfilename . ($arrFile["filename"] && $mode ? "-" : "") . $mode . ($arrFile["extension"] ? "." . $arrFile["extension"] : "") . $query;
         $pathinfo                                                   = array(
                                                                         "url"                   => $url
                                                                         , "web_url"             => (strpos($url, "://") === false
@@ -909,7 +907,9 @@ class Media extends DirStruct {
     public static function getModes($mode = null) {
         $loaded_modes                                               = Config::getSchema("media");
 
-        return ($loaded_modes[$mode]
+        if(!isset($loaded_modes[$mode]))                            { $loaded_modes[$mode] = null; }
+
+        return ($mode
             ? $loaded_modes[$mode]
             : $loaded_modes
         );
@@ -922,14 +922,17 @@ class Media extends DirStruct {
     }
 
     public static function getMimeTypeByExtension($ext, $default = "text/plain") {
-        $mime                                                       = static::MIMETYPE[strtolower($ext)];
-
-        return ($mime
-            ? $mime
-            : $default
-        );
+        $mime                                                       = $default;
+        if($ext) {
+            $ext                                                    = strtolower($ext);
+            $mime_type                                              = static::MIMETYPE;
+            if(isset($mime_type[$ext])) {
+                $mime                                               = $mime_type[$ext];
+            }
+        }
+        return $mime;
     }
-
+/*
     public static function getExtensionByMimeType($mime, $default = null) {
         $ext                                                       = array_search(strtolower($mime), static::MIMETYPE);
 
@@ -937,7 +940,7 @@ class Media extends DirStruct {
             ? $ext
             : $default
         );
-    }
+    }*/
 
     public static function getIconPath($ext = null, $abs = false) {
         //deve renderizzare l'icona
@@ -1008,7 +1011,10 @@ class Media extends DirStruct {
     private static function getModeByNoImg($basename) {
         $mode                                                       = null;
         $source                                                     = explode(".", strrev($basename), 2);
-        $filename                                                   = strrev($source[1]);
+        $filename                                                   = strrev(isset($source[1])
+                                                                        ? $source[1]
+                                                                        : $source[0]
+                                                                    );
         $arrFilename   			                                    = explode("-", $filename);
 
         $offset                                                     = count($arrFilename) - 1;
@@ -1041,6 +1047,10 @@ class Media extends DirStruct {
             } else if(/*$offset >= 1 &&*/ is_numeric(str_replace("c", "", $arrFilename[$offset])) && substr_count($arrFilename[$offset], "c") == 1) {
                 $mode                                               = $arrFilename[$offset];
             }
+        }
+
+        if($filename == $mode) {
+            $mode = null;
         }
 
         return $mode;
@@ -1078,23 +1088,35 @@ class Media extends DirStruct {
     }
 
     public function process($mode = null) {
-         switch ($this->pathinfo["extension"]) {
-            case "js":
-                $source_file                                        = str_replace(static::RENDER_SCRIPT_PATH, "", $this->pathinfo["dirname"]) . "/" . str_replace("_", "/", $this->pathinfo["filename"]) . "/script.js";
-                break;
-            case "css":
-                $source_file                                        = str_replace(static::RENDER_STYLE_PATH, "", $this->pathinfo["dirname"]) . "/" . str_replace("_", "/", $this->pathinfo["filename"]) . "/style.css";
-                break;
-            default:
-                $source_file                                        = null;
+        if(isset($this->pathinfo["extension"])) {
+
+
+            switch ($this->pathinfo["extension"]) {
+                case "js":
+                    $source_file                                    = str_replace(static::RENDER_SCRIPT_PATH, "", $this->pathinfo["dirname"]) . "/" . str_replace("_", "/", $this->pathinfo["filename"]) . "/script.js";
+                    break;
+                case "css":
+                    $source_file                                    = str_replace(static::RENDER_STYLE_PATH, "", $this->pathinfo["dirname"]) . "/" . str_replace("_", "/", $this->pathinfo["filename"]) . "/style.css";
+                    break;
+                default:
+                    $source_file                                    = null;
+            }
+            return ($source_file
+                ? $this->staticProcess($source_file)
+                : $this->renderProcess($mode)
+            );
+        } else {
+            $final_file                                             = $this->processFinalFile($this->setNoImg($this->mode));
+
+            if($final_file && !Error::check("storage")) {
+                $this->renderNoImg($final_file);
+            }
+
+            return null;
         }
 
-        return ($source_file
-            ? $this->staticProcess($source_file)
-            : $this->renderProcess($mode)
-        );
     }
-
+/*
     public function render($mode = null, $compress = false) {
         if($this->pathinfo && $this->pathinfo["orig"] != "/") {
             $final_file                                             = $this->renderProcess($mode);
@@ -1131,7 +1153,7 @@ class Media extends DirStruct {
         }
         exit;
     }
-
+*/
     public function setPathInfo($path = null) {
         if($path) {
             if(strpos($path, $this::RENDER_MEDIA_PATH) === 0) {
@@ -1199,10 +1221,11 @@ class Media extends DirStruct {
                 $status = 404;
             }
         }
-
         if($final_file && !Error::check("storage")) {
             $this->renderNoImg($final_file, $status);
         }
+
+        return null;
     }
 
     private function clear() {
@@ -1287,7 +1310,10 @@ class Media extends DirStruct {
                                                                         )
                                                                         . "-" . $this->mode
                                                                         . $str_wmk_file;
-                $this->final["extension"]                           = ($ext ? $ext : $this->pathinfo["extension"]);
+                $this->final["extension"]                           = $ext;
+                if(!$this->final["extension"] && isset($this->pathinfo["extension"])) {
+                    $this->final["extension"]                       = $this->pathinfo["extension"];
+                }
 
                 $this->final["exist"]                               = is_file($this->getFinalFile());
             } else {
@@ -1507,6 +1533,7 @@ class Media extends DirStruct {
     }
 
     private function getMode() {
+        if(!$this->mode)                                            { return false; }
         if(!$this->modes)                                           { $this->modes = $this->getModes(); }
 
         $setting                                                    = (isset($this->modes[$this->mode])
@@ -1638,21 +1665,25 @@ class Media extends DirStruct {
     private function setNoImg($mode = null, $icon = null) {
         $icon_name                                                  = ($icon
                                                                         ? $icon
-                                                                        : ($this->pathinfo["extension"]
+                                                                        : (isset($this->pathinfo["extension"])
                                                                             ? $this->pathinfo["extension"]
                                                                             : $this->pathinfo["basename"]
                                                                         )
                                                                     );
-
+        $mode                                                       = ($mode
+                                                                        ? $mode
+                                                                        : self::getModeByNoImg($this->pathinfo["basename"])
+                                                                    );
+        if($mode) {
+            $icon_name                                              = str_replace("-". $mode, "" , $icon_name);
+        }
         $icon                                                       = $this->getIconPath($icon_name, true);
         if($icon) {
             $this->basepath                                         = dirname($icon);
             $this->filesource                                       = "/" . basename($icon);
-            $this->mode                                             = ($mode
-                                                                        ? $mode
-                                                                        : self::getModeByNoImg($this->pathinfo["basename"])
-                                                                    );
-            return false;
+            $this->mode                                             = $mode;
+
+            return true;
         }
 
         return null;

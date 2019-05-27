@@ -351,13 +351,16 @@ class Mongodb extends Adapter {
 
                             $res["where"][$field["name"]] 						    = $value;
 
-                            if(is_array($struct[$field["name"]])) {
-                                $struct_type 									    = "array";
+                            if(isset($struct[$field["name"]])) {
+                                if(is_array($struct[$field["name"]])) {
+                                    $struct_type 									= "array";
+                                } else {
+                                    $arrStructType 									= explode(":", $struct[$field["name"]], 2);
+                                    $struct_type 									= $arrStructType[0];
+                                }
                             } else {
-                                $arrStructType 									    = explode(":", $struct[$field["name"]], 2);
-                                $struct_type 									    = $arrStructType[0];
+                                $struct_type                                        = null;
                             }
-
                             switch ($struct_type) {
                                 case "arrayIncremental":                                                                     //array
                                 case "arrayOfNumber":                                                                        //array

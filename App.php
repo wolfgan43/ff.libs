@@ -26,6 +26,8 @@
 namespace phpformsframework\libs;
 
 use phpformsframework\libs\tpl\Widget;
+use ReflectionClass;
+use Exception;
 
 abstract class App extends DirStruct {
     const NAME_SPACE                                                = 'phpformsframework\\libs\\';
@@ -54,12 +56,14 @@ abstract class App extends DirStruct {
             try {
                 self::setRunner($class_name);
 
-                if(0 && self::isStatic($class_name, $method)) { //todo: deprecato. le classi statiche non discendono nei namespace
+                /*if(0 && self::isStatic($class_name, $method)) { //todo: deprecato. le classi statiche non discendono nei namespace
                     $output                                         = call_user_func_array($class_name . "::" . $method, $params);
-                } else {
+                } else {*/
+                if($method && !is_array($method)) {
                     $obj                                            = new $class_name();
                     $output                                         = call_user_func_array(array(new $obj, $method), $params);
                 }
+                //}
                 //todo: da verificare benchmark
 
                 /*if(!$output) { // todo: da finire
@@ -68,7 +72,7 @@ abstract class App extends DirStruct {
                     $page->run();
                     exit;
                 }*/
-            } catch (\Exception $exception) {
+            } catch (Exception $exception) {
                 Error::send(503);
             }
         } else if(is_callable($method)) {
@@ -78,7 +82,7 @@ abstract class App extends DirStruct {
             }*/
         }/* elseif(class_exists($method)) { //todo:: da finire
             try {
-                $class                                              = new \ReflectionClass($method);
+                $class                                              = new ReflectionClass($method);
                 $instance = $class->newInstanceArgs($params);
             } catch (\exception $exception) {
 
@@ -102,9 +106,9 @@ abstract class App extends DirStruct {
     protected static function getClassName($class_name = null) {
         $res = null;
         try {
-            $reflector                                              = new \ReflectionClass($class_name);
+            $reflector                                              = new ReflectionClass($class_name);
             $res                                                    = $reflector->getShortName();
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
 
         }
         return $res;
@@ -112,9 +116,9 @@ abstract class App extends DirStruct {
     protected static function getClassPath($class_name = null) {
         $res = null;
         try {
-            $reflector = new \ReflectionClass(($class_name ? $class_name : get_called_class()));
+            $reflector = new ReflectionClass(($class_name ? $class_name : get_called_class()));
             $res = dirname($reflector->getFileName());
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
 
         }
         return $res;
@@ -122,10 +126,10 @@ abstract class App extends DirStruct {
     protected static function isStatic($class_name, $method_name) {
         $res = null;
         try {
-            $reflector = new \ReflectionClass($class_name);
+            $reflector = new ReflectionClass($class_name);
             $method = $reflector->getMethod($method_name);
             $res = $method->isStatic();
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
 
         }
         return $res;
@@ -140,7 +144,7 @@ abstract class App extends DirStruct {
     private static function getCalledClass() {
         return get_called_class();
     }
-    public static function widget($name, $config = null, $user_path = null) {
+    public static function widget($name, $return = null, $config = null, $user_path = null) {
         $schema                         = self::getSchema("widgets");
         $class_name                     = self::getCalledClass();
         if(!$user_path)                 { $user_path = self::getPathInfo(); }
@@ -155,7 +159,7 @@ abstract class App extends DirStruct {
 
         return Widget::getInstance($name, $class_name::NAME_SPACE)
             ->setConfig($config)
-            ->process("page");
+            ->process($return);
     }
 /*
     public static function getSchema($key = null) {

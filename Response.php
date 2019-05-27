@@ -42,7 +42,7 @@ class Response {
 
         Response::code($status);
 
-        if(Debug::ACTIVE) {
+        /*if(Debug::ACTIVE) {
             if(isset($response["data"]) && is_array($response["data"])) {
                 $size                               = strlen(http_build_query($response["data"], '', ''));
             } elseif(isset($response["data"])) {
@@ -51,7 +51,7 @@ class Response {
                 $size                               = 0;
             }
             Log::request($response["error"], $status, $size);
-        }
+        }*/
 
         if (is_array($headers) && count($headers)) {
             foreach ($headers AS $header) {
@@ -59,7 +59,7 @@ class Response {
             }
         }
 
-        if(!$type) {
+        if(!$type && isset($_SERVER["HTTP_ACCEPT"])) {
             switch ($_SERVER["HTTP_ACCEPT"]) {
                 case "application/json":
                 case "text/json":
@@ -83,19 +83,18 @@ class Response {
                     break;
                 default:
             }
-            if(!$type) {
-                if (is_array($response)) {
-                    if (isset($response["html"])) {
-                        $type                       = "html";
-                    } else {
-                        $type                       = "json";
-                    }
-                } else {
-                    $type                           = "text";
+        }
+
+        if(!$type) {
+            $type                                   = "text";
+            if (is_array($response)) {
+                if (isset($response["html"])) {
+                    $type                           = "html";
+                } elseif(Request::isAjax() || is_array($response)) {
+                    $type                           = "json";
                 }
             }
         }
-
         if(isset($response["error"]))               { $response["error"] = Translator::get_word_by_code($response["error"]); }
 
         self::sendHeadersByType($type);
@@ -115,12 +114,19 @@ class Response {
             case "soap":
                 //todo: self::soap_client($response["url"], $response["headers"], $response["action"], $response["data"], $response["auth"]);
                 break;
-            case "text":
-                echo $response;
-                break;
             case "json":
-            default:
                 echo json_encode((array) $response);
+                break;
+            case "text":
+            default:
+                if(isset($response["error"]) && $response["error"]) {
+                    echo $response["error"];
+                } elseif(isset($response["data"])) {
+                    echo (is_array($response["data"])
+                        ? implode(" " , $response["data"])
+                        : $response["data"]
+                    );
+                }
         }
 
         exit;

@@ -28,6 +28,7 @@ namespace phpformsframework\libs\storage\database;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\international\Data;
+use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\storage\Database;
@@ -514,16 +515,25 @@ abstract class Adapter {
         static $hits                                                    = array();
 
         if(Debug::ACTIVE) {
-            $hash = md5(serialize($this->where));
-            $hits["count"]++;
-            $hits[$hash]["where"] = $this->where;
-            $hits[$hash]["records"]++;
+            $hash                                                       = md5(serialize($this->where));
+
+            $hits["count"]                                              = (isset($hits["count"])
+                                                                            ? $hits["count"] + 1
+                                                                            : 1
+                                                                        );
+
+            $hits[$hash]["records"]                                     = (isset($hits[$hash])
+                                                                            ? $hits[$hash]["records"] + 1
+                                                                            : 1
+                                                                        );
+
+            $hits[$hash]["where"]                                       = $this->where;
             if($hits["count"] > $this::MAX_RESULTS) {
                 Log::debugging(array(
                     "URL" =>  $_SERVER["REQUEST_URI"]
                     , "Too Many Caller" => $hits
                 ));
-                $hits = array();
+                $hits                                                   = array();
             }
         }
 
@@ -777,7 +787,7 @@ abstract class Adapter {
 				}
                 break;
 			case "DATETIME":
-				$lang                                                       = FF_LOCALE;
+				$lang                                                       = Locale::getLang("code");
 				$oData                                                      = new Data($source, "Timestamp");
 				$res                                                        = $oData->getValue("Date", $lang);
 
@@ -805,16 +815,16 @@ abstract class Adapter {
 				$res                                                        = str_replace(array_keys($conv), array_values($conv), $res);
 				if($prefix)
 					$res                                                    = str_replace("/", ", ", $res);
-				$res                                                        .= " " . Translator::get_word_by_code("at") . " " . Translator::get_word_by_code("hours") . " " . $oData->getValue("Time", FF_LOCALE);
+				$res                                                        .= " " . Translator::get_word_by_code("at") . " " . Translator::get_word_by_code("hours") . " " . $oData->getValue("Time", Locale::getLang("code"));
 
 				break;
 			case "DATE":
                 $oData                                                      = new Data($source, "Timestamp");
-				$res                                                        = $oData->getValue("Date", FF_LOCALE);
+				$res                                                        = $oData->getValue("Date", Locale::getLang("code"));
 				break;
 			case "TIME":
                 $oData                                                      = new Data($source, "Timestamp");
-				$res                                                        = $oData->getValue("Time", FF_LOCALE);
+				$res                                                        = $oData->getValue("Time", Locale::getLang("code"));
 				break;
 			case "STRING":
 				if($source) {
@@ -1050,10 +1060,10 @@ abstract class Adapter {
                     $op                                                     = "<=";
                 }
 
-                if(is_array($this->struct[$name])) {
+                if(isset($this->struct[$name]) && is_array($this->struct[$name])) {
                     $struct_type                                            = "array";
                 } else {
-                    $arrType                                                = $this->convert($this->struct[$name]);
+                    $arrType                                                = $this->convert((isset($this->struct[$name]) ? $this->struct[$name] : "string"));
                     $struct_type                                            = $arrType["field"];
                     if(isset($arrType["in"])) {
                         $toField                                            = $arrType["in"];

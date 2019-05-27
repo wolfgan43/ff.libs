@@ -29,6 +29,7 @@ use phpformsframework\libs\international\Data;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Hook;
 use phpformsframework\libs\Error;
+use mysqli_result;
 
 if (!defined("FF_DB_MYSQLI_SHARELINK")) define("FF_DB_MYSQLI_SHARELINK", true);
 if (!defined("FF_DB_MYSQLI_SHUTDOWNCLEAN")) define("FF_DB_MYSQLI_SHUTDOWNCLEAN", false);
@@ -97,7 +98,7 @@ class MySqli
      */
     private $link_id                = false;
     /**
-     * @var \mysqli_result
+     * @var mysqli_result
      */
     private $query_id               = false;
 
@@ -517,7 +518,7 @@ class MySqli
     /**
      * Esegue una query
      * @param string|array $query
-     * @return bool|\mysqli_result
+     * @return bool|mysqli_result
      */
     function query($query)
     {
@@ -630,7 +631,7 @@ class MySqli
             $extraResult = mysqli_use_result($this->link_id);
             $rc |= $this->checkError();
 
-            if($extraResult instanceof \mysqli_result) {
+            if($extraResult instanceof mysqli_result) {
                 $extraResult->free();
             }
         } while(mysqli_more_results($this->link_id) && (true | mysqli_next_result($this->link_id)));
@@ -1134,6 +1135,8 @@ class MySqli
     function errorHandler($msg)
     {
         $this->checkError(); // this is needed due to params order
+
+        Error::register("MySQL(" . $this->database . ") - Error #" . $this->errno . ": " . $this->error, "database");
 
         if ($this->on_error == "ignore" && !$this->debug)
             return;

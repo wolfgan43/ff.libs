@@ -433,28 +433,30 @@ class ffTemplate extends Hook
 	{
 		$minify = ($minify === null ? $this->minify : $minify);
 
-		if ($minify === false)
-			return $this->entities_replace($this->ParsedBlocks[$block_name]);
-		else if ($minify === "strip")
-			return $this->entities_replace(preg_replace("/\n\s*/", "\n", $this->ParsedBlocks[$block_name], -1, $count));
-		else if ($minify === "strong_strip")
-			return $this->entities_replace(preg_replace(
-						array (
-							'/\>[^\S ]+/s',  // strip whitespaces after tags, except space
-							'/[^\S ]+\</s',  // strip whitespaces before tags, except space
-							'/(\s)+/s'       // shorten multiple whitespace sequences
-						)
-						, array (
-							'>',
-							'<',
-							'\\1'
-						)
-						, $this->ParsedBlocks[$block_name]
-						, -1
-						, $count
-					));
-		else if ($minify === "minify")
-		{
+		if ($minify === false) {
+            return (isset($this->ParsedBlocks[$block_name])
+                ? $this->entities_replace($this->ParsedBlocks[$block_name])
+                : null
+            );
+        } else if ($minify === "strip") {
+            return $this->entities_replace(preg_replace("/\n\s*/", "\n", $this->ParsedBlocks[$block_name], -1, $count));
+        } else if ($minify === "strong_strip") {
+            return $this->entities_replace(preg_replace(
+                array(
+                    '/\>[^\S ]+/s',  // strip whitespaces after tags, except space
+                    '/[^\S ]+\</s',  // strip whitespaces before tags, except space
+                    '/(\s)+/s'       // shorten multiple whitespace sequences
+                )
+                , array(
+                    '>',
+                    '<',
+                    '\\1'
+                )
+                , $this->ParsedBlocks[$block_name]
+                , -1
+                , $count
+            ));
+        } else if ($minify === "minify") {
 			if (!class_exists("Minify_HTML"))
 				require FF_DISK_PATH . '/library/minify/min/lib/Minify/HTML.php';
 			if (!class_exists("CSSmin"))
@@ -470,9 +472,7 @@ class ffTemplate extends Hook
 							, "jsCleanComments" => true
 						))
 					));
-		}
-		else if ($minify === "yui")
-		{
+		} else if ($minify === "yui") {
 			if (!class_exists("Minify_HTML"))
 				require FF_DISK_PATH . '/library/minify/min/lib/Minify/HTML.php';
 			if (!class_exists("Minify_YUICompressor"))
@@ -490,13 +490,12 @@ class ffTemplate extends Hook
 							, "jsMinifier" => "Minify_YUICompressor::minifyJs"
 						))
 					));
-		}
-		else
-		{
-			if ($this->useFormsFramework)
+		} else {
+			if ($this->useFormsFramework) {
                 Error::dump("Unknown minify method", E_USER_ERROR, $this, get_defined_vars());
-			else
-				die("Unknown minify method");
+            } else {
+                die("Unknown minify method");
+            }
 		}
 
 		return null;

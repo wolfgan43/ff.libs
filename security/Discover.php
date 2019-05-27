@@ -25,6 +25,8 @@
  */
 namespace phpformsframework\libs\security;
 
+use phpformsframework\libs\Debug;
+
 class Discover {
 
     public static function device() {
@@ -50,6 +52,12 @@ class Discover {
     }
 
     public static function browser() {
+        return array(
+            "name"  => "Chrome"
+            , "ver" => "32"
+        );
+
+/*
         $ua 										    = get_browser();
 
         return ($ua
@@ -58,13 +66,16 @@ class Discover {
                 , "ver" => $ua["version"]
             )
             : null
-        );
+        );*/
     }
 
     public static function platform() {
+        return "windows";
+/*
         $ua 										    = get_browser();
 
         return $ua["platform"];
+*/
     }
 
 
@@ -232,7 +243,7 @@ class Discover {
         if(!self::isCrawler($user_agent)) {
             $long_time = time() + (60 * 60 * 24 * 365 * 30);
 
-            if($_COOKIE["_ga"]) {
+            if(isset($_COOKIE["_ga"])) {
                 $ga = explode(".", $_COOKIE["_ga"]);
 
                 $visitor = array(
@@ -240,7 +251,7 @@ class Discover {
                     , "created"     => $ga[3]
                     , "last_update" => $ga[3]
                 );
-            } elseif($_COOKIE["__utma"]) {
+            } elseif(isset($_COOKIE["__utma"])) {
                 $utma = explode(".", $_COOKIE["__utma"]);
 
                 $visitor = array(
@@ -248,7 +259,7 @@ class Discover {
                 , "created" => $utma[2]
                 , "last_update" => $utma[4]
                 );
-            } elseif($_COOKIE["_uv"]) {
+            } elseif(isset($_COOKIE["_uv"])) {
                 $uv = explode(".", $_COOKIE["_uv"]);
 
                 $visitor = array(

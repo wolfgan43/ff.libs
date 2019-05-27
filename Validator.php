@@ -175,7 +175,7 @@ class Validator
                                                             "status"    => 0
                                                             , "error"   => ""
                                                         );
-        if(!isset(self::RULES[$type])) {
+        if(!array_key_exists($type, self::RULES)) {
             $type                                       = (is_array($what)
                                                             ? "array"
                                                             : "string"
@@ -329,8 +329,8 @@ class Validator
     }
     public static function isEmail($value) {
         $regex                                                              = (Debug::ACTIVE
-                                                                                ? '/^([.0-9a-z_-\+]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,12})$/i'
-                                                                                : '/^([.0-9a-z_-]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,12})$/i'
+                                                                                ? '/^([\.0-9a-z_\-\+]+)@(([0-9a-z\-]+\.)+[0-9a-z]{2,12})$/i'
+                                                                                : '/^([\.0-9a-z_\-]+)@(([0-9a-z\-]+\.)+[0-9a-z]{2,12})$/i'
                                                                             );
         $res                                                                = preg_match($regex, $value);
 

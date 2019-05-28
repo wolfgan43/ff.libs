@@ -862,7 +862,6 @@ class Orm {
         foreach ($data as $scope => $fields) {
             self::resolveFields($fields, $scope);
         }
-
         //$this->service = "mol";
         $is_single_service                                                                  = (count(self::$services_by_data["services"]) == 1
                                                                                                 ? true
@@ -951,17 +950,18 @@ class Orm {
      * @return null
      */
     private static function resolveFields($fields, $scope = "fields") {
-        $ormModel                                                                           = self::getModel();
-        $mainService                                                                        = $ormModel->getName(); // ($this->service ? $this->service : Anagraph::TYPE);
-        $mainTable                                                                          = $ormModel->getMainTable(); // ($this->service ? $this->getMainTable($mainService) : Anagraph::MAIN_TABLE);
-        self::$services_by_data["last"]                                                     = $mainService;
-        self::$services_by_data["last_table"]                                               = $mainTable;
-
         if(is_array($fields) && count($fields)) {
-            $is_or = false;
+            $ormModel                                                                       = self::getModel();
+            $mainService                                                                    = $ormModel->getName(); // ($this->service ? $this->service : Anagraph::TYPE);
+            $mainTable                                                                      = $ormModel->getMainTable(); // ($this->service ? $this->getMainTable($mainService) : Anagraph::MAIN_TABLE);
+            if($scope == "select" || $scope == "where" || $scope == "sort") {
+                self::$services_by_data["last"]                                             = $mainService;
+                self::$services_by_data["last_table"]                                       = $mainTable;
+            }
+            $is_or                                                                          = false;
             if(isset($fields['$or'])) {
-                $fields = $fields['$or'];
-                $is_or = true;
+                $fields                                                                     = $fields['$or'];
+                $is_or                                                                      = true;
             }
 
             foreach($fields AS $key => $alias) {
@@ -1022,7 +1022,7 @@ class Orm {
                 self::$services_by_data["services"][$service]                               = true;
                 self::$services_by_data["tables"][$service . "." . $table]                  = true;
                 self::$services_by_data[$scope][$service]                                   = true;
-                if($scope == "select") {
+                if($scope == "select" || $scope == "where" || $scope == "sort") {
                     self::$services_by_data["last"]                                         = $service;
                     self::$services_by_data["last_table"]                                   = $table;
                 }

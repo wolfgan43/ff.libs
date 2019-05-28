@@ -28,6 +28,8 @@ namespace phpformsframework\libs\tpl;
 use phpformsframework\libs\DirStruct;
 use phpformsframework\libs\Env;
 use phpformsframework\libs\international\Locale;
+use phpformsframework\libs\international\Translator;
+use phpformsframework\libs\Response;
 use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\storage\Media;
 
@@ -37,6 +39,7 @@ if (!defined("ENCODING"))                { define("ENCODING", "utf-8"); }
 class PageHtml extends DirStruct {
     const NL                                    = "\n";
     const APPNAME                               = APPNAME;
+    const MAIN_CONTENT                          = "content";
 
     private $encoding                           = ENCODING;
     private $path                               = null;
@@ -224,6 +227,7 @@ class PageHtml extends DirStruct {
     private $doctype                            = '<!DOCTYPE html>';
     private $layout                             = "<main>{content}</main>";
     private $contents                           = null;
+    private $statusCode                         = 200;
 
     public function __construct($path = null)
     {
@@ -243,6 +247,15 @@ class PageHtml extends DirStruct {
 
         return $this;
     }
+
+    public function setStatus($code) {
+        $this->statusCode                       = ($code > 0
+                                                    ? $code
+                                                    : 200
+                                                );
+        return $this;
+    }
+
     public function addAssets($js = null, $css = null, $fonts = null) {
         if(is_array($js) && count($js)) {
             foreach ($js as $key => $url) {
@@ -302,12 +315,12 @@ class PageHtml extends DirStruct {
     }
 
     public function setLayout($name) {
-        $this->layout                           = $this->getAsset($name, "layout");
+        $this->layout                           = file_get_contents($this::$disk_path . $this->getAsset($name, "layout"));
 
         return $this;
     }
 
-    public function addContent($content, $where = "content") {
+    public function addContent($content, $where = self::MAIN_CONTENT) {
         $this->contents["{" . $where . "}"]     = $content;
 
         return $this;
@@ -397,7 +410,32 @@ class PageHtml extends DirStruct {
         return $script_tag . implode('"></script>' . $script_tag, $this->js) . '"></script>';
     }
 
+    private function getContent($name) {
+        return (isset($this->contents["{" . $name . "}"])
+            ? $this->contents["{" . $name . "}"]
+            : null
+        );
+    }
+    private function setContent($name, $value) {
+        $this->contents["{" . $name . "}"]      = $value;
+        return $this;
+    }
+
+    public function getPageError($title, $description, $code = null) {
+        if($code)                               { Response::code($code); }
+        $error                                  = str_replace(
+                                                    array("{title}", "{description}")
+                                                    , array($title, Translator::get_word_by_code($description))
+                                                    , file_get_contents($this::$disk_path . $this->getAsset("error", "common"))
+                                                );
+        return $error;
+    }
+
     private function parseLayout() {
+        if($this->statusCode != 200) {
+            $this->setContent(self::MAIN_CONTENT,$this->getPageError("", $this->getContent(self::MAIN_CONTENT), $this->statusCode));
+        }
+
         return str_replace(
             array_keys($this->contents)
             , array_values($this->contents)

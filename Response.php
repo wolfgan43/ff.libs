@@ -33,14 +33,15 @@ class Response {
         self::send($response, $headers, $type, $status);
     }
     public static function send($response = null, $headers = null, $type = null, $status = null) {
-        if(!$status) {
+        /*if(!$status) {
             $status                                 = (isset($response["status"])
                                                         ? $response["status"]
                                                         : 200
                                                     );
+        }*/
+        if($status) {
+            Response::code($status);
         }
-
-        Response::code($status);
 
         /*if(Debug::ACTIVE) {
             if(isset($response["data"]) && is_array($response["data"])) {

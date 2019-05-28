@@ -40,6 +40,7 @@ abstract class Widget extends DirStruct {
     protected $js                               = null;
     protected $css                              = null;
     protected $html                             = null;
+    protected $status                           = null;
 
     protected abstract function getConfigDefault();
 
@@ -57,6 +58,7 @@ abstract class Widget extends DirStruct {
     }
     private function getPage() {
         return Page::getInstance("html")
+            ->setStatus($this->status)
             ->addAssets($this->js, $this->css)
             //->setLayout("empty")
             ->addContent($this->html)

@@ -144,10 +144,10 @@ abstract class App extends DirStruct {
     private static function getCalledClass() {
         return get_called_class();
     }
-    public static function widget($name, $return = null, $config = null, $user_path = null) {
+    public static function widget($name, $config = null, $return = null) {
         $schema                         = self::getSchema("widgets");
         $class_name                     = self::getCalledClass();
-        if(!$user_path)                 { $user_path = self::getPathInfo(); }
+        $user_path                      = self::getPathInfo();
 
         if(isset($schema[$user_path]) && is_array($schema[$user_path])) {
             $config                     = array_replace_recursive($config, $schema[$user_path]);
@@ -160,6 +160,9 @@ abstract class App extends DirStruct {
         return Widget::getInstance($name, $class_name::NAME_SPACE)
             ->setConfig($config)
             ->process($return);
+    }
+    public static function page($name, $config = null) {
+        return self::widget($name, $config, "page");
     }
 /*
     public static function getSchema($key = null) {

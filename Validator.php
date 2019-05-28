@@ -58,6 +58,12 @@ class Validator
                                                                     , "options"     => array("default" => null)
                                                                     , "length"      => 16
                                                                 )
+                                                                , "timestamp"       => array(
+                                                                    "filter"        => FILTER_CALLBACK
+                                                                    , "flags"       => null
+                                                                    , "options"     => '\phpformsframework\libs\Validator::isValidTimeStamp'
+                                                                    , "length"      => 10
+                                                                )
                                                                 , "ip" => array(
                                                                     "filter"        => FILTER_VALIDATE_IP
                                                                     , "flags"       => null //FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
@@ -239,6 +245,12 @@ class Validator
             ? implode(", ", $errors)
             : false
         );
+    }
+    public static function isValidTimeStamp($timestamp)
+    {
+        return (is_numeric($timestamp)
+            && $timestamp > 0
+            && $timestamp < pow(2, 31));
     }
     public static function isFile($value) {
         return (self::invalidFile($value)

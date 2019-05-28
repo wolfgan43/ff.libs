@@ -638,7 +638,7 @@ class Orm {
                                                                                                     : self::getModel($controller)->getMainTable()
                                                                                                 )]
                                                                                             );
-        $ormModel                                                                           = self::getModel($data["service"]
+        $ormModel                                                                           = self::getModel(isset($data["service"])
                                                                                                 ? $data["service"]
                                                                                                 : $controller
                                                                                             );

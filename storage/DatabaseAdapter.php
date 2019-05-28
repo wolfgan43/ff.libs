@@ -633,6 +633,7 @@ abstract class Adapter {
                                         );
                         break;
                     case "number":
+                    case "timestamp":
                     case "primary":
                         if(strpos(".", $value) === false)
                             $record[$key] = (int)$value;
@@ -1127,6 +1128,7 @@ abstract class Adapter {
                         $fields[$name] = $value;
                         break;
                     case "number":                                                                                      //number
+                    case "timestamp":
                     case "primary":
                         if(strrpos($value, "++") === strlen($value) -2) {                                         //++ to number
                             $op                                             = "++";
@@ -1149,6 +1151,9 @@ abstract class Adapter {
                             $fields[$name]                                  = 0;
                         } else {
                             $fields[$name]                                  = (int)$value;                              //other to number
+                            if($fields[$name] >= pow(2, 31)) {
+                                Error::register($name . "is too long", "database");
+                            }
                         }
                         break;
                     case "string":																			            //string

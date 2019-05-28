@@ -429,6 +429,7 @@ class Mysqli extends Adapter {
                                 case "boolean":
                                 case "date":
                                 case "number":
+                                case "timestamp":
                                 case "primary":
                                 case "string":
                                 case "char":

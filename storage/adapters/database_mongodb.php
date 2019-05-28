@@ -387,6 +387,7 @@ class Mongodb extends Adapter {
                                     break;
                                 case "date":
                                 case "number":
+                                case "timestamp":
                                 case "primary":
                                     if($value !== null) {
                                         if ($field["op"]) {                                                //< > <= >=

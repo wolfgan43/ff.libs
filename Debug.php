@@ -133,13 +133,14 @@ class Debug extends DirStruct
 
         foreach($debug_backtrace AS $i => $value) {
             if ($i) {
-                if (basename($value["file"]) == "vgCommon.php") {
-                    continue;
+                if(isset($value["file"])) {
+                    if (basename($value["file"]) == "vgCommon.php") {
+                        continue;
+                    }
+                    if (basename($value["file"]) == "cm.php") {
+                        break;
+                    }
                 }
-                if (basename($value["file"]) == "cm.php") {
-                    break;
-                }
-
                 $trace = $value;
             }
         }

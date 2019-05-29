@@ -25,7 +25,8 @@
  */
 namespace phpformsframework\libs\security;
 
-use phpformsframework\libs\Debug;
+
+use InvalidArgumentException;
 
 class Discover {
 
@@ -86,7 +87,7 @@ class Discover {
      * @link https://github.com/donatj/PhpUserAgent
      * @link http://donatstudios.com/PHP-Parser-HTTP_USER_AGENT
      * @param string|null $u_agent User agent string to parse or null. Uses $_SERVER['HTTP_USER_AGENT'] on NULL
-     * @throws \InvalidArgumentException on not having a proper user agent to parse.
+     * @throws InvalidArgumentException on not having a proper user agent to parse.
      * @return string[] an array with browser, version and platform keys
      */
     public static function parse_user_agent( $u_agent = null ) {
@@ -94,7 +95,7 @@ class Discover {
             if( isset($_SERVER['HTTP_USER_AGENT']) ) {
                 $u_agent = $_SERVER['HTTP_USER_AGENT'];
             } else {
-                throw new \InvalidArgumentException('parse_user_agent requires a user agent');
+                throw new InvalidArgumentException('parse_user_agent requires a user agent');
             }
         }
         $platform = null;
@@ -112,7 +113,8 @@ class Discover {
             $result['platform'] = array_unique($result['platform']);
 
             if( count($result['platform']) > 1 ) {
-                if( $keys = array_intersect($priority, $result['platform']) ) {
+                $keys = array_intersect($priority, $result['platform']);
+                if(is_array($keys) && count($keys)) {
                     $platform = reset($keys);
                 } else {
                     $platform = $result['platform'][0];

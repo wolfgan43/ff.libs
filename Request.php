@@ -26,6 +26,8 @@
 
 namespace phpformsframework\libs;
 
+use phpformsframework\libs\security\Validator;
+
 class Request implements Configurable {
     const TYPE                                                                                  = "request";
     const MAX_SIZE                                                                              = array(
@@ -118,21 +120,23 @@ class Request implements Configurable {
     public static function setSchema($rawdata, $path, $request = array()) {
         if(isset($rawdata["header"]) && is_array($rawdata["header"]) && count($rawdata["header"])) {
             foreach ($rawdata["header"] AS $header) {
-                self::setRequestMapping($request, DirStruct::getXmlAttr($header), $path, true);
+                self::setRequestMapping($request, DirStruct::getXmlAttr($header), $path, "header");
             }
         }
         if(isset($rawdata["get"]) && is_array($rawdata["get"]) && count($rawdata["get"])) {
             foreach ($rawdata["get"] AS $get) {
-                self::setRequestMapping($request, DirStruct::getXmlAttr($get), $path);
+                self::setRequestMapping($request, DirStruct::getXmlAttr($get), $path, "query");
+            }
+        }
+        if(isset($rawdata["post"]) && is_array($rawdata["post"]) && count($rawdata["post"])) {
+            foreach ($rawdata["post"] AS $post) {
+                self::setRequestMapping($request, DirStruct::getXmlAttr($post), $path, "body");
             }
         }
         return $request;
     }
-    private static function setRequestMapping(&$request, $attr, $path, $isHeader = false) {
-        $bucket                                                 = ($isHeader
-                                                                    ? "header"
-                                                                    : "body"
-                                                                );
+    private static function setRequestMapping(&$request, $attr, $path, $type = "body") {
+        $bucket                                                 = $type;
         $key                                                    = (isset($attr["scope"])
                                                                     ? $attr["scope"] . "."
                                                                     : ""
@@ -200,12 +204,16 @@ class Request implements Configurable {
                                                                 );
         if(!$request_path)                                      { $request_path = "/"; }
 
+        $rules["query"]                                         = array();
         $rules["body"]                                          = array();
         $rules["header"]                                        = array();
         $rules["access_control"]                                = Config::getSchema("accesscontrol");
 
         do {
             if(isset($request[$request_path])) {
+                if(isset($request[$request_path]["query"]) && is_array($request[$request_path]["query"])) {
+                    $rules["query"]                            = array_replace($request[$request_path]["query"], $rules["query"]);
+                }
                 if(isset($request[$request_path]["body"]) && is_array($request[$request_path]["body"])) {
                     $rules["body"]                              = array_replace($request[$request_path]["body"], $rules["body"]);
                 }
@@ -221,13 +229,16 @@ class Request implements Configurable {
                                                                 );
         $rules["method"]                                        = (isset($page["method"])
                                                                     ? strtoupper($page["method"])
-                                                                    : $_SERVER["REQUEST_METHOD"]
+                                                                    : self::method()
                                                                 );
         self::$rules                                            = $rules;
 
         self::$rules["last_update"]                             = microtime(true);
     }
 
+    public static function method() {
+        return strtoupper($_SERVER["REQUEST_METHOD"]);
+    }
     public static function isAjax() {
         return isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
     }
@@ -359,6 +370,119 @@ class Request implements Configurable {
         //header("Expect-CT: max-age=7776000, enforce");
         self::isInvalidReqMethod(true);
     }
+
+    private static function securityHeaderParams() {
+        $errors                                                                         = array();
+        if(self::isAllowedSize(getallheaders(), "HEAD")) {
+            foreach(self::$rules["header"] AS $rule_key => $rule) {
+                $header_key                                                             = str_replace("-", "_", $rule["name"]);
+                switch($rule["name"]) {
+                    case "Authorization":
+                        $header_name                                                    = "Authorization";
+                        break;
+                    default:
+                        $header_name                                                    = "HTTP_" . strtoupper($header_key);
+                }
+                if(isset($rule["required"]) && !isset($_SERVER[$header_name])) {
+                    $errors[400][]                                                      = $rule["name"] . " is required";
+                } elseif(isset($rule["required_ifnot"]) && !isset($_SERVER["HTTP_" . strtoupper($rule["required_ifnot"])]) && !isset($_SERVER[$header_name])) {
+                    $errors[400][]                                                      = $rule["name"] . " is required";
+                } elseif(isset($_SERVER[$header_name])) {
+                    $validator_rule                                                     = (isset($rule["validator"])
+                        ? $rule["validator"]
+                        : null
+                    );
+                    $validator_range                                                    = (isset($rule["validator_range"])
+                        ? $rule["validator_range"]
+                        : null
+                    );
+                    $validator                                                          = Validator::is($_SERVER[$header_name], $validator_rule, array("fakename" => $header_key . " (in header)", "range" => $validator_range));
+                    if ($validator["status"] !== 0)                                     { $errors[400][] = $validator["error"]; }
+
+                    self::$headers[$header_key]                                         = $_SERVER[$header_name];
+                }
+            }
+        } else {
+            $errors[413][]                                                              = "Headers Max Size Exeeded";
+        }
+
+        return $errors;
+    }
+
+    private static function securityParams($request, $method) {
+        $errors                                                                         = array();
+        $bucket                                                                         = ($method == "GET"
+                                                                                            ? "query"
+                                                                                            : "body"
+                                                                                        );
+
+        if(self::isAllowedSize($request, $method) && self::isAllowedSize(getallheaders(), "HEAD")) {
+            //Mapping Request by Rules
+            if(is_array(self::$rules[$bucket]) && count(self::$rules[$bucket]) && is_array($request) && count($request)) {
+                self::$request["valid"]                                                 = array();
+                foreach(self::$rules[$bucket] AS $rule) {
+                    if(isset($rule["required"]) && $rule["required"] === true && !isset($request[$rule["name"]])) {
+                        $errors[400][]                                                  = $rule["name"] . " is required";
+                    } elseif(isset($rule["required_ifnot"]) && !isset($_SERVER[$rule["required_ifnot"]]) && !isset($request[$rule["name"]])) {
+                        $errors[400][]                                                  = $rule["name"] . " is required";
+                    } elseif(isset($request[$rule["name"]])) {
+                        $validator_rule                                                 = (isset($rule["validator"])
+                            ? $rule["validator"]
+                            : null
+                        );
+                        $validator_range                                                = (isset($rule["validator_range"])
+                            ? $rule["validator_range"]
+                            : null
+                        );
+                        $validator                                                      = Validator::is($request[$rule["name"]], $validator_rule, array("fakename" => $rule["name"], "range" => $validator_range));
+                        if(isset($validator["status"]) && $validator["status"] !== 0)   { $errors[$validator["status"]][] = $validator["error"]; }
+
+                        if(isset($rule["scope"])) {
+                            self::$request[$rule["scope"]][$rule["name"]]               = $request[$rule["name"]];
+                        }
+                        if(!isset($rule["hide"]) || $rule["hide"] === false) {
+                            self::$request["valid"][$rule["name"]]                      = $request[$rule["name"]];
+                        } else {
+                            unset($request[$rule["name"]]);
+                        }
+                    }
+                }
+
+                self::$request["rawdata"]                                               = $request;
+                self::$request["unknown"]                                               = array_diff_key($request, self::$request["valid"]);
+
+                if(isset(self::$request["unknown"]) && is_array(self::$request["unknown"]) && count(self::$request["unknown"])) {
+                    foreach (self::$request["unknown"] as $unknown_key => $unknown) {
+                        $validator                                                      = Validator::is($unknown, null, array("fakename" => $unknown_key));
+                        if($validator["status"] !== 0)                                  { $errors[$validator["status"]][] = $validator["error"]; }
+                    }
+                }
+            }
+
+
+        } else {
+            $errors[413][]                                                              = "Request Max Size Exeeded";
+        }
+
+        return $errors;
+    }
+
+    private static function securityFileParams() {
+        $errors                                                                         = array();
+        if(is_array($_FILES) && count($_FILES)) {
+            foreach ($_FILES as $file_name => $file) {
+                if(isset(self::$rules["body"][$file_name]) && self::$rules["body"][$file_name]["validator"] != "file") {
+                    $errors[400][]                                                      = $file_name . " must be type " . self::$rules["body"][$file_name]["validator"];
+                } else {
+                    $validator                                                          = Validator::is($file_name, "file", array("fakename" => $file_name));
+                    if($validator["status"] !== 0)                                      { $errors[$validator["status"]][] = $validator["error"]; }
+                }
+            }
+        }
+
+        return $errors;
+    }
+
     private static function getReq($method = null) {
         switch($method) {
             case "POST":
@@ -405,10 +529,11 @@ class Request implements Configurable {
         if(self::$headers === null || $last_update < self::$rules["last_update"]) {
             self::$headers                                                                      = array();
             if(is_array(self::$rules["header"]) && count(self::$rules["header"])) {
-                $errors                                                                         = null;
                 $last_update                                                                    = self::$rules["last_update"];
 
-                if(self::isAllowedSize(getallheaders(), "HEAD")) {
+                $errors                                                                         = self::securityHeaderParams();
+
+                /*if(self::isAllowedSize(getallheaders(), "HEAD")) {
                     foreach(self::$rules["header"] AS $rule_key => $rule) {
                         $header_key                                                             = str_replace("-", "_", $rule["name"]);
                         switch($rule["name"]) {
@@ -439,9 +564,9 @@ class Request implements Configurable {
                     }
                 } else {
                     $errors[413][]                                                              = "Headers Max Size Exeeded";
-                }
+                }*/
 
-                if($errors) {
+                if(is_array($errors) && count($errors)) {
                     asort($errors);
                     $status = key ($errors);
 
@@ -462,18 +587,18 @@ class Request implements Configurable {
         static $last_update                                                                     = 0;
 
         if(self::security()) {
-
             if(self::$request === null || $last_update < self::$rules["last_update"]) {
                 self::$request                                                                  = array();
-                $errors                                                                         = null;
                 $last_update                                                                    = self::$rules["last_update"];
 
                 if(!$method)                                                                    { $method = self::$rules["method"]; }
                 $request                                                                        = self::getReq($method);
+                $errors                                                                         = self::securityParams($request, $method) + self::securityFileParams();
 
-                if(self::isAllowedSize($request, $method) && self::isAllowedSize(getallheaders(), "HEAD")) {
+
+                /*if(self::isAllowedSize($request, $method) && self::isAllowedSize(getallheaders(), "HEAD")) {
                     //Mapping Request by Rules
-                    if(is_array(self::$rules["body"]) && count(self::$rules["body"]) && is_array($request) && count($request)) {
+                    if($method !== "GET" && is_array(self::$rules["body"]) && count(self::$rules["body"]) && is_array($request) && count($request)) {
                         self::$request["valid"]                                                 = array();
                         foreach(self::$rules["body"] AS $rule) {
                             if(isset($rule["required"]) && $rule["required"] === true && !isset($request[$rule["name"]])) {
@@ -526,9 +651,9 @@ class Request implements Configurable {
                     }
                 } else {
                     $errors[413][]                                                              = "Request Max Size Exeeded";
-                }
+                }*/
 
-                if($errors) {
+                if(is_array($errors) && count($errors)) {
                     asort($errors);
                     $status = key ($errors);
 
@@ -559,7 +684,7 @@ class Request implements Configurable {
 
         $error                                                                                  = self::isInvalidHTTPS();
         if(!$error) {
-            if(self::$rules["method"] && $_SERVER["REQUEST_METHOD"] != self::$rules["method"]) {
+            if(self::$rules["method"] && self::method() != self::$rules["method"]) {
                 $error                                                                          = "Request Method Must Be " . self::$rules["method"]
                                                                                                     . (self::$rules["https"] && strpos($_SERVER["HTTP_REFERER"], "http://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]) === 0
                                                                                                         ? " (Redirect Https may Change Request Method)"

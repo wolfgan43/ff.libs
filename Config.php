@@ -69,11 +69,6 @@ class Config  {
                                                                         ? self::$rules[$key]["method"]
                                                                         : null
                                                                     );
-                /*$callback                                           = (isset(self::$rules[$key]["callback"])
-                                                                            ? self::$rules[$key]["callback"]
-                                                                            : null
-                                                                        );*/
-
 
                 switch ($method) {
                     case "replace":
@@ -101,8 +96,6 @@ class Config  {
                     default:
                         self::$config[$key]                         = $config;
                 }
-
-                //if($callback)                                       { self::addEngine($key, $callback); }
             }
         });
     }

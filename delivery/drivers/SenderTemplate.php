@@ -29,7 +29,7 @@ use phpformsframework\libs\Debug;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\tpl\ffTemplate;
-use phpformsframework\libs\Validator;
+use phpformsframework\libs\security\Validator;
 
 final class SenderTemplate extends Sender {
      //body

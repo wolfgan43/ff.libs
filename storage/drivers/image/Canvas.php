@@ -242,10 +242,10 @@ class Canvas
 		switch ($this->format)
 		{
 			case "jpg":
-				if ($filename === NULL) {
+                if ($filename === NULL) {
                     header("Content-Type: image/jpg");
                 }
-				if(imagejpeg($this->cvs_res, $filename) === false) {
+				if(!is_writable(dirname($filename)) || imagejpeg($this->cvs_res, $filename) === false) {
 					Error::register("Permission Denied: " . $filename, "storage");
 				} else {
 				    chmod($filename, 0664);
@@ -254,12 +254,13 @@ class Canvas
 
 			case "png":
 			default:
-				if ($filename === NULL) {
+                if ($filename === NULL) {
                     header("Content-Type: image/png");
                 }
-				if(imagepng($this->cvs_res, $filename) === false) {
+				if(!is_writable(dirname($filename)) || imagepng($this->cvs_res, $filename) === false) {
                     Error::register("Permission Denied: " . $filename, "storage");
                 } else {
+
                     chmod($filename, 0664);
 				}
 		}

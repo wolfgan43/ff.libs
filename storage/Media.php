@@ -1178,7 +1178,7 @@ class Media extends DirStruct {
         if(is_file($libs_disk_path . $source_file)) {
             $cache_final_file                                       = $this->basepathCache() . $this->pathinfo["orig"];
             $this->makeDirs(dirname($cache_final_file));
-            if(copy($libs_disk_path . $source_file, $cache_final_file)) {
+            if(is_readable($libs_disk_path . $source_file) && is_writable(dirname($cache_final_file)) && copy($libs_disk_path . $source_file, $cache_final_file)) {
                 $res = file_get_contents($cache_final_file);
             } else {
                 Error::register("Link Failed. Check write permission on: " . $source_file . " and if directory exist and have write permission on " . $this->pathinfo["orig"]);
@@ -1521,7 +1521,7 @@ class Media extends DirStruct {
         $cache_basepath                                            = $this->basepathCache();
         $path                                                       = str_replace($cache_basepath, "", $path);
 
-        if($path && $path != "/" && !is_dir($cache_basepath . $path) && mkdir($cache_basepath . $path, 0775, true)) {
+        if($path && $path != "/" && !is_dir($cache_basepath . $path) && is_writable($cache_basepath . dirname($path)) && mkdir($cache_basepath . $path, 0775, true)) {
             while ($path != DIRECTORY_SEPARATOR) {
                 if (is_dir($cache_basepath . $path)) {
                     chmod($cache_basepath . $path, 0775);

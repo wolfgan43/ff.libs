@@ -16,6 +16,10 @@
         "ext-mysqli": "*",
         "ext-mongodb": "*",
         "ext-zlib": "*",
+        "ext-gd": "*",
+        "ext-dom": "*",
+        "ext-simplexml": "*",
+        "ext-libxml": "*",
         "phpmailer/phpmailer": "^6.0",
         "sinergi/browser-detector" : "^7.0"
     },

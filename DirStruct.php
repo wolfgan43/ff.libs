@@ -29,10 +29,12 @@ if(!defined("DOCUMENT_ROOT"))                               { define("DOCUMENT_R
 if(!defined("SITE_PATH"))                                   { define("SITE_PATH", str_replace(array(DOCUMENT_ROOT, "/vendor/phpformsframework/libs"), "", __DIR__)); }
 if(!defined("CONF_PATH"))                                   { define("CONF_PATH", "/conf"); }
 if(!defined("LIBS_PATH"))                                   { define("LIBS_PATH", "/vendor"); }
+//if(!defined("DOMAIN_NAME"))                                 { define("DOMAIN_NAME", str_replace("www.", "", $_SERVER["HTTP_HOST"])); }
 
 abstract class DirStruct implements Configurable {
     const PHP_EXT                                                   = "php";
     const SITE_PATH                                                 = SITE_PATH;
+  //  const DOMAIN_NAME                                               = DOMAIN_NAME;
 
     public static $disk_path                                        = DOCUMENT_ROOT . SITE_PATH;
     protected static $dirstruct                                     = array(

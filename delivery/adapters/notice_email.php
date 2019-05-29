@@ -26,7 +26,7 @@
 namespace phpformsframework\libs\delivery\notice;
 
 use phpformsframework\libs\Error;
-use phpformsframework\libs\Validator;
+use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\delivery\drivers\Mailer;
 
 class Email extends Adapter {

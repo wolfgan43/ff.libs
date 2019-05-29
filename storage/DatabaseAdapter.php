@@ -33,7 +33,7 @@ use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\storage\Database;
 use phpformsframework\libs\tpl\Gridsystem;
-use phpformsframework\libs\Validator;
+use phpformsframework\libs\security\Validator;
 
 abstract class Adapter {
 

@@ -122,10 +122,6 @@ class Debug extends DirStruct
                 default:
             }
         });
-
-
-
-        //exit;
     }
     public static function dumpLog($filename, $data = null) {
         $trace = array();
@@ -134,10 +130,10 @@ class Debug extends DirStruct
         foreach($debug_backtrace AS $i => $value) {
             if ($i) {
                 if(isset($value["file"])) {
-                    if (basename($value["file"]) == "vgCommon.php") {
+                    if (basename($value["file"]) == "vgCommon.php") { //todo: da verificare e togliere
                         continue;
                     }
-                    if (basename($value["file"]) == "cm.php") {
+                    if (basename($value["file"]) == "cm.php") { //todo: da verificare e togliere
                         break;
                     }
                 }
@@ -306,8 +302,6 @@ class Debug extends DirStruct
                     $xhprof_runs = new XHProfRuns_Default();
                     $run_id = $xhprof_runs->save_run($xhprof_data, $profiler_namespace);
                     $res["url"] = sprintf("http" . ($_SERVER["HTTPS"] ? "s" : "") . "://" . $_SERVER["HTTP_HOST"] . '/xhprof_html/index.php?run=%s&source=%s', $run_id, $profiler_namespace);
-
-                    //  printf('nbsp;<a href="%s" target="_blank">Profiler output</a><br>', $profiler_url);
                 }
 
                 Log::write($res, "profiling", null, (Request::isAjax() ? "xhr" : "page"));
@@ -364,20 +358,5 @@ class Debug extends DirStruct
             "page"      => $page
             , "isXHR"   => Request::isAjax()
         ), "Dump", "page");
-        /*
-        if(self::$debug) {
-            Log::write(array(
-                  "\n*********************************************\n"
-                . print_r(
-                      (array) $page
-                    + array("isXHR" => Request::isAjax())
-                    , true)
-                . "*********************************************"
-                )
-                + self::$debug
-            , "benchmark_page"
-            , true);
-        }*/
-
     }
 }

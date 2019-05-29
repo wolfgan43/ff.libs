@@ -29,7 +29,7 @@ use phpformsframework\libs\Debug;
 use phpformsframework\libs\delivery\messenger\Adapter;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Log;
-use phpformsframework\libs\Validator;
+use phpformsframework\libs\security\Validator;
 
 if(!defined("MESSENGER_ADAPTER"))                       define("MESSENGER_ADAPTER", "twilio");
 

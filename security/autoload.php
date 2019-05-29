@@ -25,13 +25,16 @@
  */
 spl_autoload_register(function ($class) {
     switch ($class) {
-        case 'phpformsframework\libs\security\Buckler':
+        case 'phpformsframework\\libs\\security\\Buckler':
             require ('Buckler.php');
             break;
-        case 'phpformsframework\libs\security\Discover':
+        case 'phpformsframework\\libs\\security\\Discover':
             require ('Discover.php');
             break;
-        /*case 'phpformsframework\libs\security\Auth':
+        case 'phpformsframework\\libs\\security\\Validator':
+            require('Validator.php');
+            break;
+        /*case 'phpformsframework\\libs\\security\\Auth':
             require ('Auth.php');
             break;*/
         default:

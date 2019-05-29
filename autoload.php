@@ -64,9 +64,6 @@ spl_autoload_register(function ($class) {
         case 'phpformsframework\\libs\\Router':
             require_once('Router.php');
             break;
-        case 'phpformsframework\\libs\\Validator':
-            require('Validator.php');
-            break;
         default:
     }
 });

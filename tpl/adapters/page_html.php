@@ -27,6 +27,7 @@ namespace phpformsframework\libs\tpl;
 
 use phpformsframework\libs\DirStruct;
 use phpformsframework\libs\Env;
+use phpformsframework\libs\Error;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Response;
@@ -228,6 +229,7 @@ class PageHtml extends DirStruct {
     private $layout                             = "<main>{content}</main>";
     private $contents                           = null;
     private $statusCode                         = 200;
+    private $email_support                      = null;
 
     public function __construct($path = null)
     {
@@ -421,19 +423,27 @@ class PageHtml extends DirStruct {
         return $this;
     }
 
-    public function getPageError($title, $description, $code = null) {
+    public function getPageError($title, $code = null, $description = null) {
         if($code)                               { Response::code($code); }
-        $error                                  = str_replace(
-                                                    array("{title}", "{description}")
-                                                    , array($title, Translator::get_word_by_code($description))
-                                                    , file_get_contents($this::$disk_path . $this->getAsset("error", "common"))
-                                                );
-        return $error;
+        if(!$description)                       { $description = Error::getErrorMessage($code); }
+
+        $tpl                                    = new ffTemplate();
+        $tpl->load_file($this::$disk_path . $this->getAsset("error", "common"));
+        $tpl->set_var("site_path"   , self::SITE_PATH);
+        $tpl->set_var("title"       , Translator::get_word_by_code($title));
+        $tpl->set_var("description" , Translator::get_word_by_code($description));
+
+        if($this->email_support) {
+            $tpl->set_var("email_support", $this->email_support);
+            $tpl->parse("SezButtonSupport", false);
+        }
+
+        return $tpl->rpparse("main", false);
     }
 
     private function parseLayout() {
         if($this->statusCode != 200) {
-            $this->setContent(self::MAIN_CONTENT,$this->getPageError("", $this->getContent(self::MAIN_CONTENT), $this->statusCode));
+            $this->setContent(self::MAIN_CONTENT,$this->getPageError($this->getContent(self::MAIN_CONTENT), $this->statusCode));
         }
 
         return str_replace(

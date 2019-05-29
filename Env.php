@@ -26,6 +26,7 @@
 namespace phpformsframework\libs;
 
 use phpformsframework\libs\storage\Filemanager;
+use DirectoryIterator;
 
 class Env implements Configurable {
     private static $env                                             = array();
@@ -48,7 +49,7 @@ class Env implements Configurable {
         if(!$path)                                                  { $path = DirStruct::getDiskPath("packages", true); }
         if(!self::$packages && $key === null) {
             $fs                                                     = Filemanager::getInstance("xml");
-            $packages                                               = new \DirectoryIterator(self::$disk_path . $path);
+            $packages                                               = new DirectoryIterator(DirStruct::$disk_path . $path);
 
             foreach ($packages as $package) {
                 if ($package->isDot())                              { continue; }
@@ -59,8 +60,8 @@ class Env implements Configurable {
             }
         } elseif($key && self::$packages[$key] === null) {
             self::$packages[$key]                                   = false;
-            if(is_file(self::$disk_path . $path . "/" . $key . ".xml")) {
-                $xml                                                = Filemanager::getInstance("xml")->read(self::$disk_path . $path . "/" . $key . ".xml");
+            if(is_file(DirStruct::$disk_path . $path . "/" . $key . ".xml")) {
+                $xml                                                = Filemanager::getInstance("xml")->read(DirStruct::$disk_path . $path . "/" . $key . ".xml");
                 self::loadSchema($key, $xml);
             }
         }

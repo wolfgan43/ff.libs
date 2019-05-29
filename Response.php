@@ -91,7 +91,7 @@ class Response {
             if (is_array($response)) {
                 if (isset($response["html"])) {
                     $type                           = "html";
-                } elseif(Request::isAjax() || is_array($response)) {
+                } elseif(Request::isAjax() || Request::method() != "GET") {
                     $type                           = "json";
                 }
             }
@@ -107,7 +107,11 @@ class Response {
                 echo $response;
                 break;
             case "html":
-                echo $response["html"];
+                if(isset($response["error"]) && $response["error"]) {
+                    echo $response["error"];
+                } elseif(isset($response["html"])) {
+                    echo $response["html"];
+                }
                 break;
             case "xml":
                 echo $response;

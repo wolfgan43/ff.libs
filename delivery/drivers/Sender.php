@@ -31,7 +31,7 @@ use phpformsframework\libs\DirStruct;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\Log;
-use phpformsframework\libs\Validator;
+use phpformsframework\libs\security\Validator;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
 

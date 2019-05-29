@@ -25,7 +25,8 @@
  */
 namespace phpformsframework\libs\tpl;
 
-use \Smarty;
+use Smarty;
+use Exception;
 
 /**
  * Created by PhpStorm.
@@ -59,7 +60,7 @@ class ffSmarty extends Smarty {
     public function is_cached () {
         try {
             $res = $this->isCached($this->tpl_file);
-        } catch (\Exception $exc) {
+        } catch (Exception $exc) {
             $res = false;
         }
         return $res;
@@ -69,7 +70,7 @@ class ffSmarty extends Smarty {
     {
         try {
             $res = $this->fetch($this->tpl_file);
-        } catch (\Exception $exc) {
+        } catch (Exception $exc) {
             $res = false;
         }
         return $res;

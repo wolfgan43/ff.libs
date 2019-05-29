@@ -29,6 +29,7 @@ namespace phpformsframework\libs\storage\database;
 use MongoDB\BSON\ObjectId;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\drivers\MongoDB AS DB;
+use Exception;
 
 class Mongodb extends Adapter {
     const PREFIX                                        = "MONGO_DATABASE_";
@@ -505,7 +506,7 @@ class Mongodb extends Adapter {
 		} else {
 			try {
 				$res = new ObjectId($value);
-			} catch (\Exception $e) {
+			} catch (Exception $e) {
 				return false;
 			}
 		}

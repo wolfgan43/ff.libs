@@ -27,6 +27,17 @@ ServerTokens Prod
 - session_save_path /tmp (outside of virtual host)
 - request_order GPC
 
+- extensions:
+  - ext-json
+  - ext-openssl
+  - ext-mysqli
+  - ext-mongodb
+  - ext-zlib
+  - ext-gd
+  - ext-dom
+  - ext-simplexml
+  - ext-libxml
+
 >Ambiente Dev: Installazione di Xhprof https://www.php.net/manual/en/book.xhprof.php
 
 
@@ -105,6 +116,7 @@ ssl support must be enabled
   - ./cache
     - ./logs
     - ./.thumbs
+    - ./assets
   - ./app
     - ./api
     - ./controllers

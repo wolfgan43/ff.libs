@@ -31,7 +31,7 @@ use Exception;
 
 abstract class App extends DirStruct {
     const NAME_SPACE                                                = 'phpformsframework\\libs\\';
-    const DEBUG                                                     = true; //Debug::ACTIVE;
+    const DEBUG                                                     = Debug::ACTIVE;
 
     protected static $script_engine                                 = null;
 
@@ -56,39 +56,16 @@ abstract class App extends DirStruct {
             try {
                 self::setRunner($class_name);
 
-                /*if(0 && self::isStatic($class_name, $method)) { //todo: deprecato. le classi statiche non discendono nei namespace
-                    $output                                         = call_user_func_array($class_name . "::" . $method, $params);
-                } else {*/
                 if($method && !is_array($method)) {
                     $obj                                            = new $class_name();
                     $output                                         = call_user_func_array(array(new $obj, $method), $params);
                 }
-                //}
-                //todo: da verificare benchmark
-
-                /*if(!$output) { // todo: da finire
-                    $page = Cms::getInstance("page");
-                    $page->addContent($output);
-                    $page->run();
-                    exit;
-                }*/
             } catch (Exception $exception) {
                 Error::send(503);
             }
         } else if(is_callable($method)) {
             $output                                                 = call_user_func_array($method, $params);
-            /*if(!$output) {
-                exit;
-            }*/
-        }/* elseif(class_exists($method)) { //todo:: da finire
-            try {
-                $class                                              = new ReflectionClass($method);
-                $instance = $class->newInstanceArgs($params);
-            } catch (\exception $exception) {
-
-            }
-        }*/
-
+        }
         return $output;
     }
     public static function setRunner($what) {
@@ -109,7 +86,7 @@ abstract class App extends DirStruct {
             $reflector                                              = new ReflectionClass($class_name);
             $res                                                    = $reflector->getShortName();
         } catch (Exception $exception) {
-
+            Error::send(503);
         }
         return $res;
     }
@@ -119,10 +96,17 @@ abstract class App extends DirStruct {
             $reflector = new ReflectionClass(($class_name ? $class_name : get_called_class()));
             $res = dirname($reflector->getFileName());
         } catch (Exception $exception) {
-
+            Error::send(503);
         }
         return $res;
     }
+
+    /**
+     * @deprecated
+     * @param $class_name
+     * @param $method_name
+     * @return bool|null
+     */
     protected static function isStatic($class_name, $method_name) {
         $res = null;
         try {
@@ -130,7 +114,7 @@ abstract class App extends DirStruct {
             $method = $reflector->getMethod($method_name);
             $res = $method->isStatic();
         } catch (Exception $exception) {
-
+            Error::send(503);
         }
         return $res;
     }
@@ -164,16 +148,6 @@ abstract class App extends DirStruct {
     public static function page($name, $config = null) {
         return self::widget($name, $config, "page");
     }
-/*
-    public static function getSchema($key = null) {
-        return ($key
-            ? (is_callable($key)
-                ? $key(Kernel::config())
-                : self::$schema[$key]
-            )
-            : self::$schema
-        );
-    }*/
 }
 
 

@@ -28,9 +28,10 @@ namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Debug;
+use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\storage\database\Adapter;
 
-class Database {
+class Database implements Dumpable {
     const NAME_SPACE                                                        = 'phpformsframework\\libs\\storage\\database\\';
     const ENABLE_CACHE                                                      = true;
     const ADAPTER                                                           = "mysqli";
@@ -260,7 +261,7 @@ class Database {
         return $table . ":" . serialize($where) . "=>" . serialize($select);
     }
 
-    public static function dumpCache() {
+    public static function dump() {
         return self::$cache;
     }
 

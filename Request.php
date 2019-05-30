@@ -307,10 +307,9 @@ class Request implements Configurable {
         exit;
     }
     private static function security() {
-        /*if (!headers_sent()) {
-            foreach (headers_list() as $header)
-                header_remove(explode(":", $header)[0]);
-        }*/
+        if (headers_sent()) {
+            return false;
+        }
         if(isset($_SERVER["HTTP_ORIGIN"]) && filter_var($_SERVER["HTTP_ORIGIN"], FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME)) {
             $origin = str_replace("https://", "http://", "", $_SERVER["HTTP_ORIGIN"]);
         } elseif (isset($_SERVER["HTTP_REFERER"])) {

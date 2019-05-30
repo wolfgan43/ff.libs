@@ -25,25 +25,18 @@
  */
 
 spl_autoload_register(function ($class) {
-    switch ($class) {
-        case 'phpformsframework\\libs\\cache\\Mem':
-            require ('Mem.php');
-            break;
-        case 'phpformsframework\\libs\\cache\\mem\\Apc':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'apc.php');
-            break;
-        case 'phpformsframework\\libs\\cache\\mem\\Fs':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'fs.php');
-            break;
-        case 'phpformsframework\\libs\\cache\\mem\\Memcached':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'memcached.php');
-            break;
-        case 'phpformsframework\\libs\\cache\\mem\\Redis':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'redis.php');
-            break;
-        case 'phpformsframework\\libs\\cache\\Globals':
-            require ('Globals.php');
-            break;
-        default:
+    $name_space                         = 'phpformsframework\\libs\\cache\\';
+    $name_space_mem                     = $name_space . 'mem\\';
+    $class_files                        = array(
+        $name_space . 'Mem'             => 'Mem.php'
+        , $name_space_mem . 'Apc'       => 'adapters' . DIRECTORY_SEPARATOR . 'apc.php'
+        , $name_space_mem . 'Fs'        => 'adapters' . DIRECTORY_SEPARATOR . 'fs.php'
+        , $name_space_mem . 'Memcached' => 'adapters' . DIRECTORY_SEPARATOR . 'memcached.php'
+        , $name_space_mem . 'Redis'     => 'adapters' . DIRECTORY_SEPARATOR . 'redis.php'
+        , $name_space . 'Globals'       => 'Globals.php'
+    );
+
+    if(isset($class_files[$class])) {
+        require($class_files[$class]);
     }
 });

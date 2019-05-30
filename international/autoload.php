@@ -25,73 +25,40 @@
  */
 
 spl_autoload_register(function ($class) {
-    switch ($class) {
-        case 'phpformsframework\\libs\\international\\Locale':
-            require ('Locale.php');
-            break;
-        case 'phpformsframework\\libs\\international\\Translator':
-            require ('Translator.php');
-            break;
-        case 'phpformsframework\\libs\\international\\translator\\Adapter':
-            require ('TranslatorAdapter.php');
-            break;
-        case 'phpformsframework\\libs\\international\\Data':
-            require ('Data.php');
-            break;
-        case 'phpformsframework\\libs\\international\\data\\Adapters':
-            require ('DataAdapter.php');
-            break;
-        case 'phpformsframework\\libs\\international\\translator\\Google':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'translator_google.php');
-            break;
-        case 'phpformsframework\\libs\\international\\translator\\Translated':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'translator_translated.php');
-            break;
-        case 'phpformsframework\\libs\\international\\translator\\Transltr':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'translator_transltr.php');
-            break;
-        case 'phpformsframework\\libs\\international\\data\\Ara':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'data_ara.php');
-            break;
-        case 'phpformsframework\\libs\\international\\data\\Chn':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'data_chn.php');
-            break;
-        case 'phpformsframework\\libs\\international\\data\\Dan':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'data_dan.php');
-            break;
-        case 'phpformsframework\\libs\\international\\data\\Deu':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'data_deu.php');
-            break;
-        case 'phpformsframework\\libs\\international\\data\\Eng':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'data_eng.php');
-            break;
-        case 'phpformsframework\\libs\\international\\data\\Esp':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'data_esp.php');
-            break;
-        case 'phpformsframework\\libs\\international\\data\\Fra':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'data_fra.php');
-            break;
-        case 'phpformsframework\\libs\\international\\data\\Iso9075':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'data_iso9075.php');
-            break;
-        case 'phpformsframework\\libs\\international\\data\\Ita':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'data_ita.php');
-            break;
-        case 'phpformsframework\\libs\\international\\data\\Jpn':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'data_jpn.php');
-            break;
-        case 'phpformsframework\\libs\\international\\data\\Mssql':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'data_mssql.php');
-            break;
-        case 'phpformsframework\\libs\\international\\data\\Ned':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'data_ned.php');
-            break;
-        case 'phpformsframework\\libs\\international\\data\\Por':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'data_por.php');
-            break;
-        case 'phpformsframework\\libs\\international\\data\\Rus':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'data_rus.php');
-            break;
+    $name_space                                 = 'phpformsframework\\libs\\international\\';
+    $name_space_translator                      = 'phpformsframework\\libs\\international\\translator\\';
+    $name_space_data                            = 'phpformsframework\\libs\\international\\data\\';
+
+    $class_files                                = array(
+        $name_space . 'Locale'                  => 'Locale.php'
+        , $name_space . 'Translator'            => 'Translator.php'
+        , $name_space . 'Locale'                => 'Locale.php'
+        , $name_space_translator . 'Adapter'    => 'TranslatorAdapter.php'
+        , $name_space . 'Data'                  => 'Data.php'
+        , $name_space_data . 'Adapters'         => 'DataAdapter.php'
+        , $name_space_translator . 'Google'     => 'adapters' . DIRECTORY_SEPARATOR . 'translator_google.php'
+        , $name_space_translator . 'Translated' => 'adapters' . DIRECTORY_SEPARATOR . 'translator_translated.php'
+        , $name_space_translator . 'Transltr'   => 'adapters' . DIRECTORY_SEPARATOR . 'translator_transltr.php'
+        , $name_space_data . 'Ara'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_ara.php'
+        , $name_space_data . 'Chn'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_chn.php'
+        , $name_space_data . 'Dan'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_dan.php'
+        , $name_space_data . 'Deu'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_deu.php'
+        , $name_space_data . 'Eng'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_eng.php'
+        , $name_space_data . 'Esp'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_esp.php'
+        , $name_space_data . 'Fra'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_fra.php'
+        , $name_space_data . 'Iso9075'          => 'adapters' . DIRECTORY_SEPARATOR . 'data_iso9075.php'
+        , $name_space_data . 'Ita'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_ita.php'
+        , $name_space_data . 'Jpn'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_jpn.php'
+        , $name_space_data . 'Jpn'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_jpn.php'
+        , $name_space_data . 'Jpn'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_jpn.php'
+        , $name_space_data . 'Mssql'            => 'adapters' . DIRECTORY_SEPARATOR . 'data_mssql.php'
+        , $name_space_data . 'Ned'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_ned.php'
+        , $name_space_data . 'Por'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_por.php'
+        , $name_space_data . 'Rus'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_rus.php'
+    );
+
+    if(isset($class_files[$class])) {
+        require($class_files[$class]);
     }
 });
 

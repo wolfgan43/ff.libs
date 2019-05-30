@@ -172,13 +172,16 @@ class Response {
     }
 
     private static function sendHeadersByType($type) {
-        $mimetype = Media::MIMETYPE[$type];
-         if(0) {
+        if (!headers_sent()) {
+            $mimetype = Media::MIMETYPE[$type];
+            if(0) {
 
-             self::sendHeaders(array("mimetype" => $mimetype));
-         } else {
-             header("Content-type: " . $mimetype);
-         }
+                self::sendHeaders(array("mimetype" => $mimetype));
+            } else {
+                header("Content-type: " . $mimetype);
+            }
+
+        }
     }
 
     public static function sendHeaders($params = null) {

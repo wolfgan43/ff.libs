@@ -25,64 +25,35 @@
  */
 
 spl_autoload_register(function ($class) {
-    switch ($class) {
-        case 'phpformsframework\\libs\\storage\\drivers\\Canvas':
-            require ('drivers' . DIRECTORY_SEPARATOR . 'image' . DIRECTORY_SEPARATOR . 'Canvas.php');
-            break;
-        case 'phpformsframework\\libs\\storage\\drivers\\Render':
-            require ('drivers' . DIRECTORY_SEPARATOR . 'image' . DIRECTORY_SEPARATOR . 'Render.php');
-            break;
-        case 'phpformsframework\\libs\\storage\\drivers\\Thumb':
-            require ('drivers' . DIRECTORY_SEPARATOR . 'image' . DIRECTORY_SEPARATOR . 'Thumb.php');
-            break;
-        case 'phpformsframework\\libs\\storage\\drivers\\Array2XML':
-            require ('drivers' . DIRECTORY_SEPARATOR . 'array2xml.php');
-            break;
-        case 'phpformsframework\\libs\\storage\\drivers\\MySqli':
-            require ('drivers' . DIRECTORY_SEPARATOR . 'MySqli.php');
-            break;
-        case 'phpformsframework\\libs\\storage\\drivers\\MongoDB':
-            require ('drivers' . DIRECTORY_SEPARATOR . 'MongoDB.php');
-            break;
-        case 'phpformsframework\\libs\\storage\\filemanager\\Html':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'filemanager_html.php');
-            break;
-        case 'phpformsframework\\libs\\storage\\filemanager\\Json':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'filemanager_json.php');
-            break;
-        case 'phpformsframework\\libs\\storage\\filemanager\\Php':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'filemanager_php.php');
-            break;
-        case 'phpformsframework\\libs\\storage\\filemanager\\Xml':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'filemanager_xml.php');
-            break;
-        case 'phpformsframework\\libs\\storage\\database\\Mongodb':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'database_mongodb.php');
-            break;
-        case 'phpformsframework\\libs\\storage\\database\\Mysqli':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'database_mysqli.php');
-            break;
-        case 'phpformsframework\\libs\\storage\\Filemanager':
-            require ('Filemanager.php');
-            break;
-        case 'phpformsframework\\libs\\storage\\filemanager\\Adapter':
-            require ('FilemanagerAdapter.php');
-            break;
-        case 'phpformsframework\\libs\\storage\\Database':
-            require ('Database.php');
-            break;
-        case 'phpformsframework\\libs\\storage\\database\\Adapter':
-            require ('DatabaseAdapter.php');
-            break;
-        case 'phpformsframework\\libs\\storage\\Media':
-            require ('Media.php');
-            break;
-        case 'phpformsframework\\libs\\storage\\Orm':
-            require ('Orm.php');
-            break;
-        case 'phpformsframework\\libs\\storage\\models\\Model':
-            require ('OrmModel.php');
-            break;
-        default:
+    $name_space                                 = 'phpformsframework\\libs\\storage\\';
+    $name_space_drivers                         = $name_space . 'drivers\\';
+    $name_space_filemanager                     = $name_space . 'filemanager\\';
+    $name_space_database                        = $name_space . 'database\\';
+    $name_space_models                          = $name_space . 'models\\';
+
+    $class_files                                = array(
+        $name_space_drivers . 'Canvas'          => 'drivers' . DIRECTORY_SEPARATOR . 'image' . DIRECTORY_SEPARATOR . 'Canvas.php'
+        , $name_space_drivers . 'Render'        => 'drivers' . DIRECTORY_SEPARATOR . 'image' . DIRECTORY_SEPARATOR . 'Render.php'
+        , $name_space_drivers . 'Thumb'         => 'drivers' . DIRECTORY_SEPARATOR . 'image' . DIRECTORY_SEPARATOR . 'Thumb.php'
+        , $name_space_drivers . 'Array2XML'     => 'drivers' . DIRECTORY_SEPARATOR . 'array2xml.php'
+        , $name_space_drivers . 'MySqli'        => 'drivers' . DIRECTORY_SEPARATOR . 'MySqli.php'
+        , $name_space_drivers . 'MongoDB'       => 'drivers' . DIRECTORY_SEPARATOR . 'MongoDB.php'
+        , $name_space_filemanager . 'Html'      => 'adapters' . DIRECTORY_SEPARATOR . 'filemanager_html.php'
+        , $name_space_filemanager . 'Json'      => 'adapters' . DIRECTORY_SEPARATOR . 'filemanager_json.php'
+        , $name_space_filemanager . 'Php'       => 'adapters' . DIRECTORY_SEPARATOR . 'filemanager_php.php'
+        , $name_space_filemanager . 'Xml'       => 'adapters' . DIRECTORY_SEPARATOR . 'filemanager_xml.php'
+        , $name_space_database . 'Mongodb'      => 'adapters' . DIRECTORY_SEPARATOR . 'database_mongodb.php'
+        , $name_space_database . 'Mysqli'       => 'adapters' . DIRECTORY_SEPARATOR . 'database_mysqli.php'
+        , $name_space . 'Filemanager'           => 'Filemanager.php'
+        , $name_space_filemanager . 'Adapter'   => 'FilemanagerAdapter.php'
+        , $name_space . 'Database'              => 'Database.php'
+        , $name_space_database . 'Adapter'      => 'DatabaseAdapter.php'
+        , $name_space . 'Media'                 => 'Media.php'
+        , $name_space . 'Orm'                   => 'Orm.php'
+        , $name_space_models . 'Model'          => 'OrmModel.php'
+    );
+
+    if(isset($class_files[$class])) {
+        require($class_files[$class]);
     }
 });

@@ -24,20 +24,17 @@
  *  @link https://github.com/wolfgan43/vgallery
  */
 spl_autoload_register(function ($class) {
-    switch ($class) {
-        case 'phpformsframework\\libs\\security\\Buckler':
-            require ('Buckler.php');
-            break;
-        case 'phpformsframework\\libs\\security\\Discover':
-            require ('Discover.php');
-            break;
-        case 'phpformsframework\\libs\\security\\Validator':
-            require('Validator.php');
-            break;
-        /*case 'phpformsframework\\libs\\security\\Auth':
-            require ('Auth.php');
-            break;*/
-        default:
+    $name_space                         = 'phpformsframework\\libs\\security\\';
+
+    $class_files                        = array(
+        $name_space . 'Buckler'         => 'Buckler.php'
+        , $name_space . 'Discover'      => 'Discover.php'
+        , $name_space . 'Validator'     => 'Validator.php'
+        , $name_space . 'Auth'          => 'Auth.php'
+    );
+
+    if(isset($class_files[$class])) {
+        require($class_files[$class]);
     }
 });
 

@@ -124,45 +124,9 @@ class Debug extends DirStruct
         });
     }
     public static function dumpLog($filename, $data = null) {
-        $trace = array();
-        $debug_backtrace = debug_backtrace();
+        $trace                                  = self::get_backtrace();
 
-        foreach($debug_backtrace AS $i => $value) {
-            if ($i) {
-                if(isset($value["file"])) {
-                    if (basename($value["file"]) == "vgCommon.php") { //todo: da verificare e togliere
-                        continue;
-                    }
-                    if (basename($value["file"]) == "cm.php") { //todo: da verificare e togliere
-                        break;
-                    }
-                }
-                $trace = $value;
-            }
-        }
-        if(isset($trace["object"])) {
-            unset($trace["object"]);
-        }
-        if (is_array($trace["args"]) && count($trace["args"])) {
-            foreach ($trace["args"] AS $key => $value) {
-                if (is_object($value)) {
-                    $trace["args"][$key] = "Object: " . get_class($value);
-                } elseif(is_array($value)) {
-                    foreach($value AS $subkey => $subvalue) {
-                        if(is_object($subvalue)) {
-                            $trace["args"][$key][$subkey] = "Object: " . get_class($subvalue);
-                        } elseif(is_array($subvalue)) {
-                            $trace["args"][$key][$subkey] = $subvalue;
-                        } else {
-                            $trace["args"][$key][$subkey] = $subvalue;
-                        }
-                    }
-
-                }
-            }
-        }
-
-        $data["source"] = $trace;
+        $data["source"]                         = $trace;
         Log::write($data, $filename);
     }
 
@@ -175,7 +139,7 @@ class Debug extends DirStruct
                                                 );
             foreach($debug_backtrace AS $i => $trace) {
                 if($i) {
-                    if (basename($trace["file"]) == "vgCommon.php") {
+                    if (basename($trace["file"]) == "Debug.php") {
                         continue;
                     }
                     if (basename($trace["file"]) == "cm.php") {
@@ -196,9 +160,8 @@ class Debug extends DirStruct
         }
     }
 
-    public static function dump($backtrace = null) {
-        $html                               = "";
-        $disk_path                          = self::$disk_path;
+    private static function get_backtrace($backtrace = null) {
+        $res                                = null;
         $debug_backtrace                    = (is_array($backtrace)
                                                 ? $backtrace
                                                 : debug_backtrace()
@@ -231,28 +194,142 @@ class Debug extends DirStruct
 
                         }
                     }
-                    if(isset($trace["file"])) {
-                        $label = 'Line in: ' . '<b>' . str_replace($disk_path, "", $trace["file"])  . '</b>';
-                        $list_start = '<ol start="' . $trace["line"] . '">';
-                        $list_end = '</ol>';
-                    } else {
-                        $label = 'Func: ' . '<b>' .  $trace["function"] . '</b>';
-                        $list_start = '<ul>';
-                        $list_end = '</ul>';
-
-                    }
-
-                    $html .=  $list_start . '<li><a style="text-decoration: none;" href="javascript:void(0);" onclick="this.nextSibling.style = \'display:none\';">' . $label . '</a><pre>' . print_r($trace, true). '</pre></li>' . $list_end;
                 }
                 $res[] = $trace;
             }
         }
 
-        if(is_string($backtrace) && $backtrace) echo "<b>" . $backtrace . "</b>";
-        echo "<hr />";
-        echo "<center>BACKTRACE</center>";
-        echo "<hr />";
-        echo $html;
+        return $res;
+    }
+
+    private static function dumpInterface() {
+        $classes                                = get_declared_classes();
+        $implements                             = array();
+        /**
+         * @var $classDumpable Dumpable
+         */
+        foreach($classes as $class_name) {
+            try {
+                $reflect = new \ReflectionClass($class_name);
+            } catch (\ReflectionException $e) {
+            }
+            if($reflect->implementsInterface(__NAMESPACE__ . '\\Dumpable')) {
+                $classDumpable                  = $class_name;
+                $parent                         = $reflect->getParentClass();
+
+                if(!$parent || !isset($implements[$parent->getName()])) {
+                    $implements[basename(str_replace('\\', '/', $class_name))]    = (array) $classDumpable::dump();
+                }
+            }
+        }
+        return $implements;
+    }
+    public static function dump($backtrace = null) {
+        $html_backtrace                     = "";
+        $html_dumpable                      = "";
+        $disk_path                          = self::$disk_path;
+        $debug_backtrace                    = self::get_backtrace($backtrace);
+
+        foreach($debug_backtrace AS $i => $trace) {
+            if(isset($trace["file"])) {
+                $label = 'Line in: ' . '<b>' . str_replace($disk_path, "", $trace["file"])  . '</b>';
+                $list_start = '<ol start="' . $trace["line"] . '">';
+                $list_end = '</ol>';
+            } else {
+                $label = 'Func: ' . '<b>' .  $trace["function"] . '</b>';
+                $list_start = '<ul>';
+                $list_end = '</ul>';
+
+            }
+            $html_backtrace .=  $list_start . '<li><a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } ">' . $label . '</a><code style="display:none;"><pre>' . print_r($trace, true). '</pre></code></li>' . $list_end;
+        }
+
+        $dumpable = self::dumpInterface();
+        if(is_array($dumpable) && count($dumpable)) {
+            foreach ($dumpable as $interface => $dump) {
+                $dump = array_filter($dump);
+                if(is_array($dump) && count($dump)) {
+                    $html_dumpable .= '<hr />' . '<h5>&nbsp;' . $interface . '</h5>';
+                    $html_dumpable .= '<ul>';
+                    foreach ($dump as $key => $value) {
+                        $arrKey = explode(":", $key);
+
+                        $html_dumpable .= '<li><a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } ">' . $arrKey[0] . '</a><code style="display:none;"><pre>' . print_r($value, true). '</pre></code></li>';
+
+                    }
+                    $html_dumpable .= '</ul>';
+                }
+            }
+        }
+
+        $errors = array_filter((array) Error::raise());
+        if(is_array($errors) && count($errors)) {
+            $html_dumpable .= '<hr />' . '<h5>&nbsp;' . "Errors" . '</h5>';
+            $html_dumpable .= '<code><ul>';
+            foreach ($errors as $bucket => $error) {
+                if(is_array($error) && count($error)) {
+                    foreach ($error as $msg) {
+                        $html_dumpable .= '<li><b>' . $bucket. '</b> => ' . $msg . '</li>';
+                    }
+                }
+            }
+            $html_dumpable .= '</ul></code>';
+        }
+
+        $included_files = get_included_files();
+        if(is_array($included_files) && count($included_files)) {
+            $html_dumpable .= '<hr />' . '<a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } "><h5>' . "Includes" . '</h5></a>';
+            $html_dumpable .= '<pre style="display: none;"><ul>';
+            foreach ($included_files as $included_file) {
+                $html_dumpable .= '<li>' . str_replace(self::$disk_path, "", $included_file) . '</li>';
+            }
+            $html_dumpable .= '</ul></pre>';
+        }
+
+        $constants = get_defined_constants(true);
+
+        $constants_user = $constants["user"];
+        if(is_array($constants_user) && count($constants_user)) {
+            $html_dumpable .= '<hr />' . '<a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } "><h5>' . "Constants" . '</h5></a>';
+            $html_dumpable .= '<pre style="display: none;"><ul>';
+            foreach ($constants_user as $name => $value) {
+                $html_dumpable .= '<li>' . $name . '</li>';
+            }
+
+            $html_dumpable .= '</ul></pre>';
+        }
+/*
+        unset($constants["user"]);
+
+
+        if(is_array($constants) && count($constants)) {
+            $html_dumpable .= '<hr />' . '<a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } "><h5>' . "Constants System" . '</h5></a>';
+            $html_dumpable .= '<pre style="display: none;"><ul>';
+            foreach ($constants as $cat => $constant) {
+                $html_dumpable .= '<li><a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } ">' . $cat . '</a>';
+                $html_dumpable .= '<ul style="display: none;">';
+
+                foreach ($constant as $name => $value) {
+                    $html_dumpable .= '<li>' . $name . '</li>';
+
+                }
+                $html_dumpable .= '</ul></li>';
+            }
+            $html_dumpable .= '</ul></pre>';
+        }*/
+
+       // print_r(spl_autoload_functions  ());
+
+        if(is_string($backtrace) && $backtrace) echo "<b>" . $backtrace . "</b><hr />";
+        echo '<table>';
+        echo '<thead>';
+        echo '<tr>'         . '<th>BACKTRACE</th>'      . '<th>VARIABLES</th>'           . '</tr>';
+        echo '</thead>';
+        echo '<tbody>';
+        echo '<tr>'         . '<td valign="top">' . $html_backtrace . '</td>'  . '<td valign="top">' . $html_dumpable . '</td>'  . '</tr>';
+        echo '</tr>';
+        echo '</tbody>';
+        echo '</table>';
     }
 
     /**
@@ -271,7 +348,7 @@ class Debug extends DirStruct
                 $res["cpu"] 			= number_format(abs(($ru['ru_utime.tv_usec'] + $ru['ru_stime.tv_usec']) - $res["cpu"]), 0, ',', '.');
                 $res["includes"] 		= get_included_files();
                 $res["classes"] 		= get_declared_classes();
-                $res["db"] 				= Database::dumpCache();
+                $res["db"] 				= Database::dump();
                 $res["exTime"] 			= microtime(true) - $res["exTime"];
 
                 if (extension_loaded('xhprof') && is_dir(FF_DISK_PATH . "/xhprof_lib") && class_exists("XHProfRuns_Default")) {

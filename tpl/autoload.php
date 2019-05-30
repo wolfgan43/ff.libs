@@ -25,49 +25,28 @@
  */
 
 spl_autoload_register(function ($class) {
-    switch ($class) {
-        case 'phpformsframework\\libs\\tpl\\gridsystem\\Fontawesome4':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'fonticon_fontawesome4.php');
-            break;
-        case 'phpformsframework\\libs\\tpl\\gridsystem\\Fontawesome6':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'fonticon_fontawesome4.php');
-            break;
-        case 'phpformsframework\\libs\\tpl\\gridsystem\\Glyphicons3':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'fonticon_glyphicons3.php');
-            break;
-        case 'phpformsframework\\libs\\tpl\\gridsystem\\Bootstrap3':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'frameworkcss_bootstrap3.php');
-            break;
-        case 'phpformsframework\\libs\\tpl\\gridsystem\\Bootstrap4':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'frameworkcss_bootstrap4.php');
-            break;
-        case 'phpformsframework\\libs\\tpl\\gridsystem\\Foundation6':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'frameworkcss_foundation6.php');
-            break;
-        case 'phpformsframework\\libs\\tpl\\PageHtml':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'page_html.php');
-            break;
-        case 'phpformsframework\\libs\\tpl\\gridsystem\\FontIconAdapter':
-            require ('FontIconAdapter.php');
-            break;
-        case 'phpformsframework\\libs\\tpl\\gridsystem\\FrameworkCssAdapter':
-            require ('FrameworkCssAdapter.php');
-            break;
-        case 'phpformsframework\\libs\\tpl\\ffTemplate':
-            require ('ffTemplate.php');
-            break;
-        case 'phpformsframework\\libs\\tpl\\ffSmarty':
-            require ('ffSmarty.php');
-            break;
-        case 'phpformsframework\\libs\\tpl\\Gridsystem':
-            require ('Gridsystem.php');
-            break;
-        case 'phpformsframework\\libs\\tpl\\Widget':
-            require ('Widget.php');
-            break;
-        case 'phpformsframework\\libs\\tpl\\Page':
-            require ('Page.php');
-            break;
-        default:
+    $name_space                                             = 'phpformsframework\\libs\\tpl\\';
+    $name_space_gridsystem                                  = $name_space. 'gridsystem\\';
+
+    $class_files                                            = array(
+        $name_space_gridsystem . 'Fontawesome4'             => 'adapters' . DIRECTORY_SEPARATOR . 'fonticon_fontawesome4.php'
+        , $name_space_gridsystem . 'Fontawesome6'           => 'adapters' . DIRECTORY_SEPARATOR . 'fonticon_fontawesome4.php'
+        , $name_space_gridsystem . 'Glyphicons3'            => 'adapters' . DIRECTORY_SEPARATOR . 'fonticon_glyphicons3.php'
+        , $name_space_gridsystem . 'Bootstrap3'             => 'adapters' . DIRECTORY_SEPARATOR . 'frameworkcss_bootstrap3.php'
+        , $name_space_gridsystem . 'Bootstrap4'             => 'adapters' . DIRECTORY_SEPARATOR . 'frameworkcss_bootstrap4.php'
+        , $name_space_gridsystem . 'Foundation6'            => 'adapters' . DIRECTORY_SEPARATOR . 'frameworkcss_foundation6.php'
+        , $name_space . 'PageHtml'                          => 'adapters' . DIRECTORY_SEPARATOR . 'page_html.php'
+        , $name_space_gridsystem . 'FontIconAdapter'        => 'FontIconAdapter.php'
+        , $name_space_gridsystem . 'FrameworkCssAdapter'    => 'FrameworkCssAdapter.php'
+        , $name_space . 'ffTemplate'                        => 'ffTemplate.php'
+        , $name_space . 'ffSmarty'                          => 'ffSmarty.php'
+        , $name_space . 'Gridsystem'                        => 'Gridsystem.php'
+        , $name_space . 'Widget'                            => 'Widget.php'
+        , $name_space . 'Page'                              => 'Page.php'
+
+    );
+
+    if(isset($class_files[$class])) {
+        require($class_files[$class]);
     }
 });

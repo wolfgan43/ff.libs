@@ -27,13 +27,13 @@
 namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\DirStruct;
+use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\storage\filemanager\Adapter;
 
 if(!defined("FTP_USERNAME"))                                        define("FTP_USERNAME", null);
 if(!defined("FTP_PASSWORD"))                                        define("FTP_PASSWORD", null);
 
-class Filemanager extends DirStruct
-{
+class Filemanager extends DirStruct implements Dumpable {
     const NAME_SPACE                                                    = 'phpformsframework\\libs\\storage\\filemanager\\';
 
     private static $singletons                                          = null;
@@ -57,7 +57,7 @@ class Filemanager extends DirStruct
      * @param null|integer $expire
      * @return Adapter
      */
-    static public function getInstance($filemanagerAdapter, $file = null, $var = null, $expire = null)
+    public static function getInstance($filemanagerAdapter, $file = null, $var = null, $expire = null)
     {
         if($filemanagerAdapter) {
             if (!isset(self::$singletons[$filemanagerAdapter])) {
@@ -69,6 +69,9 @@ class Filemanager extends DirStruct
         return self::$singletons[$filemanagerAdapter];
     }
 
+    public static function dump() {
+        return self::$storage;
+    }
 
     public static function fappend($content, $file) {
         return self::fwrite($content, $file, "a");

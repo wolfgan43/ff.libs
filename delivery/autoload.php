@@ -25,51 +25,36 @@
  */
 
 spl_autoload_register(function ($class) {
-    switch ($class) {
-        case 'phpformsframework\\libs\\delivery\\messenger\\Twilio':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'messenger_twilio.php');
-            break;
-        case 'phpformsframework\\libs\\delivery\\mailer\\Localhost':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'mailer_localhost.php');
-            break;
-        case 'phpformsframework\\libs\\delivery\\mailer\\Sendgrid':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'mailer_sendgrid.php');
-            break;
-        case 'phpformsframework\\libs\\delivery\\mailer\\Sparkpost':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'mailer_sparkpost.php');
-            break;
-        case 'phpformsframework\\libs\\delivery\\notice\\Email':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'notice_email.php');
-            break;
-        case 'phpformsframework\\libs\\delivery\\notice\\Sms':
-            require ('adapters' . DIRECTORY_SEPARATOR . 'notice_sms.php');
-            break;
-        case 'phpformsframework\\libs\\delivery\\messenger\\Adapter':
-            require ('drivers' . DIRECTORY_SEPARATOR . 'MessengerAdapter.php');
-            break;
-        case 'phpformsframework\\libs\\delivery\\drivers\\Messenger':
-            require ('drivers' . DIRECTORY_SEPARATOR . 'Messenger.php');
-            break;
-        case 'phpformsframework\\libs\\delivery\\mailer\\Adapter':
-            require ('drivers' . DIRECTORY_SEPARATOR . 'MailerAdapter.php');
-            break;
-        case 'phpformsframework\\libs\\delivery\\drivers\\Mailer':
-            require ('drivers' . DIRECTORY_SEPARATOR . 'Mailer.php');
-            break;
-        case 'phpformsframework\\libs\\delivery\\drivers\\Sender':
-            require ('drivers' . DIRECTORY_SEPARATOR . 'Sender.php');
-            break;
-        case 'phpformsframework\\libs\\delivery\\drivers\\SenderSimple':
-            require ('drivers' . DIRECTORY_SEPARATOR . 'SenderSimple.php');
-            break;
-        case 'phpformsframework\\libs\\delivery\\drivers\\SenderTemplate':
-            require ('drivers' . DIRECTORY_SEPARATOR . 'SenderTemplate.php');
-            break;
-        case 'phpformsframework\\libs\\delivery\\notice\\Adapter':
-            require ('NoticeAdapter.php');
-            break;
-        case 'phpformsframework\\libs\\delivery\\Notice':
-            require ('Notice.php');
-            break;
+    $name_space                         = 'phpformsframework\\libs\\delivery\\';
+    $name_space_messenger               = $name_space . 'messenger\\';
+    $name_space_mailer                  = $name_space . 'mailer\\';
+    $name_space_notice                  = $name_space . 'notice\\';
+    $name_space_drivers                 = $name_space . 'drivers\\';
+
+
+
+
+
+    $class_files                            = array(
+        $name_space . 'Notice'                      => 'Notice.php'
+        , $name_space_messenger . 'Twilio'          => 'adapters' . DIRECTORY_SEPARATOR . 'messenger_twilio.php'
+        , $name_space_mailer . 'Localhost'          => 'adapters' . DIRECTORY_SEPARATOR . 'mailer_localhost.php'
+        , $name_space_mailer . 'Sendgrid'           => 'adapters' . DIRECTORY_SEPARATOR . 'mailer_sendgrid.php'
+        , $name_space_mailer . 'Sparkpost'          => 'adapters' . DIRECTORY_SEPARATOR . 'mailer_sparkpost.php'
+        , $name_space_notice . 'Email'              => 'adapters' . DIRECTORY_SEPARATOR . 'notice_email.php'
+        , $name_space_notice . 'Sms'                => 'adapters' . DIRECTORY_SEPARATOR . 'notice_sms.php'
+        , $name_space_messenger . 'Adapter'         => 'drivers' . DIRECTORY_SEPARATOR . 'MessengerAdapter.php'
+        , $name_space_drivers . 'Adapter'           => 'drivers' . DIRECTORY_SEPARATOR . 'Messenger.php'
+        , $name_space_mailer . 'Adapter'            => 'drivers' . DIRECTORY_SEPARATOR . 'MailerAdapter.php'
+        , $name_space_drivers . 'Mailer'            => 'drivers' . DIRECTORY_SEPARATOR . 'Mailer.php'
+        , $name_space_drivers . 'Sender'            => 'drivers' . DIRECTORY_SEPARATOR . 'Sender.php'
+        , $name_space_drivers . 'SenderSimple'      => 'drivers' . DIRECTORY_SEPARATOR . 'SenderSimple.php'
+        , $name_space_drivers . 'SenderTemplate'    => 'drivers' . DIRECTORY_SEPARATOR . 'SenderTemplate.php'
+        , $name_space_notice . 'Adapter'            => 'NoticeAdapter.php'
+
+    );
+
+    if(isset($class_files[$class])) {
+        require($class_files[$class]);
     }
 });

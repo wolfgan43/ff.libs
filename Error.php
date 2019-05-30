@@ -214,9 +214,9 @@ class Error {
             return null;
         }
 
-        return ($bucket === false
-            ? self::$errors
-            : self::$errors[$bucket]
+        return ($bucket
+            ? self::$errors[$bucket]
+            : self::$errors
         );
     }
     public static function clear($bucket = null) {

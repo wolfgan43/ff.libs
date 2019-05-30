@@ -23,14 +23,8 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
+namespace phpformsframework\libs;
 
-spl_autoload_register(function ($class) {
-    $name_space                         = 'phpformsframework\\libs\\installer\\';
-
-    $class_files                            = array(
-    );
-
-    if(isset($class_files[$class])) {
-        require($class_files[$class]);
-    }
-});
+interface Dumpable {
+    public static function dump();
+}

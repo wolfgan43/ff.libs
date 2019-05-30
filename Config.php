@@ -27,12 +27,20 @@ namespace phpformsframework\libs;
 
 use phpformsframework\libs\storage\Filemanager;
 
-class Config  {
+class Config  implements Dumpable {
     private static $config = null;
     private static $schema = null;
     private static $engine = null;
     private static $rules = null;
 
+    public static function dump() {
+        return array(
+            "config"    => self::$config
+            , "schema"  => self::$schema
+            , "engine"  => self::$engine
+            , "rules"   => self::$rules
+        );
+    }
     public static function addEngine($bucket, $callback) {
         self::$engine[$bucket]                                      = $callback;
 

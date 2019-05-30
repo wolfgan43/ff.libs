@@ -24,47 +24,26 @@
  *  @link https://github.com/wolfgan43/vgallery
  */
 spl_autoload_register(function ($class) {
-    switch ($class) {
-        case 'phpformsframework\\libs\\App':
-            require('App.php');
-            break;
-        case 'phpformsframework\\libs\\DirStruct':
-            require('DirStruct.php');
-            break;
-        case 'phpformsframework\\libs\\Env':
-            require('Env.php');
-            break;
-        case 'phpformsframework\\libs\\Hook':
-            require('Hook.php');
-            break;
-        case 'phpformsframework\\libs\\Config':
-            require('Config.php');
-            break;
-        case 'phpformsframework\\libs\\Configurable':
-            require('Configurable.php');
-            break;
-        case 'phpformsframework\\libs\\Debug':
-            require('Debug.php');
-            break;
-        case 'phpformsframework\\libs\\Error':
-            require('Error.php');
-            break;
-        case 'phpformsframework\\libs\\ErrorHandler':
-            require('ErrorHandler.php');
-            break;
-        case 'phpformsframework\\libs\\Log':
-            require('Log.php');
-            break;
-        case 'phpformsframework\\libs\\Request':
-            require_once('Request.php');
-            break;
-        case 'phpformsframework\\libs\\Response':
-            require_once('Response.php');
-            break;
-        case 'phpformsframework\\libs\\Router':
-            require_once('Router.php');
-            break;
-        default:
+    $name_space                         = 'phpformsframework\\libs\\';
+    $class_files                        = array(
+        $name_space . 'App'             => 'App.php'
+        , $name_space . 'DirStruct'     => 'DirStruct.php'
+        , $name_space . 'Env'           => 'Env.php'
+        , $name_space . 'Hook'          => 'Hook.php'
+        , $name_space . 'Config'        => 'Config.php'
+        , $name_space . 'Configurable'  => 'Configurable.php'
+        , $name_space . 'Dumpable'      => 'Dumpable.php'
+        , $name_space . 'Debug'         => 'Debug.php'
+        , $name_space . 'Error'         => 'Error.php'
+        , $name_space . 'ErrorHandler'  => 'ErrorHandler.php'
+        , $name_space . 'Log'           => 'Log.php'
+        , $name_space . 'Request'       => 'Request.php'
+        , $name_space . 'Response'      => 'Response.php'
+        , $name_space . 'Router'        => 'Router.php'
+    );
+
+    if(isset($class_files[$class])) {
+        require($class_files[$class]);
     }
 });
 

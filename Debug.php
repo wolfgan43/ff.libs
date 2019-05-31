@@ -278,7 +278,7 @@ class Debug extends DirStruct
 
         $included_files = get_included_files();
         if(is_array($included_files) && count($included_files)) {
-            $html_dumpable .= '<hr />' . '<a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } "><h5>' . "Includes" . '</h5></a>';
+            $html_dumpable .= '<hr />' . '<a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } "><h5>' . "Includes" . " (" . count($included_files) . ")" . '</h5></a>';
             $html_dumpable .= '<pre style="display: none;"><ul>';
             foreach ($included_files as $included_file) {
                 $html_dumpable .= '<li>' . str_replace(self::$disk_path, "", $included_file) . '</li>';
@@ -290,7 +290,7 @@ class Debug extends DirStruct
 
         $constants_user = $constants["user"];
         if(is_array($constants_user) && count($constants_user)) {
-            $html_dumpable .= '<hr />' . '<a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } "><h5>' . "Constants" . '</h5></a>';
+            $html_dumpable .= '<hr />' . '<a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } "><h5>' . "Constants" . " (" . count($constants_user) . ")" . '</h5></a>';
             $html_dumpable .= '<pre style="display: none;"><ul>';
             foreach ($constants_user as $name => $value) {
                 $html_dumpable .= '<li>' . $name . '</li>';

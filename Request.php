@@ -369,10 +369,25 @@ class Request implements Configurable {
         //header("Expect-CT: max-age=7776000, enforce");
         self::isInvalidReqMethod(true);
     }
+    private static function getRequestHeaders() {
+        if(function_exists(getallheaders())) {
+            $headers = getallheaders();
+        } else {
+            $headers = array();
+            foreach ($_SERVER as $key => $value) {
+                if (substr($key, 0, 5) <> 'HTTP_') {
+                    continue;
+                }
+                $header = str_replace(' ', '-', ucwords(str_replace('_', ' ', strtolower(substr($key, 5)))));
+                $headers[$header] = $value;
+            }
+        }
+        return $headers;
+    }
 
     private static function securityHeaderParams() {
         $errors                                                                         = array();
-        if(self::isAllowedSize(getallheaders(), "HEAD")) {
+        if(self::isAllowedSize(self::getRequestHeaders(), "HEAD")) {
             foreach(self::$rules["header"] AS $rule_key => $rule) {
                 $header_key                                                             = str_replace("-", "_", $rule["name"]);
                 switch($rule["name"]) {
@@ -415,7 +430,7 @@ class Request implements Configurable {
                                                                                             : "body"
                                                                                         );
 
-        if(self::isAllowedSize($request, $method) && self::isAllowedSize(getallheaders(), "HEAD")) {
+        if(self::isAllowedSize($request, $method) && self::isAllowedSize(self::getRequestHeaders(), "HEAD")) {
             //Mapping Request by Rules
             if(is_array(self::$rules[$bucket]) && count(self::$rules[$bucket]) && is_array($request) && count($request)) {
                 self::$request["valid"]                                                 = array();

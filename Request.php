@@ -370,7 +370,7 @@ class Request implements Configurable {
         self::isInvalidReqMethod(true);
     }
     private static function getRequestHeaders() {
-        if(function_exists(getallheaders())) {
+        if(function_exists("getallheaders")) {
             $headers = getallheaders();
         } else {
             $headers = array();

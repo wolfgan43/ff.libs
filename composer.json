@@ -14,17 +14,18 @@
         "ext-json" : "*",
         "ext-openssl": "*",
         "ext-mysqli": "*",
-        "ext-mongodb": "*",
+
         "ext-zlib": "*",
         "ext-gd": "*",
         "ext-dom": "*",
         "ext-simplexml": "*",
         "ext-libxml": "*",
-        "sinergi/browser-detector" : "^7.0"
+        "sinergi/browser-detector" : "^7.0",
+        "phpmailer/phpmailer": "^6.0"
     },
     "suggest": {
-        "twilio/sdk" : "to use SMS notifications [composer require twilio/sdk:^5.31.3]",
-        "phpmailer/phpmailer": "to use EMAIL notifications [composer require phpmailer/phpmailer:^6.0]"
+        "ext-mongodb": "to use MongoDb",
+        "twilio/sdk" : "to use SMS notifications [composer require twilio/sdk:^5.31.3]"
     },
     "autoload": {
         "files": [

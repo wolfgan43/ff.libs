@@ -213,6 +213,7 @@ class Debug extends DirStruct
                 $reflect = new \ReflectionClass($class_name);
             } catch (\ReflectionException $e) {
             }
+
             if($reflect->implementsInterface(__NAMESPACE__ . '\\Dumpable')) {
                 $classDumpable                  = $class_name;
                 $parent                         = $reflect->getParentClass();
@@ -224,12 +225,15 @@ class Debug extends DirStruct
         }
         return $implements;
     }
-    public static function dump($backtrace = null) {
+    public static function dump($error_message = null, $return = false) {
         $html_backtrace                     = "";
         $html_dumpable                      = "";
         $disk_path                          = self::$disk_path;
-        $debug_backtrace                    = self::get_backtrace($backtrace);
-
+        $debug_backtrace                    = self::get_backtrace();
+        $collapse = (Request::isAjax()
+            ? ''
+            : 'display:none;'
+        );
         foreach($debug_backtrace AS $i => $trace) {
             if(isset($trace["file"])) {
                 $label = 'Line in: ' . '<b>' . str_replace($disk_path, "", $trace["file"])  . '</b>';
@@ -241,7 +245,7 @@ class Debug extends DirStruct
                 $list_end = '</ul>';
 
             }
-            $html_backtrace .=  $list_start . '<li><a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } ">' . $label . '</a><code style="display:none;"><pre>' . print_r($trace, true). '</pre></code></li>' . $list_end;
+            $html_backtrace .=  $list_start . '<li><a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } ">' . $label . '</a><code style="' . $collapse . '"><pre>' . print_r($trace, true). '</pre></code></li>' . $list_end;
         }
 
         $dumpable = self::dumpInterface();
@@ -254,7 +258,7 @@ class Debug extends DirStruct
                     foreach ($dump as $key => $value) {
                         $arrKey = explode(":", $key);
 
-                        $html_dumpable .= '<li><a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } ">' . $arrKey[0] . '</a><code style="display:none;"><pre>' . print_r($value, true). '</pre></code></li>';
+                        $html_dumpable .= '<li><a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } ">' . $arrKey[0] . '</a><code style="' . $collapse . '"><pre>' . print_r($value, true). '</pre></code></li>';
 
                     }
                     $html_dumpable .= '</ul>';
@@ -279,7 +283,7 @@ class Debug extends DirStruct
         $included_files = get_included_files();
         if(is_array($included_files) && count($included_files)) {
             $html_dumpable .= '<hr />' . '<a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } "><h5>' . "Includes" . " (" . count($included_files) . ")" . '</h5></a>';
-            $html_dumpable .= '<pre style="display: none;"><ul>';
+            $html_dumpable .= '<pre style="' . $collapse . '"><ul>';
             foreach ($included_files as $included_file) {
                 $html_dumpable .= '<li>' . str_replace(self::$disk_path, "", $included_file) . '</li>';
             }
@@ -291,7 +295,7 @@ class Debug extends DirStruct
         $constants_user = $constants["user"];
         if(is_array($constants_user) && count($constants_user)) {
             $html_dumpable .= '<hr />' . '<a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } "><h5>' . "Constants" . " (" . count($constants_user) . ")" . '</h5></a>';
-            $html_dumpable .= '<pre style="display: none;"><ul>';
+            $html_dumpable .= '<pre style="' . $collapse . '"><ul>';
             foreach ($constants_user as $name => $value) {
                 $html_dumpable .= '<li>' . $name . '</li>';
             }
@@ -304,10 +308,10 @@ class Debug extends DirStruct
 
         if(is_array($constants) && count($constants)) {
             $html_dumpable .= '<hr />' . '<a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } "><h5>' . "Constants System" . '</h5></a>';
-            $html_dumpable .= '<pre style="display: none;"><ul>';
+            $html_dumpable .= '<pre style="' . $collapse . '"><ul>';
             foreach ($constants as $cat => $constant) {
                 $html_dumpable .= '<li><a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } ">' . $cat . '</a>';
-                $html_dumpable .= '<ul style="display: none;">';
+                $html_dumpable .= '<ul style="' . $collapse . '">';
 
                 foreach ($constant as $name => $value) {
                     $html_dumpable .= '<li>' . $name . '</li>';
@@ -320,16 +324,27 @@ class Debug extends DirStruct
 
        // print_r(spl_autoload_functions  ());
 
-        if(is_string($backtrace) && $backtrace) echo "<b>" . $backtrace . "</b><hr />";
-        echo '<table>';
-        echo '<thead>';
-        echo '<tr>'         . '<th>BACKTRACE</th>'      . '<th>VARIABLES</th>'           . '</tr>';
-        echo '</thead>';
-        echo '<tbody>';
-        echo '<tr>'         . '<td valign="top">' . $html_backtrace . '</td>'  . '<td valign="top">' . $html_dumpable . '</td>'  . '</tr>';
-        echo '</tr>';
-        echo '</tbody>';
-        echo '</table>';
+        $html   = ($error_message
+                    ? "<b>" . $error_message . "</b><hr />"
+                    : ""
+                );
+
+        $html   .= '<table>';
+        $html   .= '<thead>';
+        $html   .= '<tr>'         . '<th>BACKTRACE</th>'      . '<th>VARIABLES</th>'           . '</tr>';
+        $html   .= '</thead>';
+        $html   .= '<tbody>';
+        $html   .= '<tr>'         . '<td valign="top">' . $html_backtrace . '</td>'  . '<td valign="top">' . $html_dumpable . '</td>'  . '</tr>';
+        $html   .= '</tr>';
+        $html   .= '</tbody>';
+        $html   .= '</table>';
+
+        if($return) {
+            return $html;
+        } else {
+            echo $html;
+            return null;
+        }
     }
 
     /**

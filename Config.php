@@ -28,18 +28,54 @@ namespace phpformsframework\libs;
 use phpformsframework\libs\storage\Filemanager;
 
 class Config  implements Dumpable {
-    private static $config = null;
-    private static $schema = null;
-    private static $engine = null;
-    private static $rules = null;
-
+    private static $config                                          = null;
+    private static $schema                                          = null;
+    private static $engine                                          = null;
+    private static $rules                                           = null;
+    private static $autoloads                                       = array();
+    private static $dirstruct                                       = array(
+                                                                        "libs"              => array(
+                                                                            "path"          => LIBS_PATH
+                                                                            , "permission"  => ""
+                                                                        )
+                                                                        , "conf"            => array(
+                                                                            "path"          => CONF_PATH
+                                                                            , "permission"  => ""
+                                                                        )
+                                                                    );
     public static function dump() {
         return array(
-            "config"    => self::$config
-            , "schema"  => self::$schema
-            , "engine"  => self::$engine
-            , "rules"   => self::$rules
+            "config"        => self::$config
+            , "schema"      => self::$schema
+            , "engine"      => self::$engine
+            , "rules"       => self::$rules
+            , "dirstruct"   => self::$dirstruct
+            , "autoloads"   => self::$autoloads
         );
+    }
+    public static function loadDirStruct() {
+        $config                                                     = self::rawData("dirstruct", true);
+        if(is_array($config) && count($config)) {
+            foreach ($config AS $dir_key => $dir) {
+                $dir_attr                                           = DirStruct::getXmlAttr($dir);
+                self::$dirstruct[$dir_key]                          = $dir_attr;
+                if(isset(self::$dirstruct[$dir_key]["autoload"]))   {
+                    $autoload_path = DirStruct::getDiskPath($dir_key);
+                    if($autoload_path) {
+                        self::$autoloads[] = DirStruct::getDiskPath($dir_key) . "/autoload." . DirStruct::PHP_EXT;
+                    }
+                }
+            }
+        }
+    }
+    public static function getDir($name) {
+        return (isset(self::$dirstruct[$name])
+            ? self::$dirstruct[$name]["path"]
+            : ""
+        );
+    }
+    public static function getAutoloads() {
+        return self::$autoloads;
     }
     public static function addEngine($bucket, $callback) {
         self::$engine[$bucket]                                      = $callback;

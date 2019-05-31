@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\tpl;
 
+use phpformsframework\libs\Debug;
 use phpformsframework\libs\DirStruct;
 use phpformsframework\libs\Env;
 use phpformsframework\libs\Error;
@@ -466,10 +467,18 @@ class PageHtml extends DirStruct {
             . $this::NL
         . '</head>';
     }
+
+    private function parseDebug() {
+        return (Debug::ACTIVE
+            ? Debug::dump("", true) . $this::NL
+            : ""
+        );
+    }
     private function parseBody() {
         return '<body>'
             . $this->parseLayout()
             . $this::NL
+            . $this->parseDebug()
         . '</body>';
     }
 
@@ -493,7 +502,6 @@ class PageHtml extends DirStruct {
     public function process() {
  //       \phpformsframework\cms\Cm::widget("SeoCheckUp", array("url" => "http://miodottore.it/ginecologo/milano"));
 //        \phpformsframework\cms\Cm::widget("SeoCheckUp", array("url" => "https://paginemediche.it/medici-online/search/ginecologo/lombardia/mi/milano"));
-
         return $this->parseHtml();
     }
 
@@ -512,10 +520,8 @@ class PageHtml extends DirStruct {
         }
 
         Filemanager::scanExclude($excludeDirname);
-//print_r($patterns);
-//die();
-        $this->resources                        = Filemanager::scan($patterns);
 
+        $this->resources                        = Filemanager::scan($patterns);
     }
 
     private function resource($name, $type) {

@@ -31,29 +31,16 @@ if(!defined("CONF_PATH"))                                   { define("CONF_PATH"
 if(!defined("LIBS_PATH"))                                   { define("LIBS_PATH", "/vendor"); }
 //if(!defined("DOMAIN_NAME"))                                 { define("DOMAIN_NAME", str_replace("www.", "", $_SERVER["HTTP_HOST"])); }
 
-abstract class DirStruct implements Configurable {
+abstract class DirStruct {
     const PHP_EXT                                                   = "php";
     const SITE_PATH                                                 = SITE_PATH;
   //  const DOMAIN_NAME                                               = DOMAIN_NAME;
 
     public static $disk_path                                        = DOCUMENT_ROOT . SITE_PATH;
-    protected static $dirstruct                                     = array(
-                                                                        "libs"              => array(
-                                                                            "path"          => LIBS_PATH
-                                                                            , "permission"  => ""
-                                                                        )
-                                                                        , "conf"            => array(
-                                                                            "path"          => CONF_PATH
-                                                                            , "permission"  => ""
-                                                                        )
-                                                                    );
-    protected static $autoload                                      = array();
+
 
     public static function getDiskPath($what = null, $relative = false) {
-        $path                                                       = (isset(self::$dirstruct[$what])
-                                                                        ? self::$dirstruct[$what]["path"]
-                                                                        : $what
-                                                                    );
+        $path                                                       = Config::getDir($what);
 		return ($relative
             ? $path
             : realpath(self::documentRoot() . $path)
@@ -73,16 +60,6 @@ abstract class DirStruct implements Configurable {
         );
     }
 
-    public static function loadSchema() { //todo: da togliere e mettere in un solo punto. ora si eredita ovunque
-        $config                                                     = Config::rawData("dirstruct", true);
-        if(is_array($config) && count($config)) {
-            foreach ($config AS $dir_key => $dir) {
-                $dir_attr                                           = self::getXmlAttr($dir);
-                self::$dirstruct[$dir_key]                          = $dir_attr;
-                if(isset(self::$dirstruct[$dir_key]["autoload"]))   { self::$autoload[] = self::getDiskPath($dir_key) . "/autoload." . self::PHP_EXT; }
-            }
-        }
-    }
 
     /**
      * @param $path

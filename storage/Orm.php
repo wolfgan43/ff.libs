@@ -26,21 +26,12 @@
 namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\Debug;
+use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\models\Model;
 
-/*
-Orm::getInstance("anagraph")
-    ->setAdapters("mysql")
-    ->read("blalba");
-
-Orm::getInstance("anagraph", "rawData")
-    ->setAdapters("mysql")
-    ->read("blalba");
-*/
-
-class Orm {
+class Orm implements Dumpable {
     const NAME_SPACE                                                                        = 'phpformsframework\\libs\\storage\\models\\';
 
     private static $singleton                                                               = null;
@@ -56,6 +47,10 @@ class Orm {
      */
     public static function getInstance($ormModel) {
         return self::setSingleton($ormModel);
+    }
+    public static function dump()
+    {
+        return self::$singleton;
     }
 
     private static function setSingleton($ormModel) {

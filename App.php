@@ -29,7 +29,7 @@ use phpformsframework\libs\tpl\Widget;
 use ReflectionClass;
 use Exception;
 
-abstract class App extends DirStruct {
+abstract class App extends DirStruct  {
     const NAME_SPACE                                                = 'phpformsframework\\libs\\';
     const DEBUG                                                     = Debug::ACTIVE;
 

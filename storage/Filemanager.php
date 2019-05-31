@@ -39,6 +39,11 @@ class Filemanager extends DirStruct implements Dumpable {
     private static $singletons                                          = null;
     private static $storage                                             = null;
     private static $scanExclude                                         = null;
+    /**
+     * @var null|callable $callback
+     */
+    private static $callback                                            = null;
+    private static $patterns                                            = null;
 
     const FTP_USERNAME                                                  = FTP_USERNAME;
     const FTP_PASSWORD                                                  = FTP_PASSWORD;
@@ -70,7 +75,10 @@ class Filemanager extends DirStruct implements Dumpable {
     }
 
     public static function dump() {
-        return self::$storage;
+        return array(
+            "patterns"  => self::$patterns
+            , "storage" =>  self::$storage
+        );
     }
 
     public static function fappend($content, $file) {
@@ -458,13 +466,16 @@ class Filemanager extends DirStruct implements Dumpable {
     }
     public static function scan($patterns, $what = null, $callback = null) {
         if(is_array($patterns) && !$callback) {
-            $callback = $what;
+            $callback               = $what;
         }
+        self::$callback             = ($callback && is_callable($callback)
+                                        ? $callback
+                                        : null
+                                    );
 
-        self::$storage["scan"]   = array(
-            "rawdata" => array()
-            , "callback" => $callback
-        );
+        //self::$storage["scan"]["rawdata"] = array();
+
+        self::$patterns[] = $patterns;
 
         if(is_array($patterns) && count($patterns)) {
             foreach($patterns AS $pattern => $opt) {
@@ -478,7 +489,7 @@ class Filemanager extends DirStruct implements Dumpable {
     }
 
     private static function scanAddItem($file, $opt = null) {
-        if(is_callable(self::$storage["scan"]["callback"])) {
+        if(self::$callback) {
             $file_info = pathinfo($file);
             if(isset($opt["filter"]) && !isset($opt["filter"][$file_info["extension"]])) {
                 return;
@@ -486,11 +497,10 @@ class Filemanager extends DirStruct implements Dumpable {
             if(isset($opt["name"]) && !isset($opt["name"][$file_info["basename"]])) {
                 return;
             }
-
-            $callback = self::$storage["scan"]["callback"];
+            $callback = self::$callback;
             $callback($file, self::$storage);
         } elseif(!$opt) {
-            self::$storage["scan"]["rawdata"][] = $file;
+            self::$storage["rawdata"][] = $file;
         } else {
             $file_info = pathinfo($file);
             if(isset($opt["filter"]) && !isset($opt["filter"][$file_info["extension"]])) {
@@ -503,7 +513,7 @@ class Filemanager extends DirStruct implements Dumpable {
             if(isset($opt["type"])) {
                 self::setStorage($file_info, $opt["type"]);
             } else {
-                self::$storage["scan"]["rawdata"][] = $file;
+                self::$storage["rawdata"][] = $file;
             }
         }
     }
@@ -535,7 +545,7 @@ class Filemanager extends DirStruct implements Dumpable {
 
             switch ($flag) {
                 case Filemanager::SCAN_DIR:
-                    if(self::$storage["scan"]["callback"]) {
+                    if(self::$callback) {
                         self::glob_dir_callback($pattern);
                     } else {
                         self::glob_dir($pattern);
@@ -569,7 +579,7 @@ class Filemanager extends DirStruct implements Dumpable {
     }
 
     private static function glob_dir($pattern) {
-        self::$storage["scan"] = glob($pattern, GLOB_ONLYDIR);
+        self::$storage["rawdata"] = glob($pattern, GLOB_ONLYDIR);
     }
     private static function glob_dir_callback($pattern) {
         foreach(glob($pattern, GLOB_ONLYDIR) AS $file) {

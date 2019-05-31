@@ -26,6 +26,7 @@
 
 namespace phpformsframework\libs\storage\models;
 
+use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\Database;
 use phpformsframework\libs\storage\database\Adapter;
@@ -49,6 +50,9 @@ abstract class Model {
     {
         $this->setAdapters($databaseAdapters);
     }
+
+
+
     public function setAdapters($databaseAdapters = null) {
         if(is_array($databaseAdapters)) {
             foreach($databaseAdapters AS $adapter => $connector) {

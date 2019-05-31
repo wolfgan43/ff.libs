@@ -1078,25 +1078,29 @@ abstract class Adapter {
                     case "arrayIncremental":																            //array
                     case "arrayOfNumber":	    															            //array
                     case "array":																			            //array
-                        if(strrpos($value, "++") === strlen($value) -2) {								            //++ to array
+                        if(is_array($value)) {
+                            if ($struct_type == "arrayOfNumber") {                                                   //array number to array
+                                $fields[$name]                              = array_map('intval', $value);
+                            } else {
+                                $fields[$name]                              = $value;                                   //array to array
+                            }
+                        } elseif(strrpos($value, "++") === strlen($value) -2) {								            //++ to array
+                            $fields[$name]                                  = array();
                             //skip
                         } elseif(strrpos($value, "--") === strlen($value) -2) {					                //-- to array
+                            $fields[$name]                                  = array();
                             //skip
                         } elseif(strpos($value, "+") === 0) {
                             $op                                             = "+";
                             $fields[$name]                                  = substr($value, 1);
-                        } elseif(is_array($value)) {
-                            if ($struct_type == "arrayOfNumber")                                                        //array number to array
-                                $fields[$name]                              = array_map('intval', $value);
-                            else
-                                $fields[$name]                              = $value;                                   //array to array
                         } elseif(is_bool($value)) {                                                                     //boolean to array
                             $fields[$name] = array((int)$value);
                         } elseif(is_numeric($value) || $struct_type == "arrayOfNumber" || $struct_type == "arrayIncremental") {
-                            if (strpos($value, ".") !== false || strpos($value, ",") !== false)             //double to array
+                            if (strpos($value, ".") !== false || strpos($value, ",") !== false) {            //double to array
                                 $fields[$name]                              = array((double)$value);
-                            else                                                                                        //int to array
+                            } else {                                                                                       //int to array
                                 $fields[$name]                              = array((int)$value);
+                            }
                         } elseif(strtotime($value)) {															        //date to array
                             $fields[$name]                                  = array($value);
                         } elseif($value == "empty" || !$value) {                                                        //empty to array
@@ -1106,13 +1110,17 @@ abstract class Adapter {
                         }
                         break;
                     case "boolean":																			            //boolean
-                        if(strrpos($value, "++") === strlen($value) -2) {                                         //++ to boolean
+                        if(is_array($value)) {															        //array to boolean
+                            $fields[$name]                                  = false;
+                            //skip
+                        } elseif(strrpos($value, "++") === strlen($value) -2) {                                         //++ to boolean
+                            $fields[$name]                                  = false;
                             //skip
                         } elseif(strrpos($value, "--") === strlen($value) -2) {                                   //-- to boolean
+                            $fields[$name]                                  = false;
                             //skip
                         } elseif(strpos($value, "+") === 0) {												        //+ to boolean
-                            //skip
-                        } elseif(is_array($value)) {															        //array to boolean
+                            $fields[$name]                                  = false;
                             //skip
                         } elseif(is_bool($value)) {                                                                     //boolean to boolean
                             $fields[$name]                                  = $value;
@@ -1130,7 +1138,10 @@ abstract class Adapter {
                     case "number":                                                                                      //number
                     case "timestamp":
                     case "primary":
-                        if(strrpos($value, "++") === strlen($value) -2) {                                         //++ to number
+                        if(is_array($value)) {																    //array to number
+                            $fields[$name]                                  = 0;
+                            //skip
+                        } elseif(strrpos($value, "++") === strlen($value) -2) {                                         //++ to number
                             $op                                             = "++";
                             $fields[$name]                                  = substr($value, -2);
                         } elseif(strrpos($value, "--") === strlen($value) -2) {                                   //-- to number
@@ -1139,8 +1150,6 @@ abstract class Adapter {
                         } elseif(strpos($value, "+") === 0) {                                                     //+ to number
                             $op                                             = "+";
                             $fields[$name]                                  = substr($value, 1);
-                        } elseif(is_array($value)) {																    //array to number
-                            //skip
                         } elseif(is_bool($value)) {                                                                     //boolean to number
                             $fields[$name]                                  = (int)$value;
                         } elseif(!is_numeric($value) && strtotime($value)) {                                            //date to number

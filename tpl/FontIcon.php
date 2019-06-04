@@ -25,7 +25,9 @@
  */
 namespace phpformsframework\libs\tpl\gridsystem;
 
-abstract class FontIconAdapter {
+use phpformsframework\libs\Extendible;
+
+class FontIcon extends Extendible {
     protected $css          = array();
     protected $fonts        = array();
     protected $prefix       = null;
@@ -457,7 +459,7 @@ abstract class FontIconAdapter {
                                 , "stack-1x"            => "stack-1x"
                             );
 
-    private $rules         = array(
+    private $buttons_style  = array(
                                 "prefix"               => "btn"
                                 , "suffix"              => ""
                                 , "width"               => array(
@@ -488,10 +490,12 @@ abstract class FontIconAdapter {
                                 )
                             );
 
-    public function __construct($rules = null, $buttons = null)
+    public function __construct($adapter_name, $buttons_style = null, $buttons = null)
     {
-        if($rules)               { $this->rules         = $rules; }
-        if(is_array($buttons))   { $this->buttons       = array_replace($this->buttons, $buttons); }
+        parent::__construct("fonticon_" . $adapter_name);
+
+        if($buttons_style)                              { $this->buttons_style  = $buttons_style; }
+        if(is_array($buttons))                          { $this->buttons        = array_replace($this->buttons, $buttons); }
     }
 
     public function css() {
@@ -622,8 +626,8 @@ abstract class FontIconAdapter {
         }
 
         if($type) {
-            if (isset($this->rules["color"][$type])) {
-                $res["type"]                            = $this->rules["color"][$type];
+            if (isset($this->buttons_style["color"][$type])) {
+                $res["type"]                            = $this->buttons_style["color"][$type];
             }
             if (strlen($class)) {
                 $res["class"]                           = $class;
@@ -634,19 +638,19 @@ abstract class FontIconAdapter {
 
             if(is_array($button) && count($button)) {
                 foreach ($button as $btn_key => $btn_value) {
-                    if(isset($this->rules[$btn_key][$btn_value])) {
-                        $res[$btn_key . $btn_value]     = $this->rules[$btn_key][$btn_value];
+                    if(isset($this->buttons_style[$btn_key][$btn_value])) {
+                        $res[$btn_key . $btn_value]     = $this->buttons_style[$btn_key][$btn_value];
                     }
                 }
             }
 
 
             if(is_array($res) && count($res)) {
-                if(strlen($this->rules["prepend"])) {
-                    $res["prepend"]                     = $this->rules["prepend"];
+                if(strlen($this->buttons_style["prepend"])) {
+                    $res["prepend"]                     = $this->buttons_style["prepend"];
                 }
-                if(strlen($this->rules["append"])) {
-                    $res["append"]                      = $this->rules["append"];
+                if(strlen($this->buttons_style["append"])) {
+                    $res["append"]                      = $this->buttons_style["append"];
                 }
             }
         }

@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\security;
 
+use phpformsframework\libs\Configurable;
 use phpformsframework\libs\DirStruct;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Log;
@@ -35,7 +36,7 @@ use phpformsframework\libs\Config;
 Hook::register("app_on_rawconfig_loaded", "Shield::protectMyAss");
 
 
-class Buckler extends DirStruct {
+class Buckler extends DirStruct implements Configurable {
     public static function loadSchema() {
         $config                                                 = Config::rawData("badpath", true, "rule");
         if(is_array($config) && count($config)) {

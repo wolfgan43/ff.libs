@@ -32,6 +32,7 @@ spl_autoload_register(function ($class) {
         , $name_space . 'Hook'          => 'Hook.php'
         , $name_space . 'Config'        => 'Config.php'
         , $name_space . 'Configurable'  => 'Configurable.php'
+        , $name_space . 'Extendible'    => 'Extendible.php'
         , $name_space . 'Dumpable'      => 'Dumpable.php'
         , $name_space . 'Debug'         => 'Debug.php'
         , $name_space . 'Error'         => 'Error.php'

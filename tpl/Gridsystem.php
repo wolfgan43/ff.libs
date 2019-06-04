@@ -25,13 +25,12 @@
  */
 namespace phpformsframework\libs\tpl;
 
-use phpformsframework\libs\tpl\gridsystem\FrameworkCssAdapter;
+use phpformsframework\libs\tpl\gridsystem\FrameworkCss;
 
 if(!defined("FRAMEWORK_CSS"))                           { define("FRAMEWORK_CSS", "bootstrap4"); }
 if(!defined("FONT_ICON"))                               { define("FONT_ICON", "fontawesome4"); }
 
 class Gridsystem {
-    const NAME_SPACE                                        = "phpformsframework\\libs\\tpl\\gridsystem\\";
     const FRAMEWORK_CSS                                     = FRAMEWORK_CSS;
     const FONT_ICON                                         = FONT_ICON;
 
@@ -185,12 +184,11 @@ class Gridsystem {
     /**
      * @param null|string $frameworkCss
      * @param null|string $fontIcon
-     * @return FrameworkCssAdapter
+     * @return FrameworkCss
      */
     public static function getInstance($frameworkCss = self::FRAMEWORK_CSS, $fontIcon = self::FONT_ICON) {
         if(!self::$singleton) {
-            $class_name                                     = static::NAME_SPACE . ucfirst($frameworkCss);
-            self::$singleton                                = new $class_name($fontIcon, self::$buttons);
+            self::$singleton                                = new FrameworkCss($frameworkCss, $fontIcon, self::$buttons);
         }
 
         return self::$singleton;

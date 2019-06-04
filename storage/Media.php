@@ -27,6 +27,7 @@
 namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\Config;
+use phpformsframework\libs\Configurable;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\DirStruct;
 use phpformsframework\libs\Error;
@@ -65,7 +66,7 @@ if (!defined("CM_SHOWFILES_OPTIMIZE"))		                { define("CM_SHOWFILES_O
  * @example Da impostazioni DB (showfiles_modes): http://xoduslab.com/test/demo/domains/skeleton/static/thumb/mod_article/32/img/tiroide-malfunzionamento-esami.jpg
  * @example Cambiando il mime dell'immagine: http://xoduslab.com/test/demo/domains/skeleton/static/thumb-jpg/mod_article/32/img/tiroide-malfunzionamento-esami.png
  */
-class Media extends DirStruct {
+class Media extends DirStruct implements Configurable {
     const STRICT                                                    = false;
     const RENDER_MEDIA_PATH                                         = "/media";
     const RENDER_ASSETS_PATH                                        = "/assets";
@@ -1116,44 +1117,7 @@ class Media extends DirStruct {
         }
 
     }
-/*
-    public function render($mode = null, $compress = false) {
-        if($this->pathinfo && $this->pathinfo["orig"] != "/") {
-            $final_file                                             = $this->renderProcess($mode);
-            if($final_file) {
-                $etag                                               = md5($final_file . filemtime($final_file));
 
-                // implementare If-Modified-Since
-                if (strlen($_SERVER["HTTP_IF_NONE_MATCH"]) && substr($_SERVER["HTTP_IF_NONE_MATCH"], 0, strlen($etag)) == $etag) {
-                    Response::code(304);
-                } else {
-                    Response::code(200);
-
-                    $this->headers["filename"]                      = $this->source["basename"];
-                    $this->headers["etag"]                          = $etag;
-
-                    $this->sendHeaders($final_file, $this->headers);
-                    if($compress) {
-                        $this::compress(file_get_contents($final_file));
-                    } else {
-
-                        readfile($final_file);
-                    }
-                }
-            } else {
-                $this->headers["cache"]                             = "must-revalidate";
-                $this->headers["filename"]                          = $this->pathinfo["basename"];
-                $this->headers["mimetype"]                          = $this::getMimeTypeByExtension($this->pathinfo["extension"]);
-
-                $this->sendHeaders(null, $this->headers);
-                Response::code("404");
-            }
-        } else {
-            Response::code("403");
-        }
-        exit;
-    }
-*/
     public function setPathInfo($path = null) {
         if($path) {
             if(strpos($path, $this::RENDER_MEDIA_PATH) === 0) {
@@ -1177,7 +1141,7 @@ class Media extends DirStruct {
         $libs_disk_path                                             = self::getDiskPath("libs");
         if(is_file($libs_disk_path . $source_file)) {
             $cache_final_file                                       = $this->basepathCache() . $this->pathinfo["orig"];
-            $this->makeDirs(dirname($cache_final_file));
+            Filemanager::makeDir(dirname($cache_final_file), 0775, $this->basepathCache());
             if(is_readable($libs_disk_path . $source_file) && is_writable(dirname($cache_final_file)) && copy($libs_disk_path . $source_file, $cache_final_file)) {
                 $res = file_get_contents($cache_final_file);
             } else {
@@ -1199,7 +1163,7 @@ class Media extends DirStruct {
             } else {
                 $cache_basepath                                    = $this->basepathCache();
                 if($cache_basepath && !is_file($cache_basepath . $this->pathinfo["orig"])) {
-                    $this->makeDirs($cache_basepath . $this->pathinfo["dirname"]);
+                    Filemanager::makeDir($this->pathinfo["dirname"], 0775, $cache_basepath);
                     if(!link($this->basepath . $this->filesource, $cache_basepath . $this->pathinfo["orig"])) {
                         Error::register("Link Failed. Check write permission on: " . $this->basepath . $this->filesource . " and if directory exist and have write permission on " . $cache_basepath . $this->pathinfo["orig"]);
                     }
@@ -1507,7 +1471,7 @@ class Media extends DirStruct {
 
         $final_file                                                 = $this->getFinalFile();
 
-        $this->makeDirs(dirname($final_file));
+        Filemanager::makeDir(dirname($final_file), 0775, $this->basepathCache());
 
         $cCanvas->process($final_file);
     }
@@ -1516,20 +1480,6 @@ class Media extends DirStruct {
             ? $this::getDiskPath("cache-assets")
             : $this::getDiskPath("cache-thumbs")
         );
-    }
-    private function makeDirs($path) {
-        $cache_basepath                                            = $this->basepathCache();
-        $path                                                       = str_replace($cache_basepath, "", $path);
-
-        if($path && $path != "/" && !is_dir($cache_basepath . $path) && is_writable($cache_basepath . dirname($path)) && mkdir($cache_basepath . $path, 0775, true)) {
-            while ($path != DIRECTORY_SEPARATOR) {
-                if (is_dir($cache_basepath . $path)) {
-                    chmod($cache_basepath . $path, 0775);
-                }
-
-                $path                                               = dirname($path);
-            }
-        }
     }
 
     private function getMode() {
@@ -1639,7 +1589,7 @@ class Media extends DirStruct {
                     }
                 } elseif($this->mode === false && is_file($this->basepath . $this->filesource)) {
                     if(!is_file($final_file)) {
-                        $this->makeDirs(dirname($final_file));
+                        Filemanager::makeDir(dirname($final_file), 0775, $this->basepathCache());
 
                         if(!link($this->basepath . $this->filesource, $final_file)) {
                             Error::register("Link Failed. Check write permission on: " . $this->basepath . $this->filesource . " and if directory exist and have write permission on " . $this->basepath . $this->filesource);
@@ -1649,7 +1599,7 @@ class Media extends DirStruct {
                     $icon                                           = $this->getIconPath(basename($this->filesource), true);
 
                     if(!is_file($final_file) && $icon) {
-                        $this->makeDirs(dirname($final_file));
+                        Filemanager::makeDir(dirname($final_file), 0775, $this->basepathCache());
 
                         if(!link($icon, $final_file)) {
                             Error::register("Link Failed. Check write permission on: " . $icon . " and if directory exist and have write permission on " . $final_file);

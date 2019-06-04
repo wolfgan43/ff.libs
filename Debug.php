@@ -76,6 +76,10 @@ class Debug extends DirStruct
         return number_format($duration, 2, '.', '');
     }
 
+    private static function exTime() {
+        $duration                       = microtime(true) - self::STOPWATCH;
+        return number_format($duration, 3, '.', '');
+    }
 
     public static function registerErrors() {
         declare(ticks=1);
@@ -267,6 +271,7 @@ class Debug extends DirStruct
         }
 
         $errors = array_filter((array) Error::raise());
+
         if(is_array($errors) && count($errors)) {
             $html_dumpable .= '<hr />' . '<h5>&nbsp;' . "Errors" . '</h5>';
             $html_dumpable .= '<code><ul>';
@@ -324,10 +329,12 @@ class Debug extends DirStruct
 
        // print_r(spl_autoload_functions  ());
 
-        $html   = ($error_message
-                    ? "<b>" . $error_message . "</b><hr />"
+        $html   = (1 || $error_message
+                    ? "<hr /><b>asdasdasdasd" . $error_message . "</b>"
                     : ""
                 );
+
+        $html .= '<hr />' . '<center>' . '<span>ExTime: ' . self::exTime() . '</span>'. '</center>';
 
         $html   .= '<table>';
         $html   .= '<thead>';

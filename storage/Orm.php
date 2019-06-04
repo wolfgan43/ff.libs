@@ -616,7 +616,7 @@ class Orm implements Dumpable {
             }
         }
 
-        return self::getResult(false);
+        return self::getResult(true);
     }
 
     /**
@@ -713,7 +713,7 @@ class Orm implements Dumpable {
 
         if(is_array($data["def"]["relationship"]) && count($data["def"]["relationship"])) {
             foreach ($data["def"]["relationship"] AS $tbl => $rel) {
-                if(isset($rel["external"])) {
+                if(isset($rel["external"]) && isset(self::$data["sub"][$controller][$tbl])) {
                     $field_ext                                                              = $rel["external"];
                     //$field_key                                                            = $rel["primary"];
 
@@ -1148,7 +1148,11 @@ class Orm implements Dumpable {
     private static function resolveResult($rawdata = false) {
         if(is_array(self::$result)) {
             if($rawdata || count(self::$result) > 1) {
-                $res                                                        = array_values(self::$result);
+                if(isset(self::$result["keys"])) {
+                    $res                                                    = self::$result["keys"];
+                } else {
+                    $res                                                    = array_values(self::$result);
+                }
             } else {
                 $res                                                        = current(self::$result);
                 if (isset(self::$data["main"]["service"]) && isset(self::$data["sub"]) && isset(self::$data["sub"][self::$data["main"]["service"]]) && is_array(self::$data["sub"][self::$data["main"]["service"]]) && count(self::$data["sub"][self::$data["main"]["service"]]) == 1 && is_array($res) && count($res) == 1) {

@@ -29,6 +29,7 @@ use phpformsframework\libs\storage\Filemanager;
 
 class Config  implements Dumpable {
     private static $config                                          = null;
+    private static $extensions                                      = null;
     private static $schema                                          = null;
     private static $engine                                          = null;
     private static $rules                                           = null;
@@ -59,6 +60,12 @@ class Config  implements Dumpable {
             foreach ($config AS $dir_key => $dir) {
                 $dir_attr                                           = DirStruct::getXmlAttr($dir);
                 self::$dirstruct[$dir_key]                          = $dir_attr;
+                if(Debug::ACTIVE) {
+                    if(isset($dir_attr["path"]) && !is_dir(DirStruct::$disk_path . $dir_attr["path"]) && !Filemanager::makeDir($dir_attr["path"])) {
+                        Error::registerWarning("Faild to Write " . $dir_attr["path"] . ". Check permissions", "dirstruct");
+                    }
+                }
+
                 if(isset(self::$dirstruct[$dir_key]["autoload"]))   {
                     $autoload_path = DirStruct::getDiskPath($dir_key);
                     if($autoload_path) {
@@ -76,6 +83,12 @@ class Config  implements Dumpable {
     }
     public static function getAutoloads() {
         return self::$autoloads;
+    }
+    public static function getExtension($name) {
+        return (isset(self::$extensions[$name])
+            ? self::$extensions[$name]
+            : null
+        );
     }
     public static function addEngine($bucket, $callback) {
         self::$engine[$bucket]                                      = $callback;
@@ -103,47 +116,59 @@ class Config  implements Dumpable {
     }
 
     public static function loadRawData($paths) {
-        $paths                                                      = array_replace(array(__DIR__ => array("filter" => array("xml"))), $paths);
+        $paths                                                      = array_replace(array(__DIR__ => array("filter" => array("xml", "json"))), $paths);
 
         Filemanager::scan($paths, function ($file) {
-            $configs                                                = Filemanager::getInstance("xml")->read($file);
-            foreach($configs AS $key => $config) {
-                if(!isset(self::$config[$key]))                     { self::$config[$key] = array(); }
-                $method                                             = (isset(self::$rules[$key]["method"])
-                                                                        ? self::$rules[$key]["method"]
-                                                                        : null
-                                                                    );
-
-                switch ($method) {
-                    case "replace":
-                        self::$config[$key]                         = array_replace(self::$config[$key], (array)$config);
-                        break;
-                    case "merge":
-                        if (is_array($config) && count($config)) {
-                            if (!isset($config[0]))                 { $config = array($config); }
-                            self::$config[$key]                     = array_merge(self::$config[$key], $config);
-                        }
-                        break;
-                    case "mergesub":
-                        if (is_array($config) && count($config)) {
-                            foreach ($config AS $sub_key => $sub_config) {
-                                if (!isset($sub_config[0]))         { $sub_config = array($sub_config); }
-                                if(isset(self::$config[$key][$sub_key]))   {
-                                    self::$config[$key][$sub_key]   = array_merge(self::$config[$key][$sub_key], $sub_config);
-                                } else {
-                                    self::$config[$key][$sub_key]   = $sub_config;
-                                }
-
-                            }
-                        }
-                        break;
-                    default:
-                        self::$config[$key]                         = $config;
-                }
+            switch (pathinfo($file, PATHINFO_EXTENSION)) {
+                case "xml":
+                    self::loadXml($file);
+                    break;
+                case "json":
+                    self::loadJson($file);
+                    break;
             }
         });
     }
+    private static function loadJson($file) {
+        self::$extensions[pathinfo($file, PATHINFO_FILENAME)] = Filemanager::getInstance("json")->read($file);
+    }
+    private static function loadXml($file) {
+        $configs                                                = Filemanager::getInstance("xml")->read($file);
+        foreach($configs AS $key => $config) {
+            if(!isset(self::$config[$key]))                     { self::$config[$key] = array(); }
+            $method                                             = (isset(self::$rules[$key]["method"])
+                                                                    ? self::$rules[$key]["method"]
+                                                                    : null
+                                                                );
 
+            switch ($method) {
+                case "replace":
+                    self::$config[$key]                         = array_replace(self::$config[$key], (array)$config);
+                    break;
+                case "merge":
+                    if (is_array($config) && count($config)) {
+                        if (!isset($config[0]))                 { $config = array($config); }
+                        self::$config[$key]                     = array_merge(self::$config[$key], $config);
+                    }
+                    break;
+                case "mergesub":
+                    if (is_array($config) && count($config)) {
+                        foreach ($config AS $sub_key => $sub_config) {
+                            if (!isset($sub_config[0]))         { $sub_config = array($sub_config); }
+                            if(isset(self::$config[$key][$sub_key]))   {
+                                self::$config[$key][$sub_key]   = array_merge(self::$config[$key][$sub_key], $sub_config);
+                            } else {
+                                self::$config[$key][$sub_key]   = $sub_config;
+                            }
+
+                        }
+                    }
+                    break;
+                default:
+                    self::$config[$key]                         = $config;
+            }
+        }
+    }
 
     public static function setSchema($data, $bucket = null) {
         if(is_array($data)) {

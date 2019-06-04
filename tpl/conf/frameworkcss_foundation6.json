@@ -1,0 +1,302 @@
+{
+  "css": {
+    "foundation": "https:\/\/cdnjs.cloudflare.com\/ajax\/libs\/foundation\/6.5.3\/css\/foundation.min.css"
+  },
+  "js": {
+    "jquery": "https:\/\/cdnjs.cloudflare.com\/ajax\/libs\/jquery\/3.4.0\/jquery.slim.min.js",
+    "foundation": "https:\/\/cdnjs.cloudflare.com\/ajax\/libs\/foundation\/6.5.3\/js\/foundation.min.js"
+  },
+  "skip_resolution": true,
+  "skip_resolution_full": true,
+  "skip_prepost": "nopadding",
+  "container": "container",
+  "container_fluid": "container-fluid",
+  "wrap": "row",
+  "row": {
+    "prefix": "row",
+    "start": "row",
+    "end": "row",
+    "center": "row",
+    "between": "row",
+    "around": "row",
+    "padding": "row padding"
+  },
+  "col": {
+    "prefix": "columns",
+    "hidden": "hide-for-",
+    "hidden-smallest": "",
+    "hidden-largest": "-up"
+  },
+  "push": {
+    "append": "",
+    "prepend": "push-"
+  },
+  "pull": {
+    "append": "",
+    "prepend": "pull-"
+  },
+  "resolution": [
+    "small",
+    "medium",
+    "large"
+  ],
+  "button": {
+    "prepend": "btn",
+    "append": "",
+    "skip-default": true,
+    "width": {
+      "full": "expand"
+    },
+    "size": {
+      "large": "large",
+      "small": "small",
+      "tiny": "tiny"
+    },
+    "state": {
+      "current": "current",
+      "disabled": "disabled"
+    },
+    "corner": {
+      "round": "round",
+      "radius": "radius"
+    },
+    "color": {
+      "default": "secondary",
+      "primary": "primary",
+      "secondary": "primary",
+      "success": "success",
+      "info": "secondary",
+      "warning": "alert",
+      "danger": "alert",
+      "link": "secondary"
+    }
+  },
+  "from": {
+    "component": "",
+    "component-inline": "",
+    "row": "row",
+    "row-inline": "row",
+    "row-check": "row",
+    "row-padding": "row padding",
+    "row-full": "columns",
+    "group": "row collapse",
+    "group-sm": "row",
+    "group-padding": "row collapse padding",
+    "label": "",
+    "label-inline": "inline right",
+    "label-check": "inline",
+    "control": "",
+    "control-check": "",
+    "control-file": "",
+    "control-plaintext": "",
+    "size-sm": "small",
+    "size-lg": "large",
+    "control-exclude": [],
+    "control-prefix": "prefix",
+    "control-postfix": "postfix",
+    "control-text": "",
+    "control-feedback": "postfix-feedback",
+    "wrap": "row",
+    "wrap-padding": "row padding"
+  },
+  "bar": {
+    "topbar": "top-bar top-bar-section",
+    "navbar": "side-nav"
+  },
+  "sidenav": {
+    "container": "side-nav in",
+    "item": "side-nav-item",
+    "link": "side-nav-link",
+    "secondlevelmenu": "side-nav-second-level",
+    "thirdlevelmenu": "side-nav-third-level",
+    "header": "side-nav-title side-nav-item"
+  },
+  "list": {
+    "group": "list-group",
+    "group-horizontal": "list-group list-group-horizontal",
+    "item": "list-group-item",
+    "item-button": "list-group-item-action",
+    "item-success": "list-group-item-success",
+    "item-info": "list-group-item-info",
+    "item-warning": "list-group-item-warning",
+    "item-danger": "list-group-item-danger",
+    "current": "active",
+    "disabled": "disabled"
+  },
+  "topbar": {
+    "container": "navbar navbar-default",
+    "container-fixed-top": "navbar navbar-default navbar-fixed-top",
+    "container-fixed-bottom": "navbar navbar-default navbar-fixed-bottom",
+    "header": "navbar-header",
+    "nav-brand": "navbar-brand",
+    "nav-form": "navbar-form navbar-left",
+    "nav-right": "navbar-right",
+    "dropdown": "dropdown-toggle",
+    "dropdown-menu": "dropdown-menu",
+    "current": "active",
+    "hamburger": "navbar-toggle"
+  },
+  "dropdown": {
+    "container": "dropdown",
+    "menu": "dropdown-menu",
+    "sub-menu": "dropdown-submenu",
+    "header": "dropdown-header",
+    "sep": "divider",
+    "opened": "open",
+    "current": "active"
+  },
+  "panel": {
+    "container": "panel panel-default",
+    "container-primary": "panel-primary",
+    "container-success": "panel-success",
+    "container-info": "panel-info",
+    "container-warning": "panel-warning",
+    "container-danger": "panel-danger",
+    "heading": "panel-heading",
+    "body": "panel-body",
+    "footer": "panel-footer"
+  },
+  "badge": {
+    "default": "badge",
+    "primary": "badge primary",
+    "success": "badge success",
+    "info": "badge info",
+    "warning": "badge warning",
+    "danger": "badge danger"
+  },
+  "callout": {
+    "default": "panel",
+    "primary": "alert-box",
+    "success": "alert-box success",
+    "info": "panel callout",
+    "warning": "alert-box warning",
+    "danger": "alert-box alert"
+  },
+  "pagination": {
+    "align-left": "text-left",
+    "align-center": "pagination-centered",
+    "align-right": "text-right",
+    "pages": "pagination",
+    "arrows": "arrow",
+    "page": "",
+    "page-link": "",
+    "current": "current"
+  },
+  "table": {
+    "container": "",
+    "inverse": "table-dark",
+    "compact": "table-condensed",
+    "small": "table table-sm",
+    "hover": "table-hover",
+    "border": "table-bordered",
+    "oddeven": "table-striped",
+    "responsive": "",
+    "sorting": "sorting",
+    "sorting_asc": "sorting_asc",
+    "sorting_desc": "sorting_desc"
+  },
+  "tab": {
+    "menu": "tabs",
+    "menu-pills": "pills",
+    "menu-pills-justified": "pills justified",
+    "menu-bordered": "tabs bordered",
+    "menu-bordered-justified": "tabs bordered justified",
+    "menu-vertical": "tabs vertical",
+    "menu-vertical-right": "tabs vertical right",
+    "menu-item": "tabs-title",
+    "menu-item-link": "",
+    "menu-current": "is-active",
+    "pane": "tabs-content",
+    "pane-item": "tabs-panel",
+    "pane-current": "is-active",
+    "pane-item-effect": "tabs-panel fade",
+    "pane-current-effect": "is-active"
+  },
+  "collapse": {
+    "pane": "collapse",
+    "current": "in",
+    "menu": "collapsed"
+  },
+  "tooltip": {
+    "elem": "has-tip"
+  },
+  "dialog": {
+    "overlay": "reveal-overlay",
+    "window": "reveal",
+    "window-center": "centered",
+    "window-small": "tiny",
+    "window-large": "large",
+    "window-huge": "full",
+    "container": "modal-content",
+    "header": "modal-header",
+    "content": "modal-body",
+    "footer": "modal-footer",
+    "title": "modal-title",
+    "subtitle": "modal-subtitle",
+    "button": "close",
+    "effect": "fade"
+  },
+  "card": {
+    "container": "card",
+    "cover-top": "card-img-top",
+    "header": "card-header",
+    "body": "card-body",
+    "footer": "card-footer",
+    "title": "card-title",
+    "sub-title": "card-subtitle",
+    "text": "card-text",
+    "link": "card-link",
+    "list-group": "list-group list-group-flush",
+    "list-group-item": "list-group-item"
+  },
+  "util": {
+    "left": "float-left",
+    "right": "float-right",
+    "hide": "hide",
+    "align-left": "text-left",
+    "align-center": "text-center",
+    "align-right": "text-right",
+    "align-justify": "text-justify",
+    "text-nowrap": "text-nowrap",
+    "text-overflow": "text-overflow",
+    "text-lowercase": "text-lowercase",
+    "text-uppercase": "text-uppercase",
+    "text-capitalize": "text-capitalize",
+    "text-muted": "text-muted",
+    "text-primary": "text-primary",
+    "text-success": "text-success",
+    "text-info": "text-info",
+    "text-warning": "text-warning",
+    "text-danger": "text-danger",
+    "bg-primary": "bg-primary",
+    "bg-success": "bg-success",
+    "bg-info": "bg-info",
+    "bg-warning": "bg-warning",
+    "bg-danger": "bg-danger",
+    "current": "active",
+    "equalizer-row": "data-equalizer",
+    "equalizer-col": "data-equalizer-watch",
+    "corner-radius": "radius",
+    "corner-round": "round",
+    "corner-circle": "img-circle",
+    "corner-thumbnail": "img-thumbnail",
+    "clear": "clearfix"
+  },
+  "data": {
+    "tab": {
+      "menu": "data-tabs",
+      "menu-link": null,
+      "pane": "data-tabs-content",
+      "pane-item": null
+    },
+    "tooltip": {
+      "elem": "data-tooltip"
+    },
+    "collapse": {
+      "link": "data-toggle"
+    },
+    "button": {
+      "toggle": "data-toggle"
+    }
+  }
+}

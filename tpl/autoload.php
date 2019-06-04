@@ -29,15 +29,9 @@ spl_autoload_register(function ($class) {
     $name_space_gridsystem                                  = $name_space. 'gridsystem\\';
 
     $class_files                                            = array(
-        $name_space_gridsystem . 'Fontawesome4'             => 'adapters' . DIRECTORY_SEPARATOR . 'fonticon_fontawesome4.php'
-        , $name_space_gridsystem . 'Fontawesome6'           => 'adapters' . DIRECTORY_SEPARATOR . 'fonticon_fontawesome4.php'
-        , $name_space_gridsystem . 'Glyphicons3'            => 'adapters' . DIRECTORY_SEPARATOR . 'fonticon_glyphicons3.php'
-        , $name_space_gridsystem . 'Bootstrap3'             => 'adapters' . DIRECTORY_SEPARATOR . 'frameworkcss_bootstrap3.php'
-        , $name_space_gridsystem . 'Bootstrap4'             => 'adapters' . DIRECTORY_SEPARATOR . 'frameworkcss_bootstrap4.php'
-        , $name_space_gridsystem . 'Foundation6'            => 'adapters' . DIRECTORY_SEPARATOR . 'frameworkcss_foundation6.php'
-        , $name_space . 'PageHtml'                          => 'adapters' . DIRECTORY_SEPARATOR . 'page_html.php'
-        , $name_space_gridsystem . 'FontIconAdapter'        => 'FontIconAdapter.php'
-        , $name_space_gridsystem . 'FrameworkCssAdapter'    => 'FrameworkCssAdapter.php'
+        $name_space . 'PageHtml'                          => 'adapters' . DIRECTORY_SEPARATOR . 'page_html.php'
+        , $name_space_gridsystem . 'FontIcon'               => 'FontIcon.php'
+        , $name_space_gridsystem . 'FrameworkCss'           => 'FrameworkCss.php'
         , $name_space . 'ffTemplate'                        => 'ffTemplate.php'
         , $name_space . 'ffSmarty'                          => 'ffSmarty.php'
         , $name_space . 'Gridsystem'                        => 'Gridsystem.php'

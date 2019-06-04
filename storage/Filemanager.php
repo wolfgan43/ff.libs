@@ -105,6 +105,26 @@ class Filemanager extends DirStruct implements Dumpable {
         return $success;
     }
 
+    public static function makeDir($path, $chmod = 0775, $base_path = null) {
+        $res                                                            = false;
+        if(!$base_path)                                                 { $base_path = self::$disk_path; }
+        $path                                                           = str_replace($base_path, "", $path);
+
+        if($path && $path != "/") {
+            if(is_file($base_path . $path))                     { $path = dirname($path); }
+
+            if(!is_dir($base_path . $path) && is_writable($base_path . $path) && mkdir($base_path . $path, $chmod, true)) {
+                while ($path != DIRECTORY_SEPARATOR) {
+                    if (is_dir($base_path . $path))             { chmod($base_path . $path, $chmod); }
+
+                    $path                                               = dirname($path);
+                }
+                $res                                                    = true;
+            }
+        }
+        return $res;
+    }
+
     public static function xcopy($source, $destination) {
         $res                                                            = false;
         $ftp                                                            = self::ftp_xconnect();

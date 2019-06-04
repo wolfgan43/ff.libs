@@ -26,7 +26,7 @@
 
 namespace phpformsframework\libs;
 
-class Router extends App
+class Router extends App implements Configurable
 {
     const TYPE                                              = "router";
 

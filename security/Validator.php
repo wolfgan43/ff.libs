@@ -114,6 +114,12 @@ class Validator
                                                                     , "options"     => null
                                                                     , "length"      => 16
                                                                 )
+                                                                , "json" => array(
+                                                                    "filter"        => FILTER_CALLBACK
+                                                                    , "flags"       => null
+                                                                    , "options"     => '\phpformsframework\libs\security\Validator::isJson'
+                                                                    , "length"      => 192
+                                                                )
                                                                 , "password" => array(
                                                                     "filter"        => FILTER_CALLBACK
                                                                     , "flags"       => null
@@ -183,13 +189,13 @@ class Validator
                                                             "status"    => 0
                                                             , "error"   => ""
                                                         );
+
         if(!array_key_exists($type, self::RULES)) {
             $type                                       = (is_array($what)
                                                             ? "array"
                                                             : "string"
                                                         );
         }
-        $what                                           = urldecode($what);
         $rule                                           = self::RULES[$type];
 
         self::setErrorName($option["fakename"]);
@@ -201,22 +207,24 @@ class Validator
                                                             "flags"         => $rule["flags"]
                                                             , "options"     => $rule["options"]
                                                         ));
+
             if($validation === null) {
                 $res                                    = self::isError(self::getErrorName($what) . " is not a valid " . $type . ($option["range"] ? ". The permitted values are [" . $option["range"] . "]" : ""), $type);
             } elseif(is_array($validation)) {
                 if(is_array($what)) {
-                    $diff                               = array_diff_assoc($what, $validation);
+                    $diff                               = array_diff_key($what, array_filter($validation));
                     if(count($diff)) {
-                        $res                            = self::isError("subvalue [" . implode(", ", array_keys($diff)) . "] is not valid " . $type, $type);
+                        $res                            = self::isError(self::getErrorName($what) . "[" . implode(", ", array_keys($diff)) . "] is not valid " . $type, $type);
                     }
                 } else {
                     $res                                = self::isError(self::getErrorName($what) . " is malformed");
                 }
             } elseif($validation != $what) {
+
                 if(isset($rule["normalize"])) {
                     $what                               = $validation;
                 } else {
-                    $res                                = self::isError(self::getErrorName($what) . " is not a valid " . $type . ($validation ? ". (" . $validation . " is valid!)" : ""), $type);
+                    $res                                = self::isError(self::getErrorName($what) . " is not a valid " . $type . ($validation && $validation !== true ? ". (" . $validation . " is valid!)" : ""), $type);
                 }
             }
 
@@ -227,7 +235,38 @@ class Validator
                 }
             }
         }
+
+        self::transform($what, $type);
+
         return $res;
+    }
+
+    public static function transform(&$what, $in = null) {
+        if($in) {
+            if(is_array($what)) {
+                foreach ($what as &$who) {
+                    self::transform($who, $in);
+                }
+            } else {
+                if($in == "json") {
+                    $what = json_decode($what, true);
+                } else {
+                    $what = urldecode($what);
+                }
+            }
+        }
+    }
+
+    public static function isJson($value) {
+        $is_json                                        = null;
+
+        if(!is_array($value))                           { $value = array($value); }
+        foreach ($value AS $item) {
+            $is_json                                    = (bool) json_decode($item, true);
+            if($is_json === false)                      { break; }
+        }
+
+        return $is_json;
     }
 
     public static function checkSpecialChars($value, $spellcheck = null) {

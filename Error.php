@@ -215,7 +215,7 @@ class Error {
         }
 
         return ($bucket
-            ? self::$errors[$bucket]
+            ? implode(", ", self::$errors[$bucket])
             : self::$errors
         );
     }
@@ -228,7 +228,7 @@ class Error {
     }
     public static function register($error, $bucket = null) {
         if($error) {
-            self::$errors[$bucket]                      = $error;
+            self::$errors[$bucket][]                    = $error;
             if(Debug::ACTIVE) {
                 Debug::dump($error);
                 exit;
@@ -241,6 +241,10 @@ class Error {
             ? self::$errors[$bucket]
             : self::$errors
         );
+    }
+
+    public static function registerWarning($error, $bucket = null) {
+        self::$errors[$bucket][]                        = $error;
     }
     public static function transfer($from_bucket, $to_bucket) {
         Error::register(Error::raise($from_bucket), $to_bucket);

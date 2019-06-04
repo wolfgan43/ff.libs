@@ -25,9 +25,9 @@
  */
 namespace phpformsframework\libs\tpl\gridsystem;
 
-abstract class FrameworkCssAdapter {
-    const NAME_SPACE                                        = "phpformsframework\\libs\\tpl\\gridsystem\\";
+use phpformsframework\libs\Extendible;
 
+class FrameworkCss extends Extendible {
     protected $css                                          = array();
     protected $js                                           = array();
     protected $fonts                                        = array();
@@ -64,7 +64,7 @@ abstract class FrameworkCssAdapter {
                             );
     protected $resolution                                   = array();
     protected $resolution_media                             = array();
-    protected $button       = array(
+    protected $buttons_style= array(
                                 "prefix"                    => "btn"
                                 , "suffix"                  => ""
                                 , "width"                   => array(
@@ -328,14 +328,15 @@ abstract class FrameworkCssAdapter {
                                 )
                             );
     /**
-     * @var FontIconAdapter
+     * @var FontIcon
      */
     private $font_icon      = null;
 
-    public function __construct($font_icon, $buttons = null)
+    public function __construct($adapter_name, $font_icon, $buttons = null)
     {
-        $class_name         = static::NAME_SPACE . ucfirst($font_icon);
-        $this->font_icon    = new $class_name($this->button, $buttons);
+        parent::__construct("frameworkcss_" . $adapter_name);
+
+        $this->font_icon    = new FontIcon($font_icon, $this->buttons_style, $buttons);
 
         $this->css          = array_replace($this->css(), $this->font_icon->css());
         $this->fonts        = array_replace($this->fonts(), $this->font_icon->fonts());

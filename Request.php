@@ -441,15 +441,16 @@ class Request implements Configurable {
                         $errors[400][]                                                  = $rule["name"] . " is required";
                     } elseif(isset($request[$rule["name"]])) {
                         $validator_rule                                                 = (isset($rule["validator"])
-                            ? $rule["validator"]
-                            : null
-                        );
+                                                                                            ? $rule["validator"]
+                                                                                            : null
+                                                                                        );
                         $validator_range                                                = (isset($rule["validator_range"])
-                            ? $rule["validator_range"]
-                            : null
-                        );
-                        $validator                                                      = Validator::is($request[$rule["name"]], $validator_rule, array("fakename" => $rule["name"], "range" => $validator_range));
-                        if(isset($validator["status"]) && $validator["status"] !== 0)   { $errors[$validator["status"]][] = $validator["error"]; }
+                                                                                            ? $rule["validator_range"]
+                                                                                            : null
+                                                                                        );
+
+                        $errors                                                         = self::securityValidation($request[$rule["name"]], $validator_rule, $rule["name"], $validator_range);
+
 
                         if(isset($rule["scope"])) {
                             self::$request[$rule["scope"]][$rule["name"]]               = $request[$rule["name"]];
@@ -467,8 +468,7 @@ class Request implements Configurable {
 
                 if(isset(self::$request["unknown"]) && is_array(self::$request["unknown"]) && count(self::$request["unknown"])) {
                     foreach (self::$request["unknown"] as $unknown_key => $unknown) {
-                        $validator                                                      = Validator::is($unknown, null, array("fakename" => $unknown_key));
-                        if($validator["status"] !== 0)                                  { $errors[$validator["status"]][] = $validator["error"]; }
+                        $errors                                                         = self::securityValidation($unknown, null, $unknown_key);
                     }
                 }
             }
@@ -477,6 +477,19 @@ class Request implements Configurable {
         } else {
             $errors[413][]                                                              = "Request Max Size Exeeded";
         }
+
+        return $errors;
+    }
+
+    private static function securityValidation(&$value, $type = null, $fakename = null, $range = null) {
+        $errors                                                                         = array();
+        $params                                                                         = array();
+        if($fakename)                                                                   { $params["fakename"]   = $fakename; }
+        if($range)                                                                      { $params["range"]      = $range; }
+
+        $validator                                                                      = Validator::is($value, $type, $params);
+        if(isset($validator["status"]) && $validator["status"] !== 0)                   { $errors[$validator["status"]][] = $validator["error"]; }
+
 
         return $errors;
     }

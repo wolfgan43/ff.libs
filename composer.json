@@ -24,6 +24,10 @@
         "sinergi/browser-detector" : "^7.0",
         "phpmailer/phpmailer": "^6.0"
     },
+    "require-dev": {
+        "ext-xhprof": "*",
+        "phpunit/phpunit": "^8"
+    },
     "suggest": {
         "ext-mongodb": "to use MongoDb",
         "twilio/sdk" : "to use SMS notifications [composer require twilio/sdk:^5.31.3]"
@@ -40,4 +44,4 @@
             "autoload.php"
         ]
     }
-}
+},

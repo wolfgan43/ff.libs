@@ -125,8 +125,8 @@ abstract class Adapter {
                                                                                                 : null
                                                                                             )
                                                                                         );
-        $connector["name"]                                                              = ($connection["database"]
-                                                                                            ? $connection["database"]
+        $connector["name"]                                                              = ($connection["name"]
+                                                                                            ? $connection["name"]
                                                                                             : (defined($prefix . "NAME")
                                                                                                 ? constant($prefix . "NAME")
                                                                                                 : null

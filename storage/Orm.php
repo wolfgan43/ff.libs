@@ -145,7 +145,7 @@ class Orm implements Dumpable {
         if($single_service) {
             self::getDataSingle(self::$services_by_data["last"], self::$services_by_data["last_table"], $limit);
         } else {
-            if(is_array(self::$data["sub"]) && count(self::$data["sub"])) {
+            if(isset(self::$data["sub"]) && is_array(self::$data["sub"]) && count(self::$data["sub"])) {
                 foreach(self::$data["sub"] AS $controller => $tables) {
                     foreach($tables AS $table => $params) {
                         $keys_unique                                                        = (isset($params["def"]["indexes"]) && is_array($params["def"]["indexes"])
@@ -183,7 +183,7 @@ class Orm implements Dumpable {
                 foreach(self::$data["sub"] AS $controller => $tables) {
                     foreach($tables AS $table => $params) {
                         if(!isset($params["runned"]))                                       { $counter = self::getData($controller, $table); }
-                        if($counter === false && $params["where"])                          { return self::getResult($result_raw_data); }
+                        if($counter === false && isset($params["where"]))                   { return self::getResult($result_raw_data); }
 
                     }
                 }
@@ -760,7 +760,7 @@ class Orm implements Dumpable {
         ));
 
 
-        if(is_array(self::$data["sub"]) && count(self::$data["sub"])) {
+        if(isset(self::$data["sub"]) && is_array(self::$data["sub"]) && count(self::$data["sub"])) {
             foreach(self::$data["sub"] AS $controller => $tables) {
                 foreach($tables AS $table => $params) {
                     if($params["def"]["struct"][$params["def"]["relationship"][$params["def"]["mainTable"]]["external"]]

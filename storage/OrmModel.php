@@ -28,11 +28,12 @@ namespace phpformsframework\libs\storage\models;
 
 use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Error;
+use phpformsframework\libs\Extendible;
 use phpformsframework\libs\storage\Database;
 use phpformsframework\libs\storage\database\Adapter;
 use phpformsframework\libs\storage\Orm;
 
-abstract class Model {
+abstract class Model extends Extendible {
     const BUCKET                                                                            = NULL;
     const TYPE                                                                              = NULL;
     const MAIN_TABLE                                                                        = NULL;
@@ -48,10 +49,10 @@ abstract class Model {
 
     public function __construct($databaseAdapters = null)
     {
+        parent::__construct("ormmodel_" . $databaseAdapters);
+
         $this->setAdapters($databaseAdapters);
     }
-
-
 
     public function setAdapters($databaseAdapters = null) {
         if(is_array($databaseAdapters)) {
@@ -69,7 +70,7 @@ abstract class Model {
         } elseif($databaseAdapters) {
             $this->adapters[$databaseAdapters]                                              = $this->setConnector($databaseAdapters);
         } else {
-            $this->adapters                                                                 = array_intersect_key($this->adapters, static::CONNECTORS);
+            $this->adapters                                                                 = array_intersect_key(static::CONNECTORS, $this->adapters);
         }
 
         return $this;

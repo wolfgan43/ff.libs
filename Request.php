@@ -432,7 +432,7 @@ class Request implements Configurable {
 
         if(self::isAllowedSize($request, $method) && self::isAllowedSize(self::getRequestHeaders(), "HEAD")) {
             //Mapping Request by Rules
-            if(is_array(self::$rules[$bucket]) && count(self::$rules[$bucket]) && is_array($request) && count($request)) {
+            if(is_array(self::$rules[$bucket]) && count(self::$rules[$bucket]) && is_array($request)) {
                 self::$request["valid"]                                                 = array();
                 foreach(self::$rules[$bucket] AS $rule) {
                     if(isset($rule["required"]) && $rule["required"] === true && !isset($request[$rule["name"]])) {
@@ -449,7 +449,7 @@ class Request implements Configurable {
                                                                                             : null
                                                                                         );
 
-                        $errors                                                         = self::securityValidation($request[$rule["name"]], $validator_rule, $rule["name"], $validator_range);
+                        $errors                                                         = $errors + self::securityValidation($request[$rule["name"]], $validator_rule, $rule["name"], $validator_range);
 
 
                         if(isset($rule["scope"])) {
@@ -468,7 +468,7 @@ class Request implements Configurable {
 
                 if(isset(self::$request["unknown"]) && is_array(self::$request["unknown"]) && count(self::$request["unknown"])) {
                     foreach (self::$request["unknown"] as $unknown_key => $unknown) {
-                        $errors                                                         = self::securityValidation($unknown, null, $unknown_key);
+                        $errors                                                         = $errors + self::securityValidation($unknown, null, $unknown_key);
                     }
                 }
             }

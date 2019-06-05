@@ -26,6 +26,8 @@
 namespace phpformsframework\libs;
 
 use phpformsframework\libs\storage\Database;
+use ReflectionClass;
+use ReflectionException;
 
 if(!defined("APP_START"))               { define("APP_START", microtime(true)); }
 if(!defined("DEBUG_PROFILING"))         { define("DEBUG_PROFILING", false); }
@@ -214,17 +216,16 @@ class Debug extends DirStruct
          */
         foreach($classes as $class_name) {
             try {
-                $reflect = new \ReflectionClass($class_name);
-            } catch (\ReflectionException $e) {
-            }
+                $reflect                        = new ReflectionClass($class_name);
+                if($reflect->implementsInterface(__NAMESPACE__ . '\\Dumpable')) {
+                    $classDumpable              = $class_name;
+                    $parent                     = $reflect->getParentClass();
 
-            if($reflect->implementsInterface(__NAMESPACE__ . '\\Dumpable')) {
-                $classDumpable                  = $class_name;
-                $parent                         = $reflect->getParentClass();
-
-                if(!$parent || !isset($implements[$parent->getName()])) {
-                    $implements[basename(str_replace('\\', '/', $class_name))]    = (array) $classDumpable::dump();
+                    if(!$parent || !isset($implements[$parent->getName()])) {
+                        $implements[basename(str_replace('\\', '/', $class_name))]    = (array) $classDumpable::dump();
+                    }
                 }
+            } catch (ReflectionException $e) {
             }
         }
         return $implements;
@@ -253,6 +254,9 @@ class Debug extends DirStruct
         }
 
         $dumpable = self::dumpInterface();
+        $files_count = 0;
+        $db_query_count = 0;
+
         if(is_array($dumpable) && count($dumpable)) {
             foreach ($dumpable as $interface => $dump) {
                 $dump = array_filter($dump);
@@ -264,6 +268,12 @@ class Debug extends DirStruct
 
                         $html_dumpable .= '<li><a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } ">' . $arrKey[0] . '</a><code style="' . $collapse . '"><pre>' . print_r($value, true). '</pre></code></li>';
 
+                        if(strtolower($interface) == "filemanager" && $key == "storage") {
+                            $files_count++;
+                        }
+                        if(strtolower($interface) == "database") {
+                            $db_query_count++;
+                        }
                     }
                     $html_dumpable .= '</ul>';
                 }
@@ -271,7 +281,7 @@ class Debug extends DirStruct
         }
 
         $errors = array_filter((array) Error::raise());
-
+        $errors_count = 0;
         if(is_array($errors) && count($errors)) {
             $html_dumpable .= '<hr />' . '<h5>&nbsp;' . "Errors" . '</h5>';
             $html_dumpable .= '<code><ul>';
@@ -279,6 +289,7 @@ class Debug extends DirStruct
                 if(is_array($error) && count($error)) {
                     foreach ($error as $msg) {
                         $html_dumpable .= '<li><b>' . $bucket. '</b> => ' . $msg . '</li>';
+                        $errors_count++;
                     }
                 }
             }
@@ -286,11 +297,17 @@ class Debug extends DirStruct
         }
 
         $included_files = get_included_files();
+        $included_files_count = 0;
+        $included_files_autoload_count = 0;
         if(is_array($included_files) && count($included_files)) {
             $html_dumpable .= '<hr />' . '<a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } "><h5>' . "Includes" . " (" . count($included_files) . ")" . '</h5></a>';
             $html_dumpable .= '<pre style="' . $collapse . '"><ul>';
             foreach ($included_files as $included_file) {
                 $html_dumpable .= '<li>' . str_replace(self::$disk_path, "", $included_file) . '</li>';
+                $included_files_count++;
+                if(strtolower(pathinfo($included_file, PATHINFO_FILENAME)) == "autoload") {
+                    $included_files_autoload_count++;
+                }
             }
             $html_dumpable .= '</ul></pre>';
         }
@@ -334,7 +351,15 @@ class Debug extends DirStruct
                     : ""
                 );
 
-        $html .= '<hr />' . '<center>' . '<span>ExTime: ' . self::exTime() . '</span>'. '</center>';
+        $html .= '<hr />' . '<center>'
+            . '<span style="padding:15px;">BackTrace: ' . count($debug_backtrace) . '</span>'
+            . '<span style="padding:15px;">Errors: ' . $errors_count . '</span>'
+            . '<span style="padding:15px;">Includes: ' . $included_files_count . ' (' . $included_files_autoload_count . ' autoloads)' . '</span>'
+            . '<span style="padding:15px;">Constants: ' . count($constants_user) . '</span>'
+            . '<span style="padding:15px;">Files: ' . $files_count . '</span>'
+            . '<span style="padding:15px;">DB Query: ' . $db_query_count . '</span>'
+            . '<span style="padding:15px;">ExTime: ' . self::exTime() . '</span>'
+            . '</center>';
 
         $html   .= '<table>';
         $html   .= '<thead>';
@@ -398,7 +423,7 @@ class Debug extends DirStruct
                         );
 
                     $xhprof_data = xhprof_disable();
-                    $xhprof_runs = new XHProfRuns_Default();
+                    $xhprof_runs = new \XHProfRuns_Default();
                     $run_id = $xhprof_runs->save_run($xhprof_data, $profiler_namespace);
                     $res["url"] = sprintf("http" . ($_SERVER["HTTPS"] ? "s" : "") . "://" . $_SERVER["HTTP_HOST"] . '/xhprof_html/index.php?run=%s&source=%s', $run_id, $profiler_namespace);
                 }

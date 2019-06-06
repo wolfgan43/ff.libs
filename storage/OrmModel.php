@@ -24,21 +24,18 @@
  *  @link https://github.com/wolfgan43/vgallery
  */
 
-namespace phpformsframework\libs\storage\models;
+namespace phpformsframework\libs\storage;
 
-use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Extendible;
-use phpformsframework\libs\storage\Database;
 use phpformsframework\libs\storage\database\Adapter;
-use phpformsframework\libs\storage\Orm;
 
-abstract class Model extends Extendible {
-    const BUCKET                                                                            = NULL;
-    const TYPE                                                                              = NULL;
-    const MAIN_TABLE                                                                        = NULL;
+class OrmModel extends Extendible {
+    protected $bucket                                                                       = NULL;
+    protected $type                                                                         = NULL;
+    protected $main_table                                                                   = NULL;
 
-    const CONNECTORS                                                                        = array();
+    protected $connectors                                                                   = array();
 
     protected $adapters                                                                     = null;
     protected $struct                                                                       = null;
@@ -47,9 +44,9 @@ abstract class Model extends Extendible {
     protected $tables                                                                       = null;
     protected $alias                                                                        = null;
 
-    public function __construct($databaseAdapters = null)
+    public function __construct($extension_name, $databaseAdapters = null)
     {
-        parent::__construct("ormmodel_" . $databaseAdapters);
+        parent::__construct($extension_name);
 
         $this->setAdapters($databaseAdapters);
     }
@@ -70,7 +67,7 @@ abstract class Model extends Extendible {
         } elseif($databaseAdapters) {
             $this->adapters[$databaseAdapters]                                              = $this->setConnector($databaseAdapters);
         } else {
-            $this->adapters                                                                 = array_intersect_key(static::CONNECTORS, $this->adapters);
+            $this->adapters                                                                 = array_intersect_key($this->connectors, $this->adapters);
         }
 
         return $this;
@@ -78,12 +75,10 @@ abstract class Model extends Extendible {
 
     private function setConnector($adapter) {
         $res                                                                                = null;
-        $connectors                                                                         = static::CONNECTORS;
-        if(isset($connectors[$adapter])) {
-            $res                                                                            = $connectors[$adapter];
-            //, "prefix"			=> "DB_" . self::BUCKET . "_" . strtoupper($adapter)
+        if(isset($this->connectors[$adapter])) {
+            $res                                                                            = $this->connectors[$adapter];
         } else {
-            Error::register("Adapter not found. The adapters available are: " . implode(", ", array_keys($connectors)), "orm");
+            Error::register("Adapter not found. The adapters available are: " . implode(", ", array_keys($this->connectors)), "orm");
         }
 
         return $res;
@@ -97,7 +92,7 @@ abstract class Model extends Extendible {
     public function getStruct($table_name)
     {
         $res                                                                                = array(
-                                                                                                "mainTable"   => static::MAIN_TABLE
+                                                                                                "mainTable"   => $this->main_table
                                                                                             );
 
         $res["table"]                                                                       = (isset($this->tables[$table_name])
@@ -125,17 +120,17 @@ abstract class Model extends Extendible {
     }
 
     public function getMainTable() {
-        return $this::MAIN_TABLE;
+        return $this->main_table;
     }
 
     public function getName() {
-        return $this::TYPE;
+        return $this->type;
     }
 
     public function getMainModel() {
-        return ($this::TYPE == $this::BUCKET
+        return ($this->type == $this->bucket
             ? $this
-            : Orm::getInstance($this::BUCKET)
+            : Orm::getInstance($this->bucket)
         );
     }
 

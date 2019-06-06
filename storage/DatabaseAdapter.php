@@ -627,7 +627,7 @@ abstract class Adapter {
             foreach ($record as $key => $value) {
                 switch ($this->struct[$key]) {
                     case "array":
-                        $record[$key] = (is_array($value)
+                        $record[$key]   = (is_array($value)
                                             ? $value
                                             : $this->decode($value)
                                         );
@@ -635,10 +635,13 @@ abstract class Adapter {
                     case "number":
                     case "timestamp":
                     case "primary":
-                        if(strpos(".", $value) === false)
+                        if(!$value) {
+                            $record[$key] = 0;
+                        } elseif(strpos(".", $value) === false) {
                             $record[$key] = (int)$value;
-                        else
+                        } else {
                             $record[$key] = (double)$value;
+                        }
                         break;
 
                     default:

@@ -50,7 +50,7 @@ spl_autoload_register(function ($class) {
         , $name_space_database . 'Adapter'      => 'DatabaseAdapter.php'
         , $name_space . 'Media'                 => 'Media.php'
         , $name_space . 'Orm'                   => 'Orm.php'
-        , $name_space_models . 'Model'          => 'OrmModel.php'
+        , $name_space . 'OrmModel'              => 'OrmModel.php'
     );
 
     if(isset($class_files[$class])) {

@@ -157,8 +157,8 @@ class Mysqli extends Adapter {
         return $res;
     }
 
-    protected function processWrite($query)
-    {
+    protected function processWrite($query) {
+        //todo: da valutare se usare REPLACE INTO. Necessario test benckmark
         $res                                            = null;
         $keys                                           = null;
 

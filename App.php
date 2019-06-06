@@ -61,7 +61,7 @@ abstract class App extends DirStruct  {
                     $output                                         = call_user_func_array(array(new $obj, $method), $params);
                 }
             } catch (Exception $exception) {
-                Error::send(503);
+                Error::register($exception->getMessage(), "exception");
             }
         } else if(is_callable($method)) {
             $output                                                 = call_user_func_array($method, $params);
@@ -86,7 +86,7 @@ abstract class App extends DirStruct  {
             $reflector                                              = new ReflectionClass($class_name);
             $res                                                    = $reflector->getShortName();
         } catch (Exception $exception) {
-            Error::send(503);
+            Error::register($exception->getMessage(), "exception");
         }
         return $res;
     }
@@ -96,7 +96,7 @@ abstract class App extends DirStruct  {
             $reflector = new ReflectionClass(($class_name ? $class_name : get_called_class()));
             $res = dirname($reflector->getFileName());
         } catch (Exception $exception) {
-            Error::send(503);
+            Error::register($exception->getMessage(), "exception");
         }
         return $res;
     }
@@ -114,7 +114,7 @@ abstract class App extends DirStruct  {
             $method = $reflector->getMethod($method_name);
             $res = $method->isStatic();
         } catch (Exception $exception) {
-            Error::send(503);
+            Error::register($exception->getMessage(), "exception");
         }
         return $res;
     }

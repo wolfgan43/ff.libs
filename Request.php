@@ -236,6 +236,28 @@ class Request implements Configurable {
         self::$rules["last_update"]                             = microtime(true);
     }
 
+
+    public static function url($pathinfo_part = null) {
+        $url                                                    = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"];
+
+        return ($pathinfo_part && $url
+            ? pathinfo($url, $pathinfo_part)
+            : $url
+        );
+    }
+
+    public static function referer($pathinfo_part = null) {
+        $referer                                                = (isset($_SERVER["HTTP_REFERER"])
+                                                                    ? $_SERVER["HTTP_REFERER"]
+                                                                    : null
+                                                                );
+
+        return ($pathinfo_part && $referer
+            ? pathinfo($referer, $pathinfo_part)
+            : $referer
+        );
+    }
+
     public static function method() {
         return strtoupper($_SERVER["REQUEST_METHOD"]);
     }
@@ -713,7 +735,7 @@ class Request implements Configurable {
         if(!$error) {
             if(self::$rules["method"] && self::method() != self::$rules["method"]) {
                 $error                                                                          = "Request Method Must Be " . self::$rules["method"]
-                                                                                                    . (self::$rules["https"] && strpos($_SERVER["HTTP_REFERER"], "http://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]) === 0
+                                                                                                    . (self::$rules["https"] && isset($_SERVER["HTTP_REFERER"]) && strpos($_SERVER["HTTP_REFERER"], "http://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]) === 0
                                                                                                         ? " (Redirect Https may Change Request Method)"
                                                                                                         : ""
                                                                                                     );

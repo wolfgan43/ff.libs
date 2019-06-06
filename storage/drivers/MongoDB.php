@@ -277,7 +277,7 @@ class MongoDB
                         : "")
                 );
                 $rc = is_object($this->link_id);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->errorHandler("Server Error: " . $e->getMessage());
             }
 

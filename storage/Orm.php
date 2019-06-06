@@ -55,8 +55,7 @@ class Orm implements Dumpable {
 
     private static function setSingleton($ormModel) {
         if(!isset(self::$singleton[$ormModel])) {
-            $class_name                                                                     = static::NAME_SPACE . ucfirst($ormModel);
-            self::$singleton[$ormModel]                                                     = new $class_name();
+            self::$singleton[$ormModel]                                                     = new OrmModel($ormModel);
         }
 
         return self::$singleton[$ormModel];
@@ -640,18 +639,19 @@ class Orm implements Dumpable {
         $storage                                                                            = $ormModel->setStorage($data["def"]);
         $key_name                                                                           = self::getFieldAlias(array_search("primary", $data["def"]["struct"]), $data["def"]["alias"]);
 
-        if(isset($data["insert"])) {
+        if(isset($data["insert"]) && !isset($data["where"]) && !isset($data["set"])) {
             $data["insert"]                                                                 = self::getFields($data["insert"], $data["def"]["alias"]);
             if(isset($data["where"]))                                                       { $data["where"] = self::getFields($data["where"], $data["def"]["alias"]); }
             if(!isset($data["where"]))                                                      { $data["where"] = $data["insert"]; }
 
             $regs                                                                           = $storage->read($data["where"], array($key_name => true));
             if(is_array($regs)) {
-                $key                                                                        = $regs["keys"][0];
+                $key                                                                        = false;
+                Error::registerWarning($data, "orm");
             } else {
                 Error::register($regs, "orm");
             }
-            if(!$key && !Error::check("orm")) {
+            if($key === null && !Error::check("orm")) {
                 $regs                                                                       = $storage->insert($data["insert"], $data["def"]["table"]["name"]);
                 if(is_array($regs)) {
                     $key                                                                    = $regs["keys"][0];
@@ -659,7 +659,7 @@ class Orm implements Dumpable {
                     Error::register($regs, "orm");
                 }
             }
-        } elseif(isset($data["set"]) && !isset($data["where"])) {
+        } elseif(isset($data["set"]) && !isset($data["insert"]) && !isset($data["where"])) { //todo: da verificare se serve. in teoria non entra mai qui
             if(isset($data["def"]["relationship"][self::$data["main"]["def"]["mainTable"]]) && self::$data["main"]["where"][$data["def"]["relationship"][self::$data["main"]["def"]["mainTable"]]["primary"]])  {
                 $external_name                                                              = $data["def"]["relationship"][self::$data["main"]["def"]["mainTable"]]["external"];
                 $primary_name                                                               = $data["def"]["relationship"][self::$data["main"]["def"]["mainTable"]]["primary"];
@@ -672,7 +672,7 @@ class Orm implements Dumpable {
                 }
             }
 
-            if(isset($data["where"])) {
+            if(isset($data["where"])) { //todo: errore logico
                 $regs                                                                       = $storage->update($data["set"], $data["where"], $data["def"]["table"]["name"]);
                 if($regs === true) {
                     $key                                                                    = null;
@@ -680,7 +680,7 @@ class Orm implements Dumpable {
                     Error::register($regs, "orm");
                 }
             }
-        } elseif(isset($data["set"]) && isset($data["where"])) {
+        } elseif(isset($data["set"]) && isset($data["where"]) && !isset($data["insert"])) {
             $regs                                                                           = $storage->update($data["set"], $data["where"], $data["def"]["table"]["name"]);
             if($regs === true) {
                 $key                                                                        = null;
@@ -748,7 +748,7 @@ class Orm implements Dumpable {
             }
         }
 
-        if($key)                                                                            { self::$result["keys"][$data["def"]["table"]["alias"]] = $key; }
+        self::$result["keys"][$data["def"]["table"]["alias"]]                               = $key;
     }
 
     public static function cmd($name, $where = null, $fields = null, $ormModel = null) {
@@ -774,6 +774,8 @@ class Orm implements Dumpable {
             }
         }
 
+        self::cmdData($name);
+
         return self::getResult(false);
     }
     private static function cmdData($command, $controller = null, $table = null) {
@@ -790,14 +792,7 @@ class Orm implements Dumpable {
                                                                                             );
 
         if($where) {
-            $indexes                                                                        = $data["def"]["indexes"];
-            $select                                                                         = self::getFields(
-                                                                                                $data["select"]
-                                                                                                , $data["def"]["alias"]
-                                                                                                , $indexes
-                                                                                                , array_search("primary", $data["def"]["struct"])
-                                                                                            );
-            $ormModel                                                                           = self::getModel($data["service"]
+            $ormModel                                                                       = self::getModel($data["service"]
                                                                                                 ? $data["service"]
                                                                                                 : $controller
                                                                                             );
@@ -808,9 +803,8 @@ class Orm implements Dumpable {
                                                                                                     ? null
                                                                                                     : $where
                                                                                                 )
-                                                                                                , $select
                                                                                             );
-            self::$result[$data["def"]["table"]["alias"]] = $regs;
+            self::$result[$data["def"]["table"]["alias"]]                                   = $regs;
         }
 
     }

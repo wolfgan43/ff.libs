@@ -96,7 +96,7 @@ class Response {
                 }
             }
         }
-        if(isset($response["error"]))               { $response["error"] = Translator::get_word_by_code($response["error"]); }
+        if(isset($response["error"]) && $response["error"])               { $response["error"] = Translator::get_word_by_code($response["error"]); }
 
         self::sendHeadersByType($type);
         switch($type) {
@@ -127,10 +127,11 @@ class Response {
                 if(isset($response["error"]) && $response["error"]) {
                     echo $response["error"];
                 } elseif(isset($response["data"])) {
-                    echo (is_array($response["data"])
-                        ? implode(" " , $response["data"])
-                        : $response["data"]
-                    );
+                    if(is_array($response["data"])) {
+                        echo implode(" " , $response["data"]);
+                    } else {
+                        echo $response["data"];
+                    }
                 }
         }
 
@@ -140,7 +141,7 @@ class Response {
     public static function redirect($destination, $http_response_code = null, $headers = null)
     {
         if($http_response_code === null)            { $http_response_code = 301; }
-        Log::write("REFERER: " . $_SERVER["HTTP_REFERER"], "redirect", $http_response_code, $destination);
+        Log::write("REFERER: " . Request::referer(), "redirect", $http_response_code, $destination);
 
         self::sendHeaders(array(
             "cache" => "must-revalidate"

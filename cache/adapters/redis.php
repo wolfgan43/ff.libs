@@ -28,8 +28,8 @@ namespace phpformsframework\libs\cache\mem;
 use phpformsframework\libs\Debug;
 use Redis AS MC;
 
-if (!defined("FF_CACHE_REDIS_SERVER")) define("FF_CACHE_REDIS_SERVER", "127.0.0.1");
-if (!defined("FF_CACHE_REDIS_PORT")) define("FF_CACHE_REDIS_PORT", 6379);
+if (!defined("FF_CACHE_REDIS_SERVER"))  { define("FF_CACHE_REDIS_SERVER", "127.0.0.1"); }
+if (!defined("FF_CACHE_REDIS_PORT"))    { define("FF_CACHE_REDIS_PORT", 6379); }
 
 class Redis extends Adapter {
     const SERVER            = FF_CACHE_REDIS_SERVER;
@@ -41,9 +41,9 @@ class Redis extends Adapter {
 	{
         $this->conn = new MC();
         $this->conn->pconnect($this::SERVER, $this::PORT, $this->getTTL(), self::APPID); // x is sent as persistent_id and would be another connection than the three before.
-        if($auth)
+        if($auth) {
             $this->conn->auth($auth);
-
+        }
         switch (self::SERIALIZER) {
             case "PHP":
                 $this->conn->setOption(MC::OPT_SERIALIZER, MC::SERIALIZER_PHP);	// use built-in serialize/unserialize
@@ -126,10 +126,10 @@ class Redis extends Adapter {
     function clear($bucket = self::APPID)
     {
         // global reset
-        if($bucket)
+        if($bucket) {
             $this->conn->delete($this->getBucket($bucket));
-        else
+        } else {
             $this->conn->flushDb();
-
+        }
     }
 }

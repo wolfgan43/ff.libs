@@ -524,17 +524,17 @@ class MySqli
     {
         if(is_array($query)) {
             $Query_String                                   = "SELECT "
-                . ($query["limit"]["calc_found_rows"]
+                . (isset($query["limit"]["calc_found_rows"])
                     ? " SQL_CALC_FOUND_ROWS "
                     : ""
                 ) . $query["select"] . "  
                                                                 FROM " .  $query["from"] . "
                                                                 WHERE " . $query["where"]
-                . ($query["sort"]
+                . (isset($query["sort"])
                     ? " ORDER BY " . $query["sort"]
                     : ""
                 )
-                . ($query["limit"]
+                . (isset($query["limit"])
                     ? " LIMIT " . (is_array($query["limit"])
                         ? $query["limit"]["skip"] . ", " . $query["limit"]["limit"]
                         : $query["limit"]

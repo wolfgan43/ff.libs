@@ -271,6 +271,7 @@ class Data
                     sprintf("%'04u-%'02u-%'02uT00:00:00", $this->value_date_year, $this->value_date_month, $this->value_date_day)
                 );
             } catch (Exception $e) {
+                Error::register($e->getMessage(), "data");
             }
         } else if ($this->data_type === "DateTime") {
             try {
@@ -278,6 +279,7 @@ class Data
                     sprintf("%'04u-%'02u-%'02uT%'02u:%'02u:%'02u", $this->value_date_year, $this->value_date_month, $this->value_date_day, $this->value_date_hours, $this->value_date_minutes, $this->value_date_seconds)
                 );
             } catch (Exception $e) {
+                Error::register($e->getMessage(), "data");
             }
         } else {
             Error::dump("tried to recover DateTime on " . $this->data_type . " type", E_USER_ERROR, $this, get_defined_vars());

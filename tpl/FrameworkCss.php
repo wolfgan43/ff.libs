@@ -332,9 +332,9 @@ class FrameworkCss extends Extendible {
      */
     private $font_icon      = null;
 
-    public function __construct($adapter_name, $font_icon, $buttons = null)
+    public function __construct($extension_name, $font_icon, $buttons = null)
     {
-        parent::__construct("frameworkcss_" . $adapter_name);
+        parent::__construct($extension_name);
 
         $this->font_icon    = new FontIcon($font_icon, $this->buttons_style, $buttons);
 

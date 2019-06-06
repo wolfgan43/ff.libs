@@ -29,6 +29,7 @@ use phpformsframework\libs\Configurable;
 use phpformsframework\libs\DirStruct;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Log;
+use phpformsframework\libs\Request;
 use phpformsframework\libs\Response;
 use phpformsframework\libs\Hook;
 use phpformsframework\libs\Config;
@@ -85,20 +86,13 @@ class Buckler extends DirStruct implements Configurable {
                                 array(
                                     "RULE"          => $source
                                     , "ACTION"      => $rule["destination"]
-                                    , "URL"         => $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]
-                                    , "REFERER"     => $_SERVER["HTTP_REFERER"]
+                                    , "URL"         => Request::url()
+                                    , "REFERER"     => Request::referer()
                                 )
                                 , "shield"
                                 , $rule["destination"]
                                 , "BadPath"
                             );
-
-                            /*Logs::write(array(
-                                "RULE"          => $source
-                                , "ACTION"      => $rule["destination"]
-                                , "URL"         => $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]
-                                , "REFERER"     => $_SERVER["HTTP_REFERER"]
-                            ), "error_badpath");*/
                         }
                         exit;
                     } elseif($do_redirect && $rule["destination"]) {

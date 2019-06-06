@@ -28,8 +28,8 @@ namespace phpformsframework\libs\cache\mem;
 use phpformsframework\libs\Debug;
 use Memcached AS MC;
 
-if (!defined("FF_CACHE_MEMCACHED_SERVER")) define("FF_CACHE_MEMCACHED_SERVER", "localhost");
-if (!defined("FF_CACHE_MEMCACHED_PORT")) define("FF_CACHE_MEMCACHED_PORT", 11211);
+if (!defined("FF_CACHE_MEMCACHED_SERVER"))  { define("FF_CACHE_MEMCACHED_SERVER", "localhost"); }
+if (!defined("FF_CACHE_MEMCACHED_PORT"))    { define("FF_CACHE_MEMCACHED_PORT", 11211); }
 
 class Memcached extends Adapter{
     const SERVER            = FF_CACHE_MEMCACHED_SERVER;

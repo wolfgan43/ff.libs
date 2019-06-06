@@ -48,8 +48,9 @@ class Translated extends Adapter
                 $transalted                             = file_get_contents("http://api.mymemory.translated.net/get?q=" . urlencode($words) . "&langpair=" . $fromLang . "|" . $toLang . ($this->code ? "&key=" . $this->code : ""));
                 if($transalted) {
                     $buffer                             = json_decode($transalted, true);
-                    if ($buffer["responseStatus"] == 200 && $buffer["responseData"]["translatedText"])
+                    if ($buffer["responseStatus"] == 200 && $buffer["responseData"]["translatedText"]) {
                         $res                            = $this->save($words, $toLang, $fromLang, $buffer["responseData"]["translatedText"]);
+                    }
                 }
             }
         }

@@ -29,6 +29,7 @@ use phpformsframework\libs\Debug;
 use phpformsframework\libs\delivery\messenger\Adapter;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Log;
+use phpformsframework\libs\Request;
 use phpformsframework\libs\security\Validator;
 
 if(!defined("MESSENGER_ADAPTER"))                       define("MESSENGER_ADAPTER", "twilio");
@@ -112,8 +113,8 @@ class Messenger {
         if(Error::check("messenger") || Debug::ACTIVE) {
             $dump = array(
                 "source" => Debug::stackTrace()
-                , "URL" => $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]
-                , "REFERER" => (isset($_SERVER["HTTP_REFERER"]) ? $_SERVER["HTTP_REFERER"] : "")
+                , "URL" => Request::url()
+                , "REFERER" => Request::referer()
                 , " content" => $this->content
                 , " from" => $this->adapter->from()
                 , " error" => Error::raise("messenger")

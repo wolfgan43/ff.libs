@@ -247,7 +247,9 @@ class Error {
         self::$errors[$bucket][]                        = $error;
     }
     public static function transfer($from_bucket, $to_bucket) {
-        Error::register(Error::raise($from_bucket), $to_bucket);
+        if(self::check($from_bucket)) {
+            self::register(self::raise($from_bucket), $to_bucket);
+        }
     }
     public static function dump($errdes, $errno = E_USER_ERROR, $context = NULL, $variables = NULL) {
         ErrorHandler::raise($errdes, $errno, $context, $variables);

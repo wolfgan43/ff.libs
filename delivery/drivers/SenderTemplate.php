@@ -142,9 +142,9 @@ final class SenderTemplate extends Sender {
                     $count_row = 0;
                     foreach ($fields_value AS $fields_value_key => $fields_value_value)
                     {
-                        if (strtolower($fields_value_key) == "settings")
+                        if (strtolower($fields_value_key) == "settings") {
                             continue;
-
+                        }
                         switch ($field_type)
                         {
                             case "Table":
@@ -152,9 +152,9 @@ final class SenderTemplate extends Sender {
                                 {
                                     foreach ($fields_value_value AS $fields_value_value_key => $fields_value_value_value)
                                     {
-                                        if (strtolower($fields_value_value_key) == "settings")
+                                        if (strtolower($fields_value_value_key) == "settings") {
                                             continue;
-
+                                        }
                                         $this->parse_mail_field($fields_value_value_value, $fields_value_value_key, $field_type, $count_row);
                                     }
 
@@ -229,9 +229,9 @@ final class SenderTemplate extends Sender {
                 $this->tpl_html->set_var("SezStyle" . $group_key, "");
             }
         }
-        if ($type)
+        if ($type) {
             $this->tpl_html->set_var("SezStyle", "");
-
+        }
         $this->tpl_html->set_var("real_name", $this->process_mail_field($value, "smart_url"));
         $this->tpl_html->set_var("group_name", $this->process_mail_field($value));
         $this->tpl_html->parse("SezGroups", true);
@@ -257,9 +257,9 @@ final class SenderTemplate extends Sender {
                     $this->tpl_text->set_var("SezStyle" . $group_key, "");
                 }
             }
-            if ($type)
+            if ($type) {
                 $this->tpl_text->set_var("SezStyle", "");
-
+            }
             $this->tpl_text->set_var("real_name", $this->process_mail_field($value, "smart_url"));
             $this->tpl_text->set_var("group_name", $this->process_mail_field($value));
             $this->tpl_text->parse("SezGroups", true);

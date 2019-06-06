@@ -490,9 +490,9 @@ class FontIcon extends Extendible {
                                 )
                             );
 
-    public function __construct($adapter_name, $buttons_style = null, $buttons = null)
+    public function __construct($extension_name, $buttons_style = null, $buttons = null)
     {
-        parent::__construct("fonticon_" . $adapter_name);
+        parent::__construct($extension_name);
 
         if($buttons_style)                              { $this->buttons_style  = $buttons_style; }
         if(is_array($buttons))                          { $this->buttons        = array_replace($this->buttons, $buttons); }

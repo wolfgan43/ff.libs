@@ -31,11 +31,12 @@ use phpformsframework\libs\DirStruct;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\Log;
+use phpformsframework\libs\Request;
 use phpformsframework\libs\security\Validator;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
 
-if(!defined("MAILER_ADAPTER"))                          define("MAILER_ADAPTER", "localhost");
+if(!defined("MAILER_ADAPTER"))                          { define("MAILER_ADAPTER", "localhost"); }
 abstract class Sender extends DirStruct
 {
     const NAME_SPACE                                        = 'phpformsframework\\libs\\delivery\\mailer\\';
@@ -348,7 +349,8 @@ abstract class Sender extends DirStruct
         if(Error::check("mailer") || Debug::ACTIVE) {
             $dump = array(
                 "source" => Debug::stackTrace()
-                , "URL" => $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"] . " REFERER: " . $_SERVER["HTTP_REFERER"]
+                , "URL" => Request::url()
+                , "REFERER" => Request::referer()
                 , " subject" => $this->subject
                 , " fromEmail" => $this->fromEmail
                 , " fromName" => $this->fromName

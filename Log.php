@@ -28,7 +28,7 @@ namespace phpformsframework\libs;
 use phpformsframework\libs\storage\Filemanager;
 use Thread;
 
-if(!defined("LOG_SERVICES"))                                define("LOG_SERVICE", "fs");
+if(!defined("LOG_SERVICES"))                                { define("LOG_SERVICE", "fs"); }
 
 class Log extends DirStruct {
     /**

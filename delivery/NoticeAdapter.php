@@ -31,7 +31,7 @@ use phpformsframework\libs\Error;
 abstract class Adapter extends App {
     protected $recipients                                   = array();
     protected $connection                                   = null;
-    protected $actions                                      = null;
+    protected $actions                                      = array();
 
     public function __construct($connection = null)
     {

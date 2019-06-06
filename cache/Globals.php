@@ -49,25 +49,25 @@ class Globals
 	 */
 	public static function getInstance($bucket = null)
 	{
-		if (!isset(Globals::$instances[$bucket]))
+		if (!isset(Globals::$instances[$bucket])) {
             Globals::$instances[$bucket] = new Globals();
-			
+        }
 		return Globals::$instances[$bucket];
 	}
 
     public static function set($name, $value = null, $bucket = null) {
-        if (!isset(Globals::$instances[$bucket]))
+        if (!isset(Globals::$instances[$bucket])) {
             Globals::$instances[$bucket] = new Globals();
-
+        }
 	    self::$instances[$bucket]->$name = $value;
 
 	    return true;
     }
 
     public static function get($name, $bucket = null) {
-        if (!isset(Globals::$instances[$bucket]))
+        if (!isset(Globals::$instances[$bucket])) {
             Globals::$instances[$bucket] = new Globals();
-
+        }
         return (isset(self::$instances[$bucket]->$name)
             ? self::$instances[$bucket]->$name
             : null
@@ -75,15 +75,15 @@ class Globals
     }
 
     public static function del($name, $bucket = null) {
-        if(isset(self::$instances[$bucket]->$name))
+        if(isset(self::$instances[$bucket]->$name)) {
             unset(self::$instances[$bucket]->$name);
-
+        }
         return true;
     }
     public static function clear($bucket = null) {
-        if(self::$instances[$bucket])
+        if(self::$instances[$bucket]) {
             unset(self::$instances[$bucket]);
-
+        }
         return true;
     }
 }

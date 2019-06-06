@@ -27,7 +27,7 @@ namespace phpformsframework\libs;
 
 use phpformsframework\libs\storage\Database;
 use ReflectionClass;
-use ReflectionException;
+use Exception;
 
 if(!defined("APP_START"))               { define("APP_START", microtime(true)); }
 if(!defined("DEBUG_PROFILING"))         { define("DEBUG_PROFILING", false); }
@@ -225,7 +225,8 @@ class Debug extends DirStruct
                         $implements[basename(str_replace('\\', '/', $class_name))]    = (array) $classDumpable::dump();
                     }
                 }
-            } catch (ReflectionException $e) {
+            } catch (Exception $exception) {
+                Error::register($exception->getMessage(), "exception");
             }
         }
         return $implements;
@@ -235,7 +236,7 @@ class Debug extends DirStruct
         $html_dumpable                      = "";
         $disk_path                          = self::$disk_path;
         $debug_backtrace                    = self::get_backtrace();
-        $collapse = (Request::isAjax()
+        $collapse = (Request::isAjax() && Request::method() != "GET"
             ? ''
             : 'display:none;'
         );
@@ -346,8 +347,8 @@ class Debug extends DirStruct
 
        // print_r(spl_autoload_functions  ());
 
-        $html   = (1 || $error_message
-                    ? "<hr /><b>asdasdasdasd" . $error_message . "</b>"
+        $html   = ($error_message
+                    ? "<hr /><b>" . $error_message . "</b>"
                     : ""
                 );
 
@@ -448,15 +449,14 @@ class Debug extends DirStruct
         return null;
     }
 
-    public static function stackTraceOnce($key = "file") {
-        $debug_backtrace                = debug_backtrace();
-        $trace                          = $debug_backtrace[2];
-        switch ($key) {
-            case "file":
-                $res                    = str_replace(self::$disk_path, "", $trace["file"]);
-                break;
-            default:
-                $res                    = $trace[$key];
+    public static function stackTraceOnce() {
+        $debug_backtrace                    = debug_backtrace();
+        $trace                              = $debug_backtrace[2];
+
+        if(isset($trace["file"])) {
+            $res                            = str_replace(self::$disk_path, "", $trace["file"]);
+        } else {
+            $res                            = $trace["function"];
         }
 
         return $res;
@@ -468,7 +468,11 @@ class Debug extends DirStruct
         unset($debug_backtrace[0]);
 
         foreach ($debug_backtrace AS $i => $trace) {
-            $res[]                          = $trace["file"] . " on line " . $trace["line"];
+            if(isset($trace["file"])) {
+                $res[]                      = $trace["file"] . " on line " . $trace["line"];
+            } else {
+                $res[]                      = "Func: " . $trace["function"];
+            }
         }
 
         return ($plainText

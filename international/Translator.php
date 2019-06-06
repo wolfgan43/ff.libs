@@ -29,8 +29,8 @@ use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\storage\drivers\MySqli;
 
-if(!defined("FF_PREFIX"))                       define("FF_PREFIX", "ff_");
-if(!defined("FF_TRANSLATOR_ADAPTER"))           define("FF_TRANSLATOR_ADAPTER", false);
+if(!defined("FF_PREFIX"))                           { define("FF_PREFIX", "ff_"); }
+if(!defined("FF_TRANSLATOR_ADAPTER"))               { define("FF_TRANSLATOR_ADAPTER", false); }
 
 class Translator
 {

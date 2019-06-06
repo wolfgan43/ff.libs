@@ -48,8 +48,9 @@ class Google extends Adapter
                 $transalted                             = file_get_contents("https://translation.googleapis.com/language/translate/v2?q=" . urlencode($words) . "&target=" . substr($toLang, 0, 2) . "&source=" . substr($fromLang, 0, 2) . ($this->code ? "&key=" . $this->code : ""));
                 if ($transalted) {
                     $buffer                             = json_decode($transalted, true);
-                    if (!$buffer["error"] && $buffer["responseData"]["translatedText"])
+                    if (!$buffer["error"] && $buffer["responseData"]["translatedText"]) {
                         $res                            = $this->save($words, $toLang, $fromLang, $buffer["responseData"]["translatedText"]);
+                    }
                 }
             }
         }

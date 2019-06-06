@@ -209,7 +209,7 @@ class Validator
                                                         ));
 
             if($validation === null) {
-                $res                                    = self::isError(self::getErrorName($what) . " is not a valid " . $type . ($option["range"] ? ". The permitted values are [" . $option["range"] . "]" : ""), $type);
+                $res                                    = self::isError(self::getErrorName($what) . " is not a valid " . $type . (isset($option["range"]) ? ". The permitted values are [" . $option["range"] . "]" : ""), $type);
             } elseif(is_array($validation)) {
                 if(is_array($what)) {
                     $diff                               = array_diff_key($what, array_filter($validation));

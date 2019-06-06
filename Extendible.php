@@ -26,19 +26,24 @@
 namespace phpformsframework\libs;
 
 abstract class Extendible {
-    public function __construct($adapter_name)
+    public function __construct($extension_name)
     {
-        $this->loadExtension($adapter_name);
+        $this->loadExtension($extension_name);
+    }
+
+    private function getPrefix() {
+        $arrClass = explode("\\", static::class);
+
+        return strtolower(end($arrClass)) . "_";
     }
 
     protected function loadExtension($name)
     {
-        $extensions          = Config::getExtension($name);
+        $extensions             = Config::getExtension(self::getPrefix() . $name);
         if(is_array($extensions) && count($extensions)) {
-            foreach ($extensions as $key => $extension) {
-                if(isset($this->$key)) {
-                    $this->$key = $extension;
-                }
+            $has                = get_object_vars($this);
+            foreach ($has as $name => $oldValue) {
+                $this->$name    = isset($extensions[$name]) ? $extensions[$name] : $oldValue;
             }
         }
     }

@@ -48,8 +48,9 @@ class Transltr extends Adapter
                 $transalted = file_get_contents("http://www.transltr.org/api/translate?text=" . urlencode($words) . "&to=" . strtolower(substr($toLang, 0, 2)) . "&from=" . strtolower(substr($fromLang, 0, 2)) . ($this->code ? "&key=" . $this->code : ""));
                 if($transalted) {
                     $buffer                             = json_decode($transalted, true);
-                    if ($buffer["translationText"])
+                    if ($buffer["translationText"]) {
                         $res                            = $this->save($words, $toLang, $fromLang, $buffer["translationText"]);
+                    }
                 }
             }
         }

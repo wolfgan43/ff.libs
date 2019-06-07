@@ -55,7 +55,7 @@ class Hook {
      */
     public static function handle($name, &$ref = null, $params = null) {
         $res                                                        = null;
-        if(is_array(self::$events[$name])) {
+        if(isset(self::$events[$name]) && is_array(self::$events[$name])) {
             krsort(self::$events[$name], SORT_NUMERIC);
             foreach(self::$events[$name] AS $func) {
                 $res[]                                              = $func($ref, $params);

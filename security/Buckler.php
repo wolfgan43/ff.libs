@@ -31,19 +31,16 @@ use phpformsframework\libs\Error;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\Response;
-use phpformsframework\libs\Hook;
 use phpformsframework\libs\Config;
 
-Hook::register("app_on_rawconfig_loaded", "Shield::protectMyAss");
-
-
-class Buckler extends DirStruct implements Configurable {
+class Buckler implements Configurable {
     public static function loadSchema() {
         $config                                                 = Config::rawData("badpath", true, "rule");
+
         if(is_array($config) && count($config)) {
             $schema                                             = array();
             foreach($config AS $badpath) {
-                $attr                                           = self::getXmlAttr($badpath);
+                $attr                                           = DirStruct::getXmlAttr($badpath);
                 $key                                            = $attr["source"];
                 unset($attr["source"]);
                 $schema[$key]                                   = $attr;
@@ -67,21 +64,21 @@ class Buckler extends DirStruct implements Configurable {
     }
     private static function checkAllowedPath($path_info = null, $do_redirect = true) {
         $rules                                              = Config::getSchema("badpath");
+
         $path_info                                          = ($path_info
                                                                 ? $path_info
-                                                                : self::getPathInfo()
+                                                                : parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH)
                                                             );
         $matches                                            = array();
+
         if(is_array($rules) && count($rules)) {
             foreach($rules AS $source => $rule) {
                 $src                                        = self::regexp($source);
                 if(preg_match($src, $path_info, $matches)) {
                     if(is_numeric($rule["destination"]) || ctype_digit($rule["destination"])) {
-                        //sleep(mt_rand(floor($this::BADPATH_DELAY / 2), $this::BADPATH_DELAY));
-
                         Response::code($rule["destination"]);
 
-                        if($rule["log"]) {
+                        if(isset($rule["log"])) {
                             Log::write(
                                 array(
                                     "RULE"          => $source

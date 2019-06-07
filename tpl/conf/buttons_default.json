@@ -1,0 +1,392 @@
+{
+  "buttons": {
+    "ActionButtonInsert": {
+      "default": "success",
+      "icon": "check",
+      "class": "insert"
+    },
+    "ActionButtonUpdate": {
+      "default": "success",
+      "icon": "check",
+      "class": "update"
+    },
+    "ActionButtonDelete": {
+      "default": "danger",
+      "icon": "trash-o",
+      "class": "delete"
+    },
+    "ActionButtonCancel": {
+      "default": "link",
+      "class": "cancel"
+    },
+    "insert": {
+      "default": "success",
+      "class": "activebuttons",
+      "icon": "check"
+    },
+    "update": {
+      "default": "success",
+      "class": "activebuttons",
+      "icon": "check"
+    },
+    "delete": {
+      "default": "danger",
+      "class": "activebuttons",
+      "icon": "trash-o"
+    },
+    "cancel": {
+      "default": "link",
+      "icon": "times"
+    },
+    "print": {
+      "default": "default",
+      "class": "print",
+      "icon": "print"
+    },
+    "search": {
+      "default": "primary",
+      "class": "search",
+      "icon": "search"
+    },
+    "searchadv": {
+      "default": "primary",
+      "class": "search",
+      "icon": "search"
+    },
+    "searchdropdown": {
+      "default": "secondary",
+      "class": "more dropdown-toggle"
+    },
+    "more": {
+      "default": "link",
+      "class": "more",
+      "icon": "caret-down"
+    },
+    "export": {
+      "default": "default",
+      "class": "export",
+      "icon": "download"
+    },
+    "sort": {
+      "default": "link",
+      "class": "sort",
+      "icon": "sort"
+    },
+    "sort-asc": {
+      "default": "link",
+      "class": "sort asc",
+      "icon": "sort-asc"
+    },
+    "sort-desc": {
+      "default": "link",
+      "class": "sort desc",
+      "icon": "sort-desc"
+    },
+    "addnew": {
+      "default": "primary",
+      "class": "addnew",
+      "icon": "plus"
+    },
+    "editrow": {
+      "default": "link",
+      "class": "edit",
+      "icon": "pencil"
+    },
+    "deleterow": {
+      "default": "danger",
+      "class": "delete",
+      "icon": "trash-o"
+    },
+    "deletetabrow": {
+      "default": null,
+      "class": "delete",
+      "icon": "trash-o"
+    },
+    "addrow": {
+      "default": "primary",
+      "icon": "plus"
+    },
+    "first": {
+      "default": "link",
+      "class": "first",
+      "icon": "step-backward"
+    },
+    "last": {
+      "default": "link",
+      "class": "last",
+      "icon": "step-forward"
+    },
+    "prev": {
+      "default": "link",
+      "class": "prev",
+      "icon": "play",
+      "icon_params": "flip-horizontal"
+    },
+    "next": {
+      "default": "link",
+      "class": "next",
+      "icon": "play"
+    },
+    "prev-frame": {
+      "default": "link",
+      "class": "prev-frame",
+      "icon": "backward"
+    },
+    "next-frame": {
+      "default": "link",
+      "class": "next-frame",
+      "icon": "forward"
+    },
+    "pdf": {
+      "default": "link",
+      "class": "pdf",
+      "icon": "file-pdf-o"
+    },
+    "email": {
+      "default": "link",
+      "class": "email",
+      "icon": "envelope-o"
+    },
+    "preview": {
+      "default": "link",
+      "class": "preview",
+      "icon": "search"
+    },
+    "preview-email": {
+      "default": "link",
+      "class": "email",
+      "icon": "envelope-o"
+    },
+    "refresh": {
+      "default": "link",
+      "class": "refresh",
+      "icon": "refresh"
+    },
+    "clone": {
+      "default": "link",
+      "class": "clone",
+      "icon": "copy"
+    },
+    "permissions": {
+      "default": "link",
+      "class": "permissions",
+      "icon": "lock"
+    },
+    "relationships": {
+      "default": "link",
+      "class": "relationships",
+      "icon": "share-alt"
+    },
+    "settings": {
+      "default": "link",
+      "class": "settings",
+      "icon": "cog"
+    },
+    "properties": {
+      "default": "link",
+      "class": "properties",
+      "icon": "object-group"
+    },
+    "help": {
+      "default": "link",
+      "class": "helper",
+      "icon": "question-circle"
+    },
+    "noimg": {
+      "default": "link",
+      "class": "noimg",
+      "icon": "picture-o"
+    },
+    "checked": {
+      "default": "link",
+      "class": "checked",
+      "icon": "check-circle-o"
+    },
+    "unchecked": {
+      "default": "link",
+      "class": "unchecked",
+      "icon": "circle-o"
+    },
+    "exanded": {
+      "default": "link",
+      "class": "exanded",
+      "icon": "minus-square-o"
+    },
+    "retracted": {
+      "default": "link",
+      "class": "retracted",
+      "icon": "plus-square-o"
+    },
+    "history": {
+      "default": "link",
+      "class": "history",
+      "icon": "history"
+    },
+    "payments": {
+      "default": "link",
+      "class": "payments",
+      "icon": "credit-card"
+    },
+    "vg-admin": {
+      "default": "link",
+      "class": "admin",
+      "icon": "cog",
+      "icon_params": "2x"
+    },
+    "vg-restricted": {
+      "default": "link",
+      "class": "restricted",
+      "icon": "unlock-alt",
+      "icon_params": "2x"
+    },
+    "vg-manage": {
+      "default": "link",
+      "class": "manage",
+      "icon": "shopping-cart",
+      "icon_params": "2x"
+    },
+    "vg-fontend": {
+      "default": "link",
+      "class": "fontend",
+      "icon": "desktop",
+      "icon_params": "2x"
+    },
+    "vg-static-menu": {
+      "default": "link",
+      "class": "static-menu",
+      "icon": "static-menu"
+    },
+    "vg-gallery-menu": {
+      "default": "link",
+      "class": "gallery-menu",
+      "icon": "gallery-menu"
+    },
+    "vg-vgallery-menu": {
+      "default": "link",
+      "class": "vgallery-menu",
+      "icon": "vgallery-menu"
+    },
+    "vg-vgallery-group": {
+      "default": "link",
+      "class": "vgallery-group",
+      "icon": "vgallery-group"
+    },
+    "vg-gallery": {
+      "default": "link",
+      "class": "gallery",
+      "icon": "gallery"
+    },
+    "vg-draft": {
+      "default": "link",
+      "class": "draft",
+      "icon": "draft"
+    },
+    "vg-file": {
+      "default": "link",
+      "class": "file",
+      "icon": "file"
+    },
+    "vg-virtual-gallery": {
+      "default": "link",
+      "class": "virtual-gallery",
+      "icon": "virtual-gallery"
+    },
+    "vg-publishing": {
+      "default": "link",
+      "class": "publishing",
+      "icon": "publishing"
+    },
+    "vg-vgallery-rel": {
+      "default": "link",
+      "class": "vgallery-rel",
+      "icon": "vgallery-rel"
+    },
+    "vg-cart": {
+      "default": "link",
+      "class": "cart",
+      "icon": "cart"
+    },
+    "vg-lang": {
+      "default": "link",
+      "class": "lang",
+      "icon": "lang"
+    },
+    "vg-search": {
+      "default": "link",
+      "class": "search",
+      "icon": "search"
+    },
+    "vg-login": {
+      "default": "link",
+      "class": "login",
+      "icon": "login"
+    },
+    "vg-breadcrumb": {
+      "default": "link",
+      "class": "breadcrumb",
+      "icon": "breadcrumb"
+    },
+    "vg-profile": {
+      "default": "link",
+      "class": "profile",
+      "icon": "profile"
+    },
+    "vg-modules": {
+      "default": "link",
+      "addClass": "module",
+      "icon": "module"
+    },
+    "vg-applets": {
+      "default": "link",
+      "class": "applets",
+      "icon": "applets"
+    },
+    "lay-addnew": {
+      "default": "link",
+      "class": "lay-addnew",
+      "icon": "lay-addnew"
+    },
+    "lay": {
+      "default": "link",
+      "class": "lay-unknown",
+      "icon": "lay"
+    },
+    "lay-31": {
+      "default": "link",
+      "class": "lay-top",
+      "icon": "lay-31"
+    },
+    "lay-13": {
+      "default": "link",
+      "class": "lay-left",
+      "icon": "lay-13"
+    },
+    "lay-3133": {
+      "default": "link",
+      "class": "lay-right",
+      "icon": "lay-3133"
+    },
+    "lay-1333": {
+      "default": "link",
+      "class": "lay-right",
+      "icon": "lay-1333"
+    },
+    "lay-2233": {
+      "default": "link",
+      "class": "lay-content",
+      "icon": "lay-2233"
+    },
+    "js": {
+      "default": "link",
+      "icon": "js"
+    },
+    "css": {
+      "default": "link",
+      "icon": "css"
+    },
+    "seo": {
+      "default": "link",
+      "icon": "seo"
+    }
+  }
+}

@@ -164,7 +164,7 @@ final class SenderTemplate extends Sender {
                                     $this->parse_mail_row($field_type);
                                 }
                                 break;
-                            default:
+                            case "":
                                 if (is_array($fields_value_value) && count($fields_value_value))
                                 {
                                     foreach ($fields_value_value AS $fields_value_value_key => $fields_value_value_value) {
@@ -180,6 +180,7 @@ final class SenderTemplate extends Sender {
                                     $this->parse_mail_field($fields_value_value, $fields_key . "_" . $fields_value_key, $field_type);
                                     $this->parse_mail_row($field_type);
                                 }
+                                break;
                         }
                         $count_row++;
                     }

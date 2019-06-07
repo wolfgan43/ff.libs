@@ -1,4 +1,5 @@
 {
+  "button_type" : "default",
   "css": {},
   "fonts": {
     "glyphicons.eot": "https:\/\/cdnjs.cloudflare.com\/ajax\/libs\/twitter-bootstrap\/3.4.1\/fonts\/glyphicons-halflings-regular.eot",
@@ -10,5 +11,29 @@
   "prefix": "glyphicons",
   "suffix": null,
   "append": null,
-  "prepend": null
+  "prepend": null,
+  "actions": {
+    "xs": "xs",
+    "sm": "sm",
+    "lg": "lg",
+    "2x": "2x",
+    "3x": "3x",
+    "5x": "5x",
+    "7x": "7x",
+    "10x": "10x",
+    "rotate-90": "rotate-90",
+    "rotate-180": "rotate-180",
+    "rotate-270": "rotate-270",
+    "flip-horizontal": "rotate-horizontal",
+    "flip-vertical": "rotate-vertical",
+    "flip-both": "rotate-both",
+    "spin": "spin",
+    "pulse": "spin",
+    "border": "border",
+    "inverse": "inverse",
+    "transparent": "transparent",
+    "stack": "stack",
+    "stack-2x": "stack-2x",
+    "stack-1x": "stack-1x"
+  }
 }

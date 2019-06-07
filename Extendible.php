@@ -34,12 +34,12 @@ abstract class Extendible {
     private function getPrefix() {
         $arrClass = explode("\\", static::class);
 
-        return strtolower(end($arrClass)) . "_";
+        return strtolower(end($arrClass));
     }
 
     protected function loadExtension($name)
     {
-        $extensions             = Config::getExtension(self::getPrefix() . $name);
+        $extensions             = Config::getExtension(self::getPrefix(), $name);
         if(is_array($extensions) && count($extensions)) {
             $has                = get_object_vars($this);
             foreach ($has as $name => $oldValue) {

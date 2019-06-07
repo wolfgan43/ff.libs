@@ -84,10 +84,15 @@ class Config  implements Dumpable {
     public static function getAutoloads() {
         return self::$autoloads;
     }
-    public static function getExtension($name) {
-        return (isset(self::$extensions[$name])
-            ? self::$extensions[$name]
-            : null
+    public static function getExtension($bucket, $name = null) {
+        $extension                                                  = (isset(self::$extensions[$bucket])
+                                                                        ? self::$extensions[$bucket]
+                                                                        : null
+                                                                    );
+
+        return ($name && isset($extension[$name])
+            ? $extension[$name]
+            : $extension
         );
     }
     public static function addEngine($bucket, $callback) {
@@ -130,7 +135,10 @@ class Config  implements Dumpable {
         });
     }
     private static function loadJson($file) {
-        self::$extensions[pathinfo($file, PATHINFO_FILENAME)] = Filemanager::getInstance("json")->read($file);
+        $arrExt = explode("_", pathinfo($file, PATHINFO_FILENAME), 2);
+        if(count($arrExt) === 2) {
+            self::$extensions[$arrExt[0]][$arrExt[1]] = Filemanager::getInstance("json")->read($file);
+        }
     }
     private static function loadXml($file) {
         $configs                                                = Filemanager::getInstance("xml")->read($file);
@@ -187,7 +195,6 @@ class Config  implements Dumpable {
         if($bucket && !isset(self::$schema[$bucket])) {
             self::$schema[$bucket]                                  = array();
             if(isset(self::$config[$bucket])) {
-
                 $callback                                           = (isset(self::$rules[$bucket]["callback"])
                                                                         ? self::$rules[$bucket]["callback"]
                                                                         : null //ucfirst($bucket) . "::loadSchema"

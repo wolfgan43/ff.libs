@@ -26,7 +26,7 @@
 namespace phpformsframework\libs\tpl;
 
 use phpformsframework\libs\DirStruct;
-use phpformsframework\libs\tpl\gridsystem\FrameworkCssAdapter;
+use phpformsframework\libs\tpl\gridsystem\FrameworkCss;
 
 abstract class Widget extends DirStruct {
     const NAME_SPACE_BASIC                      = "widgets\\";
@@ -146,7 +146,7 @@ abstract class Widget extends DirStruct {
     }
 
     /**
-     * @return null|FrameworkCssAdapter
+     * @return null|FrameworkCss
      */
     protected function gridSystem() {
         if(!self::$grid_system)         { self::$grid_system = Gridsystem::getInstance(); }

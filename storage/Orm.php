@@ -29,7 +29,6 @@ use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\Error;
-use phpformsframework\libs\storage\models\Model;
 
 class Orm implements Dumpable {
     const NAME_SPACE                                                                        = 'phpformsframework\\libs\\storage\\models\\';
@@ -43,7 +42,7 @@ class Orm implements Dumpable {
 
     /**
      * @param string $ormModel
-     * @return Model
+     * @return OrmModel
      */
     public static function getInstance($ormModel) {
         return self::setSingleton($ormModel);
@@ -63,7 +62,7 @@ class Orm implements Dumpable {
 
     /**
      * @param string $model
-     * @return Model
+     * @return OrmModel
      */
     private static function getModel($model = null) {
         return ($model
@@ -73,7 +72,7 @@ class Orm implements Dumpable {
     }
 
     /**
-     * @param Model $ormModel
+     * @param OrmModel $ormModel
      * @param null|array $where
      * @param null|array $fields
      * @param null|array $sort
@@ -98,7 +97,7 @@ class Orm implements Dumpable {
     }
 
     /**
-     * @param Model $ormModel
+     * @param OrmModel $ormModel
      * @param null|array $where
      * @param null|array $fields
      * @param null|array $sort
@@ -127,7 +126,7 @@ class Orm implements Dumpable {
      * @param null|array $fields
      * @param null|array $sort
      * @param null|array $limit
-     * @param Model $ormModel
+     * @param OrmModel $ormModel
      * @param bool $result_raw_data
      * @return array|bool|null
      */
@@ -480,7 +479,7 @@ class Orm implements Dumpable {
 
     /**
      * @param array $insert
-     * @param null|Model $ormModel
+     * @param null|OrmModel $ormModel
      * @return array|bool|null
      */
     public static function insert($insert, $ormModel = null)
@@ -503,7 +502,7 @@ class Orm implements Dumpable {
     /**
      * @param array $set
      * @param array $where
-     * @param Model $ormModel
+     * @param OrmModel $ormModel
      * @return array|bool|null
      */
     public static function update($set, $where, $ormModel = null)
@@ -527,7 +526,7 @@ class Orm implements Dumpable {
      * @param array $where
      * @param null|array $set
      * @param null|array $insert
-     * @param Model $ormModel
+     * @param OrmModel $ormModel
      * @return array|bool|null
      */
     public static function write($where, $set = null, $insert = null, $ormModel = null)
@@ -548,7 +547,7 @@ class Orm implements Dumpable {
     }
     /**
      * @param $where
-     * @param Model $ormModel
+     * @param OrmModel $ormModel
      * @return array|bool|null
      * @todo: da fare
      */
@@ -574,7 +573,7 @@ class Orm implements Dumpable {
      * @param array $where
      * @param null|array $set
      * @param null|array $insert
-     * @param Model $ormModel
+     * @param OrmModel $ormModel
      * @return array|bool|null
      */
     private static function set($where, $set = null, $insert = null, $ormModel = null)
@@ -811,7 +810,7 @@ class Orm implements Dumpable {
 
 
     /**
-     * @param Model $ormModel
+     * @param OrmModel $ormModel
      */
     private static function setMainIndexes($ormModel) {
         $res                                                                                = $ormModel
@@ -1123,7 +1122,7 @@ class Orm implements Dumpable {
     }
 
     /**
-     * @param Model $ormModel
+     * @param OrmModel $ormModel
      */
     private static function clearResult($ormModel)
     {

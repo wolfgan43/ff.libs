@@ -154,11 +154,21 @@ class Request implements Configurable {
         return (array) self::body(null, null, $toObj, "unknown");
     }
     public static function get($key, $toObj = false) {
-        return self::body($key, "GET", $toObj);
+        return self::body($key, "GET", $toObj, "get");
     }
     public static function post($key, $toObj = false) {
-        return self::body($key, "POST", $toObj);
+        return self::body($key, "POST", $toObj, "post");
     }
+    public static function patch($key, $toObj = false) {
+        return self::body($key, "PATCH", $toObj, "post");
+    }
+    public static function delete($key, $toObj = false) {
+        return self::body($key, "DELETE", $toObj, "post");
+    }
+    public static function put($key, $toObj = false) {
+        return self::body($key, "PUT", $toObj, "rawdata");
+    }
+
     public static function cookie($key, $toObj = false) {
         return self::body($key, "COOKIE", $toObj);
     }
@@ -210,15 +220,12 @@ class Request implements Configurable {
      */
     private static function body($key = null, $method = null, $toObj = false, $scope = "rawdata") {
         $rawdata                                                = self::captureBody($scope, $method);
-
-
-        if($key && !isset($res[$key]))                          { $rawdata[$key] = null; }
+        if($key && !isset($rawdata[$key]))                      { $rawdata[$key] = null; }
 
         $res                                                    = ($key
                                                                     ? $rawdata[$key]
                                                                     : $rawdata
                                                                 );
-
         return ($toObj && $res
             ? (object) $res
             : $res
@@ -514,14 +521,23 @@ class Request implements Configurable {
                             unset($request[$rule["name"]]);
                         }
                     } else {
-                        self::$request[$rule["scope"]][$rule["name"]]                   = (isset($rule["default"])
+                        $request[$rule["name"]]                                         = (isset($rule["default"])
                                                                                             ? $rule["default"]
                                                                                             : null
                                                                                         );
+                        self::$request["valid"][$rule["name"]]                          = $request[$rule["name"]];
+                        if(isset($rule["scope"])) {
+                            self::$request[$rule["scope"]][$rule["name"]]               = $request[$rule["name"]];
+                        }
                     }
                 }
 
                 self::$request["rawdata"]                                               = $request;
+                if($method == "GET") {
+                    self::$request["get"]                                               = $request;
+                } elseif($method == "POST" || $method == "PATCH" || $method == "DELETE") {
+                    self::$request["post"]                                              = $request;
+                }
                 self::$request["unknown"]                                               = array_diff_key($request, self::$request["valid"]);
                 if(isset(self::$request["unknown"]) && is_array(self::$request["unknown"]) && count(self::$request["unknown"])) {
                     foreach (self::$request["unknown"] as $unknown_key => $unknown) {
@@ -529,8 +545,6 @@ class Request implements Configurable {
                     }
                 }
             }
-
-
         } else {
             $errors[413][]                                                              = "Request Max Size Exeeded";
         }

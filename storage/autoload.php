@@ -29,7 +29,6 @@ spl_autoload_register(function ($class) {
     $name_space_drivers                         = $name_space . 'drivers\\';
     $name_space_filemanager                     = $name_space . 'filemanager\\';
     $name_space_database                        = $name_space . 'database\\';
-    $name_space_models                          = $name_space . 'models\\';
 
     $class_files                                = array(
         $name_space_drivers . 'Canvas'          => 'drivers' . DIRECTORY_SEPARATOR . 'image' . DIRECTORY_SEPARATOR . 'Canvas.php'
@@ -45,9 +44,10 @@ spl_autoload_register(function ($class) {
         , $name_space_database . 'Mongodb'      => 'adapters' . DIRECTORY_SEPARATOR . 'database_mongodb.php'
         , $name_space_database . 'Mysqli'       => 'adapters' . DIRECTORY_SEPARATOR . 'database_mysqli.php'
         , $name_space . 'Filemanager'           => 'Filemanager.php'
-        , $name_space_filemanager . 'Adapter'   => 'FilemanagerAdapter.php'
+        , $name_space . 'FilemanagerAdapter'    => 'FilemanagerAdapter.php'
         , $name_space . 'Database'              => 'Database.php'
-        , $name_space_database . 'Adapter'      => 'DatabaseAdapter.php'
+        , $name_space . 'DatabaseAdapter'       => 'DatabaseAdapter.php'
+        , $name_space . 'DatabaseDriver'        => 'DatabaseDriver.php'
         , $name_space . 'Media'                 => 'Media.php'
         , $name_space . 'Orm'                   => 'Orm.php'
         , $name_space . 'OrmModel'              => 'OrmModel.php'

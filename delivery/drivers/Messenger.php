@@ -26,7 +26,6 @@
 namespace phpformsframework\libs\delivery\drivers;
 
 use phpformsframework\libs\Debug;
-use phpformsframework\libs\delivery\messenger\Adapter;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\Request;
@@ -42,7 +41,7 @@ class Messenger {
     private $to                                             = null;
     private $content                                        = null;
     /**
-     * @var Adapter
+     * @var MessengerAdapter
      */
     private $adapter                                        = null;
     /**
@@ -166,10 +165,7 @@ class Messenger {
      */
     private function setAdapter($messengerAdapter = null) {
         if(!$this->adapter && !$messengerAdapter)           { $messengerAdapter = static::ADAPTER; }
-        if($messengerAdapter) {
-            $class_name                                     = static::NAME_SPACE . ucfirst($messengerAdapter);
 
-            $this->adapter                                  = new $class_name();
-        }
+        $this->adapter                                  = new MessengerAdapter($messengerAdapter);
     }
 }

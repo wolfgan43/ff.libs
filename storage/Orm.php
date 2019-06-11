@@ -638,7 +638,7 @@ class Orm implements Dumpable {
         $storage                                                                            = $ormModel->setStorage($data["def"]);
         $key_name                                                                           = self::getFieldAlias(array_search("primary", $data["def"]["struct"]), $data["def"]["alias"]);
 
-        if(isset($data["insert"]) && !isset($data["where"]) && !isset($data["set"])) {
+        if(isset($data["insert"]) && !isset($data["set"])) {
             $data["insert"]                                                                 = self::getFields($data["insert"], $data["def"]["alias"]);
             if(isset($data["where"]))                                                       { $data["where"] = self::getFields($data["where"], $data["def"]["alias"]); }
             if(!isset($data["where"]))                                                      { $data["where"] = $data["insert"]; }
@@ -775,7 +775,7 @@ class Orm implements Dumpable {
 
         self::cmdData($name);
 
-        return self::getResult(false);
+        return self::getResult(true);
     }
     private static function cmdData($command, $controller = null, $table = null) {
         $data                                                                               = (!$controller && !$table
@@ -803,7 +803,7 @@ class Orm implements Dumpable {
                                                                                                     : $where
                                                                                                 )
                                                                                             );
-            self::$result[$data["def"]["table"]["alias"]]                                   = $regs;
+            self::$result["cmd"][$data["def"]["table"]["alias"]]                            = $regs;
         }
 
     }
@@ -1143,6 +1143,8 @@ class Orm implements Dumpable {
             if($rawdata || count(self::$result) > 1) {
                 if(isset(self::$result["keys"])) {
                     $res                                                    = self::$result["keys"];
+                } elseif(isset(self::$result["cmd"])) {
+                    $res                                                    = self::$result["cmd"];
                 } else {
                     $res                                                    = array_values(self::$result);
                 }

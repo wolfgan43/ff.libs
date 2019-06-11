@@ -27,8 +27,9 @@ namespace phpformsframework\libs\storage\filemanager;
 
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Error;
+use phpformsframework\libs\storage\FilemanagerAdapter;
 
-class Json extends Adapter //todo: da finire
+class Json extends FilemanagerAdapter //todo: da finire
 {
     const EXT                                                   = "json";
 

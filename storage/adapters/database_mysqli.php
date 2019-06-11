@@ -26,49 +26,17 @@
 namespace phpformsframework\libs\storage\database;
 
 use phpformsframework\libs\Error;
+use phpformsframework\libs\storage\DatabaseAdapter;
 use phpformsframework\libs\storage\drivers\MySqli AS DB;
 
-class Mysqli extends Adapter {
+class Mysqli extends DatabaseAdapter {
     const PREFIX                                        = "FF_DATABASE_";
     const TYPE                                          = "sql";
     const KEY                                           = "ID";
 
-    /**
-     * @var DB
-     */
-    private $driver                                     = null;
-
     public  function toSql($cDataValue, $data_type = null, $enclose_field = true, $transform_null = null)
     {
         return $this->driver->toSql($cDataValue, $data_type, $enclose_field, $transform_null);
-    }
-
-    protected function processRawQuery($sSQL, $key = null) {
-        $res                                            = null;
-        $success                                        = $this->driver->query($sSQL);
-        if($success) {
-            switch ($key) {
-                case "recordset":
-                    $res                                = $this->driver->getRecordset();
-                    break;
-                case "fields":
-                    $res                                = $this->driver->fields_names;
-                    break;
-                case "num_rows":
-                    $res                                = $this->driver->numRows();
-                    break;
-                default:
-                    $res                                = array(
-                                                            "recordset"     => $this->driver->getRecordset()
-                                                            , "fields"      => $this->driver->fields_names
-                                                            , "num_rows"    => $this->driver->numRows()
-                                                        );
-            }
-        } else {
-            $res                                        = $success;
-        }
-
-        return $res;
     }
 
     protected function processRead($query) {
@@ -99,7 +67,7 @@ class Mysqli extends Adapter {
                 }
             }
         } else {
-            Error::register("Read - N°: " . $this->driver->errno . " Msg: " . $this->driver->error . " SQL: " . $sSQL, "database");
+            Error::register("MySqli Unable to Read: " . $sSQL, "database");
         }
 
         return $res;
@@ -119,7 +87,7 @@ class Mysqli extends Adapter {
                                                             "keys" => array($this->driver->getInsertID(true))
                                                         );
         } else {
-            Error::register("Insert - N°: " . $this->driver->errno . " Msg: " . $this->driver->error . " SQL: " . $sSQL, "database");
+            Error::register("MySqli Unable to Insert: " . $sSQL, "database");
         }
 
         return $res;
@@ -136,7 +104,7 @@ class Mysqli extends Adapter {
         if($this->driver->execute($sSQL)) {
             $res = true;
         } else {
-            Error::register("Update - N°: " . $this->driver->errno . " Msg: " . $this->driver->error . " SQL: " . $sSQL, "database");
+            Error::register("MySqli Unable to Update: " . $sSQL, "database");
         }
 
         return $res;
@@ -151,7 +119,7 @@ class Mysqli extends Adapter {
         if($this->driver->execute($sSQL)) {
             $res = true;
         } else {
-            Error::register("Delete - N°: " . $this->driver->errno . " Msg: " . $this->driver->error . " SQL: " . $sSQL, "database");
+            Error::register("MySqli Unable to Delete: " . $sSQL, "database");
         }
 
         return $res;
@@ -168,7 +136,7 @@ class Mysqli extends Adapter {
         if($this->driver->query($sSQL)) {
             $keys                                       = $this->extractKeys($this->driver->getRecordset(), $query["key"]);
         } else {
-            Error::register("Read - N°: " . $this->driver->errno . " Msg: " . $this->driver->error . " SQL: " . $sSQL, "database");
+            Error::register("MySqli Unable to Read(Write): " . $sSQL, "database");
         }
 
         if(!Error::check("database")) {
@@ -182,7 +150,7 @@ class Mysqli extends Adapter {
                                                             , "action"  => "update"
                                                         );
                 } else {
-                    Error::register("Update - N°: " . $this->driver->errno . " Msg: " . $this->driver->error . " SQL: " . $sSQL, "database");
+                    Error::register("MySqli Unable to Update(Write): " . $sSQL, "database");
                 }
             }
             elseif($query["insert"])
@@ -199,7 +167,7 @@ class Mysqli extends Adapter {
                                                                 , "action"  => "insert"
                                                             );
                 } else {
-                    Error::register("Insert - N°: " . $this->driver->errno . " Msg: " . $this->driver->error . " SQL: " . $sSQL, "database");
+                    Error::register("MySqli Unable to Insert(Write): " . $sSQL, "database");
                 }
             }
         }
@@ -215,7 +183,7 @@ class Mysqli extends Adapter {
         if($success !== null) {
             $res                                        = $success;
         } else {
-            Error::register("Sql: unable to execute command" . print_r($query, true), "database");
+            Error::register("MySqli: Unable to Execute Command" . print_r($query, true), "database");
         }
 
         return $res;

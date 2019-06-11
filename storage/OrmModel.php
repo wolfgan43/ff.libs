@@ -28,7 +28,6 @@ namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Extendible;
-use phpformsframework\libs\storage\database\Adapter;
 
 class OrmModel extends Extendible {
     protected $bucket                                                                       = NULL;
@@ -137,7 +136,7 @@ class OrmModel extends Extendible {
     /**
      * @param null|array $struct
      * @param null|array $opt
-     * @return Adapter
+     * @return DatabaseAdapter
      */
     public function setStorage($struct = null, $opt = null)
     {

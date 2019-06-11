@@ -29,7 +29,6 @@ namespace phpformsframework\libs\storage;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dumpable;
-use phpformsframework\libs\storage\database\Adapter;
 
 class Database implements Dumpable {
     const NAME_SPACE                                                        = 'phpformsframework\\libs\\storage\\database\\';
@@ -42,7 +41,7 @@ class Database implements Dumpable {
     private static $cache                                                   = null;
 
     /**
-     * @var Adapter[]
+     * @var DatabaseAdapter[]
      */
     private $adapters                                                       = array();
     private $result                                                         = null;
@@ -50,7 +49,7 @@ class Database implements Dumpable {
     /**
      * @param array|string $databaseAdapters
      * @param null|array $params
-     * @return Adapter
+     * @return DatabaseAdapter
      */
     public static function getInstance($databaseAdapters, $params = null) {
         $key                                                                = crc32(serialize($databaseAdapters)
@@ -257,8 +256,21 @@ class Database implements Dumpable {
             )
         );
     }
-    private static function getCacheKey($table, $select, $where) {
-        return $table . ":" . serialize($where) . "=>" . serialize($select);
+    private static function getCacheKey($query) {
+        $table                                      = (isset($query["table"])
+                                                        ? $query["table"]
+                                                        : ""
+                                                    );
+        $where                                      = (isset($query["where"])
+                                                        ? serialize($query["where"])
+                                                        : ""
+                                                    );
+        $select                                     = (isset($query["select"])
+                                                        ? serialize($query["select"])
+                                                        : "*"
+                                                    );
+
+        return $table . ":" . $where . "=>" . $select;
     }
 
     public static function dump() {
@@ -266,10 +278,10 @@ class Database implements Dumpable {
     }
 
     public static function cache($query) {
-        $res                                    = null;
+        $res                                        = null;
 
         if(self::ENABLE_CACHE) {
-            $cache_key                              = Database::getCacheKey($query["from"], $query["select"], $query["where"]);
+            $cache_key                              = Database::getCacheKey($query);
             if(Debug::ACTIVE) {
                 self::$cache[$cache_key]["count"]   = (isset(self::$cache[$cache_key])
                                                         ? self::$cache[$cache_key]["count"] + 1
@@ -292,7 +304,7 @@ class Database implements Dumpable {
 
     public static function setCache($data, $query) {
         if(self::ENABLE_CACHE) {
-            $cache_key                                                  = Database::getCacheKey($query["from"], $query["select"], $query["where"]);
+            $cache_key                                                  = Database::getCacheKey($query);
 
             self::$cache[$cache_key]["query"]                           = $query;
             if(isset($data["exts"]) && $data["exts"] === true) {

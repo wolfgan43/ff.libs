@@ -26,8 +26,6 @@
 
 spl_autoload_register(function ($class) {
     $name_space                         = 'phpformsframework\\libs\\delivery\\';
-    $name_space_messenger               = $name_space . 'messenger\\';
-    $name_space_mailer                  = $name_space . 'mailer\\';
     $name_space_notice                  = $name_space . 'notice\\';
     $name_space_drivers                 = $name_space . 'drivers\\';
 
@@ -37,19 +35,14 @@ spl_autoload_register(function ($class) {
 
     $class_files                            = array(
         $name_space . 'Notice'                      => 'Notice.php'
-        , $name_space_messenger . 'Twilio'          => 'adapters' . DIRECTORY_SEPARATOR . 'messenger_twilio.php'
-        , $name_space_mailer . 'Localhost'          => 'adapters' . DIRECTORY_SEPARATOR . 'mailer_localhost.php'
-        , $name_space_mailer . 'Sendgrid'           => 'adapters' . DIRECTORY_SEPARATOR . 'mailer_sendgrid.php'
-        , $name_space_mailer . 'Sparkpost'          => 'adapters' . DIRECTORY_SEPARATOR . 'mailer_sparkpost.php'
         , $name_space_notice . 'Email'              => 'adapters' . DIRECTORY_SEPARATOR . 'notice_email.php'
         , $name_space_notice . 'Sms'                => 'adapters' . DIRECTORY_SEPARATOR . 'notice_sms.php'
-        , $name_space_messenger . 'Adapter'         => 'drivers' . DIRECTORY_SEPARATOR . 'MessengerAdapter.php'
-        , $name_space_drivers . 'Adapter'           => 'drivers' . DIRECTORY_SEPARATOR . 'Messenger.php'
-        , $name_space_mailer . 'Adapter'            => 'drivers' . DIRECTORY_SEPARATOR . 'MailerAdapter.php'
+        , $name_space_drivers . 'Messenger'         => 'drivers' . DIRECTORY_SEPARATOR . 'Messenger.php'
+        , $name_space_drivers . 'MessengerAdapter'  => 'drivers' . DIRECTORY_SEPARATOR . 'MessengerAdapter.php'
         , $name_space_drivers . 'Mailer'            => 'drivers' . DIRECTORY_SEPARATOR . 'Mailer.php'
-        , $name_space_drivers . 'Sender'            => 'drivers' . DIRECTORY_SEPARATOR . 'Sender.php'
-        , $name_space_drivers . 'SenderSimple'      => 'drivers' . DIRECTORY_SEPARATOR . 'SenderSimple.php'
-        , $name_space_drivers . 'SenderTemplate'    => 'drivers' . DIRECTORY_SEPARATOR . 'SenderTemplate.php'
+        , $name_space_drivers . 'MailerAdapter'     => 'drivers' . DIRECTORY_SEPARATOR . 'MailerAdapter.php'
+        , $name_space_drivers . 'MailerSimple'      => 'drivers' . DIRECTORY_SEPARATOR . 'MailerSimple.php'
+        , $name_space_drivers . 'MailerTemplate'    => 'drivers' . DIRECTORY_SEPARATOR . 'MailerTemplate.php'
         , $name_space_notice . 'Adapter'            => 'NoticeAdapter.php'
 
     );

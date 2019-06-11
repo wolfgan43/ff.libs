@@ -28,7 +28,6 @@ namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\DirStruct;
 use phpformsframework\libs\Dumpable;
-use phpformsframework\libs\storage\filemanager\Adapter;
 
 if(!defined("FTP_USERNAME"))                                        define("FTP_USERNAME", null);
 if(!defined("FTP_PASSWORD"))                                        define("FTP_PASSWORD", null);
@@ -60,7 +59,7 @@ class Filemanager extends DirStruct implements Dumpable {
      * @param null|string $file
      * @param null|string $var
      * @param null|integer $expire
-     * @return Adapter
+     * @return FilemanagerAdapter
      */
     public static function getInstance($filemanagerAdapter, $file = null, $var = null, $expire = null)
     {
@@ -511,7 +510,8 @@ class Filemanager extends DirStruct implements Dumpable {
     private static function scanAddItem($file, $opt = null) {
         if(self::$callback) {
             $file_info = pathinfo($file);
-            if(isset($opt["filter"]) && !isset($opt["filter"][$file_info["extension"]])) {
+
+            if(isset($opt["filter"]) && (!isset($file_info["extension"]) || !isset($opt["filter"][$file_info["extension"]]))) {
                 return;
             }
             if(isset($opt["name"]) && !isset($opt["name"][$file_info["basename"]])) {

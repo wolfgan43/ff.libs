@@ -23,21 +23,61 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\delivery\mailer;
+namespace phpformsframework\libs\delivery\drivers;
 
-abstract class Adapter {
-    const PREFIX                                            = null;
+use phpformsframework\libs\Extendible;
+
+class MailerAdapter extends Extendible {
+    protected $prefix                                       = null;
 
     private $from                                           = null;
     private $debug                                          = null;
     private $bcc                                            = null;
+    protected $config                                         = null;
 
-    abstract public function smtp();
+    public function smtp() {
+        if(!$this->config) {
+            $prefix                                         = (defined($this->prefix . "_SMTP_PASSWORD")
+                                                                ? $this->prefix . "_SMTP_"
+                                                                : "SMTP_"
+                                                            );
+            $this->config["host"]                           = (defined($prefix . "HOST")
+                                                                ? constant($prefix . "HOST")
+                                                                : $this->config["host"]
+                                                            );
+            $this->config["username"]                       = (defined($prefix . "USER")
+                                                                ? constant($prefix . "USER")
+                                                                : $this->config["username"]
+                                                            );
+            $this->config["password"]                       = (defined($prefix . "PASSWORD")
+                                                                ? constant($prefix . "PASSWORD")
+                                                                : $this->config["password"]
+                                                            );
+            $this->config["auth"]                           = (defined($prefix . "AUTH")
+                                                                ? constant($prefix . "AUTH")
+                                                                : $this->config["auth"]
+                                                            );
+            $this->config["port"]                           = (defined($prefix . "PORT")
+                                                                ? constant($prefix . "PORT")
+                                                                : $this->config["port"]
+                                                            );
+            $this->config["secure"]                         = (defined($prefix . "SECURE")
+                                                                ? constant($prefix . "SECURE")
+                                                                : $this->config["secure"]
+                                                            );
+            $this->config["autoTLS"]                        = (defined($prefix . "AUTOTLS")
+                                                                ? constant($prefix . "AUTOTLS")
+                                                                : $this->config["autoTLS"]
+                                                            );
+        }
+
+        return $this->config;
+    }
 
     public function from($key = null) {
         if(!$this->from) {
-            $prefix                                         = (defined(static::PREFIX . "_FROM_EMAIL")
-                                                                ? static::PREFIX . "_FROM_"
+            $prefix                                         = (defined($this->prefix . "_FROM_EMAIL")
+                                                                ? $this->prefix . "_FROM_"
                                                                 : "FROM_"
                                                             );
 
@@ -60,8 +100,8 @@ abstract class Adapter {
 
     public function bcc($key = null) {
         if(!$this->bcc) {
-            $prefix                                         = (defined(static::PREFIX . "_BCC_EMAIL")
-                                                                ? static::PREFIX . "_BCC_"
+            $prefix                                         = (defined($this->prefix . "_BCC_EMAIL")
+                                                                ? $this->prefix . "_BCC_"
                                                                 : "BCC_"
                                                             );
 
@@ -83,8 +123,8 @@ abstract class Adapter {
 
     public function debug($key = null) {
         if(!$this->debug) {
-            $prefix                                         = (defined(static::PREFIX . "_DEBUG_EMAIL")
-                                                                ? static::PREFIX . "_DEBUG_"
+            $prefix                                         = (defined($this->prefix . "_DEBUG_EMAIL")
+                                                                ? $this->prefix . "_DEBUG_"
                                                                 : "DEBUG_"
                                                             );
 

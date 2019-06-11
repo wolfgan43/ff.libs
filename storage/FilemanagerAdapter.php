@@ -23,14 +23,13 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\storage\filemanager;
+namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\DirStruct;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Debug;
-use phpformsframework\libs\storage\Filemanager;
 
-abstract class Adapter extends DirStruct
+abstract class FilemanagerAdapter extends DirStruct
 {
     const EXT                                                           = null;
     const SEARCH_IN_KEY                                                 = 1;
@@ -135,7 +134,7 @@ abstract class Adapter extends DirStruct
     /**
      * @param string $file_path
      * @param null|string $var
-     * @return Adapter
+     * @return FilemanagerAdapter
      */
     public function fetch($file_path, $var = null) {
         $this->setFilePath($file_path);

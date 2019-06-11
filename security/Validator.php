@@ -46,7 +46,7 @@ class Validator
                                                                     "filter"        => FILTER_VALIDATE_EMAIL
                                                                     , "flags"       => null //FILTER_FLAG_EMAIL_UNICODE
                                                                     , "options"     => array("default" => null)
-                                                                    , "length"      => 32
+                                                                    , "length"      => 64
                                                                 )
                                                                 , "float" => array(
                                                                     "filter"        => FILTER_VALIDATE_FLOAT
@@ -92,7 +92,7 @@ class Validator
                                                                     , "flags"       => FILTER_FLAG_STRIP_LOW
                                                                     , "options"     => null
                                                                     , "callback"    => "\phpformsframework\libs\security\Validator::checkSpecialChars"
-                                                                    , "length"      => 24
+                                                                    , "length"      => 48
                                                                 )
                                                                 , "string" => array(
                                                                     "filter"        => FILTER_SANITIZE_STRING
@@ -118,7 +118,7 @@ class Validator
                                                                     "filter"        => FILTER_CALLBACK
                                                                     , "flags"       => null
                                                                     , "options"     => '\phpformsframework\libs\security\Validator::isJson'
-                                                                    , "length"      => 192
+                                                                    , "length"      => 1024
                                                                 )
                                                                 , "password" => array(
                                                                     "filter"        => FILTER_CALLBACK

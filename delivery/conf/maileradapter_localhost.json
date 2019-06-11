@@ -1,0 +1,12 @@
+{
+  "prefix" : "LOCALHOST",
+  "config" : {
+    "host" : "localhost",
+    "username" : null,
+    "password" : null,
+    "auth" : false,
+    "port" : 25,
+    "secure" : "",
+    "autoTLS" : false
+  }
+}

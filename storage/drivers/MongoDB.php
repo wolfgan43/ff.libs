@@ -31,11 +31,13 @@ use MongoDB\Driver\Query;
 use MongoDB\Driver\Command;
 use MongoDB\BSON\ObjectID;
 use MongoDB\Driver\Exception\Exception;
+use MongoDB\Driver\Exception\InvalidArgumentException;
 use IteratorIterator;
 use phpformsframework\libs\international\Data;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Hook;
+use phpformsframework\libs\storage\DatabaseDriver;
 
 if (!defined("FF_DB_MONGO_SHARELINK")) define("FF_DB_MONGO_SHARELINK", true);
 if (!defined("FF_DB_MONGO_SHUTDOWNCLEAN")) define("FF_DB_MONGO_SHUTDOWNCLEAN", false);
@@ -55,7 +57,7 @@ if (FF_DB_MONGO_SHUTDOWNCLEAN)
  * @license http://opensource.org/licenses/gpl-3.0.html
  * @link http://www.formsphpframework.com
  */
-class MongoDB
+class MongoDB implements DatabaseDriver
 {
 	var $locale = "ISO9075";
 
@@ -158,7 +160,7 @@ class MongoDB
 	//  FUNZIONI GENERICHE PER LA GESTIONE DELLA CLASSE
 
 	// LIBERA LA CONNESSIONE E LA QUERY
-	function cleanup($force = false)
+    private function cleanup($force = false)
 	{
 		$this->freeResult();
 		if (is_object($this->link_id))
@@ -178,7 +180,7 @@ class MongoDB
 	}
 
 	// LIBERA LA RISORSA DELLA QUERY SENZA CHIUDERE LA CONNESSIONE
-	function freeResult()
+    private function freeResult()
 	{
 		$this->query_id                 = false;
         $this->query_params             = array();
@@ -205,7 +207,7 @@ class MongoDB
 	 * @param bool $force
 	 * @return bool|Manager
 	 */
-	function connect($Database = null, $Host = null, $User = null, $Password = null, $replica = false, $force = false)
+	public function connect($Database = null, $Host = null, $User = null, $Password = null, $replica = false, $force = false)
 	{
 		// ELABORA I PARAMETRI DI CONNESSIONE
 		if ($Host !== null) {
@@ -310,7 +312,7 @@ class MongoDB
      * @param null|string $table
 	 * @return boolean
 	 */
-    function insert($query, $table = null)
+    public function insert($query, $table = null)
 	{
         $res = null;
         if(is_array($query) && !empty($query[0])) {
@@ -336,7 +338,7 @@ class MongoDB
 
         return $res;
     }
-    function update($query, $table = null)
+    public function update($query, $table = null)
 	{
 	    $res = null;
         if(is_array($query) && !empty($query[0])) {
@@ -362,7 +364,7 @@ class MongoDB
 
         return $res;
     }
-    function delete($query, $table = null)
+    public function delete($query, $table = null)
 	{
         $res = null;
         if(is_array($query) && !empty($query[0])) {
@@ -389,7 +391,7 @@ class MongoDB
         return $res;
     }
 
-	function execute($query)
+	public function execute($query)
 	{
 		if (empty($query)) {
             $this->errorHandler("Execute invoked With blank Query String");
@@ -433,10 +435,8 @@ class MongoDB
                     }
                     $bulk = new BulkWrite();
                     $bulk->insert($mongoDB["insert"]);
-                    try {
-						$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk);
-					} catch (Exception $e) {
-						$this->errorHandler("Server Error: " . $e->getMessage());
+                    if(!$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk)) {
+                        $this->errorHandler("MognoDB Insert: " . $this->error);
 					}
 					$this->buffered_insert_id = $mongoDB["insert"][$this->keyname];
                 }
@@ -465,13 +465,9 @@ class MongoDB
 					$bulk = new BulkWrite();
                     $bulk->update($mongoDB["where"], $set, $mongoDB["options"]);
 
-					try {
-						$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk);
-					} catch (Exception $e) {
-						$this->errorHandler("Server Error: " . $e->getMessage());
+					if(!$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk)) {
+                        $this->errorHandler("MognoDB Update: " . $this->error);
 					}
-
-					//$this->buffered_insert_id = null;
                 }
                 break;
             case "delete":
@@ -487,13 +483,9 @@ class MongoDB
 
                     $bulk = new BulkWrite();
                     $bulk->delete($mongoDB["where"], $mongoDB["options"]);
-                    try {
-                    	$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk);
-					} catch (Exception $e) {
-						$this->errorHandler("Server Error: " . $e->getMessage());
+                    if(!$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk)) {
+                        $this->errorHandler("MognoDB Update: " . $this->error);
 					}
-
-					//$this->buffered_insert_id = null;
                 }
                 break;
             case "select":
@@ -506,46 +498,7 @@ class MongoDB
 		return true;
 	}
 
-	function eachAll($callback)
-	{
-		if (!$this->query_id)
-		{
-			$this->errorHandler("eachAll called with no query pending");
-			return false;
-		}
-
-		$res = $this->getRecordset();
-
-		$last_ret = null;
-		foreach ($res as $row => $record)
-		{
-			$last_ret = $callback($row, $record, $last_ret);
-		}
-
-		return $last_ret;
-	}
-
-	function eachNext($callback)
-	{
-		if (!$this->query_id)
-		{
-			$this->errorHandler("eachAll called with no query pending");
-			return false;
-		}
-
-		$last_ret = null;
-		if ($this->nextRecord())
-		{
-			do
-			{
-				$last_ret = $callback($this->row, $this->record, $last_ret);
-			} while ($this->nextRecord());
-		}
-
-		return $last_ret;
-	}
-
-	function getRecordset()
+	public function getRecordset()
 	{
         $res = null;
 		if (!$this->query_id) {
@@ -572,12 +525,16 @@ class MongoDB
 		return $res;
 	}
 
+	public function getFieldset() {
+        return $this->fields_names;
+    }
+
 	/**
 	 * Esegue una query
 	 * @param String La query da eseguire
 	 * @return bool|Query
 	 */
-	function query($query)
+	public function query($query)
 	{
 		if (empty($query)) {
             $this->errorHandler("Query invoked With blank Query String");
@@ -677,7 +634,7 @@ class MongoDB
      * @param string $name
      * @return mixed
      */
-    function cmd($query, $name = "count")
+    public function cmd($query, $name = "count")
     {
         $res = null;
         $cursor = null;
@@ -717,7 +674,7 @@ class MongoDB
         return $res;
     }
 
-	function multiQuery($queries)
+	public function multiQuery($queries)
 	{
         $queryId = array();
 	    if(is_array($queries) && count($queries))
@@ -751,32 +708,23 @@ class MongoDB
                         //$bulk->insert(ARRAY_DI_VALORI);
                         $bulk = new BulkWrite();
                         $bulk->insert($query);
-                        try {
-                        	$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk);
-						} catch (Exception $e) {
-							$this->errorHandler("Server Error: " . $e->getMessage());
+                        if(!$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk)) {
+							$this->errorHandler("MognoDB Insert: " . $this->error);
 						}
-
 						break;
                     case "update":
-                        //$bulk->update(CONDIZIONE, array('$set' => ARRAY_DI_VALORI), OPZIONI);
                         $bulk = new BulkWrite();
                         $bulk->update($query["where"], $query["set"]);
-                        try {
-							$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk);
-						} catch (Exception $e) {
-							$this->errorHandler("Server Error: " . $e->getMessage());
+                        if(!$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk)) {
+							$this->errorHandler("MongoDB Update: " . $this->error);
 						}
 						break;
                     case "delete":
-                        //$bulk->delete(CONDIZIONE, OPZIONI);
                         $bulk = new BulkWrite();
                         $bulk->delete($query);
-						try {
-							$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk);
-						} catch (Exception $e) {
-							$this->errorHandler("Server Error: " . $e->getMessage());
-						}
+						if(!$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk)) {
+                            $this->errorHandler("MognoDB Delete: " . $this->error);
+                        }
 						break;
                     case "select":
                     case "";
@@ -810,7 +758,7 @@ class MongoDB
         return $queryId;
 	}
 
-	function lookup($tabella, $chiave = null, $valorechiave = null, $defaultvalue = null, $nomecampo = null, $tiporestituito = null, $bReturnPlain = false)
+    public function lookup($tabella, $chiave = null, $valorechiave = null, $defaultvalue = null, $nomecampo = null, $tiporestituito = null, $bReturnPlain = false)
 	{
 		if (!$this->link_id) {
 			if (!$this->connect()) {
@@ -912,7 +860,7 @@ class MongoDB
 	 * Sposta il puntatore al DB al record successivo (va chiamato almeno una volta)
 	 * @return boolean
 	 */
-    function getRecord() {
+    private function getRecord() {
         $this->record                   = $this->query_id->current();
         if($this->record) {
             $this->record["_id"]        = $this->objectID2string($this->record["_id"]);
@@ -925,7 +873,7 @@ class MongoDB
         return $this->record;
     }
 
-	function nextRecord()
+	public function nextRecord($obj = null)
 	{
 		if (!$this->query_id)
 		{
@@ -945,45 +893,14 @@ class MongoDB
 		}
 	}
 
-	// SI POSIZIONA AD UN RECORD SPECIFICO
-    //todo: da fare
-	function seek($pos = 0)
-	{
-		if (!$this->query_id)
-		{
-			$this->errorHandler("Seek called with no query pending");
-			return false;
-		}
 
-        return $pos;
-	}
-
-	// SI POSIZIONA AL PRIMO RECORD DI UNA PAGINA IDEALE
-	function jumpToPage($page, $RecPerPage)
-	{
-		$totpage = ceil($this->numRows() / $RecPerPage);
-		if ($page > $totpage)
-			$page = $totpage;
-
-		if ($page > 1)
-			if ($this->seek(($page - 1) * $RecPerPage))
-				return $page;
-
-		return false;
-	}
-
-	// -------------------------
-	//  WRAPPER PER L'API Mongo
-	function affectedRows($bReturnPlain = false)
-	{
-		return $this->getInsertID($bReturnPlain);
-	}
 
 	/**
 	 * Conta il numero di righe
+     * @param bool $use_found_rows
 	 * @return int
 	 */
-    function numRows()
+    public function numRows($use_found_rows = false)
     {
         if ($this->num_rows === null) {
             try {
@@ -1000,46 +917,7 @@ class MongoDB
         return $this->num_rows;
     }
 
-	/**
-	 * Conta il numero di campi
-	 * @return bool|int
-	 */
-	function numFields()
-	{
-		if (!$this->query_id)
-		{
-			$this->errorHandler("numFields() called with no query pending");
-			return false;
-		}
-
-		return count($this->fields);
-	}
-
-	function isSetField($Name)
-	{
-		if (!$this->query_id)
-		{
-			$this->errorHandler("isSetField() called with no query pending");
-			return false;
-		}
-
-		if(isset($this->fields[$Name]))
-			return true;
-		else
-			return false;
-	}
-
-	/* ----------------------------------------
-	    FUNZIONI PER LA GESTIONE DEI RISULTATI
-
-	    Nel caso sia abilitato, verrÃƒÆ’Ã‚Â  restituito un oggetto di tipo ffData, nel caso
-	    sia disabilitato verrÃƒÆ’Ã‚Â  restituito un plain value.
-	    E' possibile forzare la restituzione di un plain value usando il parametro $bReturnPlain.
-
-	    Nel caso in cui non si utilizzi Forms Framework, i data_type accettati saranno solo
-	    "Text" (il default) e "Number".
-	*/
-	function getInsertID($bReturnPlain = false)
+	public function getInsertID($bReturnPlain = false)
 	{
 		if (!$this->link_id)
 		{
@@ -1073,7 +951,7 @@ class MongoDB
 	 * @param bool $return_error
 	 * @return bool|Data|string
 	 */
-	function getField($Name, $data_type = "Text", $bReturnPlain = false, $return_error = true)
+	public function getField($Name, $data_type = "Text", $bReturnPlain = false, $return_error = true)
 	{
 		if (!$this->query_id)
 		{
@@ -1105,27 +983,6 @@ class MongoDB
 			return new Data($tmp, $data_type, $this->locale);
 	}
 
-	// PERMETTE DI RECUPERARE IL VALORE DI UN CAMPO SPECIFICO DI UNA RIGA SPECIFICA. NB: Name puÃƒÆ’Ã‚Â² essere anche un indice numerico
-	function getResult($row, $Name, $data_type = "Text", $bReturnPlain = false)
-	{
-		if (!$this->query_id)
-		{
-			$this->errorHandler("result() called with no query pending");
-			return false;
-		}
-
-		if ($row === null)
-			$row = $this->row;
-
-		if ($row !== $this->row)
-		{
-			$rc = $this->seek($row);
-			if (!$rc)
-				return false;
-		}
-
-		return $this->getField((is_numeric($Name) ? $this->fields_names[$Name] : $Name), $data_type, $bReturnPlain);
-	}
 
 	// ----------------------------------------
 	//  FUNZIONI PER LA FORMATTAZIONE DEI DATI
@@ -1137,7 +994,7 @@ class MongoDB
      * @param null|bool $transform_null
      * @return string
      */
-    function toSql($cDataValue, $data_type = null, $enclose_field = true, $transform_null = null)
+    public function toSql($cDataValue, $data_type = null, $enclose_field = true, $transform_null = null)
 	{
         $value = null;
 
@@ -1207,61 +1064,29 @@ class MongoDB
 	// ----------------------------------------
 	//  GESTIONE ERRORI
 
-    function errorHandler($msg)
+    private function errorHandler($msg)
 	{
-		if ($this->on_error == "ignore" && !$this->debug)
-			return;
+        Error::register("MongoDB(" . $this->database . ") - " . $msg . " #" . $this->errno . ": " . $this->error, "database");
 
-		if ($this->HTML_reporting)
-		{
-			$tmp = "ffDB_MongoDB - Error: $msg";
-
-			if ($this->errno)
-			{
-				$tmp .= "<br />MongoDB - Error #" . $this->errno . ": " . $this->error;
-			}
-
-			if ($this->on_error == "halt")
-                $err_code = E_USER_ERROR;
-            else
-                $err_code = E_USER_WARNING;
-
-                Error::dump($tmp, $err_code, $this, get_defined_vars());
-		}
-		else
-		{
-			$tmp = "MongoDB - Error: $msg";
-
-			if ($this->errno)
-			{
-				$tmp .= "\nMongoDB - Error #" . $this->errno . ": " . $this->error;
-			}
-
-
-			print $tmp;
-			if ($this->on_error == "halt")
-				die("MongoDB - Error: Script Halted.\n");
-		}
-		return;
-	}
-	function createObjectID()
+    }
+	private function createObjectID()
 	{
 		return new ObjectID();
 	}
-	function getObjectID($value)
+	private function getObjectID($value)
 	{
 		if ($value instanceof ObjectID) {
 			$res = $value;
 		} else {
 			try {
 				$res = new ObjectID($value);
-			} catch (Exception $e) {
+			} catch (InvalidArgumentException $e) {
 				return false;
 			}
 		}
 		return $res;
 	}
-	function id2object($keys) {
+	private function id2object($keys) {
         $res = null;
 		if(is_array($keys)) {
 			foreach($keys AS $subkey => $subvalue) {
@@ -1286,7 +1111,7 @@ class MongoDB
 		return $res;
 	}
 	### Handle where
-    function equation2mg($exp) {
+    private function equation2mg($exp) {
         # split operator
         $exp = trim($exp);
         if (!$exp) { return(''); }
@@ -1345,7 +1170,7 @@ class MongoDB
         return ($mg_equation);
     }
 
-    function where2mg($str) {
+    private function where2mg($str) {
         # Make infix stuff to polishstuff
         $arr = preg_split ('/ *?(\() *?| *?(\)) *?| +(and) +| +(or) +| +(not) +|(not)/i',$str,null,PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
 
@@ -1502,7 +1327,7 @@ class MongoDB
         return ($rs);
 
     }
-    function sql2mongoDB($sql) {
+    private function sql2mongoDB($sql) {
         $mg_collection = null;
         $mg_fields = null;
         $mg_skip = null;
@@ -1572,9 +1397,9 @@ class MongoDB
 				}
 			}
 			$query['fields'] = $tmpfields;
-			if (sizeof($query['fields'] > 1) && $query['fields'][0] != '*') {
+			if (sizeof($query['fields']) > 1 && $query['fields'][0] != '*') {
 
-				if (is_array($query['fields']) && sizeof($query['fields'] > 1)) {
+				if (is_array($query['fields']) && sizeof($query['fields']) > 1) {
 					$mg_fields = ',{' . join (':1,',$query['fields']) . ':1}';
 				}
 			}
@@ -1651,4 +1476,126 @@ class MongoDB
         return $query;
     }
 
+
+    private function eachAll($callback)
+    {
+        if (!$this->query_id)
+        {
+            $this->errorHandler("eachAll called with no query pending");
+            return false;
+        }
+
+        $res = $this->getRecordset();
+
+        $last_ret = null;
+        foreach ($res as $row => $record)
+        {
+            $last_ret = $callback($row, $record, $last_ret);
+        }
+
+        return $last_ret;
+    }
+
+    private function eachNext($callback)
+    {
+        if (!$this->query_id)
+        {
+            $this->errorHandler("eachAll called with no query pending");
+            return false;
+        }
+
+        $last_ret = null;
+        if ($this->nextRecord())
+        {
+            do
+            {
+                $last_ret = $callback($this->row, $this->record, $last_ret);
+            } while ($this->nextRecord());
+        }
+
+        return $last_ret;
+    }
+// SI POSIZIONA AD UN RECORD SPECIFICO
+    //todo: da fare
+    private function seek($pos = 0)
+    {
+        if (!$this->query_id)
+        {
+            $this->errorHandler("Seek called with no query pending");
+            return false;
+        }
+
+        return $pos;
+    }
+
+    // SI POSIZIONA AL PRIMO RECORD DI UNA PAGINA IDEALE
+    private function jumpToPage($page, $RecPerPage)
+    {
+        $totpage = ceil($this->numRows() / $RecPerPage);
+        if ($page > $totpage)
+            $page = $totpage;
+
+        if ($page > 1)
+            if ($this->seek(($page - 1) * $RecPerPage))
+                return $page;
+
+        return false;
+    }
+
+    // -------------------------
+    //  WRAPPER PER L'API Mongo
+    private function affectedRows($bReturnPlain = false)
+    {
+        return $this->getInsertID($bReturnPlain);
+    }
+
+    /**
+     * Conta il numero di campi
+     * @return bool|int
+     */
+    private function numFields()
+    {
+        if (!$this->query_id)
+        {
+            $this->errorHandler("numFields() called with no query pending");
+            return false;
+        }
+
+        return count($this->fields);
+    }
+
+    private function isSetField($Name)
+    {
+        if (!$this->query_id)
+        {
+            $this->errorHandler("isSetField() called with no query pending");
+            return false;
+        }
+
+        if(isset($this->fields[$Name]))
+            return true;
+        else
+            return false;
+    }
+    // PERMETTE DI RECUPERARE IL VALORE DI UN CAMPO SPECIFICO DI UNA RIGA SPECIFICA. NB: Name puÃƒÆ’Ã‚Â² essere anche un indice numerico
+    private function getResult($row, $Name, $data_type = "Text", $bReturnPlain = false)
+    {
+        if (!$this->query_id)
+        {
+            $this->errorHandler("result() called with no query pending");
+            return false;
+        }
+
+        if ($row === null)
+            $row = $this->row;
+
+        if ($row !== $this->row)
+        {
+            $rc = $this->seek($row);
+            if (!$rc)
+                return false;
+        }
+
+        return $this->getField((is_numeric($Name) ? $this->fields_names[$Name] : $Name), $data_type, $bReturnPlain);
+    }
 }

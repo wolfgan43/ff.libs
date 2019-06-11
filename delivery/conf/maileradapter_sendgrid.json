@@ -1,0 +1,12 @@
+{
+  "prefix" : "SENDGRID",
+  "config" : {
+    "host" : "smtp.sendgrid.net",
+    "username" : "apikey",
+    "password" : null,
+    "auth" : true,
+    "port" : 587,
+    "secure" : "tls",
+    "autoTLS" : false
+  }
+}

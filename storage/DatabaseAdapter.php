@@ -23,7 +23,7 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\storage\database;
+namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Error;
@@ -31,11 +31,10 @@ use phpformsframework\libs\international\Data;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Log;
-use phpformsframework\libs\storage\Database;
 use phpformsframework\libs\tpl\Gridsystem;
 use phpformsframework\libs\security\Validator;
 
-abstract class Adapter {
+abstract class DatabaseAdapter {
 
     const TYPE                          = null;
     const PREFIX                        = null;
@@ -71,10 +70,13 @@ abstract class Adapter {
     private $exts                       = false;
     protected $rawdata                  = false;
 
+    /**
+     * @var DatabaseDriver
+     */
+    protected $driver                                     = null;
 
     protected abstract function loadDriver();
     protected abstract function convertFields($fields, $action);
-    protected abstract function processRawQuery($query, $key = null);
     protected abstract function processRead($query);
     protected abstract function processInsert($query);
     protected abstract function processUpdate($query);
@@ -93,6 +95,34 @@ abstract class Adapter {
         $this->exts                     = $exts;
         $this->rawdata                  = $rawdata;
         $this->setTable($table);
+    }
+
+    protected function processRawQuery($query, $key = null) {
+        $res                                            = null;
+        $success                                        = $this->driver->query($query);
+        if($success) {
+            switch ($key) {
+                case "recordset":
+                    $res                                = $this->driver->getRecordset();
+                    break;
+                case "fields":
+                    $res                                = $this->driver->getFieldset();
+                    break;
+                case "num_rows":
+                    $res                                = $this->driver->numRows();
+                    break;
+                default:
+                    $res                                = array(
+                                                            "recordset"     => $this->driver->getRecordset()
+                                                            , "fields"      => $this->driver->getFieldset()
+                                                            , "num_rows"    => $this->driver->numRows()
+                                                        );
+            }
+        } else {
+            $res                                        = $success;
+        }
+
+        return $res;
     }
 
     protected function getConnector($key = null)
@@ -274,6 +304,8 @@ abstract class Adapter {
                 default:
                     $res                                            = $this->processCmd($query);
             }
+
+            if(Debug::ACTIVE)                                       { Database::setCache($res, $query); }
         }
         return $res;
     }
@@ -627,20 +659,20 @@ abstract class Adapter {
             foreach ($record as $key => $value) {
                 switch ($this->struct[$key]) {
                     case "array":
-                        $record[$key]   = (is_array($value)
-                                            ? $value
-                                            : $this->decode($value)
-                                        );
+                        $record[$key]                                   = (is_array($value)
+                                                                            ? $value
+                                                                            : $this->decode($value)
+                                                                        );
                         break;
                     case "number":
                     case "timestamp":
                     case "primary":
                         if(!$value) {
-                            $record[$key] = 0;
-                        } elseif(strpos(".", $value) === false) {
-                            $record[$key] = (int)$value;
+                            $record[$key]                               = 0;
+                        } elseif(strpos($value, ".") !== false || strpos($value, ",") !== false) {
+                            $record[$key]                               = (double) str_replace(".", "," , $value);
                         } else {
-                            $record[$key] = (double)$value;
+                            $record[$key]                               = (int)$value;
                         }
                         break;
 
@@ -1158,11 +1190,11 @@ abstract class Adapter {
                         } elseif(!is_numeric($value) && strtotime($value)) {                                            //date to number
                             $fields[$name]                                  = strtotime($value);
                         } elseif (strpos($value, ".") !== false || strpos($value, ",") !== false) {         //double to number
-                            $fields[$name]                                  = (double)$value;
+                            $fields[$name]                                  = (double) str_replace(".", "," , $value);
                         } elseif($value == "empty") {                                                                   //empty to number
                             $fields[$name]                                  = 0;
                         } else {
-                            $fields[$name]                                  = (int)$value;                              //other to number
+                            $fields[$name]                                  = (int)$value;
                             if($fields[$name] >= pow(2, 31)) {
                                 Error::register($name . "is too long", "database");
                             }

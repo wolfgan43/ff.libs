@@ -28,12 +28,15 @@ namespace phpformsframework\libs\storage\filemanager;
 use phpformsframework\libs\storage\drivers\Array2XML;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Debug;
+use phpformsframework\libs\storage\FilemanagerAdapter;
+use Exception;
 
-class Xml extends Adapter
+class Xml extends FilemanagerAdapter
 {
     const EXT                                                   = "xml";
 
     public function read($file_path = null, $search_keys = null, $search_flag = self::SEARCH_DEFAULT) {
+        libxml_use_internal_errors(true);
         $res                                                    = array();
         if($file_path)                                          { $this->setFilePath($file_path); }
         $file_path                                              = $this->getFilePath();
@@ -48,7 +51,7 @@ class Xml extends Adapter
                     $res                                        = $return;
                 }
             } elseif($return === false) {
-                Error::register("syntax errors into file" . (Debug::ACTIVE ? ": " . $file_path : ""));
+                Error::register("syntax errors into file" . (Debug::ACTIVE ? ": " . $file_path : ""), "filemanager");
             } else {
                 $res                                            = null;
             }
@@ -61,6 +64,7 @@ class Xml extends Adapter
 
     public function write($data, $file_path = null, $var = null)
     {
+        $xml                                                    = null;
         if($file_path)                                          { $this->setFilePath($file_path); }
         if($var)                                                { $this->setVar($var); }
 
@@ -72,7 +76,13 @@ class Xml extends Adapter
                                                                     : "root"
                                                                 );
 
-        return $this->save(Array2XML::createXML($root_node, $data), $file_path);
+        try {
+            $xml                                                = Array2XML::createXML($root_node, $data);
+        } catch (Exception $e) {
+
+        }
+
+        return $this->save($xml, $file_path);
     }
 
 }

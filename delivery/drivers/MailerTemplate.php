@@ -26,12 +26,14 @@
 namespace phpformsframework\libs\delivery\drivers;
 
 use phpformsframework\libs\Debug;
+use phpformsframework\libs\DirStruct;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\international\Translator;
+use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\tpl\ffTemplate;
 use phpformsframework\libs\security\Validator;
 
-final class SenderTemplate extends Sender {
+final class MailerTemplate extends Mailer {
      //body
     private $fields                                         = array();
 
@@ -96,9 +98,9 @@ final class SenderTemplate extends Sender {
     {
         if($template) {
             if(is_file($template)) {
-                $this->tpl_html_path                = $this::$disk_path . $template;
+                $this->tpl_html_path                = $template;
             } else {
-                $mail_disk_path                     = $this->getDiskPath("mail");
+                $mail_disk_path                     = DirStruct::getDiskPath("mail");
                 if (is_file($mail_disk_path . $template)) {
                     $this->tpl_html_path            = $mail_disk_path . $template;
                 }
@@ -113,6 +115,12 @@ final class SenderTemplate extends Sender {
         }
 
 		if($this->tpl_html_path) {
+		    if(is_dir(dirname($this->tpl_html_path) . "/images")) {
+		        Filemanager::scan(dirname($this->tpl_html_path) . "/images", array("jpg", "png", "svg", "gif"), function($image) {
+		            $this->addImage($image);
+                });
+            }
+
 			$this->tpl_html = new ffTemplate();
             $this->tpl_html->load_file($this->tpl_html_path, "main");
 
@@ -136,7 +144,10 @@ final class SenderTemplate extends Sender {
             $group_type = array("Table" => true);
             foreach ($this->fields AS $fields_key => $fields_value)
             {
-                $field_type = $fields_value["settings"]["type"];
+                $field_type = (isset($fields_value["settings"]["type"])
+                                ? $fields_value["settings"]["type"]
+                                : ""
+                            );
                 if (is_array($fields_value) && count($fields_value))
                 {
                     $count_row = 0;

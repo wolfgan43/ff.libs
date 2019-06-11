@@ -28,51 +28,21 @@ namespace phpformsframework\libs\storage\database;
 
 use MongoDB\BSON\ObjectId;
 use phpformsframework\libs\Error;
+use phpformsframework\libs\storage\DatabaseAdapter;
 use phpformsframework\libs\storage\drivers\MongoDB AS DB;
 use Exception;
 
-class Mongodb extends Adapter {
+class Mongodb extends DatabaseAdapter {
     const PREFIX                                        = "MONGO_DATABASE_";
     const TYPE                                          = "nosql";
     const KEY                                           = "_id";
-
-    /**
-     * @var DB
-     */
-    private $driver                                     = null;
 
     public  function toSql($cDataValue, $data_type = null, $enclose_field = true, $transform_null = null)
     {
         return $this->driver->toSql($cDataValue, $data_type, $enclose_field, $transform_null);
     }
 
-    protected function processRawQuery($arrNoSql, $key = null) {
-        $res                                            = null;
-        $success                                        = $this->driver->query($arrNoSql);
-        if($success) {
-            switch ($key) {
-                case "recordset":
-                    $res                                = $this->driver->getRecordset();
-                    break;
-                case "fields":
-                    $res                                = $this->driver->fields_names;
-                    break;
-                case "num_rows":
-                    $res                                = $this->driver->numRows();
-                    break;
-                default:
-                    $res                                = array(
-                                                            "recordset"     => $this->driver->getRecordset()
-                                                            , "fields"      => $this->driver->fields_names
-                                                            , "num_rows"    => $this->driver->numRows()
-                                                        );
-            }
-        } else {
-            $res                                        = $success;
-        }
 
-        return $res;
-    }
 
     protected function processRead($query) {
         $res                                            = $this->processRawQuery(array(
@@ -90,7 +60,7 @@ class Mongodb extends Adapter {
                                                         ), "count");
             }
         } elseif($res !== false) {
-            Error::register("noSql: unable to read" . print_r($query, true), "database");
+            Error::register("MongoDB: Unable to Read: " . print_r($query, true), "database");
         }
 
         return $res;
@@ -104,7 +74,7 @@ class Mongodb extends Adapter {
                                                             "keys" => array($this->driver->getInsertID(true))
                                                         );
         } else {
-            Error::register("noSql: unable to insert" . print_r($query, true), "database");
+            Error::register("MongoDB: Unable to Insert: " . print_r($query, true), "database");
         }
 
         return $res;
@@ -120,7 +90,7 @@ class Mongodb extends Adapter {
         ), $query["from"])) {
             $res                                        = true;
         } else {
-            Error::register("noSql: unable to update" . print_r($query, true), "database");
+            Error::register("MongoDB: Unable to Update: " . print_r($query, true), "database");
         }
 
         return $res;
@@ -132,7 +102,7 @@ class Mongodb extends Adapter {
         if($this->driver->delete($query["where"], $query["from"])) {
             $res                                        = true;
         } else {
-            Error::register("noSql: unable to delete" . print_r($query, true), "database");
+            Error::register("MongoDB: Unable to Delete: " . print_r($query, true), "database");
         }
 
         return $res;
@@ -150,7 +120,7 @@ class Mongodb extends Adapter {
         ))) {
             $keys                                       = $this->extractKeys($this->driver->getRecordset(), $query["key"]);
         } else {
-            Error::register("noSql: unable to read" . print_r($query, true), "database");
+            Error::register("MongoDB: Unable to Read(Write): " . print_r($query, true), "database");
         }
 
         if(!Error::check("database")) {
@@ -165,7 +135,7 @@ class Mongodb extends Adapter {
                                                             , "action"  => "update"
                                                         );
                 } else {
-                    Error::register("noSql: unable to update" . print_r($query, true), "database");
+                    Error::register("MongoDB: Unable to Update(Write): " . print_r($query, true), "database");
                 }
             }
             elseif($query["insert"])
@@ -176,7 +146,7 @@ class Mongodb extends Adapter {
                                                             , "action"  => "insert"
                                                         );
                 } else {
-                    Error::register("noSql: unable to insert" . print_r($query, true), "database");
+                    Error::register("MongoDB: Unable to Insert(Write): " . print_r($query, true), "database");
                 }
             }
         }
@@ -192,7 +162,7 @@ class Mongodb extends Adapter {
         if($success) {
             $res                                        = $success;
         } else {
-            Error::register("noSql: unable to execute command" . print_r($query, true), "database");
+            Error::register("MongoDB: Unable to Execute Command" . print_r($query, true), "database");
         }
 
         return $res;

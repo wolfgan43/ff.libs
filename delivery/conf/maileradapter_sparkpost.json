@@ -1,0 +1,12 @@
+{
+  "prefix" : "SPARKPOST",
+  "config" : {
+    "host" : "smtp.sparkpostmail.com",
+    "username" : "SMTP_Injection",
+    "password" : null,
+    "auth" : true,
+    "port" : 587,
+    "secure" : "tls",
+    "autoTLS" : false
+  }
+}

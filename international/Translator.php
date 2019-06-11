@@ -29,7 +29,8 @@ use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\storage\drivers\MySqli;
 
-if(!defined("FF_PREFIX"))                           { define("FF_PREFIX", "ff_"); }
+if(!defined("DB_TABLE_LANG"))                       { define("DB_TABLE_LANG", "ff_languages"); }
+if(!defined("DB_TABLE_INTERNATIONAL"))              { define("DB_TABLE_INTERNATIONAL", "ff_international"); }
 if(!defined("FF_TRANSLATOR_ADAPTER"))               { define("FF_TRANSLATOR_ADAPTER", false); }
 
 class Translator
@@ -40,9 +41,9 @@ class Translator
     const REGEXP                                        = '/\{_([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)\}/U';
     //const REGEXP                                        = "/\{_([\w\[\]\:\=\-\|\.]+)\}/U";
 
-    const DB_TABLE_LANG                                 = FF_PREFIX . "languages";
+    const DB_TABLE_LANG                                 = DB_TABLE_LANG;
 
-    const DB_TABLE_INTERNATIONAL                        = FF_PREFIX . "international";
+    const DB_TABLE_INTERNATIONAL                        = DB_TABLE_INTERNATIONAL;
 
     const INSERT_EMPTY                                  = true;
     const BUCKET_PREFIX                                 = "ffcms/translations/";

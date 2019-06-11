@@ -89,8 +89,9 @@ class Config  implements Dumpable {
                                                                         ? self::$extensions[$bucket]
                                                                         : null
                                                                     );
+        if($name && !isset($extension[$name]))                      { $extension[$name] = null; }
 
-        return ($name && isset($extension[$name])
+        return ($name
             ? $extension[$name]
             : $extension
         );

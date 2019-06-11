@@ -27,8 +27,9 @@ namespace phpformsframework\libs\storage\filemanager;
 
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Debug;
+use phpformsframework\libs\storage\FilemanagerAdapter;
 
-class Php extends Adapter
+class Php extends FilemanagerAdapter
 {
     const EXT                                                   = "php";
 

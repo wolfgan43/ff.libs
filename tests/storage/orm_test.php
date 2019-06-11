@@ -23,20 +23,17 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\storage\filemanager;
 
-use phpformsframework\libs\storage\FilemanagerAdapter;
+final class OrmTest extends \PHPUnit\Framework\TestCase {
 
-class Html extends FilemanagerAdapter //todo: da finire
-{
-    const EXT                                                   = "html";
+    public function testRead() {
+            $this->assertInstanceOf(
+                "array"
+                , \phpformsframework\libs\storage\Orm::getInstance("access")->read(array(
+                    "users.ID" => 5
+                ))
 
-    public function read($file_path = null, $search_keys = null, $search_flag = self::SEARCH_DEFAULT)
-    {
-    }
-
-    public function write($data, $file_path = null, $var = null)
-    {
+            );
     }
 
 }

@@ -485,7 +485,7 @@ class Request implements Configurable {
 
     private static function securityParams($request, $method) {
         $errors                                                                         = array();
-        $bucket                                                                         = ($method == "GET"
+        $bucket                                                                         = ($method == "GET" || $method == "PUT"
                                                                                             ? "query"
                                                                                             : "body"
                                                                                         );
@@ -648,7 +648,6 @@ class Request implements Configurable {
      */
     private static function captureBody($key = null, $method = null) {
         static $last_update                                                                     = 0;
-
         if(self::security()) {
             if(self::$request === null || $last_update < self::$rules["last_update"]) {
                 self::$request                                                                  = array();

@@ -27,12 +27,18 @@ namespace phpformsframework\libs\storage\database;
 
 use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\DatabaseAdapter;
-use phpformsframework\libs\storage\drivers\MySqli AS DB;
+use phpformsframework\libs\storage\drivers\MySqli AS sql;
 
 class Mysqli extends DatabaseAdapter {
     const PREFIX                                        = "FF_DATABASE_";
     const TYPE                                          = "sql";
     const KEY                                           = "ID";
+
+    protected function getDriver()
+    {
+        return new sql();
+    }
+
 
     public  function toSql($cDataValue, $data_type = null, $enclose_field = true, $transform_null = null)
     {
@@ -189,22 +195,7 @@ class Mysqli extends DatabaseAdapter {
         return $res;
     }
 
-    protected function loadDriver() {
-        $connector                                                                  = $this->getConnector();
-        if($connector) {
-            $this->driver                                                               = new DB();
-            if ($this->driver->connect(
-                $connector["name"]
-                , $connector["host"]
-                , $connector["username"]
-                , $connector["password"]
-            )) {
-                $this->key_name                                                         = $connector["key"];
-            }
-        }
-        return (bool) $this->driver;
-    }
-/**
+    /**
      * @param $fields
      * @param bool $action
      * @return mixed

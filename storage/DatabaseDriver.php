@@ -29,6 +29,7 @@ interface DatabaseDriver {
     public static function factory();
     public static function free_all();
 
+    public function id2object($value);
     public function connect($Database = null, $Host = null, $User = null, $Password = null, $force = false);
     public function insert($query, $table = null);
     public function update($query, $table = null);
@@ -45,6 +46,4 @@ interface DatabaseDriver {
     public function getInsertID($bReturnPlain = false);
     public function getField($Name, $data_type = "Text", $bReturnPlain = false, $return_error = true);
     public function toSql($cDataValue, $data_type = null, $enclose_field = true, $transform_null = null);
-
 }
-

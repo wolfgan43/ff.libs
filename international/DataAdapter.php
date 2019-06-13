@@ -23,49 +23,132 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\international\data;
+namespace phpformsframework\libs\international;
 
-abstract class Adapter {
-    private static $format = array(
+use phpformsframework\libs\Extendible;
+
+class DataAdapter extends Extendible {
+    private $format = array(
         "Number" 		=> ""
         , "DateTime" 	=> ""
         , "Time" 		=> ""
         , "Date" 		=> ""
         , "Currency" 	=> ""
     );
-    public static function format($key = null) {
+
+    protected $date_time = array(
+        "regexp"        => "/((\d+):(\d+)(:(\d+))*\s+(\d+)[-\/](\d+)[-\/](\d+))|((\d+)[-\/](\d+)[-\/](\d+)\s+(\d+):(\d+)(:(\d+))*)/"
+        , "day"         => 6
+        , "month"       => 7
+        , "year"        => 8
+        , "hour"        => 2
+        , "minute"      => 3
+        , "second"      => 5
+    );
+    protected $date = array(
+        "regexp"        => "/(\d+)[-\/\s]*(\d+)[-\/\s]*(\d+)/"
+        , "day"         => 1
+        , "month"       => 2
+        , "year"        => 3
+    );
+    protected $time = array(
+        "regexp"        => "/(\d+)[:\s]*(\d+)/"
+        , "hour"        => 1
+        , "minute"      => 2
+        , "second"      => 3
+    );
+    protected $currency = array(
+        "regexp"        => "/^(\-){0,1}\s*(\d+)(.(\d+)){0,1}$/"
+        , "strip_chars" => ","
+    );
+    protected $currency_ext = array(
+        "regexp"        => "/^(\-){0,1}\s*(\d+)(.(\d+)){0,5}$/"
+        , "strip_chars" => ","
+    );
+    protected $number = array(
+        "regexp"        => "/^\\s*(\\-){0,1}\\s*(\\d+)\\s*(\\.\\s*(\\d+)){0,1}\\s*$/"
+        , "strip_chars" => ","
+    );
+    protected $number_ext = array(
+        "regexp"        => "/^\\s*(\\-){0,1}\\s*(\\d+)\\s*(\\.\\s*(\\d+)){0,5}\\s*$/"
+        , "strip_chars" => ","
+    );
+    protected $check_time = array(
+        "regexp"        => "/\\d{1,2}:\\d{1,2}(:\\d{1,2}){0,1}/"
+    );
+    protected $check_date = array(
+        "regexp"        => "/\\d{1,2}\\/\\d{1,2}\\/\\d{4}/"
+    );
+    protected $check_date_time = array(
+        "regexp"        => "/\\d{1,2}\\/\\d{1,2}\\/\\d{4}\\s*\\d{1,2}:\\d{1,2}(:\\d{1,2}){0,1}/"
+    );
+
+    protected $check_currency = array(
+        "regexp"        => "/^\\s*\\-{0,1}\\s*\\d{1,3}(\\,{0,1}\\d{3})*\\s*(\\.\\s*\\d{1,2}){0,1}\\s*$/"
+    );
+    protected $check_currency_ext = array(
+        "regexp"        => "/^\\s*\\-{0,1}\\s*\\d{1,3}(\\,{0,1}\\d{3})*\\s*(\\.\\s*\\d{1,5}){0,1}\\s*$/"
+    );
+    protected $check_number = array(
+        "regexp"        => "/^\\s*\\-{0,1}\\s*\\d+\\s*(\\.\\s*\\d+){0,1}\\s*$/"
+    );
+    protected $check_number_ext = array(
+        "regexp"        => "/^\\s*(\\-){0,1}\\s*(\\d+)\\s*(\\.\\s*(\\d+)){0,5}\\s*$/"
+    );
+    protected $empty_currency = array(
+        "default"        => "0.00"
+    );
+    protected $empty_date = array(
+        "default"        => "00-00-0000"
+    );
+    protected $empty_date_time = array(
+        "default"        => "00-00-0000 00:00:00"
+    );
+
+    private function getRule($type) {
+        return (object) $this->$type;
+    }
+    public function format($key = null) {
         return ($key
-            ? self::$format[$key]
-            : self::$format
+            ? $this->format[$key]
+            : $this->format
         );
     }
 
-    public static function SetDateTime($oData, $value) {
-        preg_match_all("/((\d+):(\d+)(:(\d+))*\s+(\d+)[-\/](\d+)[-\/](\d+))|((\d+)[-\/](\d+)[-\/](\d+)\s+(\d+):(\d+)(:(\d+))*)/", $value, $matches);
-        $oData->value_date_day = $matches[6][0] ? $matches[6][0] : $matches[10][0];
-        $oData->value_date_month = $matches[7][0] ? $matches[7][0] : $matches[11][0];
-        $oData->value_date_year = $matches[8][0] ? $matches[8][0] : $matches[12][0];
-        $oData->value_date_hours = $matches[2][0] ? $matches[2][0] : $matches[13][0];
-        $oData->value_date_minutes = $matches[3][0] ? $matches[3][0] : $matches[14][0];
-        $oData->value_date_seconds = $matches[5][0] ? $matches[5][0] : $matches[16][0];
+    public function SetDateTime($oData, $value) {
+        $rule                       = $this->getRule("date_time");
 
-        self::NormalizeDate($oData);
-    }
-    public static function SetDate($oData, $value) {
-        preg_match_all("/(\d+)[-\/\s]*(\d+)[-\/\s]*(\d+)/", $value, $matches);
-        $oData->value_date_day = $matches[1][0];
-        $oData->value_date_month = $matches[2][0];
-        $oData->value_date_year = $matches[3][0];
+        preg_match_all($rule->regexp, $value, $matches);
 
-        self::NormalizeDate($oData);
+        $oData->value_date_day      = $matches[$rule->day][0]     ? $matches[$rule->day][0]     : $matches[$rule->day + 4][0];
+        $oData->value_date_month    = $matches[$rule->month][0]   ? $matches[$rule->month][0]   : $matches[$rule->month + 4][0];
+        $oData->value_date_year     = $matches[$rule->year][0]    ? $matches[$rule->year][0]    : $matches[$rule->year + 4][0];
+        $oData->value_date_hours    = $matches[$rule->hour][0]    ? $matches[$rule->hour][0]    : $matches[$rule->hour + 11][0];
+        $oData->value_date_minutes  = $matches[$rule->minute][0]  ? $matches[$rule->minute][0]  : $matches[$rule->minute + 11][0];
+        $oData->value_date_seconds  = $matches[$rule->second][0]  ? $matches[$rule->second][0]  : $matches[$rule->second + 11][0];
+
+        $this->NormalizeDate($oData);
     }
-    public static function SetTime($oData, $value) {
-        preg_match_all("/(\d+)[:\s]*(\d+)/", $value, $matches);
-        $oData->value_date_hours = $matches[1][0];
-        $oData->value_date_minutes = $matches[2][0];
-        $oData->value_date_seconds = $matches[3][0];
+    public function SetDate($oData, $value) {
+        $rule                       = $this->getRule("date");
+
+        preg_match_all($rule->regexp, $value, $matches);
+
+        $oData->value_date_day      = $matches[$rule->day][0];
+        $oData->value_date_month    = $matches[$rule->month][0];
+        $oData->value_date_year     = $matches[$rule->year][0];
+
+        $this->NormalizeDate($oData);
     }
-    public static function NormalizeDate($oData) {
+    public function SetTime($oData, $value) {
+        $rule                       = $this->getRule("time");
+
+        preg_match_all($rule->rexexp, $value, $matches);
+        $oData->value_date_hours    = $matches[$rule->hour][0];
+        $oData->value_date_minutes  = $matches[$rule->minute][0];
+        $oData->value_date_seconds  = $matches[$rule->second][0];
+    }
+    public function NormalizeDate($oData) {
         if (strlen($oData->value_date_year) == 2) {
             $tmp = substr($oData->value_date_year, 0, 1);
             if (intval($tmp) >= 5) {
@@ -75,7 +158,7 @@ abstract class Adapter {
             }
         }
     }
-    public static function GetDateTime($oData) {
+    public function GetDateTime($oData) {
         if ($oData->value_date_year == 0 || $oData->value_date_month == 0 || $oData->value_date_day == 0
             || !strlen($oData->ori_value)) {
             return "";
@@ -84,7 +167,7 @@ abstract class Adapter {
                 " " . sprintf("%02d", intval($oData->value_date_hours)) . ":" . sprintf("%02d", intval($oData->value_date_minutes)) . ":" . sprintf("%02d", intval($oData->value_date_seconds));
         }
     }
-    public static function GetDate($oData) {
+    public function GetDate($oData) {
         if ($oData->value_date_year == 0 || $oData->value_date_month == 0 || $oData->value_date_day == 0
             || !strlen($oData->ori_value)) {
             return "";
@@ -92,45 +175,48 @@ abstract class Adapter {
             return sprintf("%02d", intval($oData->value_date_day)) . "/" . sprintf("%02d", intval($oData->value_date_month)) . "/" . sprintf("%04d", intval($oData->value_date_year));
         }
     }
-    public static function GetTime($oData) {
+    public function GetTime($oData) {
         return $oData->value_date_hours . ":" . $oData->value_date_minutes /*. ":" . $oData->value_date_seconds*/;
     }
-    public static function SetCurrency($oData, $value) {
-        $oData->value_text = $value;
+    public function SetCurrency($oData, $value) {
+        $rule                       = $this->getRule("currency");
 
-        $value = str_replace(",", "", $value);
-        preg_match_all("/^(\-){0,1}\s*(\d+)(.(\d+)){0,1}$/", $value, $matches);
+        $oData->value_text          = $value;
+
+        $value = str_replace($rule->strip_chars, "", $value);
+        preg_match_all($rule->regexp, $value, $matches);
 
         if (strlen($matches[1][0])) {
-            $oData->value_sign = true;
+            $oData->value_sign      = true;
         } else {
-            $oData->value_sign = false;
+            $oData->value_sign      = false;
         }
 
         $oData->value_numeric_integer = preg_replace("/[^0-9]+/", "", $matches[2][0]);
         $oData->value_numeric_decimal = preg_replace("/[^0-9]+/", "", $matches[4][0]);
     }
-    public static function SetExtCurrency($oData, $value) {
-        $oData->value_text = $value;
+    public function SetExtCurrency($oData, $value) {
+        $rule                       = $this->getRule("currency_ext");
+        $oData->value_text          = $value;
 
-        $value = str_replace(",", "", $value);
-        preg_match_all("/^(\-){0,1}\s*(\d+)(.(\d+)){0,5}$/", $value, $matches);
+        $value                      = str_replace($rule->strip_chars, "", $value);
+        preg_match_all($rule->regexp, $value, $matches);
 
         if (strlen($matches[1][0])) {
-            $oData->value_sign = true;
+            $oData->value_sign      = true;
         } else {
-            $oData->value_sign = false;
+            $oData->value_sign      = false;
         }
 
         $oData->value_numeric_integer = preg_replace("/[^0-9]+/", "", $matches[2][0]);
         $oData->value_numeric_decimal = preg_replace("/[^0-9]+/", "", $matches[4][0]);
     }
 
-    public static function GetExtCurrency($oData) {
+    public function GetExtCurrency($oData) {
         return self::GetCurrency($oData);
     }
 
-    public static function GetCurrency($oData) {
+    public function GetCurrency($oData) {
         if (!strlen($oData->value_text)) {
             return self::GetEmptyCurrency();
         }
@@ -145,11 +231,30 @@ abstract class Adapter {
             return $sign . number_format($oData->value_numeric_integer + round($oData->value_numeric_decimal / pow(10, strlen($oData->value_numeric_decimal)), 2), 0, ",", ".");
         }
     }
-    public static function SetNumber($oData, $value) {
+    public function SetNumber($oData, $value) {
+        $rule                       = $this->getRule("number");
+
         $oData->value_text = $value;
 
-        $value = str_replace(",", "", $value);
-        preg_match_all("/^\\s*(\\-){0,1}\\s*(\\d+)\\s*(\\.\\s*(\\d+)){0,1}\\s*$/", $value, $matches);
+        $value = str_replace($rule->strip_chars, "", $value);
+        preg_match_all($rule->regexp, $value, $matches);
+
+        if (strlen($matches[1][0])) {
+            $oData->value_sign      = true;
+        } else {
+            $oData->value_sign = false;
+        }
+        $oData->value_numeric_integer = preg_replace("/[^0-9]+/", "", $matches[2][0]);
+        $oData->value_numeric_decimal = preg_replace("/[^0-9]+/", "", $matches[4][0]);
+
+    }
+    public function SetExtNumber($oData, $value) {
+        $rule                       = $this->getRule("number_ext");
+
+        $oData->value_text = $value;
+
+        $value = str_replace($rule->strip_chars, "", $value);
+        preg_match_all($rule->regexp, $value, $matches);
 
         if (strlen($matches[1][0])) {
             $oData->value_sign = true;
@@ -158,27 +263,12 @@ abstract class Adapter {
         }
         $oData->value_numeric_integer = preg_replace("/[^0-9]+/", "", $matches[2][0]);
         $oData->value_numeric_decimal = preg_replace("/[^0-9]+/", "", $matches[4][0]);
-
-    }
-    public static function SetExtNumber($oData, $value) {
-        $oData->value_text = $value;
-
-        $value = str_replace(",", "", $value);
-        preg_match_all("/^\\s*(\\-){0,1}\\s*(\\d+)\\s*(\\.\\s*(\\d+)){0,5}\\s*$/", $value, $matches);
-
-        if (strlen($matches[1][0])) {
-            $oData->value_sign = true;
-        } else {
-            $oData->value_sign = false;
-        }
-        $oData->value_numeric_integer = preg_replace("/[^0-9]+/", "", $matches[2][0]);
-        $oData->value_numeric_decimal = preg_replace("/[^0-9]+/", "", $matches[4][0]);
     }
 
-    public static function GetExtNumber($oData) {
-        return self::GetNumber($oData);
+    public function GetExtNumber($oData) {
+        return $this->GetNumber($oData);
     }
-    public static function GetNumber($oData) {
+    public function GetNumber($oData) {
         if ($oData->value_sign) {
             $sign = -1;
         } else {
@@ -190,7 +280,7 @@ abstract class Adapter {
             return $oData->value_numeric_integer * $sign;
         }
     }
-    public static function GetTimestamp($oData) {
+    public function GetTimestamp($oData) {
         if($oData->value_date_hours == 0
             && $oData->value_date_minutes == 0
             && $oData->value_date_seconds == 0
@@ -204,7 +294,7 @@ abstract class Adapter {
                 $oData->value_date_month, $oData->value_date_day, $oData->value_date_year);
         }
     }
-    public static function SetTimestamp($oData, $value) {
+    public function SetTimestamp($oData, $value) {
         if(is_numeric($value) && $value > 0) {
             $oData->value_date_day = date("d", $value);
             $oData->value_date_month = date("m", $value);
@@ -214,7 +304,7 @@ abstract class Adapter {
             $oData->value_date_seconds = date("s", $value);
         }
     }
-    public static function GetTimeToSec($oData) {
+    public function GetTimeToSec($oData) {
         if(intval($oData->value_date_hours) == 0
             && intval($oData->value_date_minutes) == 0
             && intval($oData->value_date_seconds) == 0
@@ -233,7 +323,7 @@ abstract class Adapter {
             }
         }
     }
-    public static function SetTimeToSec($oData, $value) {
+    public function SetTimeToSec($oData, $value) {
         if(is_numeric($value) && $value > 0)
         {
             $oData->value_date_day = intval(gmdate("d", $value));
@@ -244,64 +334,57 @@ abstract class Adapter {
             $oData->value_date_seconds = intval(gmdate("s", $value));
         }
     }
-    public static function CheckTime($raw_value) {
-        if (!preg_match("/\\d{1,2}:\\d{1,2}(:\\d{1,2}){0,1}/", $raw_value)) {
-            return FALSE;
-        } else {
-            return true;
-        }
+    public function CheckTime($raw_value) {
+        $rule                               = $this->getRule("check_time");
+
+        return preg_match($rule->regexp, $raw_value) !== false;
     }
-    public static function CheckDate($raw_value) {
-        if (!preg_match("/\\d{1,2}\\/\\d{1,2}\\/\\d{4}/", $raw_value)) {
-            return FALSE;
-        } else {
-            return true;
-        }
+    public function CheckDate($raw_value) {
+        $rule                               = $this->getRule("check_date");
+
+        return preg_match($rule->regexp, $raw_value) !== false;
     }
-    public static function CheckDateTime($raw_value) {
-        if (!preg_match("/\\d{1,2}\\/\\d{1,2}\\/\\d{4}\\s*\\d{1,2}:\\d{1,2}(:\\d{1,2}){0,1}/", $raw_value)) {
-            return FALSE;
-        } else {
-            return true;
-        }
+    public function CheckDateTime($raw_value) {
+        $rule                               = $this->getRule("check_date_time");
+
+        return preg_match($rule->regexp, $raw_value) !== false;
     }
-    public static function CheckCurrency($raw_value) {
-        if (!preg_match("/^\\s*\\-{0,1}\\s*\\d{1,3}(\\,{0,1}\\d{3})*\\s*(\\.\\s*\\d{1,2}){0,1}\\s*$/", $raw_value)) {
-            return FALSE;
-        } else {
-            return true;
-        }
+    public function CheckCurrency($raw_value) {
+        $rule                               = $this->getRule("check_currency");
+
+        return preg_match($rule->regexp, $raw_value) !== false;
     }
-    public static function CheckExtCurrency($raw_value) {
-        if (!preg_match("/^\\s*\\-{0,1}\\s*\\d{1,3}(\\,{0,1}\\d{3})*\\s*(\\.\\s*\\d{1,5}){0,1}\\s*$/", $raw_value)) {
-            return FALSE;
-        } else {
-            return true;
-        }
+    public function CheckExtCurrency($raw_value) {
+        $rule                               = $this->getRule("check_currency_ext");
+
+        return preg_match($rule->regexp, $raw_value) !== false;
     }
-    public static function CheckNumber($raw_value) {
-        if (!preg_match("/^\\s*\\-{0,1}\\s*\\d+\\s*(\\.\\s*\\d+){0,1}\\s*$/", $raw_value)) {
-            return FALSE;
-        } else {
-            return true;
-        }
+    public function CheckNumber($raw_value) {
+        $rule                               = $this->getRule("check_number");
+
+        return preg_match($rule->regexp, $raw_value) !== false;
     }
-    public static function CheckExtNumber($raw_value) {
-        if (!preg_match("/^\\s*(\\-){0,1}\\s*(\\d+)\\s*(\\.\\s*(\\d+)){0,5}\\s*$/", $raw_value)) {
-            return FALSE;
-        } else {
-            return true;
-        }
+    public function CheckExtNumber($raw_value) {
+        $rule                               = $this->getRule("check_number_ext");
+
+
+        return preg_match($rule->regexp, $raw_value) !== false;
     }
-    public static function GetEmptyCurrency() {
-        return "0.00";
+    public function GetEmptyCurrency() {
+        $rule                               = $this->getRule("empty_currency");
+
+        return $rule->default;
     }
 
-    public static function GetEmptyDate() {
-        return "00-00-0000";
+    public function GetEmptyDate() {
+        $rule                               = $this->getRule("empty_date");
+
+        return $rule->default;
     }
 
-    public static function GetEmptyDateTime() {
-        return "00-00-0000 00:00:00";
+    public function GetEmptyDateTime() {
+        $rule                               = $this->getRule("empty_date_time");
+
+        return $rule->default;
     }
 }

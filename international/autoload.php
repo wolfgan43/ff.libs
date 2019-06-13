@@ -35,7 +35,7 @@ spl_autoload_register(function ($class) {
         , $name_space . 'Locale'                => 'Locale.php'
         , $name_space_translator . 'Adapter'    => 'TranslatorAdapter.php'
         , $name_space . 'Data'                  => 'Data.php'
-        , $name_space_data . 'Adapters'         => 'DataAdapter.php'
+        , $name_space . 'DataAdapter'           => 'DataAdapter.php'
         , $name_space_translator . 'Google'     => 'adapters' . DIRECTORY_SEPARATOR . 'translator_google.php'
         , $name_space_translator . 'Translated' => 'adapters' . DIRECTORY_SEPARATOR . 'translator_translated.php'
         , $name_space_translator . 'Transltr'   => 'adapters' . DIRECTORY_SEPARATOR . 'translator_transltr.php'

@@ -26,16 +26,20 @@
 
 namespace phpformsframework\libs\storage\database;
 
-use MongoDB\BSON\ObjectId;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\DatabaseAdapter;
-use phpformsframework\libs\storage\drivers\MongoDB AS DB;
-use Exception;
+use phpformsframework\libs\storage\drivers\MongoDB AS nosql;
+
 
 class Mongodb extends DatabaseAdapter {
     const PREFIX                                        = "MONGO_DATABASE_";
     const TYPE                                          = "nosql";
     const KEY                                           = "_id";
+
+    protected function getDriver()
+    {
+        return new nosql();
+    }
 
     public  function toSql($cDataValue, $data_type = null, $enclose_field = true, $transform_null = null)
     {
@@ -166,22 +170,6 @@ class Mongodb extends DatabaseAdapter {
         }
 
         return $res;
-    }
-
-    protected function loadDriver() {
-        $connector                                                                  = $this->getConnector();
-        if($connector) {
-            $this->driver                                                               = new DB();
-            if ($this->driver->connect(
-                $connector["name"]
-                , $connector["host"]
-                , $connector["username"]
-                , $connector["password"]
-            )) {
-                $this->key_name                                                         = $connector["key"];
-            }
-        }
-        return (bool) $this->driver;
     }
 
 
@@ -318,7 +306,7 @@ class Mongodb extends DatabaseAdapter {
                                 $value 										        = $field["value"];
 
                             if($field["name"] == $this->key_name)
-                                $value 											    = $this->convertID($value);
+                                $value 											    = $this->driver->id2object($value);
 
                             $res["where"][$field["name"]] 						    = $value;
 
@@ -465,50 +453,5 @@ class Mongodb extends DatabaseAdapter {
 		return $result;
 	}
 
-/**
-     * @param $value
-     * @return bool|ObjectId
-     */
-    private function getObjectID($value)
-	{
-		if ($value instanceof ObjectId) {
-			$res = $value;
-		} else {
-			try {
-				$res = new ObjectId($value);
-			} catch (Exception $e) {
-				return false;
-			}
-		}
-		return $res;
-	}
 
-    /**
-     * @param $keys
-     * @return array|bool|ObjectId
-     */
-    private function convertID($keys) {
-        $res = null;
-		if(is_array($keys)) {
-			foreach($keys AS $subkey => $subvalue) {
-				if(is_array($subvalue)) {
-					foreach($subvalue AS $i => $key) {
-						$ID = $this->getObjectID($key);
-						if($ID)
-							$res[$subkey][] = $ID;
-					}
-				} else {
-					$ID = $this->getObjectID($subvalue);
-					if($ID)
-						$res[] = $ID;
-				}
-			}
-		} else {
-			$ID = $this->getObjectID($keys);
-			if($ID)
-				$res = $ID;
-		}
-
-		return $res;
-	}
 }

@@ -73,10 +73,6 @@ class MySqli implements DatabaseDriver
     private $host                   = null;
 
     // PARAMETRI DI DEBUG
-    var $halt_on_connect_error		= true;		## Setting to true will cause a HALT message on connection error
-    var $debug						= false;	## Set to true for debugging messages. It also turn on error reporting
-    var $on_error					= "halt";	## "halt" (halt with message), "report" (ignore error, but spit a warning), "ignore" (ignore errors quietly)
-    var $HTML_reporting				= true;		## Display Messages in HTML Format
 
     // PARAMETRI SPECIFICI DI MYSQL
     var $persistent					= false;	## Setting to true will cause use of mysql_pconnect instead of mysql_connect
@@ -293,9 +289,7 @@ class MySqli implements DatabaseDriver
                     $this->link_id = @mysqli_init();
                 }
                 if (!is_object($this->link_id) || $this->checkError()) {
-                    if ($this->halt_on_connect_error) {
-                        $this->errorHandler("mysqli::init failed");
-                    }
+                    $this->errorHandler("mysqli::init failed");
                     $this->cleanup();
                     return false;
                 }
@@ -315,9 +309,7 @@ class MySqli implements DatabaseDriver
             }
 
             if (!$rc || mysqli_connect_errno()) {
-                if ($this->halt_on_connect_error) {
-                    $this->errorHandler("Connection failed to host " . $this->host);
-                }
+                $this->errorHandler("Connection failed to host " . $this->host);
                 $this->cleanup();
                 return false;
             }
@@ -914,7 +906,9 @@ class MySqli implements DatabaseDriver
         Error::register("MySQL(" . $this->database . ") - " . $msg . " #" . $this->errno . ": " . $this->error, "database");
     }
 
-
+    public function id2object($keys) {
+        return $keys;
+    }
     private function fetch_all()
     {
         $res = null;
@@ -955,9 +949,7 @@ class MySqli implements DatabaseDriver
                     return $this->connect(null, null, null, null, true); // connect chiamerÃƒÂ  da sola selectDb
                 }
             }
-            if ($this->halt_on_connect_error) {
-                $this->errorHandler("Cannot use database " . $this->database);
-            }
+            $this->errorHandler("Cannot use database " . $this->database);
             $this->cleanup();
             $this->reconnect_tryed = false;
             return false;

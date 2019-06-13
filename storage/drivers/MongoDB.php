@@ -74,10 +74,6 @@ class MongoDB implements DatabaseDriver
 	//var $charset_collation	= "utf8_unicode_ci"; //"utf8_unicode_ci";
 
 	// PARAMETRI DI DEBUG
-	var $halt_on_connect_error		= true;		## Setting to true will cause a HALT message on connection error
-	var $debug						= false;	## Set to true for debugging messages. It also turn on error reporting
-	var $on_error					= "halt";	## "halt" (halt with message), "report" (ignore error, but spit a warning), "ignore" (ignore errors quietly)
-	var $HTML_reporting				= true;		## Display Messages in HTML Format
 
 	// PARAMETRI SPECIFICI DI MYSQL
 	//var $persistent					= false;	## Setting to true will cause use of mysql_pconnect instead of mysql_connect
@@ -284,9 +280,7 @@ class MongoDB implements DatabaseDriver
             }
 
 			if (!$rc) {
-				if ($this->halt_on_connect_error) {
-                    $this->errorHandler("Connection failed to host " . $this->host);
-                }
+                $this->errorHandler("Connection failed to host " . $this->host);
 
                 $this->cleanup();
 				return false;
@@ -442,9 +436,9 @@ class MongoDB implements DatabaseDriver
                 }
                 break;
             case "update":
-                if(!$mongoDB["table"])
+                if(!$mongoDB["table"]) {
                     $mongoDB["table"] = $mongoDB["update"];
-
+                }
                 if($mongoDB["table"] && $mongoDB["set"])
                 {
 					$set = array();
@@ -1086,7 +1080,7 @@ class MongoDB implements DatabaseDriver
 		}
 		return $res;
 	}
-	private function id2object($keys) {
+	public function id2object($keys) {
         $res = null;
 		if(is_array($keys)) {
 			foreach($keys AS $subkey => $subvalue) {

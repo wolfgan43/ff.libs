@@ -75,7 +75,7 @@ abstract class DatabaseAdapter {
      */
     protected $driver                                     = null;
 
-    protected abstract function loadDriver();
+    protected abstract function getDriver();
     protected abstract function convertFields($fields, $action);
     protected abstract function processRead($query);
     protected abstract function processInsert($query);
@@ -95,6 +95,22 @@ abstract class DatabaseAdapter {
         $this->exts                     = $exts;
         $this->rawdata                  = $rawdata;
         $this->setTable($table);
+    }
+
+    protected function loadDriver() {
+        $connector                                      = $this->getConnector();
+        if($connector) {
+            $this->driver                               = $this->getDriver();
+            if ($this->driver->connect(
+                $connector["name"]
+                , $connector["host"]
+                , $connector["username"]
+                , $connector["password"]
+            )) {
+                $this->key_name                         = $connector["key"];
+            }
+        }
+        return (bool) $this->driver;
     }
 
     protected function processRawQuery($query, $key = null) {

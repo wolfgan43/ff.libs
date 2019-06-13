@@ -29,30 +29,19 @@ use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\storage\Media;
 
 class Response {
-     public static function error($status = 404, $response = null, $headers = null, $type = null) {
+    private static $content_type = null;
+
+    public static function setContentType($content_type) {
+        self::$content_type                         = $content_type;
+    }
+
+    public static function error($status = 404, $response = null, $headers = null, $type = null) {
         self::send($response, $headers, $type, $status);
     }
     public static function send($response = null, $headers = null, $type = null, $status = null) {
-        /*if(!$status) {
-            $status                                 = (isset($response["status"])
-                                                        ? $response["status"]
-                                                        : 200
-                                                    );
-        }*/
-        if($status) {
-            Response::code($status);
-        }
+        if($status)                                 { Response::code($status); }
 
-        /*if(Debug::ACTIVE) {
-            if(isset($response["data"]) && is_array($response["data"])) {
-                $size                               = strlen(http_build_query($response["data"], '', ''));
-            } elseif(isset($response["data"])) {
-                $size                               = strlen($response["data"]);
-            } else {
-                $size                               = 0;
-            }
-            Log::request($response["error"], $status, $size);
-        }*/
+        if(!$type)                                  { $type = self::$content_type; }
 
         if (is_array($headers) && count($headers)) {
             foreach ($headers AS $header) {
@@ -60,6 +49,9 @@ class Response {
             }
         }
 
+        /**
+         * @todo: da sistemare
+         */
         if(!$type && isset($_SERVER["HTTP_ACCEPT"])) {
             switch ($_SERVER["HTTP_ACCEPT"]) {
                 case "application/json":
@@ -292,5 +284,12 @@ class Response {
 
                 header("Pragma: !invalid");
         }
+    }
+
+    private static function getAccept() {
+        return (isset($_SERVER["HTTP_ACCEPT"])
+            ? explode(",", $_SERVER["HTTP_ACCEPT"])
+            : array()
+        );
     }
 }

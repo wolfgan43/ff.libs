@@ -591,19 +591,7 @@ class Orm implements Dumpable {
             , "where"                                                                       => $where
         ));
 
-        if(isset(self::$data["sub"]) && is_array(self::$data["sub"]) && count(self::$data["sub"])) {
-            foreach(self::$data["sub"] AS $controller => $tables) {
-                foreach($tables AS $table => $params) {
-                    if($params["def"]["struct"][$params["def"]["relationship"][$params["def"]["mainTable"]]["external"]]
-                        || $params["def"]["struct"][$params["def"]["relationship"][self::$data["main"]["mainTable"]]["external"]]
-                    ) {
-                        self::$data["rev"][$table]                                          = $controller;
-                    } else {
-                        self::setData($controller, $table);
-                    }
-                }
-            }
-        }
+        self::execSub();
 
         //main table
         self::setData();
@@ -658,8 +646,17 @@ class Orm implements Dumpable {
                     Error::register($regs, "orm");
                 }
             }
-        } elseif(isset($data["set"]) && !isset($data["insert"]) && !isset($data["where"])) { //todo: da verificare se serve. in teoria non entra mai qui
-            if(isset($data["def"]["relationship"][self::$data["main"]["def"]["mainTable"]]) && self::$data["main"]["where"][$data["def"]["relationship"][self::$data["main"]["def"]["mainTable"]]["primary"]])  {
+        } elseif(isset($data["set"]) && !isset($data["insert"]) && !isset($data["where"])) {
+            if(isset($data["def"]["relationship"][self::$data["main"]["def"]["mainTable"]]) && isset(self::$data["main"]["where"]))  {
+                $key_main_primary                                                           = $data["def"]["relationship"][self::$data["main"]["def"]["mainTable"]]["primary"];
+                if(!isset(self::$data["main"]["where"][$key_main_primary])) {
+                    $regs                                                                   = $storage->read(self::$data["main"]["where"], array($key_main_primary => true), null, null, self::$data["main"]["def"]["table"]["name"]);
+                    if(is_array($regs)) {
+                        self::$data["main"]["where"][$key_main_primary]                     = $regs["keys"][0];
+                    } else {
+                        Error::register($regs, "orm");
+                    }
+                }
                 $external_name                                                              = $data["def"]["relationship"][self::$data["main"]["def"]["mainTable"]]["external"];
                 $primary_name                                                               = $data["def"]["relationship"][self::$data["main"]["def"]["mainTable"]]["primary"];
                 if(!isset($data["def"]["struct"][$external_name])) {
@@ -711,6 +708,9 @@ class Orm implements Dumpable {
         }
 
         if(is_array($data["def"]["relationship"]) && count($data["def"]["relationship"])) {
+            if(!$controller) {
+                $controller = self::$data["main"]["service"];
+            }
             foreach ($data["def"]["relationship"] AS $tbl => $rel) {
                 if(isset($rel["external"]) && isset(self::$data["sub"][$controller][$tbl])) {
                     $field_ext                                                              = $rel["external"];
@@ -725,20 +725,20 @@ class Orm implements Dumpable {
                             $field_alias                                                    = self::getFieldAlias($field_ext, self::$data["sub"][$controller][$tbl]["def"]["alias"]);
                             $rev_controller                                                 = self::$data["rev"][$tbl];
 
-                            if (self::$data["sub"][$rev_controller][$tbl]["insert"]) {
+                            if (isset(self::$data["sub"][$rev_controller][$tbl]["insert"])) {
                                 self::$data["sub"][$rev_controller][$tbl]["insert"][$field_alias]   = $key;
                                 //self::$data["sub"][$rev_controller][$tbl]["where"][$field_alias]  = $key;
                             }
-                            if (self::$data["sub"][$rev_controller][$tbl]["set"]) {
+                            if (isset(self::$data["sub"][$rev_controller][$tbl]["set"])) {
                                 //self::$data["sub"][$rev_controller][$tbl]["set"][$field_alias]    = $key;
                                 self::$data["sub"][$rev_controller][$tbl]["where"][$field_alias]    = $key;
                             }
                         } else {
                             $field_alias                                                    = self::getFieldAlias($field_ext, self::$data["main"]["def"]["alias"]);
-                            if (self::$data["main"]["insert"]) {
+                            if (isset(self::$data["main"]["insert"])) {
                                 self::$data["main"]["insert"][$field_alias]                 = $key;
                             }
-                            if (self::$data["main"]["set"]) {
+                            if (isset(self::$data["main"]["set"])) {
                                 self::$data["main"]["where"][$field_alias]                  = $key;
                             }
                         }
@@ -750,15 +750,7 @@ class Orm implements Dumpable {
         self::$result["keys"][$data["def"]["table"]["alias"]]                               = $key;
     }
 
-    public static function cmd($name, $where = null, $fields = null, $ormModel = null) {
-        self::clearResult($ormModel);
-
-        self::resolveFieldsByScopes(array(
-            "select"                                                                        => $fields
-            , "where"                                                                       => $where
-        ));
-
-
+    private static function execSub($cmd = null) {
         if(isset(self::$data["sub"]) && is_array(self::$data["sub"]) && count(self::$data["sub"])) {
             foreach(self::$data["sub"] AS $controller => $tables) {
                 foreach($tables AS $table => $params) {
@@ -767,11 +759,28 @@ class Orm implements Dumpable {
                     ) {
                         self::$data["rev"][$table]                                          = $controller;
                     } else {
-                        self::cmdData($name, $controller, $table);
+                        if($cmd) {
+                            self::cmdData($cmd, $controller, $table);
+                        } else {
+                            self::setData($controller, $table);
+                        }
                     }
                 }
             }
         }
+
+
+    }
+
+    public static function cmd($name, $where = null, $fields = null, $ormModel = null) {
+        self::clearResult($ormModel);
+
+        self::resolveFieldsByScopes(array(
+            "select"                                                                        => $fields
+            , "where"                                                                       => $where
+        ));
+
+        self::execSub($name);
 
         self::cmdData($name);
 

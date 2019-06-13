@@ -134,7 +134,12 @@ class Database implements Dumpable {
      */
     public function lookup($table_name, $where = null, $fields = null, $sort = null, $limit = null)
     {
-        return $this->read($where, $fields, $sort, $limit, $table_name);
+        Error::clear("database");
+
+        foreach($this->adapters AS $adapter_name => $adapter) {
+            $this->result[$adapter_name]                                    = $adapter->lookup($table_name, $where, $fields, $sort, $limit);
+        }
+        return $this->getResult();
     }
 
     /**
@@ -147,12 +152,12 @@ class Database implements Dumpable {
      */
     public function find($fields = null, $where = null, $sort = null, $limit = null, $table_name = null)
     {
-        if(!$where && !$sort && !$limit) {
-            $where                                                                          = $fields;
-            $fields                                                                         = null;
-        }
+        Error::clear("database");
 
-        return $this->read($where, $fields, $sort, $limit, $table_name);
+        foreach($this->adapters AS $adapter_name => $adapter) {
+            $this->result[$adapter_name]                                    = $adapter->find($fields, $where, $sort, $limit, $table_name);
+        }
+        return $this->getResult();
     }
 
     /**

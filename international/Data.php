@@ -27,13 +27,12 @@
 namespace phpformsframework\libs\international;
 
 use phpformsframework\libs\Error;
-use phpformsframework\libs\international\data\Adapter;
 use DateTime;
 use Exception;
 
 class Data
 {
-    const NAME_SPACE = 'phpformsframework\\libs\\international\\data\\';
+    private static $singleton = null;
 	/**
 	 * il valore originale del dato, memorizzato non modificato
 	 * @var mixed
@@ -153,11 +152,25 @@ class Data
         $dataLang = self::getClass($locale);
         $funcname = "GetEmpty" . $data_type;
 
-        return $dataLang::$funcname();
+        return $dataLang->$funcname();
     }
+
     /**
-     * @param null $locale
-     * @return Adapter
+     * @param null|string $locale
+     * @return DataAdapter
+     */
+    private static function getAdapter($locale = null) {
+        if(!isset(self::$singleton[$locale])) {
+            self::$singleton[$locale] = new DataAdapter($locale);
+        }
+
+        return self::$singleton[$locale];
+    }
+
+
+    /**
+     * @param null|string $locale
+     * @return DataAdapter
      */
     private static function getClass($locale = null) {
         if ($locale === null) {
@@ -168,8 +181,7 @@ class Data
             Error::dump("You must specify a locale settings", E_USER_ERROR, null, get_defined_vars());
         }
 
-        $class_name = static::NAME_SPACE . ucfirst($locale);
-        return new $class_name();
+        return self::getAdapter($locale);
     }
 	/**
 	 * crea un oggetto Data
@@ -236,7 +248,7 @@ class Data
 		$dataLang = $this->getClass($locale);
 		$funcname = "Set" . $data_type;
 
-		$dataLang::$funcname($this, $value);
+		$dataLang->$funcname($this, $value);
 	}
 		
 	function getValue($data_type = null, $locale = null)
@@ -260,7 +272,7 @@ class Data
         $dataLang = $this->getClass($locale);
         $funcname = "Get" . $data_type;
 
-		return $dataLang::$funcname($this);
+		return $dataLang->$funcname($this);
 	}
         
 	function getDateTime()
@@ -311,7 +323,7 @@ class Data
         $dataLang = $this->getClass($locale);
         $funcname = "Check" . $data_type;
 
-        return $dataLang::$funcname($raw_value);
+        return $dataLang->$funcname($raw_value);
     }
         
            		
@@ -330,7 +342,7 @@ class Data
                 $format_string = $this->format_string;
             } else {
                 $dataLang = $this->getClass($locale);
-				$format_string = $dataLang::Format($data_type);
+				$format_string = $dataLang->format($data_type);
 			}
 		}
 			

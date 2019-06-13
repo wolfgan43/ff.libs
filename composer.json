@@ -21,7 +21,6 @@
         "ext-simplexml": "*",
         "ext-libxml": "*",
         "ext-ftp": "*",
-        "ext-posix": "*",
         "sinergi/browser-detector" : "^7.0",
         "phpmailer/phpmailer": "^6.0"
     },

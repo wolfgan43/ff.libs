@@ -526,7 +526,7 @@ class Log extends DirStruct {
             , [
                 $routine
             , $action
-            , posix_getpwuid(posix_geteuid())['name']
+            , (function_exists("posix_getpwuid") ? posix_getpwuid(posix_geteuid())['name'] : "NULL")
             , self::getUser()
             , strftime('%d/%b/%Y')
             , strftime('%H:%M:%S')

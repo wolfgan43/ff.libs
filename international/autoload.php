@@ -58,7 +58,7 @@ spl_autoload_register(function ($class) {
     );
 
     if(isset($class_files[$class])) {
-        require($class_files[$class]);
+        require_once(__DIR__ . "/" . $class_files[$class]);
     }
 });
 

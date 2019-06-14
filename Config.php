@@ -109,6 +109,8 @@ class Config  implements Dumpable {
     }
 
     public static function rawData($key = null, $remove = false, $sub_key = null) {
+        if($key && !isset( self::$config[$key]))                    { self::$config[$key] = null; }
+
         $res                                                        = ($key
                                                                         ? self::$config[$key]
                                                                         : self::$config

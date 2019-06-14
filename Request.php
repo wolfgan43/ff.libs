@@ -270,7 +270,7 @@ class Request implements Configurable {
     public static function hostname() {
         return (isset($_SERVER["HTTP_HOST"])
             ? $_SERVER["HTTP_HOST"]
-            : $_SERVER["HOSTNAME"]
+            : null
         );
     }
     public static function pathinfo() {
@@ -378,7 +378,7 @@ class Request implements Configurable {
         header_remove("X-Powered-By");
         header("Vary: Accept-Encoding" . ($origin ? ", Origin" : ""));
 
-        switch ($_SERVER['REQUEST_METHOD']) {
+        switch (self::method()) {
             case "OPTIONS":
                 self::CORS_prefight($origin);
                 break;

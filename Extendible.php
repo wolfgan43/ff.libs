@@ -46,7 +46,7 @@ abstract class Extendible {
                 $this->$name    = isset($extensions[$name]) ? $extensions[$name] : $oldValue;
             }
         } else {
-            Error::register(basename(str_replace("\\", "/" , get_called_class())) . ": " . $name . " not found", "orm");
+            Error::register(basename(str_replace("\\", DIRECTORY_SEPARATOR , get_called_class())) . ": " . $name . " not found", "orm");
         }
     }
 }

@@ -119,10 +119,10 @@ class Router extends App implements Configurable
             $file = null;
             $arrPath = pathinfo($path);
             if (!isset($arrPath["extension"])) {
-                if($path == "/" && is_file($webroot . "/index." . self::PHP_EXT)) {
-                    $file = "/index." . self::PHP_EXT;
-                } elseif(is_file($webroot . $path . "/index." . self::PHP_EXT)) {
-                    $file = $path . "/index." . self::PHP_EXT;
+                if($path == DIRECTORY_SEPARATOR && is_file($webroot . DIRECTORY_SEPARATOR . "index." . self::PHP_EXT)) {
+                    $file = DIRECTORY_SEPARATOR . "index." . self::PHP_EXT;
+                } elseif(is_file($webroot . $path . DIRECTORY_SEPARATOR . "index." . self::PHP_EXT)) {
+                    $file = $path . DIRECTORY_SEPARATOR . "index." . self::PHP_EXT;
                 } elseif (is_file($webroot . $path . "." . self::PHP_EXT)) {
                     $file = $path . "." . self::PHP_EXT;
                 }
@@ -174,7 +174,7 @@ class Router extends App implements Configurable
 
             if(!$this->setAlias($path, $rule) && $rule) {
                 $this->sorted           = false;
-                $key                    = $this->getPriority($priority) . "-" . (9 - substr_count($path, "/")) . "-" . $source;
+                $key                    = $this->getPriority($priority) . "-" . (9 - substr_count($path, DIRECTORY_SEPARATOR)) . "-" . $source;
                 $this->rules[$key]      = $rule;
             }
         }
@@ -191,10 +191,9 @@ class Router extends App implements Configurable
     }
 
     private function setAlias($source, $rule) {
-        $key = rtrim(rtrim(rtrim(ltrim($source, "^"), "$"), "*"), "/");
+        $key = rtrim(rtrim(rtrim(ltrim($source, "^"), "$"), "*"), DIRECTORY_SEPARATOR);
         if(strpos($key, "*") === false && strpos($key, "+") === false && strpos($key, "(") === false && strpos($key, "[") === false) {
             $this->alias[$key] = $rule;
-            //$this->alias[$key . "/"] = $rule;
             return true;
         }
 
@@ -237,7 +236,7 @@ class Router extends App implements Configurable
         $res                                            = null;
         $matches                                        = array();
         $match_path                                     = null;
-        $tmp_path                                       = rtrim($path, "/");
+        $tmp_path                                       = rtrim($path, DIRECTORY_SEPARATOR);
         if($tmp_path) {
             do {
                 if(isset($this->alias[$tmp_path])) {

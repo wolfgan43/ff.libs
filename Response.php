@@ -139,7 +139,7 @@ class Response {
             "cache" => "must-revalidate"
         ));
 
-        if(strpos($destination, "/") !== 0 && strpos($destination, "http") !== 0) {
+        if(strpos($destination, DIRECTORY_SEPARATOR) !== 0 && strpos($destination, "http") !== 0) {
             $destination                            = "http" . ($_SERVER["HTTPS"] ? "s" : "") . "://" . $destination;
         }
         if("http" . ($_SERVER["HTTPS"] ? "s": "") . "://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"] != $destination) {

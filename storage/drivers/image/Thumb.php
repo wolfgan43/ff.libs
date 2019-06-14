@@ -111,9 +111,9 @@ class Thumb extends Render
         $src_res = null;
         if($src_res_path_tmp) {
             $mime = Media::getMimeTypeByFilename($src_res_path_tmp);
-            if (!function_exists(str_replace("/", "", $mime)))
+            if (!function_exists(str_replace("/", "", $mime))) {
                 $src_res_path_tmp = $this->get_template_dir($this->icons["unknown"]);
-
+            }
             switch ($mime) {
                 case "image/jpeg":
                     $src_res = @imagecreatefromjpeg($src_res_path_tmp);
@@ -183,10 +183,10 @@ class Thumb extends Render
 	 */
     private function get_template_dir($file)
 	{
-	    if($this->icon_path && is_file($this->icon_path . "/" . $file)) {
-            return $this->icon_path . "/" . $file;
-        } elseif(is_file(__DIR__ . "/icons/" . $file)) {
-	        return __DIR__ . "/icons/" . $file;
+	    if($this->icon_path && is_file($this->icon_path . DIRECTORY_SEPARATOR . $file)) {
+            return $this->icon_path . DIRECTORY_SEPARATOR . $file;
+        } elseif(is_file(__DIR__ . DIRECTORY_SEPARATOR . "icons" . DIRECTORY_SEPARATOR . $file)) {
+	        return __DIR__ . DIRECTORY_SEPARATOR . "icons" . DIRECTORY_SEPARATOR . $file;
         } else {
 	        return false;
         }

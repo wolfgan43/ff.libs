@@ -400,20 +400,20 @@ class Debug extends DirStruct
                 $res["exTime"] 			= microtime(true) - $res["exTime"];
 
                 if (extension_loaded('xhprof') && is_dir(FF_DISK_PATH . "/xhprof_lib") && class_exists("XHProfRuns_Default")) {
-                    $path_info = ($_SERVER["PATH_INFO"] == "/"
+                    $path_info = ($_SERVER["PATH_INFO"] == DIRECTORY_SEPARATOR
                         ? "Home"
                         : $_SERVER["PATH_INFO"]
                     );
 
-                    $xhr_path_info = ($_SERVER["XHR_PATH_INFO"] == "/"
+                    $xhr_path_info = ($_SERVER["XHR_PATH_INFO"] == DIRECTORY_SEPARATOR
                         ? "Home"
                         : $_SERVER["XHR_PATH_INFO"]
                     );
                     $profiler_namespace = str_replace(array(".", "&", "?", "__nocache__"), array(",", "", "", ""), "[" . round($res["exTime"], 2) . "s] "
-                        . str_replace("/", "_", trim($path_info, "/"))
+                        . str_replace(DIRECTORY_SEPARATOR, "_", trim($path_info, DIRECTORY_SEPARATOR))
                         . (Request::isAjax()
                             ? ($xhr_path_info != $path_info && $xhr_path_info
-                                ? " (" . str_replace("/", "_", trim($xhr_path_info, "/")) . ")"
+                                ? " (" . str_replace(DIRECTORY_SEPARATOR, "_", trim($xhr_path_info, DIRECTORY_SEPARATOR)) . ")"
                                 : ""
                             ) . " - Request"
                             : ""

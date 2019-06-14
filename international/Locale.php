@@ -288,10 +288,10 @@ class Locale implements Configurable {
 
 
     public static function setByPath($path) {
-        $arrPathInfo                                        = explode("/", trim($path, "/"), "2");
+        $arrPathInfo                                        = explode(DIRECTORY_SEPARATOR, trim($path, DIRECTORY_SEPARATOR), "2");
         $lang_tiny_code                                     = $arrPathInfo[0];
         if(isset(self::$locale["lang"][$lang_tiny_code])) {
-            $path                                           = "/" . $arrPathInfo[1];
+            $path                                           = DIRECTORY_SEPARATOR . $arrPathInfo[1];
         }
         self::set($lang_tiny_code);
 

@@ -160,7 +160,7 @@ class ErrorHandler
         if (self::logEnabled())
         {
             @mkdir(self::$log_path, 0777, true);
-            self::$log_fp = @fopen(self::$log_path . "/" . $id . ".log.html", "a");
+            self::$log_fp = @fopen(self::$log_path . DIRECTORY_SEPARATOR . $id . ".log.html", "a");
         }
 
         // if this is the first error handled, output javascript to handle grouped elements

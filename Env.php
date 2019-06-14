@@ -60,8 +60,8 @@ class Env implements Configurable {
             }
         } elseif($key && self::$packages[$key] === null) {
             self::$packages[$key]                                   = false;
-            if(is_file(DirStruct::$disk_path . $path . "/" . $key . ".xml")) {
-                $xml                                                = Filemanager::getInstance("xml")->read(DirStruct::$disk_path . $path . "/" . $key . ".xml");
+            if(is_file(DirStruct::$disk_path . $path . DIRECTORY_SEPARATOR . $key . ".xml")) {
+                $xml                                                = Filemanager::getInstance("xml")->read(DirStruct::$disk_path . $path . DIRECTORY_SEPARATOR . $key . ".xml");
                 self::loadSchema($key, $xml);
             }
         }

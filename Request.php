@@ -50,7 +50,7 @@ class Request implements Configurable {
                 $schema                                                                         = self::setSchema($request, $page_attr["path"], $schema);
             }
         }
-        $schema                                                 = self::setSchema($config, "/", $schema);
+        $schema                                                 = self::setSchema($config, DIRECTORY_SEPARATOR, $schema);
 
         if(isset($config["pattern"]))                           { self::loadPatterns($config["pattern"]); }
         if(isset($config["accesscontrol"]))                     { self::loadAccessControl($config["accesscontrol"]); }
@@ -226,10 +226,10 @@ class Request implements Configurable {
         $rules                                                  = array();
         $request                                                = Config::getSchema("request");
         $request_path                                           = (isset($page["alias"])
-                                                                    ? rtrim($page["alias"] . $page["user_path"], "/")
+                                                                    ? rtrim($page["alias"] . $page["user_path"], DIRECTORY_SEPARATOR)
                                                                     : $page["user_path"]
                                                                 );
-        if(!$request_path)                                      { $request_path = "/"; }
+        if(!$request_path)                                      { $request_path = DIRECTORY_SEPARATOR; }
 
         $rules["query"]                                         = array();
         $rules["body"]                                          = array();
@@ -276,12 +276,13 @@ class Request implements Configurable {
     public static function pathinfo() {
         return (isset($_SERVER["PATH_INFO"])
             ? $_SERVER["PATH_INFO"]
-            : ""
+            : DIRECTORY_SEPARATOR
         );
     }
 
     public static function url($pathinfo_part = null) {
-        $url                                                    = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . self::hostname() . DirStruct::SITE_PATH . self::pathinfo() . self::getQuery(false);
+        $url                                                    = DirStruct::SITE_PATH . self::pathinfo() . self::getQuery(false);
+        if(self::hostname())                                    { $url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . self::hostname() . $url; }
 
         return ($pathinfo_part && $url
             ? pathinfo($url, $pathinfo_part)

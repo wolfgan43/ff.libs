@@ -212,7 +212,7 @@ abstract class FilemanagerAdapter extends DirStruct
         Error::clear("filemanager");
         if(!$ext)                                                       { $ext = $this::EXT; }
 
-        $abs_path                                                       = dirname($file_path) . "/" . basename($file_path, "." . $ext) . "." . $ext;
+        $abs_path                                                       = dirname($file_path) . DIRECTORY_SEPARATOR . basename($file_path, "." . $ext) . "." . $ext;
         if(strpos($file_path, $this::$disk_path) !== 0)                 { $abs_path = $this::$disk_path . $abs_path; }
 
         if($this->exist($abs_path)) {

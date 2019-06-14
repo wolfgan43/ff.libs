@@ -48,6 +48,6 @@ spl_autoload_register(function ($class) {
     );
 
     if(isset($class_files[$class])) {
-        require_once(__DIR__ . "/" . $class_files[$class]);
+        require_once(__DIR__ . DIRECTORY_SEPARATOR . $class_files[$class]);
     }
 });

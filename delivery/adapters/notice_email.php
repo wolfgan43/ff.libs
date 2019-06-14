@@ -56,9 +56,9 @@ class Email extends Adapter {
             if(strpos($template, "::") !== false) {
                 $objSource                  = explode("::", $template);
 
-                $this->template             = (is_file($this->getDiskPath("mail") . "/" . $objSource[0] . $objSource[1])
-                                                ? "/" . $objSource[0] . $objSource[1]
-                                                : $this->getClassPath(ucfirst($objSource[0])) . "/mailer" . $objSource[1]
+                $this->template             = (is_file($this->getDiskPath("mail") . DIRECTORY_SEPARATOR . $objSource[0] . $objSource[1])
+                                                ? DIRECTORY_SEPARATOR . $objSource[0] . $objSource[1]
+                                                : $this->getClassPath(ucfirst($objSource[0])) . DIRECTORY_SEPARATOR . "mailer" . $objSource[1]
                                             );
             } else {
                 $this->template             = $template;

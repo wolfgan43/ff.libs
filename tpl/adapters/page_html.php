@@ -531,8 +531,8 @@ class PageHtml extends DirStruct {
 
         if($pathinfo) {
             do {
-                if(isset($this->resources[$type][$name . str_replace("/", "_", $pathinfo)])) {
-                    $file = $this->resources[$type][$name . str_replace("/", "_", $pathinfo)];
+                if(isset($this->resources[$type][$name . str_replace(DIRECTORY_SEPARATOR, "_", $pathinfo)])) {
+                    $file = $this->resources[$type][$name . str_replace(DIRECTORY_SEPARATOR, "_", $pathinfo)];
                     break;
                 }
 

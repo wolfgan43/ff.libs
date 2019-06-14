@@ -33,7 +33,7 @@
         <rule source="wp-login*"                        destination="401" />
         <rule source="wp-*"                             destination="403" />
         <rule source="*.shtml"                          destination="403" />
-        <rule source="[^a-z\-0-9/\+\.\_]+"              destination="400" />
+        <rule source="[^a-z\-0-9/\+\.\_\\]+"            destination="400" />
 
         <rule source="^/autodiscover/*"                 destination="404" />
     </badpath>

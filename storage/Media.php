@@ -615,26 +615,21 @@ class Media extends DirStruct implements Configurable {
         if($mode === null && $key === null)                         { $key = "url"; }
         $query                                                      = null;
         $file_relative                                              = str_replace(array(
-                                                                            self::getDiskPath("uploads") . "/"
-                                                                            , self::getDiskPath("uploads", true) . "/"
-                                                                            , self::getDiskPath("cache-assets", true) . "/"
-                                                                            , self::getDiskPath("cache-thumbs", true) . "/"
-                                                                            , self::$disk_path . "/"
+                                                                            self::getDiskPath("uploads") . DIRECTORY_SEPARATOR
+                                                                            , self::getDiskPath("uploads", true) . DIRECTORY_SEPARATOR
+                                                                            , self::getDiskPath("cache-assets", true) . DIRECTORY_SEPARATOR
+                                                                            , self::getDiskPath("cache-thumbs", true) . DIRECTORY_SEPARATOR
+                                                                            , self::$disk_path . DIRECTORY_SEPARATOR
                                                                         )
-                                                                        , "/"
+                                                                        , DIRECTORY_SEPARATOR
                                                                         , $file
                                                                     );
 
         $arrFile                                                    = pathinfo($file_relative);
-        if(substr($arrFile["dirname"], 0, 1) !== "/") {
-            $arrFile["dirname"]                                     = "/";
-           // $arrFile["filename"]                                    = $arrFile["filename"];
-            //$arrFile["extension"]                                   = "png";
-
+        if(substr($arrFile["dirname"], 0, 1) !== DIRECTORY_SEPARATOR) {
+            $arrFile["dirname"]                                     = DIRECTORY_SEPARATOR;
         }
         if(!isset($arrFile["extension"])) {
-            //$arrFile["dirname"]                                     = "/";
-            //$arrFile["filename"]                                    = "unknown";
             $arrFile["extension"]                                   = null;
         }
         $libs_path                                                  = self::getDiskPath("libs", true);
@@ -645,16 +640,16 @@ class Media extends DirStruct implements Configurable {
             case "js":
                 $showfiles                                          = self::SITE_PATH . static::RENDER_ASSETS_PATH . static::RENDER_SCRIPT_PATH;
                 if(strpos($arrFile["dirname"], $libs_path) === 0) {
-                    $arrFile["filename"]                            = str_replace("/", "_", ltrim(substr($arrFile["dirname"] , strlen($libs_path)), "/"));
-                    $arrFile["dirname"]                             = "/";
+                    $arrFile["filename"]                            = str_replace(DIRECTORY_SEPARATOR, "_", ltrim(substr($arrFile["dirname"] , strlen($libs_path)), DIRECTORY_SEPARATOR));
+                    $arrFile["dirname"]                             = DIRECTORY_SEPARATOR;
                     $query                                          = "?" . filemtime($file); //todo:: genera redirect con Kernel::urlVerify
                 }
                 break;
             case "css":
                 $showfiles                                          = self::SITE_PATH . static::RENDER_ASSETS_PATH . static::RENDER_STYLE_PATH;
                 if(strpos($arrFile["dirname"], $libs_path) === 0) {
-                    $arrFile["filename"]                            = str_replace("/", "_", ltrim(substr($arrFile["dirname"] , strlen($libs_path)), "/"));
-                    $arrFile["dirname"]                             = "/";
+                    $arrFile["filename"]                            = str_replace(DIRECTORY_SEPARATOR, "_", ltrim(substr($arrFile["dirname"] , strlen($libs_path)), DIRECTORY_SEPARATOR));
+                    $arrFile["dirname"]                             = DIRECTORY_SEPARATOR;
                     $query                                          = "?" . filemtime($file); //todo:: genera redirect con Kernel::urlVerify
                 }
                 break;
@@ -671,7 +666,7 @@ class Media extends DirStruct implements Configurable {
                 }
         }
 
-        $dirfilename                                                = $showfiles . ($arrFile["dirname"] == "/" ? "" : $arrFile["dirname"]) . "/" . $arrFile["filename"];
+        $dirfilename                                                = $showfiles . ($arrFile["dirname"] == DIRECTORY_SEPARATOR ? "" : $arrFile["dirname"]) . DIRECTORY_SEPARATOR . $arrFile["filename"];
         $url                                                        = $dirfilename . ($arrFile["filename"] && $mode ? "-" : "") . $mode . ($arrFile["extension"] ? "." . $arrFile["extension"] : "") . $query;
         $pathinfo                                                   = array(
                                                                         "url"                   => $url
@@ -721,7 +716,7 @@ class Media extends DirStruct implements Configurable {
     public static function getFileOptimized($filename) {
         if(strpos($filename, ".min.") === false) {
             $arrFilename                                            = pathinfo($filename);
-            $filename_min                                           = $arrFilename["dirname"] . "/" . $arrFilename["filename"] . ".min." . $arrFilename["extension"];
+            $filename_min                                           = $arrFilename["dirname"] . DIRECTORY_SEPARATOR . $arrFilename["filename"] . ".min." . $arrFilename["extension"];
             if(!is_file($filename_min) || filemtime($filename) > filemtime($filename_min)) {
                 if(!self::optimize($filename, array("wait" => true, "filename_min" => $filename_min))) {
                     $filename_min                                   = $filename;
@@ -985,17 +980,17 @@ class Media extends DirStruct implements Configurable {
             }
 
             $icon_basepath                                         = self::getDiskPath("icons");
-            $abs_path                                               = ($icon_basepath && is_file($icon_basepath . "/" . $basename)
+            $abs_path                                               = ($icon_basepath && is_file($icon_basepath . DIRECTORY_SEPARATOR . $basename)
                                                                         ? $icon_basepath
                                                                         : static::ICON_DISK_PATH
                                                                     );
 
-            if(!is_file($abs_path . "/" . $basename))       { $basename = "error.png"; }
+            if(!is_file($abs_path . DIRECTORY_SEPARATOR . $basename))       { $basename = "error.png"; }
 
             if($abs === false) {
-                $res                                                = self::SITE_PATH . static::RENDER_ASSETS_PATH . "/" . $basename;
+                $res                                                = self::SITE_PATH . static::RENDER_ASSETS_PATH . DIRECTORY_SEPARATOR . $basename;
             } elseif($abs === true) {
-                $res                                                = $abs_path . "/" . $basename;
+                $res                                                = $abs_path . DIRECTORY_SEPARATOR . $basename;
             } else {
                 $res                                                = $abs . $basename;
             }
@@ -1003,7 +998,7 @@ class Media extends DirStruct implements Configurable {
             $res                                                    = ($abs
                                                                         ? static::ICON_DISK_PATH
                                                                         : self::SITE_PATH . static::RENDER_ASSETS_PATH
-                                                                    ) . "/" . "unknown.png";
+                                                                    ) . DIRECTORY_SEPARATOR . "unknown.png";
         }
 
         return $res;
@@ -1094,10 +1089,10 @@ class Media extends DirStruct implements Configurable {
 
             switch ($this->pathinfo["extension"]) {
                 case "js":
-                    $source_file                                    = str_replace(static::RENDER_SCRIPT_PATH, "", $this->pathinfo["dirname"]) . "/" . str_replace("_", "/", $this->pathinfo["filename"]) . "/script.js";
+                    $source_file                                    = str_replace(static::RENDER_SCRIPT_PATH, "", $this->pathinfo["dirname"]) . DIRECTORY_SEPARATOR . str_replace("_", DIRECTORY_SEPARATOR, $this->pathinfo["filename"]) . "/script.js";
                     break;
                 case "css":
-                    $source_file                                    = str_replace(static::RENDER_STYLE_PATH, "", $this->pathinfo["dirname"]) . "/" . str_replace("_", "/", $this->pathinfo["filename"]) . "/style.css";
+                    $source_file                                    = str_replace(static::RENDER_STYLE_PATH, "", $this->pathinfo["dirname"]) . DIRECTORY_SEPARATOR . str_replace("_", DIRECTORY_SEPARATOR, $this->pathinfo["filename"]) . "/style.css";
                     break;
                 default:
                     $source_file                                    = null;
@@ -1298,9 +1293,9 @@ class Media extends DirStruct implements Configurable {
                                                                             : ""
                                                                         )
                                                                         . $this->final["dirname"]
-                                                                        . ($this->final["dirname"] == "/"
+                                                                        . ($this->final["dirname"] == DIRECTORY_SEPARATOR
                                                                             ? ""
-                                                                            : "/"
+                                                                            : DIRECTORY_SEPARATOR
                                                                         )
                                                                         . $this->final["filename"]
                                                                         . "." . $this->final["extension"];
@@ -1630,7 +1625,7 @@ class Media extends DirStruct implements Configurable {
         $icon                                                       = $this->getIconPath($icon_name, true);
         if($icon) {
             $this->basepath                                         = dirname($icon);
-            $this->filesource                                       = "/" . basename($icon);
+            $this->filesource                                       = DIRECTORY_SEPARATOR . basename($icon);
             $this->mode                                             = $mode;
 
             return true;
@@ -1654,7 +1649,7 @@ class Media extends DirStruct implements Configurable {
     private function resolveSourcePath($mode = null) {
         $image                                                      = $this->pathinfo;
 
-        $source["dirname"] 			                                = ($image["dirname"] == "/" ? "" : $image["dirname"]);
+        $source["dirname"] 			                                = ($image["dirname"] == DIRECTORY_SEPARATOR ? "" : $image["dirname"]);
         $source["extension"] 		                                = $image["extension"];
         $source["filename"] 	                                    = $image["filename"];
 
@@ -1683,7 +1678,7 @@ class Media extends DirStruct implements Configurable {
             $source["extension"] 	                                = "jpeg";
             $source["filename"] 	                                = $file[0];
         } elseif(!$mode) {
-            $res                                                    = $this->getModeByFile($source["dirname"] . "/" . $image["filename"] . "." . $source["extension"]);
+            $res                                                    = $this->getModeByFile($source["dirname"] . DIRECTORY_SEPARATOR . $image["filename"] . "." . $source["extension"]);
             if($res) {
                 $source["filename"]                                 = $res["filename"];
                 $mode                                               = $res["mode"];
@@ -1696,7 +1691,7 @@ class Media extends DirStruct implements Configurable {
             $source["basename"] 	                                = $source["filename"] . "." . $source["extension"];
             $this->source                                           = $source;
             $this->mode                                             = $mode;
-            $this->filesource 				                        = $source["dirname"] . "/" . $source["basename"];
+            $this->filesource 				                        = $source["dirname"] . DIRECTORY_SEPARATOR . $source["basename"];
         }
     }
 }

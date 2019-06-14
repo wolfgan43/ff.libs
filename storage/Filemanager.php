@@ -109,7 +109,7 @@ class Filemanager extends DirStruct implements Dumpable {
         if(!$base_path)                                                 { $base_path = self::$disk_path; }
         $path                                                           = str_replace($base_path, "", $path);
 
-        if($path && $path != "/") {
+        if($path && $path != DIRECTORY_SEPARATOR) {
             if(is_file($base_path . $path))                     { $path = dirname($path); }
 
             if(!is_dir($base_path . $path) && is_writable($base_path . $path) && mkdir($base_path . $path, $chmod, true)) {

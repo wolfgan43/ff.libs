@@ -87,11 +87,11 @@ abstract class Widget extends DirStruct {
         $config                                 = $this->getConfig();
         $path                                   = $this::getDiskPath("tpl") . (isset($config["tpl_path"])
                 ? $config["tpl_path"]
-                : "/" . $widget_name
+                : DIRECTORY_SEPARATOR . $widget_name
             );
-        $html_name                              = "/index.html";
-        $css_name                               = "/style.css";
-        $script_name                            = "/script.js";
+        $html_name                              = DIRECTORY_SEPARATOR. "index.html";
+        $css_name                               = DIRECTORY_SEPARATOR . "style.css";
+        $script_name                            = DIRECTORY_SEPARATOR . "script.js";
 
         $filename                               = (is_file($path . $html_name)
             ? $path . $html_name

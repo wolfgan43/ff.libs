@@ -178,7 +178,7 @@ abstract class Mailer
      */
     public function addAttach($attach, $name = null, $mime = "application/octet-stream", $encoded = "base64")
 	{
-	    if(strpos($attach, "/") === 0) {
+	    if(strpos($attach, DIRECTORY_SEPARATOR) === 0) {
             if(is_file($attach)) {
                 if(!$name)                                  { $name = $attach; }
                 $this->attach[$name]["path"]                = $attach;

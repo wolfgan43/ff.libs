@@ -263,8 +263,25 @@ class Request implements Configurable {
         self::$rules["last_update"]                             = microtime(true);
     }
 
+    public static function isHTTPS() {
+        return isset($_SERVER["HTTPS"]);
+    }
+
+    public static function hostname() {
+        return (isset($_SERVER["HTTP_HOST"])
+            ? $_SERVER["HTTP_HOST"]
+            : $_SERVER["HOSTNAME"]
+        );
+    }
+    public static function pathinfo() {
+        return (isset($_SERVER["PATH_INFO"])
+            ? $_SERVER["PATH_INFO"]
+            : ""
+        );
+    }
+
     public static function url($pathinfo_part = null) {
-        $url                                                    = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . $_SERVER["HTTP_HOST"] . DirStruct::SITE_PATH . $_SERVER["PATH_INFO"] . self::getQuery(false);
+        $url                                                    = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . self::hostname() . DirStruct::SITE_PATH . self::pathinfo() . self::getQuery(false);
 
         return ($pathinfo_part && $url
             ? pathinfo($url, $pathinfo_part)
@@ -285,7 +302,10 @@ class Request implements Configurable {
     }
 
     public static function method() {
-        return strtoupper($_SERVER["REQUEST_METHOD"]);
+        return (isset($_SERVER["REQUEST_METHOD"])
+            ? strtoupper($_SERVER["REQUEST_METHOD"])
+            : null
+        );
     }
     public static function isAjax() {
         return isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
@@ -654,7 +674,7 @@ class Request implements Configurable {
     }
 
     private static function isInvalidHTTPS() {
-        return (self::$rules["https"] && !$_SERVER["HTTPS"]
+        return (self::$rules["https"] && !isset($_SERVER["HTTPS"])
             ? "Request Method Must Be In HTTPS"
             : null
         );

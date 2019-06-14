@@ -308,62 +308,23 @@ class MongoDB implements DatabaseDriver
 	 */
     public function insert($query, $table = null)
 	{
-        $res = null;
-        if(is_array($query) && !empty($query[0])) {
-            foreach($query AS $mongoDB) {
-                $mongoDB["action"] = "insert";
-                if($table) {
-                    $mongoDB["table"] = $table;
-                }
-                $res = $this->execute($mongoDB);
-            }
-        } else {
-            if(is_array($query)) {
-                $mongoDB["insert"] = $query;
-            } else {
-                $mongoDB = $this->sql2mongoDB($query);
-            }
-            if($table) {
-                $mongoDB["table"] = $table;
-            }
-            $mongoDB["action"] = "insert";
-            $res = $this->execute($mongoDB);
-        }
+        return $this->getQuery($query, $table, "insert");
 
-        return $res;
     }
     public function update($query, $table = null)
 	{
-	    $res = null;
-        if(is_array($query) && !empty($query[0])) {
-            foreach($query AS $mongoDB) {
-                $mongoDB["action"] = "update";
-                if($table) {
-                    $mongoDB["table"] = $table;
-                }
-                $res = $this->execute($mongoDB);
-            }
-        } else {
-            if(is_array($query)) {
-                $mongoDB = $query;
-            } else {
-                $mongoDB = $this->sql2mongoDB($query);
-            }
-            if($table) {
-                $mongoDB["table"] = $table;
-            }
-            $mongoDB["action"] = "update";
-            $res = $this->execute($mongoDB);
-        }
-
-        return $res;
+        return $this->getQuery($query, $table, "update");
     }
     public function delete($query, $table = null)
 	{
+        return $this->getQuery($query, $table, "delete");
+    }
+
+    private function getQuery($query, $table, $action) {
         $res = null;
         if(is_array($query) && !empty($query[0])) {
             foreach($query AS $mongoDB) {
-                $mongoDB["action"] = "delete";
+                $mongoDB["action"] = $action;
                 if($table) {
                     $mongoDB["table"] = $table;
                 }
@@ -378,7 +339,7 @@ class MongoDB implements DatabaseDriver
             if($table) {
                 $mongoDB["table"] = $table;
             }
-            $mongoDB["action"] = "delete";
+            $mongoDB["action"] = $action;
             $res = $this->execute($mongoDB);
         }
 
@@ -754,100 +715,7 @@ class MongoDB implements DatabaseDriver
 
     public function lookup($tabella, $chiave = null, $valorechiave = null, $defaultvalue = null, $nomecampo = null, $tiporestituito = null, $bReturnPlain = false)
 	{
-		if (!$this->link_id) {
-			if (!$this->connect()) {
-                return false;
-            }
-		}
-
-		if ($tiporestituito === null)
-			$tiporestituito = "Text";
-
-		if (strpos(strtolower(trim($tabella)), "select") !== 0)
-		{
-			$listacampi = "";
-
-			if(is_array($nomecampo))
-			{
-				if (!count($nomecampo))
-					$this->errorHandler("lookup: Nuessun campo specificato da recuperare");
-
-				foreach ($nomecampo as $key => $value)
-				{
-					if (strlen($listacampi))
-						$listacampi .= ", ";
-					$listacampi .= "`" . $key . "`";
-				}
-				reset($nomecampo);
-			}
-			elseif ($nomecampo !== null)
-			{
-				$listacampi = "`" . $nomecampo . "`";
-			}
-			else
-				$listacampi = "*";
-
-			$sSql = "SELECT " . $listacampi . " FROM " . $tabella . " WHERE 1 ";
-		}
-		else
-			$sSql = $tabella;
-		if(is_array($chiave))
-		{
-			if (!count($chiave))
-				$this->errorHandler("lookup: Nuessuna chiave specificata per il lookup");
-
-			foreach ($chiave as $key => $value)
-			{
-				if (is_object($value) && get_class($value) != "ffData")
-						$this->errorHandler("lookup: Il valore delle chiavi dev'essere di tipo ffData od un plain value");
-
-				$sSql .= " AND `" . $key . "` = " . $this->toSql($value);
-			}
-			reset($chiave);
-		}
-		elseif ($chiave != null)
-		{
-			if (is_object($valorechiave) && get_class($valorechiave) != "ffData")
-				$this->errorHandler("lookup: Il valore della chiave dev'essere un oggetto ffData od un plain value");
-
-			$sSql .= " AND `" . $chiave . "` = " . $this->toSql($valorechiave);
-		}
-
-		$this->query($sSql);
-		if ($this->nextRecord())
-		{
-
-			if(is_array($nomecampo))
-			{
-				$valori = array();
-				if (!count($nomecampo))
-					$this->errorHandler("lookup: Nuessun campo specificato da recuperare");
-
-				foreach ($nomecampo as $key => $value)
-				{
-					$valori[$key] = $this->getField($key, $value, $bReturnPlain);
-				}
-				reset($nomecampo);
-
-				return $valori;
-			}
-			elseif ($nomecampo !== null)
-			{
-				return $this->getField($nomecampo, $tiporestituito, $bReturnPlain);
-			}
-			else
-			{
-				return $this->getField($this->fields_names[0], $tiporestituito, $bReturnPlain);
-			}
-
-		}
-		else
-		{
-			if ($defaultvalue === null)
-				return false;
-			else
-				return $defaultvalue;
-		}
+		//todo: da implementare
 	}
 
 	/**
@@ -1468,128 +1336,5 @@ class MongoDB implements DatabaseDriver
 		}
 
         return $query;
-    }
-
-
-    private function eachAll($callback)
-    {
-        if (!$this->query_id)
-        {
-            $this->errorHandler("eachAll called with no query pending");
-            return false;
-        }
-
-        $res = $this->getRecordset();
-
-        $last_ret = null;
-        foreach ($res as $row => $record)
-        {
-            $last_ret = $callback($row, $record, $last_ret);
-        }
-
-        return $last_ret;
-    }
-
-    private function eachNext($callback)
-    {
-        if (!$this->query_id)
-        {
-            $this->errorHandler("eachAll called with no query pending");
-            return false;
-        }
-
-        $last_ret = null;
-        if ($this->nextRecord())
-        {
-            do
-            {
-                $last_ret = $callback($this->row, $this->record, $last_ret);
-            } while ($this->nextRecord());
-        }
-
-        return $last_ret;
-    }
-// SI POSIZIONA AD UN RECORD SPECIFICO
-    //todo: da fare
-    private function seek($pos = 0)
-    {
-        if (!$this->query_id)
-        {
-            $this->errorHandler("Seek called with no query pending");
-            return false;
-        }
-
-        return $pos;
-    }
-
-    // SI POSIZIONA AL PRIMO RECORD DI UNA PAGINA IDEALE
-    private function jumpToPage($page, $RecPerPage)
-    {
-        $totpage = ceil($this->numRows() / $RecPerPage);
-        if ($page > $totpage)
-            $page = $totpage;
-
-        if ($page > 1)
-            if ($this->seek(($page - 1) * $RecPerPage))
-                return $page;
-
-        return false;
-    }
-
-    // -------------------------
-    //  WRAPPER PER L'API Mongo
-    private function affectedRows($bReturnPlain = false)
-    {
-        return $this->getInsertID($bReturnPlain);
-    }
-
-    /**
-     * Conta il numero di campi
-     * @return bool|int
-     */
-    private function numFields()
-    {
-        if (!$this->query_id)
-        {
-            $this->errorHandler("numFields() called with no query pending");
-            return false;
-        }
-
-        return count($this->fields);
-    }
-
-    private function isSetField($Name)
-    {
-        if (!$this->query_id)
-        {
-            $this->errorHandler("isSetField() called with no query pending");
-            return false;
-        }
-
-        if(isset($this->fields[$Name]))
-            return true;
-        else
-            return false;
-    }
-    // PERMETTE DI RECUPERARE IL VALORE DI UN CAMPO SPECIFICO DI UNA RIGA SPECIFICA. NB: Name puÃƒÆ’Ã‚Â² essere anche un indice numerico
-    private function getResult($row, $Name, $data_type = "Text", $bReturnPlain = false)
-    {
-        if (!$this->query_id)
-        {
-            $this->errorHandler("result() called with no query pending");
-            return false;
-        }
-
-        if ($row === null)
-            $row = $this->row;
-
-        if ($row !== $this->row)
-        {
-            $rc = $this->seek($row);
-            if (!$rc)
-                return false;
-        }
-
-        return $this->getField((is_numeric($Name) ? $this->fields_names[$Name] : $Name), $data_type, $bReturnPlain);
     }
 }

@@ -180,9 +180,7 @@ class Router extends App implements Configurable
         }
     }
 
-    private function execute($path) {
-        $script                         = $this->getDiskPath($path);
-
+    private function execute($script) {
         /*
          * Anti injection, prevent error fs
          */

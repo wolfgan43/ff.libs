@@ -67,7 +67,7 @@ class Buckler implements Configurable {
 
         $path_info                                          = ($path_info
                                                                 ? $path_info
-                                                                : parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH)
+                                                                : Request::url(PHP_URL_PATH)
                                                             );
         $matches                                            = array();
 

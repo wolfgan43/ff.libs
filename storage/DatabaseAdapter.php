@@ -1093,21 +1093,17 @@ abstract class DatabaseAdapter {
                     $name                                                   = substr($name, 1);
                     $not                                                    = true;
                 }
+
                 if (strpos($name, ">") === strlen($name) - 1) {
                     $name                                                   = substr($name, 0, -1);
                     $op                                                     = ">";
-                }
-                if (strpos($name, ">=") === strlen($name) - 2) {
+                } elseif (strpos($name, ">=") === strlen($name) - 2) {
                     $name                                                   = substr($name, 0, - 2);
                     $op                                                     = ">=";
-                }
-
-                if (strpos($name, "<") === strlen($name) - 1) {
+                } elseif (strpos($name, "<") === strlen($name) - 1) {
                     $name                                                   = substr($name, 0, -1);
                     $op                                                     = "<";
-                }
-
-                if (strpos($name, "<=") === strlen($name) - 2) {
+                } elseif (strpos($name, "<=") === strlen($name) - 2) {
                     $name                                                   = substr($name, 0, -2);
                     $op                                                     = "<=";
                 }
@@ -1120,10 +1116,6 @@ abstract class DatabaseAdapter {
                     if(isset($arrType["in"])) {
                         $toField                                            = $arrType["in"];
                     }
-                    /*
-                    $arrStructType = explode(":", $this->struct[$name], 2);
-                    $struct_type = $arrStructType[0];
-                    */
                 }
                 switch($struct_type) {
                     case "arrayIncremental":																            //array

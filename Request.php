@@ -44,39 +44,14 @@ class Request implements Configurable {
     public static function loadSchema() {
         $config                                                                                 = Config::rawData("request", true);
         $schema                                                                                 = array();
-        if(is_array($config["page"]) && count($config["page"])) {
+        if(isset($config["page"]) && is_array($config["page"]) && count($config["page"])) {
             foreach ($config["page"] AS $request) {
                 $page_attr                                                                      = DirStruct::getXmlAttr($request);
                 $schema                                                                         = self::setSchema($request, $page_attr["path"], $schema);
-                /*if(is_array($request["header"]) && count($request["header"])) {
-                    foreach($request["header"] AS $header) {
-                        self::setRequestMapping($schema, DirStruct::getXmlAttr($header), $page_attr["path"], true);
-                    }
-                }
-                if(is_array($request["get"]) && count($request["get"])) {
-                    foreach($request["get"] AS $get) {
-                        self::setRequestMapping($schema, DirStruct::getXmlAttr($get), $page_attr["path"]);
-                    }
-
-                }*/
-                 /*else if($page_attr["get"]) {
-                    $schema["request"][$page_attr["path"]] = true;
-                }*/
-
             }
         }
         $schema                                                 = self::setSchema($config, "/", $schema);
 
-       /* if(is_array($config["header"]) && count($config["header"])) {
-            foreach ($config["header"] AS $header) {
-                self::setRequestMapping($schema, DirStruct::getXmlAttr($header), "/", true);
-            }
-        }
-        if(is_array($config["get"]) && count($config["get"])) {
-            foreach ($config["get"] AS $get) {
-                self::setRequestMapping($schema, DirStruct::getXmlAttr($get), "/");
-            }
-        }*/
         if(isset($config["pattern"]))                           { self::loadPatterns($config["pattern"]); }
         if(isset($config["accesscontrol"]))                     { self::loadAccessControl($config["accesscontrol"]); }
 

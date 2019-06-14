@@ -71,11 +71,6 @@ class Router extends App implements Configurable
     public function __construct()
 	{
         $this->addRules(Config::getSchema("router"));
-
-        $default = $this::getDiskPath("webroot", true);
-	    if($default) {
-            $this->addRule("*", $default);
-        }
     }
 
 	public function check($path, $source = null) {
@@ -105,10 +100,38 @@ class Router extends App implements Configurable
                 }
             }
         } elseif($rule) {
-            $this->execute($rule . $path);
+            $this->execute(self::documentRoot() . $rule . $path);
+        } else {
+            $this->runWebRoot($path);
+        }
+
+        if(self::DEBUG) {
+            Response::code(404);
+            Debug::dump();
         }
 
         Error::send(404);
+    }
+
+    private function runWebRoot($path) {
+        $webroot = self::getDiskPath("webroot");
+        if($webroot) {
+            $file = null;
+            $arrPath = pathinfo($path);
+            if (!isset($arrPath["extension"])) {
+                if($path == "/" && is_file($webroot . "/index." . self::PHP_EXT)) {
+                    $file = "/index." . self::PHP_EXT;
+                } elseif(is_file($webroot . $path . "/index." . self::PHP_EXT)) {
+                    $file = $path . "/index." . self::PHP_EXT;
+                } elseif (is_file($webroot . $path . "." . self::PHP_EXT)) {
+                    $file = $path . "." . self::PHP_EXT;
+                }
+            }
+
+            if($file) {
+                $this->execute($webroot . $file);
+            }
+        }
     }
 	public function addRules($rules) {
         if(is_array($rules) && count($rules)) {

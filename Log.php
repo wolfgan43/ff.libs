@@ -26,7 +26,6 @@
 namespace phpformsframework\libs;
 
 use phpformsframework\libs\storage\Filemanager;
-use Thread;
 
 if(!defined("LOG_SERVICES"))                                { define("LOG_SERVICE", "fs"); }
 
@@ -182,7 +181,7 @@ class Log extends DirStruct {
                                                                         , "unalterable"             => false
                                                                         , "notify"                  => false
                                                                         , "bucket"                  => "debug"
-                                                                        , "write_if"                => Debug::ACTIVE
+                                                                        , "write_if"                => null
                                                                         , "override"                => false
                                                                         , "format"                  => self::FORMAT_CLF
                                                                     )
@@ -193,7 +192,7 @@ class Log extends DirStruct {
                                                                         , "unalterable"             => false
                                                                         , "notify"                  => false
                                                                         , "bucket"                  => "info_redirect"
-                                                                        , "write_if"                => Debug::ACTIVE
+                                                                        , "write_if"                => null
                                                                         , "override"                => false
                                                                         , "format"                  => self::FORMAT_CLF
                                                                     )
@@ -347,7 +346,7 @@ class Log extends DirStruct {
                 : $procedure["routine"]
             );
 
-
+            if($rule["write_if"] === null)                          { $rule["write_if"] = Debug::ACTIVE; }
 
             if($rule["write_if"]) {
                 $bucket                                             = ($rule["bucket"]
@@ -537,7 +536,7 @@ class Log extends DirStruct {
             , explode(".", microtime(true))[1]
             , strftime('%Y')
             , getmypid()
-            , (class_exists("Thread") ? Thread::getCurrentThreadId() : null)
+            , (class_exists("Thread") ? \Thread::getCurrentThreadId() : null)
             , Debug::stopWatch()
             , Response::code($status)
             , $response

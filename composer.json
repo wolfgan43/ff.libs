@@ -29,6 +29,7 @@
     },
     "suggest": {
         "ext-mongodb": "to use MongoDb",
+        "ext-posix": "to extend log info",
         "twilio/sdk" : "to use SMS notifications [composer require twilio/sdk:^5.31.3]"
     },
     "autoload": {

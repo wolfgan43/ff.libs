@@ -39,22 +39,6 @@ spl_autoload_register(function ($class) {
         , $name_space_translator . 'Google'     => 'adapters' . DIRECTORY_SEPARATOR . 'translator_google.php'
         , $name_space_translator . 'Translated' => 'adapters' . DIRECTORY_SEPARATOR . 'translator_translated.php'
         , $name_space_translator . 'Transltr'   => 'adapters' . DIRECTORY_SEPARATOR . 'translator_transltr.php'
-        , $name_space_data . 'Ara'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_ara.php'
-        , $name_space_data . 'Chn'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_chn.php'
-        , $name_space_data . 'Dan'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_dan.php'
-        , $name_space_data . 'Deu'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_deu.php'
-        , $name_space_data . 'Eng'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_eng.php'
-        , $name_space_data . 'Esp'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_esp.php'
-        , $name_space_data . 'Fra'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_fra.php'
-        , $name_space_data . 'Iso9075'          => 'adapters' . DIRECTORY_SEPARATOR . 'data_iso9075.php'
-        , $name_space_data . 'Ita'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_ita.php'
-        , $name_space_data . 'Jpn'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_jpn.php'
-        , $name_space_data . 'Jpn'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_jpn.php'
-        , $name_space_data . 'Jpn'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_jpn.php'
-        , $name_space_data . 'Mssql'            => 'adapters' . DIRECTORY_SEPARATOR . 'data_mssql.php'
-        , $name_space_data . 'Ned'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_ned.php'
-        , $name_space_data . 'Por'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_por.php'
-        , $name_space_data . 'Rus'              => 'adapters' . DIRECTORY_SEPARATOR . 'data_rus.php'
     );
 
     if(isset($class_files[$class])) {

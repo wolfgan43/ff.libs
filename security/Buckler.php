@@ -54,12 +54,14 @@ class Buckler implements Configurable {
         self::checkAllowedPath();
     }
     private static function checkLoadAvg() {
-        $load = sys_getloadavg();
-        if ($load[0] > 80) {
-            Error::send(503);
-            Log::emergency("server busy");
-            //Logs::write($_SERVER, "error_server_busy");
-            exit;
+        if(function_exists("sys_getloadavg")) {
+            $load = sys_getloadavg();
+            if ($load[0] > 80) {
+                Error::send(503);
+                Log::emergency("server busy");
+                //Logs::write($_SERVER, "error_server_busy");
+                exit;
+            }
         }
     }
     private static function checkAllowedPath($path_info = null, $do_redirect = true) {

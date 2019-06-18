@@ -193,23 +193,21 @@ class Data
 	function __construct($value = null, $data_type = null, $locale = null)
 	{
 		// embedded types
-		if (is_object($value)) {
-			if (get_class($value) == "DateTime") {
-				if ($data_type === null) {
-                    $data_type = "DateTime";
-                } elseif ($data_type !== "DateTime" && $data_type !== "Date") {
-                    Error::dump("DateTime object with " . $data_type . " type", E_USER_ERROR, $this, get_defined_vars());
-                }
-				if ($data_type == "Date") {
-                    $value = $value->format("Y-m-d");
-                } else {
-                    $value = $value->format("Y-m-d H:i:s");
-                }
+		if (is_object($value) && get_class($value) == "DateTime") {
+            if ($data_type === null) {
+                $data_type = "DateTime";
+            } elseif ($data_type !== "DateTime" && $data_type !== "Date") {
+                Error::dump("DateTime object with " . $data_type . " type", E_USER_ERROR, $this, get_defined_vars());
+            }
+            if ($data_type == "Date") {
+                $value = $value->format("Y-m-d");
+            } else {
+                $value = $value->format("Y-m-d H:i:s");
+            }
 
-				$locale = "ISO9075";
-			}
-		}
-		
+            $locale = "ISO9075";
+        }
+
 		if ($data_type !== null) {
             $this->data_type = $data_type;
         }

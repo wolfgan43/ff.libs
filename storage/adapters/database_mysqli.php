@@ -275,16 +275,18 @@ class Mysqli extends DatabaseAdapter {
                                     $res[$name . '-' . $op] 						= "`" . $name . "`" . " LIKE " . $this->driver->toSql(str_replace(array("(.*)", "(.+)", ".*", ".+", "*", "+"), "%", $subvalue));
                                     break;
                                 case '$in':
-                                    if(is_array($subvalue))
-                                        $res[$name . '-' . $op] 					= "`" . $name . "`" . " IN('" . str_replace(", ", "', '", $this->driver->toSql(implode(", ", $subvalue), "Text", false)) . "')";
-                                    else
-                                        $res[$name . '-' . $op] 					= "`" . $name . "`" . " IN('" . str_replace(",", "', '", $this->driver->toSql($subvalue, "Text", false)) . "')";
+                                    if(is_array($subvalue)) {
+                                        $res[$name . '-' . $op]                     = "`" . $name . "`" . " IN('" . str_replace(", ", "', '", $this->driver->toSql(implode(", ", $subvalue), "Text", false)) . "')";
+                                    } else {
+                                        $res[$name . '-' . $op]                     = "`" . $name . "`" . " IN('" . str_replace(",", "', '", $this->driver->toSql($subvalue, "Text", false)) . "')";
+                                    }
                                     break;
                                 case '$nin':
-                                    if(is_array($subvalue))
+                                    if(is_array($subvalue)) {
                                         $res[$name . '-' . $op] 					= "`" . $name . "`" . " NOT IN('" . str_replace(", ", "', '", $this->driver->toSql(implode(", ", $subvalue), "Text", false)) . "')";
-                                    else
+                                    } else {
                                         $res[$name . '-' . $op] 					= "`" . $name . "`" . " NOT IN('" . str_replace(",", "', '", $this->driver->toSql($subvalue, "Text", false)) . "')";
+                                    }
                                     break;
                                 case '$ne':
                                     $res[$name . '-' . $op] 						= "`" . $name . "`" . " <> " . $this->driver->toSql($subvalue);

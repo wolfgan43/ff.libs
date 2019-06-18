@@ -440,7 +440,6 @@ class MySqli implements DatabaseDriver
             $Query_String                                   = $query;
         }
 
-
         if ($Query_String == "") {
             $this->errorHandler("Query invoked With blank Query String");
         }

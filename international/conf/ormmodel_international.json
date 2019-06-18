@@ -1,0 +1,93 @@
+{
+  "bucket": "international",
+  "type": "international",
+  "main_table": "lang",
+  "adapters": {
+    "mysqli": null
+  },
+  "connectors": {
+    "mysqli": {
+      "host": null,
+      "username": null,
+      "password": null,
+      "name": null,
+      "prefix": "INTERNATIONAL_DATABASE_",
+      "table": null,
+      "key": "ID"
+    },
+    "mongodb": {
+      "host": null,
+      "username": null,
+      "password": null,
+      "name": null,
+      "prefix": "INTERNATIONAL_MONGO_DATABASE_",
+      "table": null,
+      "key": "ID"
+    },
+    "fs": {
+      "service": "php",
+      "path": "\/cache\/international",
+      "name": [
+        "tiny_code"
+      ]
+    }
+  },
+  "struct": {
+    "lang": {
+      "ID": "primary",
+      "name": "string",
+      "description": "string",
+      "code": "string",
+      "tiny_code": "string",
+      "stopwords": "text"
+    },
+    "translation": {
+      "ID": "primary",
+      "ID_lang": "number",
+      "word_code": "string",
+      "description": "string",
+      "is_new": "boolean",
+      "last_update": "number"
+    }
+  },
+  "relationship": {
+    "lang": {
+      "translation": {
+        "external": "ID_lang",
+        "primary": "ID"
+      }
+    },
+    "translation": {
+      "lang": {
+        "external": "ID_lang",
+        "primary": "ID"
+      }
+    }
+  },
+  "indexes": {
+    "translation": {
+      "ID_lang": "hardindex"
+    }
+  },
+  "tables": {
+    "lang": {
+      "name": "lang",
+      "alias": "lang",
+      "engine": "InnoDB",
+      "crypt": false,
+      "pairing": false,
+      "transfert": false,
+      "charset": "utf8"
+    },
+    "translation": {
+      "name": "lang_international",
+      "alias": "translation",
+      "engine": "InnoDB",
+      "crypt": false,
+      "pairing": false,
+      "transfert": false,
+      "charset": "utf8"
+    }
+  },
+  "alias": {}
+}

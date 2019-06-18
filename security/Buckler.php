@@ -59,57 +59,50 @@ class Buckler implements Configurable {
             if ($load[0] > 80) {
                 Error::send(503);
                 Log::emergency("server busy");
-                //Logs::write($_SERVER, "error_server_busy");
                 exit;
             }
         }
     }
-    private static function checkAllowedPath($path_info = null, $do_redirect = true) {
+    private static function checkAllowedPath() {
         $rules                                              = Config::getSchema("badpath");
 
-        $path_info                                          = ($path_info
-                                                                ? $path_info
-                                                                : Request::url(PHP_URL_PATH)
+        $path_info                                          = (isset($_SERVER["REQUEST_URI"])
+                                                                ? $_SERVER["REQUEST_URI"]
+                                                                : null
                                                             );
-        $matches                                            = array();
+        if($path_info) {
+            $matches                                            = array();
 
-        if(is_array($rules) && count($rules)) {
-            foreach($rules AS $source => $rule) {
-                $src                                        = self::regexp($source);
-                if(preg_match($src, $path_info, $matches)) {
-                    if(is_numeric($rule["destination"]) || ctype_digit($rule["destination"])) {
-                        Response::code($rule["destination"]);
+            if(is_array($rules) && count($rules)) {
+                foreach($rules AS $source => $rule) {
+                    $src                                        = self::regexp($source);
+                    if(preg_match($src, $path_info, $matches)) {
+                        if(is_numeric($rule["destination"]) || ctype_digit($rule["destination"])) {
+                            Response::code($rule["destination"]);
 
-                        if(isset($rule["log"])) {
-                            Log::write(
-                                array(
-                                    "RULE"          => $source
-                                    , "ACTION"      => $rule["destination"]
-                                    , "URL"         => Request::url()
-                                    , "REFERER"     => Request::referer()
-                                )
-                                , "shield"
-                                , $rule["destination"]
-                                , "BadPath"
-                            );
+                            if(isset($rule["log"])) {
+                                Log::write(
+                                    array(
+                                        "RULE"          => $source
+                                        , "ACTION"      => $rule["destination"]
+                                        , "URL"         => Request::url()
+                                        , "REFERER"     => Request::referer()
+                                    )
+                                    , "shield"
+                                    , $rule["destination"]
+                                    , "BadPath"
+                                );
+                            }
+                            exit;
                         }
-                        exit;
-                    } elseif($do_redirect && $rule["destination"]) {
-                        $redirect                           = $rule["destination"];
-                        if(strpos($src, "(") !== false && strpos($rule["destination"], "$") !== false) {
-                            $redirect                       = preg_replace($src, $rule["destination"], $path_info);
-                        }
-
-                        Response::redirect($_SERVER["HTTP_HOST"] . $redirect);
                     }
                 }
             }
         }
-
-        return $path_info;
     }
-    private static function antiFlood() { //todo: da fare
 
+    //todo: da fare
+    private static function antiFlood() {
     }
     private static function regexp($rule) {
         return "#" . (strpos($rule, "[") === false && strpos($rule, "(") === false && strpos($rule, '$') === false

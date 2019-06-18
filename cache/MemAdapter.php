@@ -23,12 +23,12 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\cache\mem;
+namespace phpformsframework\libs\cache;
 
 if (!defined("FF_CACHE_SERIALIZER"))                { define("FF_CACHE_SERIALIZER", "PHP"); }
 if (!defined("APPID"))                              { define("APPID", $_SERVER["HTTP_HOST"]); }
 
-abstract class Adapter
+abstract class MemAdapter
 {
     const SERIALIZER                = FF_CACHE_SERIALIZER;
     const TTL                       = 0;
@@ -51,13 +51,10 @@ abstract class Adapter
     }
 
     protected function getBucket($name = null) {
-	    return ($name
-            ? (substr($name, 0, 1) == "/"
-                ? self::APPID
-                : ""
-            ) . $name
+	    return ($name && substr($name, 0, 1) == "/"
+            ? self::APPID
             : ""
-        );
+        ) . $name;
     }
     protected function getKey($name, $bucket = null) {
         return ($bucket

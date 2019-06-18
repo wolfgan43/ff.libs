@@ -60,7 +60,6 @@ class FontIcon extends Extendible {
     private function loadButtons() {
         if($this->button_type) {
             $this->loadExtension("buttons_" . $this->button_type);
-
         }
     }
     public function action($params, $use_source = false) {

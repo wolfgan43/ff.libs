@@ -23,7 +23,7 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\cache\mem;
+namespace phpformsframework\libs\cache;
 
 use phpformsframework\libs\Debug;
 use Memcached AS MC;
@@ -31,7 +31,7 @@ use Memcached AS MC;
 if (!defined("FF_CACHE_MEMCACHED_SERVER"))  { define("FF_CACHE_MEMCACHED_SERVER", "localhost"); }
 if (!defined("FF_CACHE_MEMCACHED_PORT"))    { define("FF_CACHE_MEMCACHED_PORT", 11211); }
 
-class Memcached extends Adapter{
+class Memcached extends MemAdapter {
     const SERVER            = FF_CACHE_MEMCACHED_SERVER;
     const PORT              = FF_CACHE_MEMCACHED_PORT;
 

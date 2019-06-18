@@ -6,7 +6,7 @@
     "password" : null,
     "auth" : true,
     "port" : 587,
-    "secure" : "tls",
+    "secure" : "",
     "autoTLS" : false
   }
 }

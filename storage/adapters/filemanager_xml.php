@@ -36,34 +36,29 @@ class Xml extends FilemanagerAdapter
     const EXT                                                   = "xml";
 
     public function read($file_path = null, $search_keys = null, $search_flag = self::SEARCH_DEFAULT) {
-        if(function_exists("simplexml_load_string")) {
-            libxml_use_internal_errors(true);
-            $res                                                    = array();
-            if($file_path)                                          { $this->setFilePath($file_path); }
-            $file_path                                              = $this->getFilePath();
+        $res                                                    = array();
+        if($file_path)                                          { $this->setFilePath($file_path); }
+        $file_path                                              = $this->getFilePath();
 
-            $xmlstring                                              = file_get_contents($file_path);
-            if($xmlstring) {
-                $return                                             = Array2XML::XML_TO_ARR($xmlstring);
-                if($return) {
-                    if($search_keys) {
-                        $res                                        = $this->search($return, $search_keys, $search_flag);
-                    } else {
-                        $res                                        = $return;
-                    }
-                } elseif($return === false) {
-                    Error::register("syntax errors into file" . (Debug::ACTIVE ? ": " . $file_path : ""), "filemanager");
+        $xmlstring                                              = file_get_contents($file_path);
+        if($xmlstring) {
+            $return                                             = Array2XML::XML_TO_ARR($xmlstring);
+            if($return) {
+                if($search_keys) {
+                    $res                                        = $this->search($return, $search_keys, $search_flag);
                 } else {
-                    $res                                            = null;
+                    $res                                        = $return;
                 }
-
-                return $this->getResult($res);
-
-            } else {
+            } elseif($return === false) {
                 Error::register("syntax errors into file" . (Debug::ACTIVE ? ": " . $file_path : ""), "filemanager");
+            } else {
+                $res                                            = null;
             }
+
+            return $this->getResult($res);
+
         } else {
-            Error::register("Missing Extension ext-libxml. Install and enable it on php.", "filemanager");
+            Error::register("syntax errors into file" . (Debug::ACTIVE ? ": " . $file_path : ""), "filemanager");
         }
 
         return null;

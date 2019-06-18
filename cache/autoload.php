@@ -29,6 +29,7 @@ spl_autoload_register(function ($class) {
     $name_space_mem                     = $name_space . 'mem\\';
     $class_files                        = array(
         $name_space . 'Mem'             => 'Mem.php'
+        , $name_space . 'MemAdapter'    => 'MemAdapter.php'
         , $name_space_mem . 'Apc'       => 'adapters' . DIRECTORY_SEPARATOR . 'apc.php'
         , $name_space_mem . 'Fs'        => 'adapters' . DIRECTORY_SEPARATOR . 'fs.php'
         , $name_space_mem . 'Memcached' => 'adapters' . DIRECTORY_SEPARATOR . 'memcached.php'

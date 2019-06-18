@@ -28,6 +28,8 @@ namespace phpformsframework\libs\storage\drivers;
 use DOMDocument;
 use DOMNode;
 use Exception;
+use function simplexml_load_string;
+use function libxml_use_internal_errors;
 
 class Array2XML {
 
@@ -167,6 +169,8 @@ class Array2XML {
      */
     public static function XML_TO_ARR($xmlstring)
     {
+        libxml_use_internal_errors(true);
+
         $xmlstring = preg_replace ("/\s+</", "<", $xmlstring);
         $xmlstring = preg_replace("/<!--.*?-->/ms","",$xmlstring);
         $xml = simplexml_load_string($xmlstring, "SimpleXMLElement", LIBXML_NOCDATA);

@@ -213,13 +213,15 @@ class Log extends DirStruct {
         self::$user                                             = $name;
     }
     protected static function getUser() {
-        return (self::$user
-            ? self::$user
-            : (isset($_COOKIE[session_name()])
-                ? "user"
-                : "guest"
-            )
-        );
+        $res                                                    = self::$user;
+        if(!$res) {
+            $res                                                = (isset($_COOKIE[session_name()])
+                                                                    ? "user"
+                                                                    : "guest"
+                                                                );
+        }
+
+        return $res;
     }
     public static function addFormat($key, $format) {
         self::$formats[$key]                                    = $format;
@@ -469,7 +471,6 @@ class Log extends DirStruct {
             $rule                                               = self::$rules[$name];
         } else {
             $rule                                               = self::$rules[self::TYPE_DEFAULT];
-            //$rule["bucket"]                                     = $name;
         }
         return $rule;
     }
@@ -573,11 +574,12 @@ class Log extends DirStruct {
         return $content;
     }
 
-
+    //todo: da finire
     private static function hashing($string, $bucket) {
 
     }
 
+    //todo: da finire
     private static function notify($message, $object) {
 
     }

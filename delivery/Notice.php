@@ -27,26 +27,26 @@ namespace phpformsframework\libs\delivery;
 
 use phpformsframework\libs\delivery\notice\Adapter;
 
-/*
-Notice::getInstance(array("email", "sms", "push"))
-    ->addRecipient("wolfgan@gmail.com")
-    ->addRecipient("3369874563")
-    ->setShortMessage("ciao mondo")
-    ->setLongMessage(
-        "title"
-        , "array message"
-        , "template"
-    )
+/**
+ *
+ * @example Notice::getInstance(array("email", "sms", "push"))
+                ->addRecipient("wolfgan@gmail.com")
+                ->addRecipient("3369874563")
+                ->setShortMessage("ciao mondo")
+                ->setLongMessage(
+                "title"
+                , "array message"
+                , "template"
+                )
 
-    ->setTitle("ciao mondo")
-    ->setMessage(array(
-            "content" => $mycontent
-            , "blabla" => $blabla
-        ), "/mytemplate.html"
-    )
-    ->send();
-
-*/
+                ->setTitle("ciao mondo")
+                ->setMessage(array(
+                "content" => $mycontent
+                , "blabla" => $blabla
+                ), "/mytemplate.html"
+                )
+                ->send();
+ */
 
 class Notice
 {

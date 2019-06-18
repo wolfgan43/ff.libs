@@ -29,6 +29,7 @@ use phpformsframework\libs\Debug;
 use phpformsframework\libs\DirStruct;
 use phpformsframework\libs\Env;
 use phpformsframework\libs\Error;
+use phpformsframework\libs\Extendible;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Response;
@@ -38,7 +39,7 @@ use phpformsframework\libs\storage\Media;
 if (!defined("APPNAME"))                 { define("APPNAME", str_replace(" " , "", ucwords(str_replace(array(".", "-"), " ", $_SERVER["HTTP_HOST"])))); }
 if (!defined("ENCODING"))                { define("ENCODING", "utf-8"); }
 
-class PageHtml extends DirStruct {
+class PageHtml extends Extendible {
     const NL                                    = "\n";
     const APPNAME                               = APPNAME;
     const MAIN_CONTENT                          = "content";
@@ -302,7 +303,7 @@ class PageHtml extends DirStruct {
 
         $url                                    = str_ireplace(array_keys($env), array_values($env), $url);
 
-        return (strpos($url, $this::$disk_path) === 0
+        return (strpos($url, DirStruct::$disk_path) === 0
             ? Media::getUrl($url)
             : $url
         );
@@ -318,7 +319,7 @@ class PageHtml extends DirStruct {
     }
 
     public function setLayout($name) {
-        $this->layout                           = file_get_contents($this::$disk_path . $this->getAsset($name, "layout"));
+        $this->layout                           = file_get_contents(DirStruct::$disk_path . $this->getAsset($name, "layout"));
 
         return $this;
     }
@@ -429,8 +430,8 @@ class PageHtml extends DirStruct {
         if(!$description)                       { $description = Error::getErrorMessage($code); }
 
         $tpl                                    = new ffTemplate();
-        $tpl->load_file($this::$disk_path . $this->getAsset("error", "common"));
-        $tpl->set_var("site_path"   , self::SITE_PATH);
+        $tpl->load_file(DirStruct::$disk_path . $this->getAsset("error", "common"));
+        $tpl->set_var("site_path"   , DirStruct::SITE_PATH);
         $tpl->set_var("title"       , Translator::get_word_by_code($title));
         $tpl->set_var("description" , Translator::get_word_by_code($description));
 
@@ -515,7 +516,7 @@ class PageHtml extends DirStruct {
 
             foreach ($this->resource_rules as $key => $rule) {
                 $patterns[$base_dir . "/assets/" . $key] = $rule;
-                $patterns[self::getDiskPath($key, true)] = $rule;
+                $patterns[DirStruct::getDiskPath($key, true)] = $rule;
             }
         }
 
@@ -555,7 +556,7 @@ class PageHtml extends DirStruct {
             }
         }
 
-        return str_replace($this::$disk_path, "", $asset);
+        return str_replace(DirStruct::$disk_path, "", $asset);
     }
 
 }

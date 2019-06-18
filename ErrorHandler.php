@@ -33,17 +33,17 @@ if (!defined("FF_ERROR_HANDLER_LOG_PATH"))		{ define("FF_ERROR_HANDLER_LOG_PATH"
  */
 class ErrorHandler
 {
-    static $errors_objects  = array();
-    static $errors_arrays   = array();
-    static $errors_handled  = array();
+    private static $errors_objects  = array();
+    private static $errors_arrays   = array();
+    private static $errors_handled  = array();
 
-    static $hide			= FF_ERROR_HANDLER_HIDE;
-    static $minimal_report	= FF_ERROR_HANDLER_MINIMAL;
-    static $whenErrorDo500	= FF_ERROR_HANDLER_500;
-    static $log				= FF_ERROR_HANDLER_LOG;
+    private static $hide			= FF_ERROR_HANDLER_HIDE;
+    private static $minimal_report	= FF_ERROR_HANDLER_MINIMAL;
+    private static $whenErrorDo500	= FF_ERROR_HANDLER_500;
+    private static $log				= FF_ERROR_HANDLER_LOG;
 
-    static $log_path		= FF_ERROR_HANDLER_LOG_PATH; // default to FF_DISK_PATH . /ff_errors
-    private static $log_fp          = null; // private
+    private static $log_path		= FF_ERROR_HANDLER_LOG_PATH;
+    private static $log_fp          = null;
     private static $error_types		= FF_ERROR_TYPES;
 
     /**
@@ -54,7 +54,7 @@ class ErrorHandler
      * @param object $context l'oggetto contesto dell'errore. Se non esiste è null
      * @param array $variables le variabili definite al momento della generazione dell'errore, normalmente recuperate tramite get_defined_vars()
      */
-    static function raise($errdes, $errno = E_USER_ERROR, $context = NULL, $variables = NULL)
+    public static function raise($errdes, $errno = E_USER_ERROR, $context = NULL, $variables = NULL)
     {
         $id = uniqid(rand(), true);
         self::$errors_objects = array();
@@ -66,13 +66,13 @@ class ErrorHandler
         self::$errors_handled[$id]["constants"]     = self::compactConstants(get_defined_constants());
         self::$errors_handled[$id]["classes"]       = self::compactConstants(get_declared_classes());
 
-        set_error_handler("\phpformsframework\libs\ErrorHandler::errorHandler", self::$error_types);
+        set_error_handler("\phpformsframework\libs\ErrorHandler::run", self::$error_types);
         error_reporting(error_reporting() ^ self::$error_types);
 
         trigger_error($id, $errno);
     }
 
-    static function errorHandler($errno, $errstr, $errfile, $errline)
+    public static function run($errno, $errstr, $errfile, $errline)
     {
         static $error_id = -1;
 
@@ -220,50 +220,17 @@ EOD
         // DISPLAY FUNCTION ARGUMENTS
         if (isset($errargs) && is_array($errargs) && count($errargs))
         {
-            //self::out('<tr><td style="vertical-align: top;"><b>Func Args: <a href="javascript:void(0);" onclick="expand(this, \'div_args_' . $error_id . '\');">[+]</a></b></td><td><div id="div_args_' . $error_id . '" style="display: none; overflow: hidden;">');
             self::out('<tr><td style="vertical-align: top;"><b>Func Args:</b></td><td>');
             self::structPrint($errargs, 0, true);
-            //self::out('</div></td></tr>');
             self::out('</td></tr>');
         }
 
-        // DISPLAY FILE SOURCE
-        /*		self::out('<tr><td style="vertical-align: top;"><b>Source: <a href="javascript:void(0);" onclick="expand(this, \'div_source_' . $error_id . '\');">[+]</a></b></td><td><div id="div_source_' . $error_id . '" style="display: none; border: 1px solid black; background-color: #FFFFFF; overflow-x: scroll;"><code>');
-                $startline = $errline - 10;
-                if ($startline < 0)
-                    $startline = 0;
-                $endline = $errline + 10;
-                $code = highlight_file($errfile, true);
-                for ($i = 0; $i < strlen($code); $i++)
-                    {
-                        $buffer .= $code[$i];
-                        if (substr($buffer, -6) == '<br />')
-                            {
-                                $tmp = count($codeln);
-                                if ($tmp + 1 == $errline)
-                                    $codeln[$tmp] = '<span style="font-weight: bold; color: #000000; border-right: 1px solid black; background-color: #AAAAAA;">&nbsp;' . str_replace(" ", "&nbsp;", sprintf("%5s", $tmp + 1)) . '&nbsp;</span>';
-                                else
-                                    $codeln[$tmp] = '<span style="font-weight: bold; color: #000000; border-right: 1px solid black; background-color: #DDDDDD;">&nbsp;' . str_replace(" ", "&nbsp;", sprintf("%5s", $tmp + 1)) . '&nbsp;</span>';
-                                $codeln[$tmp] .= $buffer;
-                                $buffer = "";
-                            }
-                    }
-                if ($code[$i] != '\n')
-                    $codeln[count($codeln)] = $buffer;
-                for ($i = $startline - 1; $i <= $endline - 1; $i++)
-                    {
-                        if ($i + 1 == $errline)
-                            self::out("<div style='background-color: #ffff66; width: 100%;'>" . $codeln[$i] . "</div>");
-                        else
-                            self::out($codeln[$i]);
-                    }
-                self::out('</code></div></td></tr>');
-         */
         // DISPLAY FUNCTION VARIABLES
         if (self::$errors_handled[$id]["variables"] !== NULL)
         {
-            if (isset(self::$errors_handled[$id]["variables"]["GLOBALS"]))
+            if (isset(self::$errors_handled[$id]["variables"]["GLOBALS"])) {
                 self::$errors_handled[$id]["variables"] = self::removeGlobals(self::$errors_handled[$id]["variables"]);
+            }
             self::out('<tr><td style="vertical-align: top;"><b>Variables: <a href="javascript:void(0);" onclick="expand(this, \'div_variables_' . $error_id . '\');">[+]</a></b></td><td><div id="div_variables_' . $error_id . '" style="display: none; overflow: hidden;">');
             self::structPrint(self::$errors_handled[$id]["variables"], 0, true);
             self::out('</div></td></tr>');
@@ -492,9 +459,6 @@ EOD
                 else
                 {
                     $bFind = FALSE;
-                    /*$obj_id = get_class($value) . "_" . FormsCommon_get_object_id($value);
-                    if (isset(self::$errors_objects[$obj_id]))
-                        $bFind = self::$errors_objects[$obj_id]["id"];*/
 
                     foreach (self::$errors_objects as $subkey => $subvalue)
                     {

@@ -28,7 +28,7 @@ namespace phpformsframework\libs;
 define("VENDOR_LIBS_DIR", DIRECTORY_SEPARATOR .  "vendor" . DIRECTORY_SEPARATOR . "phpformsframework" . DIRECTORY_SEPARATOR . "libs");
 
 if(!defined("DOCUMENT_ROOT")) {
-    define("DOCUMENT_ROOT", ($_SERVER["DOCUMENT_ROOT"]
+    define("DOCUMENT_ROOT", (isset($_SERVER["DOCUMENT_ROOT"]) && $_SERVER["DOCUMENT_ROOT"]
         ? $_SERVER["DOCUMENT_ROOT"]
         : str_replace(VENDOR_LIBS_DIR, "", __DIR__))
     );
@@ -37,12 +37,10 @@ if(!defined("DOCUMENT_ROOT")) {
 if(!defined("SITE_PATH"))                                   { define("SITE_PATH", str_replace(array(DOCUMENT_ROOT, VENDOR_LIBS_DIR), "", __DIR__)); }
 if(!defined("CONF_PATH"))                                   { define("CONF_PATH", "/conf"); }
 if(!defined("LIBS_PATH"))                                   { define("LIBS_PATH", "/vendor"); }
-//if(!defined("DOMAIN_NAME"))                                 { define("DOMAIN_NAME", str_replace("www.", "", $_SERVER["HTTP_HOST"])); }
 
 abstract class DirStruct {
     const PHP_EXT                                                   = "php";
     const SITE_PATH                                                 = SITE_PATH;
-  //  const DOMAIN_NAME                                               = DOMAIN_NAME;
 
     public static $disk_path                                        = DOCUMENT_ROOT . SITE_PATH;
 

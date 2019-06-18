@@ -30,6 +30,7 @@
     "suggest": {
         "ext-mongodb": "to use MongoDb",
         "ext-posix": "to extend log info",
+        "ext-redis": "to manage cache in memory",
         "twilio/sdk" : "to use SMS notifications [composer require twilio/sdk:^5.31.3]"
     },
     "autoload": {

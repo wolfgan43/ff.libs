@@ -351,16 +351,14 @@ class Validator
             foreach ($checks as $check) {
                 $byteCount                                                  = strlen($check) / 2;
                 $handle = @fopen($file, 'rb');
-                if ($handle !== false) {
-                    if (flock($handle, LOCK_EX)) {
-                        $contents                                           = fread($handle, $byteCount);
-                        $byteArray                                          = bin2hex($contents);
-                        $regex                                              = '#' . $check . '#i';
-                        $isValid                                            = (bool)preg_match($regex, $byteArray);
-                        flock($handle, LOCK_UN);
-                        if ($isValid) {
-                            break;
-                        }
+                if ($handle !== false && flock($handle, LOCK_EX)) {
+                    $contents                                               = fread($handle, $byteCount);
+                    $byteArray                                              = bin2hex($contents);
+                    $regex                                                  = '#' . $check . '#i';
+                    $isValid                                                = (bool)preg_match($regex, $byteArray);
+                    flock($handle, LOCK_UN);
+                    if ($isValid) {
+                        break;
                     }
                 }
                 @fclose($handle);
@@ -459,27 +457,27 @@ class Validator
         $testo = self::remove_accents($testo);
         $testo = strtolower($testo);
 
-        //$testo = preg_replace('([^a-z0-9\-]+)', ' ', $testo);
         $testo = preg_replace('/[^\p{L}0-9\-]+/u', ' ', $testo);
         $testo = trim($testo);
         $testo = preg_replace('/ +/', $char_sep, $testo);
         $testo = preg_replace('/-+/', $char_sep, $testo);
-        /*do {
-            $testo = str_replace("--", "-", $testo, $count);
-        } while ($count > 0);*/
+
         return $testo;
     }
     private static function seems_utf8($str) {
         $length = strlen($str);
         for ($i=0; $i < $length; $i++) {
             $c = ord($str[$i]);
-            if ($c < 0x80) $n = 0; # 0bbbbbbb
-            elseif (($c & 0xE0) == 0xC0) $n=1; # 110bbbbb
-            elseif (($c & 0xF0) == 0xE0) $n=2; # 1110bbbb
-            elseif (($c & 0xF8) == 0xF0) $n=3; # 11110bbb
-            elseif (($c & 0xFC) == 0xF8) $n=4; # 111110bb
-            elseif (($c & 0xFE) == 0xFC) $n=5; # 1111110b
-            else return false; # Does not match any model
+            if ($c < 0x80) {
+                $n = 0;  # 0bbbbbbb
+            } elseif (($c & 0xE0) == 0xC0) {
+                $n = 1; # 110bbbbb
+            } elseif (($c & 0xF0) == 0xE0) { $n=2; # 1110bbbb
+            } elseif (($c & 0xF8) == 0xF0) { $n = 3; # 11110bbb
+            } elseif (($c & 0xFC) == 0xF8){ $n = 4; # 111110bb
+            } elseif (($c & 0xFE) == 0xFC){ $n = 5; # 1111110b
+            } else { return false; } # Does not match any model
+
             for ($j=0; $j<$n; $j++) { # n bytes matching 10bbbbbb follow ?
                 if ((++$i == $length) || ((ord($str[$i]) & 0xC0) != 0x80))
                     return false;
@@ -677,26 +675,6 @@ class Validator
                 // grave accent
                 chr(199).chr(155) => 'U', chr(199).chr(156) => 'u',
             );
-
-            // Used for locale-specific rules
-            /*$locale = get_locale();
-
-            if ( 'de_DE' == $locale ) {
-                $chars[ chr(195).chr(132) ] = 'Ae';
-                $chars[ chr(195).chr(164) ] = 'ae';
-                $chars[ chr(195).chr(150) ] = 'Oe';
-                $chars[ chr(195).chr(182) ] = 'oe';
-                $chars[ chr(195).chr(156) ] = 'Ue';
-                $chars[ chr(195).chr(188) ] = 'ue';
-                $chars[ chr(195).chr(159) ] = 'ss';
-            } elseif ( 'da_DK' === $locale ) {
-                $chars[ chr(195).chr(134) ] = 'Ae';
-                 $chars[ chr(195).chr(166) ] = 'ae';
-                $chars[ chr(195).chr(152) ] = 'Oe';
-                $chars[ chr(195).chr(184) ] = 'oe';
-                $chars[ chr(195).chr(133) ] = 'Aa';
-                $chars[ chr(195).chr(165) ] = 'aa';
-            }*/
 
             $string = strtr($string, $chars);
         } else {

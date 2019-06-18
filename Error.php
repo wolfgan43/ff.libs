@@ -103,21 +103,25 @@ class Error {
                                                                         , "media."  => "media"
                                                                     )
                                                                 );
-    //todo: da finalizzare
     public static function addRules($rules) {
         if(is_array($rules) && count($rules)) {
-            foreach($rules AS $rule => $params) {
-                self::addRule($rule, $params);
-
+            if(isset($rules["hosts"])) {
+                foreach($rules["hosts"] AS $source => $engine) {
+                    self::addRule($source, $engine, "host");
+                }
+            }
+            if(isset($rules["paths"])) {
+                foreach($rules["paths"] AS $source => $engine) {
+                    self::addRule($source, $engine, "host");
+                }
             }
         }
-
     }
-    public static function addRule($source, $destination, $priority = null, $redirect = false) {
-
+    public static function addRule($source, $engine, $type = "path") {
+        self::$rules[$type][$source]                            = $engine;
     }
     public static function getErrorMessage($code) {
-        $status_code = self::STATUS_CODE;
+        $status_code                                            = self::STATUS_CODE;
 
         return (isset($status_code[$code])
             ? $status_code[$code]
@@ -187,9 +191,9 @@ class Error {
     public static function run($path_info) {
         $rule                                           = self::find($path_info);
 
-        if($rule) { //todo:: da finire la gestione con hook e inizializzazione delle casistiche
-            //self::doHook("on_error_" . $rule["type"], $path_info);
+        Hook::handle("on_error_process", $path_info);
 
+        if($rule) {
             switch ($rule["type"]) {
                 case "media":
                     self::send("404");
@@ -244,7 +248,10 @@ class Error {
     }
 
     public static function registerWarning($error, $bucket = null) {
-        self::$errors[$bucket][]                        = $error;
+        self::$errors[$bucket][]                        = (is_array($error)
+                                                            ? print_r($error, true)
+                                                            : $error
+                                                        );
     }
     public static function transfer($from_bucket, $to_bucket) {
         if(self::check($from_bucket)) {
@@ -253,10 +260,5 @@ class Error {
     }
     public static function dump($errdes, $errno = E_USER_ERROR, $context = NULL, $variables = NULL) {
         ErrorHandler::raise($errdes, $errno, $context, $variables);
-    }
-
-    public static function handler($errno, $errstr, $errfile, $errline)
-    {
-//todo: da portare l'handler del framework qui
     }
 }

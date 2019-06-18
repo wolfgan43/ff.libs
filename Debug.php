@@ -257,7 +257,7 @@ class Debug extends DirStruct
         $dumpable = self::dumpInterface();
         $files_count = 0;
         $db_query_count = 0;
-
+        $db_query_cache_count = 0;
         if(is_array($dumpable) && count($dumpable)) {
             foreach ($dumpable as $interface => $dump) {
                 $dump = array_filter($dump);
@@ -266,14 +266,19 @@ class Debug extends DirStruct
                     $html_dumpable .= '<ul>';
                     foreach ($dump as $key => $value) {
                         $arrKey = explode(":", $key);
-
-                        $html_dumpable .= '<li><a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } ">' . $arrKey[0] . '</a><code style="' . $collapse . '"><pre>' . print_r($value, true). '</pre></code></li>';
-
+                        if($value === true) {
+                            $html_dumpable .= '<li>' . $arrKey[0] . '</li>';
+                        } else {
+                            $html_dumpable .= '<li><a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } ">' . $arrKey[0] . '</a><code style="' . $collapse . '"><pre>' . print_r($value, true) . '</pre></code></li>';
+                        }
                         if(strtolower($interface) == "filemanager" && $key == "storage") {
                             $files_count++;
                         }
                         if(strtolower($interface) == "database") {
                             $db_query_count++;
+                            if($value === true) {
+                                $db_query_cache_count++;
+                            }
                         }
                     }
                     $html_dumpable .= '</ul>';
@@ -325,27 +330,6 @@ class Debug extends DirStruct
 
             $html_dumpable .= '</ul></pre>';
         }
-/*
-        unset($constants["user"]);
-
-
-        if(is_array($constants) && count($constants)) {
-            $html_dumpable .= '<hr />' . '<a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } "><h5>' . "Constants System" . '</h5></a>';
-            $html_dumpable .= '<pre style="' . $collapse . '"><ul>';
-            foreach ($constants as $cat => $constant) {
-                $html_dumpable .= '<li><a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } ">' . $cat . '</a>';
-                $html_dumpable .= '<ul style="' . $collapse . '">';
-
-                foreach ($constant as $name => $value) {
-                    $html_dumpable .= '<li>' . $name . '</li>';
-
-                }
-                $html_dumpable .= '</ul></li>';
-            }
-            $html_dumpable .= '</ul></pre>';
-        }*/
-
-       // print_r(spl_autoload_functions  ());
 
         $html   = ($error_message
                     ? "<hr /><b>" . $error_message . "</b>"
@@ -358,7 +342,7 @@ class Debug extends DirStruct
             . '<span style="padding:15px;">Includes: ' . $included_files_count . ' (' . $included_files_autoload_count . ' autoloads)' . '</span>'
             . '<span style="padding:15px;">Constants: ' . count($constants_user) . '</span>'
             . '<span style="padding:15px;">Files: ' . $files_count . '</span>'
-            . '<span style="padding:15px;">DB Query: ' . $db_query_count . '</span>'
+            . '<span style="padding:15px;">DB Query: ' . $db_query_count . ' (' . $db_query_cache_count . ' cached)'. '</span>'
             . '<span style="padding:15px;">ExTime: ' . self::exTime() . '</span>'
             . '</center>';
 
@@ -400,22 +384,23 @@ class Debug extends DirStruct
                 $res["exTime"] 			= microtime(true) - $res["exTime"];
 
                 if (extension_loaded('xhprof') && is_dir(FF_DISK_PATH . "/xhprof_lib") && class_exists("XHProfRuns_Default")) {
-                    $path_info = ($_SERVER["PATH_INFO"] == DIRECTORY_SEPARATOR
-                        ? "Home"
-                        : $_SERVER["PATH_INFO"]
-                    );
+                    $path_info          = ($_SERVER["PATH_INFO"] == DIRECTORY_SEPARATOR
+                                            ? "Home"
+                                            : $_SERVER["PATH_INFO"]
+                                        );
 
-                    $xhr_path_info = ($_SERVER["XHR_PATH_INFO"] == DIRECTORY_SEPARATOR
-                        ? "Home"
-                        : $_SERVER["XHR_PATH_INFO"]
-                    );
+                    $xhr_path_info      = ($_SERVER["XHR_PATH_INFO"] == DIRECTORY_SEPARATOR
+                                            ? "Home"
+                                            : $_SERVER["XHR_PATH_INFO"]
+                                        );
                     $profiler_namespace = str_replace(array(".", "&", "?", "__nocache__"), array(",", "", "", ""), "[" . round($res["exTime"], 2) . "s] "
                         . str_replace(DIRECTORY_SEPARATOR, "_", trim($path_info, DIRECTORY_SEPARATOR))
+                        . ($xhr_path_info != $path_info && $xhr_path_info
+                            ? " (" . str_replace(DIRECTORY_SEPARATOR, "_", trim($xhr_path_info, DIRECTORY_SEPARATOR)) . ")"
+                            : ""
+                        )
                         . (Request::isAjax()
-                            ? ($xhr_path_info != $path_info && $xhr_path_info
-                                ? " (" . str_replace(DIRECTORY_SEPARATOR, "_", trim($xhr_path_info, DIRECTORY_SEPARATOR)) . ")"
-                                : ""
-                            ) . " - Request"
+                            ? " - Request"
                             : ""
                         ))
                         . ($end !== true

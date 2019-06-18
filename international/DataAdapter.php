@@ -216,24 +216,14 @@ class DataAdapter extends Extendible {
         return $oData->value_date_hours . ":" . $oData->value_date_minutes /*. ":" . $oData->value_date_seconds*/;
     }
     public function SetCurrency($oData, $value) {
-        $rule                       = $this->getRule("currency");
-
-        $oData->value_text          = $value;
-
-        $value = str_replace($rule->strip_chars, "", $value);
-        preg_match_all($rule->regexp, $value, $matches);
-
-        if (strlen($matches[1][0])) {
-            $oData->value_sign      = true;
-        } else {
-            $oData->value_sign      = false;
-        }
-
-        $oData->value_numeric_integer = preg_replace("/[^0-9]+/", "", $matches[2][0]);
-        $oData->value_numeric_decimal = preg_replace("/[^0-9]+/", "", $matches[4][0]);
+        self::SetCurrencyByType($oData, $value, "currency");
     }
     public function SetExtCurrency($oData, $value) {
-        $rule                       = $this->getRule("currency_ext");
+        self::SetCurrencyByType($oData, $value, "currency_ext");
+    }
+
+    private function SetCurrencyByType($oData, $value, $type) {
+        $rule                       = $this->getRule($type);
         $oData->value_text          = $value;
 
         $value                      = str_replace($rule->strip_chars, "", $value);
@@ -269,24 +259,14 @@ class DataAdapter extends Extendible {
         }
     }
     public function SetNumber($oData, $value) {
-        $rule                       = $this->getRule("number");
-
-        $oData->value_text = $value;
-
-        $value = str_replace($rule->strip_chars, "", $value);
-        preg_match_all($rule->regexp, $value, $matches);
-
-        if (strlen($matches[1][0])) {
-            $oData->value_sign      = true;
-        } else {
-            $oData->value_sign = false;
-        }
-        $oData->value_numeric_integer = preg_replace("/[^0-9]+/", "", $matches[2][0]);
-        $oData->value_numeric_decimal = preg_replace("/[^0-9]+/", "", $matches[4][0]);
-
+        self::SetNumberByType($oData, $value, "number");
     }
     public function SetExtNumber($oData, $value) {
-        $rule                       = $this->getRule("number_ext");
+        self::SetNumberByType($oData, $value, "number_ext");
+    }
+
+    private function SetNumberByType($oData, $value, $type) {
+        $rule                       = $this->getRule($type);
 
         $oData->value_text = $value;
 

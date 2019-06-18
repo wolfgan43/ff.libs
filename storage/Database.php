@@ -39,6 +39,7 @@ class Database implements Dumpable {
 
     private static $singletons                                              = null;
     private static $cache                                                   = null;
+    private static $cache_rawdata                                           = array();
 
     /**
      * @var DatabaseAdapter[]
@@ -261,25 +262,41 @@ class Database implements Dumpable {
             )
         );
     }
-    private static function getCacheKey($query) {
-        $table                                      = (isset($query["table"])
-                                                        ? $query["table"]
-                                                        : ""
-                                                    );
-        $where                                      = (isset($query["where"])
-                                                        ? serialize($query["where"])
-                                                        : ""
-                                                    );
-        $select                                     = (isset($query["select"])
-                                                        ? serialize($query["select"])
-                                                        : "*"
-                                                    );
 
-        return $table . ":" . $where . "=>" . $select;
+    private static function getCacheParam($param, $sep = ", ") {
+        return (is_array($param)
+            ? implode($sep, $param)
+            : $param
+        );
+    }
+
+    private static function getCacheKey($query) {
+        $action                                     = $query["action"];
+        $table                                      = $query["from"];
+
+        $where = (isset($query["where"])
+            ? " WHERE " . self::getCacheParam($query["where"], " AND ")
+            : ""
+        );
+
+        $select = (isset($query["select"])
+            ? " SELECT " . self::getCacheParam($query["select"])
+            : ""
+        );
+        $set = (isset($query["set"])
+            ? " SET " . self::getCacheParam($query["set"])
+            : ""
+        );
+        $insert = (isset($query["insert"])
+            ? " INSERT " . self::getCacheParam($query["insert"], " VALUES ")
+            : ""
+        );
+
+        return ucfirst($action) . " => " . $table . " (" . $insert . $set . $select . $where . ")";
     }
 
     public static function dump() {
-        return self::$cache;
+        return self::$cache_rawdata;
     }
 
     public static function cache($query) {
@@ -299,8 +316,8 @@ class Database implements Dumpable {
             }
 
             if(isset(self::$cache[$cache_key]["data"])) {
-                if(Debug::ACTIVE)                { Debug::dumpLog("query_duplicate", $query); }
-                $res                            = self::$cache[$cache_key]["data"];
+                if(Debug::ACTIVE)                   { Debug::dumpLog("query_duplicate", $query); }
+                $res                                = self::$cache[$cache_key]["data"];
             }
         }
 
@@ -310,7 +327,10 @@ class Database implements Dumpable {
     public static function setCache($data, $query) {
         if(self::ENABLE_CACHE) {
             $cache_key                                                  = Database::getCacheKey($query);
-
+            if(Debug::ACTIVE) {
+                $from_cache = isset(self::$cache[$cache_key]["data"]) && self::$cache[$cache_key]["data"];
+                self::$cache_rawdata[(count(self::$cache_rawdata) + 1) . ". " . $cache_key] = ($from_cache ? true : $query);
+            }
             self::$cache[$cache_key]["query"]                           = $query;
             if(isset($data["exts"]) && $data["exts"] === true) {
                 self::$cache[$cache_key][serialize($data["exts"])]      = $data;

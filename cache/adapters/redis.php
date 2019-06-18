@@ -23,15 +23,14 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\cache\mem;
+namespace phpformsframework\libs\cache;
 
-use phpformsframework\libs\Debug;
 use Redis AS MC;
 
 if (!defined("FF_CACHE_REDIS_SERVER"))  { define("FF_CACHE_REDIS_SERVER", "127.0.0.1"); }
 if (!defined("FF_CACHE_REDIS_PORT"))    { define("FF_CACHE_REDIS_PORT", 6379); }
 
-class Redis extends Adapter {
+class Redis extends MemAdapter {
     const SERVER            = FF_CACHE_REDIS_SERVER;
     const PORT              = FF_CACHE_REDIS_PORT;
 
@@ -73,13 +72,16 @@ class Redis extends Adapter {
     function set($name, $value = null, $bucket = self::APPID)
     {
         $name = ltrim($name, "/");
-        return ($value === null
-            ? $this->del($name, $bucket)
-            : ($bucket
+        if($value === null) {
+            $res = $this->del($name, $bucket);
+        } else {
+            $res = ($bucket
                 ? $this->conn->hSet($this->getBucket($bucket), $name, $value)
                 : $this->conn->set($name, $value)
-            )
-        );
+            );
+        }
+
+        return $res;
     }
 
     /**
@@ -90,17 +92,17 @@ class Redis extends Adapter {
      */
     function get($name, $bucket = self::APPID)
     {
-        if(Debug::ACTIVE) {
-            return null;
-        }
         $name = ltrim($name, "/");
-        return ($bucket
-            ? ($name
+        if($bucket) {
+            $res = ($name
                 ? $this->conn->hGet($this->getBucket($bucket), $name)
                 : $this->conn->hGetAll($this->getBucket($bucket))
-            )
-            : $this->conn->get($name)
-        );
+            );
+        } else {
+            $res =  $this->conn->get($name);
+        }
+
+        return $res;
     }
 
     /**

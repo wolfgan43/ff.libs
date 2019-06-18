@@ -247,9 +247,9 @@ abstract class DatabaseAdapter {
         if(is_array($query)) {
             switch($query["action"]) {
                 case "read":
-                    $db                                             = null;
+                    $db                                              = null;
 
-                    if(!$this->exts)                                { $res = Database::cache($query); }
+                    if(1 || !$this->exts)                           { $res = Database::cache($query); } //todo: da verificare
                     if(!$res)                                       { $db = $this->processRead($query); }
 
                     if($db) {
@@ -300,7 +300,7 @@ abstract class DatabaseAdapter {
                                 if(isset($db["count"]))             { $res["count"] = $db["count"]; }
                             }
 
-                            Database::setCache($res, $query);
+                            //Database::setCache($res, $query);
                         }
                     }
 
@@ -321,7 +321,7 @@ abstract class DatabaseAdapter {
                     $res                                            = $this->processCmd($query);
             }
 
-            if(Debug::ACTIVE)                                       { Database::setCache($res, $query); }
+            Database::setCache($res, $query);
         }
         return $res;
     }

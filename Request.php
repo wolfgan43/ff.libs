@@ -174,6 +174,8 @@ class Request implements Configurable {
     }
 
     public static function capture() {
+        self::security();
+
         self::captureHeaders();
         self::captureBody();
     }
@@ -264,13 +266,21 @@ class Request implements Configurable {
     }
 
     public static function isHTTPS() {
-        return isset($_SERVER["HTTPS"]);
+        return isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
     }
-
+    public static function protocol() {
+        return (self::isHTTPS() ? "https" : "http") . "://";
+    }
     public static function hostname() {
         return (isset($_SERVER["HTTP_HOST"])
             ? $_SERVER["HTTP_HOST"]
             : null
+        );
+    }
+    public static function webhost() {
+        return (self::hostname()
+            ?  self::protocol() . self::hostname()
+            : ""
         );
     }
     public static function pathinfo() {
@@ -281,8 +291,7 @@ class Request implements Configurable {
     }
 
     public static function url($pathinfo_part = null) {
-        $url                                                    = DirStruct::SITE_PATH . self::pathinfo() . self::getQuery(false);
-        if(self::hostname())                                    { $url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . self::hostname() . $url; }
+        $url                                                    = self::webhost() . DirStruct::SITE_PATH . self::pathinfo() . self::getQuery(false);
 
         return ($pathinfo_part && $url
             ? pathinfo($url, $pathinfo_part)
@@ -487,9 +496,10 @@ class Request implements Configurable {
                                                                                         );
 
         if(self::isAllowedSize($request, $method) && self::isAllowedSize(self::getRequestHeaders(), "HEAD")) {
+            self::$request["valid"]                                                     = array();
             //Mapping Request by Rules
             if(is_array(self::$rules[$bucket]) && count(self::$rules[$bucket]) && is_array($request)) {
-                self::$request["valid"]                                                 = array();
+
                 foreach(self::$rules[$bucket] AS $rule) {
                     if(isset($rule["required"]) && $rule["required"] === true && !isset($request[$rule["name"]])) {
                         $errors[400][]                                                  = $rule["name"] . " is required";
@@ -637,6 +647,12 @@ class Request implements Configurable {
         return self::$headers;
     }
 
+    private static function getRequestMethod() {
+        return (isset(self::$rules["method"])
+            ? self::$rules["method"]
+            : self::method()
+        );
+    }
     /**
      * @param null|string $key
      * @param null|string $method
@@ -644,27 +660,28 @@ class Request implements Configurable {
      */
     private static function captureBody($key = null, $method = null) {
         static $last_update                                                                     = 0;
-        if(self::security()) {
-            if(self::$request === null || $last_update < self::$rules["last_update"]) {
-                self::$request                                                                  = array();
-                $last_update                                                                    = self::$rules["last_update"];
 
-                if(!$method)                                                                    { $method = self::$rules["method"]; }
-                $request                                                                        = self::getReq($method);
-                $errors                                                                         = self::securityParams($request, $method) + self::securityFileParams();
+        if(self::$request === null || $last_update < self::$rules["last_update"]) {
+            self::$request                                                                  = array();
+            $last_update                                                                    = self::$rules["last_update"];
 
-                if(is_array($errors) && count($errors)) {
-                    asort($errors);
-                    $status = key ($errors);
+            if(!$method)                                                                    { $method = self::getRequestMethod(); }
 
-                    self::isError(implode(", ", $errors[$status]), $status);
-                } else {
-                    unset($_REQUEST);
-                    unset($_GET);
-                    unset($_POST);
-                }
+            $request                                                                        = self::getReq($method);
+            $errors                                                                         = self::securityParams($request, $method) + self::securityFileParams();
+
+            if(is_array($errors) && count($errors)) {
+                asort($errors);
+                $status = key ($errors);
+
+                self::isError(implode(", ", $errors[$status]), $status);
+            } else {
+                unset($_REQUEST);
+                unset($_GET);
+                unset($_POST);
             }
         }
+
         if($key && !isset(self::$request[$key])) {
             self::$request[$key] = null;
         }
@@ -683,14 +700,12 @@ class Request implements Configurable {
     private static function isInvalidReqMethod($exit = false) {
 
         $error                                                                                  = self::isInvalidHTTPS();
-        if(!$error) {
-            if(self::$rules["method"] && self::method() != self::$rules["method"]) {
-                $error                                                                          = "Request Method Must Be " . self::$rules["method"]
+        if(!$error && self::$rules["method"] && self::method() != self::$rules["method"]) {
+            $error                                                                              = "Request Method Must Be " . self::$rules["method"]
                                                                                                     . (self::$rules["https"] && isset($_SERVER["HTTP_REFERER"]) && strpos($_SERVER["HTTP_REFERER"], "http://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]) === 0
                                                                                                         ? " (Redirect Https may Change Request Method)"
                                                                                                         : ""
                                                                                                     );
-            }
         }
 
         if($exit && $error)                                                                     { self::isError($error, 405); }

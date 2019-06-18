@@ -318,22 +318,11 @@ class Locale implements Configurable {
 
         self::setLang($lang_tiny_code);
         self::setCountry($country_tiny_code);
-
-        //todo: trovare alternativa (tipo Cms::lang) per semplificare la programmazione
-//        self::$locale["lang"]["current"]                    = self::$lang;
-//        self::$locale["country"]["current"]                 = self::$locale["country"][$country];
-//        self::$locale["country"]["current"]["code"]         = $country;
-
-        /*define("LANGUAGE_INSET_TINY", self::$lang["tiny_code"]);
-        define("LANGUAGE_INSET", self::$lang["code"]);
-        define("LANGUAGE_INSET_ID", self::$lang["id"]);
-        define("FF_LOCALE", self::$lang["code"]);
-        define("FF_LOCALE_ID", self::$lang["id"]);*/
-
     }
 
     public static function loadSchema() {
         $config                                                         = Config::rawData("locale", true);
+
         if(is_array($config)) {
             $lang_tiny_code                                             = Env::get("LANG_TINY_CODE");
             $country_tiny_code                                          = Env::get("COUNTRY_TINY_CODE");

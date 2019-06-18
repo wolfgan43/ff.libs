@@ -49,35 +49,6 @@ class Response {
             }
         }
 
-        /**
-         * @todo: da sistemare
-         */
-        if(!$type && isset($_SERVER["HTTP_ACCEPT"])) {
-            switch ($_SERVER["HTTP_ACCEPT"]) {
-                case "application/json":
-                case "text/json":
-                    $type                           = "json";
-                    break;
-                case "application/x-javascript":
-                    $type                           = "js";
-                    break;
-                case "text/css":
-                    $type                           = "css";
-                    break;
-                case "application/xml":
-                case "text/xml":
-                    $type                           = "xml";
-                    break;
-                case "application/soap+xml":
-                    $type                           = "soap";
-                    break;
-                case "text/html":
-                    $type                           = "html";
-                    break;
-                default:
-            }
-        }
-
         if(!$type) {
             $type                                   = "text";
             if (is_array($response)) {
@@ -88,43 +59,49 @@ class Response {
                 }
             }
         }
-        if(isset($response["error"]) && $response["error"])               { $response["error"] = Translator::get_word_by_code($response["error"]); }
 
-        self::sendHeadersByType($type);
-        switch($type) {
-            case "js":
-                echo $response;
-                break;
-            case "css":
-                echo $response;
-                break;
-            case "html":
-                if(isset($response["error"]) && $response["error"]) {
-                    echo $response["error"];
-                } elseif(isset($response["html"])) {
-                    echo $response["html"];
-                }
-                break;
-            case "xml":
-                echo $response;
-                break;
-            case "soap":
-                //todo: self::soap_client($response["url"], $response["headers"], $response["action"], $response["data"], $response["auth"]);
-                break;
-            case "json":
-                echo json_encode((array) $response);
-                break;
-            case "text":
-            default:
-                if(isset($response["error"]) && $response["error"]) {
-                    echo $response["error"];
-                } elseif(isset($response["data"])) {
-                    if(is_array($response["data"])) {
-                        echo implode(" " , $response["data"]);
-                    } else {
-                        echo $response["data"];
+        if(0 &&  self::invalidAccept($type)) {
+            Response::code(501);
+            echo "content type " . $type . "is different to http_accept";
+        } else {
+            if(isset($response["error"]) && $response["error"])               { $response["error"] = Translator::get_word_by_code($response["error"]); }
+
+            self::sendHeadersByType($type);
+            switch($type) {
+                case "js":
+                    echo $response;
+                    break;
+                case "css":
+                    echo $response;
+                    break;
+                case "html":
+                    if(isset($response["error"]) && $response["error"]) {
+                        echo $response["error"];
+                    } elseif(isset($response["html"])) {
+                        echo $response["html"];
                     }
-                }
+                    break;
+                case "xml":
+                    echo $response;
+                    break;
+                case "soap":
+                    //todo: da fare
+                    break;
+                case "json":
+                    echo json_encode((array) $response);
+                    break;
+                case "text":
+                default:
+                    if(isset($response["error"]) && $response["error"]) {
+                        echo $response["error"];
+                    } elseif(isset($response["data"])) {
+                        if(is_array($response["data"])) {
+                            echo implode(" " , $response["data"]);
+                        } else {
+                            echo $response["data"];
+                        }
+                    }
+            }
         }
 
         exit;
@@ -178,9 +155,6 @@ class Response {
     }
 
     public static function sendHeaders($params = null) {
-        //header_remove();
-        $days                       = 7;
-
         $keep_alive			        = isset($params["keep_alive"])  ? $params["keep_alive"]			: false;
         $max_age				    = isset($params["max_age"])     ? $params["max_age"]            : null;
         $expires				    = isset($params["expires"])     ? $params["expires"]            : null;
@@ -203,8 +177,6 @@ class Response {
             } elseif ($mimetype == "text/html") {
                 $content_type .= "; charset=UTF-8";
                 header("Vary: Accept-Encoding");
-            } elseif (strpos($mimetype, "image/") === 0) {
-                $days = 365;
             }
 
             header("Content-type: $content_type");
@@ -286,10 +258,7 @@ class Response {
         }
     }
 
-    private static function getAccept() {
-        return (isset($_SERVER["HTTP_ACCEPT"])
-            ? explode(",", $_SERVER["HTTP_ACCEPT"])
-            : array()
-        );
+    private static function invalidAccept($ext) {
+        return isset($_SERVER["HTTP_ACCEPT"]) && $_SERVER["HTTP_ACCEPT"] && strpos($_SERVER["HTTP_ACCEPT"], Media::getMimeTypeByExtension($ext)) === false;
     }
 }

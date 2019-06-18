@@ -26,10 +26,16 @@
 
 namespace phpformsframework\libs\cache\mem;
 
+use phpformsframework\libs\cache\MemAdapter;
 use phpformsframework\libs\Debug;
 use APCIterator AS MC;
+use function apc_store;
+use function apc_fetch;
+use function apc_delete;
+use function apc_clear_cache;
 
-class Apc extends Adapter
+
+class Apc extends MemAdapter
 {
 	function __construct($auth = null)
 	{
@@ -47,7 +53,7 @@ class Apc extends Adapter
 	{
 		return ($value === null
             ? $this->del($name, $bucket)
-            : @apc_store($this->getKey($name, $bucket), $this->setValue($value), $this->getTTL())
+            : apc_store($this->getKey($name, $bucket), $this->setValue($value), $this->getTTL())
         );
 	}
 

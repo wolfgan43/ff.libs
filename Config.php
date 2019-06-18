@@ -60,10 +60,8 @@ class Config  implements Dumpable {
             foreach ($config AS $dir_key => $dir) {
                 $dir_attr                                           = DirStruct::getXmlAttr($dir);
                 self::$dirstruct[$dir_key]                          = $dir_attr;
-                if(Debug::ACTIVE) {
-                    if(isset($dir_attr["path"]) && !is_dir(DirStruct::$disk_path . $dir_attr["path"]) && !Filemanager::makeDir($dir_attr["path"])) {
-                        Error::registerWarning("Faild to Write " . $dir_attr["path"] . ". Check permissions", "dirstruct");
-                    }
+                if(Debug::ACTIVE && isset($dir_attr["path"]) && !is_dir(DirStruct::$disk_path . $dir_attr["path"]) && !Filemanager::makeDir($dir_attr["path"])) {
+                    Error::registerWarning("Faild to Write " . $dir_attr["path"] . ". Check permissions", "dirstruct");
                 }
 
                 if(isset(self::$dirstruct[$dir_key]["autoload"]))   {
@@ -134,6 +132,8 @@ class Config  implements Dumpable {
                 case "json":
                     self::loadJson($file);
                     break;
+                default:
+                    Error::registerWarning("Config file Extension not supported", "config");
             }
         });
     }

@@ -27,7 +27,8 @@
 namespace phpformsframework\libs\international;
 use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\Debug;
-use phpformsframework\libs\storage\drivers\MySqli;
+use phpformsframework\libs\Error;
+use phpformsframework\libs\storage\Orm;
 
 if(!defined("DB_TABLE_LANG"))                       { define("DB_TABLE_LANG", "ff_languages"); }
 if(!defined("DB_TABLE_INTERNATIONAL"))              { define("DB_TABLE_INTERNATIONAL", "ff_international"); }
@@ -39,7 +40,6 @@ class Translator
     const ADAPTER                                       = false;
 
     const REGEXP                                        = '/\{_([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)\}/U';
-    //const REGEXP                                        = "/\{_([\w\[\]\:\=\-\|\.]+)\}/U";
 
     const DB_TABLE_LANG                                 = DB_TABLE_LANG;
 
@@ -110,59 +110,44 @@ class Translator
 
         return (self::$cache[$lang_code][$code]["cache"]
             ? self::$cache[$lang_code][$code]["word"]
-            : (Debug::ACTIVE
-                ? "{" . self::$cache[$lang_code][$code]["word"] . "}"
-                : self::$cache[$lang_code][$code]["word"]
-            )
+            : self::getCode(self::$cache[$lang_code][$code]["code"])
+        );
+    }
+
+    private static function getCode($code) {
+        return (Debug::ACTIVE
+            ? "{" . $code . "}"
+            : $code
         );
     }
 
     private static function getWordByCodeFromDB($code, $language = null) {
-        $db                                             = new MySqli();
+        $lang                                           = self::getLang($language);
         $i18n                                           = array(
                                                             "code"      => $code
-                                                            , "lang"    => self::getLang($language)
+                                                            , "lang"    => $lang
                                                             , "cache"   => false
                                                             , "word"    => $code
                                                         );
-        $sSQL                                           = "SELECT
-                                                                " . self::DB_TABLE_INTERNATIONAL . ".*
-                                                            FROM
-                                                                " . self::DB_TABLE_INTERNATIONAL . "
-                                                                INNER JOIN " . self::DB_TABLE_LANG . " ON
-                                                                    " . self::DB_TABLE_INTERNATIONAL . ".`ID_lang` = " . self::DB_TABLE_LANG . ".ID
-                                                            WHERE
-                                                                " . self::DB_TABLE_LANG . ".`code` = " . $db->toSql($i18n["lang"]) . "
-                                                                AND " . self::DB_TABLE_INTERNATIONAL . ".`word_code` =" . $db->toSql(substr($i18n["code"], 0, 254));
-        $db->query($sSQL);
-        if($db->nextRecord()) {
-            if(!$db->record["is_new"]) {
-                $i18n["word"]                           = $db->getField("description", "Text", true);
-                $i18n["cache"]                          = true;
+        if($lang) {
+            $orm                                        = Orm::getInstance("international");
+            $res                                        = $orm->read(array(
+                                                            "translation.description"
+                                                            , "translation.is_new"
+                                                        ), array(
+                                                            "lang.code" => $i18n["lang"]
+                                                            , "translation.word_code" => substr($i18n["code"], 0, 254)
+                                                        ), null, 1);
+            if(is_array($res)) {
+                $i18n["word"]                           = $res["description"];
+                $i18n["cache"]                          = !$res["is_new"];
+            } elseif(self::INSERT_EMPTY) {
+                $orm->insert(array(
+                    "lang.code"                         =>  $i18n["lang"]
+                    , "translation.word_code"           =>  substr($i18n["code"], 0, 254)
+                    , "translation.is_new"              => true
+                ));
             }
-        } elseif(self::INSERT_EMPTY) {
-            $sSQL                   = "INSERT INTO " . self::DB_TABLE_INTERNATIONAL . "
-                                    (
-                                        `ID`
-                                        , `ID_lang`
-                                        , `word_code`
-                                        , `is_new`
-                                    )
-                                    VALUES
-                                    (
-                                        null
-                                        , IFNULL(
-                                            (SELECT " . self::DB_TABLE_LANG . ".`ID` 
-                                                FROM " . self::DB_TABLE_LANG . " 
-                                                WHERE " . self::DB_TABLE_LANG . ".`code` = " . $db->toSql($i18n["lang"]) . " 
-                                                LIMIT 1
-                                            )
-                                            , 0
-                                        )
-                                        , " . $db->toSql(substr($i18n["code"], 0, 254)) . "
-                                        , " . $db->toSql("1", "Number") . "
-                                    )";
-            $db->execute($sSQL);
         }
 
         return $i18n;

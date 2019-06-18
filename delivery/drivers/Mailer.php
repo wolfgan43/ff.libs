@@ -239,8 +239,6 @@ abstract class Mailer
 
         Debug::startWatch();
 
-//        $this->clearResult();
-
         if(!$this->fromEmail)                               { $this->fromEmail  = $this->adapter->from("email"); }
         if(!$this->fromName)                                { $this->fromName   = $this->adapter->from("name"); }
         if(!$this->lang)                                    { $this->lang       = Locale::getLang("tiny_code"); }
@@ -275,7 +273,7 @@ abstract class Mailer
         $mail->Username                                     = $smtp["username"];
         $mail->Port                                         = $smtp["port"];
         $mail->Password                                     = $smtp["password"];
-        //$mail->SMTPSecure                                 = $smtp["secure"];
+        $mail->SMTPSecure                                   = $smtp["secure"];
         $mail->SMTPAutoTLS                                  = $smtp["autoTLS"];
 
         $mail->FromName                                     = $this->fromName;

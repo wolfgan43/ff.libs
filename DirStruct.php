@@ -47,10 +47,14 @@ abstract class DirStruct {
 
     public static function getDiskPath($what = null, $relative = false) {
         $path                                                       = Config::getDir($what);
-		return ($relative
-            ? $path
-            : realpath(self::documentRoot() . $path)
-        );
+        if($path) {
+            return ($relative
+                ? $path
+                : realpath(self::documentRoot() . $path)
+            );
+        } else {
+            return null;
+        }
 	}
 	public static function checkDiskPath($abs_path) {
         return strpos(realpath($abs_path), self::$disk_path) === 0;

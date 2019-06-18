@@ -107,7 +107,7 @@ class Router extends App implements Configurable
 
         if(self::DEBUG) {
             Response::code(404);
-            Debug::dump();
+            Debug::dump("Page Not Found!");
         }
 
         Error::send(404);

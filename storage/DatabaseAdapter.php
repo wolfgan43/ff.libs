@@ -527,7 +527,7 @@ abstract class DatabaseAdapter {
             $alias_rev = array_flip($this->alias);
             return($alias_rev[$field]
                 ? $alias_rev[$field]
-                : ($this->struct[$field]
+                : (isset($this->struct[$field])
                     ? $field
                     : false
                 )
@@ -535,13 +535,27 @@ abstract class DatabaseAdapter {
         } else {
             return ($this->struct === null
                 ? $field
-                : ($this->struct[$field]
+                : (isset($this->struct[$field])
                     ? $field
                     : false
                 )
             );
         }
     }
+
+    private function getStructField($key, $subkey = null) {
+        if(isset($this->struct[$key])) {
+            return ($subkey
+                ? $this->struct[$key][$subkey]
+                : $this->struct[$key]
+            );
+        } else {
+            Error::register("Field: " . $key . " not found in struct on table: " . $this->table["name"], "database");
+        }
+
+        return null;
+    }
+
     private function clearResult()
     {
         $this->select                                               = null;
@@ -638,20 +652,21 @@ abstract class DatabaseAdapter {
 					}
 
 					if(!$toField) {
-						$struct                                         = ($arrValue && is_array($this->struct[$arrValue[0]])
-                                                                            ? ($this->struct[$arrValue[0]][$arrValue[1]]
-                                                                                ? $this->struct[$arrValue[0]][$arrValue[1]]
-                                                                                : $this->struct[$arrValue[0]]["default"]
-                                                                            )
-                                                                            : (is_array($this->struct[$name])
-                                                                                ? $this->struct[$name]["default"]
-                                                                                : $this->struct[$name]
-                                                                            )
+                        $struct                                         = null;
+					    if($arrValue && isset($this->struct[$arrValue[0]]) && is_array($this->struct[$arrValue[0]])) {
+					        $struct                                     = (isset($this->struct[$arrValue[0]][$arrValue[1]]) && $this->struct[$arrValue[0]][$arrValue[1]]
+                                                                            ? $this->struct[$arrValue[0]][$arrValue[1]]
+                                                                            : $this->struct[$arrValue[0]]["default"]
                                                                         );
-                        $toField                                        = $this->convert($struct, "to");
-						/*$arrStruct                                      = explode(":", $struct, 2);
-						$toField                                        = $arrStruct[1];
-						*/
+                        }
+                        if(!$struct) {
+                            $struct_field                               = $this->getStructField($name);
+                            $struct                                     = (is_array($struct_field)
+                                                                            ? $struct_field["default"]
+                                                                            : $struct_field
+                                                                        );
+                        }
+                        if($struct)                                     { $toField = $this->convert($struct, "to"); }
 					}
 
 					if($toField) {
@@ -673,7 +688,7 @@ abstract class DatabaseAdapter {
 	private function recordsetCast(&$record) {
         if(is_array($record) && count($record)) {
             foreach ($record as $key => $value) {
-                switch ($this->struct[$key]) {
+                switch ($this->getStructField($key)) {
                     case "array":
                         $record[$key]                                   = (is_array($value)
                                                                             ? $value
@@ -1108,10 +1123,11 @@ abstract class DatabaseAdapter {
                     $op                                                     = "<=";
                 }
 
-                if(isset($this->struct[$name]) && is_array($this->struct[$name])) {
+                $struct_field                                               = $this->getStructField($name);
+                if(is_array($struct_field)) {
                     $struct_type                                            = "array";
                 } else {
-                    $arrType                                                = $this->convert((isset($this->struct[$name]) ? $this->struct[$name] : "string"));
+                    $arrType                                                = $this->convert($struct_field);
                     $struct_type                                            = $arrType["field"];
                     if(isset($arrType["in"])) {
                         $toField                                            = $arrType["in"];

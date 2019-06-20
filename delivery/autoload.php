@@ -26,6 +26,7 @@
 
 spl_autoload_register(function ($class) {
     $name_space                         = 'phpformsframework\\libs\\delivery\\';
+    $name_space_adapters                = $name_space . 'adapters\\';
     $name_space_notice                  = $name_space . 'notice\\';
     $name_space_drivers                 = $name_space . 'drivers\\';
 
@@ -39,6 +40,8 @@ spl_autoload_register(function ($class) {
         , $name_space_notice . 'Sms'                => 'adapters' . DIRECTORY_SEPARATOR . 'notice_sms.php'
         , $name_space_drivers . 'Messenger'         => 'drivers' . DIRECTORY_SEPARATOR . 'Messenger.php'
         , $name_space_drivers . 'MessengerAdapter'  => 'drivers' . DIRECTORY_SEPARATOR . 'MessengerAdapter.php'
+        , $name_space_adapters . 'MessengerTwilio'  => 'adapters' . DIRECTORY_SEPARATOR . 'MessengerTwilio.php'
+        , $name_space_drivers . 'MailerConfig'      => 'drivers' . DIRECTORY_SEPARATOR . 'MailerConfig.php'
         , $name_space_drivers . 'Mailer'            => 'drivers' . DIRECTORY_SEPARATOR . 'Mailer.php'
         , $name_space_drivers . 'MailerAdapter'     => 'drivers' . DIRECTORY_SEPARATOR . 'MailerAdapter.php'
         , $name_space_drivers . 'MailerSimple'      => 'drivers' . DIRECTORY_SEPARATOR . 'MailerSimple.php'

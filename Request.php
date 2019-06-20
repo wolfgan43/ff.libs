@@ -32,6 +32,7 @@ class Request implements Configurable {
     const TYPE                                                                                  = "request";
     const MAX_SIZE                                                                              = array(
                                                                                                     "GET"       => 256
+                                                                                                    , "PUT"     => 10240
                                                                                                     , "POST"    => 10240
                                                                                                     , "HEAD"    => 2048
                                                                                                     , "DEFAULT" => 128
@@ -162,7 +163,7 @@ class Request implements Configurable {
     public static function getQuery($with_unknown = false) {
         if(!self::$request)                                     { self::captureBody(); }
 
-        $res                                                    = ($with_unknown
+        $res                                                    = array_filter($with_unknown
                                                                     ? self::$request["rawdata"]
                                                                     : self::$request["valid"]
                                                                 );
@@ -266,7 +267,7 @@ class Request implements Configurable {
     }
 
     public static function isHTTPS() {
-        return isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
+        return (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || (isset($_SERVER["HTTP_ORIGIN"]) && strpos($_SERVER["HTTP_ORIGIN"], "https://") === 0);
     }
     public static function protocol() {
         return (self::isHTTPS() ? "https" : "http") . "://";

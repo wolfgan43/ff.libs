@@ -23,7 +23,7 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\tpl;
+namespace phpformsframework\libs\tpl\adapters;
 
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\DirStruct;
@@ -32,9 +32,13 @@ use phpformsframework\libs\Error;
 use phpformsframework\libs\Extendible;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\international\Translator;
+use phpformsframework\libs\Request;
 use phpformsframework\libs\Response;
 use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\storage\Media;
+use phpformsframework\libs\tpl\ffTemplate;
+use phpformsframework\libs\tpl\Gridsystem;
+use phpformsframework\libs\tpl\Page;
 
 if (!defined("APPNAME"))                 { define("APPNAME", str_replace(" " , "", ucwords(str_replace(array(".", "-"), " ", $_SERVER["HTTP_HOST"])))); }
 if (!defined("ENCODING"))                { define("ENCODING", "utf-8"); }
@@ -60,171 +64,9 @@ class PageHtml extends Extendible {
     private $author                             = null;
     private $manifest                           = null;
     private $resources                          = null;
-    private $meta                               = array(
-                                                    "viewport"          => array(
-                                                        "name"          => "viewport"
-                                                        , "content"     => "width=device-width, initial-scale=1.0"
-                                                    )
-                                                    , "msapplication-TileColor" => array(
-                                                        "name"          => "msapplication-TileColor"
-                                                        , "content"     => "#da532c"
-                                                    )
-                                                    , "theme-color"     => array(
-                                                        "name"          => "theme-color"
-                                                        , "content"     => "#ffffff"
-                                                    )
-                                                    , "robots"          => array(
-                                                        "name"          => "robots"
-                                                        , "content"     => "index, follow"
-                                                    )
-                                                );
-    private $favicons                           = array(
-                                                    "favicon" => array(
-                                                        "rel"           => "shortcut icon"
-                                                        , "sizes"       => "16x16"
-                                                        , "href"        => null
-                                                    )
-                                                    , "apple-touch-icon-57x57" => array(
-                                                        "rel"           => "apple-touch-icon"
-                                                        , "sizes"       => "57x57"
-                                                        , "href"        => null
-                                                    )
-                                                    , "apple-touch-icon-60x60" => array(
-                                                        "rel"           => "apple-touch-icon"
-                                                        , "sizes"       => "60x60"
-                                                        , "href"        => null
-                                                    )
-                                                    , "apple-touch-icon-72x72" => array(
-                                                        "rel"           => "apple-touch-icon"
-                                                        , "sizes"       => "72x72"
-                                                        , "href"        => null
-                                                    )
-                                                    , "apple-touch-icon-76x76" => array(
-                                                        "rel"           => "apple-touch-icon"
-                                                        , "sizes"       => "76x76"
-                                                        , "href"        => null
-                                                    )
-                                                    , "apple-touch-icon-114x114" => array(
-                                                        "rel"           => "apple-touch-icon"
-                                                        , "sizes"       => "114x114"
-                                                        , "href"        => null
-                                                    )
-                                                    , "apple-touch-icon-120x120" => array(
-                                                        "rel"           => "apple-touch-icon"
-                                                        , "sizes"       => "120x120"
-                                                        , "href"        => null
-                                                    )
-                                                    , "apple-touch-icon-144x144" => array(
-                                                        "rel"           => "apple-touch-icon"
-                                                        , "sizes"       => "144x144"
-                                                        , "href"        => null
-                                                    )
-                                                    , "apple-touch-icon-152x152" => array(
-                                                        "rel"           => "apple-touch-icon"
-                                                        , "sizes"       => "152x152"
-                                                        , "href"        => null
-                                                    )
-                                                    , "apple-touch-icon-180x180" => array(
-                                                        "rel"           => "apple-touch-icon"
-                                                        , "sizes"       => "180x180"
-                                                        , "href"        => null
-                                                    )
-                                                    , "icon-192x192"    => array(
-                                                        "rel"           => "icon"
-                                                        , "type"        => "image/png"
-                                                        , "sizes"       => "192x192"
-                                                        , "href"        => null
-                                                    )
-                                                    , "icon-32x32"      => array(
-                                                        "rel"           => "icon"
-                                                        , "type"        => "image/png"
-                                                        , "sizes"       => "32x32"
-                                                        , "href"        => null
-                                                    )
-                                                    , "icon-96x96"      => array(
-                                                        "rel"           => "icon"
-                                                        , "type"        => "image/png"
-                                                        , "sizes"       => "96x96"
-                                                        , "href"        => null
-                                                    )
-                                                    , "icon-16x16"      => array(
-                                                        "rel"           => "icon"
-                                                        , "type"        => "image/png"
-                                                        , "sizes"       => "16x16"
-                                                        , "href"        => null
-                                                    )
-                                                );
-    private $resource_rules                     = array(
-                                                    "layouts"           => array(
-                                                        "flag"          => Filemanager::SCAN_FILE
-                                                        , "type"        => "layouts"
-                                                        , "filter"      => array(
-                                                                            "html"
-                                                                            , "tpl"
-                                                                        )
-                                                    )
-                                                    , "commons"         => array(
-                                                        "flag"          => Filemanager::SCAN_FILE
-                                                        , "type"        => "common"
-                                                        , "filter"      => array(
-                                                                            "html"
-                                                                            , "tpl"
-                                                                        )
-                                                    )
-                                                    /*, "widgets"       => array(
-                                                        "flag"          => Filemanager::SCAN_FILE
-                                                        , "type"        => "widgets"
-                                                        , "filter"      => array(
-                                                                            "html"
-                                                                            , "tpl"
-                                                                        )
-                                                    )*/
-                                                    , "css"             => array(
-                                                        "flag"          => Filemanager::SCAN_FILE
-                                                        , "type"        => "css"
-                                                        , "filter"      => array(
-                                                                            "css"
-                                                                        )
-                                                    )
-                                                    , "js"              => array(
-                                                        "flag"          => Filemanager::SCAN_FILE
-                                                        , "type"        => "js"
-                                                        , "filter"      => array(
-                                                                            "js"
-                                                                        )
-                                                    )
-                                                    , "images"          => array(
-                                                        "flag"          => Filemanager::SCAN_FILE
-                                                        , "type"        => "images"
-                                                        , "filter"      => array(
-                                                                            "jpg"
-                                                                            , "png"
-                                                                            , "svg"
-                                                                            , "jpeg"
-                                                                            , "gif"
-                                                                        )
-                                                    )
-                                                    , "fonts"           => array(
-                                                        "flag"          => Filemanager::SCAN_FILE
-                                                        , "type"        => "fonts"
-                                                        , "filter"      => array(
-                                                                            "otf"
-                                                                            , "eot"
-                                                                            , "svg"
-                                                                            , "ttf"
-                                                                            , "woff"
-                                                                            , "woff2"
-                                                                        )
-                                                    )
-                                                    /*, "components"    => array(
-                                                        "flag"          => Filemanager::SCAN_FILE
-                                                        , "type"        => "components"
-                                                        , "filter"      => array(
-                                                            "html"      => true
-                                                            , "tpl"     => true
-                                                        )
-                                                    )*/
-                                                );
+    protected $meta                             = array();
+    protected $favicons                         = array();
+    protected $resource_rules                   = array();
 
     private $GridSystem                         = null;
     private $doctype                            = '<!DOCTYPE html>';
@@ -233,19 +75,19 @@ class PageHtml extends Extendible {
     private $statusCode                         = 200;
     private $email_support                      = null;
 
-    public function __construct($path = null)
+    public function __construct($extension_name = "default")
     {
+        parent::__construct($extension_name);
+
         $this->GridSystem                       = Gridsystem::getInstance();
         $this->lang                             = Locale::getLang("tiny_code");
         $this->region                           = Locale::getCountry("tiny_code");
         $this->js                               = $this->GridSystem->js();
         $this->css                              = $this->GridSystem->css();
         $this->fonts                            = $this->GridSystem->fonts();
-        $this->path                             = ($path
-                                                    ? $path
-                                                    : $_SERVER["PATH_INFO"]
-                                                );
+        $this->path                             = Request::pathinfo();
     }
+
     public function setEncoding($encoding) {
         $this->encoding = $encoding;
 

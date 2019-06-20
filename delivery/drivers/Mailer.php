@@ -31,14 +31,13 @@ use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\security\Validator;
-use phpformsframework\libs\storage\Media;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
 
-if(!defined("MAILER_ADAPTER"))                          { define("MAILER_ADAPTER", "localhost"); }
+if(!defined("MAILER_SMTP"))                          { define("MAILER_SMTP", "localhost"); }
 abstract class Mailer
 {
-    const ADAPTER                                           = MAILER_ADAPTER;
+    const MAILER_SMTP                                       = MAILER_SMTP;
 
     /**
      * @var MailerAdapter
@@ -239,15 +238,14 @@ abstract class Mailer
 
         Debug::startWatch();
 
-        if(!$this->fromEmail)                               { $this->fromEmail  = $this->adapter->from("email"); }
-        if(!$this->fromName)                                { $this->fromName   = $this->adapter->from("name"); }
+        if(!$this->fromEmail)                               { $this->fromEmail  = $this->adapter->from_email; }
+        if(!$this->fromName)                                { $this->fromName   = $this->adapter->from_name; }
         if(!$this->lang)                                    { $this->lang       = Locale::getLang("tiny_code"); }
         if($subject)                                        { $this->setSubject($subject); }
         if($to)                                             { $this->addTo($to); }
         if($message)                                        { $this->setMessage($message); }
 
-        if(DEBUG::ACTIVE)                                   { $this->addBCC($this->adapter->debug("email")); }
-        $this->addBCC($this->adapter->bcc("email"));
+        if(DEBUG::ACTIVE)                                   { $this->addBCC($this->adapter->debug_email); }
 
         if($this->to)                                       { $this->phpmailer(); }
 
@@ -261,27 +259,26 @@ abstract class Mailer
         $mail->CharSet                                      = $this->charset;
         $mail->Encoding                                     = $this->encoding;
 
-        $smtp                                               = $this->adapter->smtp();
-        if($smtp["auth"]) {
+        if($this->adapter->auth) {
             $mail->IsSMTP();
         } else {
             $mail->IsMail();
         }
-
-        $mail->Host                                         = $smtp["host"];
-        $mail->SMTPAuth                                     = $smtp["auth"];
-        $mail->Username                                     = $smtp["username"];
-        $mail->Port                                         = $smtp["port"];
-        $mail->Password                                     = $smtp["password"];
-        $mail->SMTPSecure                                   = $smtp["secure"];
-        $mail->SMTPAutoTLS                                  = $smtp["autoTLS"];
+print_r($this->adapter);
+        $mail->Host                                         = $this->adapter->host;
+        $mail->SMTPAuth                                     = $this->adapter->auth;
+        $mail->Username                                     = $this->adapter->username;
+        $mail->Port                                         = $this->adapter->port;
+        $mail->Password                                     = $this->adapter->password;
+        $mail->SMTPSecure                                   = $this->adapter->secure;
+        $mail->SMTPAutoTLS                                  = $this->adapter->autoTLS;
 
         $mail->FromName                                     = $this->fromName;
-        $mail->From                                         = (strpos($smtp["username"], "@") === false
+        $mail->From                                         = (strpos($this->adapter->username, "@") === false
                                                                 ? $this->fromEmail
-                                                                : $smtp["username"]
+                                                                : $this->adapter->username
                                                             );
-        if ($smtp["username"] != $this->fromEmail)          { $mail->AddReplyTo($this->fromEmail, $this->fromName); }
+        if ($this->adapter->username != $this->fromEmail)   { $mail->AddReplyTo($this->fromEmail, $this->fromName); }
 
         if(is_array($this->to) && count($this->to)) {
             foreach($this->to AS $email => $name)           { $mail->addAddress($email, $name); }
@@ -294,7 +291,7 @@ abstract class Mailer
         }
 
         $mail->IsHTML(true);
-
+        $mail->AllowEmpty                                   = true;
         $mail->Body                                         = $this->processBody();
         $mail->AltBody                                      = $this->processBodyAlt();
 
@@ -334,12 +331,12 @@ abstract class Mailer
     }
 
     /**
-     * @param null|string $mailerAdapter
+     * @param null|string $mailerSmtp
      */
-    private function setAdapter($mailerAdapter = null) {
-        if(!$this->adapter && !$mailerAdapter)              { $mailerAdapter = static::ADAPTER; }
+    private function setAdapter($mailerSmtp = null) {
+        if(!$this->adapter && !$mailerSmtp)              { $mailerSmtp = static::MAILER_SMTP; }
 
-        $this->adapter                                      = new MailerAdapter($mailerAdapter);
+        $this->adapter                                      = new MailerAdapter($mailerSmtp);
     }
 
     private function clearResult()
@@ -413,20 +410,21 @@ abstract class Mailer
     }
 
     public function getHeaders() {
-        if(!$this->fromEmail)                               { $this->fromEmail  = $this->adapter->from("email"); }
-        if(!$this->fromName)                                { $this->fromName   = $this->adapter->from("name"); }
+        if(!$this->fromEmail)                               { $this->fromEmail  = $this->adapter->from_email; }
+        if(!$this->fromName)                                { $this->fromName   = $this->adapter->from_name; }
         if(!$this->lang)                                    { $this->lang       = Locale::getLang("tiny_code"); }
+        if(DEBUG::ACTIVE)                                   { $this->addBCC($this->adapter->debug_email); }
 
-        $smtp                                               = $this->adapter->smtp();
-        $smtp["password"]                                   = false;
+        $smtp                                               = $this->adapter;
+        $smtp->password                                     = false;
 
         return array(
-            "smtp"          => $smtp
+            "smtp"          => (array) $smtp
             , "from"        => array(
                                 "name"          => $this->fromName
                                 , "email"       => $this->fromEmail
                             )
-            , "replyTo"     => ($smtp["username"] != $this->fromEmail
+            , "replyTo"     => ($smtp->username != $this->fromEmail
                                 ? array(
                                     "name"      => $this->fromName
                                     , "email"   => $this->fromEmail

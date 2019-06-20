@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <configdata>
     <pages>
-        <page path="/media"     engine="media"  />
-        <page path="/assets"    engine="media"  />
+        <page path="/media"     engine="media" validate_url="false" />
+        <page path="/assets"    engine="media" validate_url="false" />
     </pages>
     <engine>
         <media source="(.*)" obj="phpformsframework\libs\storage\Media" method="get" params="$1" />
@@ -10,7 +10,7 @@
     <dirstruct>
         <cache-thumbs type="cache" path="/cache/.thumbs" />
         <cache-assets type="cache" path="/cache/assets" />
-        <icons type="asset" path="/assets/images" />
+        <images type="asset" path="/assets/images" />
         <uploads type="app" path="/uploads" />
     </dirstruct>
 </configdata>

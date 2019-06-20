@@ -63,13 +63,23 @@ class Buckler implements Configurable {
             }
         }
     }
-    private static function checkAllowedPath() {
-        $rules                                              = Config::getSchema("badpath");
 
-        $path_info                                          = (isset($_SERVER["REQUEST_URI"])
-                                                                ? $_SERVER["REQUEST_URI"]
-                                                                : null
-                                                            );
+    private static function path_info() {
+        $path_info = null;
+        if(isset($_SERVER["REQUEST_URI"])) {
+            $path_info =  rtrim(rtrim(isset($_SERVER["QUERY_STRING"]) && $_SERVER["QUERY_STRING"]
+                ? rtrim($_SERVER["REQUEST_URI"], $_SERVER["QUERY_STRING"])
+                : $_SERVER["REQUEST_URI"]
+                , "?"), "/");
+        }
+
+        return $path_info;
+    }
+
+    private static function checkAllowedPath() {
+        $rules                                                  = Config::getSchema("badpath");
+
+        $path_info                                              = self::path_info();
         if($path_info) {
             $matches                                            = array();
 

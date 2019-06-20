@@ -117,9 +117,9 @@ class Response {
         ));
 
         if(strpos($destination, DIRECTORY_SEPARATOR) !== 0 && strpos($destination, "http") !== 0) {
-            $destination                            = "http" . ($_SERVER["HTTPS"] ? "s" : "") . "://" . $destination;
+            $destination                            = Request::protocol() . $destination;
         }
-        if("http" . ($_SERVER["HTTPS"] ? "s": "") . "://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"] != $destination) {
+        if(Request::webhost() . $_SERVER["REQUEST_URI"] != $destination) {
             header("Location: " . $destination, true, $http_response_code);
             if(is_array($headers) && count($headers)) {
                 foreach ($headers AS $key => $value) {

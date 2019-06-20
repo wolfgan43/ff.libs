@@ -61,7 +61,7 @@ class Config  implements Dumpable {
                 $dir_attr                                           = DirStruct::getXmlAttr($dir);
                 self::$dirstruct[$dir_key]                          = $dir_attr;
                 if(Debug::ACTIVE && isset($dir_attr["path"]) && !is_dir(DirStruct::$disk_path . $dir_attr["path"]) && !Filemanager::makeDir($dir_attr["path"])) {
-                    Error::registerWarning("Faild to Write " . $dir_attr["path"] . ". Check permissions", "dirstruct");
+                    Error::registerWarning("Faild to Write " . $dir_attr["path"] . " Check permissions", "dirstruct");
                 }
 
                 if(isset(self::$dirstruct[$dir_key]["autoload"]))   {
@@ -154,29 +154,38 @@ class Config  implements Dumpable {
 
             switch ($method) {
                 case "replace":
-                    self::$config[$key]                         = array_replace(self::$config[$key], (array)$config);
+                    self::loadXmlReplace($key, $config);
                     break;
                 case "merge":
-                    if (is_array($config) && count($config)) {
-                        if (!isset($config[0]))                 { $config = array($config); }
-                        self::$config[$key]                     = array_merge(self::$config[$key], $config);
-                    }
+                    self::loadXmlMerge($key, $config);
                     break;
                 case "mergesub":
-                    if (is_array($config) && count($config)) {
-                        foreach ($config AS $sub_key => $sub_config) {
-                            if (!isset($sub_config[0]))         { $sub_config = array($sub_config); }
-                            if(isset(self::$config[$key][$sub_key]))   {
-                                self::$config[$key][$sub_key]   = array_merge(self::$config[$key][$sub_key], $sub_config);
-                            } else {
-                                self::$config[$key][$sub_key]   = $sub_config;
-                            }
-
-                        }
-                    }
+                    self::loadXmlMergeSub($key, $config);
                     break;
                 default:
                     self::$config[$key]                         = $config;
+            }
+        }
+    }
+    private static function loadXmlReplace($key, $config) {
+        self::$config[$key]                                         = array_replace(self::$config[$key], (array)$config);
+    }
+    private static function loadXmlMerge($key, $config) {
+        if (is_array($config) && count($config)) {
+            if (!isset($config[0]))                                 { $config = array($config); }
+            self::$config[$key]                                     = array_merge(self::$config[$key], $config);
+        }
+    }
+    private static function loadXmlMergeSub($key, $config) {
+        if (is_array($config) && count($config)) {
+            foreach ($config AS $sub_key => $sub_config) {
+                if (!isset($sub_config[0]))                         { $sub_config = array($sub_config); }
+                if(isset(self::$config[$key][$sub_key]))   {
+                    self::$config[$key][$sub_key]                   = array_merge(self::$config[$key][$sub_key], $sub_config);
+                } else {
+                    self::$config[$key][$sub_key]                   = $sub_config;
+                }
+
             }
         }
     }
@@ -200,7 +209,7 @@ class Config  implements Dumpable {
             if(isset(self::$config[$bucket])) {
                 $callback                                           = (isset(self::$rules[$bucket]["callback"])
                                                                         ? self::$rules[$bucket]["callback"]
-                                                                        : null //ucfirst($bucket) . "::loadSchema"
+                                                                        : null
                                                                     );
                 if(is_callable($callback))                          { $callback(); }
             }

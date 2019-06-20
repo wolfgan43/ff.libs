@@ -26,14 +26,12 @@
 
 namespace phpformsframework\libs\cache;
 
-use phpformsframework\libs\cache\mem\Adapter;
-
-if (!defined("FF_CACHE_ADAPTER"))                   { define("FF_CACHE_ADAPTER", false); }
+if (!defined("CACHE_ADAPTER"))                   { define("CACHE_ADAPTER", false); }
 
 class Mem // apc | memcached | redis | globals
 {
     const NAME_SPACE                      = 'phpformsframework\\libs\\cache\\mem\\';
-    const ADAPTER                           = FF_CACHE_ADAPTER;
+    const ADAPTER                           = CACHE_ADAPTER;
 
     private static $singletons = null;
 
@@ -41,7 +39,7 @@ class Mem // apc | memcached | redis | globals
     /**
      * @param bool|string $memAdapter
      * @param null $auth
-     * @return Adapter
+     * @return MemAdapter
      */
     public static function getInstance($memAdapter = self::ADAPTER, $auth = null)
     {

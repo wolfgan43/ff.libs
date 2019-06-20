@@ -129,7 +129,7 @@ class Translator
                                                             , "cache"   => false
                                                             , "word"    => $code
                                                         );
-        if($lang) {
+        if($lang && 0) {
             $orm                                        = Orm::getInstance("international");
             $res                                        = $orm->read(array(
                                                             "translation.description"

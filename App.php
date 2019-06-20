@@ -31,6 +31,7 @@ use Exception;
 
 abstract class App extends DirStruct  {
     const NAME_SPACE                                                = 'phpformsframework\\libs\\';
+    const ERROR_BUCKET                                              = 'exception';
     const DEBUG                                                     = Debug::ACTIVE;
 
     protected static $script_engine                                 = null;
@@ -61,7 +62,7 @@ abstract class App extends DirStruct  {
                     $output                                         = call_user_func_array(array(new $obj, $method), $params);
                 }
             } catch (Exception $exception) {
-                Error::register($exception->getMessage(), "exception");
+                Error::register($exception->getMessage(), self::ERROR_BUCKET);
             }
         } else if(is_callable($method)) {
             $output                                                 = call_user_func_array($method, $params);
@@ -86,7 +87,7 @@ abstract class App extends DirStruct  {
             $reflector                                              = new ReflectionClass($class_name);
             $res                                                    = $reflector->getShortName();
         } catch (Exception $exception) {
-            Error::register($exception->getMessage(), "exception");
+            Error::register($exception->getMessage(), self::ERROR_BUCKET);
         }
         return $res;
     }
@@ -96,7 +97,7 @@ abstract class App extends DirStruct  {
             $reflector = new ReflectionClass(($class_name ? $class_name : get_called_class()));
             $res = dirname($reflector->getFileName());
         } catch (Exception $exception) {
-            Error::register($exception->getMessage(), "exception");
+            Error::register($exception->getMessage(), self::ERROR_BUCKET);
         }
         return $res;
     }
@@ -114,7 +115,7 @@ abstract class App extends DirStruct  {
             $method = $reflector->getMethod($method_name);
             $res = $method->isStatic();
         } catch (Exception $exception) {
-            Error::register($exception->getMessage(), "exception");
+            Error::register($exception->getMessage(), self::ERROR_BUCKET);
         }
         return $res;
     }

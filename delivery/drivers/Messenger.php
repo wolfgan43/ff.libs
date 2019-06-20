@@ -31,10 +31,10 @@ use phpformsframework\libs\Log;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\security\Validator;
 
-if(!defined("MESSENGER_ADAPTER"))                       define("MESSENGER_ADAPTER", "twilio");
+if(!defined("MESSENGER_ADAPTER"))                       define("MESSENGER_ADAPTER", "Twilio");
 
 class Messenger {
-    const NAME_SPACE                                        = 'phpformsframework\\libs\\delivery\\messenger\\';
+    const NAME_SPACE                                        = 'phpformsframework\\libs\\delivery\\adapters\\';
 
     const ADAPTER                                           = MESSENGER_ADAPTER;
 
@@ -89,8 +89,7 @@ class Messenger {
         if($to)                                             { $this->addAddress($to); }
         if($message)                                        { $this->setMessage($message); }
 
-        if(DEBUG::ACTIVE)                                   { $this->addAddress($this->adapter->debug()); }
-        $this->addAddress($this->adapter->bcc());
+        if(DEBUG::ACTIVE)                                   { $this->addAddress($this->adapter->debug); }
 
         $this->adapter->send($this->content, $this->to);
 
@@ -115,7 +114,7 @@ class Messenger {
                 , "URL" => Request::url()
                 , "REFERER" => Request::referer()
                 , " content" => $this->content
-                , " from" => $this->adapter->from()
+                , " from" => $this->adapter->from
                 , " error" => Error::raise("messenger")
                 , " exTime" => $exTime
             );
@@ -166,6 +165,8 @@ class Messenger {
     private function setAdapter($messengerAdapter = null) {
         if(!$this->adapter && !$messengerAdapter)           { $messengerAdapter = static::ADAPTER; }
 
-        $this->adapter                                  = new MessengerAdapter($messengerAdapter);
+        $className                                          = self::NAME_SPACE . "Messenger" . ucfirst($messengerAdapter);
+
+        $this->adapter                                      = new $className();
     }
 }

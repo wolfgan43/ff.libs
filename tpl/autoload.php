@@ -26,10 +26,11 @@
 
 spl_autoload_register(function ($class) {
     $name_space                                             = 'phpformsframework\\libs\\tpl\\';
+    $name_space_adapters                                    = 'phpformsframework\\libs\\tpl\\adapters\\';
     $name_space_gridsystem                                  = $name_space. 'gridsystem\\';
 
     $class_files                                            = array(
-        $name_space . 'PageHtml'                          => 'adapters' . DIRECTORY_SEPARATOR . 'page_html.php'
+        $name_space_adapters . 'PageHtml'                   => 'adapters' . DIRECTORY_SEPARATOR . 'PageHtml.php'
         , $name_space_gridsystem . 'FontIcon'               => 'FontIcon.php'
         , $name_space_gridsystem . 'FrameworkCss'           => 'FrameworkCss.php'
         , $name_space . 'ffTemplate'                        => 'ffTemplate.php'

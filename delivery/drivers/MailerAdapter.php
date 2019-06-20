@@ -30,117 +30,44 @@ use phpformsframework\libs\Extendible;
 class MailerAdapter extends Extendible {
     protected $prefix                                       = null;
 
-    private $from                                           = null;
-    private $debug                                          = null;
-    private $bcc                                            = null;
-    protected $config                                         = null;
+    public $host                                            = null;
+    public $username                                        = null;
+    public $password                                        = null;
+    public $auth                                            = null;
+    public $port                                            = null;
+    public $secure                                          = null;
+    public $autoTLS                                         = null;
 
-    public function smtp() {
-        if(!$this->config) {
-            $prefix                                         = (defined($this->prefix . "_SMTP_PASSWORD")
-                                                                ? $this->prefix . "_SMTP_"
-                                                                : "SMTP_"
-                                                            );
-            $this->config["host"]                           = (defined($prefix . "HOST")
-                                                                ? constant($prefix . "HOST")
-                                                                : $this->config["host"]
-                                                            );
-            $this->config["username"]                       = (defined($prefix . "USER")
-                                                                ? constant($prefix . "USER")
-                                                                : $this->config["username"]
-                                                            );
-            $this->config["password"]                       = (defined($prefix . "PASSWORD")
-                                                                ? constant($prefix . "PASSWORD")
-                                                                : $this->config["password"]
-                                                            );
-            $this->config["auth"]                           = (defined($prefix . "AUTH")
-                                                                ? constant($prefix . "AUTH")
-                                                                : $this->config["auth"]
-                                                            );
-            $this->config["port"]                           = (defined($prefix . "PORT")
-                                                                ? constant($prefix . "PORT")
-                                                                : $this->config["port"]
-                                                            );
-            $this->config["secure"]                         = (defined($prefix . "SECURE")
-                                                                ? constant($prefix . "SECURE")
-                                                                : $this->config["secure"]
-                                                            );
-            $this->config["autoTLS"]                        = (defined($prefix . "AUTOTLS")
-                                                                ? constant($prefix . "AUTOTLS")
-                                                                : $this->config["autoTLS"]
-                                                            );
-        }
+    public $from_email                                      = null;
+    public $from_name                                       = null;
+    public $debug_email                                     = null;
 
-        return $this->config;
+    public function __construct($extension_name)
+    {
+        parent::__construct($extension_name);
+
+
+        $smtp_prefix                                        = (defined($this->prefix . "_SMTP_PASSWORD")
+            ? $this->prefix . "_SMTP_"
+            : "SMTP_"
+        );
+
+        $this->setProperty("host", $smtp_prefix);
+        $this->setProperty("username", $smtp_prefix);
+        $this->setProperty("password", $smtp_prefix);
+        $this->setProperty("auth", $smtp_prefix);
+        $this->setProperty("port", $smtp_prefix);
+        $this->setProperty("secure", $smtp_prefix);
+        $this->setProperty("autoTLS", $smtp_prefix);
+
+        $this->setProperty("from_email");
+        $this->setProperty("from_name");
+        $this->setProperty("debug_email");
     }
 
-    public function from($key = null) {
-        if(!$this->from) {
-            $prefix                                         = (defined($this->prefix . "_FROM_EMAIL")
-                                                                ? $this->prefix . "_FROM_"
-                                                                : "FROM_"
-                                                            );
+    private function setProperty($name, $prefix = "") {
+        $const                                          = strtoupper($prefix . $name);
 
-            $this->from["email"]                            = (defined($prefix . "EMAIL")
-                                                                ? constant($prefix . "EMAIL")
-                                                                : ""
-                                                            );
-            $this->from["name"]                             = (defined($prefix . "NAME")
-                                                                ? constant($prefix . "NAME")
-                                                                : $this->from["email"]
-                                                            );
-        }
-
-        return ($key
-            ? $this->from[$key]
-            : $this->from
-        );
-    }
-
-
-    public function bcc($key = null) {
-        if(!$this->bcc) {
-            $prefix                                         = (defined($this->prefix . "_BCC_EMAIL")
-                                                                ? $this->prefix . "_BCC_"
-                                                                : "BCC_"
-                                                            );
-
-            $this->bcc["email"]                             = (defined($prefix . "EMAIL")
-                                                                ? constant($prefix . "EMAIL")
-                                                                : ""
-                                                            );
-            $this->bcc["name"]                              = (defined($prefix . "NAME")
-                                                                ? constant($prefix . "NAME")
-                                                                : $this->bcc["email"]
-                                                            );
-        }
-
-        return ($key
-            ? $this->bcc[$key]
-            : $this->bcc
-        );
-    }
-
-    public function debug($key = null) {
-        if(!$this->debug) {
-            $prefix                                         = (defined($this->prefix . "_DEBUG_EMAIL")
-                                                                ? $this->prefix . "_DEBUG_"
-                                                                : "DEBUG_"
-                                                            );
-
-            $this->debug["email"]                           = (defined($prefix . "EMAIL")
-                                                                ? constant($prefix . "EMAIL")
-                                                                : ""
-                                                            );
-            $this->debug["name"]                            = (defined($prefix . "NAME")
-                                                                ? constant($prefix . "NAME")
-                                                                : $this->debug["email"]
-                                                            );
-        }
-
-        return ($key
-            ? $this->debug[$key]
-            : $this->debug
-        );
+        if(defined($const))                             { $this->$name = constant($const); }
     }
 }

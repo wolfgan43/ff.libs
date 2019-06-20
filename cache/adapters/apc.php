@@ -27,7 +27,6 @@
 namespace phpformsframework\libs\cache\mem;
 
 use phpformsframework\libs\cache\MemAdapter;
-use phpformsframework\libs\Debug;
 use APCIterator AS MC;
 use function apc_store;
 use function apc_fetch;
@@ -65,9 +64,6 @@ class Apc extends MemAdapter
 	 */
 	function get($name, $bucket = self::APPID)
 	{
-        if(Debug::ACTIVE) {
-            return null;
-        }
         $res = null;
         if($name) {
             $success = null;

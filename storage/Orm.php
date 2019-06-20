@@ -615,10 +615,11 @@ class Orm implements Dumpable {
                                                                                                     : self::getModel($controller)->getMainTable()
                                                                                                 )]
                                                                                             );
-        $ormModel                                                                           = self::getModel(isset($data["service"])
+        $modelName                                                                          = (isset($data["service"])
                                                                                                 ? $data["service"]
                                                                                                 : $controller
                                                                                             );
+        $ormModel                                                                           = self::getModel($modelName);
         $storage                                                                            = $ormModel->setStorage($data["def"]);
         $key_name                                                                           = self::getFieldAlias(array_search("primary", $data["def"]["struct"]), $data["def"]["alias"]);
 
@@ -645,7 +646,9 @@ class Orm implements Dumpable {
             if(isset($data["def"]["relationship"][self::$data["main"]["def"]["mainTable"]]) && isset(self::$data["main"]["where"]))  {
                 $key_main_primary                                                           = $data["def"]["relationship"][self::$data["main"]["def"]["mainTable"]]["primary"];
                 if(!isset(self::$data["main"]["where"][$key_main_primary])) {
-                    $regs                                                                   = $storage->read(self::$data["main"]["where"], array($key_main_primary => true), null, null, self::$data["main"]["def"]["table"]["name"]);
+                    $regs                                                                   = self::getModel($modelName)
+                                                                                                ->setStorage(self::$data["main"]["def"])
+                                                                                                ->read(self::$data["main"]["where"], array($key_main_primary => true), null, null, self::$data["main"]["def"]["table"]["name"]);
                     if(is_array($regs)) {
                         self::$data["main"]["where"][$key_main_primary]                     = $regs["keys"][0];
                     }

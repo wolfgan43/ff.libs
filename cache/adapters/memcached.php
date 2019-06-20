@@ -23,9 +23,9 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\cache;
+namespace phpformsframework\libs\cache\mem;
 
-use phpformsframework\libs\Debug;
+use phpformsframework\libs\cache\MemAdapter;
 use Memcached AS MC;
 
 if (!defined("FF_CACHE_MEMCACHED_SERVER"))  { define("FF_CACHE_MEMCACHED_SERVER", "localhost"); }
@@ -74,9 +74,6 @@ class Memcached extends MemAdapter {
 	 */
 	function get($name, $bucket = self::APPID)
 	{
-        if(Debug::ACTIVE) {
-            return null;
-        }
         $res = null;
         if($name) {
             $res = $this->conn->get($this->getKey($name, $bucket));

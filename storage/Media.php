@@ -31,6 +31,7 @@ use phpformsframework\libs\Configurable;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\DirStruct;
 use phpformsframework\libs\Error;
+use phpformsframework\libs\Request;
 use phpformsframework\libs\Response;
 use phpformsframework\libs\storage\drivers\Canvas;
 use phpformsframework\libs\storage\drivers\Thumb;
@@ -671,7 +672,7 @@ class Media extends DirStruct implements Configurable {
         $pathinfo                                                   = array(
                                                                         "url"                   => $url
                                                                         , "web_url"             => (strpos($url, "://") === false
-                                                                                                    ? "http" . ($_SERVER["HTTPS"] ? "s": "") . "://" . $_SERVER["HTTP_HOST"] . $url
+                                                                                                    ? Request::webhost() . $url
                                                                                                     : $url
                                                                                                 )
                                                                         , "extension"           => $arrFile["extension"]
@@ -1085,8 +1086,7 @@ class Media extends DirStruct implements Configurable {
 
     public function process($mode = null) {
         if(isset($this->pathinfo["extension"])) {
-
-
+            Response::setContentType($this->pathinfo["extension"]);
             switch ($this->pathinfo["extension"]) {
                 case "js":
                     $source_file                                    = str_replace(static::RENDER_SCRIPT_PATH, "", $this->pathinfo["dirname"]) . DIRECTORY_SEPARATOR . str_replace("_", DIRECTORY_SEPARATOR, $this->pathinfo["filename"]) . "/script.js";

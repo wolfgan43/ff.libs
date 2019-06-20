@@ -25,11 +25,12 @@
  */
 namespace phpformsframework\libs;
 
+define("DR_LABEL", "DOCUMENT_ROOT");
 define("VENDOR_LIBS_DIR", DIRECTORY_SEPARATOR .  "vendor" . DIRECTORY_SEPARATOR . "phpformsframework" . DIRECTORY_SEPARATOR . "libs");
 
-if(!defined("DOCUMENT_ROOT")) {
-    define("DOCUMENT_ROOT", (isset($_SERVER["DOCUMENT_ROOT"]) && $_SERVER["DOCUMENT_ROOT"]
-        ? $_SERVER["DOCUMENT_ROOT"]
+if(!defined(DR_LABEL)) {
+    define(DR_LABEL, (isset($_SERVER[DR_LABEL]) && $_SERVER[DR_LABEL]
+        ? $_SERVER[DR_LABEL]
         : str_replace(VENDOR_LIBS_DIR, "", __DIR__))
     );
 }
@@ -61,13 +62,14 @@ abstract class DirStruct {
     }
     public static function getPathInfo($user_path = null) {
         $path_info                                                  = $_SERVER["PATH_INFO"];
-        return ($user_path
-            ? (strpos($path_info, $user_path) === 0
-                ? substr($path_info, strlen($user_path))
-                : false
-            )
-            : $path_info
-        );
+        if($user_path) {
+            $path_info                                              = (strpos($path_info, $user_path) === 0
+                                                                        ? substr($path_info, strlen($user_path))
+                                                                        : false
+                                                                    );
+        }
+
+        return $path_info;
     }
 
 

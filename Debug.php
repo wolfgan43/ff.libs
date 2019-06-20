@@ -240,7 +240,7 @@ class Debug extends DirStruct
             ? ''
             : 'display:none;'
         );
-        foreach($debug_backtrace AS $i => $trace) {
+        foreach($debug_backtrace AS $trace) {
             if(isset($trace["file"])) {
                 $label = 'Line in: ' . '<b>' . str_replace($disk_path, "", $trace["file"])  . '</b>';
                 $list_start = '<ol start="' . $trace["line"] . '">';
@@ -272,7 +272,9 @@ class Debug extends DirStruct
                             $html_dumpable .= '<li><a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } ">' . $arrKey[0] . '</a><code style="' . $collapse . '"><pre>' . print_r($value, true) . '</pre></code></li>';
                         }
                         if(strtolower($interface) == "filemanager" && $key == "storage") {
-                            $files_count++;
+                            foreach ($value as $file_index) {
+                                $files_count = $files_count + count($file_index);
+                            }
                         }
                         if(strtolower($interface) == "database") {
                             $db_query_count++;
@@ -452,7 +454,7 @@ class Debug extends DirStruct
         $debug_backtrace                    = debug_backtrace();
         unset($debug_backtrace[0]);
 
-        foreach ($debug_backtrace AS $i => $trace) {
+        foreach ($debug_backtrace AS $trace) {
             if(isset($trace["file"])) {
                 $res[]                      = $trace["file"] . " on line " . $trace["line"];
             } else {

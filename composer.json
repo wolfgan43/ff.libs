@@ -34,15 +34,9 @@
         "twilio/sdk" : "to use SMS notifications [composer require twilio/sdk:^5.31.3]"
     },
     "autoload": {
+        "psr-4": { "phpformsframework\\libs\\": "src/" },
         "files": [
-            "cache/autoload.php",
-            "delivery/autoload.php",
-            "installer/autoload.php",
-            "international/autoload.php",
-            "security/autoload.php",
-            "storage/autoload.php",
-            "tpl/autoload.php",
-            "autoload.php"
+            "constants.inc.php"
         ]
     }
 }

@@ -32,7 +32,7 @@
             force_icon="false"
         />
     </media>
-    <dirstruct>
-        <mail type="app" path="/app/views/mail" />
-    </dirstruct>
+    <dirs>
+        <dir type="app" path="/app/views/mail" />
+    </dirs>
 </configdata>

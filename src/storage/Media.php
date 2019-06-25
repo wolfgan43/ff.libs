@@ -75,8 +75,8 @@ class Media extends DirStruct implements Configurable {
 
     const MODIFY_PATH                                               = Constant::SITE_PATH . "/restricted/media/modify";
 
-    const ASSET_DISK_PATH                                           = Constant::LIBS_DISK_PATH . DIRECTORY_SEPARATOR . "assets";
-    const ICON_DISK_PATH                                            = Constant::LIBS_DISK_PATH . DIRECTORY_SEPARATOR . "assets" . DIRECTORY_SEPARATOR . "images";
+    const ASSET_DISK_PATH                                           = Constant::LIBS_FF_DISK_PATH . DIRECTORY_SEPARATOR . "assets";
+    const ICON_DISK_PATH                                            = Constant::LIBS_FF_DISK_PATH . DIRECTORY_SEPARATOR . "assets" . DIRECTORY_SEPARATOR . "images";
 
     const MIMETYPE                                                  = array(
                                                                         "3dm" => "x-world/x-3dmf"
@@ -630,7 +630,7 @@ class Media extends DirStruct implements Configurable {
         if(!isset($arrFile["extension"])) {
             $arrFile["extension"]                                   = null;
         }
-        $libs_path                                                  = self::getDiskPath("libs", true);
+        $libs_path                                                  = Constant::LIBS_PATH;
         switch($arrFile["extension"]) {
             case "svg";
                 return self::image2base64($file, $arrFile["extension"]);
@@ -1130,11 +1130,10 @@ class Media extends DirStruct implements Configurable {
     }
     private function staticProcess($source_file) {
         $res                                                        = null;
-        $libs_disk_path                                             = self::getDiskPath("libs");
-        if(is_file($libs_disk_path . $source_file)) {
+        if(is_file(Constant::LIBS_DISK_PATH . $source_file)) {
             $cache_final_file                                       = $this->basepathCache() . $this->pathinfo["orig"];
             Filemanager::makeDir(dirname($cache_final_file), 0775, $this->basepathCache());
-            if(is_readable($libs_disk_path . $source_file) && is_writable(dirname($cache_final_file)) && copy($libs_disk_path . $source_file, $cache_final_file)) {
+            if(is_readable(Constant::LIBS_DISK_PATH . $source_file) && is_writable(dirname($cache_final_file)) && copy(Constant::LIBS_DISK_PATH . $source_file, $cache_final_file)) {
                 $res = file_get_contents($cache_final_file);
             } else {
                 Error::register("Link Failed. Check write permission on: " . $source_file . " and if directory exist and have write permission on " . $this->pathinfo["orig"]);
@@ -1216,7 +1215,7 @@ class Media extends DirStruct implements Configurable {
     }
 
     private function basepathAsset() {
-        $basepath                                                  = $this::getDiskPath("assets");
+        $basepath                                                  = $this::getDiskPath("cache-assets");
         if(!$basepath || !is_file($basepath . $this->filesource)) {
             $basepath                                              = static::ASSET_DISK_PATH;
         }
@@ -1470,7 +1469,7 @@ class Media extends DirStruct implements Configurable {
     private function basepathCache() {
         return ($this->pathinfo["render"] == static::RENDER_ASSETS_PATH
             ? $this::getDiskPath("cache-assets")
-            : $this::getDiskPath("cache-thumbs")
+            : $this::getDiskPath("cache-.thumbs")
         );
     }
 

@@ -25,9 +25,9 @@
  */
 namespace phpformsframework\libs\tpl;
 
-use phpformsframework\libs\Extendible;
+use phpformsframework\libs\Mappable;
 
-class FrameworkCss extends Extendible {
+class FrameworkCss extends Mappable {
     protected $css                                          = array();
     protected $js                                           = array();
     protected $fonts                                        = array();
@@ -69,9 +69,9 @@ class FrameworkCss extends Extendible {
      */
     private $font_icon      = null;
 
-    public function __construct($extension_name, $font_icon, $buttons = null)
+    public function __construct($map_name, $font_icon, $buttons = null)
     {
-        parent::__construct($extension_name);
+        parent::__construct($map_name);
 
         $this->font_icon    = new FontIcon($font_icon, $this->buttons_style, $buttons);
 

@@ -257,6 +257,7 @@ class ImageCanvas
                 if ($filename === NULL) {
                     header("Content-Type: image/png");
                 }
+
 				if(!is_writable(dirname($filename)) || imagepng($this->cvs_res, $filename) === false) {
                     Error::register("Permission Denied: " . $filename, "storage");
                 } else {

@@ -1,0 +1,73 @@
+{
+  "rules": {
+    "layouts": {
+      "flag": 4,
+      "type": "layouts",
+      "filter": [
+        "html",
+        "tpl"
+      ]
+    },
+    "common": {
+      "flag": 4,
+      "type": "common",
+      "filter": [
+        "html",
+        "tpl"
+      ]
+    },
+    "css": {
+      "flag": 4,
+      "type": "css",
+      "filter": [
+        "css"
+      ]
+    },
+    "js": {
+      "flag": 4,
+      "type": "js",
+      "filter": [
+        "js"
+      ]
+    },
+    "images": {
+      "flag": 4,
+      "type": "images",
+      "filter": [
+        "jpg",
+        "png",
+        "svg",
+        "jpeg",
+        "gif"
+      ]
+    },
+    "fonts": {
+      "flag": 4,
+      "type": "fonts",
+      "filter": [
+        "otf",
+        "eot",
+        "svg",
+        "ttf",
+        "woff",
+        "woff2"
+      ]
+    },
+    "widgets": {
+      "flag": 4,
+      "type": "widget",
+      "filter": [
+        "html",
+        "css",
+        "js"
+      ]
+    },
+    "xml": {
+      "flag": 4,
+      "type": "xml",
+      "filter": [
+        "xml"
+      ]
+    }
+  }
+}

@@ -27,11 +27,16 @@ namespace phpformsframework\libs;
 
 class Constant {
     const VENDOR_LIBS_DIR                   = VENDOR_LIBS_DIR;
-    const LIBS_DISK_PATH                    = LIBS_DISK_PATH;
     const DOCUMENT_ROOT                     = DOCUMENT_ROOT;
     const SITE_PATH                         = SITE_PATH;
     const CONF_PATH                         = CONF_PATH;
     const LIBS_PATH                         = LIBS_PATH;
+    const LIBS_DISK_PATH                    = self::DOCUMENT_ROOT . self::LIBS_PATH;
+    const LIBS_FF_PATH                      = DIRECTORY_SEPARATOR . "phpformsframework" . DIRECTORY_SEPARATOR . "libs";
+    const LIBS_FF_DISK_PATH                 = self::LIBS_DISK_PATH . self::LIBS_FF_PATH;
+    const CONFIG_PATH                       = self::LIBS_FF_DISK_PATH . DIRECTORY_SEPARATOR . 'conf';
+
+
     const OPTIMIZE_IMAGE                    = true;
 
     const PHP_EXT                           = "php";

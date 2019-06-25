@@ -32,7 +32,6 @@
 
 
 define("VENDOR_LIBS_DIR", DIRECTORY_SEPARATOR .  "vendor" . DIRECTORY_SEPARATOR . "phpformsframework" . DIRECTORY_SEPARATOR . "libs");
-define("LIBS_DISK_PATH", __DIR__);
 if(!defined("DOCUMENT_ROOT")) {
     define("DOCUMENT_ROOT", (isset($_SERVER["DOCUMENT_ROOT"]) && $_SERVER["DOCUMENT_ROOT"]
         ? $_SERVER["DOCUMENT_ROOT"]

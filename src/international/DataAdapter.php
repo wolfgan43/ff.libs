@@ -25,9 +25,9 @@
  */
 namespace phpformsframework\libs\international;
 
-use phpformsframework\libs\Extendible;
+use phpformsframework\libs\Mappable;
 
-class DataAdapter extends Extendible {
+class DataAdapter extends Mappable {
     private $format = array(
         "Number" 		=> ""
         , "DateTime" 	=> ""

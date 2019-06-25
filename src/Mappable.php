@@ -23,21 +23,30 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
+namespace phpformsframework\libs;
 
-spl_autoload_register(function ($class) {
-    $name_space                         = 'phpformsframework\\libs\\cache\\';
-    $name_space_mem                     = $name_space . 'mem\\';
-    $class_files                        = array(
-        $name_space . 'Mem'             => 'Mem.php'
-        , $name_space . 'MemAdapter'    => 'MemAdapter.php'
-        , $name_space_mem . 'Apc'       => 'adapters' . DIRECTORY_SEPARATOR . 'apc.php'
-        , $name_space_mem . 'Fs'        => 'adapters' . DIRECTORY_SEPARATOR . 'fs.php'
-        , $name_space_mem . 'Memcached' => 'adapters' . DIRECTORY_SEPARATOR . 'memcached.php'
-        , $name_space_mem . 'Redis'     => 'adapters' . DIRECTORY_SEPARATOR . 'redis.php'
-        , $name_space . 'Globals'       => 'Globals.php'
-    );
-
-    if(isset($class_files[$class])) {
-        require_once(__DIR__ . DIRECTORY_SEPARATOR . $class_files[$class]);
+abstract class Mappable {
+    public function __construct($map_name)
+    {
+        $this->loadMap($map_name);
     }
-});
+
+    private function getPrefix() {
+        $arrClass = explode("\\", static::class);
+
+        return strtolower(end($arrClass));
+    }
+
+    protected function loadMap($name)
+    {
+        $extensions             = Config::mapping(self::getPrefix(), $name);
+        if(is_array($extensions) && count($extensions)) {
+            $has                = get_object_vars($this);
+            foreach ($has as $name => $oldValue) {
+                $this->$name    = isset($extensions[$name]) ? $extensions[$name] : $oldValue;
+            }
+        } else {
+            Error::register(basename(str_replace("\\", DIRECTORY_SEPARATOR , get_called_class())) . ": " . $name . " not found", "mappable");
+        }
+    }
+}

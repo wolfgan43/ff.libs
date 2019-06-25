@@ -440,7 +440,7 @@ abstract class ImageRender
 
 		do
 		{
-			$bbox = imagettfbbox($this->new_res_font["size"], 0, Constant::LIBS_DISK_PATH . "/assets/fonts/" . $this->new_res_font["type"], $this->new_res_font["caption"]);
+			$bbox = imagettfbbox($this->new_res_font["size"], 0, Constant::LIBS_FF_DISK_PATH . "/assets/fonts/" . $this->new_res_font["type"], $this->new_res_font["caption"]);
 
 			$text_width_top = abs($bbox[6]) + abs($bbox[4]);
 			$text_width_bottom = abs($bbox[0]) + abs($bbox[2]);
@@ -502,7 +502,7 @@ abstract class ImageRender
 						, $src_res_font_x_start
 						, $src_res_font_y_start
 						, $color_font
-						, Constant::LIBS_DISK_PATH . "/assets/fonts/" . $this->new_res_font["type"]
+						, Constant::LIBS_FF_DISK_PATH . "/assets/fonts/" . $this->new_res_font["type"]
 						, $this->new_res_font["caption"]
 					);
 	}

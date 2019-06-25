@@ -186,8 +186,8 @@ class ImageThumb extends ImageRender
 	{
 	    if($this->icon_path && is_file($this->icon_path . DIRECTORY_SEPARATOR . $file)) {
             return $this->icon_path . DIRECTORY_SEPARATOR . $file;
-        } elseif(is_file(Constant::LIBS_DISK_PATH . DIRECTORY_SEPARATOR . "assets" . DIRECTORY_SEPARATOR . "images" . DIRECTORY_SEPARATOR . $file)) {
-	        return Constant::LIBS_DISK_PATH . DIRECTORY_SEPARATOR . "assets" . DIRECTORY_SEPARATOR . "images" . DIRECTORY_SEPARATOR . $file;
+        } elseif(is_file(Constant::LIBS_FF_DISK_PATH . DIRECTORY_SEPARATOR . "assets" . DIRECTORY_SEPARATOR . "images" . DIRECTORY_SEPARATOR . $file)) {
+	        return Constant::LIBS_FF_DISK_PATH . DIRECTORY_SEPARATOR . "assets" . DIRECTORY_SEPARATOR . "images" . DIRECTORY_SEPARATOR . $file;
         } else {
 	        return false;
         }

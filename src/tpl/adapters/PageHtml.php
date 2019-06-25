@@ -30,20 +30,18 @@ use phpformsframework\libs\Debug;
 use phpformsframework\libs\DirStruct;
 use phpformsframework\libs\Env;
 use phpformsframework\libs\Error;
-use phpformsframework\libs\Extendible;
+use phpformsframework\libs\Mappable;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\Response;
-use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\storage\Media;
 use phpformsframework\libs\tpl\ffTemplate;
 use phpformsframework\libs\tpl\Gridsystem;
-use phpformsframework\libs\tpl\Page;
+use phpformsframework\libs\tpl\Resource;
 
 
-
-class PageHtml extends Extendible {
+class PageHtml extends Mappable {
     const NL                                    = "\n";
     const MAIN_CONTENT                          = "content";
 
@@ -62,10 +60,8 @@ class PageHtml extends Extendible {
     private $prev                               = null;
     private $author                             = null;
     private $manifest                           = null;
-    private $resources                          = null;
     protected $meta                             = array();
     protected $favicons                         = array();
-    protected $resource_rules                   = array();
 
     private $GridSystem                         = null;
     private $doctype                            = '<!DOCTYPE html>';
@@ -74,9 +70,9 @@ class PageHtml extends Extendible {
     private $statusCode                         = 200;
     private $email_support                      = null;
 
-    public function __construct($extension_name = "default")
+    public function __construct($map_name = "default")
     {
-        parent::__construct($extension_name);
+        parent::__construct($map_name);
 
         $this->GridSystem                       = Gridsystem::getInstance();
         $this->lang                             = Locale::getLang("tiny_code");
@@ -348,45 +344,11 @@ class PageHtml extends Extendible {
     }
 
 
-    protected function loadResources($patterns = null, $excludeDirname = null) {
-        if(is_array($this->resource_rules) && count($this->resource_rules)) {
-            foreach ($this->resource_rules as $key => $rule) {
-                $patterns[Page::ASSETS_PATH . DIRECTORY_SEPARATOR . $key] = $rule;
-                $patterns[DirStruct::getDiskPath($key, true)] = $rule;
-            }
-        }
 
-        Filemanager::scanExclude($excludeDirname);
-
-        $this->resources                        = Filemanager::scan($patterns);
-    }
-
-    private function resource($name, $type) {
-        $file                                   = null;
-        $pathinfo                               = $this->path;
-        if(!$this->resources)                   { $this->loadResources(); }
-
-        if($pathinfo) {
-            do {
-                if(isset($this->resources[$type][$name . str_replace(DIRECTORY_SEPARATOR, "_", $pathinfo)])) {
-                    $file = $this->resources[$type][$name . str_replace(DIRECTORY_SEPARATOR, "_", $pathinfo)];
-                    break;
-                }
-
-                $pathinfo = dirname($pathinfo);
-            } while ($pathinfo != DIRECTORY_SEPARATOR);
-        }
-
-        if(!$file) {
-            $file = $this->resources[$type][$name];
-        }
-
-        return $file;
-    }
     private function getAsset($what, $type) {
         $asset = null;
         foreach((array) $what AS $name) {
-            $asset = $this->resource($name, $type);
+            $asset = Resource::get($name, $type);
             if($asset) {
                 break;
             }

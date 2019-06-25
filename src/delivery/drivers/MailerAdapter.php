@@ -25,9 +25,9 @@
  */
 namespace phpformsframework\libs\delivery\drivers;
 
-use phpformsframework\libs\Extendible;
+use phpformsframework\libs\Mappable;
 
-class MailerAdapter extends Extendible {
+class MailerAdapter extends Mappable {
     protected $prefix                                       = null;
 
     public $host                                            = null;
@@ -42,9 +42,9 @@ class MailerAdapter extends Extendible {
     public $from_name                                       = null;
     public $debug_email                                     = null;
 
-    public function __construct($extension_name)
+    public function __construct($map_name)
     {
-        parent::__construct($extension_name);
+        parent::__construct($map_name);
 
 
         $smtp_prefix                                        = (defined($this->prefix . "_SMTP_PASSWORD")

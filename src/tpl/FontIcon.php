@@ -25,9 +25,9 @@
  */
 namespace phpformsframework\libs\tpl;
 
-use phpformsframework\libs\Extendible;
+use phpformsframework\libs\Mappable;
 
-class FontIcon extends Extendible {
+class FontIcon extends Mappable {
     protected $button_type  = null;
     protected $css          = array();
     protected $fonts        = array();
@@ -40,9 +40,9 @@ class FontIcon extends Extendible {
     private $buttons        = array();
     private $buttons_style  = array();
 
-    public function __construct($extension_name, $buttons_style = null, $buttons = null)
+    public function __construct($map_name, $buttons_style = null, $buttons = null)
     {
-        parent::__construct($extension_name);
+        parent::__construct($map_name);
         $this->loadButtons();
 
         if($buttons_style)                              { $this->buttons_style  = $buttons_style; }
@@ -59,7 +59,7 @@ class FontIcon extends Extendible {
 
     private function loadButtons() {
         if($this->button_type) {
-            $this->loadExtension("buttons_" . $this->button_type);
+            $this->loadMap("buttons_" . $this->button_type);
         }
     }
     public function action($params, $use_source = false) {

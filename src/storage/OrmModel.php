@@ -27,9 +27,9 @@
 namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\Error;
-use phpformsframework\libs\Extendible;
+use phpformsframework\libs\Mappable;
 
-class OrmModel extends Extendible {
+class OrmModel extends Mappable {
     protected $bucket                                                                       = NULL;
     protected $type                                                                         = NULL;
     protected $main_table                                                                   = NULL;
@@ -43,9 +43,9 @@ class OrmModel extends Extendible {
     protected $tables                                                                       = null;
     protected $alias                                                                        = null;
 
-    public function __construct($extension_name, $databaseAdapters = null)
+    public function __construct($map_name, $databaseAdapters = null)
     {
-        parent::__construct($extension_name);
+        parent::__construct($map_name);
 
         $this->setAdapters($databaseAdapters);
     }

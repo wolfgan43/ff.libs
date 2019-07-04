@@ -26,21 +26,23 @@
 namespace phpformsframework\libs\security;
 
 use phpformsframework\libs\Configurable;
-use phpformsframework\libs\DirStruct;
+use phpformsframework\libs\Dir;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\Response;
 use phpformsframework\libs\Config;
 
-class Buckler implements Configurable {
-    public static function loadSchema() {
+class Buckler implements Configurable
+{
+    public static function loadSchema()
+    {
         $config                                                 = Config::rawData("badpath", true, "rule");
 
-        if(is_array($config) && count($config)) {
+        if (is_array($config) && count($config)) {
             $schema                                             = array();
-            foreach($config AS $badpath) {
-                $attr                                           = DirStruct::getXmlAttr($badpath);
+            foreach ($config as $badpath) {
+                $attr                                           = Dir::getXmlAttr($badpath);
                 $key                                            = $attr["source"];
                 unset($attr["source"]);
                 $schema[$key]                                   = $attr;
@@ -49,12 +51,14 @@ class Buckler implements Configurable {
             Config::setSchema($schema, "badpath");
         }
     }
-    public static function protectMyAss() {
+    public static function protectMyAss()
+    {
         self::checkLoadAvg();
         self::checkAllowedPath();
     }
-    private static function checkLoadAvg() {
-        if(function_exists("sys_getloadavg")) {
+    private static function checkLoadAvg()
+    {
+        if (function_exists("sys_getloadavg")) {
             $load = sys_getloadavg();
             if ($load[0] > 80) {
                 Error::send(503);
@@ -64,43 +68,44 @@ class Buckler implements Configurable {
         }
     }
 
-    private static function path_info() {
+    private static function path_info()
+    {
         $path_info = null;
-        if(isset($_SERVER["REQUEST_URI"])) {
+        if (isset($_SERVER["REQUEST_URI"])) {
             $path_info =  rtrim(rtrim(isset($_SERVER["QUERY_STRING"]) && $_SERVER["QUERY_STRING"]
                 ? rtrim($_SERVER["REQUEST_URI"], $_SERVER["QUERY_STRING"])
-                : $_SERVER["REQUEST_URI"]
-                , "?"), "/");
+                : $_SERVER["REQUEST_URI"], "?"), "/");
         }
 
         return $path_info;
     }
 
-    private static function checkAllowedPath() {
+    private static function checkAllowedPath()
+    {
         $rules                                                  = Config::getSchema("badpath");
 
         $path_info                                              = self::path_info();
-        if($path_info) {
+        if ($path_info) {
             $matches                                            = array();
 
-            if(is_array($rules) && count($rules)) {
-                foreach($rules AS $source => $rule) {
+            if (is_array($rules) && count($rules)) {
+                foreach ($rules as $source => $rule) {
                     $src                                        = self::regexp($source);
-                    if(preg_match($src, $path_info, $matches)) {
-                        if(is_numeric($rule["destination"]) || ctype_digit($rule["destination"])) {
+                    if (preg_match($src, $path_info, $matches)) {
+                        if (is_numeric($rule["destination"]) || ctype_digit($rule["destination"])) {
                             Response::code($rule["destination"]);
 
-                            if(isset($rule["log"])) {
+                            if (isset($rule["log"])) {
                                 Log::write(
                                     array(
                                         "RULE"          => $source
                                         , "ACTION"      => $rule["destination"]
                                         , "URL"         => Request::url()
                                         , "REFERER"     => Request::referer()
-                                    )
-                                    , "shield"
-                                    , $rule["destination"]
-                                    , "BadPath"
+                                    ),
+                                    "shield",
+                                    $rule["destination"],
+                                    "BadPath"
                                 );
                             }
                             exit;
@@ -112,13 +117,15 @@ class Buckler implements Configurable {
     }
 
     //todo: da fare
-    private static function antiFlood() {
+    private static function antiFlood()
+    {
     }
-    private static function regexp($rule) {
-        return "#" . (strpos($rule, "[") === false && strpos($rule, "(") === false && strpos($rule, '$') === false
+    private static function regexp($rule)
+    {
+        return "#" . (
+            strpos($rule, "[") === false && strpos($rule, "(") === false && strpos($rule, '$') === false
                 ? str_replace("\*", "(.*)", preg_quote($rule, "#"))
                 : $rule
             ) . "#i";
     }
 }
-

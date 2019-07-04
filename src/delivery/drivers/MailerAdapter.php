@@ -27,16 +27,17 @@ namespace phpformsframework\libs\delivery\drivers;
 
 use phpformsframework\libs\Mappable;
 
-class MailerAdapter extends Mappable {
+class MailerAdapter extends Mappable
+{
     protected $prefix                                       = null;
 
     public $host                                            = null;
     public $username                                        = null;
     public $password                                        = null;
-    public $auth                                            = null;
-    public $port                                            = null;
-    public $secure                                          = null;
-    public $autoTLS                                         = null;
+    public $auth                                            = false;
+    public $port                                            = 25;
+    public $secure                                          = "none";
+    public $autoTLS                                         = false;
 
     public $from_email                                      = null;
     public $from_name                                       = null;
@@ -47,7 +48,8 @@ class MailerAdapter extends Mappable {
         parent::__construct($map_name);
 
 
-        $smtp_prefix                                        = (defined($this->prefix . "_SMTP_PASSWORD")
+        $smtp_prefix                                        = (
+            defined($this->prefix . "_SMTP_PASSWORD")
             ? $this->prefix . "_SMTP_"
             : "SMTP_"
         );
@@ -65,9 +67,12 @@ class MailerAdapter extends Mappable {
         $this->setProperty("debug_email");
     }
 
-    private function setProperty($name, $prefix = "") {
+    private function setProperty($name, $prefix = "")
+    {
         $const                                          = strtoupper($prefix . $name);
 
-        if(defined($const))                             { $this->$name = constant($const); }
+        if (defined($const)) {
+            $this->$name = constant($const);
+        }
     }
 }

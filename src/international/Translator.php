@@ -25,27 +25,22 @@
  */
 
 namespace phpformsframework\libs\international;
+
 use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\Constant;
+use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\Orm;
-
-if(!defined("DB_TABLE_LANG"))                       { define("DB_TABLE_LANG", "ff_languages"); }
-if(!defined("DB_TABLE_INTERNATIONAL"))              { define("DB_TABLE_INTERNATIONAL", "ff_international"); }
-if(!defined("FF_TRANSLATOR_ADAPTER"))               { define("FF_TRANSLATOR_ADAPTER", false); }
 
 class Translator
 {
+    const ERROR_BUCKET                                  = "translator";
     const NAME_SPACE                                    = 'phpformsframework\\libs\\international\\adapters\\';
     const ADAPTER                                       = false;
 
     const REGEXP                                        = '/\{_([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)\}/U';
 
-    const DB_TABLE_LANG                                 = DB_TABLE_LANG;
-
-    const DB_TABLE_INTERNATIONAL                        = DB_TABLE_INTERNATIONAL;
-
     const INSERT_EMPTY                                  = true;
-    const BUCKET_PREFIX                                 = "ffcms/translations/";
+    const CACHE_BUCKET                                  = "translations/";
 
 
     private static $singletons                          = null;
@@ -53,7 +48,7 @@ class Translator
     private static $cache                               = null;
 
 
-    public static function getInstance($translatorAdapter, $auth = null)
+    public static function getInstance($translatorAdapter = Constant::TRANSLATOR_ADAPTER, $auth = null)
     {
         if (!isset(self::$singletons[$translatorAdapter])) {
             $class_name                                 = static::NAME_SPACE . "Translator" . ucfirst($translatorAdapter);
@@ -63,22 +58,25 @@ class Translator
         return self::$singletons[$translatorAdapter];
     }
 
-    public static function dump($language = null) {
+    public static function dump($language = null)
+    {
         $lang_code                                      = self::getLang($language);
 
         return self::$cache[$lang_code];
     }
-    public static function clear($language = null) {
+    public static function clear($language = null)
+    {
         $lang_code                                      = self::getLang($language);
 
         self::$cache[$lang_code]                        = null;
-        Mem::getInstance()->clear(self::BUCKET_PREFIX . $lang_code);
+        Mem::getInstance(static::CACHE_BUCKET . $lang_code)->clear();
 
         return true;
     }
-    public static function process($content, $language = null) {
+    public static function process($content, $language = null)
+    {
         $matches                                        = array();
-        $rc                                             = preg_match_all (self::REGEXP, $content, $matches);
+        $rc                                             = preg_match_all(self::REGEXP, $content, $matches);
 
         if ($rc) {
             $replace                                    = null;
@@ -88,22 +86,29 @@ class Translator
                 $replace["values"][]                    = self::get_word_by_code($code, $language);
             }
 
-            if($replace)                                { $content = str_replace($replace["keys"], $replace["values"], $content); }
+            if ($replace) {
+                $content = str_replace($replace["keys"], $replace["values"], $content);
+            }
         }
 
         return $content;
     }
-    public static function get_word_by_code($code, $language = null) {
-        if(!$code)                                      { return null; }
+    public static function get_word_by_code($code, $language = null)
+    {
+        if (!$code || !Locale::isMultiLang()) {
+            return $code;
+        }
         $lang_code                                      = self::getLang($language);
+        if (array_search($lang_code, Locale::ACCEPTED_LANG) === false) {
+            Error::register("Lang not accepted: " . $lang_code . " Lang allowed: " . implode(", ", Locale::ACCEPTED_LANG), static::ERROR_BUCKET);
+        }
+        if (!isset(self::$cache[$lang_code][$code])) {
+            $cache                                      = Mem::getInstance(static::CACHE_BUCKET . $lang_code);
+            self::$cache[$lang_code][$code]             = $cache->get($code);
+            if (!self::$cache[$lang_code][$code]) {
+                self::$cache[$lang_code][$code]         = self::getWordByCodeFromDB($code, $lang_code);
 
-        if(!isset(self::$cache[$lang_code][$code])) {
-            $cache                                      = Mem::getInstance();
-            self::$cache[$lang_code][$code]              = $cache->get($code, self::BUCKET_PREFIX . $lang_code);
-            if(!self::$cache[$lang_code][$code]) {
-                self::$cache[$lang_code][$code]          = self::getWordByCodeFromDB($code, $lang_code);
-
-                $cache->set($code, self::$cache[$lang_code][$code], self::BUCKET_PREFIX . $lang_code);
+                $cache->set($code, self::$cache[$lang_code][$code]);
             }
         }
 
@@ -113,14 +118,16 @@ class Translator
         );
     }
 
-    private static function getCode($code) {
+    private static function getCode($code)
+    {
         return (Constant::DEBUG
             ? "{" . $code . "}"
             : $code
         );
     }
 
-    private static function getWordByCodeFromDB($code, $language = null) {
+    private static function getWordByCodeFromDB($code, $language = null)
+    {
         $lang                                           = self::getLang($language);
         $i18n                                           = array(
                                                             "code"      => $code
@@ -128,7 +135,7 @@ class Translator
                                                             , "cache"   => false
                                                             , "word"    => $code
                                                         );
-        if($lang && 0) {
+        if ($lang) {
             $orm                                        = Orm::getInstance("international");
             $res                                        = $orm->read(array(
                                                             "translation.description"
@@ -137,10 +144,10 @@ class Translator
                                                             "lang.code" => $i18n["lang"]
                                                             , "translation.word_code" => substr($i18n["code"], 0, 254)
                                                         ), null, 1);
-            if(is_array($res)) {
+            if (is_array($res)) {
                 $i18n["word"]                           = $res["description"];
                 $i18n["cache"]                          = !$res["is_new"];
-            } elseif(self::INSERT_EMPTY) {
+            } elseif (self::INSERT_EMPTY) {
                 $orm->insert(array(
                     "lang.code"                         =>  $i18n["lang"]
                     , "translation.word_code"           =>  substr($i18n["code"], 0, 254)
@@ -151,14 +158,18 @@ class Translator
 
         return $i18n;
     }
-    public static function getLang($lang_code = null) {
-        return strtolower($lang_code
+    public static function getLang($lang_code = null)
+    {
+        return strtolower(
+            $lang_code
             ? $lang_code
             : Locale::getLang("code")
         );
     }
-    public static function getLangDefault($lang_code = null) {
-        return strtolower($lang_code
+    public static function getLangDefault($lang_code = null)
+    {
+        return strtolower(
+            $lang_code
             ? $lang_code
             : Locale::getLangDefault("code")
         );

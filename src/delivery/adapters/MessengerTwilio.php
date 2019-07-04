@@ -31,19 +31,23 @@ use Twilio\Exceptions\ConfigurationException;
 use Twilio\Exceptions\TwilioException;
 use Twilio\Rest\Client;
 
-class MessengerTwilio extends MessengerAdapter {
+class MessengerTwilio extends MessengerAdapter
+{
     const PREFIX                                            = "TWILIO";
 
-    public function send($message, $to) {
+    public function send($message, $to)
+    {
         $res                                                = null;
-        if($message) {
-            if(is_array($to) && count($to)) {
+        if ($message) {
+            if (is_array($to) && count($to)) {
                 try {
                     $client                                 = new Client($this->sid, $this->token);
                     $from                                   = $this->from;
-                    if(!$from)                              { $from = $this->getAppName(); }
+                    if (!$from) {
+                        $from = $this->getAppName();
+                    }
 
-                    if($from) {
+                    if ($from) {
                         foreach ($to as $tel => $name) {
                             try {
                                 $client->messages->create(
@@ -54,22 +58,21 @@ class MessengerTwilio extends MessengerAdapter {
                                     )
                                 );
                             } catch (TwilioException $e) {
-                                Error::register($e->getMessage(), "messenger");
+                                Error::register($e->getMessage(), static::ERROR_BUCKET);
                             }
                         }
                     } else {
-                        Error::register(static::PREFIX . " configuration missing. Set constant: " . static::PREFIX. "_SMS_FROM", "messenger");
+                        Error::register(static::PREFIX . " configuration missing. Set constant: " . static::PREFIX. "_SMS_FROM", static::ERROR_BUCKET);
                     }
                 } catch (ConfigurationException $e) {
-                    Error::register(static::PREFIX . " configuration missing. Set constant: " . static::PREFIX . "_SMS_SID and " . static::PREFIX . "_SMS_TOKEN", "messenger");
+                    Error::register(static::PREFIX . " configuration missing. Set constant: " . static::PREFIX . "_SMS_SID and " . static::PREFIX . "_SMS_TOKEN", static::ERROR_BUCKET);
                 }
             } else {
-                Error::register(static::PREFIX . " recipient is required.", "messenger");
+                Error::register(static::PREFIX . " recipient is required.", static::ERROR_BUCKET);
             }
         } else {
-            Error::register(static::PREFIX . "  message is required.", "messenger");
+            Error::register(static::PREFIX . "  message is required.", static::ERROR_BUCKET);
         }
         return $res;
     }
-
 }

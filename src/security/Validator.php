@@ -185,14 +185,16 @@ class Validator
      * @param array[range, fakename] $option
      * @return array[status, error]
      */
-    public static function is(&$what, $type = null, $option = null) {
+    public static function is(&$what, $type = null, $option = null)
+    {
         $res                                            = array(
                                                             "status"    => 0
                                                             , "error"   => ""
                                                         );
 
-        if(!array_key_exists($type, self::RULES)) {
-            $type                                       = (is_array($what)
+        if (!array_key_exists($type, self::RULES)) {
+            $type                                       = (
+                is_array($what)
                                                             ? "array"
                                                             : "string"
                                                         );
@@ -200,8 +202,10 @@ class Validator
         $rule                                           = self::RULES[$type];
 
         self::setErrorName($option["fakename"]);
-        if(isset($option["range"]))                     { self::setRuleOptions($rule, $option["range"]); }
-        if(!self::isAllowedSize($what, $rule["length"])) {
+        if (isset($option["range"])) {
+            self::setRuleOptions($rule, $option["range"]);
+        }
+        if (!self::isAllowedSize($what, $rule["length"])) {
             $res                                        = self::isError(self::getErrorName($what) . " Max Length Exeeded", $type, 413);
         } else {
             $validation                                 = filter_var($what, $rule["filter"], array(
@@ -209,29 +213,28 @@ class Validator
                                                             , "options"     => $rule["options"]
                                                         ));
 
-            if($validation === null) {
+            if ($validation === null) {
                 $res                                    = self::isError(self::getErrorName($what) . " is not a valid " . $type . (isset($option["range"]) ? ". The permitted values are [" . $option["range"] . "]" : ""), $type);
-            } elseif(is_array($validation)) {
-                if(is_array($what)) {
+            } elseif (is_array($validation)) {
+                if (is_array($what)) {
                     $diff                               = array_diff_key($what, array_filter($validation));
-                    if(count($diff)) {
+                    if (count($diff)) {
                         $res                            = self::isError(self::getErrorName($what) . "[" . implode(", ", array_keys($diff)) . "] is not valid " . $type, $type);
                     }
                 } else {
                     $res                                = self::isError(self::getErrorName($what) . " is malformed");
                 }
-            } elseif($validation != $what) {
-
-                if(isset($rule["normalize"])) {
+            } elseif ($validation != $what) {
+                if (isset($rule["normalize"])) {
                     $what                               = $validation;
                 } else {
                     $res                                = self::isError(self::getErrorName($what) . " is not a valid " . $type . ($validation && $validation !== true ? ". (" . $validation . " is valid!)" : ""), $type);
                 }
             }
 
-            if(isset($rule["callback"])) {
+            if (isset($rule["callback"])) {
                 $error                                  = call_user_func($rule["callback"], $what);
-                if($error) {
+                if ($error) {
                     $res                                = self::isError($error, $type);
                 }
             }
@@ -242,14 +245,15 @@ class Validator
         return $res;
     }
 
-    public static function transform(&$what, $in = null) {
-        if($in) {
-            if(is_array($what)) {
+    public static function transform(&$what, $in = null)
+    {
+        if ($in) {
+            if (is_array($what)) {
                 foreach ($what as &$who) {
                     self::transform($who, $in);
                 }
             } else {
-                if($in == "json") {
+                if ($in == "json") {
                     $what = json_decode($what, true);
                 } else {
                     $what = urldecode($what);
@@ -258,26 +262,36 @@ class Validator
         }
     }
 
-    public static function isJson($value) {
+    public static function isJson($value)
+    {
         $is_json                                        = null;
 
-        if(!is_array($value))                           { $value = array($value); }
-        foreach ($value AS $item) {
+        if (!is_array($value)) {
+            $value = array($value);
+        }
+        foreach ($value as $item) {
             $is_json                                    = (bool) json_decode($item, true);
-            if($is_json === false)                      { break; }
+            if ($is_json === false) {
+                break;
+            }
         }
 
         return $is_json;
     }
 
-    public static function checkSpecialChars($value, $spellcheck = null) {
+    public static function checkSpecialChars($value, $spellcheck = null)
+    {
         $errors                                         = array();
-        if(!$spellcheck)                                {  $spellcheck = array("'", '"', '\\', '../', './'); }
+        if (!$spellcheck) {
+            $spellcheck = array("'", '"', '\\', '../', './');
+        }
 
-        if(!is_array($value))                           { $value = array($value); }
-        foreach ($value AS $item) {
+        if (!is_array($value)) {
+            $value = array($value);
+        }
+        foreach ($value as $item) {
             $check                                      = str_replace($spellcheck, "", $item);
-            if($item != $check) {
+            if ($item != $check) {
                 $errorName                              = self::getErrorName($item);
                 $errors[$errorName]                     = $errorName . " is not a valid. " . "You can't use [" . implode(" ", $spellcheck) . "]";
             }
@@ -294,61 +308,64 @@ class Validator
             && $timestamp > 0
             && $timestamp < pow(2, 31));
     }
-    public static function isFile($value) {
+    public static function isFile($value)
+    {
         return (self::invalidFile($value)
             ? false
             : true
         );
     }
-    public static function invalidFile($value) {
+    public static function invalidFile($value)
+    {
         $res                                                                = false;
         $error                                                              = array();
 
         unset(self::$errors["file"]);
-        if(isset($_FILES[$value])) {
+        if (isset($_FILES[$value])) {
             $names                                                          = (array) $_FILES[$value]["name"];
-            if(is_array($names) && count($names)) {
-                foreach ($names AS $index => $name) {
-                    if(!self::isFilePath($name)) {
+            if (is_array($names) && count($names)) {
+                foreach ($names as $index => $name) {
+                    if (!self::isFilePath($name)) {
                         $error[]                                            = $name . " is not valid path";
                     }
                 }
             }
 
             $sizes                                                          = (array) $_FILES[$value]["size"];
-            if(is_array($sizes) && count($sizes)) {
-                foreach ($sizes AS $index => $size) {
-                    if($size > self::RULES["file"]["length"]) {
+            if (is_array($sizes) && count($sizes)) {
+                foreach ($sizes as $index => $size) {
+                    if ($size > self::RULES["file"]["length"]) {
                         $error[]                                            = $names[$index] . ": Upload Limit Exeeded";
                     }
                 }
             }
 
             $types                                                          = (array) $_FILES[$value]["type"];
-            if(is_array($types) && count($types)) {
+            if (is_array($types) && count($types)) {
                 $files                                                      = (array) $_FILES[$value]["tmp_name"];
-                foreach ($types AS $index => $type) {
-                    if(!self::checkMagicBytes($files[$index], $type)) {
+                foreach ($types as $index => $type) {
+                    if (!self::checkMagicBytes($files[$index], $type)) {
                         $error[]                                            = $names[$index] . " File type mismatch";
                     }
                 }
             }
-        } elseif(!self::isFilePath($value)) {
+        } elseif (!self::isFilePath($value)) {
             $error[]                                                        = $value . " is not valid path";
         }
 
-        if(count($error)) {
-            $res = implode(", ", $error);;
+        if (count($error)) {
+            $res = implode(", ", $error);
             self::$errors["file"] = $res;
         }
 
         return $res;
     }
 
-    private static function checkMagicBytes($file, $type) {
+    private static function checkMagicBytes($file, $type)
+    {
         $checks                                                             = self::SIGNATURES[$type];
         $isValid                                                            = false;
-        if(is_array($checks) && count($checks)) {
+        if (is_array($checks) && count($checks)) {
             foreach ($checks as $check) {
                 $byteCount                                                  = strlen($check) / 2;
                 $handle = @fopen($file, 'rb');
@@ -371,16 +388,19 @@ class Validator
         return $isValid;
     }
 
-    public static function isFilePath($value) {
-        if(strpos($value, $_SERVER["DOCUMENT_ROOT"]) === 0) {
+    public static function isFilePath($value)
+    {
+        if (strpos($value, Constant::DISK_PATH) === 0) {
             $res = false;
         } else {
             $res = !self::checkSpecialChars($value) && !preg_match('/[^A-Za-z0-9.\/\-\\$]/', $value);
         }
         return (bool) $res;
     }
-    public static function isEmail($value) {
-        $regex                                                              = (Constant::DEBUG
+    public static function isEmail($value)
+    {
+        $regex                                                              = (
+            Constant::DEBUG
                                                                                 ? '/^([\.0-9a-z_\-\+]+)@(([0-9a-z\-]+\.)+[0-9a-z]{2,12})$/i'
                                                                                 : '/^([\.0-9a-z_\-]+)@(([0-9a-z\-]+\.)+[0-9a-z]{2,12})$/i'
                                                                             );
@@ -389,20 +409,23 @@ class Validator
 
         return $res;
     }
-    public static function isTel($value) {
+    public static function isTel($value)
+    {
         $res                                                                = is_numeric(ltrim(str_replace(array(" ", ".", ",", "-"), array(""), $value), "+"));
 
         return $res;
     }
 
-    public static function isPassword($value, $rule = null) {
+    public static function isPassword($value, $rule = null)
+    {
         return (self::invalidPassword($value, $rule)
             ? false
             : true
         );
     }
 
-    public static function invalidUsername($value) {
+    public static function invalidUsername($value)
+    {
         $res = self::is($value, "username");
 
         return ($res["status"] === 0
@@ -410,37 +433,56 @@ class Validator
             : true
         );
     }
-    public static function invalidPassword($value, $rule = null) {
+    public static function invalidPassword($value, $rule = null)
+    {
         $res                                                                = false;
         $error                                                              = array();
 
         unset(self::$errors["password"]);
-        if($value) {
-            switch($rule) {
+        if ($value) {
+            switch ($rule) {
                 case "kerberos":
-                    if (strlen($value) < 8)                                 $error[] = "Password too short!";
-                    if (!preg_match("#[0-9]+#", $value))             $error[] = "Password must include at least one number!";
-                    if (!preg_match("#[a-z]+#", $value))             $error[] = "Password must include at least one letter!";
-                    if (!preg_match("#[A-Z]+#", $value))             $error[] = "Password must include at least one upper letter!";
-                    if (!preg_match("#[^a-zA-Z0-9]+#", $value))      $error[] = "Password must include at least one Special Character!";
+                    if (strlen($value) < 8) {
+                        $error[] = "Password too short!";
+                    }
+                    if (!preg_match("#[0-9]+#", $value)) {
+                        $error[] = "Password must include at least one number!";
+                    }
+                    if (!preg_match("#[a-z]+#", $value)) {
+                        $error[] = "Password must include at least one letter!";
+                    }
+                    if (!preg_match("#[A-Z]+#", $value)) {
+                        $error[] = "Password must include at least one upper letter!";
+                    }
+                    if (!preg_match("#[^a-zA-Z0-9]+#", $value)) {
+                        $error[] = "Password must include at least one Special Character!";
+                    }
 
                     /*$pspell_link                                            = pspell_new(vgCommon::LANG_CODE_TINY); //todo: non funziona il controllo
                     $word                                                   = preg_replace("#[^a-zA-Z]+#", "", $value);
 
                     if (!pspell_check($pspell_link, $word))                 $error[] = "Password must be impersonal!";
                     */
-                    if(count($error)) {
+                    if (count($error)) {
                         $res                                                = implode(", ", $error);
                         self::$errors["password"]                           = $res;
                     }
                     break;
                 default:
-                    if (strlen($value) < 8)                                 $error[] = "Password too short!";
-                    if (!preg_match("#[0-9]+#", $value))             $error[] = "Password must include at least one number!";
-                    if (!preg_match("#[a-z]+#", $value))             $error[] = "Password must include at least one letter!";
-                    if (!preg_match("#[A-Z]+#", $value))             $error[] = "Password must include at least one upper letter!";
+                    if (strlen($value) < 8) {
+                        $error[] = "Password too short!";
+                    }
+                    if (!preg_match("#[0-9]+#", $value)) {
+                        $error[] = "Password must include at least one number!";
+                    }
+                    if (!preg_match("#[a-z]+#", $value)) {
+                        $error[] = "Password must include at least one letter!";
+                    }
+                    if (!preg_match("#[A-Z]+#", $value)) {
+                        $error[] = "Password must include at least one upper letter!";
+                    }
 
-                    if(count($error)) {
+                    if (count($error)) {
                         $res                                                = implode(", ", $error);
                         self::$errors["password"]                           = $res;
                     }
@@ -454,7 +496,8 @@ class Validator
      * @param string $char_sep
      * @return mixed|string
      */
-    public static function urlRewrite($testo, $char_sep = '-') {
+    public static function urlRewrite($testo, $char_sep = '-')
+    {
         $testo = self::remove_accents($testo);
         $testo = strtolower($testo);
 
@@ -465,7 +508,8 @@ class Validator
 
         return $testo;
     }
-    private static function seems_utf8($str) {
+    private static function seems_utf8($str)
+    {
         $length = strlen($str);
         for ($i=0; $i < $length; $i++) {
             $c = ord($str[$i]);
@@ -473,15 +517,22 @@ class Validator
                 $n = 0;  # 0bbbbbbb
             } elseif (($c & 0xE0) == 0xC0) {
                 $n = 1; # 110bbbbb
-            } elseif (($c & 0xF0) == 0xE0) { $n=2; # 1110bbbb
-            } elseif (($c & 0xF8) == 0xF0) { $n = 3; # 11110bbb
-            } elseif (($c & 0xFC) == 0xF8){ $n = 4; # 111110bb
-            } elseif (($c & 0xFE) == 0xFC){ $n = 5; # 1111110b
-            } else { return false; } # Does not match any model
+            } elseif (($c & 0xF0) == 0xE0) {
+                $n=2; # 1110bbbb
+            } elseif (($c & 0xF8) == 0xF0) {
+                $n = 3; # 11110bbb
+            } elseif (($c & 0xFC) == 0xF8) {
+                $n = 4; # 111110bb
+            } elseif (($c & 0xFE) == 0xFC) {
+                $n = 5; # 1111110b
+            } else {
+                return false;
+            } # Does not match any model
 
             for ($j=0; $j<$n; $j++) { # n bytes matching 10bbbbbb follow ?
-                if ((++$i == $length) || ((ord($str[$i]) & 0xC0) != 0x80))
+                if ((++$i == $length) || ((ord($str[$i]) & 0xC0) != 0x80)) {
                     return false;
+                }
             }
         }
         return true;
@@ -496,10 +547,11 @@ class Validator
      * @param string $string Text that might have accent characters
      * @return string Filtered string with replaced "nice" characters.
      */
-    private static function remove_accents($string) {
-        if ( !preg_match('/[\x80-\xff]/', $string) )
+    private static function remove_accents($string)
+    {
+        if (!preg_match('/[\x80-\xff]/', $string)) {
             return $string;
-
+        }
         if (self::seems_utf8($string)) {
             $chars = array(
                 // Decompositions for Latin-1 Supplement
@@ -702,10 +754,11 @@ class Validator
         return $string;
     }
 
-    private static function isAllowedSize($value, $length) {
+    private static function isAllowedSize($value, $length)
+    {
         $res = true;
         foreach ((array) $value as $item) {
-            if(strlen($item) > $length) {
+            if (strlen($item) > $length) {
                 $res = false;
                 break;
             }
@@ -714,18 +767,19 @@ class Validator
         return $res;
     }
 
-    private static function setRuleOptions(&$rule, $option) {
-        if($option) {
-            if($rule["filter"] == FILTER_VALIDATE_INT || $rule["filter"] == FILTER_VALIDATE_FLOAT) {
-                if(strpos($option, ":") !== false) {
+    private static function setRuleOptions(&$rule, $option)
+    {
+        if ($option) {
+            if ($rule["filter"] == FILTER_VALIDATE_INT || $rule["filter"] == FILTER_VALIDATE_FLOAT) {
+                if (strpos($option, ":") !== false) {
                     $arrOpt                                 = explode(":", $option);
-                    if(is_numeric($arrOpt[0])) {
+                    if (is_numeric($arrOpt[0])) {
                         $rule["options"]["min_range"]       = $arrOpt[0];
                     }
-                    if(is_numeric($arrOpt[1])) {
+                    if (is_numeric($arrOpt[1])) {
                         $rule["options"]["max_range"]       = $arrOpt[1];
                     }
-                } elseif(is_numeric($option)) {
+                } elseif (is_numeric($option)) {
                     $rule["options"]["decimal"]             = $option;
                 }
             } else {
@@ -733,29 +787,34 @@ class Validator
             }
         }
     }
-    private static function setRuleOptionsString(&$rule, $option) {
-        if(strpos($option, ":") !== false) {
+    private static function setRuleOptionsString(&$rule, $option)
+    {
+        if (strpos($option, ":") !== false) {
             $arrOpt                                 = explode(":", $option);
-            if(is_numeric($arrOpt[1])) {
+            if (is_numeric($arrOpt[1])) {
                 $rule["length"]                     = $arrOpt[1];
             }
-        } elseif(is_numeric($option)) {
+        } elseif (is_numeric($option)) {
             $rule["length"]                         = $option;
         }
     }
-    private static function setErrorName($name) {
+    private static function setErrorName($name)
+    {
         self::$errorName = $name;
     }
-    private static function getErrorName($name = null) {
+    private static function getErrorName($name = null)
+    {
         return (self::$errorName
             ? self::$errorName
             : $name
         );
     }
-    private static function isError($error, $type = null, $status = 400) {
+    private static function isError($error, $type = null, $status = 400)
+    {
         return array(
             "status" => $status
-            , "error" => ($type && isset(self::$errors[$type])
+            , "error" => (
+                $type && isset(self::$errors[$type])
                 ? self::$errors[$type]
                 : $error
             )

@@ -38,5 +38,4 @@ class FilemanagerHtml extends FilemanagerAdapter //todo: da finire
     public function write($data, $file_path = null, $var = null)
     {
     }
-
 }

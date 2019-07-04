@@ -27,7 +27,8 @@ namespace phpformsframework\libs\tpl;
 
 use phpformsframework\libs\Mappable;
 
-class FrameworkCss extends Mappable {
+class FrameworkCss extends Mappable
+{
     protected $css                                          = array();
     protected $js                                           = array();
     protected $fonts                                        = array();
@@ -79,13 +80,16 @@ class FrameworkCss extends Mappable {
         $this->fonts        = array_replace($this->fonts(), $this->font_icon->fonts());
     }
 
-    public function css() {
+    public function css()
+    {
         return $this->css;
     }
-    public function js() {
+    public function js()
+    {
         return $this->js;
     }
-    public function fonts() {
+    public function fonts()
+    {
         return $this->fonts;
     }
     /**
@@ -93,22 +97,25 @@ class FrameworkCss extends Mappable {
      * @param null|string $additional_class
      * @return string
      */
-    public function row($value = null, $additional_class = null) {
+    public function row($value = null, $additional_class = null)
+    {
         $res = array();
 
-        if(isset($this->row[$value]) && strlen($this->row[$value])) {
+        if (isset($this->row[$value]) && strlen($this->row[$value])) {
             $res[] = $this->row[$value];
         } else {
-            if(isset($this->row["prefix"]) && strlen($this->row["prefix"])) {
+            if (isset($this->row["prefix"]) && strlen($this->row["prefix"])) {
                 $res[] = $this->row["prefix"];
             }
 
-            if(strlen($value)) {
+            if (strlen($value)) {
                 $res[] = $value;
             }
         }
 
-        if($additional_class)                            { $res[] = $additional_class; }
+        if ($additional_class) {
+            $res[] = $additional_class;
+        }
 
         return implode(" ", $res);
     }
@@ -118,9 +125,12 @@ class FrameworkCss extends Mappable {
      * @param null|string $additional_class
      * @return string
      */
-    public function col($value, $additional_class = null) {
+    public function col($value, $additional_class = null)
+    {
         $res                                            = $this->getClassByResolution($value, "col");
-        if($additional_class)                           { $res[] = $additional_class; }
+        if ($additional_class) {
+            $res[] = $additional_class;
+        }
 
         return implode(" ", $res);
     }
@@ -130,9 +140,12 @@ class FrameworkCss extends Mappable {
      * @param null|string $additional_class
      * @return string
      */
-    public function push($value, $additional_class = null) {
+    public function push($value, $additional_class = null)
+    {
         $res                                            = $this->getClassByResolution($value, "push");
-        if($additional_class)                           { $res[] = $additional_class; }
+        if ($additional_class) {
+            $res[] = $additional_class;
+        }
 
         return implode(" ", $res);
     }
@@ -142,9 +155,12 @@ class FrameworkCss extends Mappable {
      * @param null|string $additional_class
      * @return string
      */
-    public function pull($value, $additional_class = null) {
+    public function pull($value, $additional_class = null)
+    {
         $res                                            = $this->getClassByResolution($value, "pull");
-        if($additional_class)                           { $res[] = $additional_class; }
+        if ($additional_class) {
+            $res[] = $additional_class;
+        }
 
         return implode(" ", $res);
     }
@@ -153,10 +169,15 @@ class FrameworkCss extends Mappable {
      * @param null|string $additional_class
      * @return string
      */
-    public function wrap($additional_class = null) {
+    public function wrap($additional_class = null)
+    {
         $res                                            = array();
-        if($this->wrap)                                 { $res[] = $this->wrap; }
-        if($additional_class)                           { $res[] = $additional_class; }
+        if ($this->wrap) {
+            $res[] = $this->wrap;
+        }
+        if ($additional_class) {
+            $res[] = $additional_class;
+        }
 
         return implode(" ", $res);
     }
@@ -166,70 +187,94 @@ class FrameworkCss extends Mappable {
      * @param null|string $additional_class
      * @return string
      */
-    public function container($fluid = true, $additional_class = null) {
+    public function container($fluid = true, $additional_class = null)
+    {
         $res                                            = array();
-        $container                                      = ($fluid
+        $container                                      = (
+            $fluid
                                                             ? $this->container_fluid
                                                             : $this->container
                                                         );
-        if($this->container)                            { $res[] = $container; }
-        if($additional_class)                           { $res[] = $additional_class; }
+        if ($this->container) {
+            $res[] = $container;
+        }
+        if ($additional_class) {
+            $res[] = $additional_class;
+        }
 
         return implode(" ", $res);
     }
-    public function resolutions() {
+    public function resolutions()
+    {
         return $this->resolution;
     }
-    public function form($value, $additional_class = null) {
+    public function form($value, $additional_class = null)
+    {
         return $this->getClass($this->form, $value, $additional_class);
     }
 
-    public function bar($value, $additional_class = null) {
+    public function bar($value, $additional_class = null)
+    {
         return $this->getClass($this->bar, $value, $additional_class);
     }
-    public function sidenav($value, $additional_class = null) {
+    public function sidenav($value, $additional_class = null)
+    {
         return $this->getClass($this->sidenav, $value, $additional_class);
     }
-    public function lists($value, $additional_class = null) {
+    public function lists($value, $additional_class = null)
+    {
         return $this->getClass($this->list, $value, $additional_class);
     }
-    public function topbar($value, $additional_class = null) {
+    public function topbar($value, $additional_class = null)
+    {
         return $this->getClass($this->topbar, $value, $additional_class);
     }
-    public function dropdown($value, $additional_class = null) {
+    public function dropdown($value, $additional_class = null)
+    {
         return $this->getClass($this->dropdown, $value, $additional_class);
     }
-    public function panel($value, $additional_class = null) {
+    public function panel($value, $additional_class = null)
+    {
         return $this->getClass($this->panel, $value, $additional_class);
     }
-    public function badge($value, $additional_class = null) {
+    public function badge($value, $additional_class = null)
+    {
         return $this->getClass($this->badge, $value, $additional_class);
     }
-    public function callout($value, $additional_class = null) {
+    public function callout($value, $additional_class = null)
+    {
         return $this->getClass($this->callout, $value, $additional_class);
     }
-    public function pagination($value, $additional_class = null) {
+    public function pagination($value, $additional_class = null)
+    {
         return $this->getClass($this->pagination, $value, $additional_class);
     }
-    public function table($value, $additional_class = null) {
+    public function table($value, $additional_class = null)
+    {
         return $this->getClass($this->table, $value, $additional_class);
     }
-    public function tab($value, $additional_class = null) {
+    public function tab($value, $additional_class = null)
+    {
         return $this->getClass($this->tab, $value, $additional_class);
     }
-    public function collapse($value, $additional_class = null) {
+    public function collapse($value, $additional_class = null)
+    {
         return $this->getClass($this->collapse, $value, $additional_class);
     }
-    public function tooltip($value, $additional_class = null) {
+    public function tooltip($value, $additional_class = null)
+    {
         return $this->getClass($this->tooltip, $value, $additional_class);
     }
-    public function dialog($value, $additional_class = null) {
+    public function dialog($value, $additional_class = null)
+    {
         return $this->getClass($this->dialog, $value, $additional_class);
     }
-    public function card($value, $additional_class = null) {
+    public function card($value, $additional_class = null)
+    {
         return $this->getClass($this->card, $value, $additional_class);
     }
-    public function util($value, $additional_class = null) {
+    public function util($value, $additional_class = null)
+    {
         return $this->getClass($this->util, $value, $additional_class);
     }
     /**
@@ -237,17 +282,18 @@ class FrameworkCss extends Mappable {
      * @param string $value
      * @return string
      */
-    public function data($type, $value) {
+    public function data($type, $value)
+    {
         $res                                            = array();
-        if(isset($this->data[$type])) {
-            if(is_array($value)) {
-                foreach($value AS $subvalue) {
-                    if(isset($this->data[$type][$subvalue]) && strlen($this->data[$type][$subvalue])) {
+        if (isset($this->data[$type])) {
+            if (is_array($value)) {
+                foreach ($value as $subvalue) {
+                    if (isset($this->data[$type][$subvalue]) && strlen($this->data[$type][$subvalue])) {
                         $res[$this->data[$type][$subvalue]] = true;
                     }
                 }
-            } elseif(strlen($value)) {
-                if(isset($this->data[$type][$value]) && strlen($this->data[$type][$value])) {
+            } elseif (strlen($value)) {
+                if (isset($this->data[$type][$value]) && strlen($this->data[$type][$value])) {
                     $res[$this->data[$type][$value]]        = true;
                 }
             }
@@ -258,22 +304,27 @@ class FrameworkCss extends Mappable {
             : ""
         );
     }
-    public function button($value, $additional_class = null) {
+    public function button($value, $additional_class = null)
+    {
         return $this->button($value, array("class" => $additional_class));
     }
 
-    public function icon($value, $additional_class = null) {
+    public function icon($value, $additional_class = null)
+    {
         return $this->font_icon->icon($value, $additional_class);
     }
-    public function iconTag($value, $additional_class = null) {
+    public function iconTag($value, $additional_class = null)
+    {
         return $this->font_icon->iconTag($value, $additional_class);
     }
-    public function iconAction($params) {
+    public function iconAction($params)
+    {
         return $this->font_icon->action($params);
     }
 
-    public function get($value, $type, $additional_class = null) {
-        switch($type) {
+    public function get($value, $type, $additional_class = null)
+    {
+        switch ($type) {
             case "button":
             case "link":
                 $res                                    = $this->button($value, $additional_class);
@@ -281,7 +332,7 @@ class FrameworkCss extends Mappable {
             case "icon-tag":
             case "icon-link-tag":
             case "icon-link-tag-default":
-                if(substr($value, "0", 1) === "&") {
+                if (substr($value, "0", 1) === "&") {
                     return $value;
                 }
 
@@ -336,31 +387,32 @@ class FrameworkCss extends Mappable {
 
 
 
-    private function getClassByResolution($resolution = array(), $type = "col") {
+    private function getClassByResolution($resolution = array(), $type = "col")
+    {
         $arrRes                                         = array();
-        if(is_array($resolution) && count($resolution)) {
-            if(is_array($this->resolution) && count($this->resolution)) {
+        if (is_array($resolution) && count($resolution)) {
+            if (is_array($this->resolution) && count($this->resolution)) {
                 $diff_resolution = count($resolution) - count($this->resolution);
-                if($diff_resolution > 0) {
+                if ($diff_resolution > 0) {
                     $resolution                         = array_slice($resolution, $diff_resolution, count($this->resolution));
                 }
             }
 
             $count_res_value                            = array_count_values($resolution);
-            if($count_res_value[0] == count($resolution)) {
-                if($this->skip_resolution_full) {
+            if ($count_res_value[0] == count($resolution)) {
+                if ($this->skip_resolution_full) {
                     $resolution                         = array();
                 } else {
                     $resolution                         = array_fill(0, count($resolution), 12);
                 }
-            } elseif($count_res_value[12] == count($resolution)) {
-                if($this->skip_resolution_full) {
+            } elseif ($count_res_value[12] == count($resolution)) {
+                if ($this->skip_resolution_full) {
                     $resolution                         = array();
                 }
             }
 
-            if(is_array($resolution) && count($resolution)) {
-                if($this->skip_resolution) {
+            if (is_array($resolution) && count($resolution)) {
+                if ($this->skip_resolution) {
                     $resolution                         = array_reverse($resolution);
                 }
 
@@ -368,32 +420,33 @@ class FrameworkCss extends Mappable {
                 $i                                      = 0;
                 $prev_num                               = "";
                 $real_prefix                            = "";
-                foreach($resolution AS $res_num) {
-                    if($res_num !== $prev_num || $res_num == 0) {
-                        $real_prefix                    = ($res_num
+                foreach ($resolution as $res_num) {
+                    if ($res_num !== $prev_num || $res_num == 0) {
+                        $real_prefix                    = (
+                            $res_num
                                                             ? "append"
                                                             : "hidden"
                                                         );
-                        if(isset($arrType[$real_prefix]) && strlen($arrType[$real_prefix])) {
+                        if (isset($arrType[$real_prefix]) && strlen($arrType[$real_prefix])) {
                             $arrRes[$i]                 .= $arrType[$real_prefix];
-                            if($i == 0 && isset($arrType[$real_prefix . "-smallest"])) {
+                            if ($i == 0 && isset($arrType[$real_prefix . "-smallest"])) {
                                 $arrRes[$i]             .= $arrType[$real_prefix . "-smallest"];
                             }
                         }
 
-                        if($res_num || isset($arrType[$real_prefix])) {
-                            if(!$this->skip_resolution) {
-                                if(is_array($this->resolution) && count($this->resolution)
+                        if ($res_num || isset($arrType[$real_prefix])) {
+                            if (!$this->skip_resolution) {
+                                if (is_array($this->resolution) && count($this->resolution)
                                     && isset($this->resolution[$i])
                                 ) {
                                     $arrRes[$i]         .= $this->resolution[$i] . ($this->resolution[$i] && $res_num ? "-" : "");
                                 }
                             }
-                            if(isset($arrType["prepend"]) && strlen($arrType["prepend"])) {
+                            if (isset($arrType["prepend"]) && strlen($arrType["prepend"])) {
                                 $arrRes[$i]             .= $arrType["prepend"];
                             }
 
-                            if($res_num) {
+                            if ($res_num) {
                                 $arrRes[$i]             .= $res_num;
                             }
                         }
@@ -401,13 +454,13 @@ class FrameworkCss extends Mappable {
                         $prev_num                       = $res_num;
                     }
 
-                    if($this->skip_resolution) {
+                    if ($this->skip_resolution) {
                         break;
                     }
                     $i++;
                 }
-                if(is_array($arrRes) && count($arrRes)) {
-                    if(array_key_exists(count($resolution) - 1, $arrRes) && isset($arrType[$real_prefix . "-largest"])) {
+                if (is_array($arrRes) && count($arrRes)) {
+                    if (array_key_exists(count($resolution) - 1, $arrRes) && isset($arrType[$real_prefix . "-largest"])) {
                         $arrRes[count($resolution) - 1]     .= $arrType[$real_prefix . "-largest"];
                     }
 
@@ -421,33 +474,38 @@ class FrameworkCss extends Mappable {
             }
         }
 
-        if($this->skip_prepost)                         { $arrRes[] = $this->skip_prepost; }
+        if ($this->skip_prepost) {
+            $arrRes[] = $this->skip_prepost;
+        }
 
         return $arrRes;
     }
 
-    private function getProperty($name) {
+    private function getProperty($name)
+    {
         return (method_exists($this, $name)
             ? $this->$name
             : array()
         );
     }
 
-    private function getClass($data, $value, $additional_class = null) {
+    private function getClass($data, $value, $additional_class = null)
+    {
         $res                                            = array();
-        if(is_array($value)) {
-            foreach ($value AS $subvalue) {
-                if(isset($data[$subvalue]) && strlen($data[$subvalue])) {
+        if (is_array($value)) {
+            foreach ($value as $subvalue) {
+                if (isset($data[$subvalue]) && strlen($data[$subvalue])) {
                     $res[$data[$subvalue]]              = $data[$subvalue];
                 }
             }
-        } elseif(isset($data[$value]) && strlen($data[$value])) {
+        } elseif (isset($data[$value]) && strlen($data[$value])) {
             $res[$data[$value]]                         = $data[$value];
         }
 
-        if($additional_class)                           { $res[$additional_class] = $additional_class; }
+        if ($additional_class) {
+            $res[$additional_class] = $additional_class;
+        }
 
-        return implode(" " , $res);
+        return implode(" ", $res);
     }
 }
-

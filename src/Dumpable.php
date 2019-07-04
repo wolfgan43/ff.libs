@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs;
 
-interface Dumpable {
+interface Dumpable
+{
     public static function dump();
 }

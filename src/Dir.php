@@ -25,27 +25,30 @@
  */
 namespace phpformsframework\libs;
 
-abstract class DirStruct {
-    public static $disk_path                                        = Constant::DOCUMENT_ROOT . Constant::SITE_PATH;
-
-    public static function getDiskPath($what = null, $relative = false) {
+class Dir
+{
+    public static function getDiskPath($what = null, $relative = false)
+    {
         $path                                                       = Config::getDir($what);
-        if($path) {
+        if ($path) {
             return ($relative
                 ? $path
-                : realpath(self::documentRoot() . $path)
+                : realpath(Constant::DISK_PATH . $path)
             );
         } else {
             return null;
         }
-	}
-	public static function checkDiskPath($abs_path) {
-        return strpos(realpath($abs_path), self::$disk_path) === 0;
     }
-    public static function getPathInfo($user_path = null) {
+    public static function checkDiskPath($abs_path)
+    {
+        return strpos(realpath($abs_path), Constant::DISK_PATH) === 0;
+    }
+    public static function getPathInfo($user_path = null)
+    {
         $path_info                                                  = $_SERVER["PATH_INFO"];
-        if($user_path) {
-            $path_info                                              = (strpos($path_info, $user_path) === 0
+        if ($user_path) {
+            $path_info                                              = (
+                strpos($path_info, $user_path) === 0
                                                                         ? substr($path_info, strlen($user_path))
                                                                         : false
                                                                     );
@@ -60,23 +63,24 @@ abstract class DirStruct {
      * @param bool $once
      * @return bool|mixed
      */
-    protected static function autoload($path, $once = false) {
+    public static function autoload($path, $once = false)
+    {
         $rc                                                         = false;
-        if(self::checkDiskPath($path)) {
-            $rc                                                     = ($once
-                                                                        ? require_once ($path)
+        if (self::checkDiskPath($path)) {
+            $rc                                                     = (
+                $once
+                                                                        ? require_once($path)
                                                                         : include($path)
                                                                     );
         }
 
         return $rc;
     }
-    protected static function documentRoot() {
-        return self::$disk_path;
-    }
 
-    public static function getXmlAttr($item, $key = null) {
-        $res = (isset($item["@attributes"])
+    public static function getXmlAttr($item, $key = null)
+    {
+        $res = (
+            isset($item["@attributes"])
             ? $item["@attributes"]
             : $item
         );

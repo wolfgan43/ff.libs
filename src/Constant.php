@@ -25,17 +25,28 @@
  */
 namespace phpformsframework\libs;
 
-class Constant {
+class Constant
+{
+    public static $disable_cache            = DISABLE_CACHE;
+
     const VENDOR_LIBS_DIR                   = VENDOR_LIBS_DIR;
     const DOCUMENT_ROOT                     = DOCUMENT_ROOT;
     const SITE_PATH                         = SITE_PATH;
     const CONF_PATH                         = CONF_PATH;
     const LIBS_PATH                         = LIBS_PATH;
+    const CACHE_PATH                        = "/cache";
+    const UPLOAD_PATH                       = "/uploads";
+
+    const DISK_PATH                         = self::DOCUMENT_ROOT . self::SITE_PATH;
     const LIBS_DISK_PATH                    = self::DOCUMENT_ROOT . self::LIBS_PATH;
     const LIBS_FF_PATH                      = DIRECTORY_SEPARATOR . "phpformsframework" . DIRECTORY_SEPARATOR . "libs";
     const LIBS_FF_DISK_PATH                 = self::LIBS_DISK_PATH . self::LIBS_FF_PATH;
-    const CONFIG_PATH                       = self::LIBS_FF_DISK_PATH . DIRECTORY_SEPARATOR . 'conf';
+    const CONFIG_FF_DISK_PATH               = self::LIBS_FF_DISK_PATH . DIRECTORY_SEPARATOR . 'conf';
+    const CACHE_DISK_PATH                   = self::DISK_PATH . self::CACHE_PATH;
+    const UPLOAD_DISK_PATH                  = self::DISK_PATH . self::UPLOAD_PATH;
 
+    const HTTP_AUTH_USERNAME                = HTTP_AUTH_USERNAME;
+    const HTTP_AUTH_PASSWORD                = HTTP_AUTH_PASSWORD;
 
     const OPTIMIZE_IMAGE                    = true;
 
@@ -49,8 +60,16 @@ class Constant {
     const PROFILING                         = DEBUG_PROFILING;
     const DEBUG                             = DEBUG_MODE;
 
+    const ACCEPTED_LANG                     = array("en");
     const CACHE_MEM                         = CACHE_MEM;
-    const CACHE_SERIALIZER                  = CACHE_SERIALIZER;
+    const MESSENGER_ADAPTER                 = "Twilio";
+    const TRANSLATOR_ADAPTER                = "Google";
 
+    const FTP_USERNAME                      = FTP_USERNAME;
+    const FTP_PASSWORD                      = FTP_PASSWORD;
+
+    const SESSION_NAME                      = SESSION_NAME;
+    const SESSION_SAVE_PATH                 = SESSION_SAVE_PATH;
+    const SESSION_PERMANENT                 = SESSION_PERMANENT;
+    const SESSION_SHARE                     = SESSION_SHARE;
 }
-

@@ -30,20 +30,22 @@ use phpformsframework\libs\Error;
 use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\delivery\drivers\Messenger;
 
-
-class NoticeSms extends NoticeAdapter {
+class NoticeSms extends NoticeAdapter
+{
     private $content                        = null;
 
-    public  function checkRecipient($target)
+    public function checkRecipient($target)
     {
         return Validator::isTel($target);
     }
-    public function send($message) {
+    public function send($message)
+    {
         $this->content                      = $message;
 
         return $this->process();
     }
-    public function sendLongMessage($title, $fields = null, $template = null) {
+    public function sendLongMessage($title, $fields = null, $template = null)
+    {
         $this->content                      = $title;
 
         return $this->process();
@@ -51,13 +53,14 @@ class NoticeSms extends NoticeAdapter {
 
     protected function process()
     {
-        Messenger::getInstance($this->connection)
+        Messenger::getInstance($this->connection_service)
+            ->setConnection($this->connection)
+            ->setFrom($this->fromKey, $this->fromLabel)
             ->addAddresses($this->recipients)
             ->send($this->content);
 
-        Error::transfer("messenger", "notice");
+        Error::transfer(Messenger::ERROR_BUCKET, static::ERROR_BUCKET);
 
         return $this->getResult();
     }
 }
-

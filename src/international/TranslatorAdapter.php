@@ -27,26 +27,29 @@ namespace phpformsframework\libs\international;
 
 use phpformsframework\libs\cache\Mem;
 
-abstract class TranslatorAdapter {
-    const DICTIONARY_PREFIX                             = "dictionary/translations/";
+abstract class TranslatorAdapter
+{
+    const CACHE_DICTIONARY_BUCKET                       = "dictionary/translations/";
 
     private static $translation                         = array();
 
-    protected function save($words, $toLang, $fromLang, $words_translated) {
+    protected function save($words, $toLang, $fromLang, $words_translated)
+    {
         $fromto                                         = strtoupper($fromLang . "|" . $toLang);
 
         self::$translation[$fromto][$words]             = $words_translated;
-        Mem::getInstance()->set($words, self::$translation[$fromto][$words], self::DICTIONARY_PREFIX . $fromto);
+        Mem::getInstance(static::CACHE_DICTIONARY_BUCKET . $fromto)->set($words, self::$translation[$fromto][$words]);
 
         return self::$translation[$fromto][$words];
     }
 
-    public function translate($words, $toLang = null, $fromLang = null) {
+    public function translate($words, $toLang = null, $fromLang = null)
+    {
         $fromto                                         = strtoupper(Translator::getLangDefault($fromLang)  . "|" . Translator::getLang($toLang));
 
-        if(!isset(self::$translation[$fromto][$words])) {
-            $cache                                      = Mem::getInstance();
-            self::$translation[$fromto][$words]         = $cache->get($words, self::DICTIONARY_PREFIX . $fromto);
+        if (!isset(self::$translation[$fromto][$words])) {
+            $cache                                      = Mem::getInstance(static::CACHE_DICTIONARY_BUCKET . $fromto);
+            self::$translation[$fromto][$words]         = $cache->get($words);
         }
 
         return self::$translation[$fromto][$words];

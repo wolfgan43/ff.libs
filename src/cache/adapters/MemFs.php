@@ -25,35 +25,57 @@
  */
 namespace phpformsframework\libs\cache\adapters;
 
-
 use phpformsframework\libs\cache\MemAdapter;
 use phpformsframework\libs\Constant;
+use phpformsframework\libs\Dir;
+use phpformsframework\libs\storage\Filemanager;
 
 class MemFs extends MemAdapter
 {
-	/**
-	 * Inserisce un elemento nella cache
-	 * Oltre ai parametri indicati, accetta un numero indefinito di chiavi per relazione i valori memorizzati
-	 * @param String $name il nome dell'elemento
-	 * @param Mixed $value l'elemento
+    /**
+     * Inserisce un elemento nella cache
+     * Oltre ai parametri indicati, accetta un numero indefinito di chiavi per relazione i valori memorizzati
+     * @param String $name il nome dell'elemento
+     * @param Mixed $value l'elemento
      * @param String $bucket il name space
      * @return bool if storing both value and rel table will success
-	 */
-	function set($name, $value = null, $bucket = Constant::APPID) {
-        return null;
-	}
+     */
+    public function set($name, $value = null, $bucket = null)
+    {
+        if ($value === null) {
+            return $this->del($name, $bucket);
+        }
+        $this->getKey("set", $bucket, $name);
 
-	/**
-	 * Recupera un elemento dalla cache
-	 * @param String $name il nome dell'elemento
+        Filemanager::getInstance("php")->write(
+            $value,
+            Dir::getDiskPath("cache/data")
+            . "/" . $bucket
+            . "/" . $name
+        );
+        return null;
+    }
+
+    /**
+     * Recupera un elemento dalla cache
+     * @param String $name il nome dell'elemento
      * @param String $bucket il name space
      * @return Mixed l'elemento
-	 */
-	function get($name, $bucket = Constant::APPID)
-	{
-        $res = null;
+     */
+    public function get($name, $bucket = null)
+    {
+        $res = false;
+        if (!Constant::$disable_cache) {
+            $this->getKey("get", $bucket, $name);
+            $res = Filemanager::getInstance("php")
+                ->read(
+                    "/cache/data"
+                    . "/" . $bucket
+                    . "/" . $name
+                );
+        }
         return $res;
-	}
+    }
 
     /**
      * Cancella una variabile
@@ -61,15 +83,24 @@ class MemFs extends MemAdapter
      * @param String $bucket il name space
      * @return bool
      */
-    function del($name, $bucket = Constant::APPID)
+    public function del($name, $bucket = null)
     {
+        $this->getKey("del", $bucket, $name);
+        Filemanager::xpurge_dir(
+            Dir::getDiskPath("cache/data")
+            . "/" . $bucket
+            . "/" . $name
+        );
         return null;
     }
 
 
-	function clear($bucket = Constant::APPID)
-	{
-        // global reset
-
-	}
+    public function clear($bucket = null)
+    {
+        $this->getKey("clear", $bucket);
+        Filemanager::xpurge_dir(
+            Dir::getDiskPath("cache/data")
+            . "/" . $bucket
+        );
+    }
 }

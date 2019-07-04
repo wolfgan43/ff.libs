@@ -37,43 +37,54 @@ class Notice
     protected $adapters                                     = null;
 
     public static function getInstance($noticeAdapters)
-	{
-		if (self::$singleton === null) {
+    {
+        if (self::$singleton === null) {
             self::$singleton                                = new Notice();
         }
 
-		return self::$singleton->setAdapters($noticeAdapters);
-	}
+        return self::$singleton->setAdapters($noticeAdapters);
+    }
 
-    public function addRecipient($target, $name = null) {
-        foreach ($this->adapters as $adapter)               { $adapter->addRecipient($target, $name); }
+    public function addRecipient($target, $name = null)
+    {
+        foreach ($this->adapters as $adapter) {
+            $adapter->addRecipient($target, $name);
+        }
 
         return $this;
     }
-    public function addAction($name, $url) {
-        foreach ($this->adapters as $adapter)               { $adapter->addAction($name, $url); }
+    public function addAction($name, $url)
+    {
+        foreach ($this->adapters as $adapter) {
+            $adapter->addAction($name, $url);
+        }
 
         return $this;
     }
 
 
-    public function sendLongMessage($title, $fields, $template = null) {
+    public function sendLongMessage($title, $fields, $template = null)
+    {
         $res                                                = null;
-        foreach ($this->adapters as $key => $adapter)       { $res[$key] = $adapter->sendLongMessage($title, $fields, $template); }
+        foreach ($this->adapters as $key => $adapter) {
+            $res[$key]                                      = $adapter->sendLongMessage($title, $fields, $template);
+        }
 
         return $res;
     }
 
-    public function send($message) {
+    public function send($message)
+    {
         $error                                              = array();
         $res                                                = null;
-        foreach ($this->adapters as $key => $adapter)       {
+        foreach ($this->adapters as $key => $adapter) {
             $error[$key]                                    = $adapter->send($message);
             $res[$key]                                      = $error[$key] === false;
         }
 
-        $res["error"]                                       = implode(" " , $error);
-        $res["status"]                                      = ($res["error"]
+        $res["error"]                                       = implode(" ", $error);
+        $res["status"]                                      = (
+            $res["error"]
                                                                 ? 502
                                                                 : 200
                                                             );
@@ -81,10 +92,15 @@ class Notice
     }
 
 
-    private function setAdapters($noticeAdapters) {
-        if(is_array($noticeAdapters)) {
-            foreach($noticeAdapters AS $adapter => $connection) {
-                if(is_numeric($adapter) && strlen($connection)) {
+    /**
+     * @param $noticeAdapters
+     * @return $this
+     */
+    private function setAdapters($noticeAdapters)
+    {
+        if (is_array($noticeAdapters)) {
+            foreach ($noticeAdapters as $adapter => $connection) {
+                if (is_numeric($adapter) && strlen($connection)) {
                     $adapter                                = $connection;
                     $connection                             = null;
                 }
@@ -92,7 +108,7 @@ class Notice
                 $class_name                                 = static::NAME_SPACE . "Notice" . ucfirst($adapter);
                 $this->adapters[$adapter]                   = new $class_name($connection);
             }
-        } elseif($noticeAdapters) {
+        } elseif ($noticeAdapters) {
             $class_name                                     = static::NAME_SPACE . "Notice" . ucfirst($noticeAdapters);
             $this->adapters[$noticeAdapters]                = new $class_name();
         }

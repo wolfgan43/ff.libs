@@ -33,6 +33,6 @@
         />
     </media>
     <dirs>
-        <dir type="app" path="/app/views/mail" />
+        <dir type="asset" path="[LIBS_PATH]/phpformsframework/libs/assets/email" scan="email" />
     </dirs>
 </configdata>

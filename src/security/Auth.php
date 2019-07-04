@@ -25,8 +25,6 @@
  */
 namespace phpformsframework\libs\security;
 
-
-
-class Auth {
-
+class Auth
+{
 }

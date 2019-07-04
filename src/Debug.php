@@ -26,10 +26,9 @@
 namespace phpformsframework\libs;
 
 use phpformsframework\libs\storage\Database;
+use phpformsframework\libs\storage\Filemanager;
 use ReflectionClass;
 use Exception;
-
-
 
 Log::extend("profiling", Log::TYPE_DEBUG, array(
     "bucket"        => "profiling"
@@ -38,55 +37,54 @@ Log::extend("profiling", Log::TYPE_DEBUG, array(
     , "format"      => Log::FORMAT_CLE
 ));
 
-if(DEBUG_MODE) {
+if (DEBUG_MODE) {
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
 }
 
-class Debug extends DirStruct
+class Debug
 {
+    const ERROR_BUCKET                      = "exception";
     const STOPWATCH                         = APP_START;
 
-    private static $microtime               = self::STOPWATCH;
+    private static $startWatch              = array();
+    private static $exTime                  = array();
 
     private static $debug                   = array();
 
-    /**
-     * @param null $microtime
-     * @return string
-     */
-    public static function startWatch($microtime = null)
+    public static function stopWatch($bucket)
     {
-        self::$microtime                = ($microtime
-                                            ? $microtime
-                                            : microtime(true)
-                                        );
-        return number_format(self::$microtime, 2, '.', '');
-    }
-    public static function stopWatch($microtime = null)
-    {
-        $duration                       = ($microtime
-                                            ? $microtime
-                                            : microtime(true)
-                                        ) - self::$microtime;
+        if (isset(self::$exTime[$bucket])) {
+            $bucket                         = $bucket . "-" . (count(self::$exTime) + 1);
+        }
 
-        self::$microtime                = self::STOPWATCH;
-        return number_format($duration, 2, '.', '');
+        if (isset(self::$startWatch[$bucket])) {
+            self::$exTime[$bucket]          = number_format(microtime(true) - self::$startWatch[$bucket], 4, '.', '');
+
+            return self::$exTime[$bucket];
+        } else {
+            self::$startWatch[$bucket]      = microtime(true);
+            //self::$exTime[$bucket]          = null;
+
+            return null;
+        }
     }
 
-    private static function exTime() {
-        $duration                       = microtime(true) - self::STOPWATCH;
+    public static function exTimeApp()
+    {
+        $duration                           = microtime(true) - self::STOPWATCH;
         return number_format($duration, 3, '.', '');
     }
 
-    public static function registerErrors() {
+    public static function registerErrors()
+    {
         declare(ticks=1);
 
-        register_tick_function(function() {
-            $GLOBALS["backtrace"]                           = debug_backtrace();
+        register_tick_function(function () {
+            $GLOBALS["backtrace"]           = debug_backtrace();
         });
 
-        register_shutdown_function(function() {
+        register_shutdown_function(function () {
             $error = error_get_last();
 
             switch ($error['type']) {
@@ -100,6 +98,7 @@ class Debug extends DirStruct
 
                     echo "<br /><br /><b>Warning</b>: " . $error["message"] . " in <b>" . $error["file"] . "</b> on line <b>" . $error["line"] . "</b>";
 
+                    // no break
                 case E_ERROR:
                 case E_RECOVERABLE_ERROR:
 
@@ -117,7 +116,7 @@ class Debug extends DirStruct
 
                 case E_USER_DEPRECATED:
                     self::dump($GLOBALS["backtrace"]);
-                    if(function_exists("cache_sem_remove")) {
+                    if (function_exists("cache_sem_remove")) {
                         cache_sem_remove($_SERVER["PATH_INFO"]);
                     }
                     break;
@@ -125,22 +124,24 @@ class Debug extends DirStruct
             }
         });
     }
-    public static function dumpLog($filename, $data = null) {
+    public static function dumpLog($filename, $data = null)
+    {
         $trace                                  = self::get_backtrace();
 
         $data["source"]                         = $trace;
         Log::write($data, $filename);
     }
 
-    public static function dumpCaller($note = null, $backtrace = null) {
-        if(Constant::PROFILING) {
-            $disk_path                          = self::$disk_path;
-            $debug_backtrace                    = (is_array($backtrace)
+    public static function dumpCaller($note = null, $backtrace = null)
+    {
+        if (Constant::PROFILING) {
+            $debug_backtrace                    = (
+                is_array($backtrace)
                                                     ? $backtrace
                                                     : debug_backtrace()
                                                 );
-            foreach($debug_backtrace AS $i => $trace) {
-                if($i) {
+            foreach ($debug_backtrace as $i => $trace) {
+                if ($i) {
                     if (basename($trace["file"]) == "Debug.php") {
                         continue;
                     }
@@ -148,12 +149,12 @@ class Debug extends DirStruct
                         break;
                     }
 
-                    if($trace["file"]) {
-                        $res = $trace["line"] . ' Line in: ' . str_replace($disk_path, "", $trace["file"]);
+                    if ($trace["file"]) {
+                        $res = $trace["line"] . ' Line in: ' . str_replace(Constant::DISK_PATH, "", $trace["file"]);
                     } else {
                         $res = 'Func: ' . $trace["function"];
                     }
-                    if($res) {
+                    if ($res) {
                         self::$debug[] = $res . "\n" . str_repeat(" ", 8) . (is_array($note) ? print_r($note, true) : $note);
                         break;
                     }
@@ -162,38 +163,39 @@ class Debug extends DirStruct
         }
     }
 
-    private static function get_backtrace($backtrace = null) {
+    private static function get_backtrace($backtrace = null)
+    {
         $res                                = null;
-        $debug_backtrace                    = (is_array($backtrace)
+        $debug_backtrace                    = (
+            is_array($backtrace)
                                                 ? $backtrace
                                                 : debug_backtrace()
                                             );
 
-        foreach($debug_backtrace AS $i => $trace) {
-            if($i) {
-                if(isset($trace["file"]) && basename($trace["file"]) == "vgCommon.php") {
+        foreach ($debug_backtrace as $i => $trace) {
+            if ($i) {
+                if (isset($trace["file"]) && basename($trace["file"]) == "vgCommon.php") {
                     continue;
                 }
-                if(isset($trace["file"]) && basename($trace["file"]) == "cm.php") {
+                if (isset($trace["file"]) && basename($trace["file"]) == "cm.php") {
                     break;
                 }
 
                 unset($trace["object"]);
                 if (is_array($trace["args"]) && count($trace["args"])) {
-                    foreach ($trace["args"] AS $key => $value) {
+                    foreach ($trace["args"] as $key => $value) {
                         if (is_object($value)) {
                             $trace["args"][$key] = "Object: " . get_class($value);
-                        } elseif(is_array($value)) {
-                            foreach($value AS $subkey => $subvalue) {
-                                if(is_object($subvalue)) {
+                        } elseif (is_array($value)) {
+                            foreach ($value as $subkey => $subvalue) {
+                                if (is_object($subvalue)) {
                                     $trace["args"][$key][$subkey] = "Object: " . get_class($subvalue);
-                                } elseif(is_array($subvalue)) {
+                                } elseif (is_array($subvalue)) {
                                     $trace["args"][$key][$subkey] = $subvalue;
                                 } else {
                                     $trace["args"][$key][$subkey] = $subvalue;
                                 }
                             }
-
                         }
                     }
                 }
@@ -204,48 +206,49 @@ class Debug extends DirStruct
         return $res;
     }
 
-    private static function dumpInterface() {
+    private static function dumpInterface()
+    {
         $classes                                = get_declared_classes();
         $implements                             = array();
         /**
          * @var $classDumpable Dumpable
          */
-        foreach($classes as $class_name) {
+        foreach ($classes as $class_name) {
             try {
                 $reflect                        = new ReflectionClass($class_name);
-                if($reflect->implementsInterface(__NAMESPACE__ . '\\Dumpable')) {
+                if ($reflect->implementsInterface(__NAMESPACE__ . '\\Dumpable')) {
                     $classDumpable              = $class_name;
                     $parent                     = $reflect->getParentClass();
 
-                    if(!$parent || !isset($implements[$parent->getName()])) {
+                    if (!$parent || !isset($implements[$parent->getName()])) {
                         $implements[basename(str_replace('\\', '/', $class_name))]    = (array) $classDumpable::dump();
                     }
                 }
             } catch (Exception $exception) {
-                Error::register($exception->getMessage(), "exception");
+                Error::register($exception->getMessage(), static::ERROR_BUCKET);
             }
         }
         return $implements;
     }
-    public static function dump($error_message = null, $return = false) {
+    public static function dump($error_message = null, $return = false)
+    {
         $html_backtrace                     = "";
         $html_dumpable                      = "";
-        $disk_path                          = self::$disk_path;
         $debug_backtrace                    = self::get_backtrace();
-        $collapse = (Request::isAjax() && Request::method() != "GET"
+        $collapse = (
+            Request::isAjax() && Request::method() != "GET"
             ? ''
             : 'display:none;'
         );
-        foreach($debug_backtrace AS $trace) {
-            if(isset($trace["file"])) {
-                $label = 'Line in: ' . '<b>' . str_replace($disk_path, "", $trace["file"])  . '</b>';
+        foreach ($debug_backtrace as $trace) {
+            if (isset($trace["file"])) {
+                $label = 'Line in: ' . '<b>' . str_replace(Constant::DISK_PATH, "", $trace["file"])  . '</b>';
                 $list_start = '<ol start="' . $trace["line"] . '">';
                 $list_end = '</ol>';
             } else {
                 $label = 'Func: ' . '<b>' .  $trace["function"] . '</b>';
                 $list_start = '<ul>';
                 $list_end = '</ul>';
-
             }
             $html_backtrace .=  $list_start . '<li><a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } ">' . $label . '</a><code style="' . $collapse . '"><pre>' . print_r($trace, true). '</pre></code></li>' . $list_end;
         }
@@ -254,27 +257,27 @@ class Debug extends DirStruct
         $files_count = 0;
         $db_query_count = 0;
         $db_query_cache_count = 0;
-        if(is_array($dumpable) && count($dumpable)) {
+        if (is_array($dumpable) && count($dumpable)) {
             foreach ($dumpable as $interface => $dump) {
                 $dump = array_filter($dump);
-                if(is_array($dump) && count($dump)) {
+                if (is_array($dump) && count($dump)) {
                     $html_dumpable .= '<hr />' . '<h5>&nbsp;' . $interface . '</h5>';
                     $html_dumpable .= '<ul>';
                     foreach ($dump as $key => $value) {
                         $arrKey = explode(":", $key);
-                        if($value === true) {
+                        if ($value === true) {
                             $html_dumpable .= '<li>' . $arrKey[0] . '</li>';
                         } else {
                             $html_dumpable .= '<li><a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } ">' . $arrKey[0] . '</a><code style="' . $collapse . '"><pre>' . print_r($value, true) . '</pre></code></li>';
                         }
-                        if(strtolower($interface) == "filemanager" && $key == "storage") {
+                        if (strtolower($interface) == "filemanager" && $key == "storage") {
                             foreach ($value as $file_index) {
                                 $files_count = $files_count + count($file_index);
                             }
                         }
-                        if(strtolower($interface) == "database") {
+                        if (strtolower($interface) == "database") {
                             $db_query_count++;
-                            if($value === true) {
+                            if ($value === true) {
                                 $db_query_cache_count++;
                             }
                         }
@@ -284,13 +287,42 @@ class Debug extends DirStruct
             }
         }
 
+        if (is_array(self::$exTime) && count(self::$exTime)) {
+            $html_dumpable .= '<hr />' . '<h5>&nbsp;' . "StopWatch" . '</h5>';
+            $html_dumpable .= '<code><ul>';
+            foreach (self::$exTime as $bucket => $exTime) {
+                if ($exTime > 0.09) {
+                    $fontsize = "large";
+                } elseif ($exTime > 0.009) {
+                    $fontsize = "normal";
+                } else {
+                    $fontsize = "x-small";
+                }
+                $html_dumpable .= '<li><span style="font-size: ' .  $fontsize. ';">' . $exTime . '</span> => <span>' . $bucket. '</span></li>';
+            }
+            $html_dumpable .= '</ul></code>';
+        }
+
         $errors = array_filter((array) Error::raise());
         $errors_count = 0;
-        if(is_array($errors) && count($errors)) {
+        $dirstruct = Config::getDir();
+        if (is_array($dirstruct) && count($dirstruct)) {
+            foreach ($dirstruct as $dir) {
+                if (isset($dir["path"]) && !is_dir(Constant::DISK_PATH . $dir["path"]) && !Filemanager::makeDir($dir["path"])) {
+                    $errors["dirstruct"][] = "Failed to Write " . $dir["path"] . " Check permission";
+                } elseif (isset($dir["writable"]) && $dir["writable"] && !is_writable(Constant::DISK_PATH . $dir["path"])) {
+                    $errors["dirstruct"][] = "Dir " . $dir["path"] . " is not Writable";
+                } elseif (!is_readable(Constant::DISK_PATH . $dir["path"])) {
+                    $errors["dirstruct"][] = "Dir " . $dir["path"] . " is not Readible";
+                }
+            }
+        }
+
+        if (is_array($errors) && count($errors)) {
             $html_dumpable .= '<hr />' . '<h5>&nbsp;' . "Errors" . '</h5>';
             $html_dumpable .= '<code><ul>';
             foreach ($errors as $bucket => $error) {
-                if(is_array($error) && count($error)) {
+                if (is_array($error) && count($error)) {
                     foreach ($error as $msg) {
                         $html_dumpable .= '<li><b>' . $bucket. '</b> => ' . $msg . '</li>';
                         $errors_count++;
@@ -303,13 +335,13 @@ class Debug extends DirStruct
         $included_files = get_included_files();
         $included_files_count = 0;
         $included_files_autoload_count = 0;
-        if(is_array($included_files) && count($included_files)) {
+        if (is_array($included_files) && count($included_files)) {
             $html_dumpable .= '<hr />' . '<a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } "><h5>' . "Includes" . " (" . count($included_files) . ")" . '</h5></a>';
             $html_dumpable .= '<pre style="' . $collapse . '"><ul>';
             foreach ($included_files as $included_file) {
-                $html_dumpable .= '<li>' . str_replace(self::$disk_path, "", $included_file) . '</li>';
+                $html_dumpable .= '<li>' . str_replace(Constant::DISK_PATH, "", $included_file) . '</li>';
                 $included_files_count++;
-                if(strtolower(pathinfo($included_file, PATHINFO_FILENAME)) == "autoload") {
+                if (strtolower(pathinfo($included_file, PATHINFO_FILENAME)) == "autoload") {
                     $included_files_autoload_count++;
                 }
             }
@@ -319,7 +351,7 @@ class Debug extends DirStruct
         $constants = get_defined_constants(true);
 
         $constants_user = $constants["user"];
-        if(is_array($constants_user) && count($constants_user)) {
+        if (is_array($constants_user) && count($constants_user)) {
             $html_dumpable .= '<hr />' . '<a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } "><h5>' . "Constants" . " (" . count($constants_user) . ")" . '</h5></a>';
             $html_dumpable .= '<pre style="' . $collapse . '"><ul>';
             foreach ($constants_user as $name => $value) {
@@ -329,7 +361,8 @@ class Debug extends DirStruct
             $html_dumpable .= '</ul></pre>';
         }
 
-        $html   = ($error_message
+        $html   = (
+            $error_message
                     ? "<hr /><b>" . $error_message . "</b>"
                     : ""
                 );
@@ -341,7 +374,7 @@ class Debug extends DirStruct
             . '<span style="padding:15px;">Constants: ' . count($constants_user) . '</span>'
             . '<span style="padding:15px;">Files: ' . $files_count . '</span>'
             . '<span style="padding:15px;">DB Query: ' . $db_query_count . ' (' . $db_query_cache_count . ' cached)'. '</span>'
-            . '<span style="padding:15px;">ExTime: ' . self::exTime() . '</span>'
+            . '<span style="padding:15px;">ExTime: ' . self::exTimeApp() . '</span>'
             . '</center>';
 
         $html   .= '<table>';
@@ -354,7 +387,7 @@ class Debug extends DirStruct
         $html   .= '</tbody>';
         $html   .= '</table>';
 
-        if($return) {
+        if ($return) {
             return $html;
         } else {
             echo $html;
@@ -366,11 +399,12 @@ class Debug extends DirStruct
      * @param bool $end
      * @return mixed
      */
-    public static function benchmark($end = false) {
+    public static function benchmark($end = false)
+    {
         static $res;
 
-        if(function_exists("getrusage"))
-        {
+        Debug::stopWatch("debug/benchmark");
+        if (function_exists("getrusage")) {
             $ru = getrusage();
             if ($end) {
                 $res["mem"] 			= number_format(memory_get_usage(true) - $res["mem"], 0, ',', '.');
@@ -381,27 +415,32 @@ class Debug extends DirStruct
                 $res["db"] 				= Database::dump();
                 $res["exTime"] 			= microtime(true) - $res["exTime"];
 
-                if (extension_loaded('xhprof') && is_dir(FF_DISK_PATH . "/xhprof_lib") && class_exists("XHProfRuns_Default")) {
-                    $path_info          = ($_SERVER["PATH_INFO"] == DIRECTORY_SEPARATOR
+                if (extension_loaded('xhprof') && is_dir(Constant::DISK_PATH . "/xhprof_lib") && class_exists("XHProfRuns_Default")) {
+                    $path_info          = (
+                        $_SERVER["PATH_INFO"] == DIRECTORY_SEPARATOR
                                             ? "Home"
                                             : $_SERVER["PATH_INFO"]
                                         );
 
-                    $xhr_path_info      = ($_SERVER["XHR_PATH_INFO"] == DIRECTORY_SEPARATOR
+                    $xhr_path_info      = (
+                        $_SERVER["XHR_PATH_INFO"] == DIRECTORY_SEPARATOR
                                             ? "Home"
                                             : $_SERVER["XHR_PATH_INFO"]
                                         );
                     $profiler_namespace = str_replace(array(".", "&", "?", "__nocache__"), array(",", "", "", ""), "[" . round($res["exTime"], 2) . "s] "
                         . str_replace(DIRECTORY_SEPARATOR, "_", trim($path_info, DIRECTORY_SEPARATOR))
-                        . ($xhr_path_info != $path_info && $xhr_path_info
+                        . (
+                            $xhr_path_info != $path_info && $xhr_path_info
                             ? " (" . str_replace(DIRECTORY_SEPARATOR, "_", trim($xhr_path_info, DIRECTORY_SEPARATOR)) . ")"
                             : ""
                         )
-                        . (Request::isAjax()
+                        . (
+                            Request::isAjax()
                             ? " - Request"
                             : ""
                         ))
-                        . ($end !== true
+                        . (
+                            $end !== true
                             ? " - " . $end
                             : ""
                         );
@@ -421,23 +460,26 @@ class Debug extends DirStruct
                 $res["cpu"]             = $ru['ru_utime.tv_usec'] + $ru['ru_stime.tv_usec'];
                 $res["exTime"] 			= microtime(true);
 
-                if (extension_loaded('xhprof') && is_dir(FF_DISK_PATH . "/xhprof_lib")) {
-                    self::autoload(self::$disk_path . '/xhprof_lib/utils/xhprof_lib.php', true);
-                    self::autoload(self::$disk_path . '/xhprof_lib/utils/xhprof_runs.php', true);
+                if (extension_loaded('xhprof') && is_dir(Constant::DISK_PATH . "/xhprof_lib")) {
+                    Dir::autoload(Constant::DISK_PATH . '/xhprof_lib/utils/xhprof_lib.php', true);
+                    Dir::autoload(Constant::DISK_PATH . '/xhprof_lib/utils/xhprof_runs.php', true);
 
                     xhprof_enable(XHPROF_FLAGS_NO_BUILTINS | XHPROF_FLAGS_CPU | XHPROF_FLAGS_MEMORY);
                 }
             }
         }
+
+        Debug::stopWatch("debug/benchmark");
         return null;
     }
 
-    public static function stackTraceOnce() {
+    public static function stackTraceOnce()
+    {
         $debug_backtrace                    = debug_backtrace();
         $trace                              = $debug_backtrace[2];
 
-        if(isset($trace["file"])) {
-            $res                            = str_replace(self::$disk_path, "", $trace["file"]);
+        if (isset($trace["file"])) {
+            $res                            = str_replace(Constant::DISK_PATH, "", $trace["file"]);
         } else {
             $res                            = $trace["function"];
         }
@@ -445,13 +487,14 @@ class Debug extends DirStruct
         return $res;
     }
 
-    public static function stackTrace($plainText = false) {
+    public static function stackTrace($plainText = false)
+    {
         $res                                = null;
         $debug_backtrace                    = debug_backtrace();
         unset($debug_backtrace[0]);
 
-        foreach ($debug_backtrace AS $trace) {
-            if(isset($trace["file"])) {
+        foreach ($debug_backtrace as $trace) {
+            if (isset($trace["file"])) {
                 $res[]                      = $trace["file"] . " on line " . $trace["line"];
             } else {
                 $res[]                      = "Func: " . $trace["function"];
@@ -464,7 +507,8 @@ class Debug extends DirStruct
         );
     }
 
-    public static function page($page) {
+    public static function page($page)
+    {
         Log::debugging(array(
             "page"      => $page
             , "isXHR"   => Request::isAjax()

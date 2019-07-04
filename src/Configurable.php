@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs;
 
-interface Configurable {
+interface Configurable
+{
     public static function loadSchema();
 }

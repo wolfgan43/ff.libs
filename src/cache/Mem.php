@@ -26,6 +26,7 @@
 
 namespace phpformsframework\libs\cache;
 
+use phpformsframework\libs\cache\adapters\MemGlobal;
 use phpformsframework\libs\Constant;
 
 class Mem // apc | memcached | redis | globals
@@ -34,58 +35,21 @@ class Mem // apc | memcached | redis | globals
 
     private static $singletons = null;
 
-
     /**
      * @param bool|string $memAdapter
-     * @param null $auth
+     * @param null|string $bucket
      * @return MemAdapter
      */
-    public static function getInstance($memAdapter = Constant::CACHE_MEM, $auth = null)
+    public static function getInstance($bucket = null, $memAdapter = Constant::CACHE_MEM)
     {
-        if($memAdapter) {
-            if (!isset(self::$singletons[$memAdapter])) {
-                $class_name = static::NAME_SPACE . "Mem" . ucfirst($memAdapter);
-                self::$singletons[$memAdapter] = new $class_name($auth);
+        if (!isset(self::$singletons[$memAdapter][$bucket])) {
+            if(!$memAdapter) {
+                $memAdapter = "Global";
             }
-        } else {
-            self::$singletons[$memAdapter] = new Mem();
+            $class_name                 = static::NAME_SPACE . "Mem" . ucfirst($memAdapter);
+            self::$singletons[$memAdapter][$bucket] = new $class_name($bucket);
         }
 
-        return self::$singletons[$memAdapter];
+        return self::$singletons[$memAdapter][$bucket];
     }
-
-    public function set($name, $value = null, $bucket = null) {
-        $name = ltrim($name, "/");
-
-        return Globals::set($name, $value, $bucket);
-    }
-    public function get($name, $bucket = null) {
-        $name = ltrim($name, "/");
-        $res = null;
-        if($name) {
-            $res = Globals::get($name, $bucket);
-        } else {
-            $prefix = $bucket;
-            $keys = Globals::getInstance();
-            if(is_array($keys) && count($keys)) {
-                foreach($keys AS $key => $value) {
-                    if (strpos($key, $prefix) === 0) {
-                        $real_key = substr($key, strlen($prefix));
-                        $res[$real_key] = $value;
-                    }
-                }
-            }
-        }
-
-        return $res;
-    }
-    public function del($name, $bucket = null) {
-        $name = ltrim($name, "/");
-
-        return Globals::del($name, $bucket);
-    }
-    public function clear($bucket = null) {
-        return Globals::clear($bucket);
-    }
-
 }

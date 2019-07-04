@@ -27,10 +27,12 @@ namespace phpformsframework\libs\delivery\drivers;
 
 use phpformsframework\libs\international\Translator;
 
-final class MailerSimple extends Mailer {
+final class MailerSimple extends Mailer
+{
     private $content                                        = null;
 
-    public function setMessage($content) {
+    public function setMessage($content)
+    {
         $this->content                                      = $content;
 
         return $this;

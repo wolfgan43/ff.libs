@@ -26,43 +26,48 @@
 namespace phpformsframework\libs\storage\adapters;
 
 use phpformsframework\libs\Constant;
+use phpformsframework\libs\Dir;
 use phpformsframework\libs\Error;
-use phpformsframework\libs\Debug;
 use phpformsframework\libs\storage\FilemanagerAdapter;
 
 class FilemanagerPhp extends FilemanagerAdapter
 {
     const EXT                                                   = "php";
 
-    public function read($file_path = null, $search_keys = null, $search_flag = self::SEARCH_DEFAULT) {
+    public function read($file_path = null, $search_keys = null, $search_flag = self::SEARCH_DEFAULT)
+    {
         $res                                                    = array();
-        if($file_path)                                          { $this->setFilePath($file_path); }
-        $file_path                                              = $this->getFilePath();
-        $var                                                    = $this->getVar();
 
-        $output                                                 = exec("php -l " . addslashes($file_path));
+        $params                                                 = $this->getParams($file_path);
+        if (!$params) {
+            return false;
+        }
 
-        if(strpos($output, "No syntax errors") === 0) {
-            $include                                            = $this->autoload($file_path);
-            if($include === 1) {
-                if(!$var) {
+        $output                                                 = exec("php -l " . addslashes($params->file_path));
+
+        if (strpos($output, "No syntax errors") === 0) {
+            $include                                            = Dir::autoload($params->file_path);
+            if ($include === 1) {
+                if (!$params->var) {
                     $arrDefVars                                 = get_defined_vars();
                     end($arrDefVars);
-                    $var                                        = key($arrDefVars);
-                    if($var == "output")
-                        $var                                    = null;
-                    else
-                        $this->setVar($var);
+                    $params->var                                        = key($arrDefVars);
+                    if ($params->var == "output") {
+                        $params->var = null;
+                    } else {
+                        $this->setVar($params->var);
+                    }
                 }
-                $return = ${$var};
+                $return = ${$params->var};
             } else {
                 $return = $include;
-                if($var)
-                    $return = $return[$var];
+                if ($params->var) {
+                    $return = $return[$params->var];
+                }
             }
 
-            if($return) {
-                if($search_keys) {
+            if ($return) {
+                if ($search_keys) {
                     $res                                        = $this->search($return, $search_keys, $search_flag);
                 } else {
                     $res                                        = $return;
@@ -70,29 +75,25 @@ class FilemanagerPhp extends FilemanagerAdapter
             } else {
                 $res                                            = null;
             }
+
+            return $this->getResult($res);
         } else {
-            Error::register("syntax errors into file" . (Constant::DEBUG ? ": " . $file_path : ""), "filemanager");
+            Error::register("syntax errors into file" . (Constant::DEBUG ? ": " . $params->file_path : ""), static::ERROR_BUCKET);
         }
 
-        return $this->getResult($res);
+        return null;
     }
 
     public function write($data, $file_path = null, $var = null)
     {
-        if($file_path)                                          { $this->setFilePath($file_path); }
-        if($var)                                                { $this->setVar($var); }
+        $params                                                 = $this->setParams($file_path, $var);
 
-        $file_path                                              = $this->getFilePath();
-        $var                                                    = $this->getVar();
-
-        if($var) {
-            $return = '$' . $var . ' = ';
+        if ($params->var) {
+            $return = '$' . $params->var . ' = ';
         } else {
             $return = 'return ';
         }
 
-        return $this->save("<?php\n" . ' '. $return . var_export($data, true) . ";", $file_path);
+        return $this->save("<?php\n" . ' '. $return . var_export($data, true) . ";", $params->file_path);
     }
-
-
 }

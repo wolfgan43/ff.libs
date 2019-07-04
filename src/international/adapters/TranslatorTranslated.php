@@ -41,13 +41,13 @@ class TranslatorTranslated extends TranslatorAdapter
     {
         $fromLang                                       = Translator::getLangDefault($fromLang);
         $toLang                                         = Translator::getLang($toLang);
-        if($fromLang == $toLang) {
+        if ($fromLang == $toLang) {
             $res                                        = $words;
         } else {
             $res                                        = parent::translate($words, $toLang, $fromLang);
-            if(!$res) {
+            if (!$res) {
                 $transalted                             = file_get_contents("http://api.mymemory.translated.net/get?q=" . urlencode($words) . "&langpair=" . $fromLang . "|" . $toLang . ($this->code ? "&key=" . $this->code : ""));
-                if($transalted) {
+                if ($transalted) {
                     $buffer                             = json_decode($transalted, true);
                     if ($buffer["responseStatus"] == 200 && $buffer["responseData"]["translatedText"]) {
                         $res                            = $this->save($words, $toLang, $fromLang, $buffer["responseData"]["translatedText"]);
@@ -58,6 +58,4 @@ class TranslatorTranslated extends TranslatorAdapter
 
         return $res;
     }
-
 }
-

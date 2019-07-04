@@ -89,7 +89,7 @@ ssl support must be enabled
     | Group | dev.example.com |  7  |
     | Other |                 |  0  |
 
-  - ./cronjobs
+  - ./cron-jobs
   
     | Perm  | Name            | Mod |
     |-------|-----------------|:---:|

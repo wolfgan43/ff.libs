@@ -27,7 +27,9 @@ namespace phpformsframework\libs\delivery\drivers;
 
 use phpformsframework\libs\Request;
 
-abstract class MessengerAdapter {
+abstract class MessengerAdapter
+{
+    const ERROR_BUCKET                                      = "messenger";
     const PREFIX                                            = null;
     protected $appname                                      = null;
 
@@ -36,11 +38,12 @@ abstract class MessengerAdapter {
     public $from                                            = null;
     public $debug                                           = null;
 
-    public abstract function send($message, $to);
+    abstract public function send($message, $to);
 
     public function __construct()
     {
-        $sms_prefix                                         = (defined(static::PREFIX . "_SMS_SID")
+        $sms_prefix                                         = (
+            defined(static::PREFIX . "_SMS_SID")
                                                                 ? static::PREFIX . "_SMS_"
                                                                 : "SMS_"
                                                             );
@@ -52,16 +55,21 @@ abstract class MessengerAdapter {
         $this->setProperty("debug");
     }
 
-    private function setProperty($name, $prefix = "") {
+    private function setProperty($name, $prefix = "")
+    {
         $const                                              = strtoupper($prefix . $name);
 
-        if(defined($const))                                 { $this->$name = constant($const); }
+        if (defined($const)) {
+            $this->$name = constant($const);
+        }
     }
 
-    protected function getAppName() {
-        return substr(($this->appname
+    protected function getAppName()
+    {
+        return substr((
+            $this->appname
             ? $this->appname
-            : str_replace(" " , "", ucwords(str_replace(array(".", "-"), " ", Request::hostname())))
+            : str_replace(" ", "", ucwords(str_replace(array(".", "-"), " ", Request::hostname())))
         ), 0, 11);
     }
 }

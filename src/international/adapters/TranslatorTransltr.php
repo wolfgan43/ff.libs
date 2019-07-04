@@ -41,13 +41,13 @@ class TranslatorTransltr extends TranslatorAdapter
     {
         $fromLang                                       = Translator::getLangDefault($fromLang);
         $toLang                                         = Translator::getLang($toLang);
-        if($fromLang == $toLang) {
+        if ($fromLang == $toLang) {
             $res                                        = $words;
         } else {
             $res                                        = parent::translate($words, $toLang, $fromLang);
-            if(!$res) {
+            if (!$res) {
                 $transalted = file_get_contents("http://www.transltr.org/api/translate?text=" . urlencode($words) . "&to=" . strtolower(substr($toLang, 0, 2)) . "&from=" . strtolower(substr($fromLang, 0, 2)) . ($this->code ? "&key=" . $this->code : ""));
-                if($transalted) {
+                if ($transalted) {
                     $buffer                             = json_decode($transalted, true);
                     if ($buffer["translationText"]) {
                         $res                            = $this->save($words, $toLang, $fromLang, $buffer["translationText"]);
@@ -57,6 +57,4 @@ class TranslatorTransltr extends TranslatorAdapter
         }
         return $res;
     }
-
 }
-

@@ -41,11 +41,11 @@ class TranslatorGoogle extends TranslatorAdapter
     {
         $fromLang                                       = Translator::getLangDefault($fromLang);
         $toLang                                         = Translator::getLang($toLang);
-        if($fromLang == $toLang) {
+        if ($fromLang == $toLang) {
             $res                                        = $words;
         } else {
             $res                                        = parent::translate($words, $toLang, $fromLang);
-            if(!$res) {
+            if (!$res) {
                 $transalted                             = file_get_contents("https://translation.googleapis.com/language/translate/v2?q=" . urlencode($words) . "&target=" . substr($toLang, 0, 2) . "&source=" . substr($fromLang, 0, 2) . ($this->code ? "&key=" . $this->code : ""));
                 if ($transalted) {
                     $buffer                             = json_decode($transalted, true);
@@ -57,6 +57,4 @@ class TranslatorGoogle extends TranslatorAdapter
         }
         return $res;
     }
-
 }
-

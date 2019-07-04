@@ -28,7 +28,8 @@ namespace phpformsframework\libs\tpl;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\tpl\adapters\PageHtml;
 
-class Page {
+class Page
+{
     const NAME_SPACE                            = 'phpformsframework\\libs\\tpl\\adapters\\';
     const ASSETS_PATH                           =  Constant::LIBS_FF_DISK_PATH . DIRECTORY_SEPARATOR . 'assets';
 
@@ -38,8 +39,9 @@ class Page {
      * @param string $type
      * @return PageHtml
      */
-    public static function getInstance($type, $extension_name = "default") {
-        if(!self::$singleton) {
+    public static function getInstance($type, $extension_name = "default")
+    {
+        if (!self::$singleton) {
             $class_name                         = self::NAME_SPACE . "Page" . ucfirst($type);
             self::$singleton                    = new $class_name($extension_name);
         }

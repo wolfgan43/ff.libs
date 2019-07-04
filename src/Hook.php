@@ -26,7 +26,8 @@
 
 namespace phpformsframework\libs;
 
-class Hook {
+class Hook
+{
     const EVENT_PRIORITY_HIGH                                       = 1000;
     const EVENT_PRIORITY_NORMAL                                     = 100;
     const EVENT_PRIORITY_LOW                                        = 10;
@@ -39,8 +40,9 @@ class Hook {
      * @param $func
      * @param int $priority
      */
-    public static function register($name, $func, $priority = self::EVENT_PRIORITY_NORMAL) {
-        if(is_callable($func)) {
+    public static function register($name, $func, $priority = self::EVENT_PRIORITY_NORMAL)
+    {
+        if (is_callable($func)) {
             Debug::dumpCaller("addEvent::" . $name);
             self::$events[$name][$priority + count((array)self::$events[$name])]    = $func;
         }
@@ -53,11 +55,12 @@ class Hook {
      * @param null $params
      * @return array|null
      */
-    public static function handle($name, &$ref = null, $params = null) {
+    public static function handle($name, &$ref = null, $params = null)
+    {
         $res                                                        = null;
-        if(isset(self::$events[$name]) && is_array(self::$events[$name])) {
+        if (isset(self::$events[$name]) && is_array(self::$events[$name])) {
             krsort(self::$events[$name], SORT_NUMERIC);
-            foreach(self::$events[$name] AS $func) {
+            foreach (self::$events[$name] as $func) {
                 $res[]                                              = $func($ref, $params);
             }
         }

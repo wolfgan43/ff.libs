@@ -28,46 +28,56 @@ namespace phpformsframework\libs;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\storage\Media;
 
-class Response {
+class Response
+{
     private static $content_type = null;
 
-    public static function setContentType($content_type) {
+    public static function setContentType($content_type)
+    {
         self::$content_type                         = $content_type;
     }
 
-    public static function error($status = 404, $response = null, $headers = null, $type = null) {
+    public static function error($status = 404, $response = null, $headers = null, $type = null)
+    {
         self::send($response, $headers, $type, $status);
     }
-    public static function send($response = null, $headers = null, $type = null, $status = null) {
-        if($status)                                 { Response::code($status); }
+    public static function send($response = null, $headers = null, $type = null, $status = null)
+    {
+        if ($status) {
+            Response::code($status);
+        }
 
-        if(!$type)                                  { $type = self::$content_type; }
+        if (!$type) {
+            $type = self::$content_type;
+        }
 
         if (is_array($headers) && count($headers)) {
-            foreach ($headers AS $header) {
+            foreach ($headers as $header) {
                 header($header);
             }
         }
 
-        if(!$type) {
+        if (!$type) {
             $type                                   = "text";
             if (is_array($response)) {
                 if (isset($response["html"])) {
                     $type                           = "html";
-                } elseif(Request::isAjax() || Request::method() != "GET") {
+                } elseif (Request::isAjax() || Request::method() != "GET") {
                     $type                           = "json";
                 }
             }
         }
 
-        if(0 &&  self::invalidAccept($type)) {
+        if (0 &&  self::invalidAccept($type)) {
             Response::code(501);
             echo "content type " . $type . "is different to http_accept";
         } else {
-            if(isset($response["error"]) && $response["error"])               { $response["error"] = Translator::get_word_by_code($response["error"]); }
+            if (isset($response["error"]) && $response["error"]) {
+                $response["error"] = Translator::get_word_by_code($response["error"]);
+            }
 
             self::sendHeadersByType($type);
-            switch($type) {
+            switch ($type) {
                 case "js":
                     echo $response;
                     break;
@@ -75,9 +85,9 @@ class Response {
                     echo $response;
                     break;
                 case "html":
-                    if(isset($response["error"]) && $response["error"]) {
+                    if (isset($response["error"]) && $response["error"]) {
                         echo $response["error"];
-                    } elseif(isset($response["html"])) {
+                    } elseif (isset($response["html"])) {
                         echo $response["html"];
                     }
                     break;
@@ -92,11 +102,11 @@ class Response {
                     break;
                 case "text":
                 default:
-                    if(isset($response["error"]) && $response["error"]) {
+                    if (isset($response["error"]) && $response["error"]) {
                         echo $response["error"];
-                    } elseif(isset($response["data"])) {
-                        if(is_array($response["data"])) {
-                            echo implode(" " , $response["data"]);
+                    } elseif (isset($response["data"])) {
+                        if (is_array($response["data"])) {
+                            echo implode(" ", $response["data"]);
                         } else {
                             echo $response["data"];
                         }
@@ -109,20 +119,22 @@ class Response {
 
     public static function redirect($destination, $http_response_code = null, $headers = null)
     {
-        if($http_response_code === null)            { $http_response_code = 301; }
+        if ($http_response_code === null) {
+            $http_response_code = 301;
+        }
         Log::write("REFERER: " . Request::referer(), "redirect", $http_response_code, $destination);
 
         self::sendHeaders(array(
             "cache" => "must-revalidate"
         ));
 
-        if(strpos($destination, DIRECTORY_SEPARATOR) !== 0 && strpos($destination, "http") !== 0) {
+        if (strpos($destination, DIRECTORY_SEPARATOR) !== 0 && strpos($destination, "http") !== 0) {
             $destination                            = Request::protocol() . $destination;
         }
-        if(Request::webhost() . $_SERVER["REQUEST_URI"] != $destination) {
+        if (Request::protocol_host() . $_SERVER["REQUEST_URI"] != $destination) {
             header("Location: " . $destination, true, $http_response_code);
-            if(is_array($headers) && count($headers)) {
-                foreach ($headers AS $key => $value) {
+            if (is_array($headers) && count($headers)) {
+                foreach ($headers as $key => $value) {
                     header(ucfirst(str_replace(array(" ", "_"), "-", $key)) . ": " . $value);
                 }
             }
@@ -133,28 +145,28 @@ class Response {
         exit;
     }
 
-    public static function code($code = null) {
+    public static function code($code = null)
+    {
         return ($code
              ? http_response_code($code)
              : http_response_code()
          );
-
     }
 
-    private static function sendHeadersByType($type) {
+    private static function sendHeadersByType($type)
+    {
         if (!headers_sent()) {
             $mimetype = Media::MIMETYPE[$type];
-            if(0) {
-
+            if (0) {
                 self::sendHeaders(array("mimetype" => $mimetype));
             } else {
                 header("Content-type: " . $mimetype);
             }
-
         }
     }
 
-    public static function sendHeaders($params = null) {
+    public static function sendHeaders($params = null)
+    {
         $keep_alive			        = isset($params["keep_alive"])  ? $params["keep_alive"]			: false;
         $max_age				    = isset($params["max_age"])     ? $params["max_age"]            : null;
         $expires				    = isset($params["expires"])     ? $params["expires"]            : null;
@@ -167,10 +179,14 @@ class Response {
         $size				        = isset($params["size"])        ? $params["size"]               : null;
         $etag				        = isset($params["etag"])		? $params["etag"]				: true;
 
-        if($size)                   { header("Content-Length: " . $size); }
-        if(strlen($etag))           { header("ETag: " . $etag); }
+        if ($size) {
+            header("Content-Length: " . $size);
+        }
+        if (strlen($etag)) {
+            header("ETag: " . $etag);
+        }
 
-        if($mimetype) {
+        if ($mimetype) {
             $content_type = $mimetype;
             if ($mimetype == "text/css" || $mimetype == "application/x-javascript") {
                 header("Vary: Accept-Encoding");
@@ -182,34 +198,35 @@ class Response {
             header("Content-type: $content_type");
         }
 
-        if($disposition && $filename) {
+        if ($disposition && $filename) {
             $content_disposition = $disposition;
             $content_disposition .= "; filename=" . rawurlencode($filename);
             header("Content-Disposition: " . $content_disposition);
         }
 
 
-        if($keep_alive) {
+        if ($keep_alive) {
             header("Connection: Keep-Alive");
         }
-        if($compress) {
-            $accept_encoding    = (isset($_SERVER["HTTP_ACCEPT_ENCODING"])
-                                    ? explode("," , str_replace(" ", "", $_SERVER["HTTP_ACCEPT_ENCODING"]))
+        if ($compress) {
+            $accept_encoding    = (
+                isset($_SERVER["HTTP_ACCEPT_ENCODING"])
+                                    ? explode(",", str_replace(" ", "", $_SERVER["HTTP_ACCEPT_ENCODING"]))
                                     : false
                                 );
-            if($accept_encoding) {
+            if ($accept_encoding) {
                 if ($compress === true) {
                     $compress   = $accept_encoding[0];
                 } elseif (array_search($compress, $accept_encoding) === false) {
                     $compress = false;
                 }
-                if($compress) {
+                if ($compress) {
                     header("Content-encoding: " . $compress);
                 }
             }
         }
 
-        switch($cache) {
+        switch ($cache) {
             case "no-store":
                 header('Cache-Control: no-store');
                 header("Pragma: no-cache");
@@ -228,7 +245,7 @@ class Response {
                 break;
             case "public":
             default:
-                if($expires === false && $max_age === false) {
+                if ($expires === false && $max_age === false) {
                     header('Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
                     header("Pragma: no-cache");
                 } else {
@@ -241,14 +258,13 @@ class Response {
                     }
 
                     if ($max_age !== false) {
-                        if($mtime) {
+                        if ($mtime) {
                             $mod_gmt = gmdate("D, d M Y H:i:s", $mtime) . " GMT";
                             header("Last-Modified: $mod_gmt");
                         }
                         if ($max_age === null) {
                             header("Cache-Control: public");
-                        }
-                        else {
+                        } else {
                             header("Cache-Control: public, max-age=$max_age");
                         }
                     }
@@ -258,7 +274,8 @@ class Response {
         }
     }
 
-    private static function invalidAccept($ext) {
+    private static function invalidAccept($ext)
+    {
         return isset($_SERVER["HTTP_ACCEPT"]) && $_SERVER["HTTP_ACCEPT"] && strpos($_SERVER["HTTP_ACCEPT"], Media::getMimeTypeByExtension($ext)) === false;
     }
 }

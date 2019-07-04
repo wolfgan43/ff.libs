@@ -28,33 +28,58 @@ namespace phpformsframework\libs\delivery;
 use phpformsframework\libs\App;
 use phpformsframework\libs\Error;
 
-abstract class NoticeAdapter extends App {
+abstract class NoticeAdapter extends App
+{
+    const ERROR_BUCKET                                      = "delivery";
+
     protected $recipients                                   = array();
-    protected $connection                                   = null;
+    protected $connection_service                           = null;
     protected $actions                                      = array();
 
-    public function __construct($connection = null)
+    protected $connection                                   = null;
+    protected $fromKey                                      = null;
+    protected $fromLabel                                    = null;
+
+    public function __construct($connection_service = null)
+    {
+        $this->connection_service                           = $connection_service;
+    }
+
+    abstract public function checkRecipient($target);
+    abstract public function send($message);
+    abstract public function sendLongMessage($title, $fields = null, $template = null);
+
+    abstract protected function process();
+
+    public function setFrom($key, $label = null)
+    {
+        $this->fromKey                                      = $key;
+        $this->fromLabel                                    = $label;
+
+        return $this;
+    }
+
+    public function setConnection($connection)
     {
         $this->connection                                   = $connection;
+
+        return $this;
     }
 
-    public abstract function checkRecipient($target);
-    public abstract function send($message);
-    public abstract function sendLongMessage($title, $fields = null, $template = null);
-
-    protected abstract function process();
-
-    public function addAction($name, $url) {
+    public function addAction($name, $url)
+    {
         $this->actions[$url]                                = $name;
     }
-    public function addRecipient($target, $name = null) {
-        if($this->checkRecipient($target)) {
+    public function addRecipient($target, $name = null)
+    {
+        if ($this->checkRecipient($target)) {
             $this->recipients[$target]                      = ($name ? $name : $target);
         }
     }
-    protected function getResult() {
-        return (Error::check("notice")
-            ? Error::raise("notice")
+    protected function getResult()
+    {
+        return (Error::check(static::ERROR_BUCKET)
+            ? Error::raise(static::ERROR_BUCKET)
             : false
         );
     }

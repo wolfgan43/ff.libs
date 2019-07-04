@@ -25,7 +25,8 @@
  */
 namespace phpformsframework\libs\storage;
 
-interface DatabaseDriver {
+interface DatabaseDriver
+{
     public static function factory();
     public static function free_all();
 

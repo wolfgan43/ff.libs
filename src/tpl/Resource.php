@@ -26,15 +26,19 @@
 
 namespace phpformsframework\libs\tpl;
 
-use phpformsframework\libs\DirStruct;
+use phpformsframework\libs\cache\Mem;
+use phpformsframework\libs\Config;
+use phpformsframework\libs\Debug;
+use phpformsframework\libs\Dir;
 use phpformsframework\libs\Mappable;
 use phpformsframework\libs\storage\Filemanager;
 
-class Resource extends Mappable {
+class Resource extends Mappable
+{
     private static $singleton                   = null;
 
-    protected $rules                     = null;
-    private $resources                   = null;
+    protected $rules                            = null;
+    private $resources                          = null;
 
     public function __construct($map_name)
     {
@@ -43,30 +47,34 @@ class Resource extends Mappable {
         $this->loadResources();
     }
 
-    private function loadResources($patterns = null, $excludeDirname = null) {
-        if(is_array($this->rules) && count($this->rules)) {
-            foreach ($this->rules as $key => $rule) {
-                $patterns[Page::ASSETS_PATH . DIRECTORY_SEPARATOR . $key] = $rule;
+    private function loadResources($excludeDirname = null)
+    {
+        Debug::stopWatch("resource/loadResources");
 
-                $user_pattern                   = DirStruct::getDiskPath($key);
-                if($user_pattern)               { $patterns[$user_pattern] = $rule; }
-            }
+        $cache = Mem::getInstance("resource");
+        $this->resources = $cache->get("rawdata");
+        if (!$this->resources) {
+            $patterns                           = Config::getScans($this->rules);
+            Filemanager::scanExclude($excludeDirname);
+            $this->resources                    = Filemanager::scan($patterns);
+
+            $cache->set("rawdata", $this->resources);
         }
-
-        Filemanager::scanExclude($excludeDirname);
-
-        $this->resources                        = Filemanager::scan($patterns);
+        Debug::stopWatch("resource/loadResources");
     }
 
-    public static function get($name, $type, $rule_name = "default") {
-        if(!self::$singleton)                   { self::$singleton = new Resource($rule_name); }
+    public static function get($name, $type, $rule_name = "default")
+    {
+        if (!self::$singleton) {
+            self::$singleton = new Resource($rule_name);
+        }
 
 
         $file                                   = null;
-        $pathinfo                               = DirStruct::getPathInfo();
-        if($pathinfo) {
+        $pathinfo                               = Dir::getPathInfo();
+        if ($pathinfo) {
             do {
-                if(isset(self::$singleton->resources[$type][$name . str_replace(DIRECTORY_SEPARATOR, "_", $pathinfo)])) {
+                if (isset(self::$singleton->resources[$type][$name . str_replace(DIRECTORY_SEPARATOR, "_", $pathinfo)])) {
                     $file                       = self::$singleton->resources[$type][$name . str_replace(DIRECTORY_SEPARATOR, "_", $pathinfo)];
                     break;
                 }
@@ -75,7 +83,7 @@ class Resource extends Mappable {
             } while ($pathinfo != DIRECTORY_SEPARATOR);
         }
 
-        if(!$file && isset(self::$singleton->resources[$type][$name])) {
+        if (!$file && isset(self::$singleton->resources[$type][$name])) {
             $file                               = self::$singleton->resources[$type][$name];
         }
 

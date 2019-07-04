@@ -25,45 +25,50 @@
  */
 namespace phpformsframework\libs;
 
+use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\storage\Filemanager;
 use DirectoryIterator;
 
-class Env implements Configurable {
+class Env implements Configurable
+{
     private static $env                                             = array();
     private static $packages                                        = null;
 
-    public static function get($key = null, $value = null) {
-        if($key) {
+    public static function get($key = null, $value = null)
+    {
+        if ($key) {
             $ref                                                    = &self::$env[$key];
         } else {
             $ref                                                    = &self::$env;
         }
-        if($value !== null) {
+        if ($value !== null) {
             $ref                                                    = $value;
         }
 
         return $ref;
     }
 
-    public static function getPackage($key = null, $path = null) {
-        if(!$path)                                                  { $path = DirStruct::getDiskPath("packages", true); }
-        if(!self::$packages && $key === null) {
+    public static function getPackage($key = null)
+    {
+        $package_disk_path                                          = Dir::getDiskPath("config/packages");
+        if (!self::$packages && $key === null) {
             $fs                                                     = Filemanager::getInstance("xml");
-            $packages                                               = new DirectoryIterator(DirStruct::$disk_path . $path);
+            $packages                                               = new DirectoryIterator($package_disk_path);
 
             foreach ($packages as $package) {
-                if ($package->isDot())                              { continue; }
+                if ($package->isDot()) {
+                    continue;
+                }
 
                 $name                                               = $package->getBasename(".xml");
                 $xml                                                = $fs->read($package->getPathname());
-                self::loadSchema($name, $xml);
+                self::loadSchema($xml, $name);
             }
-        } elseif($key && self::$packages[$key] === null) {
+        } elseif ($key && self::$packages[$key] === null) {
             self::$packages[$key]                                   = false;
-            if(is_file(DirStruct::$disk_path . $path . DIRECTORY_SEPARATOR . $key . ".xml")) {
-                $xml                                                = Filemanager::getInstance("xml")->read(DirStruct::$disk_path . $path . DIRECTORY_SEPARATOR . $key . ".xml");
-                self::loadSchema($key, $xml);
-            }
+
+            $xml                                                    = Filemanager::getInstance("xml")->read($package_disk_path . DIRECTORY_SEPARATOR . $key . ".xml");
+            self::loadSchema($xml, $key);
         }
 
         return ($key
@@ -72,15 +77,31 @@ class Env implements Configurable {
         );
     }
 
-    public static function loadSchema() {
-        $config                                                     = Config::rawData("env", true);
-
-        if(is_array($config) && count($config)) {
-            foreach ($config as $key => $value) {
-                self::$packages["default"][$key]                    = DirStruct::getXmlAttr($value);
-
-                self::$env[$key]                                    = self::$packages["default"][$key]["value"];
+    public static function loadSchema($config = null, $bucket = "default")
+    {
+        Debug::stopWatch("env/config");
+        $cache                                                      = Mem::getInstance("env");
+        $res                                                        = $cache->get("rawdata");
+        if (!$res) {
+            if (!$config) {
+                $config = Config::rawData("env", true);
             }
+            if (is_array($config) && count($config)) {
+                foreach ($config as $key => $value) {
+                    self::$packages[$bucket][$key]                  = Dir::getXmlAttr($value);
+
+                    self::$env[$key]                                = self::$packages[$bucket][$key]["value"];
+                }
+            }
+
+            $cache->set("rawdata", array(
+                "env"       => self::$env,
+                "packages"  => self::$packages,
+            ));
+        } else {
+            self::$env                                              = $res["env"];
+            self::$packages                                         = $res["packages"];
         }
+        Debug::stopWatch("env/config");
     }
 }

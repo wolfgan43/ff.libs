@@ -23,47 +23,14 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
+
 namespace phpformsframework\libs\cache\adapters;
 
+use phpformsframework\libs\cache\Globals;
 use phpformsframework\libs\cache\MemAdapter;
-use phpformsframework\libs\Constant;
-use phpformsframework\libs\Dumpable;
-use phpformsframework\libs\Request;
-use Redis as MC;
 
-class MemRedis extends MemAdapter implements Dumpable
+class MemGlobal extends MemAdapter
 {
-    public static $server       = "127.0.0.1";
-    public static $port         = 6379;
-    public static $auth         = null;
-
-    private $conn	= null;
-
-    public function __construct($bucket = null)
-    {
-        parent::__construct($bucket);
-
-        $this->conn = new MC();
-        $this->conn->pconnect(static::$server, static::$port, $this->getTTL(), Constant::APPID); // x is sent as persistent_id and would be another connection than the three before.
-        if (static::$auth) {
-            $this->conn->auth(static::$auth);
-        }
-        switch (static::$serializer) {
-            case "PHP":
-                $this->conn->setOption(MC::OPT_SERIALIZER, MC::SERIALIZER_PHP);	// use built-in serialize/unserialize
-                break;
-            case "IGBINARY":
-                $this->conn->setOption(MC::OPT_SERIALIZER, MC::SERIALIZER_IGBINARY);	// use igBinary serialize/unserialize
-                break;
-            default:
-                $this->conn->setOption(MC::OPT_SERIALIZER, MC::SERIALIZER_NONE);	// don't serialize data
-
-        }
-
-
-        //$this->conn->setOption(MC::OPT_PREFIX, self::APPID . ':');	// use custom prefix on all keys
-    }
-
     /**
      * Inserisce un elemento nella cache
      * Oltre ai parametri indicati, accetta un numero indefinito di chiavi per relazione i valori memorizzati
@@ -75,18 +42,12 @@ class MemRedis extends MemAdapter implements Dumpable
     public function set($name, $value = null, $bucket = null)
     {
         if ($value === null) {
-            $res = $this->del($name, $bucket);
-        } else {
-            $this->getKey("set", $bucket, $name);
-
-            $res = (
-                $bucket
-                ? $this->conn->hSet($bucket, $name, $value)
-                : $this->conn->set($name, $value)
-            );
+            return $this->del($name, $bucket);
         }
 
-        return $res;
+        $this->getKey("set", $bucket, $name);
+
+        return Globals::set($name, $value, $bucket);
     }
 
     /**
@@ -97,18 +58,19 @@ class MemRedis extends MemAdapter implements Dumpable
      */
     public function get($name, $bucket = null)
     {
-        $res = false;
-        if (!Constant::$disable_cache) {
-            $this->getKey("get", $bucket, $name);
-
-            if ($bucket) {
-                $res = (
-                    $name
-                    ? $this->conn->hGet($bucket, $name)
-                    : $this->conn->hGetAll($bucket)
-                );
-            } else {
-                $res = $this->conn->get($name);
+        $this->getKey("get", $bucket, $name);
+        $res = null;
+        if ($name) {
+            $res = Globals::get($name, $bucket);
+        } else {
+            $keys = Globals::getInstance();
+            if (is_array($keys) && count($keys)) {
+                foreach ($keys as $key => $value) {
+                    if (strpos($key, $bucket) === 0) {
+                        $real_key = substr($key, strlen($bucket));
+                        $res[$real_key] = $value;
+                    }
+                }
             }
         }
 
@@ -125,26 +87,20 @@ class MemRedis extends MemAdapter implements Dumpable
     {
         $this->getKey("del", $bucket, $name);
 
-        return ($bucket
-            ? $this->conn->hDel($bucket, $name)
-            : $this->conn->delete($name)
-        );
+        return Globals::del($name, $bucket);
     }
+
     /**
      * Pulisce la cache
      * Accetta un numero indefinito di parametri che possono essere utilizzati per cancellare i dati basandosi sulle relazioni
      * Se non si specificano le relazioni, verrà cancellata l'intera cache
      * @param string $bucket
+     * @return bool
      */
     public function clear($bucket = null)
     {
-        $this->getKey("del", $bucket);
+        $this->getKey("clear", $bucket);
 
-        // global reset
-        if ($bucket) {
-            $this->conn->delete($bucket);
-        } else {
-            $this->conn->flushDb();
-        }
+        return Globals::clear($bucket);
     }
 }

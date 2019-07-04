@@ -32,121 +32,122 @@ use Exception;
 
 class Data
 {
+    const ERROR_BUCKET          = "data";
     private static $singleton = null;
-	/**
-	 * il valore originale del dato, memorizzato non modificato
-	 * @var mixed
-	 */
-	var $ori_value 	= null;
-	/**
-	 * Il tipo del dato memorizzato al momento della creazione dell'oggetto.
-	 * può essere: Text, Number, Date, Time, DateTime, Timestamp, Currency
-	 * non tutti i tipi di dato sono permessi per tutti i locale
-	 * @var string
-	 */
-	var $data_type 	= "Text";
-	/**
-	 * Il locale del dato memorizzato al momento della creazione dell'oggetto
-	 * può essere uno qualsiasi dei tipi indicati nella sottodir "locale"
-	 * Esistono due costanti predefinite normalmente associate al locale:
-	 *  - FF_SYSTEM_LOCALE : il tipo usato dal sistema (sempre ISO9075)
-	 *  - FF_LOCALE : il tipo usato per visualizzare i dati all'utente
-	 * @var string
-	 */
-	var $locale 	= "ISO9075";	/* The default locale setting.
-	
-												NB.: DON'T ALTER THIS!!!!
-												This will be altered on single instances, but is NOT safe to alter the default
-												due to superclasses automation.
-												If you want to alter the default locale of system objects, alter the settings
-												in configuration file. */
-	/**
-	 * Se dev'essere applicata una trasformazione in modo che non venga mai restituito null come valore.
-	 * Se "true", per dati di tipo testuale verrà restituita stringa nulla, per dati di tipo numerico verrà restituito 0
-	 * @var string
-	 */
-	var $transform_null 		= false;
+    /**
+     * il valore originale del dato, memorizzato non modificato
+     * @var mixed
+     */
+    public $ori_value 	= null;
+    /**
+     * Il tipo del dato memorizzato al momento della creazione dell'oggetto.
+     * può essere: Text, Number, Date, Time, DateTime, Timestamp, Currency
+     * non tutti i tipi di dato sono permessi per tutti i locale
+     * @var string
+     */
+    public $data_type 	= "Text";
+    /**
+     * Il locale del dato memorizzato al momento della creazione dell'oggetto
+     * può essere uno qualsiasi dei tipi indicati nella sottodir "locale"
+     * Esistono due costanti predefinite normalmente associate al locale:
+     *  - FF_SYSTEM_LOCALE : il tipo usato dal sistema (sempre ISO9075)
+     *  - FF_LOCALE : il tipo usato per visualizzare i dati all'utente
+     * @var string
+     */
+    public $locale 	= "ISO9075";	/* The default locale setting.
 
-	/**
-	 * @todo
-	 * @var string
-	 */
-	var $format_string			= null;
-	
-	/**
-	 * Il valore testuale del dato
-	 * @var string
-	 */
-	var $value_text				= null;
-	/**
-	 * la parte intera di un valore numerico
-	 * @var int
-	 */
-	var $value_numeric_integer	= null;
-	/**
-	 * la parte decimale di un valore numerico
-	 * @var int
-	 */
-	var $value_numeric_decimal	= null;
-	/**
-	 * il segno di un valore numerico, true per negativo, false per positivo
-	 * @var boolean
-	 */
-	var $value_sign				= false;
-	/**
-	 * La parte "giorno" di una data
-	 * @var int
-	 */
-	var $value_date_day			= null;
-	/**
-	 * La parte "mese" di una data
-	 * @var int
-	 */
-	var $value_date_month		= null;
-	/**
-	 * La parte "anno" di una data
-	 * @var int
-	 */
-	var $value_date_year		= null;
-	/**
-	 * La parte "ora" di un orario
-	 * @var int
-	 */
-	var $value_date_hours		= null;
-	/**
-	 * La parte "minuti" di un orario
-	 * @var int
-	 */
-	var $value_date_minutes		= null;
-	/**
-	 * La parte "secondi" di un orario
-	 * @var int
-	 */
-	var $value_date_seconds		= null;
-	/**
-	 * Se una data è precedente o successiva a mezzogiorno: true se precedente, false se successiva
-	 * @var bool
-	 */
-	var $value_date_meridiem	= false; /* true = ante, false = post */
+                                                NB.: DON'T ALTER THIS!!!!
+                                                This will be altered on single instances, but is NOT safe to alter the default
+                                                due to superclasses automation.
+                                                If you want to alter the default locale of system objects, alter the settings
+                                                in configuration file. */
+    /**
+     * Se dev'essere applicata una trasformazione in modo che non venga mai restituito null come valore.
+     * Se "true", per dati di tipo testuale verrà restituita stringa nulla, per dati di tipo numerico verrà restituito 0
+     * @var string
+     */
+    public $transform_null 		= false;
 
-	/**
-	 * @deprecated
-	 * Se un tipo currency deve mostrare la parte decimale
-	 * @var bool
-	 */
-	var $format_currency_showdecimals = true;
+    /**
+     * @todo
+     * @var string
+     */
+    public $format_string			= null;
+    
+    /**
+     * Il valore testuale del dato
+     * @var string
+     */
+    public $value_text				= null;
+    /**
+     * la parte intera di un valore numerico
+     * @var int
+     */
+    public $value_numeric_integer	= null;
+    /**
+     * la parte decimale di un valore numerico
+     * @var int
+     */
+    public $value_numeric_decimal	= null;
+    /**
+     * il segno di un valore numerico, true per negativo, false per positivo
+     * @var boolean
+     */
+    public $value_sign				= false;
+    /**
+     * La parte "giorno" di una data
+     * @var int
+     */
+    public $value_date_day			= null;
+    /**
+     * La parte "mese" di una data
+     * @var int
+     */
+    public $value_date_month		= null;
+    /**
+     * La parte "anno" di una data
+     * @var int
+     */
+    public $value_date_year		= null;
+    /**
+     * La parte "ora" di un orario
+     * @var int
+     */
+    public $value_date_hours		= null;
+    /**
+     * La parte "minuti" di un orario
+     * @var int
+     */
+    public $value_date_minutes		= null;
+    /**
+     * La parte "secondi" di un orario
+     * @var int
+     */
+    public $value_date_seconds		= null;
+    /**
+     * Se una data è precedente o successiva a mezzogiorno: true se precedente, false se successiva
+     * @var bool
+     */
+    public $value_date_meridiem	= false; /* true = ante, false = post */
+
+    /**
+     * @deprecated
+     * Se un tipo currency deve mostrare la parte decimale
+     * @var bool
+     */
+    public $format_currency_showdecimals = true;
 
 
-    static function getEmpty($data_type, $locale)
+    public static function getEmpty($data_type, $locale)
     {
         if (!$data_type) {
-            Error::dump("You must specify a data type", E_USER_ERROR, null, get_defined_vars());
+            Error::register("You must specify a data type", static::ERROR_BUCKET);
         }
         if (!$locale) {
-            Error::dump("You must specify a locale settings", E_USER_ERROR, null, get_defined_vars());
+            Error::register("You must specify a locale settings", static::ERROR_BUCKET);
         }
         if ($data_type == "Currency" && $locale == "ISO9075") {
-            Error::dump("Data cowardly refuse to manage currency on ISO9075", E_USER_ERROR, null, get_defined_vars());
+            Error::register("Data cowardly refuse to manage currency on ISO9075", static::ERROR_BUCKET);
         }
 
         $dataLang = self::getClass($locale);
@@ -159,8 +160,9 @@ class Data
      * @param null|string $locale
      * @return DataAdapter
      */
-    private static function getAdapter($locale = null) {
-        if(!isset(self::$singleton[$locale])) {
+    private static function getAdapter($locale = null)
+    {
+        if (!isset(self::$singleton[$locale])) {
             self::$singleton[$locale] = new DataAdapter($locale);
         }
 
@@ -172,32 +174,33 @@ class Data
      * @param null|string $locale
      * @return DataAdapter
      */
-    private static function getClass($locale = null) {
+    private static function getClass($locale = null)
+    {
         if ($locale === null) {
             $locale = Locale::getLang("code");
         }
 
         if (!$locale) {
-            Error::dump("You must specify a locale settings", E_USER_ERROR, null, get_defined_vars());
+            Error::register("You must specify a locale settings", static::ERROR_BUCKET);
         }
 
         return self::getAdapter($locale);
     }
-	/**
-	 * crea un oggetto Data
-	 * 
-	 * @param mixed $value il valore originale del dato
-	 * @param string $data_type il tipo del dato
-	 * @param string $locale la localizzazione del dato originale
-	 */
-	function __construct($value = null, $data_type = null, $locale = null)
-	{
-		// embedded types
-		if (is_object($value) && get_class($value) == "DateTime") {
+    /**
+     * crea un oggetto Data
+     *
+     * @param mixed $value il valore originale del dato
+     * @param string $data_type il tipo del dato
+     * @param string $locale la localizzazione del dato originale
+     */
+    public function __construct($value = null, $data_type = null, $locale = null)
+    {
+        // embedded types
+        if (is_object($value) && get_class($value) == "DateTime") {
             if ($data_type === null) {
                 $data_type = "DateTime";
             } elseif ($data_type !== "DateTime" && $data_type !== "Date") {
-                Error::dump("DateTime object with " . $data_type . " type", E_USER_ERROR, $this, get_defined_vars());
+                Error::register("DateTime object with " . $data_type . " type", static::ERROR_BUCKET);
             }
             if ($data_type == "Date") {
                 $value = $value->format("Y-m-d");
@@ -208,96 +211,96 @@ class Data
             $locale = "ISO9075";
         }
 
-		if ($data_type !== null) {
+        if ($data_type !== null) {
             $this->data_type = $data_type;
         }
-		if ($locale !== null) {
+        if ($locale !== null) {
             $this->locale = $locale;
         }
-		if ($value !== null) {
+        if ($value !== null) {
             $this->setValue($value, $data_type, $locale);
         }
-	}
+    }
 
 
 
-	/**
-	 * set all the proper value fields in one shot.
-	 * 
-	 * @param mixed $value il valore da impostare nell'oggetto preesistente
-	 * @param string $data_type il tipo del dato da memorizzare (sovrascriverà quello attuale). Se omesso viene considerato il tipo attuale.
-	 * @param string $locale il locale del dato da impostare. se omesso viene utilizzato quello attuale.
-	 */
-	function setValue($value, $data_type = null, $locale = null)
-	{
-		$this->ori_value = $value;
+    /**
+     * set all the proper value fields in one shot.
+     *
+     * @param mixed $value il valore da impostare nell'oggetto preesistente
+     * @param string $data_type il tipo del dato da memorizzare (sovrascriverà quello attuale). Se omesso viene considerato il tipo attuale.
+     * @param string $locale il locale del dato da impostare. se omesso viene utilizzato quello attuale.
+     */
+    public function setValue($value, $data_type = null, $locale = null)
+    {
+        $this->ori_value = $value;
 
-		// alter the content of the object will reset the data_type
-		if ($data_type === null) {
+        // alter the content of the object will reset the data_type
+        if ($data_type === null) {
             $data_type = $this->data_type;
         } else {
             $this->data_type = $data_type;
         }
-		if ($data_type == "Text") {
-			$this->value_text = $value;
-			return;
-		}
+        if ($data_type == "Text") {
+            $this->value_text = $value;
+            return;
+        }
 
-		$dataLang = $this->getClass($locale);
-		$funcname = "Set" . $data_type;
+        $dataLang = $this->getClass($locale);
+        $funcname = "Set" . $data_type;
 
-		$dataLang->$funcname($this, $value);
-	}
-		
-	function getValue($data_type = null, $locale = null)
-	{
-		if ($this->ori_value === null/* || $this->ori_value === ""*/) {
+        $dataLang->$funcname($this, $value);
+    }
+        
+    public function getValue($data_type = null, $locale = null)
+    {
+        if ($this->ori_value === null/* || $this->ori_value === ""*/) {
             return null;
         }
 
-		// it's possible to use data type different from the one stored (es.: DateTime -> Date or Time)
-		if ($data_type === null) {
+        // it's possible to use data type different from the one stored (es.: DateTime -> Date or Time)
+        if ($data_type === null) {
             $data_type = $this->data_type;
         }
-		if ($data_type == "Text") {
-			return $this->value_text . "";
-		}
-			
-		if ($data_type == "Currency" && $locale == "ISO9075") {
-            Error::dump("Data cowardly refuse to manage currency on ISO9075", E_USER_ERROR, $this, get_defined_vars());
+        if ($data_type == "Text") {
+            return $this->value_text . "";
+        }
+            
+        if ($data_type == "Currency" && $locale == "ISO9075") {
+            Error::register("Data cowardly refuse to manage currency on ISO9075", static::ERROR_BUCKET);
         }
 
         $dataLang = $this->getClass($locale);
         $funcname = "Get" . $data_type;
 
-		return $dataLang->$funcname($this);
-	}
+        return $dataLang->$funcname($this);
+    }
         
-	function getDateTime()
-	{
-		if ($this->data_type === "Date") {
+    public function getDateTime()
+    {
+        if ($this->data_type === "Date") {
             try {
                 return new DateTime(
                     sprintf("%'04u-%'02u-%'02uT00:00:00", $this->value_date_year, $this->value_date_month, $this->value_date_day)
                 );
             } catch (Exception $e) {
-                Error::register($e->getMessage(), "data");
+                Error::register($e->getMessage(), static::ERROR_BUCKET);
             }
-        } else if ($this->data_type === "DateTime") {
+        } elseif ($this->data_type === "DateTime") {
             try {
                 return new DateTime(
                     sprintf("%'04u-%'02u-%'02uT%'02u:%'02u:%'02u", $this->value_date_year, $this->value_date_month, $this->value_date_day, $this->value_date_hours, $this->value_date_minutes, $this->value_date_seconds)
                 );
             } catch (Exception $e) {
-                Error::register($e->getMessage(), "data");
+                Error::register($e->getMessage(), static::ERROR_BUCKET);
             }
         } else {
-            Error::dump("tried to recover DateTime on " . $this->data_type . " type", E_USER_ERROR, $this, get_defined_vars());
+            Error::register("tried to recover DateTime on " . $this->data_type . " type", static::ERROR_BUCKET);
         }
-		return null;
-	}
+        return null;
+    }
         
-    function checkValue($raw_value = null, $data_type = null, $locale = null)
+    public function checkValue($raw_value = null, $data_type = null, $locale = null)
     {
         if ($raw_value === null) {
             $raw_value = $this->ori_value;
@@ -310,12 +313,12 @@ class Data
         if ($data_type === null) {
             $data_type = $this->data_type;
         }
-		if ($data_type == "Text") {
+        if ($data_type == "Text") {
             return true;
         }
             
         if ($data_type == "Currency" && $locale == "ISO9075") {
-            Error::dump("Data cowardly refuse to manage currency on ISO9075", E_USER_ERROR, $this, get_defined_vars());
+            Error::register("Data cowardly refuse to manage currency on ISO9075", static::ERROR_BUCKET);
         }
 
         $dataLang = $this->getClass($locale);
@@ -324,31 +327,31 @@ class Data
         return $dataLang->$funcname($raw_value);
     }
         
-           		
-	function format_value($format_string = null, $data_type = null, $locale = null)
-	{
-		// it's possible to use data type different from the one stored (es.: DateTime -> Date or Time)
-		if ($data_type === null) {
+                   
+    public function format_value($format_string = null, $data_type = null, $locale = null)
+    {
+        // it's possible to use data type different from the one stored (es.: DateTime -> Date or Time)
+        if ($data_type === null) {
             $data_type = $this->data_type;
         }
-		if ($data_type == "Text") {
+        if ($data_type == "Text") {
             return $this->ori_value;
         }
 
-		if ($format_string === null) {
-			if ($this->format_string !== null) {
+        if ($format_string === null) {
+            if ($this->format_string !== null) {
                 $format_string = $this->format_string;
             } else {
                 $dataLang = $this->getClass($locale);
-				$format_string = $dataLang->format($data_type);
-			}
-		}
-			
-		switch ($data_type) {
-			case "Date":
-			case "Time":
-			case "DateTime":
-				$timestamp = mktime(
+                $format_string = $dataLang->format($data_type);
+            }
+        }
+            
+        switch ($data_type) {
+            case "Date":
+            case "Time":
+            case "DateTime":
+                $timestamp = mktime(
                     $this->value_date_hours,
                     $this->value_date_minutes,
                     $this->value_date_seconds,
@@ -356,17 +359,17 @@ class Data
                     $this->value_date_day,
                     $this->value_date_year
                 );
-					
-				return date($format_string, $timestamp);
-			
-			case "Currency":
-			case "Number":
-				break;
+                    
+                return date($format_string, $timestamp);
+            
+            case "Currency":
+            case "Number":
+                break;
 
-			default: // Text
-                Error::dump("Unhandled data_type", E_USER_ERROR, $this, get_defined_vars());
-		}
+            default: // Text
+                Error::register("Unhandled data_type", static::ERROR_BUCKET);
+        }
 
-		return null;
-	}
+        return null;
+    }
 }

@@ -26,12 +26,11 @@
 namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\Constant;
-use phpformsframework\libs\DirStruct;
 use phpformsframework\libs\Error;
-use phpformsframework\libs\Debug;
 
-abstract class FilemanagerAdapter extends DirStruct
+abstract class FilemanagerAdapter
 {
+    const ERROR_BUCKET                                                  = "storage";
     const EXT                                                           = null;
     const SEARCH_IN_KEY                                                 = 1;
     const SEARCH_IN_VALUE                                               = 2;
@@ -41,9 +40,14 @@ abstract class FilemanagerAdapter extends DirStruct
     private $file_path                                                  = null;
     private $var                                                        = null;
 
-    public function __construct($file_path = null, $var = null, $expire = null) {
-        if($file_path)                                                  { $this->setFilePath($file_path); }
-        if($var)                                                        { $this->setVar($var); }
+    public function __construct($file_path = null, $var = null)
+    {
+        if ($file_path) {
+            $this->file_path = $file_path;
+        }
+        if ($var) {
+            $this->setVar($var);
+        }
     }
 
     /**
@@ -52,7 +56,7 @@ abstract class FilemanagerAdapter extends DirStruct
      * @param int $search_flag
      * @return array
      */
-    public abstract function read($file_path = null, $search_keys = null, $search_flag = self::SEARCH_DEFAULT);
+    abstract public function read($file_path = null, $search_keys = null, $search_flag = self::SEARCH_DEFAULT);
 
 
     /**
@@ -61,7 +65,7 @@ abstract class FilemanagerAdapter extends DirStruct
      * @param null|string $file_path
      * @return bool
      */
-    public abstract function write($data, $var = null, $file_path = null);
+    abstract public function write($data, $var = null, $file_path = null);
 
     /**
      * @param array $data
@@ -71,7 +75,8 @@ abstract class FilemanagerAdapter extends DirStruct
      */
     public function update($data, $var = null, $file_path = null)
     {
-        $res                                                            = (is_array($data)
+        $res                                                            = (
+            is_array($data)
                                                                             ? array_replace($this->read(), $data)
                                                                             : $data
                                                                         );
@@ -101,12 +106,16 @@ abstract class FilemanagerAdapter extends DirStruct
     public function save($buffer, $file_path = null, $expire = null)
     {
         $rc                                                             = false;
-        if(!Error::check("filemanager")) {
-            if(!$file_path)                                             { $file_path = $this->getFilePath(); }
-            $rc                                                         = $this->makeDir(dirname($file_path));
+        if (!Error::check(static::ERROR_BUCKET)) {
+            if (!$file_path) {
+                $file_path = $this->getFilePath();
+            }
+            $rc                                                         = $this->isValid($file_path) && $this->makeDir(dirname($file_path));
             if ($rc) {
                 if (Filemanager::fsave($buffer, $file_path)) {
-                    if ($expire !== null)                              { $this->touch($expire, $file_path); }
+                    if ($expire !== null) {
+                        $this->touch($expire, $file_path);
+                    }
                 }
             }
         }
@@ -121,11 +130,15 @@ abstract class FilemanagerAdapter extends DirStruct
      */
     public function saveAppend($buffer, $file_path = null, $expires = null)
     {
-        if(!$file_path)                                                 { $file_path = $this->getFilePath(); }
-        $rc                                                             = $this->makeDir(dirname($file_path));
+        if (!$file_path) {
+            $file_path = $this->getFilePath();
+        }
+        $rc                                                             = $this->isValid($file_path) && $this->makeDir(dirname($file_path));
         if ($rc) {
-            if(Filemanager::fappend($buffer, $file_path)) {
-                if($expires !== null)                                   { $this->touch($expires, $file_path); }
+            if (Filemanager::fappend($buffer, $file_path)) {
+                if ($expires !== null) {
+                    $this->touch($expires, $file_path);
+                }
             }
         }
 
@@ -137,9 +150,12 @@ abstract class FilemanagerAdapter extends DirStruct
      * @param null|string $var
      * @return FilemanagerAdapter
      */
-    public function fetch($file_path, $var = null) {
+    public function fetch($file_path, $var = null)
+    {
         $this->setFilePath($file_path);
-        if($var)                                                        { $this->setVar($var); }
+        if ($var) {
+            $this->setVar($var);
+        }
 
         return $this;
     }
@@ -150,8 +166,12 @@ abstract class FilemanagerAdapter extends DirStruct
     public function makeDir($path = null)
     {
         $rc                                                             = true;
-        if(!$path)                                                      { $path = dirname($this->file_path); }
-        if(!is_dir($path))                                              { $rc = @mkdir($path, 0777, true); }
+        if (!$path) {
+            $path = dirname($this->file_path);
+        }
+        if (!is_dir($path)) {
+            $rc = @mkdir($path, 0777, true);
+        }
 
         return $rc;
     }
@@ -166,7 +186,9 @@ abstract class FilemanagerAdapter extends DirStruct
      */
     public function touch($expires, $file_path = null)
     {
-        if(!$file_path)                                                 { $file_path = $this->getFilePath(); }
+        if (!$file_path) {
+            $file_path = $this->getFilePath();
+        }
         $rc                                                             = @touch($file_path, $expires);
 
         return $rc;
@@ -178,7 +200,9 @@ abstract class FilemanagerAdapter extends DirStruct
      */
     public function isExpired($file_path = null)
     {
-        if(!$file_path)                                                 { $file_path = $this->getFilePath(); }
+        if (!$file_path) {
+            $file_path = $this->getFilePath();
+        }
         return (filemtime($file_path) >= filectime($file_path)
             ? false
             : true
@@ -186,22 +210,34 @@ abstract class FilemanagerAdapter extends DirStruct
     }
 
     /**
+     * @param string $file_path
+     * @return bool
+     */
+    private function isValid($file_path)
+    {
+        return strpos($file_path, Constant::DISK_PATH) === 0;
+    }
+
+    /**
      * @param null|string $file_path
      * @return bool
      */
-    public function exist($file_path = null) {
-        $file_path                                                      = ($file_path
+    public function exist($file_path = null)
+    {
+        $file_path                                                      = (
+            $file_path
                                                                             ? $file_path
                                                                             : $this->getFilePath()
                                                                         );
 
-        return strpos(realpath($file_path), $this::$disk_path) === 0;
+        return $this->isValid(realpath($file_path));
     }
 
     /**
      * @return null|string
      */
-    public function getFilePath() {
+    public function getFilePath()
+    {
         return $this->file_path;
     }
 
@@ -209,32 +245,68 @@ abstract class FilemanagerAdapter extends DirStruct
      * @param string $file_path
      * @param null|string $ext
      */
-    public function setFilePath($file_path, $ext = null) {
-        Error::clear("filemanager");
-        if(!$ext)                                                       { $ext = $this::EXT; }
-
-        $abs_path                                                       = dirname($file_path) . DIRECTORY_SEPARATOR . basename($file_path, "." . $ext) . "." . $ext;
-        if(strpos($file_path, $this::$disk_path) !== 0)                 { $abs_path = $this::$disk_path . $abs_path; }
-
-        if($this->exist($abs_path)) {
-            $this->file_path                                            = $abs_path;
-        } else {
-            Error::register("File not found" . (Constant::DEBUG ? ": " . $abs_path : ""), "filemanager");
+    public function setFilePath($file_path, $ext = null)
+    {
+        Error::clear(static::ERROR_BUCKET);
+        if (!$ext) {
+            $ext = $this::EXT;
         }
+
+        $abs_path                                                   = dirname($file_path) . DIRECTORY_SEPARATOR . basename($file_path, "." . $ext) . "." . $ext;
+        if (strpos($file_path, Constant::DISK_PATH) !== 0) {
+            $abs_path = Constant::DISK_PATH . $abs_path;
+        }
+        $this->file_path                                            = $abs_path;
     }
 
     /**
      * @return null|string
      */
-    public function getVar() {
+    public function getVar()
+    {
         return $this->var;
     }
 
     /**
      * @param string $var
      */
-    public function setVar($var) {
+    public function setVar($var)
+    {
         $this->var                                                      = $var;
+    }
+    protected function setParams($file_path, $var)
+    {
+        if ($file_path) {
+            $this->setFilePath($file_path);
+        }
+        if ($var) {
+            $this->setVar($var);
+        }
+
+        $file_path                                              = $this->getFilePath();
+        $var                                                    = $this->getVar();
+
+        return (object) array(
+            "file_path"     => $file_path,
+            "var"           => $var
+        );
+    }
+    protected function getParams($file_path)
+    {
+        if ($file_path) {
+            $this->setFilePath($file_path);
+        }
+        $file_path                                              = $this->getFilePath();
+        if (!$this->exist($file_path)) {
+            return false;
+        }
+
+        $var                                                    = $this->getVar();
+
+        return (object) array(
+            "file_path"     => $file_path,
+            "var"           => $var
+        );
     }
 
     /**
@@ -243,14 +315,17 @@ abstract class FilemanagerAdapter extends DirStruct
      * @param int $search_flag
      * @return array
      */
-    protected function search($data, $search_keys, $search_flag = self::SEARCH_DEFAULT) {
-        if(!is_array($search_keys))                                     { $search_keys = array($search_keys); }
+    protected function search($data, $search_keys, $search_flag = self::SEARCH_DEFAULT)
+    {
+        if (!is_array($search_keys)) {
+            $search_keys = array($search_keys);
+        }
 
-        foreach($search_keys AS $key) {
-            if($search_flag == $this::SEARCH_IN_KEY || $search_flag == $this::SEARCH_IN_BOTH) {
+        foreach ($search_keys as $key) {
+            if ($search_flag == $this::SEARCH_IN_KEY || $search_flag == $this::SEARCH_IN_BOTH) {
                 unset($data[$key]);
             }
-            if($search_flag == $this::SEARCH_IN_VALUE || $search_flag == $this::SEARCH_IN_BOTH) {
+            if ($search_flag == $this::SEARCH_IN_VALUE || $search_flag == $this::SEARCH_IN_BOTH) {
                 $arrToDel                                               = array_flip(array_keys($data, $key));
                 $data                                                   = array_diff_key($data, $arrToDel);
             }
@@ -265,8 +340,8 @@ abstract class FilemanagerAdapter extends DirStruct
      */
     protected function getResult($result)
     {
-        return (Error::check("filemanager")
-            ? Error::raise("filemanager")
+        return (Error::check(static::ERROR_BUCKET)
+            ? Error::raise(static::ERROR_BUCKET)
             : $result
         );
     }

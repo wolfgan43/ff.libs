@@ -25,28 +25,36 @@
  */
 namespace phpformsframework\libs;
 
-abstract class Mappable {
+abstract class Mappable
+{
+    const ERROR_BUCKET          = "mappable";
     public function __construct($map_name)
     {
         $this->loadMap($map_name);
     }
 
-    private function getPrefix() {
-        $arrClass = explode("\\", static::class);
+    private function getPrefix()
+    {
+        $arrClass               = explode("\\", static::class);
 
         return strtolower(end($arrClass));
     }
 
     protected function loadMap($name)
     {
-        $extensions             = Config::mapping(self::getPrefix(), $name);
-        if(is_array($extensions) && count($extensions)) {
+        $prefix                 = self::getPrefix();
+        Debug::stopWatch("mapping/" . $prefix . "_" . $name);
+
+        $extensions             = Config::mapping($prefix, $name);
+        if (is_array($extensions) && count($extensions)) {
             $has                = get_object_vars($this);
-            foreach ($has as $name => $oldValue) {
-                $this->$name    = isset($extensions[$name]) ? $extensions[$name] : $oldValue;
+            foreach ($has as $key => $oldValue) {
+                $this->$key    = isset($extensions[$key]) ? $extensions[$key] : $oldValue;
             }
         } else {
-            Error::register(basename(str_replace("\\", DIRECTORY_SEPARATOR , get_called_class())) . ": " . $name . " not found", "mappable");
+            Error::register(basename(str_replace("\\", DIRECTORY_SEPARATOR, get_called_class())) . ": " . $name . " not found", static::ERROR_BUCKET);
         }
+
+        Debug::stopWatch("mapping/" . $prefix . "_" . $name);
     }
 }

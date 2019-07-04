@@ -29,60 +29,67 @@ use phpformsframework\libs\tpl\Widget;
 use ReflectionClass;
 use Exception;
 
-abstract class App extends DirStruct  {
+abstract class App
+{
     const NAME_SPACE                                                = 'phpformsframework\\libs\\';
     const ERROR_BUCKET                                              = 'exception';
 
     protected static $script_engine                                 = null;
 
-    public static function env($name = null, $value = null) {
+    public static function env($name = null, $value = null)
+    {
         return Env::get($name, $value);
     }
 
-    public static function isXHR() {
-        return Request::isAjax();
-    }
-
-    protected static function hook($name, $func, $priority = null) {
+    protected static function hook($name, $func, $priority = null)
+    {
         Hook::register($name, $func, $priority);
     }
-    protected static function doHook($name, &$ref = null, $params = null) {
+    protected static function doHook($name, &$ref = null, $params = null)
+    {
         return Hook::handle($name, $ref, $params);
     }
 
-    public static function caller($class_name, $method, $params) {
+    public static function caller($class_name, $method, $params)
+    {
         $output                                                     = null;
-        if($class_name) {
+        if ($class_name) {
             try {
                 self::setRunner($class_name);
 
-                if($method && !is_array($method)) {
+                if ($method && !is_array($method)) {
                     $obj                                            = new $class_name();
                     $output                                         = call_user_func_array(array(new $obj, $method), $params);
                 }
             } catch (Exception $exception) {
                 Error::register($exception->getMessage(), static::ERROR_BUCKET);
             }
-        } else if(is_callable($method)) {
+        } elseif (is_callable($method)) {
             $output                                                 = call_user_func_array($method, $params);
         }
         return $output;
     }
-    public static function setRunner($what) {
+    public static function setRunner($what)
+    {
         self::$script_engine                                        = self::getClassName($what);
     }
-    public static function isRunnedAs($what) {
-        if(self::$script_engine) {
+    public static function isRunnedAs($what)
+    {
+        if (self::$script_engine) {
             $res                                                    = self::$script_engine == ucfirst($what);
         } else {
-            $path                                                   = self::getDiskPath($what, true);
-            $res                                                    = self::getPathInfo($path);
+            $path                                                   = Dir::getDiskPath($what, true);
+            $res                                                    = Dir::getPathInfo($path);
         }
         return $res;
     }
-    protected static function getClassName($class_name = null) {
-        $res = null;
+    protected static function getClassName($class_name = null)
+    {
+        $res                                                        = null;
         try {
+            if (!$class_name) {
+                $class_name = get_called_class();
+            }
             $reflector                                              = new ReflectionClass($class_name);
             $res                                                    = $reflector->getShortName();
         } catch (Exception $exception) {
@@ -90,7 +97,8 @@ abstract class App extends DirStruct  {
         }
         return $res;
     }
-    protected static function getClassPath($class_name = null) {
+    protected static function getClassPath($class_name = null)
+    {
         $res = null;
         try {
             $reflector = new ReflectionClass(($class_name ? $class_name : get_called_class()));
@@ -107,7 +115,8 @@ abstract class App extends DirStruct  {
      * @param $method_name
      * @return bool|null
      */
-    protected static function isStatic($class_name, $method_name) {
+    protected static function isStatic($class_name, $method_name)
+    {
         $res = null;
         try {
             $reflector = new ReflectionClass($class_name);
@@ -118,24 +127,27 @@ abstract class App extends DirStruct  {
         }
         return $res;
     }
-    protected static function getSchema($bucket) {
+    protected static function getSchema($bucket)
+    {
         return Config::getSchema($bucket);
     }
 
     /**
      * @return App
      */
-    private static function getCalledClass() {
+    private static function getCalledClass()
+    {
         return get_called_class();
     }
-    public static function widget($name, $config = null, $return = null) {
+    public static function widget($name, $config = null, $return = null)
+    {
         $schema                         = self::getSchema("widgets");
         $class_name                     = self::getCalledClass();
-        $user_path                      = self::getPathInfo();
+        $user_path                      = Dir::getPathInfo();
 
-        if(isset($schema[$user_path]) && is_array($schema[$user_path])) {
+        if (isset($schema[$user_path]) && is_array($schema[$user_path])) {
             $config                     = array_replace_recursive($config, $schema[$user_path]);
-        } elseif(isset($schema[$name]) && is_array($schema[$name])) {
+        } elseif (isset($schema[$name]) && is_array($schema[$name])) {
             $config                     = array_replace_recursive($config, $schema[$name]);
         }
 
@@ -145,12 +157,8 @@ abstract class App extends DirStruct  {
             ->setConfig($config)
             ->process($return);
     }
-    public static function page($name, $config = null) {
+    public static function page($name, $config = null)
+    {
         return self::widget($name, $config, "page");
     }
 }
-
-
-
-
-

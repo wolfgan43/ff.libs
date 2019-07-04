@@ -29,14 +29,13 @@ namespace phpformsframework\libs\storage;
 use phpformsframework\libs\Config;
 use phpformsframework\libs\Configurable;
 use phpformsframework\libs\Constant;
-use phpformsframework\libs\DirStruct;
+use phpformsframework\libs\Dir;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\Response;
 use phpformsframework\libs\storage\drivers\ImageCanvas;
 use phpformsframework\libs\storage\drivers\ImageThumb;
-
-
+use phpformsframework\libs\tpl\Resource;
 
 /**
  * Immagine Originale
@@ -66,7 +65,9 @@ use phpformsframework\libs\storage\drivers\ImageThumb;
  * @example Da impostazioni DB (showfiles_modes): http://xoduslab.com/test/demo/domains/skeleton/static/thumb/mod_article/32/img/tiroide-malfunzionamento-esami.jpg
  * @example Cambiando il mime dell'immagine: http://xoduslab.com/test/demo/domains/skeleton/static/thumb-jpg/mod_article/32/img/tiroide-malfunzionamento-esami.png
  */
-class Media extends DirStruct implements Configurable {
+class Media implements Configurable
+{
+    const ERROR_BUCKET                                              = "storage";
     const STRICT                                                    = false;
     const RENDER_MEDIA_PATH                                         = "/media";
     const RENDER_ASSETS_PATH                                        = "/assets";
@@ -74,9 +75,6 @@ class Media extends DirStruct implements Configurable {
     const RENDER_STYLE_PATH                                         = "/css";
 
     const MODIFY_PATH                                               = Constant::SITE_PATH . "/restricted/media/modify";
-
-    const ASSET_DISK_PATH                                           = Constant::LIBS_FF_DISK_PATH . DIRECTORY_SEPARATOR . "assets";
-    const ICON_DISK_PATH                                            = Constant::LIBS_FF_DISK_PATH . DIRECTORY_SEPARATOR . "assets" . DIRECTORY_SEPARATOR . "images";
 
     const MIMETYPE                                                  = array(
                                                                         "3dm" => "x-world/x-3dmf"
@@ -581,11 +579,12 @@ class Media extends DirStruct implements Configurable {
         return self::$singleton;
     }
 
-    public function get($pathinfo) {
+    public function get($pathinfo)
+    {
         $this->setPathInfo($pathinfo);
         $res = $this->process();
 
-        if(Error::check("storage")) {
+        if (Error::check(static::ERROR_BUCKET)) {
             Response::code(404);
             header('Content-Type: image/png');
             echo base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII=');
@@ -596,7 +595,8 @@ class Media extends DirStruct implements Configurable {
         }
     }
 
-    public static function getIcon($name, $mode = null) {
+    public static function getIcon($name, $mode = null)
+    {
         $icon = new Media(false);
         $icon->setNoImg($mode, $name);
         $icon->renderNoImg($icon->processFinalFile(true));
@@ -605,59 +605,63 @@ class Media extends DirStruct implements Configurable {
         //da fare con la gestione delle iconde di ffImafge
     }
 
-    public static function getInfo($file) {
+    public static function getInfo($file)
+    {
         return self::getModeByFile($file);
     }
 
-    public static function getUrl($file, $mode = null, $key = null) {
-        if($mode === null && $key === null)                         { $key = "url"; }
+    public static function getUrl($file, $mode = null, $key = null)
+    {
+        if ($mode === null && $key === null) {
+            $key = "url";
+        }
         $query                                                      = null;
-        $file_relative                                              = str_replace(array(
-                                                                            self::getDiskPath("uploads") . DIRECTORY_SEPARATOR
-                                                                            , self::getDiskPath("uploads", true) . DIRECTORY_SEPARATOR
-                                                                            , self::getDiskPath("cache-assets", true) . DIRECTORY_SEPARATOR
-                                                                            , self::getDiskPath("cache-thumbs", true) . DIRECTORY_SEPARATOR
-                                                                            , self::$disk_path . DIRECTORY_SEPARATOR
-                                                                        )
-                                                                        , DIRECTORY_SEPARATOR
-                                                                        , $file
+        $file_relative                                              = str_replace(
+            array(
+                                                                            Constant::UPLOAD_DISK_PATH . DIRECTORY_SEPARATOR
+                                                                            , Constant::UPLOAD_PATH. DIRECTORY_SEPARATOR
+                                                                            , Dir::getDiskPath("cache/assets", true) . DIRECTORY_SEPARATOR
+                                                                            , Dir::getDiskPath("cache/.thumbs", true) . DIRECTORY_SEPARATOR
+                                                                            , Constant::DISK_PATH . DIRECTORY_SEPARATOR
+                                                                        ),
+            DIRECTORY_SEPARATOR,
+            $file
                                                                     );
-
         $arrFile                                                    = pathinfo($file_relative);
-        if(substr($arrFile["dirname"], 0, 1) !== DIRECTORY_SEPARATOR) {
+        if (substr($arrFile["dirname"], 0, 1) !== DIRECTORY_SEPARATOR) {
             $arrFile["dirname"]                                     = DIRECTORY_SEPARATOR;
         }
-        if(!isset($arrFile["extension"])) {
+        if (!isset($arrFile["extension"])) {
             $arrFile["extension"]                                   = null;
         }
         $libs_path                                                  = Constant::LIBS_PATH;
-        switch($arrFile["extension"]) {
-            case "svg";
+        switch ($arrFile["extension"]) {
+            case "svg":
                 return self::image2base64($file, $arrFile["extension"]);
                 break;
             case "js":
                 $showfiles                                          = Constant::SITE_PATH . static::RENDER_ASSETS_PATH . static::RENDER_SCRIPT_PATH;
-                if(strpos($arrFile["dirname"], $libs_path) === 0) {
-                    $arrFile["filename"]                            = str_replace(DIRECTORY_SEPARATOR, "_", ltrim(substr($arrFile["dirname"] , strlen($libs_path)), DIRECTORY_SEPARATOR));
+                if (strpos($arrFile["dirname"], $libs_path) === 0) {
+                    $arrFile["filename"]                            = str_replace(DIRECTORY_SEPARATOR, "_", ltrim(substr($arrFile["dirname"], strlen($libs_path)), DIRECTORY_SEPARATOR));
                     $arrFile["dirname"]                             = DIRECTORY_SEPARATOR;
                     $query                                          = "?" . filemtime($file); //todo:: genera redirect con Kernel::urlVerify
                 }
                 break;
             case "css":
                 $showfiles                                          = Constant::SITE_PATH . static::RENDER_ASSETS_PATH . static::RENDER_STYLE_PATH;
-                if(strpos($arrFile["dirname"], $libs_path) === 0) {
-                    $arrFile["filename"]                            = str_replace(DIRECTORY_SEPARATOR, "_", ltrim(substr($arrFile["dirname"] , strlen($libs_path)), DIRECTORY_SEPARATOR));
+                if (strpos($arrFile["dirname"], $libs_path) === 0) {
+                    $arrFile["filename"]                            = str_replace(DIRECTORY_SEPARATOR, "_", ltrim(substr($arrFile["dirname"], strlen($libs_path)), DIRECTORY_SEPARATOR));
                     $arrFile["dirname"]                             = DIRECTORY_SEPARATOR;
                     $query                                          = "?" . filemtime($file); //todo:: genera redirect con Kernel::urlVerify
                 }
                 break;
-            case "jpg";
-            case "jpeg";
-            case "png";
-            case "gif";
+            case "jpg":
+            case "jpeg":
+            case "png":
+            case "gif":
             default:
-                if(strpos($arrFile["dirname"], $libs_path) === 0 && strpos($arrFile["dirname"], static::RENDER_ASSETS_PATH) !== false) {
-                    $arrFile["dirname"]                             = substr($arrFile["dirname"] , strpos($arrFile["dirname"] , static::RENDER_ASSETS_PATH));
+                if (strpos($arrFile["dirname"], $libs_path) === 0 && strpos($arrFile["dirname"], static::RENDER_ASSETS_PATH) !== false) {
+                    $arrFile["dirname"]                             = substr($arrFile["dirname"], strpos($arrFile["dirname"], static::RENDER_ASSETS_PATH));
                     $showfiles                                      = Constant::SITE_PATH;
                 } else {
                     $showfiles                                      = Constant::SITE_PATH . static::RENDER_MEDIA_PATH;
@@ -668,8 +672,9 @@ class Media extends DirStruct implements Configurable {
         $url                                                        = $dirfilename . ($arrFile["filename"] && $mode ? "-" : "") . $mode . ($arrFile["extension"] ? "." . $arrFile["extension"] : "") . $query;
         $pathinfo                                                   = array(
                                                                         "url"                   => $url
-                                                                        , "web_url"             => (strpos($url, "://") === false
-                                                                                                    ? Request::webhost() . $url
+                                                                        , "web_url"             => (
+                                                                            strpos($url, "://") === false
+                                                                                                    ? Request::protocol_host() . $url
                                                                                                     : $url
                                                                                                 )
                                                                         , "extension"           => $arrFile["extension"]
@@ -681,11 +686,11 @@ class Media extends DirStruct implements Configurable {
             ? $pathinfo[$key]
             : $pathinfo
         );
-
     }
 
 
-    private static function image2base64($path, $ext = "svg") {
+    private static function image2base64($path, $ext = "svg")
+    {
         $data = file_get_contents($path);
 
         return 'data:image/' . $ext . ';base64,' . base64_encode($data);
@@ -695,28 +700,40 @@ class Media extends DirStruct implements Configurable {
      * @param string|array $file
      * @param null|array $params
      */
-    public static function sendHeaders($file, $params = null) {
-        if(is_array($file) && $params === null) {
+    public static function sendHeaders($file, $params = null)
+    {
+        if (is_array($file) && $params === null) {
             $params                                                 = $file;
             $file                                                   = null;
         }
 
-        if($file) {
-            if(!isset($params["mimetype"])) { $params["mimetype"]   = self::getMimeTypeByFilename($file); }
-            if(!isset($params["filename"])) { $params["filename"]   = basename($file); }
-            if(!isset($params["size"]))     { $params["size"]       = filesize($file); }
-            if(!isset($params["etag"]))     { $params["etag"]       = md5($file . filemtime($file)); }
-            if(!isset($params["mtime"]))    { $params["mtime"]      = filemtime($file); }
+        if ($file) {
+            if (!isset($params["mimetype"])) {
+                $params["mimetype"]   = self::getMimeTypeByFilename($file);
+            }
+            if (!isset($params["filename"])) {
+                $params["filename"]   = basename($file);
+            }
+            if (!isset($params["size"])) {
+                $params["size"]       = filesize($file);
+            }
+            if (!isset($params["etag"])) {
+                $params["etag"]       = md5($file . filemtime($file));
+            }
+            if (!isset($params["mtime"])) {
+                $params["mtime"]      = filemtime($file);
+            }
         }
 
         Response::sendHeaders($params);
     }
-    public static function getFileOptimized($filename) {
-        if(strpos($filename, ".min.") === false) {
+    public static function getFileOptimized($filename)
+    {
+        if (strpos($filename, ".min.") === false) {
             $arrFilename                                            = pathinfo($filename);
             $filename_min                                           = $arrFilename["dirname"] . DIRECTORY_SEPARATOR . $arrFilename["filename"] . ".min." . $arrFilename["extension"];
-            if(!is_file($filename_min) || filemtime($filename) > filemtime($filename_min)) {
-                if(!self::optimize($filename, array("wait" => true, "filename_min" => $filename_min))) {
+            if (!is_file($filename_min) || filemtime($filename) > filemtime($filename_min)) {
+                if (!self::optimize($filename, array("wait" => true, "filename_min" => $filename_min))) {
                     $filename_min                                   = $filename;
                 }
             }
@@ -726,10 +743,14 @@ class Media extends DirStruct implements Configurable {
 
         return $filename_min;
     }
-    public static function optimize($filename, $params = null) { //todo: da spostare in optimizer
-        if(!Constant::OPTIMIZE_IMAGE)                              { return null; }
+    public static function optimize($filename, $params = null)
+    { //todo: da spostare in optimizer
+        if (!Constant::OPTIMIZE_IMAGE) {
+            return null;
+        }
 
-        $filename_min                                               = ($params["filename_min"]
+        $filename_min                                               = (
+            $params["filename_min"]
                                                                         ? $params["filename_min"]
                                                                         : $filename
                                                                     );
@@ -793,17 +814,18 @@ class Media extends DirStruct implements Configurable {
                                                                                                         )
                                                                     );
         $mime                                                       = self::getMimeTypeByFilename($filename, $params["type"]);
-        if(isset($optiBin[$mime])) {
+        if (isset($optiBin[$mime])) {
             $cmd                                                    = null;
             $bins                                                   = $optiBin[$mime];
-            foreach($bins AS $optim) {
-                if(self::commandExist($optim["bin"])) {
+            foreach ($bins as $optim) {
+                if (self::commandExist($optim["bin"])) {
                     $cmd                                            = $optim["cmd"];
                     break;
                 }
             }
-            if($cmd) { //todo: da testare se funziona veramente
-                $nowait_cmd                                         = ($params["wait"]
+            if ($cmd) { //todo: da testare se funziona veramente
+                $nowait_cmd                                         = (
+                    $params["wait"]
                                                                         ? ''
                                                                         : ' > /dev/null 2>/dev/null & '
                                                                     );
@@ -820,11 +842,10 @@ class Media extends DirStruct implements Configurable {
         return null;
     }
     public static function compress($data, $output_result = true, $method = null, $level = 9)
-	{
-		if ($method === null)
-		{
-			$encodings = explode(",", $_SERVER["HTTP_ACCEPT_ENCODING"]);
-			switch ($encodings[0]) {
+    {
+        if ($method === null) {
+            $encodings = explode(",", $_SERVER["HTTP_ACCEPT_ENCODING"]);
+            switch ($encodings[0]) {
                 case "gzip":
                     $method = "gzip";
                     break;
@@ -833,58 +854,49 @@ class Media extends DirStruct implements Configurable {
                     break;
                 default:
             }
-		}
+        }
 
-		if ($method == "deflate")
-		{
-			if ($output_result)
-			{
-				header("Content-Encoding: deflate");
-				echo gzdeflate($data, $level);
-				/*gzcompress($this->tpl[0]->rpparse("main", false), 9);
-				gzencode($this->tpl[0]->rpparse("main", false), 9, FORCE_DEFLATE);
-				gzencode($this->tpl[0]->rpparse("main", false), 9, FORCE_GZIP);*/
-			}
-			else
-				return array(
-					"method" => "deflate"
-					, "data" => gzdeflate($data, $level)
-				);
-		}
-		elseif ($method == "gzip")
-		{
-			if ($output_result)
-			{
-				header("Content-Encoding: gzip");
-				echo gzencode($data, $level);
-			}
-			else
-				return array(
-					"method" => "gzip"
-					, "data" => gzencode($data, $level)
-				);
-		}
-		else
-		{
-			if ($output_result)
-				echo $data;
-			else
-				return array(
-					"method" => null
-					, "data" => $data
-				);
-		}
+        if ($method == "deflate") {
+            if ($output_result) {
+                header("Content-Encoding: deflate");
+                echo gzdeflate($data, $level);
+            } else {
+                return array(
+                    "method"    => "deflate",
+                    "data"      => gzdeflate($data, $level)
+                );
+            }
+        } elseif ($method == "gzip") {
+            if ($output_result) {
+                header("Content-Encoding: gzip");
+                echo gzencode($data, $level);
+            } else {
+                return array(
+                    "method" => "gzip",
+                    "data" => gzencode($data, $level)
+                );
+            }
+        } else {
+            if ($output_result) {
+                echo $data;
+            } else {
+                return array(
+                    "method" => null
+                    , "data" => $data
+                );
+            }
+        }
 
-		return null;
-	}
+        return null;
+    }
 
-	public static function loadSchema()
+    public static function loadSchema()
     {
         $config                                                     = Config::rawData("media", true, "thumb");
-        if(is_array($config) && count($config)) {
+        if (is_array($config) && count($config)) {
             $schema                                                 = array();
-            foreach($config AS $thumb) {
-                $attr                                               = self::getXmlAttr($thumb);
+            foreach ($config as $thumb) {
+                $attr                                               = Dir::getXmlAttr($thumb);
                 $key                                                = $attr["name"];
                 unset($attr["name"]);
                 $schema[$key]                                       = $attr;
@@ -898,10 +910,13 @@ class Media extends DirStruct implements Configurable {
      * @param null $mode
      * @return mixed
      */
-    public static function getModes($mode = null) {
+    public static function getModes($mode = null)
+    {
         $loaded_modes                                               = Config::getSchema("media");
 
-        if(!isset($loaded_modes[$mode]))                            { $loaded_modes[$mode] = null; }
+        if (!isset($loaded_modes[$mode])) {
+            $loaded_modes[$mode] = null;
+        }
 
         return ($mode
             ? $loaded_modes[$mode]
@@ -909,42 +924,29 @@ class Media extends DirStruct implements Configurable {
         );
     }
 
-    public static function getMimeTypeByFilename($filename, $default = "text/plain") {
+    public static function getMimeTypeByFilename($filename, $default = "text/plain")
+    {
         $ext                                                        = pathinfo($filename, PATHINFO_EXTENSION);
 
         return self::getMimeTypeByExtension($ext, $default);
     }
 
-    public static function getMimeTypeByExtension($ext, $default = "text/plain") {
+    public static function getMimeTypeByExtension($ext, $default = "text/plain")
+    {
         $mime                                                       = $default;
-        if($ext) {
+        if ($ext) {
             $ext                                                    = strtolower($ext);
             $mime_type                                              = static::MIMETYPE;
-            if(isset($mime_type[$ext])) {
+            if (isset($mime_type[$ext])) {
                 $mime                                               = $mime_type[$ext];
             }
         }
         return $mime;
     }
-/*
-    public static function getExtensionByMimeType($mime, $default = null) {
-        $ext                                                       = array_search(strtolower($mime), static::MIMETYPE);
 
-        return ($ext
-            ? $ext
-            : $default
-        );
-    }*/
-
-    public static function getIconPath($ext = null, $abs = false) {
-        //deve renderizzare l'icona
-        //da fare con la gestione delle iconde di ffImafge
-
-
-
-        if($ext === false) {
-            $res                                                    = static::ICON_DISK_PATH;
-        } elseif($ext) {
+    public static function getIconPath($ext = null, $abs = false)
+    {
+        if ($ext) {
             $arrExt                                                 = explode(".", $ext);
             $filename                                               = $arrExt[0];
 
@@ -953,59 +955,64 @@ class Media extends DirStruct implements Configurable {
                 case "jpg":
                 case "jpeg":
                 case "gif":
-                    $basename                                       = "noimg.png";
+                    $filename                                       = "noimg";
                     break;
                 case "zip":
                 case "gz":
                 case "rar":
                 case "bz2":
-                    $basename                                       = "archive.png";
+                    $filename                                       = "archive";
                     break;
                 case "mp3":
                 case "wav":
-                    $basename                                       = "audio.png";
+                    $filename                                       = "audio";
                     break;
                 case "avi":
                 case "mpg":
-                    $basename                                       = "video.png";
+                    $filename                                       = "video";
                     break;
                 case "spacer":
-                    $basename                                       = "spacer.gif";
+                    $filename                                       = "spacer";
                     break;
                 default:
-                    $basename                                       = $filename . ".png";
-
             }
 
-            $icon_basepath                                         = self::getDiskPath("icons");
-            $abs_path                                               = ($icon_basepath && is_file($icon_basepath . DIRECTORY_SEPARATOR . $basename)
-                                                                        ? $icon_basepath
-                                                                        : static::ICON_DISK_PATH
-                                                                    );
-
-            if(!is_file($abs_path . DIRECTORY_SEPARATOR . $basename))       { $basename = "error.png"; }
-
-            if($abs === false) {
+            $abs_path                                               = Resource::get($filename, "images");
+            if (!$abs_path) {
+                $abs_path = Resource::get("error", "images");
+            }
+            if (!$abs_path) {
+                Error::register("Icon " . $filename . " not found", static::ERROR_BUCKET);
+            }
+            $basename                                               = basename($abs_path);
+            if ($abs === false) {
                 $res                                                = Constant::SITE_PATH . static::RENDER_ASSETS_PATH . DIRECTORY_SEPARATOR . $basename;
-            } elseif($abs === true) {
-                $res                                                = $abs_path . DIRECTORY_SEPARATOR . $basename;
+            } elseif ($abs === true) {
+                $res                                                = $abs_path;
             } else {
                 $res                                                = $abs . $basename;
             }
         } else {
-            $res                                                    = ($abs
-                                                                        ? static::ICON_DISK_PATH
-                                                                        : Constant::SITE_PATH . static::RENDER_ASSETS_PATH
-                                                                    ) . DIRECTORY_SEPARATOR . "unknown.png";
+            $abs_path = Resource::get("unknown", "images");
+            if (!$abs_path) {
+                Error::register("Icon unknown not found", static::ERROR_BUCKET);
+            }
+            $res                                                    = (
+                $abs
+                                                                        ? $abs_path
+                                                                        : Constant::SITE_PATH . static::RENDER_ASSETS_PATH . DIRECTORY_SEPARATOR . basename($abs_path)
+                                                                    );
         }
 
         return $res;
     }
 
-    private static function getModeByNoImg($basename) {
+    private static function getModeByNoImg($basename)
+    {
         $mode                                                       = null;
         $source                                                     = explode(".", strrev($basename), 2);
-        $filename                                                   = strrev(isset($source[1])
+        $filename                                                   = strrev(
+            isset($source[1])
                                                                         ? $source[1]
                                                                         : $source[0]
                                                                     );
@@ -1013,49 +1020,48 @@ class Media extends DirStruct implements Configurable {
 
         $offset                                                     = count($arrFilename) - 1;
         $modes                                                      = self::getModes();
-        foreach ($modes AS $key => $value) {
-            if(strpos($basename, ($offset ? "-" : "") . $key . "."))  {
+        foreach ($modes as $key => $value) {
+            if (strpos($basename, ($offset ? "-" : "") . $key . ".")) {
                 $mode                                           = $key;
                 break;
             }
         }
-        if(!$mode) {
-            if($offset >= 2 && is_numeric($arrFilename[$offset]) && is_numeric($arrFilename[$offset - 1])) {
+        if (!$mode) {
+            if ($offset >= 2 && is_numeric($arrFilename[$offset]) && is_numeric($arrFilename[$offset - 1])) {
                 $mode                                               = $arrFilename[$offset - 1] . "-" . $arrFilename[$offset];
-            } else if(/*$offset >= 1 &&*/ is_numeric(str_replace("x", "", $arrFilename[$offset])) && substr_count($arrFilename[$offset], "x") == 1) {
-                $mode                                               = $arrFilename[$offset];
-            } else if(/*$offset >= 1 &&*/ is_numeric(str_replace("q", "", $arrFilename[$offset])) && substr_count($arrFilename[$offset], "q") == 1) {
-                $mode                                               = $arrFilename[$offset];
-            } else if(/*$offset >= 1 &&*/ is_numeric(str_replace("w", "", $arrFilename[$offset])) && substr_count($arrFilename[$offset], "w") == 1) {
-                $mode                                               = $arrFilename[$offset];
-            } else if(/*$offset >= 1 &&*/ is_numeric(str_replace("e", "", $arrFilename[$offset])) && substr_count($arrFilename[$offset], "e") == 1) {
-                $mode                                               = $arrFilename[$offset];
-            } else if(/*$offset >= 1 &&*/ is_numeric(str_replace("a", "", $arrFilename[$offset])) && substr_count($arrFilename[$offset], "a") == 1) {
-                $mode                                               = $arrFilename[$offset];
-            } else if(/*$offset >= 1 &&*/ is_numeric(str_replace("s", "", $arrFilename[$offset])) && substr_count($arrFilename[$offset], "s") == 1) {
-                $mode                                               = $arrFilename[$offset];
-            } else if(/*$offset >= 1 &&*/ is_numeric(str_replace("d", "", $arrFilename[$offset])) && substr_count($arrFilename[$offset], "d") == 1) {
-                $mode                                               = $arrFilename[$offset];
-            } else if(/*$offset >= 1 &&*/ is_numeric(str_replace("z", "", $arrFilename[$offset])) && substr_count($arrFilename[$offset], "z") == 1) {
-                $mode                                               = $arrFilename[$offset];
-            } else if(/*$offset >= 1 &&*/ is_numeric(str_replace("c", "", $arrFilename[$offset])) && substr_count($arrFilename[$offset], "c") == 1) {
+            } elseif (self::getModeAuto($arrFilename[$offset], "x")
+                || self::getModeAuto($arrFilename[$offset], "q")
+                || self::getModeAuto($arrFilename[$offset], "w")
+                || self::getModeAuto($arrFilename[$offset], "e")
+                || self::getModeAuto($arrFilename[$offset], "a")
+                || self::getModeAuto($arrFilename[$offset], "s")
+                || self::getModeAuto($arrFilename[$offset], "d")
+                || self::getModeAuto($arrFilename[$offset], "z")
+                || self::getModeAuto($arrFilename[$offset], "c")
+            ) {
                 $mode                                               = $arrFilename[$offset];
             }
         }
 
-        if($filename == $mode) {
+        if ($filename == $mode) {
             $mode = null;
         }
 
         return $mode;
     }
 
-    private static function getModeByFile($file, $key = null) {
+    private static function getModeAuto($value, $char)
+    {
+        return is_numeric(str_replace($char, "", $value)) && substr_count($value, $char) == 1;
+    }
+
+    private static function getModeByFile($file, $key = null)
+    {
         $res                                                        = null;
         $source                                                     = pathinfo($file);
 
         $mode                                                       = self::getModeByNoImg($source["basename"]);
-        if($mode) {
+        if ($mode) {
             $res["mode"]                                            = $mode;
             $res["filename"]                                        = str_replace("-". $mode . "." . $source["extension"], "", $source["basename"]);
             $res["basename"]                                        = $res["filename"] . "." . $source["extension"];
@@ -1067,7 +1073,8 @@ class Media extends DirStruct implements Configurable {
         );
     }
 
-    private static function commandExist($cmd) {
+    private static function commandExist($cmd)
+    {
         $return                                                     = shell_exec(sprintf("which %s", escapeshellarg($cmd)));
         return !empty($return);
     }
@@ -1077,12 +1084,13 @@ class Media extends DirStruct implements Configurable {
         $this->setPathInfo($pathinfo);
     }
 
-    public function resize($mode) {
-
+    public function resize($mode)
+    {
     }
 
-    public function process($mode = null) {
-        if(isset($this->pathinfo["extension"])) {
+    public function process($mode = null)
+    {
+        if (isset($this->pathinfo["extension"])) {
             Response::setContentType($this->pathinfo["extension"]);
             switch ($this->pathinfo["extension"]) {
                 case "js":
@@ -1101,21 +1109,21 @@ class Media extends DirStruct implements Configurable {
         } else {
             $final_file                                             = $this->processFinalFile($this->setNoImg($this->mode));
 
-            if($final_file && !Error::check("storage")) {
+            if ($final_file && !Error::check(static::ERROR_BUCKET)) {
                 $this->renderNoImg($final_file);
             }
 
             return null;
         }
-
     }
 
-    public function setPathInfo($path = null) {
-        if($path) {
-            if(strpos($path, $this::RENDER_MEDIA_PATH) === 0) {
+    public function setPathInfo($path = null)
+    {
+        if ($path) {
+            if (strpos($path, $this::RENDER_MEDIA_PATH) === 0) {
                 $path                                               = substr($path, strlen($this::RENDER_MEDIA_PATH));
                 $render                                             = $this::RENDER_MEDIA_PATH;
-            } elseif(strpos($path, $this::RENDER_ASSETS_PATH) === 0) {
+            } elseif (strpos($path, $this::RENDER_ASSETS_PATH) === 0) {
                 $path                                               = substr($path, strlen($this::RENDER_ASSETS_PATH));
                 $render                                             = $this::RENDER_ASSETS_PATH;
             } else {
@@ -1128,35 +1136,37 @@ class Media extends DirStruct implements Configurable {
             $this->pathinfo["orig"]                                 = $path;
         }
     }
-    private function staticProcess($source_file) {
+    private function staticProcess($source_file)
+    {
         $res                                                        = null;
-        if(is_file(Constant::LIBS_DISK_PATH . $source_file)) {
+        if (is_file(Constant::LIBS_DISK_PATH . $source_file)) {
             $cache_final_file                                       = $this->basepathCache() . $this->pathinfo["orig"];
             Filemanager::makeDir(dirname($cache_final_file), 0775, $this->basepathCache());
-            if(is_readable(Constant::LIBS_DISK_PATH . $source_file) && is_writable(dirname($cache_final_file)) && copy(Constant::LIBS_DISK_PATH . $source_file, $cache_final_file)) {
+            if (is_readable(Constant::LIBS_DISK_PATH . $source_file) && is_writable(dirname($cache_final_file)) && copy(Constant::LIBS_DISK_PATH . $source_file, $cache_final_file)) {
                 $res = file_get_contents($cache_final_file);
             } else {
-                Error::register("Link Failed. Check write permission on: " . $source_file . " and if directory exist and have write permission on " . $this->pathinfo["orig"]);
+                Error::register("Link Failed. Check write permission on: " . $source_file . " and if directory exist and have write permission on " . $this->pathinfo["orig"], static::ERROR_BUCKET);
             }
         }
         return $res;
     }
-    private function renderProcess($mode = null) {
+    private function renderProcess($mode = null)
+    {
         $this->clear();
         $this->waterMark();
         $this->findSource($mode);
 
         $status                                                     = null;
         $final_file                                                 = null;
-        if($this->filesource && $this->basepath && is_file($this->basepath . $this->filesource)) {
+        if ($this->filesource && $this->basepath && is_file($this->basepath . $this->filesource)) {
             if ($this->mode) {
                 $final_file                                         = $this->processFinalFile();
             } else {
                 $cache_basepath                                    = $this->basepathCache();
-                if($cache_basepath && !is_file($cache_basepath . $this->pathinfo["orig"])) {
+                if ($cache_basepath && !is_file($cache_basepath . $this->pathinfo["orig"])) {
                     Filemanager::makeDir($this->pathinfo["dirname"], 0775, $cache_basepath);
-                    if(!link($this->basepath . $this->filesource, $cache_basepath . $this->pathinfo["orig"])) {
-                        Error::register("Link Failed. Check write permission on: " . $this->basepath . $this->filesource . " and if directory exist and have write permission on " . $cache_basepath . $this->pathinfo["orig"]);
+                    if (!link($this->basepath . $this->filesource, $cache_basepath . $this->pathinfo["orig"])) {
+                        Error::register("Link Failed. Check write permission on: " . $this->basepath . $this->filesource . " and if directory exist and have write permission on " . $cache_basepath . $this->pathinfo["orig"], static::ERROR_BUCKET);
                     }
 
                     $final_file                                     = $cache_basepath . $this->pathinfo["orig"];
@@ -1164,26 +1174,29 @@ class Media extends DirStruct implements Configurable {
             }
         }
 
-        if(!$final_file) {
+        if (!$final_file) {
             $pathinfo                                               = $this->pathinfo["filename"];
-            if($this->mode) {
+            if ($this->mode) {
                 $pathinfo                                           = str_replace(array("-" . $this->mode, $this->mode), "", $pathinfo);
-                if(!$pathinfo)                                      { $pathinfo = $this->pathinfo["extension"]; }
+                if (!$pathinfo) {
+                    $pathinfo = $this->pathinfo["extension"];
+                }
             }
 
             $final_file                                             = $this->processFinalFile($this->setNoImg($this->mode));
-            if($pathinfo != pathinfo($this->filesource, PATHINFO_FILENAME)) {
+            if ($pathinfo != pathinfo($this->filesource, PATHINFO_FILENAME)) {
                 $status = 404;
             }
         }
-        if($final_file && !Error::check("storage")) {
+        if ($final_file && !Error::check(static::ERROR_BUCKET)) {
             $this->renderNoImg($final_file, $status);
         }
 
         return null;
     }
 
-    private function clear() {
+    private function clear()
+    {
         $this->wmk                                                  = null;
         $this->source                                               = null;
         $this->mode                                                 = null;
@@ -1192,19 +1205,16 @@ class Media extends DirStruct implements Configurable {
         $this->filesource                                           = null;
         $this->final                                                = null;
     }
-    private function waterMark() {
+    private function waterMark()
+    {
         $this->wmk                                                  = array();
         $pathinfo                                                   = $this->pathinfo["orig"];
-        if(strpos($pathinfo, "/wmk") !== false)
-        {
+        if (strpos($pathinfo, "/wmk") !== false) {
             $arrWmk                                                 = explode("/wmk", substr($pathinfo, strpos($pathinfo, "/wmk") + strlen("/wmk")));
-            if(is_array($arrWmk) && count($arrWmk))
-            {
-                foreach($arrWmk AS $arrWmk_file)
-                {
-                    $wmk_abs_file                                   = $this::getDiskPath("uploads") . $arrWmk_file;
-                    if(strlen($arrWmk_file) && is_file($wmk_abs_file))
-                    {
+            if (is_array($arrWmk) && count($arrWmk)) {
+                foreach ($arrWmk as $arrWmk_file) {
+                    $wmk_abs_file                                   = Constant::UPLOAD_DISK_PATH . $arrWmk_file;
+                    if (strlen($arrWmk_file) && is_file($wmk_abs_file)) {
                         $this->wmk[]["file"]                        = $wmk_abs_file;
                     }
                 }
@@ -1214,59 +1224,58 @@ class Media extends DirStruct implements Configurable {
         }
     }
 
-    private function basepathAsset() {
-        $basepath                                                  = $this::getDiskPath("cache-assets");
-        if(!$basepath || !is_file($basepath . $this->filesource)) {
-            $basepath                                              = static::ASSET_DISK_PATH;
-        }
+    private function basepathAsset()
+    {
+        $basepath                                                   = str_replace($this->filesource, "", Resource::get($this->source["filename"], "images"));
 
         return $basepath;
     }
-    private function basepathMedia() {
-        $basepath                                                  = $this::getDiskPath("uploads");
-
-        if(!$basepath || !is_file($basepath . $this->filesource)) {
-            $basepath                                              = $this::documentRoot();
-        }
+    private function basepathMedia()
+    {
+        $basepath                                                  = Constant::UPLOAD_DISK_PATH;
 
         return $basepath;
     }
-    private function findSource($mode = null) {
+    private function findSource($mode = null)
+    {
         $this->resolveSourcePath($mode);
-        if($this->filesource) {
-            $this->basepath                                         = ($this->pathinfo["render"] == static::RENDER_ASSETS_PATH
+        if ($this->filesource) {
+            $this->basepath                                         = (
+                $this->pathinfo["render"] == static::RENDER_ASSETS_PATH
                                                                         ? $this->basepathAsset()
                                                                         : $this->basepathMedia()
                                                                     );
         }
     }
 
-    private function makeFinalFile($ext = null) {
-        if($this->filesource) {
+    private function makeFinalFile($ext = null)
+    {
+        if ($this->filesource) {
             $str_wmk_file                                           = "";
-            if(is_array($this->wmk) && count($this->wmk)) {
+            if (is_array($this->wmk) && count($this->wmk)) {
                 $str_wmk_file_time                                  = "";
                 $str_wmk_file_path                                  = "";
-                foreach($this->wmk AS $wmk_key => $wmk_file) {
+                foreach ($this->wmk as $wmk_file) {
                     $str_wmk_file_time                              .= filectime($wmk_file);
                     $str_wmk_file_path                              .= $wmk_file;
                 }
                 $str_wmk_file                                       = "-" . md5($str_wmk_file_time . $str_wmk_file_path);
             }
 
-            if($this->mode) {
+            if ($this->mode) {
                 $filepath                                           = pathinfo($this->filesource);
                 $format_is_different                                = ($this->source["extension"] && $this->source["extension"] != $this->pathinfo["extension"]);
                 $this->final["dirname"]                             = $filepath["dirname"];
                 $this->final["filename"]                            = $filepath["filename"]
-                                                                        . ($format_is_different
+                                                                        . (
+                                                                            $format_is_different
                                                                             ? "-" . $this->source["extension"]
                                                                             : ""
                                                                         )
                                                                         . "-" . $this->mode
                                                                         . $str_wmk_file;
                 $this->final["extension"]                           = $ext;
-                if(!$this->final["extension"] && isset($this->pathinfo["extension"])) {
+                if (!$this->final["extension"] && isset($this->pathinfo["extension"])) {
                     $this->final["extension"]                       = $this->pathinfo["extension"];
                 }
 
@@ -1280,16 +1289,19 @@ class Media extends DirStruct implements Configurable {
         return $this->final;
     }
 
-    private function getFinalFile($abs = true) {
+    private function getFinalFile($abs = true)
+    {
         $final                                                      = false;
 
-        if($this->final) {
-            $final                                                  = ($abs
+        if ($this->final) {
+            $final                                                  = (
+                $abs
                                                                             ? $this->basepathCache()
                                                                             : ""
                                                                         )
                                                                         . $this->final["dirname"]
-                                                                        . ($this->final["dirname"] == DIRECTORY_SEPARATOR
+                                                                        . (
+                                                                            $this->final["dirname"] == DIRECTORY_SEPARATOR
                                                                             ? ""
                                                                             : DIRECTORY_SEPARATOR
                                                                         )
@@ -1300,7 +1312,8 @@ class Media extends DirStruct implements Configurable {
         return $final;
     }
 
-    private function createImage($params) {
+    private function createImage($params)
+    {
         $default_params                                             = array(
                                                                         "dim_x"                     => null
                                                                         , "dim_y"                   => null
@@ -1321,17 +1334,14 @@ class Media extends DirStruct implements Configurable {
         $params                                                     = array_replace_recursive($default_params, $params);
         $extend                                                     = true;
 
-        if($extend)
-        {
-            $params["filesource"]                                   = (isset($params["force_icon"]) && $params["force_icon"]
-                                                                        ? $this::documentRoot() . $params["force_icon"]
+        if ($extend) {
+            $params["filesource"]                                   = (
+                isset($params["force_icon"]) && $params["force_icon"]
+                                                                        ? Constant::DISK_PATH . $params["force_icon"]
                                                                         : $this->basepath . $this->filesource
                                                                     );
 
-            //if(!$params["dim_x"] > 0)                               $params["dim_x"] = 1;
-            //if(!$params["dim_y"] > 0)                               $params["dim_y"] = 1;
-
-            if($params["resize"] && $params["mode"] != "crop") {
+            if ($params["resize"] && $params["mode"] != "crop") {
                 $params["max_x"]                                    = $params["dim_x"];
                 $params["max_y"]                                    = $params["dim_y"];
 
@@ -1342,7 +1352,7 @@ class Media extends DirStruct implements Configurable {
                 $params["max_y"]                                    = null;
             }
 
-            if($params["format"] == "png" && $params["transparent"]) {
+            if ($params["format"] == "png" && $params["transparent"]) {
                 $params["bgcolor_csv"]                              = $params["bgcolor"];
                 $params["alpha_csv"]                                = 127;
 
@@ -1358,15 +1368,24 @@ class Media extends DirStruct implements Configurable {
 
 
 
-            $params["wmk_word_enable"]                              = (is_dir($this->basepath . $this->filesource)
+            $params["wmk_word_enable"]                              = (
+                is_dir($this->basepath . $this->filesource)
                                                                         ? $params["enable_thumb_word_dir"]
                                                                         : $params["enable_thumb_word_file"]
                                                                     );
         } else {
-            if ($params["dim_x"] == 0)                              $params["dim_x"] = null;
-            if ($params["dim_y"] == 0)                              $params["dim_y"] = null;
-            if ($params["dim_x"] || $params["max_x"] == 0)          $params["max_x"] = null;
-            if ($params["dim_y"] || $params["max_y"] == 0)          $params["max_y"] = null;
+            if ($params["dim_x"] == 0) {
+                $params["dim_x"] = null;
+            }
+            if ($params["dim_y"] == 0) {
+                $params["dim_y"] = null;
+            }
+            if ($params["dim_x"] || $params["max_x"] == 0) {
+                $params["max_x"] = null;
+            }
+            if ($params["dim_y"] || $params["max_y"] == 0) {
+                $params["max_y"] = null;
+            }
 
             $params["bgcolor_csv"]                                  = $params["bgcolor"];
             $params["alpha_csv"]                                    = $params["alpha"];
@@ -1377,9 +1396,7 @@ class Media extends DirStruct implements Configurable {
             $params["frame_size"]                                   = 0;
             $params["wmk_method"]                                   = "proportional";
             $params["wmk_word_enable"]                              = false;
-
         }
-        //if(!strlen($params["format"]))                              $params["format"] = "jpg";
 
         $cCanvas                                                    = new ImageCanvas();
 
@@ -1403,14 +1420,12 @@ class Media extends DirStruct implements Configurable {
         $cThumb->new_res_align 							            = $params["alignment"];
 
         //Default Watermark Image
-        if ($params["wmk_enable"])
-        {
+        if ($params["wmk_enable"]) {
             $cThumb_wmk                                             = new ImageThumb($params["dim_x"], $params["dim_y"]);
             $cThumb_wmk->new_res_max_x 					            = $params["max_x"];
             $cThumb_wmk->new_res_max_y 					            = $params["max_y"];
             $cThumb_wmk->src_res_path 					            = $params["wmk_file"];
 
-            //$cThumb->new_res_background_color_hex                 = $params["bgcolor"];
             $cThumb_wmk->new_res_background_color_alpha	            = "127";
 
             $cThumb_wmk->new_res_method 				            = $params["mode"];
@@ -1419,21 +1434,16 @@ class Media extends DirStruct implements Configurable {
             $cThumb_wmk->new_res_method 				            = $params["wmk_method"];
 
             $cThumb->addWatermark($cThumb_wmk);
-
-            //$cCanvas->addChild($cThumb_wmk);
         }
 
         //Multi Watermark Image
-        if(is_array($this->wmk) && count($this->wmk))
-        {
-            foreach($this->wmk AS $wmk_key => $wmk_file)
-            {
+        if (is_array($this->wmk) && count($this->wmk)) {
+            foreach ($this->wmk as $wmk_file) {
                 $cThumb_wmk                                         = new ImageThumb($params["dim_x"], $params["dim_y"]);
                 $cThumb_wmk->new_res_max_x 						    = $params["max_x"];
                 $cThumb_wmk->new_res_max_y 						    = $params["max_y"];
                 $cThumb_wmk->src_res_path 						    = $wmk_file["file"];
 
-                //$cThumb->new_res_background_color_hex             = $params["bgcolor"];
                 $cThumb_wmk->new_res_background_color_alpha		    = "127";
 
                 $cThumb_wmk->new_res_method						    = $params["mode"];
@@ -1446,16 +1456,20 @@ class Media extends DirStruct implements Configurable {
         }
 
         //Watermark Text
-        if($params["wmk_word_enable"]) {
+        if ($params["wmk_word_enable"]) {
             $cThumb->new_res_font["caption"]                        = $params["shortdesc"];
-            if(preg_match('/^[A-F0-9]{1,}$/is', strtoupper($params["word_color"])))
+            if (preg_match('/^[A-F0-9]{1,}$/is', strtoupper($params["word_color"]))) {
                 $cThumb->new_res_font["color"]                      = $params["word_color"];
-            if(is_numeric($params["word_size"]) && $params["word_size"] > 0)
+            }
+            if (is_numeric($params["word_size"]) && $params["word_size"] > 0) {
                 $cThumb->new_res_font["size"]                       = $params["word_size"];
-            if(strlen($params["word_type"]))
+            }
+            if (strlen($params["word_type"])) {
                 $cThumb->new_res_font["type"]                       = $params["word_type"];
-            if(strlen($params["word_align"]))
+            }
+            if (strlen($params["word_align"])) {
                 $cThumb->new_res_font["align"]                      = $params["word_align"];
+            }
         }
 
         $cCanvas->addChild($cThumb);
@@ -1466,77 +1480,80 @@ class Media extends DirStruct implements Configurable {
 
         $cCanvas->process($final_file);
     }
-    private function basepathCache() {
+    private function basepathCache()
+    {
         return ($this->pathinfo["render"] == static::RENDER_ASSETS_PATH
-            ? $this::getDiskPath("cache-assets")
-            : $this::getDiskPath("cache-.thumbs")
+            ? Dir::getDiskPath("cache/assets")
+            : Dir::getDiskPath("cache/.thumbs")
         );
     }
 
-    private function getMode() {
-        if(!$this->mode)                                            { return false; }
-        if(!$this->modes)                                           { $this->modes = $this->getModes(); }
+    private function getModeWizard($mode)
+    {
+        $char                                                       = strtolower(preg_replace('/[0-9]+/', '', $mode));
+        $wizard                                                     = array(
+                                                                        "alignment" => "center"
+                                                                        , "mode"    => explode($char, $mode)
+                                                                        , "method"  => "crop"
+                                                                        , "resize"  => false
+                                                                    );
 
-        $setting                                                    = (isset($this->modes[$this->mode])
+        switch ($char) {
+            case "x":
+                $wizard["alignment"]                                = "center";
+                $wizard["method"]                                   = "proportional";
+                break;
+            case "q":
+                $wizard["alignment"]                                = "top-left";
+                break;
+            case "w":
+                $wizard["alignment"]                                = "top-middle";
+                break;
+            case "e":
+                $wizard["alignment"]                                = "top-right";
+                break;
+            case "a":
+                $wizard["alignment"]                                = "middle-left";
+                break;
+            case "d":
+                $wizard["alignment"]                                = "middle-right";
+                break;
+            case "z":
+                $wizard["alignment"]                                = "bottom-left";
+                break;
+            case "s":
+                $wizard["alignment"]                                = "bottom-middle";
+                break;
+            case "c":
+                $wizard["alignment"]                                = "bottom-right";
+                break;
+            default:
+                $wizard                                             = null;
+        }
+
+        return $wizard;
+    }
+
+    private function getMode()
+    {
+        if (!$this->mode) {
+            return false;
+        }
+        if (!$this->modes) {
+            $this->modes = $this->getModes();
+        }
+
+        $setting                                                    = (
+            isset($this->modes[$this->mode])
                                                                         ? $this->modes[$this->mode]
                                                                         : false
                                                                     );
-        if(!$setting) {
-            if(!$this->wizard["mode"]) {
-                if(stripos($this->mode, "x") !== false) {
-                    $this->wizard["alignment"] 				        = "center";
-                    $this->wizard["mode"] 				            = explode("x", strtolower($this->mode));
-                    $this->wizard["method"] 				        = "proportional";
-                    $this->wizard["resize"] 				        = false;
-                } elseif(strpos($this->mode, "q") !== false) {
-                    $this->wizard["alignment"] 				        = "top-left";
-                    $this->wizard["mode"] 				            = explode("q", $this->mode);
-                    $this->wizard["method"] 				        = "crop";
-                    $this->wizard["resize"] 				        = false;
-                } elseif(strpos($this->mode, "w") !== false) {
-                    $this->wizard["alignment"] 				        = "top-middle";
-                    $this->wizard["mode"] 				            = explode("w", $this->mode);
-                    $this->wizard["method"] 				        = "crop";
-                    $this->wizard["resize"] 				        = false;
-                } elseif(strpos($this->mode, "e") !== false) {
-                    $this->wizard["alignment"] 				        = "top-right";
-                    $this->wizard["mode"] 				            = explode("e", $this->mode);
-                    $this->wizard["method"] 				        = "crop";
-                    $this->wizard["resize"] 				        = false;
-                } elseif(strpos($this->mode, "a") !== false) {
-                    $this->wizard["alignment"] 				        = "middle-left";
-                    $this->wizard["mode"] 				            = explode("a", $this->mode);
-                    $this->wizard["method"] 				        = "crop";
-                    $this->wizard["resize"] 				        = false;
-                } elseif(strpos($this->mode, "-") !== false) {
-                    $this->wizard["alignment"] 				        = "center";
-                    $this->wizard["mode"] 				            = explode("-", $this->mode);
-                    $this->wizard["method"] 				        = "crop";
-                    $this->wizard["resize"] 				        = false;
-                } elseif(strpos($this->mode, "d") !== false) {
-                    $this->wizard["alignment"] 				        = "middle-right";
-                    $this->wizard["mode"] 				            = explode("d", $this->mode);
-                    $this->wizard["method"] 				        = "crop";
-                    $this->wizard["resize"] 				        = false;
-                } elseif(strpos($this->mode, "z") !== false) {
-                    $this->wizard["alignment"] 				        = "bottom-left";
-                    $this->wizard["mode"] 				            = explode("z", $this->mode);
-                    $this->wizard["method"] 				        = "crop";
-                    $this->wizard["resize"] 				        = false;
-                } elseif(strpos($this->mode, "s") !== false) {
-                    $this->wizard["alignment"] 				        = "bottom-middle";
-                    $this->wizard["mode"] 				            = explode("s", $this->mode);
-                    $this->wizard["method"] 				        = "crop";
-                    $this->wizard["resize"] 				        = false;
-                } elseif(strpos($this->mode, "c") !== false) {
-                    $this->wizard["alignment"] 				        = "bottom-right";
-                    $this->wizard["mode"] 				            = explode("c", $this->mode);
-                    $this->wizard["method"] 				        = "crop";
-                    $this->wizard["resize"] 				        = false;
-                }
+        if (!$setting) {
+            if (!$this->wizard["mode"]) {
+                $this->wizard = $this->getModeWizard($this->mode);
             }
 
-            if(count($this->wizard["mode"]) == 2 && is_numeric($this->wizard["mode"][0]) && is_numeric($this->wizard["mode"][1])) {
+            if (is_array($this->wizard) && count($this->wizard["mode"]) == 2 && is_numeric($this->wizard["mode"][0]) && is_numeric($this->wizard["mode"][1])) {
                 $setting                                            = array(
                                                                         "dim_x"             => $this->wizard["mode"][0]
                                                                         , "dim_y"           => $this->wizard["mode"][1]
@@ -1556,45 +1573,48 @@ class Media extends DirStruct implements Configurable {
     }
 
 
-    private function processFinalFile($isIcon = false) {
+    private function processFinalFile($isIcon = false)
+    {
         $final_file                                                 = null;
-        if($this->filesource) {
-            if(!$this->final)                                       { $this->makeFinalFile($isIcon ? "png" : null); }
-               if($this->final) {
+        if ($this->filesource) {
+            if (!$this->final) {
+                $this->makeFinalFile($isIcon ? "png" : null);
+            }
+            if ($this->final) {
                 $final_file                                         = $this->getFinalFile();
 
                 $mode                                               = $this->getMode();
-                //$mode["format"]                                     = $this->final["extension"];
                 if (is_array($mode)) {
-                    $fmtime                                         = ($this->final["exist"]
+                    $fmtime                                         = (
+                        $this->final["exist"]
                                                                         ? filemtime($final_file)
                                                                         : "-1"
                                                                     );
                     if (Constant::DEBUG
                         || !$this->final["exist"]
-                        || $fmtime      <= $mode["last_update"]
+                       // || $fmtime      <= $mode["last_update"] //todo: da fare controllo sul file di importazione dei mode
                         || $fmtime      <= filemtime($this->basepath . $this->filesource)
                     ) {
                         $this->createImage($mode);
                         $this::optimize($final_file);
                     }
-                } elseif($this->mode === false && is_file($this->basepath . $this->filesource)) {
-                    if(!is_file($final_file)) {
+                } elseif ($this->mode === false && is_file($this->basepath . $this->filesource)) {
+                    if (!is_file($final_file)) {
                         Filemanager::makeDir(dirname($final_file), 0775, $this->basepathCache());
 
-                        if(!link($this->basepath . $this->filesource, $final_file)) {
-                            Error::register("Link Failed. Check write permission on: " . $this->basepath . $this->filesource . " and if directory exist and have write permission on " . $this->basepath . $this->filesource);
-                        };
+                        if (!link($this->basepath . $this->filesource, $final_file)) {
+                            Error::register("Link Failed. Check write permission on: " . $this->basepath . $this->filesource . " and if directory exist and have write permission on " . $this->basepath . $this->filesource, static::ERROR_BUCKET);
+                        }
                     }
                 } else {
                     $icon                                           = $this->getIconPath(basename($this->filesource), true);
 
-                    if(!is_file($final_file) && $icon) {
+                    if (!is_file($final_file) && $icon) {
                         Filemanager::makeDir(dirname($final_file), 0775, $this->basepathCache());
 
-                        if(!link($icon, $final_file)) {
-                            Error::register("Link Failed. Check write permission on: " . $icon . " and if directory exist and have write permission on " . $final_file);
-                        };
+                        if (!link($icon, $final_file)) {
+                            Error::register("Link Failed. Check write permission on: " . $icon . " and if directory exist and have write permission on " . $final_file, static::ERROR_BUCKET);
+                        }
                     }
                 }
             }
@@ -1603,23 +1623,27 @@ class Media extends DirStruct implements Configurable {
         return $final_file;
     }
 
-    private function setNoImg($mode = null, $icon = null) {
-        $icon_name                                                  = ($icon
+    private function setNoImg($mode = null, $icon = null)
+    {
+        $icon_name                                                  = (
+            $icon
                                                                         ? $icon
-                                                                        : (isset($this->pathinfo["extension"])
+                                                                        : (
+                                                                            isset($this->pathinfo["extension"])
                                                                             ? $this->pathinfo["extension"]
                                                                             : $this->pathinfo["basename"]
                                                                         )
                                                                     );
-        $mode                                                       = ($mode
+        $mode                                                       = (
+            $mode
                                                                         ? $mode
                                                                         : self::getModeByNoImg($this->pathinfo["basename"])
                                                                     );
-        if($mode) {
-            $icon_name                                              = str_replace("-". $mode, "" , $icon_name);
+        if ($mode) {
+            $icon_name                                              = str_replace("-". $mode, "", $icon_name);
         }
         $icon                                                       = $this->getIconPath($icon_name, true);
-        if($icon) {
+        if ($icon) {
             $this->basepath                                         = dirname($icon);
             $this->filesource                                       = DIRECTORY_SEPARATOR . basename($icon);
             $this->mode                                             = $mode;
@@ -1630,52 +1654,48 @@ class Media extends DirStruct implements Configurable {
         return null;
     }
 
-    private function renderNoImg($final_file, $code = null) {
+    private function renderNoImg($final_file, $code = null)
+    {
         $this->headers["cache"]                                     = "must-revalidate";
         $this->headers["filename"]                                  = $this->pathinfo["basename"];
         $this->headers["mimetype"]                                  = $this::getMimeTypeByFilename($final_file);
 
-        if($code)                                                   { Response::code($code); }
+        if ($code) {
+            Response::code($code);
+        }
 
         $this->sendHeaders($final_file, $this->headers);
         readfile($final_file);
         exit;
     }
+    private function overrideSourcePath(&$source, $image, $sep, $mode = null)
+    {
+        $file 					                                    = explode("-" . $sep . "-", $image["filename"]);
+        $source["extension"] 	                                    = $sep;
+        $source["filename"] 	                                    = $file[0];
 
-    private function resolveSourcePath($mode = null) {
+        return ($mode
+            ? $mode
+            : $file[1]
+        );
+    }
+    private function resolveSourcePath($mode = null)
+    {
         $image                                                      = $this->pathinfo;
 
         $source["dirname"] 			                                = ($image["dirname"] == DIRECTORY_SEPARATOR ? "" : $image["dirname"]);
         $source["extension"] 		                                = $image["extension"];
         $source["filename"] 	                                    = $image["filename"];
 
-        if(strpos($image["filename"], "-png-") !== false) {
-            $file 					                                = explode("-png-", $image["filename"]);
-            $mode 					                                = ($mode
-                                                                        ? $mode
-                                                                        : $file[1]
-                                                                    );
-            $source["extension"] 	                                = "png";
-            $source["filename"] 	                                = $file[0];
-        } elseif(strpos($image["filename"], "-jpg-") !== false) {
-            $file 					                                = explode("-jpg-", $image["filename"]);
-            $mode 					                                = ($mode
-                                                                        ? $mode
-                                                                        : $file[1]
-                                                                    );
-            $source["extension"] 	                                = "jpg";
-            $source["filename"] 	                                = $file[0];
-        } elseif(strpos($image["filename"], "-jpeg-") !== false) {
-            $file 					                                = explode("-jpeg-", $image["filename"]);
-            $mode 					                                = ($mode
-                                                                        ? $mode
-                                                                        : $file[1]
-                                                                    );
-            $source["extension"] 	                                = "jpeg";
-            $source["filename"] 	                                = $file[0];
-        } elseif(!$mode) {
+        if (strpos($image["filename"], "-png-") !== false) {
+            $mode                                                   = $this->overrideSourcePath($source, $image, "png", $mode);
+        } elseif (strpos($image["filename"], "-jpg-") !== false) {
+            $mode                                                   = $this->overrideSourcePath($source, $image, "jpg", $mode);
+        } elseif (strpos($image["filename"], "-jpeg-") !== false) {
+            $mode                                                   = $this->overrideSourcePath($source, $image, "jpeg", $mode);
+        } elseif (!$mode) {
             $res                                                    = $this->getModeByFile($source["dirname"] . DIRECTORY_SEPARATOR . $image["filename"] . "." . $source["extension"]);
-            if($res) {
+            if ($res) {
                 $source["filename"]                                 = $res["filename"];
                 $mode                                               = $res["mode"];
             } else {
@@ -1683,7 +1703,7 @@ class Media extends DirStruct implements Configurable {
             }
         }
 
-        if($source["filename"] && $source["extension"]) {
+        if ($source["filename"] && $source["extension"]) {
             $source["basename"] 	                                = $source["filename"] . "." . $source["extension"];
             $this->source                                           = $source;
             $this->mode                                             = $mode;

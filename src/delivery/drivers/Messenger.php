@@ -32,12 +32,12 @@ use phpformsframework\libs\Log;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\security\Validator;
 
-if(!defined("MESSENGER_ADAPTER"))                       define("MESSENGER_ADAPTER", "Twilio");
-
-class Messenger {
+class Messenger
+{
+    const ERROR_BUCKET                                      = "messenger";
     const NAME_SPACE                                        = 'phpformsframework\\libs\\delivery\\adapters\\';
 
-    const ADAPTER                                           = MESSENGER_ADAPTER;
+    const ADAPTER                                           = Constant::MESSENGER_ADAPTER;
 
     private $to                                             = null;
     private $content                                        = null;
@@ -56,7 +56,7 @@ class Messenger {
      */
     public static function getInstance($messengerAdapter = null)
     {
-        if(!self::$singleton) {
+        if (!self::$singleton) {
             self::$singleton = new Messenger($messengerAdapter);
         }
 
@@ -73,8 +73,9 @@ class Messenger {
      * @param string[to|cc|bcc] $type
      * @return Messenger
      */
-    public function addAddresses($tels) {
-        if(is_array($tels)) {
+    public function addAddresses($tels)
+    {
+        if (is_array($tels)) {
             foreach ($tels as $tel) {
                 $this->addAddress($tel);
             }
@@ -82,22 +83,49 @@ class Messenger {
 
         return $this;
     }
+    public function setConnection($connection)
+    {
+        if (is_array($connection)) {
+            foreach ($connection as $key => $value) {
+                if (isset($this->adapter->$key)) {
+                    $this->adapter->$key = $value;
+                }
+            }
+        }
+        return $this;
+    }
+    public function setFrom($from, $label = null)
+    {
+        $this->adapter->from = (
+            $label
+            ? $label . " (" . $from . ")"
+            : $from
+        );
 
-    public function send($message = null, $to = null) {
+        return $this;
+    }
+    public function send($message = null, $to = null)
+    {
+        Debug::stopWatch("messenger/send");
 
-        Debug::startWatch();
+        if ($to) {
+            $this->addAddress($to);
+        }
+        if ($message) {
+            $this->setMessage($message);
+        }
 
-        if($to)                                             { $this->addAddress($to); }
-        if($message)                                        { $this->setMessage($message); }
-
-        if(Constant::DEBUG)                                 { $this->addAddress($this->adapter->debug); }
+        if (Constant::DEBUG) {
+            $this->addAddress($this->adapter->debug);
+        }
 
         $this->adapter->send($this->content, $this->to);
 
-        return $this->getResult(Debug::stopWatch());
+        return $this->getResult(Debug::stopWatch("messenger/send"));
     }
 
-    public function setMessage($content) {
+    public function setMessage($content)
+    {
         $this->content                                      = $content;
 
         return $this;
@@ -109,17 +137,17 @@ class Messenger {
      */
     private function getResult($exTime = null)
     {
-        if(Error::check("messenger") || Constant::DEBUG) {
+        if (Error::check(static::ERROR_BUCKET) || Constant::DEBUG) {
             $dump = array(
                 "source" => Debug::stackTrace()
                 , "URL" => Request::url()
                 , "REFERER" => Request::referer()
                 , " content" => $this->content
                 , " from" => $this->adapter->from
-                , " error" => Error::raise("messenger")
+                , " error" => Error::raise(static::ERROR_BUCKET)
                 , " exTime" => $exTime
             );
-            if(Error::check("messenger")) {
+            if (Error::check(static::ERROR_BUCKET)) {
                 Log::error($dump);
             } else {
                 Log::debugging($dump);
@@ -127,10 +155,10 @@ class Messenger {
         }
 
 
-        return (Error::check("messenger")
+        return (Error::check(static::ERROR_BUCKET)
             ? array(
                 "status"    => 500
-                , "error"   => Error::raise("messenger")
+                , "error"   => Error::raise(static::ERROR_BUCKET)
                 , "exTime"  => $exTime
             )
             : array(
@@ -148,8 +176,9 @@ class Messenger {
      */
     public function addAddress($tel, $name = null)
     {
-        if($tel && Validator::isTel($tel)) {
-            $name                                           = ($name
+        if ($tel && Validator::isTel($tel)) {
+            $name                                           = (
+                $name
                                                                 ? $name
                                                                 : $tel
                                                             );
@@ -163,8 +192,11 @@ class Messenger {
     /**
      * @param null|string $messengerAdapter
      */
-    private function setAdapter($messengerAdapter = null) {
-        if(!$this->adapter && !$messengerAdapter)           { $messengerAdapter = static::ADAPTER; }
+    private function setAdapter($messengerAdapter = null)
+    {
+        if (!$this->adapter && !$messengerAdapter) {
+            $messengerAdapter = static::ADAPTER;
+        }
 
         $className                                          = self::NAME_SPACE . "Messenger" . ucfirst($messengerAdapter);
 

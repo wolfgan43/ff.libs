@@ -30,21 +30,24 @@ use phpformsframework\libs\Error;
 use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\delivery\drivers\Mailer;
 
-class NoticeEmail extends NoticeAdapter {
+class NoticeEmail extends NoticeAdapter
+{
     private $title                          = null;
     private $fields                         = null;
     private $template                       = null;
 
-    public  function checkRecipient($target)
+    public function checkRecipient($target)
     {
         return Validator::isEmail($target);
     }
-    public function send($message) {
+    public function send($message)
+    {
         $this->title                        = $message;
 
         return $this->process();
     }
-    public function sendLongMessage($title, $fields = null, $template = null) {
+    public function sendLongMessage($title, $fields = null, $template = null)
+    {
         $this->title                        = $title;
         $this->fields                       = $fields;
 
@@ -52,12 +55,14 @@ class NoticeEmail extends NoticeAdapter {
 
         return $this->process();
     }
-    private function setTemplate($template) {
+    private function setTemplate($template)
+    {
         if ($template) {
-            if(strpos($template, "::") !== false) {
+            if (strpos($template, "::") !== false) {
                 $objSource                  = explode("::", $template);
 
-                $this->template             = (is_file($this->getDiskPath("mail") . DIRECTORY_SEPARATOR . $objSource[0] . $objSource[1])
+                $this->template             = (
+                    is_file($this->getDiskPath("mail") . DIRECTORY_SEPARATOR . $objSource[0] . $objSource[1])
                                                 ? DIRECTORY_SEPARATOR . $objSource[0] . $objSource[1]
                                                 : $this->getClassPath(ucfirst($objSource[0])) . DIRECTORY_SEPARATOR . "mailer" . $objSource[1]
                                             );
@@ -69,16 +74,17 @@ class NoticeEmail extends NoticeAdapter {
 
     protected function process()
     {
-        Mailer::getInstance($this->template, $this->connection)
+        Mailer::getInstance($this->template, $this->connection_service)
+            ->setSmtp($this->connection)
+            ->setFrom($this->fromKey, $this->fromLabel)
             ->addAddresses($this->recipients, "to")
             ->addActions($this->actions)
             ->setSubject($this->title)
             ->setMessage($this->fields)
             ->send();
 
-        Error::transfer("mailer", "notice");
+        Error::transfer(Mailer::ERROR_BUCKET, static::ERROR_BUCKET);
 
         return $this->getResult();
     }
 }
-

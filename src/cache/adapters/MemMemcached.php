@@ -26,76 +26,83 @@
 namespace phpformsframework\libs\cache\adapters;
 
 use phpformsframework\libs\cache\MemAdapter;
-use Memcached AS MC;
 use phpformsframework\libs\Constant;
+use Memcached as MC;
 
-class MemMemcached extends MemAdapter {
-    const SERVER            = FF_CACHE_MEMCACHED_SERVER;
-    const PORT              = FF_CACHE_MEMCACHED_PORT;
+class MemMemcached extends MemAdapter
+{
+    public static $server   = "127.0.0.1";
+    public static $port     = 11211;
+    public static $auth     = null;
 
-	private $conn	= null;
+    private $conn	= null;
 
-	function __construct($auth = null)
-	{
-		$this->conn = new MC(Constant::APPID);
-
-		if($auth) {
-            $this->conn->setOption(MC::OPT_BINARY_PROTOCOL, true);
-            $this->conn->addServer($this::SERVER, $this::PORT);
-            $this->conn->setSaslAuthData(Constant::APPID, $auth);
-        } else {
-            $this->conn->addServer($this::SERVER, $this::PORT);
-        }
-	}
-
-	/**
-	 * Inserisce un elemento nella cache
-	 * Oltre ai parametri indicati, accetta un numero indefinito di chiavi per relazione i valori memorizzati
-	 * @param String $name il nome dell'elemento
-	 * @param Mixed $value l'elemento
-     * @param String $bucket il name space
-     * @return bool if storing both value and rel table will success
-	 */
-    function set($name, $value = null, $bucket = Constant::APPID)
+    public function __construct($bucket = null)
     {
-        return ($value === null
-            ? $this->del($name, $bucket)
-            : $this->conn->set($this->getKey($name, $bucket), $this->setValue($value), $this->getTTL())
-        );
+        parent::__construct($bucket);
+
+        $this->conn = new MC(Constant::APPID);
+
+        if (static::$auth) {
+            $this->conn->setOption(MC::OPT_BINARY_PROTOCOL, true);
+            $this->conn->addServer(static::$server, static::$port);
+            $this->conn->setSaslAuthData(Constant::APPID, static::$auth);
+        } else {
+            $this->conn->addServer(static::$server, static::$port);
+        }
     }
 
-	/**
-	 * Recupera un elemento dalla cache
-	 * @param String $name il nome dell'elemento
+    /**
+     * Inserisce un elemento nella cache
+     * Oltre ai parametri indicati, accetta un numero indefinito di chiavi per relazione i valori memorizzati
+     * @param String $name il nome dell'elemento
+     * @param Mixed $value l'elemento
      * @param String $bucket il name space
-	 * @return Mixed l'elemento 
-	 */
-	function get($name, $bucket = Constant::APPID)
-	{
-        $res = null;
-        if($name) {
-            $res = $this->conn->get($this->getKey($name, $bucket));
-            $res = ($this->conn->getResultCode() === MC::RES_SUCCESS
-                ? $this->getValue($res)
-                : false
-            );
-        } else {
-	        $prefix = $this->getBucket($bucket);
-	        if($prefix) {
+     * @return bool if storing both value and rel table will success
+     */
+    public function set($name, $value = null, $bucket = null)
+    {
+        if($value === null) {
+            return $this->del($name, $bucket);
+        }
+
+        $key = $this->getKey("set", $bucket,$name);
+
+        return $this->conn->set($key, $this->setValue($value), $this->getTTL());
+    }
+
+    /**
+     * Recupera un elemento dalla cache
+     * @param String $name il nome dell'elemento
+     * @param String $bucket il name space
+     * @return Mixed l'elemento
+     */
+    public function get($name, $bucket = null)
+    {
+        $res = false;
+        if (!Constant::$disable_cache) {
+            $key = $this->getKey("get", $bucket, $name);
+            if ($name) {
+                $res = $this->conn->get($key);
+                $res = (
+                $this->conn->getResultCode() === MC::RES_SUCCESS
+                    ? $this->getValue($res)
+                    : false
+                );
+            } else {
                 $keys = $this->conn->getAllKeys();
                 if (is_array($keys) && count($keys)) {
-                    foreach ($keys AS $key) {
-                        if (strpos($key, $prefix) === 0) {
-                            $real_key = substr($key, strlen($prefix));
+                    foreach ($keys as $value) {
+                        if (strpos($value, $bucket) === 0) {
+                            $real_key = substr($value, strlen($bucket));
                             $res[$real_key] = $this->get($real_key, $bucket);
                         }
                     }
                 }
             }
         }
-
         return $res;
-	}
+    }
 
     /**
      * Cancella una variabile
@@ -103,19 +110,23 @@ class MemMemcached extends MemAdapter {
      * @param String $bucket il name space
      * @return bool
      */
-    function del($name, $bucket = Constant::APPID)
+    public function del($name, $bucket = null)
     {
-        return $this->conn->delete($this->getKey($name, $bucket));
+        $key = $this->getKey("del", $bucket, $name);
+
+        return $this->conn->delete($key);
     }
-	/**
-	 * Pulisce la cache
-	 * Accetta un numero indefinito di parametri che possono essere utilizzati per cancellare i dati basandosi sulle relazioni
-	 * Se non si specificano le relazioni, verrà cancellata l'intera cache
+    /**
+     * Pulisce la cache
+     * Accetta un numero indefinito di parametri che possono essere utilizzati per cancellare i dati basandosi sulle relazioni
+     * Se non si specificano le relazioni, verrà cancellata l'intera cache
      * @param string $bucket
-	 */
-	function clear($bucket = Constant::APPID)
-	{
-		// global reset
+     */
+    public function clear($bucket = null)
+    {
+        $this->getKey("clear", $bucket);
+
+        // global reset
         $this->conn->flush();
-	}
+    }
 }

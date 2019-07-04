@@ -36,30 +36,32 @@ class FilemanagerXml extends FilemanagerAdapter
 {
     const EXT                                                   = "xml";
 
-    public function read($file_path = null, $search_keys = null, $search_flag = self::SEARCH_DEFAULT) {
+    public function read($file_path = null, $search_keys = null, $search_flag = self::SEARCH_DEFAULT)
+    {
         $res                                                    = array();
-        if($file_path)                                          { $this->setFilePath($file_path); }
-        $file_path                                              = $this->getFilePath();
+        $params                                                 = $this->getParams($file_path);
+        if (!$params) {
+            return false;
+        }
 
-        $xmlstring                                              = file_get_contents($file_path);
-        if($xmlstring) {
+        $xmlstring                                              = file_get_contents($params->file_path);
+        if ($xmlstring) {
             $return                                             = Array2XML::XML_TO_ARR($xmlstring);
-            if($return) {
-                if($search_keys) {
+            if ($return) {
+                if ($search_keys) {
                     $res                                        = $this->search($return, $search_keys, $search_flag);
                 } else {
                     $res                                        = $return;
                 }
-            } elseif($return === false) {
-                Error::register("syntax errors into file" . (Constant::DEBUG ? ": " . $file_path : ""), "filemanager");
+            } elseif ($return === false) {
+                Error::register("syntax errors into file" . (Constant::DEBUG ? ": " . $params->file_path : ""), static::ERROR_BUCKET);
             } else {
                 $res                                            = null;
             }
 
             return $this->getResult($res);
-
         } else {
-            Error::register("syntax errors into file" . (Constant::DEBUG ? ": " . $file_path : ""), "filemanager");
+            Error::register("syntax errors into file" . (Constant::DEBUG ? ": " . $params->file_path : ""), static::ERROR_BUCKET);
         }
 
         return null;
@@ -68,24 +70,20 @@ class FilemanagerXml extends FilemanagerAdapter
     public function write($data, $file_path = null, $var = null)
     {
         $xml                                                    = null;
-        if($file_path)                                          { $this->setFilePath($file_path); }
-        if($var)                                                { $this->setVar($var); }
+        $params                                                 = $this->setParams($file_path, $var);
 
-        $file_path                                              = $this->getFilePath();
-        $var                                                    = $this->getVar();
 
-        $root_node                                              = ($var
-                                                                    ? $var
+        $root_node                                              = (
+            $params->var
+                                                                    ? $params->var
                                                                     : "root"
                                                                 );
 
         try {
             $xml                                                = Array2XML::createXML($root_node, $data);
         } catch (Exception $e) {
-
         }
 
-        return $this->save($xml, $file_path);
+        return $this->save($xml, $params->file_path);
     }
-
 }

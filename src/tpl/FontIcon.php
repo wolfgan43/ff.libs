@@ -27,7 +27,8 @@ namespace phpformsframework\libs\tpl;
 
 use phpformsframework\libs\Mappable;
 
-class FontIcon extends Mappable {
+class FontIcon extends Mappable
+{
     protected $button_type  = null;
     protected $css          = array();
     protected $fonts        = array();
@@ -45,24 +46,32 @@ class FontIcon extends Mappable {
         parent::__construct($map_name);
         $this->loadButtons();
 
-        if($buttons_style)                              { $this->buttons_style  = $buttons_style; }
-        if(is_array($buttons))                          { $this->buttons        = array_replace($this->buttons, $buttons); }
+        if ($buttons_style) {
+            $this->buttons_style  = $buttons_style;
+        }
+        if (is_array($buttons)) {
+            $this->buttons        = array_replace($this->buttons, $buttons);
+        }
     }
 
-    public function css() {
+    public function css()
+    {
         return $this->css;
     }
-    public function fonts() {
+    public function fonts()
+    {
         return $this->fonts;
     }
 
 
-    private function loadButtons() {
-        if($this->button_type) {
+    private function loadButtons()
+    {
+        if ($this->button_type) {
             $this->loadMap("buttons_" . $this->button_type);
         }
     }
-    public function action($params, $use_source = false) {
+    public function action($params, $use_source = false)
+    {
         $res                                            = null;
         if ($params) {
             if (!is_array($params)) {
@@ -71,24 +80,24 @@ class FontIcon extends Mappable {
             foreach ($params as $param) {
                 if (isset($this->actions[$param])) {
                     $res[$this->actions[$param]]        = $this->actions[$param];
-                } elseif($use_source) {
+                } elseif ($use_source) {
                     $res[$param]                        = $param;
                 }
-
             }
         }
         return $res;
     }
 
-    private function iconsTagStack($values, $params = null) {
-        $res                                            = null;
+    private function iconsTagStack($values, $params = null)
+    {
         $items                                          = null;
         $container                                      = $this->action($params, true);
         $container[$this->actions["stack"]]             = $this->actions["stack"];
 
-        if(is_array($values) && count($values)) {
-            foreach ($values AS $i => $value) {
-                $stack_size                             = (isset($this->actions["stack-" . ($i + 1) . "x"])
+        if (is_array($values) && count($values)) {
+            foreach ($values as $i => $value) {
+                $stack_size                             = (
+                    isset($this->actions["stack-" . ($i + 1) . "x"])
                                                             ? $this->actions["stack-" . ($i + 1) . "x"]
                                                             : null
                                                         );
@@ -103,7 +112,8 @@ class FontIcon extends Mappable {
         );
     }
 
-    public function iconTag($value, $params = null) {
+    public function iconTag($value, $params = null)
+    {
         $res                                            = $this->icon($value, $params);
 
         return (strlen($res)
@@ -111,23 +121,24 @@ class FontIcon extends Mappable {
             : null
         );
     }
-    public function icon($value, $params = null) {
+    public function icon($value, $params = null)
+    {
         $res                                            = null;
 
-        if(is_array($value)) {
+        if (is_array($value)) {
             $res                                        = $this->iconsTagStack($value, $params);
-        } elseif($value) {
+        } elseif ($value) {
             $res                                        = $this->action($params, true);
 
-            if(strlen($value)) {
+            if (strlen($value)) {
                 $res[]                                  = $this->append . $value . $this->prepend;
             }
 
-            if(is_array($res) && count($res)) {
-                if(strlen($this->prefix)) {
+            if (is_array($res) && count($res)) {
+                if (strlen($this->prefix)) {
                     $res[$this->prefix]                 = $this->prefix;
                 }
-                if(strlen($this->suffix)) {
+                if (strlen($this->suffix)) {
                     $res[$this->suffix]                 = $this->suffix;
                 }
             }
@@ -136,53 +147,61 @@ class FontIcon extends Mappable {
         }
 
         return (is_array($res)
-            ? implode(" " , $res)
+            ? implode(" ", $res)
             : null
         );
     }
 
-    public function button($value, $params = null) {
+    public function button($value, $params = null)
+    {
         $res                                            = null;
-        if(isset($this->buttons[$value])) {
+        if (isset($this->buttons[$value])) {
             $type                                       = $this->buttons[$value]["default"];
-            $icon                                       = (isset($this->buttons[$value]["icon"])
+            $icon                                       = (
+                isset($this->buttons[$value]["icon"])
                                                             ? $this->buttons[$value]["icon"]
                                                             : null
                                                         );
-            $icon_params                                = (isset($this->buttons[$value]["icon_params"])
+            $icon_params                                = (
+                isset($this->buttons[$value]["icon_params"])
                                                             ? $this->buttons[$value]["icon_params"]
                                                             : null
                                                         );
-            $class                                      = (isset($this->buttons[$value]["class"])
+            $class                                      = (
+                isset($this->buttons[$value]["class"])
                                                             ? $this->buttons[$value]["class"]
                                                             : null
                                                         );
-            $button                                     = (isset($this->buttons[$value]["button"])
+            $button                                     = (
+                isset($this->buttons[$value]["button"])
                                                             ? $this->buttons[$value]["button"]
                                                             : null
                                                         );
         } else {
             $type                                       = $value;
-            $icon                                       = (isset($params["icon"])
+            $icon                                       = (
+                isset($params["icon"])
                                                             ? $params["icon"]
                                                             : null
                                                         );
-            $icon_params                                = (isset($params["icon_params"])
+            $icon_params                                = (
+                isset($params["icon_params"])
                                                             ? $params["icon_params"]
                                                             : null
                                                         );
-            $class                                      = (isset($params["class"])
+            $class                                      = (
+                isset($params["class"])
                                                             ? $params["class"]
                                                             : null
                                                         );
-            $button                                     = (isset($params["button"])
+            $button                                     = (
+                isset($params["button"])
                                                             ? $params["button"]
                                                             : null
                                                         );
-
         }
 
-        if($type) {
+        if ($type) {
             if (isset($this->buttons_style["color"][$type])) {
                 $res["type"]                            = $this->buttons_style["color"][$type];
             }
@@ -193,29 +212,28 @@ class FontIcon extends Mappable {
                 $res["icon"]                            = $this->icon($icon, $icon_params);
             }
 
-            if(is_array($button) && count($button)) {
+            if (is_array($button) && count($button)) {
                 foreach ($button as $btn_key => $btn_value) {
-                    if(isset($this->buttons_style[$btn_key][$btn_value])) {
+                    if (isset($this->buttons_style[$btn_key][$btn_value])) {
                         $res[$btn_key . $btn_value]     = $this->buttons_style[$btn_key][$btn_value];
                     }
                 }
             }
 
 
-            if(is_array($res) && count($res)) {
-                if(strlen($this->buttons_style["prepend"])) {
+            if (is_array($res) && count($res)) {
+                if (strlen($this->buttons_style["prepend"])) {
                     $res["prepend"]                     = $this->buttons_style["prepend"];
                 }
-                if(strlen($this->buttons_style["append"])) {
+                if (strlen($this->buttons_style["append"])) {
                     $res["append"]                      = $this->buttons_style["append"];
                 }
             }
         }
 
         return (is_array($res)
-            ? implode(" " , $res)
+            ? implode(" ", $res)
             : null
         );
     }
 }
-

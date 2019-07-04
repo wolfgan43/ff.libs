@@ -31,7 +31,9 @@ use phpformsframework\libs\Error;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dumpable;
 
-class Database implements Dumpable {
+class Database implements Dumpable
+{
+    const ERROR_BUCKET                                                      = "database";
     const NAME_SPACE                                                        = 'phpformsframework\\libs\\storage\\adapters\\';
     const ENABLE_CACHE                                                      = true;
     const ADAPTER                                                           = "mysqli";
@@ -53,26 +55,34 @@ class Database implements Dumpable {
      * @param null|array $params
      * @return DatabaseAdapter
      */
-    public static function getInstance($databaseAdapters, $params = null) {
-        $key                                                                = crc32(serialize($databaseAdapters)
+    public static function getInstance($databaseAdapters, $params = null)
+    {
+        $key                                                                = crc32(
+            serialize($databaseAdapters)
                                                                                 . "-" . $params["table"]["name"]
-                                                                                . (isset($params["rawdata"]) && $params["rawdata"]
+                                                                                . (
+                                                                                    isset($params["rawdata"]) && $params["rawdata"]
                                                                                     ? "-rawdata"
                                                                                     : ""
                                                                                 )
-                                                                                . (isset($params["exts"]) && $params["exts"]
+                                                                                . (
+                                                                                    isset($params["exts"]) && $params["exts"]
                                                                                     ? "-exts"
                                                                                     : ""
                                                                                 )
                                                                             );
-        if(!isset(self::$singletons[$key]))                                 { self::$singletons[$key] = new Database($databaseAdapters, $params); }
+        if (!isset(self::$singletons[$key])) {
+            self::$singletons[$key] = new Database($databaseAdapters, $params);
+        }
 
         return self::$singletons[$key];
     }
 
     public static function isAssocArray(array $arr)
     {
-        if (array() === $arr) { return false; }
+        if (array() === $arr) {
+            return false;
+        }
         return array_keys($arr) !== range(0, count($arr) - 1);
     }
 
@@ -95,10 +105,11 @@ class Database implements Dumpable {
      * @param array|string $databaseAdapters
      * @param null $params
      */
-    public function __construct($databaseAdapters = self::ADAPTER, $params = null) {
-        if(is_array($databaseAdapters)) {
-            foreach($databaseAdapters AS $adapter => $connection) {
-                if(is_numeric($adapter) && strlen($connection)) {
+    public function __construct($databaseAdapters = self::ADAPTER, $params = null)
+    {
+        if (is_array($databaseAdapters)) {
+            foreach ($databaseAdapters as $adapter => $connection) {
+                if (is_numeric($adapter) && strlen($connection)) {
                     $adapter                                                = $connection;
                     $connection                                             = null;
                 }
@@ -106,7 +117,7 @@ class Database implements Dumpable {
                 $class_name                                                 = static::NAME_SPACE . "Database" . ucfirst($adapter);
                 $this->adapters[$adapter]                                   = new $class_name($connection, $params["table"], $params["struct"], $params["relationship"], $params["indexes"], $params["alias"], (bool) $params["exts"], (bool) $params["rawdata"]);
             }
-        } elseif($databaseAdapters) {
+        } elseif ($databaseAdapters) {
             $class_name                                                     = static::NAME_SPACE . "Database" . ucfirst($databaseAdapters);
             $this->adapters[$databaseAdapters]                              = new $class_name($params["connection"], $params["table"], $params["struct"], $params["relationship"], $params["indexes"], $params["alias"], (bool) $params["exts"], (bool) $params["rawdata"]);
         }
@@ -117,10 +128,11 @@ class Database implements Dumpable {
      * @param string[recordset|fields|num_rows] $key
      * @return null|bool|array
      */
-    public function rawQuery($query, $key = null) {
-        Error::clear("database");
+    public function rawQuery($query, $key = null)
+    {
+        Error::clear(static::ERROR_BUCKET);
 
-        foreach($this->adapters AS $adapter_name => $adapter) {
+        foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->rawQuery($query, $key);
         }
         return $this->getResult();
@@ -136,9 +148,9 @@ class Database implements Dumpable {
      */
     public function lookup($table_name, $where = null, $fields = null, $sort = null, $limit = null)
     {
-        Error::clear("database");
+        Error::clear(static::ERROR_BUCKET);
 
-        foreach($this->adapters AS $adapter_name => $adapter) {
+        foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->lookup($table_name, $where, $fields, $sort, $limit);
         }
         return $this->getResult();
@@ -154,9 +166,9 @@ class Database implements Dumpable {
      */
     public function find($fields = null, $where = null, $sort = null, $limit = null, $table_name = null)
     {
-        Error::clear("database");
+        Error::clear(static::ERROR_BUCKET);
 
-        foreach($this->adapters AS $adapter_name => $adapter) {
+        foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->find($fields, $where, $sort, $limit, $table_name);
         }
         return $this->getResult();
@@ -170,10 +182,11 @@ class Database implements Dumpable {
      * @param null|string $table_name
      * @return bool|array
      */
-    public function read($where, $fields = null, $sort = null, $limit = null, $table_name = null) {
-        Error::clear("database");
+    public function read($where, $fields = null, $sort = null, $limit = null, $table_name = null)
+    {
+        Error::clear(static::ERROR_BUCKET);
 
-        foreach($this->adapters AS $adapter_name => $adapter) {
+        foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->read($where, $fields, $sort, $limit, $table_name);
         }
 
@@ -185,10 +198,11 @@ class Database implements Dumpable {
      * @param null|string $table_name
      * @return bool
      */
-    public function insert($insert, $table_name = null) {
-        Error::clear("database");
+    public function insert($insert, $table_name = null)
+    {
+        Error::clear(static::ERROR_BUCKET);
 
-        foreach($this->adapters AS $adapter_name => $adapter) {
+        foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->insert($insert, $table_name);
         }
         return $this->getResult();
@@ -200,10 +214,11 @@ class Database implements Dumpable {
      * @param null|string $table_name
      * @return bool
      */
-    public function update($set, $where, $table_name = null) {
-        Error::clear("database");
+    public function update($set, $where, $table_name = null)
+    {
+        Error::clear(static::ERROR_BUCKET);
 
-        foreach($this->adapters AS $adapter_name => $adapter) {
+        foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->update($set, $where, $table_name);
         }
         return $this->getResult();
@@ -215,10 +230,11 @@ class Database implements Dumpable {
      * @param null|string $table_name
      * @return bool
      */
-    public function write($insert, $update, $table_name = null) {
-        Error::clear("database");
+    public function write($insert, $update, $table_name = null)
+    {
+        Error::clear(static::ERROR_BUCKET);
 
-        foreach($this->adapters AS $adapter_name => $adapter) {
+        foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->write($insert, $update, $table_name);
         }
         return $this->getResult();
@@ -229,10 +245,11 @@ class Database implements Dumpable {
      * @param null|string $table_name
      * @return bool
      */
-    public function delete($where, $table_name = null) {
-        Error::clear("database");
+    public function delete($where, $table_name = null)
+    {
+        Error::clear(static::ERROR_BUCKET);
 
-        foreach($this->adapters AS $adapter_name => $adapter) {
+        foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->delete($where, $table_name);
         }
         return $this->getResult();
@@ -244,10 +261,11 @@ class Database implements Dumpable {
      * @param null|string $table_name
      * @return bool
      */
-    public function cmd($action, $what, $table_name = null) {
-        Error::clear("database");
+    public function cmd($action, $what, $table_name = null)
+    {
+        Error::clear(static::ERROR_BUCKET);
 
-        foreach($this->adapters AS $adapter_name => $adapter) {
+        foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->cmd($action, $what, $table_name);
         }
         return $this->getResult();
@@ -255,40 +273,47 @@ class Database implements Dumpable {
 
     private function getResult()
     {
-        return (Error::check("database")
-            ? Error::raise("database")
-            : (is_array($this->result) && count($this->result) == 1
+        return (Error::check(static::ERROR_BUCKET)
+            ? Error::raise(static::ERROR_BUCKET)
+            : (
+                is_array($this->result) && count($this->result) == 1
                 ? array_shift($this->result)
                 : $this->result
             )
         );
     }
 
-    private static function getCacheParam($param, $sep = ", ") {
+    private static function getCacheParam($param, $sep = ", ")
+    {
         return (is_array($param)
             ? implode($sep, $param)
             : $param
         );
     }
 
-    private static function getCacheKey($query) {
+    private static function getCacheKey($query)
+    {
         $action                                     = $query["action"];
         $table                                      = $query["from"];
 
-        $where = (isset($query["where"])
+        $where = (
+            isset($query["where"])
             ? " WHERE " . self::getCacheParam($query["where"], " AND ")
             : ""
         );
 
-        $select = (isset($query["select"])
+        $select = (
+            isset($query["select"])
             ? " SELECT " . self::getCacheParam($query["select"])
             : ""
         );
-        $set = (isset($query["set"])
+        $set = (
+            isset($query["set"])
             ? " SET " . self::getCacheParam($query["set"])
             : ""
         );
-        $insert = (isset($query["insert"])
+        $insert = (
+            isset($query["insert"])
             ? " INSERT " . self::getCacheParam($query["insert"], " VALUES ")
             : ""
         );
@@ -296,17 +321,20 @@ class Database implements Dumpable {
         return ucfirst($action) . " => " . $table . " (" . $insert . $set . $select . $where . ")";
     }
 
-    public static function dump() {
+    public static function dump()
+    {
         return self::$cache_rawdata;
     }
 
-    public static function cache($query) {
+    public static function cache($query)
+    {
         $res                                        = null;
 
-        if(self::ENABLE_CACHE) {
+        if (self::ENABLE_CACHE) {
             $cache_key                              = Database::getCacheKey($query);
-            if(Constant::DEBUG) {
-                self::$cache[$cache_key]["count"]   = (isset(self::$cache[$cache_key])
+            if (Constant::DEBUG) {
+                self::$cache[$cache_key]["count"]   = (
+                    isset(self::$cache[$cache_key])
                                                         ? self::$cache[$cache_key]["count"] + 1
                                                         : 1
                                                     );
@@ -316,8 +344,10 @@ class Database implements Dumpable {
                 }
             }
 
-            if(isset(self::$cache[$cache_key]["data"])) {
-                if(Constant::DEBUG)                   { Debug::dumpLog("query_duplicate", $query); }
+            if (isset(self::$cache[$cache_key]["data"])) {
+                if (Constant::DEBUG) {
+                    Debug::dumpLog("query_duplicate", $query);
+                }
                 $res                                = self::$cache[$cache_key]["data"];
             }
         }
@@ -325,15 +355,16 @@ class Database implements Dumpable {
         return $res;
     }
 
-    public static function setCache($data, $query) {
-        if(self::ENABLE_CACHE) {
+    public static function setCache($data, $query)
+    {
+        if (self::ENABLE_CACHE) {
             $cache_key                                                  = Database::getCacheKey($query);
-            if(Constant::DEBUG) {
+            if (Constant::DEBUG) {
                 $from_cache = isset(self::$cache[$cache_key]["data"]) && self::$cache[$cache_key]["data"];
                 self::$cache_rawdata[(count(self::$cache_rawdata) + 1) . ". " . $cache_key] = ($from_cache ? true : $query);
             }
             self::$cache[$cache_key]["query"]                           = $query;
-            if(isset($data["exts"]) && $data["exts"] === true) {
+            if (isset($data["exts"]) && $data["exts"] === true) {
                 self::$cache[$cache_key][serialize($data["exts"])]      = $data;
             } else {
                 self::$cache[$cache_key]["data"]                        = $data;

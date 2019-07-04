@@ -27,9 +27,10 @@ namespace phpformsframework\libs\storage\adapters;
 
 use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\DatabaseAdapter;
-use phpformsframework\libs\storage\drivers\MySqli AS sql;
+use phpformsframework\libs\storage\drivers\MySqli as sql;
 
-class DatabaseMysqli extends DatabaseAdapter {
+class DatabaseMysqli extends DatabaseAdapter
+{
     const PREFIX                                        = "FF_DATABASE_";
     const TYPE                                          = "sql";
     const KEY                                           = "ID";
@@ -40,40 +41,45 @@ class DatabaseMysqli extends DatabaseAdapter {
     }
 
 
-    public  function toSql($cDataValue, $data_type = null, $enclose_field = true, $transform_null = null)
+    public function toSql($cDataValue, $data_type = null, $enclose_field = true, $transform_null = null)
     {
         return $this->driver->toSql($cDataValue, $data_type, $enclose_field, $transform_null);
     }
 
-    protected function processRead($query) {
+    protected function processRead($query)
+    {
         $sSQL                                           = "SELECT "
-                                                            . (isset($query["limit"]) && is_array($query["limit"]) && isset($query["limit"]["calc_found_rows"])
+                                                            . (
+                                                                isset($query["limit"]) && is_array($query["limit"]) && isset($query["limit"]["calc_found_rows"])
                                                                 ? " SQL_CALC_FOUND_ROWS "
                                                                 : ""
                                                             ) . $query["select"] . "  
                                                             FROM " .  $query["from"] . "
                                                             WHERE " . $query["where"]
-                                                            . (isset($query["sort"])
+                                                            . (
+                                                                isset($query["sort"])
                                                                 ? " ORDER BY " . $query["sort"]
                                                                 : ""
                                                             )
-                                                            . (isset($query["limit"])
-                                                                ? " LIMIT " . (is_array($query["limit"])
+                                                            . (
+                                                                isset($query["limit"])
+                                                                ? " LIMIT " . (
+                                                                    is_array($query["limit"])
                                                                     ? $query["limit"]["skip"] . ", " . $query["limit"]["limit"]
                                                                     : $query["limit"]
                                                                 )
                                                                 : ""
                                                             );
         $res                                            = $this->processRawQuery($sSQL);
-        if($res) {
-            if(isset($query["limit"]) && is_array($query["limit"]) && isset($query["limit"]["calc_found_rows"])) {
+        if ($res) {
+            if (isset($query["limit"]) && is_array($query["limit"]) && isset($query["limit"]["calc_found_rows"])) {
                 $this->driver->query("SELECT FOUNT_ROWS() AS tot_row");
                 if ($this->driver->nextRecord()) {
                     $res["count"]                       = $this->driver->getField("tot_row", "Number", true);
                 }
             }
         } else {
-            Error::register("MySqli Unable to Read: " . $sSQL, "database");
+            Error::register("MySqli Unable to Read: " . $sSQL, static::ERROR_BUCKET);
         }
 
         return $res;
@@ -88,12 +94,12 @@ class DatabaseMysqli extends DatabaseAdapter {
                                                             ) VALUES (
                                                                 " . $query["insert"]["body"] . "
                                                             )";
-        if($this->driver->execute($sSQL)) {
+        if ($this->driver->execute($sSQL)) {
             $res                                        = array(
                                                             "keys" => array($this->driver->getInsertID(true))
                                                         );
         } else {
-            Error::register("MySqli Unable to Insert: " . $sSQL, "database");
+            Error::register("MySqli Unable to Insert: " . $sSQL, static::ERROR_BUCKET);
         }
 
         return $res;
@@ -107,10 +113,10 @@ class DatabaseMysqli extends DatabaseAdapter {
                                                             WHERE " . $query["where"];
 
 
-        if($this->driver->execute($sSQL)) {
+        if ($this->driver->execute($sSQL)) {
             $res = true;
         } else {
-            Error::register("MySqli Unable to Update: " . $sSQL, "database");
+            Error::register("MySqli Unable to Update: " . $sSQL, static::ERROR_BUCKET);
         }
 
         return $res;
@@ -122,16 +128,17 @@ class DatabaseMysqli extends DatabaseAdapter {
 
         $sSQL                                           = "DELETE FROM " .  $query["from"] . "  
                                                             WHERE " . $query["where"];
-        if($this->driver->execute($sSQL)) {
+        if ($this->driver->execute($sSQL)) {
             $res = true;
         } else {
-            Error::register("MySqli Unable to Delete: " . $sSQL, "database");
+            Error::register("MySqli Unable to Delete: " . $sSQL, static::ERROR_BUCKET);
         }
 
         return $res;
     }
 
-    protected function processWrite($query) {
+    protected function processWrite($query)
+    {
         //todo: da valutare se usare REPLACE INTO. Necessario test benckmark
         $res                                            = null;
         $keys                                           = null;
@@ -139,41 +146,39 @@ class DatabaseMysqli extends DatabaseAdapter {
         $sSQL                                           = "SELECT " . $query["key"] . " 
                                                             FROM " .  $query["from"] . "
                                                             WHERE " . $query["where"];
-        if($this->driver->query($sSQL)) {
+        if ($this->driver->query($sSQL)) {
             $keys                                       = $this->extractKeys($this->driver->getRecordset(), $query["key"]);
         } else {
-            Error::register("MySqli Unable to Read(Write): " . $sSQL, "database");
+            Error::register("MySqli Unable to Read(Write): " . $sSQL, static::ERROR_BUCKET);
         }
 
-        if(!Error::check("database")) {
-            if(is_array($keys)) {
+        if (!Error::check(static::ERROR_BUCKET)) {
+            if (is_array($keys)) {
                 $sSQL                                   = "UPDATE " .  $query["from"] . " SET 
                                                                 " . $query["update"] . "
-                                                            WHERE " . $query["key"] . " IN(" . $this->driver->toSql(implode("," , $keys), "Text", false) . ")";
-                if($this->driver->execute($sSQL)) {
+                                                            WHERE " . $query["key"] . " IN(" . $this->driver->toSql(implode(",", $keys), "Text", false) . ")";
+                if ($this->driver->execute($sSQL)) {
                     $res                                = array(
                                                             "keys"      => $keys
                                                             , "action"  => "update"
                                                         );
                 } else {
-                    Error::register("MySqli Unable to Update(Write): " . $sSQL, "database");
+                    Error::register("MySqli Unable to Update(Write): " . $sSQL, static::ERROR_BUCKET);
                 }
-            }
-            elseif($query["insert"])
-            {
+            } elseif ($query["insert"]) {
                 $sSQL                                   = "INSERT INTO " .  $query["from"] . "
                                                             (
                                                                 " . $query["insert"]["head"] . "
                                                             ) VALUES (
                                                                 " . $query["insert"]["body"] . "
                                                             )";
-                if($this->driver->execute($sSQL)) {
+                if ($this->driver->execute($sSQL)) {
                     $res                                    = array(
                                                                 "keys"      => array($this->driver->getInsertID(true))
                                                                 , "action"  => "insert"
                                                             );
                 } else {
-                    Error::register("MySqli Unable to Insert(Write): " . $sSQL, "database");
+                    Error::register("MySqli Unable to Insert(Write): " . $sSQL, static::ERROR_BUCKET);
                 }
             }
         }
@@ -186,10 +191,10 @@ class DatabaseMysqli extends DatabaseAdapter {
         $res                                            = null;
 
         $success                                        = $this->driver->cmd($query, $query["action"]);
-        if($success !== null) {
+        if ($success !== null) {
             $res                                        = $success;
         } else {
-            Error::register("MySqli: Unable to Execute Command" . print_r($query, true), "database");
+            Error::register("MySqli: Unable to Execute Command" . print_r($query, true), static::ERROR_BUCKET);
         }
 
         return $res;
@@ -201,61 +206,62 @@ class DatabaseMysqli extends DatabaseAdapter {
      * @return mixed
      */
     protected function convertFields($fields, $action)
-	{
+    {
         $result                                                                     = null;
-		$res 																		= array();
-		$struct 																	= $this->struct;
-		if(is_array($fields) && count($fields))
-		{
+        $res 																		= array();
+        $struct 																	= $this->struct;
+        if (is_array($fields) && count($fields)) {
             $fields                                                                 = $this->convertKey("_id", $fields);
-		    if($action == "where" && isset($fields['$or']) && is_array($fields['$or'])) {
+            if ($action == "where" && isset($fields['$or']) && is_array($fields['$or'])) {
                 $or                                                                 = $this->convertFields($fields['$or'], "where_OR");
-                if($or)                                                             { $res['$or'] = $or; }
+                if ($or) {
+                    $res['$or'] = $or;
+                }
             }
 
-		    unset($fields['$or']);
-			foreach($fields AS $name => $value)
-			{
-			    if($name == "*") {
-			        if($action == "select") {
-			            $res                                                        = null;
+            unset($fields['$or']);
+            foreach ($fields as $name => $value) {
+                if ($name == "*") {
+                    if ($action == "select") {
+                        $res                                                        = null;
                         $result["select"]                                           = "*";
-			            break;
+                        break;
                     } else {
-			            continue;
+                        continue;
                     }
                 }
 
-			    $name                                                               = str_replace("`", "", $name);
-                if(!is_null($value) && !is_array($value)) {
+                $name                                                               = str_replace("`", "", $name);
+                if (!is_null($value) && !is_array($value)) {
                     $value                                                          = str_replace("`", "", $value);
                 }
-				if ($name == "key") {
-					$name 															= $this->key_name;
-				} elseif(0 && strpos($name, "key") === 1) { //todo: esplode se hai un campo tipo pkey chediventa pID. da verificare perche esiste questa condizione
-					$name 															= substr($name, 0,1) . $this->key_name;
-				} elseif ($action == "select" && strpos($value, ".") > 0) { //todo: da valutare con il ritorno degl array che nn funziona es: read("campo_pippo => ciao.te = ["ciao"]["te"])
-					$name 															= substr($value, 0, strpos($value, "."));
-					$value 															= true;
-				}
-				if($action == "select" && !is_array($value)) {
-					$arrValue 														= explode(":", $value, 2);
-					$value 															= ($arrValue[0] ? $arrValue[0] : true);
-				}
+                if ($name == "key") {
+                    $name 															= $this->key_name;
+                } elseif (0 && strpos($name, "key") === 1) { //todo: esplode se hai un campo tipo pkey chediventa pID. da verificare perche esiste questa condizione
+                    $name 															= substr($name, 0, 1) . $this->key_name;
+                } elseif ($action == "select" && strpos($value, ".") > 0) { //todo: da valutare con il ritorno degl array che nn funziona es: read("campo_pippo => ciao.te = ["ciao"]["te"])
+                    $name 															= substr($value, 0, strpos($value, "."));
+                    $value 															= true;
+                }
+                if ($action == "select" && !is_array($value)) {
+                    $arrValue 														= explode(":", $value, 2);
+                    $value 															= ($arrValue[0] ? $arrValue[0] : true);
+                }
 
-				if($action == "sort") {
-					$res[$name] 													= "`" . str_replace(".", "`.`", $name) ."` " . ($value === "-1" || $value === "DESC"
-																						? "DESC"
-																						: "ASC"
-																					);
-					continue;
-				}
+                if ($action == "sort") {
+                    $res[$name] 													= "`" . str_replace(".", "`.`", $name) ."` " . (
+                        $value === "-1" || $value === "DESC"
+                                                                                        ? "DESC"
+                                                                                        : "ASC"
+                                                                                    );
+                    continue;
+                }
 
-				$field 																= $this->normalizeField($name, $value);
-                if($field == "special") {
-                    if($action == "where" || $action == "where_OR") {
-                        foreach($value AS $op => $subvalue) {
-                            switch($op) {
+                $field 																= $this->normalizeField($name, $value);
+                if ($field == "special") {
+                    if ($action == "where" || $action == "where_OR") {
+                        foreach ($value as $op => $subvalue) {
+                            switch ($op) {
                                 case '$gt':
                                     $res[$name . '-' . $op] 				        = "`" . $name . "`" . " > " . $this->driver->toSql($subvalue, "Number");
                                     break;
@@ -275,14 +281,14 @@ class DatabaseMysqli extends DatabaseAdapter {
                                     $res[$name . '-' . $op] 						= "`" . $name . "`" . " LIKE " . $this->driver->toSql(str_replace(array("(.*)", "(.+)", ".*", ".+", "*", "+"), "%", $subvalue));
                                     break;
                                 case '$in':
-                                    if(is_array($subvalue)) {
+                                    if (is_array($subvalue)) {
                                         $res[$name . '-' . $op]                     = "`" . $name . "`" . " IN('" . str_replace(", ", "', '", $this->driver->toSql(implode(", ", $subvalue), "Text", false)) . "')";
                                     } else {
                                         $res[$name . '-' . $op]                     = "`" . $name . "`" . " IN('" . str_replace(",", "', '", $this->driver->toSql($subvalue, "Text", false)) . "')";
                                     }
                                     break;
                                 case '$nin':
-                                    if(is_array($subvalue)) {
+                                    if (is_array($subvalue)) {
                                         $res[$name . '-' . $op] 					= "`" . $name . "`" . " NOT IN('" . str_replace(", ", "', '", $this->driver->toSql(implode(", ", $subvalue), "Text", false)) . "')";
                                     } else {
                                         $res[$name . '-' . $op] 					= "`" . $name . "`" . " NOT IN('" . str_replace(",", "', '", $this->driver->toSql($subvalue, "Text", false)) . "')";
@@ -299,26 +305,27 @@ class DatabaseMysqli extends DatabaseAdapter {
                         }
                     }
                 } else {
-                    switch($action) {
+                    switch ($action) {
                         case "select":
                             $res[$name]         									= $field["name"];
                             break;
                         case "insert":
                             $res["head"][$name]         							= $field["name"];
-                            if(is_array($field["value"])) {
-                                if($this->isAssocArray($field["value"]))														//array assoc to string
-                                    $res["body"][$name] 							= "'" . str_replace("'", "\\'", json_encode($field["value"])) . "'";
-                                else																				//array seq to string
-                                    $res["body"][$name] 							= $this->driver->toSql(implode(",", array_unique($field["value"])));
-                            } elseif(is_null($field["value"])) {
+                            if (is_array($field["value"])) {
+                                if ($this->isAssocArray($field["value"])) {                                                        //array assoc to string
+                                    $res["body"][$name]                             = "'" . str_replace("'", "\\'", json_encode($field["value"])) . "'";
+                                } else {                                                                                //array seq to string
+                                    $res["body"][$name]                             = $this->driver->toSql(implode(",", array_unique($field["value"])));
+                                }
+                            } elseif (is_null($field["value"])) {
                                 $res["body"][$name]         						= "NULL";
                             } else {
                                 $res["body"][$name]         						= $this->driver->toSql($field["value"]);
                             }
                             break;
                         case "update":
-                            if(is_array($field["value"])) {
-                                switch($field["op"]) {
+                            if (is_array($field["value"])) {
+                                switch ($field["op"]) {
                                     case "++":
                                         //skip
                                         break;
@@ -326,20 +333,21 @@ class DatabaseMysqli extends DatabaseAdapter {
                                         //skip
                                         break;
                                     case "+":
-                                        if($this->isAssocArray($field["value"])) {                                                        //array assoc to string
+                                        if ($this->isAssocArray($field["value"])) {                                                        //array assoc to string
                                             //skip
                                         } else {																				//array seq to string
                                             $res[$name] 							= "`" . $field["name"] . "` = " . "CONCAT(`"  . $field["name"] . "`, IF(`"  . $field["name"] . "` = '', '', ','), " . $this->driver->toSql(implode(",", array_unique($field["value"]))) . ")";
                                         }
                                         break;
                                     default:
-                                        if($this->isAssocArray($field["value"]))														//array assoc to string
-                                            $res[$name] 							= "`" . $field["name"] . "` = " . "'" . str_replace("'", "\\'", json_encode($field["value"])) . "'";
-                                        else																				//array seq to string
-                                            $res[$name] 							= "`" . $field["name"] . "` = " . $this->driver->toSql(implode(",", array_unique($field["value"])));
+                                        if ($this->isAssocArray($field["value"])) {                                                    //array assoc to string
+                                            $res[$name]                             = "`" . $field["name"] . "` = " . "'" . str_replace("'", "\\'", json_encode($field["value"])) . "'";
+                                        } else {                                                                                //array seq to string
+                                            $res[$name]                             = "`" . $field["name"] . "` = " . $this->driver->toSql(implode(",", array_unique($field["value"])));
+                                        }
                                 }
                             } else {
-                                switch($field["op"]) {
+                                switch ($field["op"]) {
                                     case "++":
                                         $res[$name] = $res[$name] . " + 1";
                                         break;
@@ -350,7 +358,7 @@ class DatabaseMysqli extends DatabaseAdapter {
                                         $res[$name] 								= "`" . $field["name"] . "` = " . "CONCAT(`"  . $field["name"] . "`, IF(`"  . $field["name"] . "` = '', '', ','), " . $this->driver->toSql($field["value"]) . ")";
                                         break;
                                     default:
-                                        if(is_null($field["value"])) {
+                                        if (is_null($field["value"])) {
                                             $res[$name]         			        = "`" . $field["name"] . "` = NULL";
                                         } else {
                                             $res[$name]         			        = "`" . $field["name"] . "` = " . $this->driver->toSql($field["value"]);
@@ -360,14 +368,14 @@ class DatabaseMysqli extends DatabaseAdapter {
                             break;
                         case "where":
                         case "where_OR":
-                            if(!is_array($value)) {
+                            if (!is_array($value)) {
                                 $value                                              = $field["value"];
                             }
-                            if($field["name"] == $this->key_name) {
+                            if ($field["name"] == $this->key_name) {
                                 $value 												= $this->convertID($value);
                             }
-                            if(isset($struct[$field["name"]])) {
-                                if(is_array($struct[$field["name"]])) {
+                            if (isset($struct[$field["name"]])) {
+                                if (is_array($struct[$field["name"]])) {
                                     $struct_type 								    = "array";
                                 } else {
                                     $arrStructType 									= explode(":", $struct[$field["name"]], 2);
@@ -381,7 +389,7 @@ class DatabaseMysqli extends DatabaseAdapter {
                                 case "arrayOfNumber":                                                                        //array
                                 case "array":                                                                                //array
                                     if (is_array($value) && count($value)) {
-                                        foreach($value AS $i => $item) {
+                                        foreach ($value as $item) {
                                             $res[$name][] 							= ($field["not"] ? "NOT " : "") . "FIND_IN_SET(" . $this->driver->toSql($item) . ", `" . $field["name"] . "`)";
                                         }
                                         $res[$name] 								= "(" . implode(($field["not"] ? " AND " : " OR "), $res[$name]) . ")";
@@ -397,14 +405,15 @@ class DatabaseMysqli extends DatabaseAdapter {
                                 case "text":
                                 default:
                                     if (is_array($value)) {
-                                        if(count($value))
-                                            $res[$name] 							= "`" . $field["name"] . "` " . ($field["not"] ? "NOT " : "") . "IN(" . $this->valueToFunc($value, $struct_type) . ")";
-                                    } elseif(is_null($value)) {
+                                        if (count($value)) {
+                                            $res[$name]                             = "`" . $field["name"] . "` " . ($field["not"] ? "NOT " : "") . "IN(" . $this->valueToFunc($value, $struct_type) . ")";
+                                        }
+                                    } elseif (is_null($value)) {
                                         $res[$name] 							    = "`" . $field["name"] . "` " . ($field["not"] ? "not" : "") . " is null";
-                                    } elseif(empty($value)) {
+                                    } elseif (empty($value)) {
                                         $res[$name] 							    = "`" . $field["name"] . "` " . ($field["not"] ? "<>" : "=") . " ''";
                                     } else {
-                                        switch($field["op"]) {
+                                        switch ($field["op"]) {
                                             case ">":
                                                 $op 								= ($field["not"] ? '<' : '>');
                                                 break;
@@ -427,39 +436,40 @@ class DatabaseMysqli extends DatabaseAdapter {
                         default:
                     }
                 }
-			}
+            }
 
-			if(is_array($res)) {
-				switch ($action) {
-					case "select":
+            if (is_array($res)) {
+                switch ($action) {
+                    case "select":
                         $result["select"]                                           = "`" . implode("`, `", $res) . "`";
-					    if($result["select"] != "*" && !$this->rawdata) {
+                        if ($result["select"] != "*" && !$this->rawdata) {
                             $key_name                                               = $this->getFieldAlias($this->key_name);
-                            if($key_name && !isset($res[$key_name]))                { $result["select"] .= ", `" . $key_name . "`"; }
+                            if ($key_name && !isset($res[$key_name])) {
+                                $result["select"] .= ", `" . $key_name . "`";
+                            }
                         }
-						break;
-					case "insert":
-						$result["insert"]["head"] 									= "`" . implode("`, `", $res["head"]) . "`";
-						$result["insert"]["body"] 									= implode(", ", $res["body"]);
-						break;
-					case "update":
-						$result["update"] 											= implode(", ", $res);
-						break;
-					case "where":
-						$result["where"] 											= implode(" AND ", $res);
-						break;
+                        break;
+                    case "insert":
+                        $result["insert"]["head"] 									= "`" . implode("`, `", $res["head"]) . "`";
+                        $result["insert"]["body"] 									= implode(", ", $res["body"]);
+                        break;
+                    case "update":
+                        $result["update"] 											= implode(", ", $res);
+                        break;
+                    case "where":
+                        $result["where"] 											= implode(" AND ", $res);
+                        break;
                     case "where_OR":
                         $result 											        = implode(" OR ", $res);
                         break;
-					case "sort":
-						$result["sort"]												= implode(", ", $res);
-						break;
-					default:
-				}
-			}
-
-		} else {
-		    switch($action) {
+                    case "sort":
+                        $result["sort"]												= implode(", ", $res);
+                        break;
+                    default:
+                }
+            }
+        } else {
+            switch ($action) {
                 case "select":
                     $result["select"] = "*";
                     break;
@@ -473,30 +483,32 @@ class DatabaseMysqli extends DatabaseAdapter {
             }
         }
 
-		return $result;
-	}
+        return $result;
+    }
 
-	/**
+    /**
      * @param $keys
      * @return array|int|null|string
      */
-    private function convertID($keys) {
-		if(is_array($keys))
-			$res = array_filter($keys, "is_numeric");
-		elseif(!is_numeric($keys))
-			$res = null;
-		else
+    private function convertID($keys)
+    {
+        if (is_array($keys)) {
+            $res = array_filter($keys, "is_numeric");
+        } elseif (!is_numeric($keys)) {
+            $res = null;
+        } else {
             $res = $keys;
-
-		return $res;
-	}
+        }
+        return $res;
+    }
 
     /**
      * @param $value
      * @param $func
      * @return string
      */
-    private function valueToFunc($value, $func) {
+    private function valueToFunc($value, $func)
+    {
         $res                                                                        = null;
         $uFunc                                                                      = strtoupper($func);
         switch ($uFunc) {
@@ -516,9 +528,9 @@ class DatabaseMysqli extends DatabaseAdapter {
             case "MD5":
             case "OLD_PASSWORD":
             case "PASSWORD":
-                if(is_array($value)) {
+                if (is_array($value)) {
                     $res                                                            = array();
-                    foreach($value AS $i => $v) {
+                    foreach ($value as $i => $v) {
                         $res[$i]                                                    = $uFunc . "(" . $this->driver->toSql($v) . ")";
                     }
                     $res                                                            = implode(",", $res);
@@ -527,15 +539,15 @@ class DatabaseMysqli extends DatabaseAdapter {
                 }
 
                 break;
-            case "REPLACE";
-            case "CONCAT";
+            case "REPLACE":
+            case "CONCAT":
             //todo: da fare altri metodi se servono
                 break;
             case "AES256":
-                $res = openssl_encrypt ($value, "AES-256-CBC", time()/*$this->getCertificate()*/);
+                $res = openssl_encrypt($value, "AES-256-CBC", time()/*$this->getCertificate()*/);
                 break;
             default:
-                if(is_array($value)) {
+                if (is_array($value)) {
                     $res                                                            = "'" . implode("','", array_unique($value)) . "'";
                 } else {
                     $res                                                            = $this->driver->toSql($value);

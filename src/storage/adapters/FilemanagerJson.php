@@ -26,7 +26,6 @@
 namespace phpformsframework\libs\storage\adapters;
 
 use phpformsframework\libs\Constant;
-use phpformsframework\libs\Debug;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\FilemanagerAdapter;
 
@@ -37,44 +36,50 @@ class FilemanagerJson extends FilemanagerAdapter //todo: da finire
     public function read($file_path = null, $search_keys = null, $search_flag = self::SEARCH_DEFAULT)
     {
         $res                                                    = array();
-        if($file_path)                                          { $this->setFilePath($file_path); }
-        $file_path                                              = $this->getFilePath();
 
-        $json                                                   = file_get_contents($file_path);
-        if($json) {
+        $params                                                 = $this->getParams($file_path);
+        if (!$params) {
+            return false;
+        }
+
+        $json                                                   = file_get_contents($params->file_path);
+        if ($json) {
             $return                                             = json_decode($json, true);
-            if($return) {
-                if($search_keys) {
+            if ($return) {
+                if ($search_keys) {
                     $res                                        = $this->search($return, $search_keys, $search_flag);
                 } else {
                     $res                                        = $return;
                 }
-            } elseif($return === false) {
-                Error::register("syntax errors into file" . (Constant::DEBUG ? ": " . $file_path : ""));
+            } elseif ($return === false) {
+                Error::register("syntax errors into file" . (Constant::DEBUG ? ": " . $params->file_path : ""), static::ERROR_BUCKET);
             } else {
                 $res                                            = null;
             }
+            return $this->getResult($res);
         } else {
-            Error::register("syntax errors into file" . (Constant::DEBUG ? ": " . $file_path : ""), "filemanager");
+            Error::register("syntax errors into file" . (Constant::DEBUG ? ": " . $params->file_path : ""), static::ERROR_BUCKET);
         }
 
-        return $this->getResult($res);
+        return null;
     }
 
+    /**
+     * @param array $data
+     * @param null $file_path
+     * @param null $var
+     * @return bool
+     */
     public function write($data, $file_path = null, $var = null)
     {
-        if($file_path)                                          { $this->setFilePath($file_path); }
-        if($var)                                                { $this->setVar($var); }
+        $params                                                 = $this->setParams($file_path, $var);
 
-        $file_path                                              = $this->getFilePath();
-        $var                                                    = $this->getVar();
-
-        $root_node                                              = ($var
-                                                                    ? array($var => $data)
+        $root_node                                              = (
+            $params->var
+                                                                    ? array($params->var => $data)
                                                                     : $data
                                                                 );
 
-        return $this->save(json_encode($root_node), $file_path);
+        return $this->save(json_encode($root_node), $params->file_path);
     }
-
 }

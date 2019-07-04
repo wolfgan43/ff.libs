@@ -25,7 +25,8 @@
  */
 namespace phpformsframework\libs;
 
-class Error {
+class Error
+{
     const TYPE                                                  = "Error";
     const STATUS_CODE                                           = array(
                                                                       100 => "100 Continue"
@@ -103,24 +104,27 @@ class Error {
                                                                         , "media."  => "media"
                                                                     )
                                                                 );
-    public static function addRules($rules) {
-        if(is_array($rules) && count($rules)) {
-            if(isset($rules["hosts"])) {
-                foreach($rules["hosts"] AS $source => $engine) {
+    public static function addRules($rules)
+    {
+        if (is_array($rules) && count($rules)) {
+            if (isset($rules["hosts"])) {
+                foreach ($rules["hosts"] as $source => $engine) {
                     self::addRule($source, $engine, "host");
                 }
             }
-            if(isset($rules["paths"])) {
-                foreach($rules["paths"] AS $source => $engine) {
+            if (isset($rules["paths"])) {
+                foreach ($rules["paths"] as $source => $engine) {
                     self::addRule($source, $engine, "host");
                 }
             }
         }
     }
-    public static function addRule($source, $engine, $type = "path") {
+    public static function addRule($source, $engine, $type = "path")
+    {
         self::$rules[$type][$source]                            = $engine;
     }
-    public static function getErrorMessage($code) {
+    public static function getErrorMessage($code)
+    {
         $status_code                                            = self::STATUS_CODE;
 
         return (isset($status_code[$code])
@@ -128,13 +132,15 @@ class Error {
             : null
         );
     }
-    public static function send($code = 404, $template = null) {
+    public static function send($code = 404, $template = null)
+    {
         Response::error($code, $template);
     }
 
-    private static function find($path_info) {
+    private static function find($path_info)
+    {
         $type                                           = self::findByHost();
-        if($type) {
+        if ($type) {
             $rule                                       = array(
                                                             "type"      => $type
                                                             , "path"    => $path_info
@@ -146,10 +152,12 @@ class Error {
         return $rule;
     }
 
-    private static function findByHost($host_name = null) {
+    private static function findByHost($host_name = null)
+    {
         $res                                            = false;
-        if(is_array(self::$rules["host"]) && count(self::$rules["host"])) {
-            $arrHost                                    = explode(".", ($host_name
+        if (is_array(self::$rules["host"]) && count(self::$rules["host"])) {
+            $arrHost                                    = explode(".", (
+                $host_name
                                                             ? $host_name
                                                             : $_SERVER["HTTP_HOST"]
                                                         ));
@@ -157,24 +165,24 @@ class Error {
             $res                                        = isset(self::$rules["host"][$arrHost[0]]);
         }
         return $res;
-
     }
 
-    private static function findByPath($path_info) {
+    private static function findByPath($path_info)
+    {
         $rule                                           = null;
         $res                                            = false;
-        if(is_array(self::$rules["path"]) && count(self::$rules["path"])) {
+        if (is_array(self::$rules["path"]) && count(self::$rules["path"])) {
             $base_path                                  = $path_info;
-            if($base_path) {
+            if ($base_path) {
                 do {
                     $base_path                          = dirname($base_path);
-                    if(isset(self::$rules["path"][$base_path])) {
+                    if (isset(self::$rules["path"][$base_path])) {
                         $rule                           = self::$rules["path"][$base_path];
                         break;
                     }
-                } while($base_path != DIRECTORY_SEPARATOR);
+                } while ($base_path != DIRECTORY_SEPARATOR);
 
-                if($rule) {
+                if ($rule) {
                     $res                                = array(
                                                             "type"          => $rule
                                                             , "base_path"   => $base_path
@@ -188,12 +196,13 @@ class Error {
         return $res;
     }
 
-    public static function run($path_info) {
+    public static function run($path_info)
+    {
         $rule                                           = self::find($path_info);
 
         Hook::handle("on_error_process", $path_info);
 
-        if($rule) {
+        if ($rule) {
             switch ($rule["type"]) {
                 case "media":
                     self::send("404");
@@ -210,11 +219,13 @@ class Error {
         exit;
     }
 
-    public static function check($bucket = null) {
+    public static function check($bucket = null)
+    {
         return (bool) self::raise($bucket);
     }
-    public static function raise($bucket = null) {
-        if($bucket && !isset(self::$errors[$bucket])) {
+    public static function raise($bucket = null)
+    {
+        if ($bucket && !isset(self::$errors[$bucket])) {
             return null;
         }
 
@@ -223,17 +234,19 @@ class Error {
             : self::$errors
         );
     }
-    public static function clear($bucket = null) {
-        if($bucket === false) {
+    public static function clear($bucket = null)
+    {
+        if ($bucket === false) {
             self::$errors                               = null;
         } else {
             self::$errors[$bucket]                      = null;
         }
     }
-    public static function register($error, $bucket = null) {
-        if($error) {
+    public static function register($error, $bucket = null)
+    {
+        if ($error) {
             self::$errors[$bucket][]                    = $error;
-            if(Constant::DEBUG) {
+            if (Constant::DEBUG) {
                 Debug::dump($error);
                 exit;
             } else {
@@ -247,18 +260,22 @@ class Error {
         );
     }
 
-    public static function registerWarning($error, $bucket = null) {
-        self::$errors[$bucket][]                        = (is_array($error)
+    public static function registerWarning($error, $bucket = null)
+    {
+        self::$errors[$bucket][]                        = (
+            is_array($error)
                                                             ? print_r($error, true)
                                                             : $error
                                                         );
     }
-    public static function transfer($from_bucket, $to_bucket) {
-        if(self::check($from_bucket)) {
+    public static function transfer($from_bucket, $to_bucket)
+    {
+        if (self::check($from_bucket)) {
             self::register(self::raise($from_bucket), $to_bucket);
         }
     }
-    public static function dump($errdes, $errno = E_USER_ERROR, $context = NULL, $variables = NULL) {
+    public static function dump($errdes, $errno = E_USER_ERROR, $context = null, $variables = null)
+    {
         ErrorHandler::raise($errdes, $errno, $context, $variables);
     }
 }

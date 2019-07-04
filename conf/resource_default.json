@@ -54,8 +54,9 @@
       ]
     },
     "widgets": {
-      "flag": 4,
+      "flag": 8,
       "type": "widget",
+      "prototype" : "parentname/extension",
       "filter": [
         "html",
         "css",
@@ -67,6 +68,13 @@
       "type": "xml",
       "filter": [
         "xml"
+      ]
+    },
+    "email": {
+      "flag": 4,
+      "type": "email",
+      "filter": [
+        "html"
       ]
     }
   }

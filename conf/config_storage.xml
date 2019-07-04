@@ -8,13 +8,11 @@
         <media source="(.*)" obj="phpformsframework\libs\storage\Media" method="get" params="$1" />
     </engine>
     <dirs>
-        <dir type="cache" path="/cache/.thumbs" />
-        <dir type="cache" path="/cache/assets" />
-        <dir type="app" path="/uploads" />
+        <dir type="config" path="/conf/packages" />
+        <dir type="app" path="/uploads"  writable="true" />
 
         <dir type="asset" path="[LIBS_PATH]/phpformsframework/libs/assets/common" scan="common" />
         <dir type="asset" path="[LIBS_PATH]/phpformsframework/libs/assets/css" scan="css" />
-        <dir type="asset" path="[LIBS_PATH]/phpformsframework/libs/assets/email" scan="email" />
         <dir type="asset" path="[LIBS_PATH]/phpformsframework/libs/assets/fonts" scan="fonts" />
         <dir type="asset" path="[LIBS_PATH]/phpformsframework/libs/assets/images" scan="images" />
         <dir type="asset" path="[LIBS_PATH]/phpformsframework/libs/assets/js" scan="js" />

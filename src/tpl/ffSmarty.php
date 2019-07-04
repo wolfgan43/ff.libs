@@ -36,29 +36,29 @@ use Exception;
  * Time: 10:11
  */
 
-class ffSmarty extends Smarty {
+class ffSmarty extends Smarty
+{
     public $tpl_file;
 
-    public function __construct($file = null) {
-
+    public function __construct($file = null)
+    {
         parent::__construct();
-
-        $disk_path              = Constant::DOCUMENT_ROOT;
 
         $this->tpl_file         = $file;
 
 
-        $this->template_dir     = $disk_path . '/cache/smarty/templates';
-        $this->compile_dir      = $disk_path . '/cache/smarty/templates_c';
-        $this->config_dir       = $disk_path . '/cache/smarty/configs';
-        $this->cache_dir        = $disk_path . '/cache/smarty/cache';
+        $this->template_dir     = Constant::DISK_PATH . '/cache/smarty/templates';
+        $this->compile_dir      = Constant::DISK_PATH . '/cache/smarty/templates_c';
+        $this->config_dir       = Constant::DISK_PATH . '/cache/smarty/configs';
+        $this->cache_dir        = Constant::DISK_PATH . '/cache/smarty/cache';
 
         $this->caching          = false;
 
         $this->cache_lifetime   = 10;
     }
 
-    public function is_cached () {
+    public function is_cached()
+    {
         try {
             $res = $this->isCached($this->tpl_file);
         } catch (Exception $exc) {
@@ -77,4 +77,3 @@ class ffSmarty extends Smarty {
         return $res;
     }
 }
-

@@ -25,44 +25,73 @@
  */
 namespace phpformsframework\libs\cache;
 
-
-
 use phpformsframework\libs\Constant;
 
 abstract class MemAdapter
 {
+    public static $serializer       = "PHP";
+    public static $dump             = array();
+
     private $ttl                    = 0;
+    private $bucket                 = null;
 
-	public abstract function set($name, $value = null, $bucket = Constant::APPID);
-	public abstract function get($name, $bucket = Constant::APPID);
-    public abstract function del($name, $bucket = Constant::APPID);
-	public abstract function clear($bucket = Constant::APPID);
-
-
-	protected function setTTL($val) {
-	    $this->ttl = $val;
-
+    public static function dump()
+    {
+        return self::$dump;
     }
-    protected function getTTL() {
+
+    abstract public function set($name, $value = null, $bucket = null);
+    abstract public function get($name, $bucket = null);
+    abstract public function del($name, $bucket = null);
+    abstract public function clear($bucket = null);
+
+    public function __construct($bucket = null)
+    {
+        $this->bucket = Constant::APPID . "/" . $bucket;
+    }
+
+    private function cache($bucket, $action, $name = "*")
+    {
+        self::$dump[$action . " => " . $bucket . " => " . $name] = (
+            isset(self::$dump[$action . " => " . $bucket . " => " . $name])
+            ? self::$dump[$action . " => " . $bucket . " => " . $name] + 1
+            : 1
+        );
+    }
+
+    protected function setTTL($val)
+    {
+        $this->ttl = $val;
+    }
+    protected function getTTL()
+    {
         return $this->ttl;
     }
 
-    protected function getBucket($name = null) {
-	    return ($name && substr($name, 0, 1) == "/"
-            ? Constant::APPID
-            : ""
-        ) . $name;
+    protected function getBucket($name = null)
+    {
+        return ($name
+            ? $name
+            : $this->bucket
+        );
     }
-    protected function getKey($name, $bucket = null) {
+    protected function getKey($action, &$bucket, &$name = null)
+    {
+        $bucket = $this->getBucket($bucket);
+        $name = ltrim($name, "/");
+
+        $this->cache($bucket, $action, $name);
+
         return ($bucket
-            ? $this->getBucket($bucket) . "/" . ltrim($name, "/")
+            ? $bucket . "/" . $name
             : $name
         );
     }
 
-    protected function setValue($value) {
-        if(is_array($value)) {
-            switch (Constant::CACHE_SERIALIZER) {
+    protected function setValue($value)
+    {
+        if (is_array($value)) {
+            switch (static::$serializer) {
                 case "PHP":
                     $value = serialize($value);
                     break;
@@ -74,10 +103,11 @@ abstract class MemAdapter
                 default:
             }
         }
-	    return $value;
+        return $value;
     }
-    protected function getValue($value) {
-        switch (Constant::CACHE_SERIALIZER) {
+    protected function getValue($value)
+    {
+        switch (static::$serializer) {
             case "PHP":
                 $data = unserialize($value);
                 break;
@@ -95,5 +125,4 @@ abstract class MemAdapter
             : $data
         );
     }
-
 }

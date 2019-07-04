@@ -26,7 +26,7 @@
 namespace phpformsframework\libs\delivery\drivers;
 
 use phpformsframework\libs\Constant;
-use phpformsframework\libs\DirStruct;
+use phpformsframework\libs\Dir;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Request;
@@ -34,10 +34,11 @@ use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\tpl\ffTemplate;
 use phpformsframework\libs\security\Validator;
 
-final class MailerTemplate extends Mailer {
+final class MailerTemplate extends Mailer
+{
     const MAILER_TPL_PATH                                   = Constant::VENDOR_LIBS_DIR . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'email';
 
-     //body
+    //body
     private $fields                                         = array();
 
     private $tpl_html_path                                  = null;
@@ -63,8 +64,10 @@ final class MailerTemplate extends Mailer {
         parent::__construct($mailerAdapter);
     }
 
-    public function setMessage($fields) {
-        $this->fields                                       = (is_array($fields)
+    public function setMessage($fields)
+    {
+        $this->fields                                       = (
+            is_array($fields)
                                                                 ? $fields
                                                                 : array("content" => $fields)
                                                             );
@@ -74,16 +77,16 @@ final class MailerTemplate extends Mailer {
     protected function processSubject()
     {
         $subject                                            = str_replace(
-                                                                array_keys($this->fields)
-                                                                , array_values($this->fields)
-                                                                , Translator::get_word_by_code($this->subject)
+            array_keys($this->fields),
+            array_values($this->fields),
+            Translator::get_word_by_code($this->subject)
                                                             );
         return $subject;
     }
 
     protected function processBody()
     {
-        if($this->body === null) {
+        if ($this->body === null) {
             $this->processTemplate();
         }
         return $this->body;
@@ -91,7 +94,7 @@ final class MailerTemplate extends Mailer {
 
     protected function processBodyAlt()
     {
-        if($this->body === null) {
+        if ($this->body === null) {
             $this->processTemplate();
         }
         return $this->bodyAlt;
@@ -99,17 +102,18 @@ final class MailerTemplate extends Mailer {
 
     private function loadTemplate($template)
     {
-        if($template) {
-            if(is_file($template)) {
+        if ($template) {
+            if (is_file($template)) {
                 $this->tpl_html_path                = $template;
             } else {
-                $mail_disk_path                     = DirStruct::getDiskPath("mail");
+                $mail_disk_path                     = Dir::getDiskPath("mail");
                 if (is_file($mail_disk_path . $template)) {
                     $this->tpl_html_path            = $mail_disk_path . $template;
                 }
             }
         } else {
-            $tpl_name                               = (is_array($this->fields) && count($this->fields)
+            $tpl_name                               = (
+                is_array($this->fields) && count($this->fields)
                                                         ? "default"
                                                         : "empty"
                                                     );
@@ -117,55 +121,50 @@ final class MailerTemplate extends Mailer {
             $this->tpl_html_path                    = $this::MAILER_TPL_PATH . $tpl_name . ".html";
         }
 
-		if($this->tpl_html_path) {
-		    if(is_dir(dirname($this->tpl_html_path) . "/images")) {
-		        Filemanager::scan(dirname($this->tpl_html_path) . "/images", array("jpg", "png", "svg", "gif"), function($image) {
-		            $this->addImage($image);
+        if ($this->tpl_html_path) {
+            if (is_dir(dirname($this->tpl_html_path) . "/images")) {
+                Filemanager::scan(dirname($this->tpl_html_path) . "/images", array("jpg", "png", "svg", "gif"), function ($image) {
+                    $this->addImage($image);
                 });
             }
 
-			$this->tpl_html = new ffTemplate();
+            $this->tpl_html = new ffTemplate();
             $this->tpl_html->load_file($this->tpl_html_path, "main");
 
-            if(is_file(dirname($this->tpl_html_path) . "/default.txt")) {
+            if (is_file(dirname($this->tpl_html_path) . "/default.txt")) {
                 $this->tpl_text_path = dirname($this->tpl_html_path) . "/default.txt";
 
                 $this->tpl_text = new ffTemplate();
                 $this->tpl_text->load_file($this->tpl_text_path, "main");
             }
         } else {
-            Error::register("Template not found" . (Constant::DEBUG ? ": " . $this->tpl_html_path : ""), "mailer");
+            Error::register("Template not found" . (Constant::DEBUG ? ": " . $this->tpl_html_path : ""), static::ERROR_BUCKET);
         }
     }
-    private function processTemplate() {
+    private function processTemplate()
+    {
         /**
          * Process Fields
          */
-        if (is_array($this->fields))
-        {
+        if (is_array($this->fields)) {
             $count_group = 0;
             $group_type = array("Table" => true);
-            foreach ($this->fields AS $fields_key => $fields_value)
-            {
-                $field_type = (isset($fields_value["settings"]["type"])
+            foreach ($this->fields as $fields_key => $fields_value) {
+                $field_type = (
+                    isset($fields_value["settings"]["type"])
                                 ? $fields_value["settings"]["type"]
                                 : ""
                             );
-                if (is_array($fields_value) && count($fields_value))
-                {
+                if (is_array($fields_value) && count($fields_value)) {
                     $count_row = 0;
-                    foreach ($fields_value AS $fields_value_key => $fields_value_value)
-                    {
+                    foreach ($fields_value as $fields_value_key => $fields_value_value) {
                         if (strtolower($fields_value_key) == "settings") {
                             continue;
                         }
-                        switch ($field_type)
-                        {
+                        switch ($field_type) {
                             case "Table":
-                                if (is_array($fields_value_value) && count($fields_value_value))
-                                {
-                                    foreach ($fields_value_value AS $fields_value_value_key => $fields_value_value_value)
-                                    {
+                                if (is_array($fields_value_value) && count($fields_value_value)) {
+                                    foreach ($fields_value_value as $fields_value_value_key => $fields_value_value_value) {
                                         if (strtolower($fields_value_value_key) == "settings") {
                                             continue;
                                         }
@@ -179,14 +178,12 @@ final class MailerTemplate extends Mailer {
                                 }
                                 break;
                             case "":
-                                if (is_array($fields_value_value) && count($fields_value_value))
-                                {
-                                    foreach ($fields_value_value AS $fields_value_value_key => $fields_value_value_value) {
+                                if (is_array($fields_value_value) && count($fields_value_value)) {
+                                    foreach ($fields_value_value as $fields_value_value_key => $fields_value_value_value) {
                                         if (strtolower($fields_value_value_key) == "settings") {
                                             continue;
                                         }
                                         $this->parse_mail_field($fields_value_value_value, $fields_value_value_key, $field_type, $count_row);
-
                                     }
 
                                     $this->parse_mail_row($field_type, true);
@@ -200,7 +197,7 @@ final class MailerTemplate extends Mailer {
                     }
                 } else {
                     $this->tpl_html->set_var($fields_key, $fields_value); //custom vars
-                    if($this->tpl_text) {
+                    if ($this->tpl_text) {
                         $this->tpl_text->set_var($fields_key, $fields_value); //custom vars
                     }
                 }
@@ -211,17 +208,19 @@ final class MailerTemplate extends Mailer {
             }
 
             $this->tpl_html->parse("SezFields", false);
-            if($this->tpl_text) {
+            if ($this->tpl_text) {
                 $this->tpl_text->parse("SezFields", false);
             }
         }
 
-        $this->body = ($this->tpl_html
+        $this->body = (
+            $this->tpl_html
             ? $this->tpl_html->rpparse("main", false)
             : ''
         );
 
-        $this->bodyAlt = ($this->tpl_text
+        $this->bodyAlt = (
+            $this->tpl_text
             ? $this->tpl_text->rpparse("main", false)
             : ''
         );
@@ -238,8 +237,7 @@ final class MailerTemplate extends Mailer {
          * Parse field html(label, value, real_name)
          */
         $this->tpl_html->parse("SezStyle" . $type, false);
-        foreach ($groups AS $group_key => $group_value)
-        {
+        foreach ($groups as $group_key => $group_value) {
             if ($group_key != $type) {
                 $this->tpl_html->set_var("SezStyle" . $group_key, "");
             }
@@ -254,8 +252,7 @@ final class MailerTemplate extends Mailer {
         $this->tpl_html->set_var("SezFieldLabel", "");
         $this->tpl_html->set_var("SezField", "");
 
-        foreach ($groups AS $group_key => $group_value)
-        {
+        foreach ($groups as $group_key => $group_value) {
             $this->tpl_html->set_var("Sez" . $group_key . "FieldLabel", "");
             $this->tpl_html->set_var("Sez" . $group_key . "Field", "");
             $this->tpl_html->set_var("Sez" . $group_key . "Row", "");
@@ -264,10 +261,9 @@ final class MailerTemplate extends Mailer {
         /*
          * Parse field text(label, value, real_name)
          */
-        if($this->tpl_text)
-        {
+        if ($this->tpl_text) {
             $this->tpl_text->parse("SezStyle" . $type, false);
-            foreach ($groups AS $group_key => $group_value) {
+            foreach ($groups as $group_key => $group_value) {
                 if ($group_key != $type) {
                     $this->tpl_text->set_var("SezStyle" . $group_key, "");
                 }
@@ -282,8 +278,7 @@ final class MailerTemplate extends Mailer {
             $this->tpl_text->set_var("SezFieldLabel", "");
             $this->tpl_text->set_var("SezField", "");
 
-            foreach ($groups AS $group_key => $group_value)
-            {
+            foreach ($groups as $group_key => $group_value) {
                 $this->tpl_text->set_var("Sez" . $group_key . "FieldLabel", "");
                 $this->tpl_text->set_var("Sez" . $group_key . "Field", "");
                 $this->tpl_text->set_var("Sez" . $group_key . "Row", "");
@@ -300,15 +295,14 @@ final class MailerTemplate extends Mailer {
     private function parse_mail_field($value, $name, $type = null, $skip_label = false)
     {
         $this->tpl_html->set_var($name, $value); //custom vars
-        if($this->tpl_text) {
+        if ($this->tpl_text) {
             $this->tpl_text->set_var($name, $value); //custom vars
         }
 
         /*
          * Parse field html(label, value, real_name)
          */
-        if (!$skip_label)
-        {
+        if (!$skip_label) {
             $this->tpl_html->set_var("fields_label", $this->process_mail_field($name));
             $this->tpl_html->parse("Sez" . $type . "FieldLabel", true);
         }
@@ -318,17 +312,15 @@ final class MailerTemplate extends Mailer {
         $this->tpl_html->parse("Sez" . $type . "Field", true);
 
         $this->tpl_html->set_var(                      //custom vars
-            $this->process_mail_field($name)
-            , $this->process_mail_field($value)
+            $this->process_mail_field($name),
+            $this->process_mail_field($value)
         );
 
         /*
          * Parse field text(label, value, real_name)
          */
-        if($this->tpl_text)
-        {
-            if (!$skip_label)
-            {
+        if ($this->tpl_text) {
+            if (!$skip_label) {
                 $this->tpl_text->set_var("fields_label", $this->process_mail_field($name));
                 $this->tpl_text->parse("Sez" . $type . "FieldLabel", true);
             }
@@ -337,8 +329,8 @@ final class MailerTemplate extends Mailer {
             $this->tpl_text->parse("SezField", true);
 
             $this->tpl_text->set_var(                  //custom vars
-                $this->process_mail_field($name)
-                , $this->process_mail_field($value)
+                $this->process_mail_field($name),
+                $this->process_mail_field($value)
             );
         }
     }
@@ -352,12 +344,12 @@ final class MailerTemplate extends Mailer {
         $this->tpl_html->parse("Sez" . $type . "Row", false);
         $this->tpl_html->parse("SezRow" . $type, false); //custom vars
 
-        if($reset_field) {
+        if ($reset_field) {
             $this->tpl_html->set_var("Sez" . $type . "Field", "");
             $this->tpl_html->set_var("Sez" . $type . "FieldLabel", "");
         }
 
-        if($this->tpl_text) {
+        if ($this->tpl_text) {
             $this->tpl_text->parse("Sez" . $type . "Row", false);
             $this->tpl_text->parse("SezRow" . $type, false); //custom vars
             if ($reset_field) {
@@ -375,11 +367,11 @@ final class MailerTemplate extends Mailer {
      */
     protected function process_mail_field($value, $type = null)
     {
-        switch($type) {
+        switch ($type) {
             case "link":
                 $link = $value;
-                if(strpos($value, "http") === 0) {
-                    $link = Request::webhost() . substr($link, 4);
+                if (strpos($value, "http") === 0) {
+                    $link = Request::protocol_host() . substr($link, 4);
                 }
 
                 $res = $this->link_to_tagA($link, $value);
@@ -395,31 +387,38 @@ final class MailerTemplate extends Mailer {
     }
 
 
-    private function link_to_tagA($description, $alias = null, $email_alias = null) {
-        if($alias) {
+    private function link_to_tagA($description, $alias = null, $email_alias = null)
+    {
+        if ($alias) {
             $old_description = $description;
-            $description = preg_replace( '%^((https?://)|(www\.))([a-z0-9-].?)+(:[0-9]+)?(/.*)?$%i',
-                '<a href="http://\\0" target="_blank" rel="nofollow">' . "[--alias--]" . '</a>', $description);
+            $description = preg_replace(
+                '%^((https?://)|(www\.))([a-z0-9-].?)+(:[0-9]+)?(/.*)?$%i',
+                '<a href="http://\\0" target="_blank" rel="nofollow">' . "[--alias--]" . '</a>',
+                $description
+            );
 
-            if($old_description != $description) {
+            if ($old_description != $description) {
                 $description = str_replace("[--alias--]", Translator::get_word_by_code($alias), $description);
             }
         } else {
-            $description = preg_replace( '%^((https?://)|(www\.))([a-z0-9-].?)+(:[0-9]+)?(/.*)?$%i',
-                '<a href="http://\\0" target="_blank" rel="nofollow">' . '\\0' . '</a>', $description);
+            $description = preg_replace(
+                '%^((https?://)|(www\.))([a-z0-9-].?)+(:[0-9]+)?(/.*)?$%i',
+                '<a href="http://\\0" target="_blank" rel="nofollow">' . '\\0' . '</a>',
+                $description
+            );
         }
 
         $description = str_replace("http://http://", "http://", $description);
 
-        if($email_alias) {
+        if ($email_alias) {
             $old_description = $description;
 
-            $description = preg_replace('/([.0-9a-z_-]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,4})/i','<a href="mailto:$1@$2">[--mailalias--]</a>', $description);
-            if($old_description != $description) {
+            $description = preg_replace('/([.0-9a-z_-]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,4})/i', '<a href="mailto:$1@$2">[--mailalias--]</a>', $description);
+            if ($old_description != $description) {
                 $description = str_replace("[--mailalias--]", Translator::get_word_by_code($email_alias), $description);
             }
         } else {
-            $description = preg_replace('/([.0-9a-z_-]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,4})/i','<a href="mailto:$1@$2">$1@$2</a>', $description);
+            $description = preg_replace('/([.0-9a-z_-]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,4})/i', '<a href="mailto:$1@$2">$1@$2</a>', $description);
         }
 
         return $description;

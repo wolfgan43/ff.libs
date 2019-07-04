@@ -32,9 +32,8 @@ use phpformsframework\libs\Error;
 use mysqli_result;
 use phpformsframework\libs\storage\DatabaseDriver;
 
-
 /**
- * ffDB_Sql ÃƒÂ¨ la classe preposta alla gestione della connessione con database di tipo SQL
+ * classe preposta alla gestione della connessione con database di tipo SQL
  *
  * @package FormsFramework
  * @subpackage utils
@@ -45,13 +44,15 @@ use phpformsframework\libs\storage\DatabaseDriver;
  */
 class MySqli implements DatabaseDriver
 {
-    static $_dbs = array();
-    static $_sharelink = true;
+    const ERROR_BUCKET              = "database";
+
+    public static $_dbs = array();
+    public static $_sharelink = true;
 
     public $locale                  = "ISO9075";
-    public $charset			        = "utf8"; //"utf8";
-    public $charset_names		    = "utf8"; //"utf8";
-    public $charset_collation	    = "utf8_unicode_ci"; //"utf8_unicode_ci";
+    public $charset			        = "utf8";
+    public $charset_names		    = "utf8";
+    public $charset_collation	    = "utf8_unicode_ci";
 
     // PARAMETRI DI CONNESSIONE
     private $database               = null;
@@ -62,16 +63,16 @@ class MySqli implements DatabaseDriver
     // PARAMETRI DI DEBUG
 
     // PARAMETRI SPECIFICI DI MYSQL
-    var $persistent					= false;	## Setting to true will cause use of mysql_pconnect instead of mysql_connect
+    public $persistent					= false;	## Setting to true will cause use of mysql_pconnect instead of mysql_connect
 
-    var $transform_null				= true;
+    public $transform_null				= true;
 
     // -------------------
     //  VARIABILI PRIVATE
 
     // VARIABILI DI GESTIONE DEI RISULTATI
-    var $row			= -1;
-    var $record			= false;
+    public $row			= -1;
+    public $record			= false;
 
     /* public: current error number and error text */
     public $errno                   = 0;
@@ -86,25 +87,25 @@ class MySqli implements DatabaseDriver
      */
     private $query_id               = false;
 
-    var $fields			= null;
-    var $fields_names	= null;
-    var $field_primary  = null;
+    public $fields			= null;
+    public $fields_names	= null;
+    public $field_primary  = null;
 
     private $num_rows               = null;
 
-    var $avoid_real_connect         = true;
-    var $buffered_affected_rows     = null;
-    var $buffered_insert_id         = null;
+    public $avoid_real_connect         = true;
+    public $buffered_affected_rows     = null;
+    public $buffered_insert_id         = null;
 
-    var $reconnect                  = true;
-    var $reconnect_tryed            = false;
+    public $reconnect                  = true;
+    public $reconnect_tryed            = false;
 
-    static public function addEvent($event_name, $func_name, $priority = null)
+    public static function addEvent($event_name, $func_name, $priority = null)
     {
         Hook::register("mysqli:" . $event_name, $func_name, $priority);
     }
 
-    static private function doEvent($event_name, $event_params = array())
+    private static function doEvent($event_name, $event_params = array())
     {
         Hook::handle("mysqli:" . $event_name, $event_params);
     }
@@ -126,29 +127,25 @@ class MySqli implements DatabaseDriver
 
     public static function free_all()
     {
-        if (static::$_sharelink)
-        {
-            foreach (static::$_dbs as $key => $link)
-            {
+        if (static::$_sharelink) {
+            foreach (static::$_dbs as $key => $link) {
                 @mysqli_kill($link, mysqli_thread_id($link));
                 @mysqli_close($link);
             }
-        }
-        else
-        {
+        } else {
             $tmp_keys = array_keys(static::$_dbs);
-            foreach ($tmp_keys as $key)
-            {
+            foreach ($tmp_keys as $key) {
                 static::$_dbs[$key]->cleanup(true);
             }
         }
     }
 
     // CONSTRUCTOR
-    function __construct()
+    public function __construct()
     {
-        if (!static::$_sharelink)
+        if (!static::$_sharelink) {
             static::$_dbs[] = $this;
+        }
     }
 
     // -------------------------------------------------
@@ -158,14 +155,11 @@ class MySqli implements DatabaseDriver
     private function cleanup($force = false)
     {
         $this->freeResult();
-        if (is_object($this->link_id))
-        {
-            if ($force || (!static::$_sharelink && !$this->persistent))
-            {
+        if (is_object($this->link_id)) {
+            if ($force || (!static::$_sharelink && !$this->persistent)) {
                 @mysqli_kill($this->link_id, mysqli_thread_id($this->link_id));
                 @mysqli_close($this->link_id);
-                if (static::$_sharelink)
-                {
+                if (static::$_sharelink) {
                     $dbkey = $this->host . "|" . $this->user . "|" . $this->password;
                     unset(static::$_dbs[$dbkey]);
                 }
@@ -212,28 +206,28 @@ class MySqli implements DatabaseDriver
         // ELABORA I PARAMETRI DI CONNESSIONE
         if ($Host !== null) {
             $tmp_host                               = $Host;
-        } else if ($this->host === null) {
+        } elseif ($this->host === null) {
             $tmp_host                               = FF_DATABASE_HOST;
         } else {
             $tmp_host                               = $this->host;
         }
         if ($User !== null) {
             $tmp_user                               = $User;
-        } else if ($this->user === null) {
+        } elseif ($this->user === null) {
             $tmp_user                               = FF_DATABASE_USER;
         } else {
             $tmp_user                               = $this->user;
         }
         if ($Password !== null) {
             $tmp_pwd                                = $Password;
-        } else if ($this->password === null) {
+        } elseif ($this->password === null) {
             $tmp_pwd                                = FF_DATABASE_PASSWORD;
         } else {
             $tmp_pwd                                = $this->password;
         }
         if ($Database !== null) {
             $tmp_database                           = $Database;
-        } else if ($this->database === null) {
+        } elseif ($this->database === null) {
             $tmp_database                           = FF_DATABASE_NAME;
         } else {
             $tmp_database                           = $this->database;
@@ -243,8 +237,7 @@ class MySqli implements DatabaseDriver
         $dbkey                                      = null;
 
         // CHIUDE LA CONNESSIONE PRECEDENTE NEL CASO DI RIUTILIZZO DELL'OGGETTO
-        if (is_object($this->link_id))
-        {
+        if (is_object($this->link_id)) {
             if (
                 ($this->host !== $tmp_host || $this->user !== $tmp_user || $this->database !== $tmp_database)
                 || $force
@@ -315,13 +308,16 @@ class MySqli implements DatabaseDriver
     // -------------------------------------------
     //  FUNZIONI PER LA GESTIONE DELLE OPERAZIONI
 
-    public function insert($Query_String, $table = null){
+    public function insert($Query_String, $table = null)
+    {
         return $this->execute($Query_String);
     }
-    public function update($Query_String, $table = null){
+    public function update($Query_String, $table = null)
+    {
         return $this->execute($Query_String);
     }
-    public function delete($Query_String, $table = null) {
+    public function delete($Query_String, $table = null)
+    {
         return $this->execute($Query_String);
     }
     /**
@@ -331,32 +327,24 @@ class MySqli implements DatabaseDriver
      */
     public function execute($Query_String)
     {
-        if ($Query_String == "")
+        if ($Query_String == "") {
             $this->errorHandler("Execute invoked With blank Query String");
-
-        if (!$this->link_id)
-        {
-            if (!$this->connect())
-                return false;
         }
-        /*else
-        {
-            if (!$this->selectDb())
-                return false;
-        }*/
+        if (!$this->link_id && !$this->connect()) {
+            return false;
+        }
+
         Debug::dumpCaller($Query_String);
 
         $this->freeResult();
 
         $this->query_id = @mysqli_query($this->link_id, $Query_String);
-        if ($this->checkError())
-        {
+        if ($this->checkError()) {
             $this->errorHandler("Invalid SQL: " . $Query_String);
             return false;
         }
 
-        if (static::$_sharelink)
-        {
+        if (static::$_sharelink) {
             $this->buffered_affected_rows = @mysqli_affected_rows($this->link_id);
             $this->buffered_insert_id = @mysqli_insert_id($this->link_id);
         }
@@ -371,8 +359,7 @@ class MySqli implements DatabaseDriver
     public function getRecordset($obj = null)
     {
         $res = null;
-        if (!$this->query_id)
-        {
+        if (!$this->query_id) {
             $this->errorHandler("eachAll called with no query pending");
             return false;
         }
@@ -384,8 +371,7 @@ class MySqli implements DatabaseDriver
         }
         mysqli_free_result($this->query_id);
 
-        if ($res === null && $this->checkError())
-        {
+        if ($res === null && $this->checkError()) {
             $this->errorHandler("fetch_assoc_error");
             return false;
         }
@@ -404,20 +390,24 @@ class MySqli implements DatabaseDriver
      */
     public function query($query)
     {
-        if(is_array($query)) {
+        if (is_array($query)) {
             $Query_String                                   = "SELECT "
-                . (isset($query["limit"]["calc_found_rows"])
+                . (
+                    isset($query["limit"]["calc_found_rows"])
                     ? " SQL_CALC_FOUND_ROWS "
                     : ""
                 ) . $query["select"] . "  
                                                                 FROM " .  $query["from"] . "
                                                                 WHERE " . $query["where"]
-                . (isset($query["sort"])
+                . (
+                    isset($query["sort"])
                     ? " ORDER BY " . $query["sort"]
                     : ""
                 )
-                . (isset($query["limit"])
-                    ? " LIMIT " . (is_array($query["limit"])
+                . (
+                    isset($query["limit"])
+                    ? " LIMIT " . (
+                        is_array($query["limit"])
                         ? $query["limit"]["skip"] . ", " . $query["limit"]["limit"]
                         : $query["limit"]
                     )
@@ -439,13 +429,10 @@ class MySqli implements DatabaseDriver
         $this->freeResult();
 
         $this->query_id = @mysqli_query($this->link_id, $Query_String);
-        if (!$this->query_id || $this->checkError())
-        {
+        if (!$this->query_id || $this->checkError()) {
             $this->errorHandler("Invalid SQL: " . $Query_String);
             return false;
-        }
-        else
-        {
+        } else {
             $this->fields = array();
             $this->fields_names = array();
 
@@ -462,7 +449,8 @@ class MySqli implements DatabaseDriver
         return $this->query_id;
     }
 
-    public function cmd($query, $name = "count") {
+    public function cmd($query, $name = "count")
+    {
         $res = null;
 
         Debug::dumpCaller($query);
@@ -471,7 +459,7 @@ class MySqli implements DatabaseDriver
             case "count":
                 $query["select"] = "COUNT(ID) AS count";
                 $this->query($query);
-                if($this->nextRecord()) {
+                if ($this->nextRecord()) {
                     $res = $this->record["count"];
                 }
                 break;
@@ -489,9 +477,8 @@ class MySqli implements DatabaseDriver
         if ($Query_String == "") {
             $this->errorHandler("Query invoked With blank Query String");
         }
-        if (!$this->link_id) {
-            if (!$this->connect())
-                return false;
+        if (!$this->link_id && !$this->connect()) {
+            return false;
         }
 
         Debug::dumpCaller($Query_String);
@@ -501,16 +488,15 @@ class MySqli implements DatabaseDriver
         mysqli_multi_query($this->link_id, $Query_String);
         $i = 0;
         $rc = null;
-        do
-        {
+        do {
             $i++;
             $extraResult = mysqli_use_result($this->link_id);
             $rc |= $this->checkError();
 
-            if($extraResult instanceof mysqli_result) {
+            if ($extraResult instanceof mysqli_result) {
                 $extraResult->free();
             }
-        } while(mysqli_more_results($this->link_id) && (true | mysqli_next_result($this->link_id)));
+        } while (mysqli_more_results($this->link_id) && (true | mysqli_next_result($this->link_id)));
 
         return array("rc" => !$rc, "ord" => $i);
     }
@@ -528,7 +514,7 @@ class MySqli implements DatabaseDriver
         if (strpos(strtolower(trim($tabella)), "select") !== 0) {
             $listacampi = "";
 
-            if(is_array($nomecampo)) {
+            if (is_array($nomecampo)) {
                 if (!count($nomecampo)) {
                     $this->errorHandler("lookup: Nuessun campo specificato da recuperare");
                 }
@@ -548,7 +534,7 @@ class MySqli implements DatabaseDriver
         } else {
             $sSql = $tabella;
         }
-        if(is_array($chiave)) {
+        if (is_array($chiave)) {
             if (!count($chiave)) {
                 $this->errorHandler("lookup: Nuessuna chiave specificata per il lookup");
             }
@@ -568,8 +554,7 @@ class MySqli implements DatabaseDriver
 
         $this->query($sSql);
         if ($this->nextRecord()) {
-
-            if(is_array($nomecampo)) {
+            if (is_array($nomecampo)) {
                 $valori = array();
                 if (!count($nomecampo)) {
                     $this->errorHandler("lookup: Nuessun campo specificato da recuperare");
@@ -600,7 +585,8 @@ class MySqli implements DatabaseDriver
      * @param null|object
      * @return bool|null|object
      */
-    public function nextRecord($obj = null) {
+    public function nextRecord($obj = null)
+    {
         if (!$this->query_id) {
             $this->errorHandler("nextRecord called with no query pending");
             return false;
@@ -622,34 +608,10 @@ class MySqli implements DatabaseDriver
         if ($this->record) {
             $this->row += 1;
             return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    // SI POSIZIONA AD UN RECORD SPECIFICO
-    private function seek($pos = 0) {
-        if (!$this->query_id) {
-            $this->errorHandler("Seek called with no query pending");
-            return false;
-        }
-
-        if (!@mysqli_data_seek($this->query_id, $pos)) {
-            $this->errorHandler("seek($pos) failed, result has  " . $this->numRows() . " rows");
-            @mysqli_data_seek($this->query_id, 0);
-            $this->row = -1;
-            return false;
         } else {
-            $this->record 	= @mysqli_fetch_assoc($this->query_id);
-            $this->row 		= $pos;
-            return true;
+            return false;
         }
     }
-
-
-
 
     /**
      * Conta il numero di righe
@@ -664,10 +626,10 @@ class MySqli implements DatabaseDriver
         }
 
         if ($this->num_rows === null) {
-            if($use_found_rows) {
+            if ($use_found_rows) {
                 $db = new MySqli();
                 $db->query("SELECT FOUND_ROWS() AS found_rows");
-                if($db->nextRecord()) {
+                if ($db->nextRecord()) {
                     $this->num_rows = $db->record["found_rows"];
                 }
             } else {
@@ -677,7 +639,8 @@ class MySqli implements DatabaseDriver
         return $this->num_rows;
     }
 
-    public function getInsertID($bReturnPlain = false) {
+    public function getInsertID($bReturnPlain = false)
+    {
         if (!$this->link_id) {
             $this->errorHandler("insert_id() called with no DB connection");
             return false;
@@ -706,16 +669,17 @@ class MySqli implements DatabaseDriver
      * @param bool $return_error
      * @return mixed Dato recuperato dal DB
      */
-    public function getField($Name, $data_type = "Text", $bReturnPlain = false, $return_error = true) {
+    public function getField($Name, $data_type = "Text", $bReturnPlain = false, $return_error = true)
+    {
         if (!$this->query_id) {
             $this->errorHandler("f() called with no query pending");
             return false;
         }
 
-        if(isset($this->fields[$Name])) {
+        if (isset($this->fields[$Name])) {
             $tmp = $this->record[$Name];
         } else {
-            if($return_error) {
+            if ($return_error) {
                 $tmp = "NO_FIELD [" . $Name . "]";
             } else {
                 $tmp = null;
@@ -725,10 +689,12 @@ class MySqli implements DatabaseDriver
         if ($bReturnPlain) {
             switch ($data_type) {
                 case "Number":
-                    if(strpos($tmp, ".") === false)
+                    if (strpos($tmp, ".") === false) {
                         return (int)$tmp;
-                    else
-                        return  (double)$tmp;
+                    } else {
+                        return (double)$tmp;
+                    }
+                    // no break
                 default:
                     return $tmp;
             }
@@ -755,17 +721,15 @@ class MySqli implements DatabaseDriver
         }
         if (is_array($cDataValue)) {
             $this->errorHandler("toSql: Wrong parameter, array not managed.");
-        }
-        elseif (!is_object($cDataValue)) {
+        } elseif (!is_object($cDataValue)) {
             $value = mysqli_real_escape_string($this->link_id, $cDataValue);
-        }
-        else if (get_class($cDataValue) == "Data") {
-            if ($data_type === null)
+        } elseif (get_class($cDataValue) == "Data") {
+            if ($data_type === null) {
                 $data_type = $cDataValue->data_type;
+            }
 
             $value = mysqli_real_escape_string($this->link_id, $cDataValue->getValue($data_type, $this->locale));
-        }
-        else if (get_class($cDataValue) == "DateTime") {
+        } elseif (get_class($cDataValue) == "DateTime") {
             switch ($data_type) {
                 case "Date":
                     $tmp = new Data($cDataValue, "Date");
@@ -778,8 +742,7 @@ class MySqli implements DatabaseDriver
                     $tmp = new Data($cDataValue, "DateTime");
                     $value = mysqli_real_escape_string($this->link_id, $tmp->getValue($data_type, $this->locale));
             }
-        }
-        else {
+        } else {
             $this->errorHandler("toSql: Wrong parameter, unmanaged datatype");
         }
         if ($transform_null === null) {
@@ -788,26 +751,28 @@ class MySqli implements DatabaseDriver
         switch ($data_type) {
             case "Number":
             case "ExtNumber":
-                if (!strlen($value))
-                {
-                    if ($transform_null)
+                if (!strlen($value)) {
+                    if ($transform_null) {
                         return 0;
-                    else
+                    } else {
                         return "null";
+                    }
                 }
                 return $value;
 
             default:
-                if (!strlen($value) && !$transform_null)
+                if (!strlen($value) && !$transform_null) {
                     return "null";
-
-                if (!strlen($value) && ($data_type == "Date" || $data_type == "DateTime"))
+                }
+                if (!strlen($value) && ($data_type == "Date" || $data_type == "DateTime")) {
                     $value = Data::getEmpty($data_type, $this->locale);
+                }
 
-                if ($enclose_field)
+                if ($enclose_field) {
                     return "'" . $value . "'";
-                else
+                } else {
                     return $value;
+                }
         }
     }
 
@@ -816,13 +781,14 @@ class MySqli implements DatabaseDriver
 
     private function checkError()
     {
-        if(is_object($this->link_id)) {
+        if (is_object($this->link_id)) {
             $this->error = @mysqli_error($this->link_id);
             $this->errno = @mysqli_errno($this->link_id);
-            if ($this->errno)
+            if ($this->errno) {
                 return true;
-            else
+            } else {
                 return false;
+            }
         } else {
             return true;
         }
@@ -832,10 +798,11 @@ class MySqli implements DatabaseDriver
     {
         $this->checkError(); // this is needed due to params order
 
-        Error::register("MySQL(" . $this->database . ") - " . $msg . " #" . $this->errno . ": " . $this->error, "database");
+        Error::register("MySQL(" . $this->database . ") - " . $msg . " #" . $this->errno . ": " . $this->error, static::ERROR_BUCKET);
     }
 
-    public function id2object($keys) {
+    public function id2object($keys)
+    {
         return $keys;
     }
 }

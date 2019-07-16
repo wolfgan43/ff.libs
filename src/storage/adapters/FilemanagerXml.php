@@ -25,10 +25,7 @@
  */
 namespace phpformsframework\libs\storage\adapters;
 
-use phpformsframework\libs\Constant;
 use phpformsframework\libs\storage\drivers\Array2XML;
-use phpformsframework\libs\Error;
-use phpformsframework\libs\Debug;
 use phpformsframework\libs\storage\FilemanagerAdapter;
 use Exception;
 
@@ -36,54 +33,30 @@ class FilemanagerXml extends FilemanagerAdapter
 {
     const EXT                                                   = "xml";
 
-    public function read($file_path = null, $search_keys = null, $search_flag = self::SEARCH_DEFAULT)
+
+    protected function load_file($file_path, $var = null)
     {
-        $res                                                    = array();
-        $params                                                 = $this->getParams($file_path);
-        if (!$params) {
-            return false;
-        }
-
-        $xmlstring                                              = file_get_contents($params->file_path);
-        if ($xmlstring) {
-            $return                                             = Array2XML::XML_TO_ARR($xmlstring);
-            if ($return) {
-                if ($search_keys) {
-                    $res                                        = $this->search($return, $search_keys, $search_flag);
-                } else {
-                    $res                                        = $return;
-                }
-            } elseif ($return === false) {
-                Error::register("syntax errors into file" . (Constant::DEBUG ? ": " . $params->file_path : ""), static::ERROR_BUCKET);
-            } else {
-                $res                                            = null;
-            }
-
-            return $this->getResult($res);
-        } else {
-            Error::register("syntax errors into file" . (Constant::DEBUG ? ": " . $params->file_path : ""), static::ERROR_BUCKET);
-        }
-
-        return null;
+        $xmlstring                                              = file_get_contents($file_path);
+        return ($xmlstring
+            ? Array2XML::XML_TO_ARR($xmlstring)
+            : false
+        );
     }
 
-    public function write($data, $file_path = null, $var = null)
+    protected function output($data, $var)
     {
         $xml                                                    = null;
-        $params                                                 = $this->setParams($file_path, $var);
-
-
         $root_node                                              = (
-            $params->var
-                                                                    ? $params->var
-                                                                    : "root"
-                                                                );
+            $var
+            ? $var
+            : "root"
+        );
 
         try {
             $xml                                                = Array2XML::createXML($root_node, $data);
         } catch (Exception $e) {
         }
 
-        return $this->save($xml, $params->file_path);
+        return $xml;
     }
 }

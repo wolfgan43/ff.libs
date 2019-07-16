@@ -34,7 +34,7 @@ use phpformsframework\libs\storage\Orm;
 class Translator
 {
     const ERROR_BUCKET                                  = "translator";
-    const NAME_SPACE                                    = 'phpformsframework\\libs\\international\\adapters\\';
+    const NAME_SPACE                                    = __NAMESPACE__ . '\\adapters\\';
     const ADAPTER                                       = false;
 
     const REGEXP                                        = '/\{_([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)\}/U';
@@ -93,6 +93,15 @@ class Translator
 
         return $content;
     }
+
+    public static function checkLang()
+    {
+        return (Locale::isMultiLang()
+            ? self::getLang()
+            : "nolang"
+        );
+    }
+
     public static function get_word_by_code($code, $language = null)
     {
         if (!$code || !Locale::isMultiLang()) {

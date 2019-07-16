@@ -49,53 +49,22 @@ use phpformsframework\libs\storage\DatabaseDriver;
  * @license http://opensource.org/licenses/gpl-3.0.html
  * @link http://www.formsphpframework.com
  */
-class MongoDB implements DatabaseDriver
+class MongoDB extends DatabaseDriver
 {
-    const ERROR_BUCKET      = "database";
-    public $locale             = "ISO9075";
-
-    // PARAMETRI DI CONNESSIONE
-    public $database = null;
-    public $user     = null;
-    public $password = null;
-    public $host     = null;
-    public $replica  = null;
-    public $auth     = null;
-
-    public $transform_null				= true;
-
-    // -------------------
-    //  VARIABILI PRIVATE
-
-    // VARIABILI DI GESTIONE DEI RISULTATI
-    public $row			= -1;
-    public $record			= false;
-
-    /* public: current error number and error text */
-    public $errno    = 0;
-    public $error    = "";
+    public $replica                 = null;
+    public $auth                    = null;
 
     /**
      * @var bool|Manager
      */
-    public $link_id  = false;
+    protected $link_id              = false;
     /**
      * @var bool|IteratorIterator
      */
-    public $query_id = false;
-    public $query_params = array();
+    protected $query_id             = false;
 
-    public $fields						= null;
-    public $fields_names				= null;
-
-    private $num_rows 				= null;
-
+    private $query_params           = array();
     private $keyname				= "_id";
-
-    public static $_dbs 					= array();
-    public static $_sharelink 				= true;
-
-    private $buffered_insert_id 	= null;
 
     // STATIC EVENTS MANAGEMENT
 
@@ -129,29 +98,18 @@ class MongoDB implements DatabaseDriver
         static::$_dbs = array();
     }
 
-    // CONSTRUCTOR
-    public function __construct()
-    {
-        if (!static::$_sharelink) {
-            static::$_dbs[] = $this;
-        }
-    }
-
     // -------------------------------------------------
     //  FUNZIONI GENERICHE PER LA GESTIONE DELLA CLASSE
 
     // LIBERA LA CONNESSIONE E LA QUERY
-    private function cleanup($force = false)
+    private function cleanup()
     {
         $this->freeResult();
-        if (is_object($this->link_id)) {
-            if ($force || !static::$_sharelink) {
-                if (static::$_sharelink) {
-                    $dbkey = $this->host . "|" . $this->auth;
-                    unset(static::$_dbs[$dbkey]);
-                }
-            }
+        $dbkey = $this->host . "|" . $this->auth;
+        if (isset(static::$_dbs[$dbkey])) {
+            unset(static::$_dbs[$dbkey]);
         }
+
         $this->link_id                  = false;
         $this->errno                    = 0;
         $this->error                    = "";
@@ -236,9 +194,9 @@ class MongoDB implements DatabaseDriver
                                                     : ""
                                                 );
 
-        if (static::$_sharelink && !$force) {
+        if (!$force) {
             $dbkey = $this->host . "|" . $this->auth;
-            if (is_array(static::$_dbs) && array_key_exists($dbkey, static::$_dbs)) {
+            if (isset(static::$_dbs[$dbkey])) {
                 $this->link_id =& static::$_dbs[$dbkey];
                 $do_connect = false;
             }
@@ -269,10 +227,8 @@ class MongoDB implements DatabaseDriver
                 return false;
             }
 
-            if (static::$_sharelink) {
-                static::$_dbs[$dbkey] = $this->link_id;
-                $this->link_id =& static::$_dbs[$dbkey];
-            }
+            static::$_dbs[$dbkey] = $this->link_id;
+            $this->link_id =& static::$_dbs[$dbkey];
         }
 
         return $this->link_id;
@@ -302,29 +258,16 @@ class MongoDB implements DatabaseDriver
 
     private function getQuery($query, $table, $action)
     {
-        $res = null;
-        if (is_array($query) && !empty($query[0])) {
-            foreach ($query as $mongoDB) {
-                $mongoDB["action"] = $action;
-                if ($table) {
-                    $mongoDB["table"] = $table;
-                }
-                $res = $this->execute($mongoDB);
-            }
+        if ($action == 'update') {
+            $mongoDB            = $query;
         } else {
-            if (is_array($query)) {
-                $mongoDB["where"] = $query;
-            } else {
-                $mongoDB = $this->sql2mongoDB($query);
-            }
-            if ($table) {
-                $mongoDB["table"] = $table;
-            }
-            $mongoDB["action"] = $action;
-            $res = $this->execute($mongoDB);
+            $mongoDB[$action]   = $query;
         }
 
-        return $res;
+        $mongoDB["action"]      = $action;
+        $mongoDB["table"]       = $table;
+
+        return $this->execute($mongoDB);
     }
 
     public function execute($query)
@@ -505,6 +448,11 @@ class MongoDB implements DatabaseDriver
         if (isset($mongoDB["where"][$this->keyname])) {
             $mongoDB["where"][$this->keyname] = $this->id2object($mongoDB["where"][$this->keyname]);
         }
+
+        if (!isset($mongoDB['options'])) {
+            $mongoDB['options'] = null;
+        }
+
         switch ($mongoDB["action"]) {
             case "insert":
             case "update":
@@ -595,7 +543,6 @@ class MongoDB implements DatabaseDriver
             $mongoDB["table"] = $mongoDB["from"];
         }
         if (isset($mongoDB["table"])) {
-            // Commands
             switch ($name) {
                 case "count":
                     $res = $this->numRows();
@@ -770,126 +717,15 @@ class MongoDB implements DatabaseDriver
             : (string) $var
         );
     }
-    /**
-     *
-     * @param String Nome del campo
-     * @param String Tipo di dato inserito
-     * @param bool $bReturnPlain
-     * @param bool $return_error
-     * @return bool|Data|string
-     */
-    public function getField($Name, $data_type = "Text", $bReturnPlain = false, $return_error = true)
+    protected function toSql_escape($DataValue)
     {
-        if (!$this->query_id) {
-            $this->errorHandler("f() called with no query pending");
-            return false;
-        }
-
-        if (isset($this->fields[$Name])) {
-            $tmp = $this->record[$Name];
-        } else {
-            if ($return_error) {
-                $tmp = "NO_FIELD [" . $Name . "]";
-            } else {
-                $tmp = null;
-            }
-        }
-        if ($bReturnPlain) {
-            switch ($data_type) {
-                case "Number":
-                    if (strpos($tmp, ".") === false) {
-                        return (int)$tmp;
-                    } else {
-                        return (double)$tmp;
-                    }
-                    // no break
-                default:
-                    return $tmp;
-            }
-        } else {
-            return new Data($tmp, $data_type, $this->locale);
-        }
-    }
-
-
-    // ----------------------------------------
-    //  FUNZIONI PER LA FORMATTAZIONE DEI DATI
-
-    /**
-     * @param string|Data $cDataValue
-     * @param null|string $data_type
-     * @param bool $enclose_field
-     * @param null|bool $transform_null
-     * @return string
-     */
-    public function toSql($cDataValue, $data_type = null, $enclose_field = true, $transform_null = null)
-    {
-        $value = null;
-
-        if (!$this->link_id) {
-            $this->connect();
-        }
-        if (is_array($cDataValue)) {
-            $this->errorHandler("toSql: Wrong parameter, array not managed.");
-        } elseif (!is_object($cDataValue)) {
-            $value = $cDataValue;
-        } elseif (get_class($cDataValue) == "Data") {
-            if ($data_type === null) {
-                $data_type = $cDataValue->data_type;
-            }
-            $value = $cDataValue->getValue($data_type, $this->locale);
-        } elseif (get_class($cDataValue) == "DateTime") {
-            switch ($data_type) {
-                case "Date":
-                    $tmp = new Data($cDataValue, "Date");
-                    $value = $tmp->getValue($data_type, $this->locale);
-                    break;
-
-                case "DateTime":
-                default:
-                    $data_type = "DateTime";
-                    $tmp = new Data($cDataValue, "DateTime");
-                    $value = $tmp->getValue($data_type, $this->locale);
-            }
-        } else {
-            $this->errorHandler("toSql: Wrong parameter, unmanaged datatype");
-        }
-        if ($transform_null === null) {
-            $transform_null = $this->transform_null;
-        }
-
-        switch ($data_type) {
-            case "Number":
-            case "ExtNumber":
-                if (!strlen($value)) {
-                    if ($transform_null) {
-                        return 0;
-                    } else {
-                        return "null";
-                    }
-                }
-                return $value;
-
-            default:
-                if (!strlen($value) && !$transform_null) {
-                    return "null";
-                }
-
-                if (!strlen($value) && ($data_type == "Date" || $data_type == "DateTime")) {
-                    $value = Data::getEmpty($data_type, $this->locale);
-                }
-                if ($enclose_field) {
-                    return "'" . $value . "'";
-                } else {
-                    return $value;
-                }
-        }
+        return $DataValue;
     }
 
     // ----------------------------------------
     //  GESTIONE ERRORI
 
-    private function errorHandler($msg)
+    protected function errorHandler($msg)
     {
         Error::register("MongoDB(" . $this->database . ") - " . $msg . " #" . $this->errno . ": " . $this->error, static::ERROR_BUCKET);
     }
@@ -910,7 +746,7 @@ class MongoDB implements DatabaseDriver
         }
         return $res;
     }
-    public function id2object($keys)
+    protected function id2object($keys)
     {
         $res = null;
         if (is_array($keys)) {
@@ -1212,10 +1048,8 @@ class MongoDB implements DatabaseDriver
                 }
             }
             $query['fields'] = $tmpfields;
-            if (sizeof($query['fields']) > 1 && $query['fields'][0] != '*') {
-                if (is_array($query['fields']) && sizeof($query['fields']) > 1) {
-                    $mg_fields = ',{' . join(':1,', $query['fields']) . ':1}';
-                }
+            if (sizeof($query['fields']) > 1 && $query['fields'][0] != '*' && is_array($query['fields']) && sizeof($query['fields']) > 1) {
+                $mg_fields = ',{' . join(':1,', $query['fields']) . ':1}';
             }
 
             ### Handle table

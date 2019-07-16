@@ -435,12 +435,11 @@ class FrameworkCss extends Mappable
                         }
 
                         if ($res_num || isset($arrType[$real_prefix])) {
-                            if (!$this->skip_resolution) {
-                                if (is_array($this->resolution) && count($this->resolution)
-                                    && isset($this->resolution[$i])
-                                ) {
-                                    $arrRes[$i]         .= $this->resolution[$i] . ($this->resolution[$i] && $res_num ? "-" : "");
-                                }
+                            if (!$this->skip_resolution
+                                && is_array($this->resolution) && count($this->resolution)
+                                && isset($this->resolution[$i])
+                            ) {
+                                $arrRes[$i]         .= $this->resolution[$i] . ($this->resolution[$i] && $res_num ? "-" : "");
                             }
                             if (isset($arrType["prepend"]) && strlen($arrType["prepend"])) {
                                 $arrRes[$i]             .= $arrType["prepend"];

@@ -25,15 +25,14 @@
  */
 namespace phpformsframework\libs\tpl;
 
+use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Hook;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\international\Translator;
+use stdClass;
 
-if (!defined("FF_ENABLE_MULTILANG")) {
-    define("FF_ENABLE_MULTILANG", true);
-}
 if (!defined("FF_TEMPLATE_ENABLE_TPL_JS")) {
     define("FF_TEMPLATE_ENABLE_TPL_JS", false);
 }
@@ -42,7 +41,6 @@ class ffTemplate extends Hook
 {
     const ERROR_BUCKET                      = "tpl";
     const REGEXP                            = '/\{([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)\}/U';
-    //const REGEXP                            = '/\{([\w\:\=\-\|\.]+)\}/U';
 
     const APPLET                            = '/\{\[(.+)\]\}/U';
     const COMMENTHTML                       = '/\{\{([\w\[\]\:\=\-\|\.]+)\}\}/U';
@@ -58,32 +56,15 @@ class ffTemplate extends Hook
 
     public $DBlocks 							= null;
     public $DVars 								= null;
-    public $DBlockVars 						= null;
+    public $DBlockVars 						    = null;
     public $ParsedBlocks 						= array();
     public $DApplets							= null;
 
-    public $minify								= false; /* can be: false, strip, strong_strip, minify
-                                                  NB: minify require /library/minify (set CM_CSSCACHE_MINIFIER and CM_JSCACHE_MINIFIER too) */
-    public $compress							= false;
-
-    // FF enabled settings (u must have FF and use ::factory()
-    //var $force_mb_encoding					= "UTF-8"; // false or UTF-8 (require FF)
-
-    // MultiLang SETTINGS
-    public $MultiLang							= FF_ENABLE_MULTILANG; // enable support (require class ffDB_Sql)
-
-    public static function _get_word_by_code($code, $language = null)
-    {
-        return Translator::get_word_by_code($code, $language);
-    }
-
     /**
-     * This method istantiate a ffTemplate instance based on dir path. When using this
-     * function, the resulting object will deeply use Forms Framework.
-     *
-     * @param string $template_file
-     * @return ffTemplate
+     * @var bool|string[strip|strong_strip|minify]
      */
+    public $minify								= false;
+
     public static function fetch($template_file)
     {
         $tmp = new ffTemplate();
@@ -92,37 +73,33 @@ class ffTemplate extends Hook
         return $tmp;
     }
 
-
-    public static function factory()
-    {
-        $tmp = new ffTemplate();
-
-        self::handle("on_factory_done", $tmp);
-
-        return $tmp;
-    }
-
-    // CONSTRUCTOR
-    public function __construct()
-    {
-    }
-
     public function load_file($template_path, $root_element = null)
     {
-        Debug::stopWatch("tpl" . $template_path);
+        $tpl_name = Translator::checkLang() . "-" . str_replace(
+            array(
+            Constant::DISK_PATH . "/",
+            "_",
+            "/"
+
+        ),
+            array(
+            "",
+            "-",
+            "_"
+        ),
+            $template_path
+        );
+
+        Debug::stopWatch("tpl/" . $tpl_name);
 
         $cache = Mem::getInstance("tpl");
-        $res = $cache->get($template_path);
+        $res = $cache->get($tpl_name);
         if (!$res) {
             if ($root_element !== null) {
                 $this->root_element = $root_element;
             }
             $this->DBlocks[$this->root_element] = @file_get_contents($template_path);
             if ($this->DBlocks[$this->root_element] !== false) {
-                /*if ($this->force_mb_encoding !== false) {
-                    $this->DBlocks[$this->root_element] = htmlspecialchars($this->DBlocks[$this->root_element], ENT_COMPAT, $this->force_mb_encoding);
-                }*/
-
                 $this->getDVars();
                 $nName = $this->NextDBlockName($this->root_element);
                 while ($nName != "") {
@@ -134,7 +111,7 @@ class ffTemplate extends Hook
                 Error::register("Unable to find the template", static::ERROR_BUCKET);
             }
 
-            $cache->set($template_path, array(
+            $cache->set($tpl_name, array(
                 "DBlocks"       => $this->DBlocks
                 , "DVars"       => $this->DVars
                 , "DBlockVars"  => $this->DBlockVars
@@ -149,7 +126,7 @@ class ffTemplate extends Hook
 
         $this->handle("on_loaded_data", $this);
 
-        Debug::stopWatch("tpl" . $template_path);
+        Debug::stopWatch("tpl/" . $tpl_name);
 
         return null;
     }
@@ -171,16 +148,17 @@ class ffTemplate extends Hook
         $this->handle("on_loaded_data", $this);
     }
 
-    public function getDVars()
+    private function getDVars()
     {
         if ($this->doublevar_to_commenthtml) {
-            $this->DBlocks[$this->root_element] = preg_replace('/\{\{([\w\[\]\:\=\-\|\.]+)\}\}/U', "<!--{\{$1\}\}-->", $this->DBlocks[$this->root_element]);// str_replace(array("{{", "}}"), array("<!--", "-->"), $this->DBlocks[$this->root_element]);
+            $this->DBlocks[$this->root_element] = preg_replace('/\{\{([\w\[\]\:\=\-\|\.]+)\}\}/U', "<!--{\{$1\}\}-->", $this->DBlocks[$this->root_element]);
         }
 
         $matches = null;
         $rc = preg_match_all(ffTemplate::REGEXP, $this->DBlocks[$this->root_element], $matches);
         if ($rc && $matches) {
             $this->DVars = array_flip($matches[1]);
+            $this->translateDocument();
         }
     }
 
@@ -231,7 +209,7 @@ class ffTemplate extends Hook
         parse_str(str_replace(":", "&", $arrApplet[1]), $this->DApplets[$appletid]["params"]);
     }
 
-    public function NextDBlockName($sTemplateName)
+    private function NextDBlockName($sTemplateName)
     {
         $sTemplate = $this->DBlocks[$sTemplateName];
         $BTag = strpos($sTemplate, "<!--" . $this->BeginTag);
@@ -249,7 +227,7 @@ class ffTemplate extends Hook
     }
 
 
-    public function SetBlock($sTplName, $sBlockName)
+    private function SetBlock($sTplName, $sBlockName)
     {
         if (!isset($this->DBlocks[$sBlockName])) {
             $this->DBlocks[$sBlockName] = $this->getBlock($this->DBlocks[$sTplName], $sBlockName);
@@ -264,7 +242,7 @@ class ffTemplate extends Hook
         }
     }
 
-    public function getBlock($sTemplate, $sName)
+    private function getBlock($sTemplate, $sName)
     {
         $alpha = strlen($sName) + 12;
 
@@ -279,7 +257,7 @@ class ffTemplate extends Hook
     }
 
 
-    public function replaceBlock($sTemplate, $sName)
+    private function replaceBlock($sTemplate, $sName)
     {
         $BBlock = strpos($sTemplate, "<!--" . $this->BeginTag . $sName . "-->");
         $EBlock = strpos($sTemplate, "<!--" . $this->EndTag . $sName . "-->");
@@ -299,61 +277,23 @@ class ffTemplate extends Hook
     public function set_var($sName, $sValue)
     {
         $this->ParsedBlocks[$sName] = $sValue;
-        if (isset($this->DVars[$sName]) || isset($this->DBlocks[$sName])) {
-            return true;
-        } else {
-            return false;
-        }
+
+        return isset($this->DVars[$sName]) || isset($this->DBlocks[$sName]);
     }
 
     public function isset_var($sName)
     {
-        if (isset($this->DVars[$sName]) || isset($this->DBlocks[$sName])) {
-            return true;
-        } else {
-            return false;
-        }
+        return isset($this->DVars[$sName]) || isset($this->DBlocks[$sName]);
     }
 
     public function isset_block($sName)
     {
-        if ((bool)($this->ParsedBlocks[$sName])) {
-            return true;
-        } else {
-            return false;
-        }
+        return (bool)($this->ParsedBlocks[$sName]);
     }
 
-    public function set_regexp_var($sPattern, $sValue)
-    {
-        $rc = false;
-        $tmp = array_keys($this->ParsedBlocks);
-        foreach ($tmp as $value) {
-            if (preg_match($sPattern, $value)) {
-                $rc = true;
-                $this->ParsedBlocks[$value] = $sValue;
-            }
-        }
-        return $rc;
-    }
 
-    public function parse_regexp($sPattern, $sValue)
-    {
-        $rc = false;
-        $tmp = array_keys($this->DBlocks);
-        foreach ($tmp as $value) {
-            if (preg_match($sPattern, $value)) {
-                $rc = true;
-                $this->parse($value, $sValue);
-            }
-        }
-        return $rc;
-    }
 
-    public function print_var($sName)
-    {
-        echo $this->ParsedBlocks[$sName];
-    }
+
 
     public function parse($sTplName, $bRepeat, $bBefore = false)
     {
@@ -369,7 +309,7 @@ class ffTemplate extends Hook
             }
             return true;
         } elseif ($this->debug_msg) {
-            echo "<br><b>Block with name <u><font color=\"red\">$sTplName</font></u> does't exist</b><br>";
+            echo "<br><b>Block with name <u><span style=\"color: red; \">$sTplName</span></u> does't exist</b><br>";
         }
 
         return false;
@@ -377,12 +317,7 @@ class ffTemplate extends Hook
 
     public function pparse($block_name, $is_repeat)
     {
-        $ret = $this->rpparse($block_name, $is_repeat);
-        if (0 && $this->compress) {
-            ffTemplate::http_compress($ret);
-        } else {
-            echo $ret;
-        }
+        echo $this->rpparse($block_name, $is_repeat);
     }
 
     public function rpparse($block_name, $is_repeat)
@@ -425,52 +360,7 @@ class ffTemplate extends Hook
         return null;
     }
 
-    public static function http_compress($data, $output_result = true, $method = null, $level = 9)
-    {
-        if ($method === null) {
-            $encodings = array_flip(explode(",", $_SERVER["HTTP_ACCEPT_ENCODING"]));
-            if (isset($encodings["gzip"])) {
-                $method = "gzip";
-            } elseif (isset($encodings["deflate"])) {
-                $method = "deflate";
-            }
-        }
-
-        if ($method == "deflate") {
-            if ($output_result) {
-                header("Content-Encoding: deflate");
-                echo gzdeflate($data, $level);
-            } else {
-                return array(
-                    "method" => "deflate",
-                    "data" => gzdeflate($data, $level)
-                );
-            }
-        } elseif ($method == "gzip") {
-            if ($output_result) {
-                header("Content-Encoding: gzip");
-                echo gzencode($data, $level);
-            } else {
-                return array(
-                    "method" => "gzip",
-                    "data" => gzencode($data, $level)
-                );
-            }
-        } else {
-            if ($output_result) {
-                echo $data;
-            } else {
-                return array(
-                    "method" => null
-                    , "data" => $data
-                );
-            }
-        }
-
-        return null;
-    }
-
-    public function blockVars($sTplName)
+    private function blockVars($sTplName)
     {
         if (isset($this->DBlockVars[$sTplName])) {
             return $this->DBlockVars[$sTplName];
@@ -483,18 +373,6 @@ class ffTemplate extends Hook
         if ($rc) {
             $vars = $matches[1];
 
-            // --- AUTOMATIC LANGUAGE LOOKUP FOR INTERNATIONALIZATION
-            foreach ($vars as $nName) {
-                if (substr($nName, 0, 1) == "_") {
-                    if ($this->MultiLang) {
-                        $this->set_var($nName, $this->get_word_by_code(substr($nName, 1)));
-                    } else {
-                        $this->set_var($nName, "{" . substr($nName, 1) . "}");
-                    }
-                }
-            }
-            reset($vars);
-
             $this->DBlockVars[$sTplName] = $vars;
 
             return $vars;
@@ -503,7 +381,20 @@ class ffTemplate extends Hook
         }
     }
 
-    public function ProceedTpl($sTplName)
+    private function translateDocument()
+    {
+        $translation = new stdClass();
+        foreach ($this->DVars as $nName => $count) {
+            if (substr($nName, 0, 1) == "_") {
+                $translation->key[]           = "{" . $nName . "}";
+                $translation->value[]         = Translator::get_word_by_code(substr($nName, 1));
+            }
+        }
+        if (isset($translation->key)) {
+            $this->DBlocks[$this->root_element] = str_replace($translation->key, $translation->value, $this->DBlocks[$this->root_element]);
+        }
+    }
+    private function ProceedTpl($sTplName)
     {
         $vars = $this->blockVars($sTplName);
         $sTpl = $this->DBlocks[$sTplName];
@@ -537,34 +428,8 @@ class ffTemplate extends Hook
         return $sTpl;
     }
 
-    public function PrintAll()
-    {
-        $res = "<table border=\"1\" width=\"100%\">";
-        $res .= "<tr bgcolor=\"#C0C0C0\" align=\"center\"><td>Key</td><td>Value</td></tr>";
-        $res .= "<tr bgcolor=\"#FFE0E0\"><td colspan=\"2\" align=\"center\">ParsedBlocks</td></tr>";
-        reset($this->ParsedBlocks);
-        foreach ($this->ParsedBlocks as $key => $value) {
-            $res .= "<tr><td><pre>" . htmlspecialchars($key) . "</pre></td>";
-            $res .= "<td><pre>" . htmlspecialchars($value) . "</pre></td></tr>";
-        }
-        $res .= "<tr bgcolor=\"#E0FFE0\"><td colspan=\"2\" align=\"center\">DBlocks</td></tr>";
-        reset($this->DBlocks);
-
-        foreach ($this->DBlocks as $key => $value) {
-            $res .= "<tr><td><pre>" . htmlspecialchars($key) . "</pre></td>";
-            $res .= "<td><pre>" . htmlspecialchars($value) . "</pre></td></tr>";
-        }
-        $res .= "</table>";
-        return $res;
-    }
-
-    public function entities_replace($text)
+    private function entities_replace($text)
     {
         return str_replace(array("{\\","\\}"), array("{","}"), $text);
-    }
-
-    public function get_word_by_code($code, $language = null)
-    {
-        return Translator::get_word_by_code($code, $language);
     }
 }

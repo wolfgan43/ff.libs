@@ -26,8 +26,9 @@
 namespace phpformsframework\libs\cache;
 
 use phpformsframework\libs\Constant;
+use phpformsframework\libs\Dumpable;
 
-abstract class MemAdapter
+abstract class MemAdapter implements Dumpable
 {
     public static $serializer       = "PHP";
     public static $dump             = array();

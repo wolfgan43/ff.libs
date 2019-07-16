@@ -165,13 +165,12 @@ class Gridsystem
     public static function extend($data, $what)
     {
         if (is_array($data) && $what) {
-            switch ($what) {
-                case "buttons":
-                    self::extendButtons($data);
-                    return self::$buttons;
-                default:
-                    self::extendComponents($data, $what);
-                    return self::$components[$what];
+            if ($what == "buttons") {
+                self::extendButtons($data);
+                return self::$buttons;
+            } else {
+                self::extendComponents($data, $what);
+                return self::$components[$what];
             }
         }
 

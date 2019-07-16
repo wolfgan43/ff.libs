@@ -31,7 +31,7 @@ use phpformsframework\libs\storage\drivers\MySqli as sql;
 
 class DatabaseMysqli extends DatabaseAdapter
 {
-    const PREFIX                                        = "FF_DATABASE_";
+    const PREFIX                                        = "MYSQL_DATABASE_";
     const TYPE                                          = "sql";
     const KEY                                           = "ID";
 
@@ -312,9 +312,9 @@ class DatabaseMysqli extends DatabaseAdapter
                         case "insert":
                             $res["head"][$name]         							= $field["name"];
                             if (is_array($field["value"])) {
-                                if ($this->isAssocArray($field["value"])) {                                                        //array assoc to string
+                                if ($this->isAssocArray($field["value"])) {
                                     $res["body"][$name]                             = "'" . str_replace("'", "\\'", json_encode($field["value"])) . "'";
-                                } else {                                                                                //array seq to string
+                                } else {
                                     $res["body"][$name]                             = $this->driver->toSql(implode(",", array_unique($field["value"])));
                                 }
                             } elseif (is_null($field["value"])) {
@@ -327,22 +327,19 @@ class DatabaseMysqli extends DatabaseAdapter
                             if (is_array($field["value"])) {
                                 switch ($field["op"]) {
                                     case "++":
-                                        //skip
                                         break;
                                     case "--":
-                                        //skip
                                         break;
                                     case "+":
-                                        if ($this->isAssocArray($field["value"])) {                                                        //array assoc to string
-                                            //skip
-                                        } else {																				//array seq to string
+                                        if ($this->isAssocArray($field["value"])) {
+                                        } else {
                                             $res[$name] 							= "`" . $field["name"] . "` = " . "CONCAT(`"  . $field["name"] . "`, IF(`"  . $field["name"] . "` = '', '', ','), " . $this->driver->toSql(implode(",", array_unique($field["value"]))) . ")";
                                         }
                                         break;
                                     default:
-                                        if ($this->isAssocArray($field["value"])) {                                                    //array assoc to string
+                                        if ($this->isAssocArray($field["value"])) {
                                             $res[$name]                             = "`" . $field["name"] . "` = " . "'" . str_replace("'", "\\'", json_encode($field["value"])) . "'";
-                                        } else {                                                                                //array seq to string
+                                        } else {
                                             $res[$name]                             = "`" . $field["name"] . "` = " . $this->driver->toSql(implode(",", array_unique($field["value"])));
                                         }
                                 }
@@ -385,14 +382,14 @@ class DatabaseMysqli extends DatabaseAdapter
                                 $struct_type                                        = null;
                             }
                             switch ($struct_type) {
-                                case "arrayIncremental":                                                                     //array
-                                case "arrayOfNumber":                                                                        //array
-                                case "array":                                                                                //array
+                                case "arrayIncremental":
+                                case "arrayOfNumber":
+                                case "array":
                                     if (is_array($value) && count($value)) {
                                         foreach ($value as $item) {
-                                            $res[$name][] 							= ($field["not"] ? "NOT " : "") . "FIND_IN_SET(" . $this->driver->toSql($item) . ", `" . $field["name"] . "`)";
+                                            $res[$name][] 							= "FIND_IN_SET(" . $this->driver->toSql($item) . ", `" . $field["name"] . "`)";
                                         }
-                                        $res[$name] 								= "(" . implode(($field["not"] ? " AND " : " OR "), $res[$name]) . ")";
+                                        $res[$name] 								= "(" . implode(" OR ", $res[$name]) . ")";
                                     }
                                     break;
                                 case "boolean":
@@ -406,30 +403,14 @@ class DatabaseMysqli extends DatabaseAdapter
                                 default:
                                     if (is_array($value)) {
                                         if (count($value)) {
-                                            $res[$name]                             = "`" . $field["name"] . "` " . ($field["not"] ? "NOT " : "") . "IN(" . $this->valueToFunc($value, $struct_type) . ")";
+                                            $res[$name]                             = "`" . $field["name"] . "` " . "IN(" . $this->valueToFunc($value, $struct_type) . ")";
                                         }
                                     } elseif (is_null($value)) {
-                                        $res[$name] 							    = "`" . $field["name"] . "` " . ($field["not"] ? "not" : "") . " is null";
+                                        $res[$name] 							    = "`" . $field["name"] . "` " . " is null";
                                     } elseif (empty($value)) {
-                                        $res[$name] 							    = "`" . $field["name"] . "` " . ($field["not"] ? "<>" : "=") . " ''";
+                                        $res[$name] 							    = "`" . $field["name"] . "` " . " ''";
                                     } else {
-                                        switch ($field["op"]) {
-                                            case ">":
-                                                $op 								= ($field["not"] ? '<' : '>');
-                                                break;
-                                            case ">=":
-                                                $op 								= ($field["not"] ? '<=' : '>=');
-                                                break;
-                                            case "<":
-                                                $op 								= ($field["not"] ? '>' : '<');
-                                                break;
-                                            case "<=":
-                                                $op 								= ($field["not"] ? '>=' : '<=');
-                                                break;
-                                            default:
-                                                $op                                 = ($field["not"] ? "<>" : "=");
-                                        }
-                                        $res[$name] 							    = "`" . $field["name"] . "` " . $op . " " . $this->valueToFunc($value, $struct_type);
+                                        $res[$name] 							    = "`" . $field["name"] . "` = " . $this->valueToFunc($value, $struct_type);
                                     }
                             }
                             break;

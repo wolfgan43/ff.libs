@@ -301,21 +301,20 @@ abstract class DatabaseAdapter
                     if ($db) {
                         $exts                                       = array();
 
-                        if ($this->exts) {
-                            if (is_array($db["fields"]) && count($db["fields"])) {
-                                foreach ($db["fields"] as $name) {
-                                    if ($name == $query["key"]) {
-                                        $exts[$name] = null;
-                                    } elseif (strpos($name, "ID_") === 0) {
-                                        $exts[$name] = null;
-                                    } elseif (isset($this->relationship[$name])) {
-                                        $exts[$name]                = null;
-                                    } elseif (isset($this->alias[$name]) && isset($this->relationship[$this->alias[$name]])) {
-                                        $exts[$name]                = $this->alias[$name];
-                                    }
+                        if ($this->exts && is_array($db["fields"]) && count($db["fields"])) {
+                            foreach ($db["fields"] as $name) {
+                                if ($name == $query["key"]) {
+                                    $exts[$name]                    = null;
+                                } elseif (strpos($name, "ID_") === 0) {
+                                    $exts[$name]                    = null;
+                                } elseif (isset($this->relationship[$name])) {
+                                    $exts[$name]                    = null;
+                                } elseif (isset($this->alias[$name]) && isset($this->relationship[$this->alias[$name]])) {
+                                    $exts[$name]                    = $this->alias[$name];
                                 }
                             }
                         }
+
                         if ($db["num_rows"] < $this::MAX_NUMROWS) {
                             if ($this->rawdata || $db["num_rows"] > $this::MAX_RESULTS) {
                                 $res["rawdata"]                     = $db["recordset"];
@@ -568,28 +567,24 @@ abstract class DatabaseAdapter
 
         return $this->process($query);
     }
+
+    /**
+     * @param $field
+     */
     protected function getFieldAlias($field)
     {
+        $res                                                        = false;
         if (is_array($this->alias) && count($this->alias)) {
-            $alias_rev = array_flip($this->alias);
-            return($alias_rev[$field]
-                ? $alias_rev[$field]
-                : (
-                    isset($this->struct[$field])
-                    ? $field
-                    : false
-                )
-            );
-        } else {
-            return ($this->struct === null
-                ? $field
-                : (
-                    isset($this->struct[$field])
-                    ? $field
-                    : false
-                )
-            );
+            $alias_rev                                              = array_flip($this->alias);
+
+            if (isset($alias_rev[$field])) {
+                $res                                                = $alias_rev[$field];
+            }
+        } elseif ($this->struct === null || isset($this->struct[$field])) {
+            $res                                                    = $field;
         }
+
+        return $res;
     }
 
     private function getStructField($key, $subkey = null)
@@ -1025,9 +1020,7 @@ abstract class DatabaseAdapter
                 break;
             case "PASSWORD":
                 $res                                                        = "*" . strtoupper(sha1(sha1($data, true)));
-
-                //$res                                                        = password_hash($data, PASSWORD_DEFAULT);
-                //todo: da usare Password_Verify
+                //todo: da usare Password_Verify (password_hash($data, PASSWORD_DEFAULT))
                 break;
             case "BCRYPT":
                 $res                                                        = password_hash($data, PASSWORD_BCRYPT);
@@ -1108,7 +1101,7 @@ abstract class DatabaseAdapter
                     $method                                                 = null;
             }
 
-            // IV must be exact 16 chars (128 bit)
+
             if ($method) {
                 $res = array(
                     "key"       => password_hash($password, PASSWORD_BCRYPT, ['cost' => $cost])
@@ -1124,7 +1117,7 @@ abstract class DatabaseAdapter
     {
         $res                                                                = null;
         $params                                                             = $this->getEncryptParams($password, $algorithm, $cost);
-        if ($params) {  // av3DYGLkwBsErphcyYp+imUW4QKs19hUnFyyYcXwURU=
+        if ($params) {
             $res = base64_encode(openssl_encrypt($data, $params["method"], $params["key"], OPENSSL_RAW_DATA, $params["iv"]));
         }
 
@@ -1135,7 +1128,7 @@ abstract class DatabaseAdapter
     {
         $res                                                                = null;
         $params                                                             = $this->getEncryptParams($password, $algorithm, $cost);
-        if ($params) { // My secret message 1234
+        if ($params) {
             $res = openssl_decrypt(base64_decode($encrypted), $params["method"], $params["key"], OPENSSL_RAW_DATA, $params["key"]);
         }
         return $res;
@@ -1151,8 +1144,9 @@ abstract class DatabaseAdapter
     protected function normalizeField($name, $value)
     {
         $res                                                                = false;
-        if (is_array($value)) {
-            if (isset($value['$gt'])
+        if (is_array($value)
+            && (
+                isset($value['$gt'])
                 || isset($value['$gte'])
                 || isset($value['$lt'])
                 || isset($value['$lte'])
@@ -1162,34 +1156,15 @@ abstract class DatabaseAdapter
                 || isset($value['$nin'])
                 || isset($value['$ne'])
                 || isset($value['$inset'])
-            ) {
-                $res                                                        = "special";
-            }
+            )
+        ) {
+            $res                                                            = "special";
         }
 
         if (!$res) {
             $op                                                             = null;
             $toField                                                        = null;
             $fields                                                         = array();
-            $not                                                            = false;
-            if (strpos($name, "!") === 0) {
-                $name                                                       = substr($name, 1);
-                $not                                                        = true;
-            }
-
-            if (strpos($name, ">") === strlen($name) - 1) {
-                $name                                                       = substr($name, 0, -1);
-                $op                                                         = ">";
-            } elseif (strpos($name, ">=") === strlen($name) - 2) {
-                $name                                                       = substr($name, 0, - 2);
-                $op                                                         = ">=";
-            } elseif (strpos($name, "<") === strlen($name) - 1) {
-                $name                                                       = substr($name, 0, -1);
-                $op                                                         = "<";
-            } elseif (strpos($name, "<=") === strlen($name) - 2) {
-                $name                                                       = substr($name, 0, -2);
-                $op                                                         = "<=";
-            }
 
             $struct_field                                                   = $this->getStructField($name);
             if (is_array($struct_field)) {
@@ -1202,88 +1177,81 @@ abstract class DatabaseAdapter
                 }
             }
             switch ($struct_type) {
-                case "arrayIncremental":																            //array
-                case "arrayOfNumber":	    															            //array
-                case "array":																			            //array
+                case "arrayIncremental":
+                case "arrayOfNumber":
+                case "array":
                     if (is_array($value)) {
-                        if ($struct_type == "arrayOfNumber") {                                                   //array number to array
+                        if ($struct_type == "arrayOfNumber") {
                             $fields[$name]                                  = array_map('intval', $value);
                         } else {
-                            $fields[$name]                                  = $value;                                   //array to array
+                            $fields[$name]                                  = $value;
                         }
-                    } elseif (strrpos($value, "++") === strlen($value) -2) {								            //++ to array
+                    } elseif (strrpos($value, "++") === strlen($value) -2) {
                         $fields[$name]                                      = array();
-                    //skip
-                    } elseif (strrpos($value, "--") === strlen($value) -2) {					                //-- to array
+                    } elseif (strrpos($value, "--") === strlen($value) -2) {
                         $fields[$name]                                      = array();
-                    //skip
                     } elseif (strpos($value, "+") === 0) {
                         $op                                                 = "+";
                         $fields[$name]                                      = substr($value, 1);
-                    } elseif (is_bool($value)) {                                                                     //boolean to array
+                    } elseif (is_bool($value)) {
                         $fields[$name] = array((int)$value);
                     } elseif (is_numeric($value) || $struct_type == "arrayOfNumber" || $struct_type == "arrayIncremental") {
-                        if (strpos($value, ".") !== false || strpos($value, ",") !== false) {            //double to array
+                        if (strpos($value, ".") !== false || strpos($value, ",") !== false) {
                             $fields[$name]                                  = array((double)$value);
-                        } else {                                                                                       //int to array
+                        } else {
                             $fields[$name]                                  = array((int)$value);
                         }
-                    } elseif (strtotime($value)) {															        //date to array
+                    } elseif (strtotime($value)) {
                         $fields[$name]                                      = array($value);
-                    } elseif ($value == "empty" || !$value) {                                                        //empty to array
+                    } elseif ($value == "empty" || !$value) {
                         $fields[$name]                                      = array();
-                    } else {                                                                                        //other to array
+                    } else {
                         $fields[$name]                                      = array((string)$value);
                     }
                     break;
-                case "boolean":																			            //boolean
-                    if (is_array($value)) {															        //array to boolean
+                case "boolean":
+                    if (is_array($value)) {
                         $fields[$name]                                      = false;
-                    //skip
-                    } elseif (strrpos($value, "++") === strlen($value) -2) {                                         //++ to boolean
+                    } elseif (strrpos($value, "++") === strlen($value) -2) {
                         $fields[$name]                                      = false;
-                    //skip
-                    } elseif (strrpos($value, "--") === strlen($value) -2) {                                   //-- to boolean
+                    } elseif (strrpos($value, "--") === strlen($value) -2) {
                         $fields[$name]                                      = false;
-                    //skip
-                    } elseif (strpos($value, "+") === 0) {												        //+ to boolean
+                    } elseif (strpos($value, "+") === 0) {
                         $fields[$name]                                      = false;
-                    //skip
-                    } elseif (is_bool($value)) {                                                                     //boolean to boolean
+                    } elseif (is_bool($value)) {
                         $fields[$name]                                      = $value;
-                    } elseif (is_numeric($value)) {															        //number to boolean
+                    } elseif (is_numeric($value)) {
                         $fields[$name]                                      = (bool)$value;
-                    } elseif ($value == "empty") {                                                                   //empty seq to boolean
+                    } elseif ($value == "empty") {
                         $fields[$name]                                      = false;
-                    } else {                                                                                        //other to boolean
+                    } else {
                         $fields[$name]                                      = (bool)$value;
                     }
                     break;
-                case "date":																			            //date
+                case "date":
                     $fields[$name] = $value;
                     break;
-                case "number":                                                                                      //number
+                case "number":
                 case "timestamp":
                 case "primary":
-                    if (is_array($value)) {																    //array to number
+                    if (is_array($value)) {
                         $fields[$name]                                      = 0;
-                    //skip
-                    } elseif (strrpos($value, "++") === strlen($value) -2) {                                         //++ to number
+                    } elseif (strrpos($value, "++") === strlen($value) -2) {
                         $op                                                 = "++";
                         $fields[$name]                                      = substr($value, -2);
-                    } elseif (strrpos($value, "--") === strlen($value) -2) {                                   //-- to number
+                    } elseif (strrpos($value, "--") === strlen($value) -2) {
                         $op                                                 = "--";
                         $fields[$name]                                      = substr($value, -2);
-                    } elseif (strpos($value, "+") === 0) {                                                     //+ to number
+                    } elseif (strpos($value, "+") === 0) {
                         $op                                                 = "+";
                         $fields[$name]                                      = substr($value, 1);
-                    } elseif (is_bool($value)) {                                                                     //boolean to number
+                    } elseif (is_bool($value)) {
                         $fields[$name]                                      = (int)$value;
-                    } elseif (!is_numeric($value) && strtotime($value)) {                                            //date to number
+                    } elseif (!is_numeric($value) && strtotime($value)) {
                         $fields[$name]                                      = strtotime($value);
-                    } elseif (strpos($value, ".") !== false || strpos($value, ",") !== false) {         //double to number
+                    } elseif (strpos($value, ".") !== false || strpos($value, ",") !== false) {
                         $fields[$name]                                      = (double) str_replace(".", ",", $value);
-                    } elseif ($value == "empty") {                                                                   //empty to number
+                    } elseif ($value == "empty") {
                         $fields[$name]                                      = 0;
                     } else {
                         $fields[$name]                                      = (int)$value;
@@ -1292,36 +1260,36 @@ abstract class DatabaseAdapter
                         }
                     }
                     break;
-                case "string":																			            //string
+                case "string":
                 case "char":
                 case "text":
                 default:
-                    if (strrpos($value, "++") === strlen($value) -2) {                                         //++ to string
+                    if (strrpos($value, "++") === strlen($value) -2) {
                         $op                                                 = "++";
                         $fields[$name]                                      = substr($value, -2);
-                    } elseif (strrpos($value, "--") === strlen($value) -2) {                                    //-- to string
+                    } elseif (strrpos($value, "--") === strlen($value) -2) {
                         $op                                                 = "--";
                         $fields[$name]                                      = substr($value, -2);
-                    } elseif (strpos($value, "+") === 0) {                                                      //+ to string
+                    } elseif (strpos($value, "+") === 0) {
                         $op                                                 = "+";
                         $fields[$name]                                      = substr($value, 1);
                     } elseif (is_array($value)) {
-                        if ($this->isAssocArray($value)) {                                                            //array assoc to string
+                        if ($this->isAssocArray($value)) {
                             $fields[$name]                                  = json_encode($value);
-                        } else {                                                                                        //array seq to string
+                        } else {
                             $fields[$name]                                  = implode(",", array_unique($value));
                         }
                     } elseif (is_bool($value)) {
                         $fields[$name]                                      = (string)($value ? "1" : "0");
-                    } elseif (is_numeric($value)) {															        //number to string
+                    } elseif (is_numeric($value)) {
                         $fields[$name]                                      = (string)$value;
-                    } elseif (is_null($value)) {                                                                                        //other to string
+                    } elseif (is_null($value)) {
                         $fields[$name]                                      = $value;
-                    } elseif ($value == "empty" || empty($value)) {                                                                   //empty seq to string
+                    } elseif ($value == "empty" || empty($value)) {
                         $fields[$name]                                      = "";
-                    } elseif (substr($name, 0, 1) == "_") {                                               //empty seq to string
+                    } elseif (substr($name, 0, 1) == "_") {
                         $fields[$name]                                      = $value;
-                    } else {                                                                                        //other to string
+                    } else {
                         $fields[$name]                                      = (string)$value;
                     }
             }
@@ -1329,7 +1297,6 @@ abstract class DatabaseAdapter
             $res                                                            = array(
                                                                                 "value"     => $this->in($fields[$name], $toField)
                                                                                 , "name"    => $name
-                                                                                , "not"     => $not
                                                                                 , "op"      => $op
                                                                                 , "type"    => $struct_type
                                                                             );

@@ -44,10 +44,13 @@ class OrmModel extends Mappable
     protected $tables                                                                       = null;
     protected $alias                                                                        = null;
 
-    public function __construct($map_name, $databaseAdapters = null)
+    public function __construct($map_name, $mainTable = null, $databaseAdapters = null)
     {
         parent::__construct($map_name);
 
+        if ($mainTable) {
+            $this->main_table = $mainTable;
+        }
         $this->setAdapters($databaseAdapters);
     }
 
@@ -86,7 +89,6 @@ class OrmModel extends Mappable
 
         return $res;
     }
-
 
     /**
      * @param string $table_name

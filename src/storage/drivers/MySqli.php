@@ -42,63 +42,30 @@ use phpformsframework\libs\storage\DatabaseDriver;
  * @license http://opensource.org/licenses/gpl-3.0.html
  * @link http://www.formsphpframework.com
  */
-class MySqli implements DatabaseDriver
+class MySqli extends DatabaseDriver
 {
-    const ERROR_BUCKET              = "database";
-
-    public static $_dbs = array();
-    public static $_sharelink = true;
-
-    public $locale                  = "ISO9075";
     public $charset			        = "utf8";
     public $charset_names		    = "utf8";
     public $charset_collation	    = "utf8_unicode_ci";
 
-    // PARAMETRI DI CONNESSIONE
-    private $database               = null;
-    private $user                   = null;
-    private $password               = null;
-    private $host                   = null;
-
-    // PARAMETRI DI DEBUG
-
-    // PARAMETRI SPECIFICI DI MYSQL
-    public $persistent					= false;	## Setting to true will cause use of mysql_pconnect instead of mysql_connect
-
-    public $transform_null				= true;
-
-    // -------------------
-    //  VARIABILI PRIVATE
-
-    // VARIABILI DI GESTIONE DEI RISULTATI
-    public $row			= -1;
-    public $record			= false;
-
-    /* public: current error number and error text */
-    public $errno                   = 0;
-    public $error                   = "";
+    public $persistent				= false;
 
     /**
      * @var \mysqli
      */
-    private $link_id                = false;
+    protected $link_id              = false;
     /**
      * @var mysqli_result
      */
-    private $query_id               = false;
+    protected $query_id             = false;
 
-    public $fields			= null;
-    public $fields_names	= null;
-    public $field_primary  = null;
+    public $field_primary           = null;
 
-    private $num_rows               = null;
+    public $avoid_real_connect      = true;
+    public $buffered_affected_rows  = null;
 
-    public $avoid_real_connect         = true;
-    public $buffered_affected_rows     = null;
-    public $buffered_insert_id         = null;
-
-    public $reconnect                  = true;
-    public $reconnect_tryed            = false;
+    public $reconnect               = true;
+    public $reconnect_tryed         = false;
 
     public static function addEvent($event_name, $func_name, $priority = null)
     {
@@ -127,24 +94,9 @@ class MySqli implements DatabaseDriver
 
     public static function free_all()
     {
-        if (static::$_sharelink) {
-            foreach (static::$_dbs as $key => $link) {
-                @mysqli_kill($link, mysqli_thread_id($link));
-                @mysqli_close($link);
-            }
-        } else {
-            $tmp_keys = array_keys(static::$_dbs);
-            foreach ($tmp_keys as $key) {
-                static::$_dbs[$key]->cleanup(true);
-            }
-        }
-    }
-
-    // CONSTRUCTOR
-    public function __construct()
-    {
-        if (!static::$_sharelink) {
-            static::$_dbs[] = $this;
+        foreach (static::$_dbs as $link) {
+            @mysqli_kill($link, mysqli_thread_id($link));
+            @mysqli_close($link);
         }
     }
 
@@ -156,11 +108,11 @@ class MySqli implements DatabaseDriver
     {
         $this->freeResult();
         if (is_object($this->link_id)) {
-            if ($force || (!static::$_sharelink && !$this->persistent)) {
+            if ($force || !$this->persistent) {
                 @mysqli_kill($this->link_id, mysqli_thread_id($this->link_id));
                 @mysqli_close($this->link_id);
-                if (static::$_sharelink) {
-                    $dbkey = $this->host . "|" . $this->user . "|" . $this->password;
+                $dbkey = $this->host . "|" . $this->user . "|" . $this->password;
+                if (isset(static::$_dbs[$dbkey])) {
                     unset(static::$_dbs[$dbkey]);
                 }
             }
@@ -207,34 +159,35 @@ class MySqli implements DatabaseDriver
         if ($Host !== null) {
             $tmp_host                               = $Host;
         } elseif ($this->host === null) {
-            $tmp_host                               = FF_DATABASE_HOST;
+            $tmp_host                               = MYSQL_DATABASE_HOST;
         } else {
             $tmp_host                               = $this->host;
         }
         if ($User !== null) {
             $tmp_user                               = $User;
         } elseif ($this->user === null) {
-            $tmp_user                               = FF_DATABASE_USER;
+            $tmp_user                               = MYSQL_DATABASE_USER;
         } else {
             $tmp_user                               = $this->user;
         }
         if ($Password !== null) {
             $tmp_pwd                                = $Password;
         } elseif ($this->password === null) {
-            $tmp_pwd                                = FF_DATABASE_PASSWORD;
+            $tmp_pwd                                = MYSQL_DATABASE_PASSWORD;
         } else {
             $tmp_pwd                                = $this->password;
         }
         if ($Database !== null) {
             $tmp_database                           = $Database;
         } elseif ($this->database === null) {
-            $tmp_database                           = FF_DATABASE_NAME;
+            $tmp_database                           = MYSQL_DATABASE_NAME;
         } else {
             $tmp_database                           = $this->database;
         }
 
         $do_connect                                 = true;
         $dbkey                                      = null;
+
 
         // CHIUDE LA CONNESSIONE PRECEDENTE NEL CASO DI RIUTILIZZO DELL'OGGETTO
         if (is_object($this->link_id)) {
@@ -254,9 +207,9 @@ class MySqli implements DatabaseDriver
         $this->password                             = $tmp_pwd;
         $this->database                             = $tmp_database;
 
-        if (static::$_sharelink && !$force) {
+        if (!$force) {
             $dbkey = $this->host . "|" . $this->user . "|" . $this->database;
-            if (is_array(static::$_dbs) && array_key_exists($dbkey, static::$_dbs)) {
+            if (isset(static::$_dbs[$dbkey])) {
                 $this->link_id =& static::$_dbs[$dbkey];
                 $do_connect = false;
             }
@@ -296,10 +249,9 @@ class MySqli implements DatabaseDriver
             if ($this->charset !== null) {
                 @mysqli_set_charset($this->link_id, $this->charset);
             }
-            if (static::$_sharelink) {
-                static::$_dbs[$dbkey]       = $this->link_id;
-                $this->link_id              =& static::$_dbs[$dbkey];
-            }
+
+            static::$_dbs[$dbkey]       = $this->link_id;
+            $this->link_id              =& static::$_dbs[$dbkey];
         }
 
         return $this->link_id;
@@ -344,10 +296,8 @@ class MySqli implements DatabaseDriver
             return false;
         }
 
-        if (static::$_sharelink) {
-            $this->buffered_affected_rows = @mysqli_affected_rows($this->link_id);
-            $this->buffered_insert_id = @mysqli_insert_id($this->link_id);
-        }
+        $this->buffered_affected_rows = @mysqli_affected_rows($this->link_id);
+        $this->buffered_insert_id = @mysqli_insert_id($this->link_id);
 
         return true;
     }
@@ -646,134 +596,16 @@ class MySqli implements DatabaseDriver
             return false;
         }
 
-        if (static::$_sharelink) {
-            if ($bReturnPlain) {
-                return $this->buffered_insert_id;
-            } else {
-                return new Data($this->buffered_insert_id, "Number", $this->locale);
-            }
-        }
-
         if ($bReturnPlain) {
-            return @mysqli_insert_id($this->link_id);
+            return $this->buffered_insert_id;
         } else {
-            return new Data(@mysqli_insert_id($this->link_id), "Number", $this->locale);
+            return new Data($this->buffered_insert_id, "Number", $this->locale);
         }
     }
 
-    /**
-     *
-     * @param String Nome del campo
-     * @param String Tipo di dato inserito
-     * @param bool $bReturnPlain
-     * @param bool $return_error
-     * @return mixed Dato recuperato dal DB
-     */
-    public function getField($Name, $data_type = "Text", $bReturnPlain = false, $return_error = true)
+    protected function toSql_escape($DataValue)
     {
-        if (!$this->query_id) {
-            $this->errorHandler("f() called with no query pending");
-            return false;
-        }
-
-        if (isset($this->fields[$Name])) {
-            $tmp = $this->record[$Name];
-        } else {
-            if ($return_error) {
-                $tmp = "NO_FIELD [" . $Name . "]";
-            } else {
-                $tmp = null;
-            }
-        }
-
-        if ($bReturnPlain) {
-            switch ($data_type) {
-                case "Number":
-                    if (strpos($tmp, ".") === false) {
-                        return (int)$tmp;
-                    } else {
-                        return (double)$tmp;
-                    }
-                    // no break
-                default:
-                    return $tmp;
-            }
-        } else {
-            return new Data($tmp, $data_type, $this->locale);
-        }
-    }
-
-    // ----------------------------------------
-    //  FUNZIONI PER LA FORMATTAZIONE DEI DATI
-
-    /**
-     * @param string|Data $cDataValue
-     * @param null|string $data_type
-     * @param bool $enclose_field
-     * @param null|bool $transform_null
-     * @return null|string
-     */
-    public function toSql($cDataValue, $data_type = null, $enclose_field = true, $transform_null = null)
-    {
-        $value = null;
-        if (!$this->link_id) {
-            $this->connect();
-        }
-        if (is_array($cDataValue)) {
-            $this->errorHandler("toSql: Wrong parameter, array not managed.");
-        } elseif (!is_object($cDataValue)) {
-            $value = mysqli_real_escape_string($this->link_id, $cDataValue);
-        } elseif (get_class($cDataValue) == "Data") {
-            if ($data_type === null) {
-                $data_type = $cDataValue->data_type;
-            }
-
-            $value = mysqli_real_escape_string($this->link_id, $cDataValue->getValue($data_type, $this->locale));
-        } elseif (get_class($cDataValue) == "DateTime") {
-            switch ($data_type) {
-                case "Date":
-                    $tmp = new Data($cDataValue, "Date");
-                    $value = mysqli_real_escape_string($this->link_id, $tmp->getValue($data_type, $this->locale));
-                    break;
-
-                case "DateTime":
-                default:
-                    $data_type = "DateTime";
-                    $tmp = new Data($cDataValue, "DateTime");
-                    $value = mysqli_real_escape_string($this->link_id, $tmp->getValue($data_type, $this->locale));
-            }
-        } else {
-            $this->errorHandler("toSql: Wrong parameter, unmanaged datatype");
-        }
-        if ($transform_null === null) {
-            $transform_null = $this->transform_null;
-        }
-        switch ($data_type) {
-            case "Number":
-            case "ExtNumber":
-                if (!strlen($value)) {
-                    if ($transform_null) {
-                        return 0;
-                    } else {
-                        return "null";
-                    }
-                }
-                return $value;
-
-            default:
-                if (!strlen($value) && !$transform_null) {
-                    return "null";
-                }
-                if (!strlen($value) && ($data_type == "Date" || $data_type == "DateTime")) {
-                    $value = Data::getEmpty($data_type, $this->locale);
-                }
-
-                if ($enclose_field) {
-                    return "'" . $value . "'";
-                } else {
-                    return $value;
-                }
-        }
+        return mysqli_real_escape_string($this->link_id, $DataValue);
     }
 
     // ----------------------------------------
@@ -784,24 +616,21 @@ class MySqli implements DatabaseDriver
         if (is_object($this->link_id)) {
             $this->error = @mysqli_error($this->link_id);
             $this->errno = @mysqli_errno($this->link_id);
-            if ($this->errno) {
-                return true;
-            } else {
-                return false;
-            }
+
+            return $this->errno !== 0;
         } else {
             return true;
         }
     }
 
-    private function errorHandler($msg)
+    protected function errorHandler($msg)
     {
         $this->checkError(); // this is needed due to params order
 
         Error::register("MySQL(" . $this->database . ") - " . $msg . " #" . $this->errno . ": " . $this->error, static::ERROR_BUCKET);
     }
 
-    public function id2object($keys)
+    protected function id2object($keys)
     {
         return $keys;
     }

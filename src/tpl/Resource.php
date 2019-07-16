@@ -29,12 +29,16 @@ namespace phpformsframework\libs\tpl;
 use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\Config;
 use phpformsframework\libs\Debug;
-use phpformsframework\libs\Dir;
+use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Mappable;
+use phpformsframework\libs\Request;
 use phpformsframework\libs\storage\Filemanager;
 
-class Resource extends Mappable
+class Resource extends Mappable implements Dumpable
 {
+    /**
+     * @var Resource
+     */
     private static $singleton                   = null;
 
     protected $rules                            = null;
@@ -45,6 +49,11 @@ class Resource extends Mappable
         parent::__construct($map_name);
 
         $this->loadResources();
+    }
+
+    public static function dump()
+    {
+        return self::$singleton->resources;
     }
 
     private function loadResources($excludeDirname = null)
@@ -60,9 +69,20 @@ class Resource extends Mappable
 
             $cache->set("rawdata", $this->resources);
         }
+
         Debug::stopWatch("resource/loadResources");
     }
+    public static function type($type, $rule_name = "default")
+    {
+        if (!self::$singleton) {
+            self::$singleton = new Resource($rule_name);
+        }
 
+        return (isset(self::$singleton->resources[$type])
+            ? self::$singleton->resources[$type]
+            : array()
+        );
+    }
     public static function get($name, $type, $rule_name = "default")
     {
         if (!self::$singleton) {
@@ -71,16 +91,14 @@ class Resource extends Mappable
 
 
         $file                                   = null;
-        $pathinfo                               = Dir::getPathInfo();
-        if ($pathinfo) {
-            do {
-                if (isset(self::$singleton->resources[$type][$name . str_replace(DIRECTORY_SEPARATOR, "_", $pathinfo)])) {
-                    $file                       = self::$singleton->resources[$type][$name . str_replace(DIRECTORY_SEPARATOR, "_", $pathinfo)];
-                    break;
-                }
+        $pathinfo                               = Request::pathinfo();
+        while ($pathinfo != DIRECTORY_SEPARATOR) {
+            if (isset(self::$singleton->resources[$type][$name . str_replace(DIRECTORY_SEPARATOR, "_", $pathinfo)])) {
+                $file                           = self::$singleton->resources[$type][$name . str_replace(DIRECTORY_SEPARATOR, "_", $pathinfo)];
+                break;
+            }
 
-                $pathinfo                       = dirname($pathinfo);
-            } while ($pathinfo != DIRECTORY_SEPARATOR);
+            $pathinfo                           = dirname($pathinfo);
         }
 
         if (!$file && isset(self::$singleton->resources[$type][$name])) {

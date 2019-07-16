@@ -27,6 +27,7 @@ namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Error;
+use Exception;
 
 abstract class FilemanagerAdapter
 {
@@ -50,22 +51,51 @@ abstract class FilemanagerAdapter
         }
     }
 
+    abstract protected function load_file($file_path, $var = null);
+    abstract protected function output($data, $var);
+
     /**
      * @param null|string $file_path
      * @param null|string $search_keys
      * @param int $search_flag
-     * @return array
+     * @return bool|null|array
      */
-    abstract public function read($file_path = null, $search_keys = null, $search_flag = self::SEARCH_DEFAULT);
+    public function read($file_path = null, $search_keys = null, $search_flag = self::SEARCH_DEFAULT)
+    {
+        $res                                                            = null;
 
+        $params                                                         = $this->getParams($file_path);
+        if (!$params) {
+            return false;
+        }
+
+        $return                                                         = $this->load_file($params->file_path);
+        if ($return) {
+            if ($search_keys) {
+                $res                                                    = $this->search($return, $search_keys, $search_flag);
+            } else {
+                $res                                                    = $return;
+            }
+        } elseif ($return === false) {
+            Error::register("syntax errors into file" . (Constant::DEBUG ? ": " . $params->file_path : ""), static::ERROR_BUCKET);
+        }
+
+        return $this->getResult($res);
+    }
 
     /**
      * @param array $data
-     * @param null|string $var
      * @param null|string $file_path
+     * @param null|string $var
      * @return bool
      */
-    abstract public function write($data, $var = null, $file_path = null);
+    public function write($data, $file_path = null, $var = null)
+    {
+        $params                                                 = $this->setParams($file_path, $var);
+        $output                                                 = $this->output($data, $params->var);
+
+        return $this->save($output, $params->file_path);
+    }
 
     /**
      * @param array $data
@@ -111,12 +141,8 @@ abstract class FilemanagerAdapter
                 $file_path = $this->getFilePath();
             }
             $rc                                                         = $this->isValid($file_path) && $this->makeDir(dirname($file_path));
-            if ($rc) {
-                if (Filemanager::fsave($buffer, $file_path)) {
-                    if ($expire !== null) {
-                        $this->touch($expire, $file_path);
-                    }
-                }
+            if ($rc && Filemanager::fsave($buffer, $file_path) && $expire !== null) {
+                $this->touch($expire, $file_path);
             }
         }
         return $rc;
@@ -134,12 +160,8 @@ abstract class FilemanagerAdapter
             $file_path = $this->getFilePath();
         }
         $rc                                                             = $this->isValid($file_path) && $this->makeDir(dirname($file_path));
-        if ($rc) {
-            if (Filemanager::fappend($buffer, $file_path)) {
-                if ($expires !== null) {
-                    $this->touch($expires, $file_path);
-                }
-            }
+        if ($rc && Filemanager::fappend($buffer, $file_path) && $expires !== null) {
+            $this->touch($expires, $file_path);
         }
 
         return $rc;
@@ -167,10 +189,10 @@ abstract class FilemanagerAdapter
     {
         $rc                                                             = true;
         if (!$path) {
-            $path = dirname($this->file_path);
+            $path                                                       = dirname($this->file_path);
         }
         if (!is_dir($path)) {
-            $rc = @mkdir($path, 0777, true);
+            $rc                                                         = @mkdir($path, 0777, true);
         }
 
         return $rc;
@@ -187,11 +209,9 @@ abstract class FilemanagerAdapter
     public function touch($expires, $file_path = null)
     {
         if (!$file_path) {
-            $file_path = $this->getFilePath();
+            $file_path                                                  = $this->getFilePath();
         }
-        $rc                                                             = @touch($file_path, $expires);
-
-        return $rc;
+        return @touch($file_path, $expires);
     }
 
     /**
@@ -201,12 +221,9 @@ abstract class FilemanagerAdapter
     public function isExpired($file_path = null)
     {
         if (!$file_path) {
-            $file_path = $this->getFilePath();
+            $file_path                                                  = $this->getFilePath();
         }
-        return (filemtime($file_path) >= filectime($file_path)
-            ? false
-            : true
-        );
+        return filemtime($file_path) < filectime($file_path);
     }
 
     /**

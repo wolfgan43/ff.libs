@@ -190,9 +190,7 @@ class Request implements Configurable
     }
     public static function getModel($scope, $toObj = true)
     {
-        $res                                                    = self::body(null, null, $toObj, $scope);
-
-        return $res;
+        return self::body(null, null, $toObj, $scope);
     }
     /**
      * @param bool $with_unknown
@@ -499,10 +497,14 @@ class Request implements Configurable
         header("X-XSS-Protection: 1; mode=block");
         header("X-Content-Type-Options: nosniff");
         header("Strict-Transport-Security: max-age=31536000");
-        //header("Content-Security-Policy: default-src 'self' https://cdnjs.cloudflare.com; script-src 'self' https://cdnjs.cloudflare.com; connect-src 'self'; img-src 'self'; style-src 'self' https://cdnjs.cloudflare.com; ");
-        //header('Public-Key-Pins: pin-sha256="d6qzRu9zOECb90Uez27xWltNsj0e1Md7GkYYkVoZWmM="; pin-sha256="E9CZ9INDbd+2eRQozYqqbQ2yXLVKB9+xcprMF+44U1g="; max-age=604800; includeSubDomains; report-uri="https://example.net/pkp-report"');
-        //header("Referrer-Policy: origin-when-cross-origin");
-        //header("Expect-CT: max-age=7776000, enforce");
+        /**
+         * @todo: da verificare e implementare
+         *
+         * header("Content-Security-Policy: default-src 'self' https://cdnjs.cloudflare.com; script-src 'self' https://cdnjs.cloudflare.com; connect-src 'self'; img-src 'self'; style-src 'self' https://cdnjs.cloudflare.com; ");
+         * header('Public-Key-Pins: pin-sha256="d6qzRu9zOECb90Uez27xWltNsj0e1Md7GkYYkVoZWmM="; pin-sha256="E9CZ9INDbd+2eRQozYqqbQ2yXLVKB9+xcprMF+44U1g="; max-age=604800; includeSubDomains; report-uri="https://example.net/pkp-report"');
+         * header("Referrer-Policy: origin-when-cross-origin");
+         * header("Expect-CT: max-age=7776000, enforce");
+         */
         self::isInvalidReqMethod(true);
     }
     private static function getRequestHeaders()
@@ -528,13 +530,12 @@ class Request implements Configurable
         if (self::isAllowedSize(self::getRequestHeaders(), "HEAD")) {
             foreach (self::$rules["header"] as $rule) {
                 $header_key                                                             = str_replace("-", "_", $rule["name"]);
-                switch ($rule["name"]) {
-                    case "Authorization":
-                        $header_name                                                    = "Authorization";
-                        break;
-                    default:
-                        $header_name                                                    = "HTTP_" . strtoupper($header_key);
+                if ($rule["name"] == "Authorization") {
+                    $header_name                                                        = "Authorization";
+                } else {
+                    $header_name                                                        = "HTTP_" . strtoupper($header_key);
                 }
+
                 if (isset($rule["required"]) && !isset($_SERVER[$header_name])) {
                     $errors[400][]                                                      = $rule["name"] . " is required";
                 } elseif (isset($rule["required_ifnot"]) && !isset($_SERVER["HTTP_" . strtoupper($rule["required_ifnot"])]) && !isset($_SERVER[$header_name])) {

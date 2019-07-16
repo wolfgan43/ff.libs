@@ -27,11 +27,9 @@ namespace phpformsframework\libs\cache\adapters;
 
 use phpformsframework\libs\cache\MemAdapter;
 use phpformsframework\libs\Constant;
-use phpformsframework\libs\Dumpable;
-use phpformsframework\libs\Request;
 use Redis as MC;
 
-class MemRedis extends MemAdapter implements Dumpable
+class MemRedis extends MemAdapter
 {
     public static $server       = "127.0.0.1";
     public static $port         = 6379;

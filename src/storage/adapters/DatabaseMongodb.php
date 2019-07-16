@@ -50,6 +50,13 @@ class DatabaseMongodb extends DatabaseAdapter
 
     protected function processRead($query)
     {
+        if (!isset($query['sort'])) {
+            $query['sort']                              = null;
+        }
+        if (!isset($query['limit'])) {
+            $query['limit']                             = null;
+        }
+
         $res                                            = $this->processRawQuery(array(
                                                             "select" 	    => $query["select"]
                                                             , "from" 	    => $query["from"]
@@ -185,7 +192,7 @@ class DatabaseMongodb extends DatabaseAdapter
         if (is_array($fields) && count($fields)) {
             $fields                                                                 = $this->convertKey("ID", $fields);
 
-            if ($flag == "where" && is_array($fields['$or'])) {
+            if ($flag == "where" && isset($fields['$or']) && is_array($fields['$or'])) {
                 $or                                                                 = $this->convertFields($fields['$or'], "where_OR");
                 if ($or) {
                     $res['$or'] = $or;
@@ -251,10 +258,8 @@ class DatabaseMongodb extends DatabaseAdapter
                             ) {
                                 switch ($field["op"]) {
                                     case "++":
-                                        //skip
                                         break;
                                     case "--":
-                                        //skip
                                         break;
                                     case "+":
                                         $res["update"]['$addToSet'][$field["name"]] = $field["value"];
@@ -273,7 +278,6 @@ class DatabaseMongodb extends DatabaseAdapter
                                         $res["update"]['$inc'][$field["name"]]      = -1;
                                         break;
                                     case "+":
-                                        //skip
                                         break;
                                     default:
                                         $res["update"]['$set'][$field["name"]]      = $field["value"];
@@ -284,10 +288,8 @@ class DatabaseMongodb extends DatabaseAdapter
                             ) {
                                 switch ($field["op"]) {
                                     case "++":
-                                        //skip
                                         break;
                                     case "--":
-                                        //skip
                                         break;
                                     case "+":
                                         $res["update"]['$concat'][$field["name"]]   = array('$' . $field["name"], ",", $field["value"]);
@@ -321,15 +323,12 @@ class DatabaseMongodb extends DatabaseAdapter
                                 $struct_type                                        = null;
                             }
                             switch ($struct_type) {
-                                case "arrayIncremental":                                                                     //array
-                                case "arrayOfNumber":                                                                        //array
-                                case "array":                                                                                //array
-                                    //search
+                                case "arrayIncremental":
+                                case "arrayOfNumber":
+                                case "array":
                                     if (is_array($value) && count($value)) {
                                         if (!$this->isAssocArray($value)) {
-                                            $res["where"][$field["name"]] 		    = array(
-                                                                                        ($field["not"] ? '$nin' : '$in') => $value
-                                                                                    );
+                                            $res["where"][$field["name"]] 		    = array('$in' => $value);
                                         }
                                     } elseif (is_array($value) && !count($value)) {
                                         $res["where"][$field["name"]]               = array();
@@ -338,48 +337,14 @@ class DatabaseMongodb extends DatabaseAdapter
                                     }
                                     break;
                                 case "boolean":
-                                    if ($field["not"] && $value !== null) {                                                //not
-                                        $res["where"][$field["name"]] 			    = array(
-                                                                                        '$ne' => $value
-                                                                                    );
-                                    }
                                     break;
                                 case "date":
                                 case "number":
                                 case "timestamp":
                                 case "primary":
-                                    if ($value !== null) {
-                                        if ($field["op"]) {                                                //< > <= >=
-                                            switch ($field["op"]) {
-                                                case ">":
-                                                    $op 						    = ($field["not"] ? '$lt' : '$gt');
-                                                    break;
-                                                case ">=":
-                                                    $op 						    = ($field["not"] ? '$lte' : '$gte');
-                                                    break;
-                                                case "<":
-                                                    $op 						    = ($field["not"] ? '$gt' : '$lt');
-                                                    break;
-                                                case "<=":
-                                                    $op 						    = ($field["not"] ? '$gte' : '$lte');
-                                                    break;
-                                                default:
-                                                    $op                             = "";
-                                            }
-                                            if ($op) {
-                                                $res["where"][$field["name"]] 	    = array(
-                                                                                        "$op" => $value
-                                                                                    );
-                                            }
-                                        } elseif ($field["not"]) {                                                //not
-                                            $res["where"][$field["name"]] 		    = array(
-                                                                                        '$ne' => $value
-                                                                                    );
-                                        }
-                                    }
                                     if (is_array($value) && count($value)) {
                                         $res["where"][$field["name"]] 			    = array(
-                                                                                        ($field["not"] ? '$nin' : '$in') => (
+                                                                                        '$in' => (
                                                                                             ($field["name"] == $this->key_name)
                                                                                             ? $value
                                                                                             : array_map('intval', $value)
@@ -393,22 +358,13 @@ class DatabaseMongodb extends DatabaseAdapter
                                 default:
                                     if (is_array($value) && count($value)) {
                                         $res["where"][$field["name"]] 			    = array(
-                                                                                        ($field["not"] ? '$nin' : '$in') => (
+                                                                                        '$in' => (
                                                                                             ($field["name"] == $this->key_name)
                                                                                             ? $value
                                                                                             : array_map('strval', $value)
                                                                                         )
                                                                                     );
-                                    } elseif ($field["not"]) {                                                        //not
-                                        if ($value) {
-                                            $res["where"][$field["name"]] 		    = array(
-                                                                                        '$ne' => $value
-                                                                                    );
-                                        } else {
-                                            unset($res["where"][$field["name"]]);
-                                        }
                                     }
-                                //string
                             }
                             break;
                         default:

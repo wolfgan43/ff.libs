@@ -34,7 +34,7 @@ use phpformsframework\libs\Dumpable;
 class Database implements Dumpable
 {
     const ERROR_BUCKET                                                      = "database";
-    const NAME_SPACE                                                        = 'phpformsframework\\libs\\storage\\adapters\\';
+    const NAME_SPACE                                                        = __NAMESPACE__ . '\\adapters\\';
     const ENABLE_CACHE                                                      = true;
     const ADAPTER                                                           = "mysqli";
 
@@ -273,22 +273,22 @@ class Database implements Dumpable
 
     private function getResult()
     {
-        return (Error::check(static::ERROR_BUCKET)
-            ? Error::raise(static::ERROR_BUCKET)
-            : (
+        if (Error::check(static::ERROR_BUCKET)) {
+            $res = Error::raise(static::ERROR_BUCKET);
+        } else {
+            $res = (
                 is_array($this->result) && count($this->result) == 1
                 ? array_shift($this->result)
                 : $this->result
-            )
-        );
+            );
+        }
+
+        return $res;
     }
 
-    private static function getCacheParam($param, $sep = ", ")
+    private static function getCacheParam($param)
     {
-        return (is_array($param)
-            ? implode($sep, $param)
-            : $param
-        );
+        return json_encode($param);
     }
 
     private static function getCacheKey($query)
@@ -298,7 +298,7 @@ class Database implements Dumpable
 
         $where = (
             isset($query["where"])
-            ? " WHERE " . self::getCacheParam($query["where"], " AND ")
+            ? " WHERE " . self::getCacheParam($query["where"])
             : ""
         );
 
@@ -314,7 +314,7 @@ class Database implements Dumpable
         );
         $insert = (
             isset($query["insert"])
-            ? " INSERT " . self::getCacheParam($query["insert"], " VALUES ")
+            ? " INSERT " . self::getCacheParam($query["insert"])
             : ""
         );
 
@@ -360,8 +360,8 @@ class Database implements Dumpable
         if (self::ENABLE_CACHE) {
             $cache_key                                                  = Database::getCacheKey($query);
             if (Constant::DEBUG) {
-                $from_cache = isset(self::$cache[$cache_key]["data"]) && self::$cache[$cache_key]["data"];
-                self::$cache_rawdata[(count(self::$cache_rawdata) + 1) . ". " . $cache_key] = ($from_cache ? true : $query);
+                $from_cache                                             = isset(self::$cache[$cache_key]["data"]) && self::$cache[$cache_key]["data"];
+                self::$cache_rawdata[(count(self::$cache_rawdata) + 1) . ". " . $cache_key] = ($from_cache ? $from_cache : $query);
             }
             self::$cache[$cache_key]["query"]                           = $query;
             if (isset($data["exts"]) && $data["exts"] === true) {

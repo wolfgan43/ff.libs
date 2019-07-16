@@ -25,61 +25,29 @@
  */
 namespace phpformsframework\libs\storage\adapters;
 
-use phpformsframework\libs\Constant;
-use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\FilemanagerAdapter;
 
 class FilemanagerJson extends FilemanagerAdapter //todo: da finire
 {
     const EXT                                                   = "json";
 
-    public function read($file_path = null, $search_keys = null, $search_flag = self::SEARCH_DEFAULT)
+    protected function load_file($file_path, $var = null)
     {
-        $res                                                    = array();
-
-        $params                                                 = $this->getParams($file_path);
-        if (!$params) {
-            return false;
-        }
-
-        $json                                                   = file_get_contents($params->file_path);
-        if ($json) {
-            $return                                             = json_decode($json, true);
-            if ($return) {
-                if ($search_keys) {
-                    $res                                        = $this->search($return, $search_keys, $search_flag);
-                } else {
-                    $res                                        = $return;
-                }
-            } elseif ($return === false) {
-                Error::register("syntax errors into file" . (Constant::DEBUG ? ": " . $params->file_path : ""), static::ERROR_BUCKET);
-            } else {
-                $res                                            = null;
-            }
-            return $this->getResult($res);
-        } else {
-            Error::register("syntax errors into file" . (Constant::DEBUG ? ": " . $params->file_path : ""), static::ERROR_BUCKET);
-        }
-
-        return null;
+        $json                                                   = file_get_contents($file_path);
+        return ($json
+            ? json_decode($json, true)
+            : false
+        );
     }
 
-    /**
-     * @param array $data
-     * @param null $file_path
-     * @param null $var
-     * @return bool
-     */
-    public function write($data, $file_path = null, $var = null)
+    protected function output($data, $var)
     {
-        $params                                                 = $this->setParams($file_path, $var);
-
         $root_node                                              = (
-            $params->var
-                                                                    ? array($params->var => $data)
-                                                                    : $data
-                                                                );
+            $var
+            ? array($var => $data)
+            : $data
+        );
 
-        return $this->save(json_encode($root_node), $params->file_path);
+        return json_encode($root_node);
     }
 }

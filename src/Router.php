@@ -26,11 +26,13 @@
 
 namespace phpformsframework\libs;
 
+use Exception;
 use phpformsframework\libs\cache\Mem;
 
-class Router extends App implements Configurable
+class Router implements Configurable
 {
     const TYPE                                              = "router";
+    const ERROR_BUCKET                                      = "routing";
 
     const PRIORITY_TOP 			                            = 0;
     const PRIORITY_VERY_HIGH	                            = 1;
@@ -217,7 +219,7 @@ class Router extends App implements Configurable
          * Anti injection, prevent error fs
          */
         if (!Dir::autoload($script)) {
-            Error::run(Dir::getPathInfo());
+            Error::run(Request::pathinfo());
         }
         exit;
     }
@@ -311,4 +313,27 @@ class Router extends App implements Configurable
         Debug::stopWatch("router/find");
         return $res;
     }
+
+
+
+    public static function caller($class_name, $method, $params)
+    {
+        $output                                                     = null;
+        if ($class_name) {
+            try {
+                App::setRunner($class_name);
+
+                if ($method && !is_array($method)) {
+                    $obj                                            = new $class_name();
+                    $output                                         = call_user_func_array(array(new $obj, $method), $params);
+                }
+            } catch (Exception $exception) {
+                Error::register($exception->getMessage(), static::ERROR_BUCKET);
+            }
+        } elseif (is_callable($method)) {
+            $output                                                 = call_user_func_array($method, $params);
+        }
+        return $output;
+    }
+
 }

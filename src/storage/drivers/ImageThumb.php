@@ -91,11 +91,9 @@ class ImageThumb extends ImageRender
             case "[CONVERT]":
                 $src_res_path_tmp = $src_res_path . "-conversion.png";
                 exec('convert -antialias -density 300 -depth 24 "' . $src_res_path . '"[0] "' . $src_res_path_tmp . '"');
-                if (!is_file($src_res_path_tmp)) {
-                    if (is_file($src_res_path . "-conversion-0.png")) {
-                        exec('mv "' . $src_res_path . '-conversion-0.png" "' . $src_res_path_tmp . '"');
-                        exec('rm -f "' . $src_res_path . '-conversion-*.png"');
-                    }
+                if (!is_file($src_res_path_tmp) && is_file($src_res_path . "-conversion-0.png")) {
+                    exec('mv "' . $src_res_path . '-conversion-0.png" "' . $src_res_path_tmp . '"');
+                    exec('rm -f "' . $src_res_path . '-conversion-*.png"');
                 }
                 if (!is_file($src_res_path_tmp)) {
                     $src_res_path_tmp = $this->get_template_dir("pdf.png");

@@ -26,16 +26,43 @@
 namespace phpformsframework\libs;
 
 use phpformsframework\libs\tpl\Widget;
-use ReflectionClass;
-use Exception;
 
-abstract class App
+abstract class App implements Dumpable
 {
-    const NAME_SPACE                                                = 'phpformsframework\\libs\\';
-    const ERROR_BUCKET                                              = 'exception';
+    const NAME_SPACE                                                = __NAMESPACE__ . '\\';
+    const ERROR_BUCKET                                              = 'app';
 
     protected static $script_engine                                 = null;
+    protected static $page                                          = null;
 
+    public static function getPage($key = null)
+    {
+        if ($key && !isset(self::$page[$key])) {
+            self::$page[$key]                                       = null;
+        }
+
+        return ($key
+            ? self::$page[$key]
+            : self::$page
+        );
+    }
+
+
+    public static function dump()
+    {
+        return array(
+            "isRunnedAs"    => self::$script_engine,
+            "page"          => self::$page
+        );
+    }
+
+    /**
+     * @param array|object $page
+     */
+    public static function setPage($page)
+    {
+        self::$page = (array) $page;
+    }
     public static function env($name = null, $value = null)
     {
         return Env::get($name, $value);
@@ -50,28 +77,9 @@ abstract class App
         return Hook::handle($name, $ref, $params);
     }
 
-    public static function caller($class_name, $method, $params)
-    {
-        $output                                                     = null;
-        if ($class_name) {
-            try {
-                self::setRunner($class_name);
-
-                if ($method && !is_array($method)) {
-                    $obj                                            = new $class_name();
-                    $output                                         = call_user_func_array(array(new $obj, $method), $params);
-                }
-            } catch (Exception $exception) {
-                Error::register($exception->getMessage(), static::ERROR_BUCKET);
-            }
-        } elseif (is_callable($method)) {
-            $output                                                 = call_user_func_array($method, $params);
-        }
-        return $output;
-    }
     public static function setRunner($what)
     {
-        self::$script_engine                                        = self::getClassName($what);
+        self::$script_engine                                        = basename(str_replace('\\', '/', $what));
     }
     public static function isRunnedAs($what)
     {
@@ -79,71 +87,16 @@ abstract class App
             $res                                                    = self::$script_engine == ucfirst($what);
         } else {
             $path                                                   = Dir::getDiskPath($what, true);
-            $res                                                    = Dir::getPathInfo($path);
-        }
-        return $res;
-    }
-    protected static function getClassName($class_name = null)
-    {
-        $res                                                        = null;
-        try {
-            if (!$class_name) {
-                $class_name = get_called_class();
-            }
-            $reflector                                              = new ReflectionClass($class_name);
-            $res                                                    = $reflector->getShortName();
-        } catch (Exception $exception) {
-            Error::register($exception->getMessage(), static::ERROR_BUCKET);
-        }
-        return $res;
-    }
-    protected static function getClassPath($class_name = null)
-    {
-        $res = null;
-        try {
-            $reflector = new ReflectionClass(($class_name ? $class_name : get_called_class()));
-            $res = dirname($reflector->getFileName());
-        } catch (Exception $exception) {
-            Error::register($exception->getMessage(), static::ERROR_BUCKET);
+            $res                                                    = $path && strpos(Request::pathinfo(), $path) === 0;
         }
         return $res;
     }
 
-    /**
-     * @deprecated
-     * @param $class_name
-     * @param $method_name
-     * @return bool|null
-     */
-    protected static function isStatic($class_name, $method_name)
-    {
-        $res = null;
-        try {
-            $reflector = new ReflectionClass($class_name);
-            $method = $reflector->getMethod($method_name);
-            $res = $method->isStatic();
-        } catch (Exception $exception) {
-            Error::register($exception->getMessage(), static::ERROR_BUCKET);
-        }
-        return $res;
-    }
-    protected static function getSchema($bucket)
-    {
-        return Config::getSchema($bucket);
-    }
-
-    /**
-     * @return App
-     */
-    private static function getCalledClass()
-    {
-        return get_called_class();
-    }
     public static function widget($name, $config = null, $return = null)
     {
-        $schema                         = self::getSchema("widgets");
-        $class_name                     = self::getCalledClass();
-        $user_path                      = Dir::getPathInfo();
+        $schema                         = Config::getSchema("widgets");
+        $class_name                     = get_called_class();
+        $user_path                      = Request::pathinfo();
 
         if (isset($schema[$user_path]) && is_array($schema[$user_path])) {
             $config                     = array_replace_recursive($config, $schema[$user_path]);

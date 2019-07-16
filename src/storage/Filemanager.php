@@ -32,7 +32,7 @@ use phpformsframework\libs\Dumpable;
 
 class Filemanager implements Dumpable
 {
-    const NAME_SPACE                                                    = 'phpformsframework\\libs\\storage\\adapters\\';
+    const NAME_SPACE                                                    = __NAMESPACE__ . '\\adapters\\';
 
     private static $singletons                                          = null;
     private static $storage                                             = null;
@@ -62,11 +62,9 @@ class Filemanager implements Dumpable
      */
     public static function getInstance($filemanagerAdapter, $file = null, $var = null, $expire = null)
     {
-        if ($filemanagerAdapter) {
-            if (!isset(self::$singletons[$filemanagerAdapter])) {
-                $class_name                                             = static::NAME_SPACE . "Filemanager" . ucfirst($filemanagerAdapter);
-                self::$singletons[$filemanagerAdapter]                  = new $class_name($file, $var, $expire);
-            }
+        if ($filemanagerAdapter && !isset(self::$singletons[$filemanagerAdapter])) {
+            $class_name                                                 = static::NAME_SPACE . "Filemanager" . ucfirst($filemanagerAdapter);
+            self::$singletons[$filemanagerAdapter]                      = new $class_name($file, $var, $expire);
         }
 
         return self::$singletons[$filemanagerAdapter];
@@ -94,14 +92,14 @@ class Filemanager implements Dumpable
         if ($data && $file) {
             $handle = @fopen($file, $mode);
             if ($handle !== false) {
-                if (flock($handle, LOCK_EX)) { // exclusive lock will blocking wait until obtained
+                if (flock($handle, LOCK_EX)) {
                     if (@fwrite($handle, $data . "\n") !== false) {
                         $success = true;
                     }
-                    flock($handle, LOCK_UN); // unlock
+                    flock($handle, LOCK_UN);
                 }
+                @fclose($handle);
             }
-            @fclose($handle);
         }
         return $success;
     }
@@ -181,38 +179,33 @@ class Filemanager implements Dumpable
                 $conn_id = @ftp_connect($_SERVER["SERVER_ADDR"]);
             }
 
-            if ($conn_id !== false) {
-                // login with username and password
-                if (@ftp_login($conn_id, self::FTP_USERNAME, self::FTP_PASSWORD)) {
-                    $local_path = Constant::DISK_PATH;
-                    $part_path = "";
-                    $real_ftp_path = null;
+            if ($conn_id !== false && @ftp_login($conn_id, self::FTP_USERNAME, self::FTP_PASSWORD)) {
+                $local_path = Constant::DISK_PATH;
+                $part_path = "";
+                $real_ftp_path = null;
 
-                    foreach (explode("/", $local_path) as $curr_path) {
-                        if (strlen($curr_path)) {
-                            $ftp_path = str_replace($part_path, "", $local_path);
-                            if (@ftp_chdir($conn_id, $ftp_path)) {
-                                $real_ftp_path = $ftp_path;
-                                break;
-                            }
-
-                            $part_path .= "/" . $curr_path;
+                foreach (explode("/", $local_path) as $curr_path) {
+                    if (strlen($curr_path)) {
+                        $ftp_path = str_replace($part_path, "", $local_path);
+                        if (@ftp_chdir($conn_id, $ftp_path)) {
+                            $real_ftp_path = $ftp_path;
+                            break;
                         }
-                    }
-                    if ($real_ftp_path === null) {
-                        if (@ftp_chdir($conn_id, "/")) {
-                            $real_ftp_path = "";
-                        }
-                    }
 
-                    if ($real_ftp_path) {
-                        $res = array(
-                            "conn" => $conn_id
-                            , "path" => $real_ftp_path
-                        );
-                    } else {
-                        @ftp_close($conn_id);
+                        $part_path .= "/" . $curr_path;
                     }
+                }
+                if ($real_ftp_path === null && @ftp_chdir($conn_id, "/")) {
+                    $real_ftp_path = "";
+                }
+
+                if ($real_ftp_path) {
+                    $res = array(
+                        "conn" => $conn_id
+                        , "path" => $real_ftp_path
+                    );
+                } else {
+                    @ftp_close($conn_id);
                 }
             }
         }

@@ -27,7 +27,7 @@ namespace phpformsframework\libs\delivery;
 
 class Notice
 {
-    const NAME_SPACE                                        = 'phpformsframework\\libs\\delivery\\adapters\\';
+    const NAME_SPACE                                        = __NAMESPACE__ . '\\adapters\\';
 
     private static $singleton                               = null;
 
@@ -98,6 +98,7 @@ class Notice
      */
     private function setAdapters($noticeAdapters)
     {
+        $name_space                                         = static::NAME_SPACE . "Notice";
         if (is_array($noticeAdapters)) {
             foreach ($noticeAdapters as $adapter => $connection) {
                 if (is_numeric($adapter) && strlen($connection)) {
@@ -105,11 +106,11 @@ class Notice
                     $connection                             = null;
                 }
 
-                $class_name                                 = static::NAME_SPACE . "Notice" . ucfirst($adapter);
+                $class_name                                 = $name_space . ucfirst($adapter);
                 $this->adapters[$adapter]                   = new $class_name($connection);
             }
         } elseif ($noticeAdapters) {
-            $class_name                                     = static::NAME_SPACE . "Notice" . ucfirst($noticeAdapters);
+            $class_name                                     = $name_space . ucfirst($noticeAdapters);
             $this->adapters[$noticeAdapters]                = new $class_name();
         }
 

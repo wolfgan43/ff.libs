@@ -62,11 +62,11 @@ class MemMemcached extends MemAdapter
      */
     public function set($name, $value = null, $bucket = null)
     {
-        if($value === null) {
+        if ($value === null) {
             return $this->del($name, $bucket);
         }
 
-        $key = $this->getKey("set", $bucket,$name);
+        $key = $this->getKey("set", $bucket, $name);
 
         return $this->conn->set($key, $this->setValue($value), $this->getTTL());
     }
@@ -83,12 +83,10 @@ class MemMemcached extends MemAdapter
         if (!Constant::$disable_cache) {
             $key = $this->getKey("get", $bucket, $name);
             if ($name) {
-                $res = $this->conn->get($key);
-                $res = (
-                $this->conn->getResultCode() === MC::RES_SUCCESS
-                    ? $this->getValue($res)
-                    : false
-                );
+                $this->conn->get($key);
+                if ($this->conn->getResultCode() === MC::RES_SUCCESS) {
+                    $res = $this->getValue($res);
+                }
             } else {
                 $keys = $this->conn->getAllKeys();
                 if (is_array($keys) && count($keys)) {

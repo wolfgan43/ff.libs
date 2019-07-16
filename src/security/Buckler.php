@@ -91,35 +91,31 @@ class Buckler implements Configurable
             if (is_array($rules) && count($rules)) {
                 foreach ($rules as $source => $rule) {
                     $src                                        = self::regexp($source);
-                    if (preg_match($src, $path_info, $matches)) {
-                        if (is_numeric($rule["destination"]) || ctype_digit($rule["destination"])) {
-                            Response::code($rule["destination"]);
+                    if (preg_match($src, $path_info, $matches)
+                        && (is_numeric($rule["destination"]) || ctype_digit($rule["destination"]))
+                    ) {
+                        Response::code($rule["destination"]);
 
-                            if (isset($rule["log"])) {
-                                Log::write(
-                                    array(
-                                        "RULE"          => $source
-                                        , "ACTION"      => $rule["destination"]
-                                        , "URL"         => Request::url()
-                                        , "REFERER"     => Request::referer()
-                                    ),
-                                    "shield",
-                                    $rule["destination"],
-                                    "BadPath"
-                                );
-                            }
-                            exit;
+                        if (isset($rule["log"])) {
+                            Log::write(
+                                array(
+                                    "RULE"          => $source
+                                    , "ACTION"      => $rule["destination"]
+                                    , "URL"         => Request::url()
+                                    , "REFERER"     => Request::referer()
+                                ),
+                                "shield",
+                                $rule["destination"],
+                                "BadPath"
+                            );
                         }
+                        exit;
                     }
                 }
             }
         }
     }
 
-    //todo: da fare
-    private static function antiFlood()
-    {
-    }
     private static function regexp($rule)
     {
         return "#" . (
@@ -128,4 +124,11 @@ class Buckler implements Configurable
                 : $rule
             ) . "#i";
     }
+
+    /**
+     * @todo da fare
+     * private static function antiFlood()
+     * {
+     * }
+     */
 }

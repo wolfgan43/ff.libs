@@ -69,12 +69,10 @@ class MemApc extends MemAdapter
 
             if ($name) {
                 $success = null;
-                $res = apc_fetch($key, $success);
-                $res = (
-                    $success
-                    ? $this->getValue($res)
-                    : false
-                );
+                apc_fetch($key, $success);
+                if ($success) {
+                    $res = $this->getValue($res);
+                }
             } else {
                 foreach (new MC('user', '#^' . preg_quote($bucket) . '\.#') as $item) {
                     $res[$item["key"]] = $item["value"];

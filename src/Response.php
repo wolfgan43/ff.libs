@@ -167,17 +167,17 @@ class Response
 
     public static function sendHeaders($params = null)
     {
-        $keep_alive			        = isset($params["keep_alive"])  ? $params["keep_alive"]			: false;
+        $keep_alive			        = isset($params["keep_alive"])  ? $params["keep_alive"]			: null;
         $max_age				    = isset($params["max_age"])     ? $params["max_age"]            : null;
         $expires				    = isset($params["expires"])     ? $params["expires"]            : null;
-        $compress			        = isset($params["compress"])    ? $params["compress"]           : false;
+        $compress			        = isset($params["compress"])    ? $params["compress"]           : null;
         $cache					    = isset($params["cache"])		? $params["cache"]				: "public";
         $disposition			    = isset($params["disposition"])	? $params["disposition"]		: "inline";
         $filename			        = isset($params["filename"])    ? $params["filename"]           : null;
         $mtime			            = isset($params["mtime"])       ? $params["mtime"]              : null;
         $mimetype			        = isset($params["mimetype"])	? $params["mimetype"]			: null;
         $size				        = isset($params["size"])        ? $params["size"]               : null;
-        $etag				        = isset($params["etag"])		? $params["etag"]				: true;
+        $etag				        = isset($params["etag"])		? $params["etag"]				: null;
 
         if ($size) {
             header("Content-Length: " . $size);
@@ -209,11 +209,11 @@ class Response
             header("Connection: Keep-Alive");
         }
         if ($compress) {
-            $accept_encoding    = (
+            $accept_encoding = (
                 isset($_SERVER["HTTP_ACCEPT_ENCODING"])
-                                    ? explode(",", str_replace(" ", "", $_SERVER["HTTP_ACCEPT_ENCODING"]))
-                                    : false
-                                );
+                ? explode(",", str_replace(" ", "", $_SERVER["HTTP_ACCEPT_ENCODING"]))
+                : null
+            );
             if ($accept_encoding) {
                 if ($compress === true) {
                     $compress   = $accept_encoding[0];

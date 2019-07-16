@@ -29,6 +29,7 @@ use phpformsframework\libs\delivery\NoticeAdapter;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\delivery\drivers\Mailer;
+use phpformsframework\libs\tpl\Resource;
 
 class NoticeEmail extends NoticeAdapter
 {
@@ -57,18 +58,13 @@ class NoticeEmail extends NoticeAdapter
     }
     private function setTemplate($template)
     {
-        if ($template) {
-            if (strpos($template, "::") !== false) {
-                $objSource                  = explode("::", $template);
-
-                $this->template             = (
-                    is_file($this->getDiskPath("mail") . DIRECTORY_SEPARATOR . $objSource[0] . $objSource[1])
-                                                ? DIRECTORY_SEPARATOR . $objSource[0] . $objSource[1]
-                                                : $this->getClassPath(ucfirst($objSource[0])) . DIRECTORY_SEPARATOR . "mailer" . $objSource[1]
-                                            );
-            } else {
-                $this->template             = $template;
-            }
+        $this->template = (
+            strpos($template, "/") === false
+            ? Resource::get($template, "email")
+            : $template
+        );
+        if (!$this->template) {
+            Error::register("Template mail not found: " .  $template, static::ERROR_BUCKET);
         }
     }
 

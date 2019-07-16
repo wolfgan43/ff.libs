@@ -343,14 +343,7 @@ class Log
 
     public static function getLogDir()
     {
-        $cache_disk_path                                            = Dir::getDiskPath("cache/logs");
-        $log_dir                                                    = (
-            $cache_disk_path
-                                                                        ? $cache_disk_path . DIRECTORY_SEPARATOR . Request::hostname()
-                                                                        : null
-                                                                    );
-
-        return $log_dir;
+        return Dir::getDiskPath("cache/logs");
     }
 
     private static function run($message, $type = null, $routine = null, $action = null, $status = null, $response = null)
@@ -388,15 +381,17 @@ class Log
                     $status,
                     $response
                 );
-
-                if ($rule["unalterable"]) {
-                    self::hashing($message, $bucket);
-                }
-
-                if ($rule["notify"]) {
-                    self::notify($message, $bucket);
-                }
-
+                /**
+                 * @todo: da finire
+                 *
+                 * if ($rule["unalterable"]) {
+                 *    self::hashing($message, $bucket);
+                 * }
+                 *
+                 * if ($rule["notify"]) {
+                 *    self::notify($message, $bucket);
+                 * }
+                */
                 self::set($content, $bucket, $rule["override"]);
             }
         }
@@ -406,7 +401,7 @@ class Log
     {
         $log_path                                                   = self::getLogDir();
         if ($log_path) {
-            $file                                                   = $log_path . '/' . date("Y-m-d") . "_" . $filename . '.txt';
+            $file                                                   = $log_path . '/' . Constant::APPNAME . "_" . date("Y-m-d") . "_" . $filename . '.txt';
 
             if ($override) {
                 Filemanager::fsave($data, $file);
@@ -415,12 +410,6 @@ class Log
             }
         }
     }
-
-    //todo: da finire
-    protected static function get($bucket, $tail = null)
-    {
-    }
-
 
     private static function writable($type)
     {
@@ -617,13 +606,18 @@ class Log
         return $content;
     }
 
-    //todo: da finire
-    private static function hashing($string, $bucket)
-    {
-    }
+    /**
+     * @todo da finire
+     *
+     * protected static function get($bucket, $tail = null)
+     * {
+     * }
+     * private static function hashing($string, $bucket)
+     * {
+     * }
+     * private static function notify($message, $object)
+     * {
+     * }
+     */
 
-    //todo: da finire
-    private static function notify($message, $object)
-    {
-    }
 }

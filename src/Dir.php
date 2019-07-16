@@ -43,20 +43,6 @@ class Dir
     {
         return strpos(realpath($abs_path), Constant::DISK_PATH) === 0;
     }
-    public static function getPathInfo($user_path = null)
-    {
-        $path_info                                                  = $_SERVER["PATH_INFO"];
-        if ($user_path) {
-            $path_info                                              = (
-                strpos($path_info, $user_path) === 0
-                                                                        ? substr($path_info, strlen($user_path))
-                                                                        : false
-                                                                    );
-        }
-
-        return $path_info;
-    }
-
 
     /**
      * @param $path

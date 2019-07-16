@@ -23,29 +23,27 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\tpl;
 
-use phpformsframework\libs\Constant;
-use phpformsframework\libs\tpl\adapters\PageHtml;
+namespace phpformsframework\libs\dto;
 
-class Page
+abstract class DataAdapter
 {
-    const NAME_SPACE                            = __NAMESPACE__ . '\\adapters\\';
-    const ASSETS_PATH                           =  Constant::LIBS_FF_DISK_PATH . DIRECTORY_SEPARATOR . 'assets';
+    const CONTENT_TYPE = null;
 
-    private static $singleton                   = null;
+    public $error = null;
+    public $status = null;
 
-    /**
-     * @param string $type
-     * @return PageHtml
-     */
-    public static function getInstance($type, $extension_name = "default")
+    protected function get_vars()
     {
-        if (!self::$singleton) {
-            $class_name                         = self::NAME_SPACE . "Page" . ucfirst($type);
-            self::$singleton                    = new $class_name($extension_name);
-        }
+        return get_object_vars($this);
+    }
 
-        return self::$singleton;
+    public function toArray()
+    {
+        return $this->get_vars();
+    }
+    public function toJson()
+    {
+        return json_encode($this->get_vars());
     }
 }

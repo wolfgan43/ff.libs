@@ -26,6 +26,7 @@
 
 namespace phpformsframework\libs\storage;
 
+use hcore\Hook;
 use phpformsframework\libs\Config;
 use phpformsframework\libs\Configurable;
 use phpformsframework\libs\Constant;
@@ -69,12 +70,13 @@ class Media implements Configurable
 {
     const ERROR_BUCKET                                              = "storage";
     const STRICT                                                    = false;
-    const RENDER_MEDIA_PATH                                         = "/media";
-    const RENDER_ASSETS_PATH                                        = "/assets";
-    const RENDER_SCRIPT_PATH                                        = "/js";
-    const RENDER_STYLE_PATH                                         = "/css";
+    const RENDER_MEDIA_PATH                                         = DIRECTORY_SEPARATOR . "media";
+    const RENDER_ASSETS_PATH                                        = DIRECTORY_SEPARATOR . "assets";
+    const RENDER_IMAGE_PATH                                         = DIRECTORY_SEPARATOR . "images";
+    const RENDER_SCRIPT_PATH                                        = DIRECTORY_SEPARATOR . "js";
+    const RENDER_STYLE_PATH                                         = DIRECTORY_SEPARATOR . "css";
 
-    const MODIFY_PATH                                               = Constant::SITE_PATH . "/restricted/media/modify";
+    const MODIFY_PATH                                               = Constant::SITE_PATH . DIRECTORY_SEPARATOR . "restricted" . DIRECTORY_SEPARATOR . "media" . DIRECTORY_SEPARATOR . "modify";
 
     const MIMETYPE                                                  = array(
                                                                         "3dm" => "x-world/x-3dmf"
@@ -612,27 +614,32 @@ class Media implements Configurable
 
     public static function getUrl($file, $mode = null, $key = null)
     {
-        if ($mode === null && $key === null) {
-            $key = "url";
-        }
         $query                                                      = null;
-        $file_relative                                              = str_replace(
+        if ($mode === null && $key === null) {
+            $key                                                    = "url";
+        }
+
+        if (strpos($file, "/") === false) {
+            $file                                                   = Resource::get($file, "images");
+        }
+
+        $file_relative = str_replace(
             array(
-                                                                            Constant::UPLOAD_DISK_PATH . DIRECTORY_SEPARATOR
-                                                                            , Constant::UPLOAD_PATH. DIRECTORY_SEPARATOR
-                                                                            , Dir::getDiskPath("cache/assets", true) . DIRECTORY_SEPARATOR
-                                                                            , Dir::getDiskPath("cache/.thumbs", true) . DIRECTORY_SEPARATOR
-                                                                            , Constant::DISK_PATH . DIRECTORY_SEPARATOR
-                                                                        ),
+                Constant::UPLOAD_DISK_PATH . DIRECTORY_SEPARATOR
+                , Constant::UPLOAD_PATH. DIRECTORY_SEPARATOR
+                , Dir::getDiskPath("cache/assets", true) . DIRECTORY_SEPARATOR
+                , Dir::getDiskPath("cache/.thumbs", true) . DIRECTORY_SEPARATOR
+                , Constant::DISK_PATH . DIRECTORY_SEPARATOR
+            ),
             DIRECTORY_SEPARATOR,
             $file
-                                                                    );
+        );
         $arrFile                                                    = pathinfo($file_relative);
         if (substr($arrFile["dirname"], 0, 1) !== DIRECTORY_SEPARATOR) {
             $arrFile["dirname"]                                     = DIRECTORY_SEPARATOR;
         }
         if (!isset($arrFile["extension"])) {
-            $arrFile["extension"]                                   = null;
+            Error::register("Image not valid: " . $file, static::ERROR_BUCKET);
         }
         $libs_path                                                  = Constant::LIBS_PATH;
         switch ($arrFile["extension"]) {
@@ -727,169 +734,6 @@ class Media implements Configurable
 
         Response::sendHeaders($params);
     }
-    public static function getFileOptimized($filename)
-    {
-        if (strpos($filename, ".min.") === false) {
-            $arrFilename                                            = pathinfo($filename);
-            $filename_min                                           = $arrFilename["dirname"] . DIRECTORY_SEPARATOR . $arrFilename["filename"] . ".min." . $arrFilename["extension"];
-            if (!is_file($filename_min) || filemtime($filename) > filemtime($filename_min)) {
-                if (!self::optimize($filename, array("wait" => true, "filename_min" => $filename_min))) {
-                    $filename_min                                   = $filename;
-                }
-            }
-        } else {
-            $filename_min                                           = $filename;
-        }
-
-        return $filename_min;
-    }
-    public static function optimize($filename, $params = null)
-    { //todo: da spostare in optimizer
-        if (!Constant::OPTIMIZE_IMAGE) {
-            return null;
-        }
-
-        $filename_min                                               = (
-            $params["filename_min"]
-                                                                        ? $params["filename_min"]
-                                                                        : $filename
-                                                                    );
-
-        $optiBin                                                    = array(
-                                                                        "image/jpeg"                    => array(
-                                                                                                            "convert"       => array( //https://www.imagemagick.org/script/index.php
-                                                                                                                "bin"       => "convert"
-                                                                                                                , "cmd" 	=> 'convert ' . $filename . ' -strip ' . $filename // -quality 85
-                                                                                                            )
-                                                                                                            , "JpegTran"    => array( //http://jpegclub.org/jpegtran/
-                                                                                                                "bin"       => "jpegtran"
-                                                                                                                , "cmd" 	=> 'jpegtran -optimize -progressive -copy none ' . $filename
-                                                                                                            )
-                                                                                                            , "JpegOptim"   => array( //https://github.com/tjko/jpegoptim
-                                                                                                                "bin"       => "jpegoptim"
-                                                                                                                , "cmd" 	=> 'jpegoptim --strip-all --all-progressive ' . $filename
-                                                                                                            )
-                                                                                                        )
-                                                                        , "image/png"                   => array(
-                                                                                                            "OptiPng"     => array( //http://optipng.sourceforge.net/
-                                                                                                                "bin"       => "optipng"
-                                                                                                                , "cmd" 	=> 'optipng -o2 ' . $filename
-                                                                                                            )
-                                                                                                            , "PngOut"      => array(
-                                                                                                                "bin"       => "pngout"
-                                                                                                                , "cmd" 	=> 'pngout -s0 -q -y ' . $filename
-                                                                                                            )
-                                                                                                            , "convert"       => array( //https://www.imagemagick.org/script/index.php
-                                                                                                                "bin"       => "convert"
-                                                                                                                , "cmd" 	=> 'convert ' . $filename . ' -strip ' . $filename
-                                                                                                            )
-                                                                                                        )
-                                                                        , "image/gif"                   => array(
-                                                                                                            "convert"       => array( //https://www.imagemagick.org/script/index.php
-                                                                                                                "bin"       => "convert"
-                                                                                                                , "cmd" 	=> 'convert ' . $filename . ' -strip ' . $filename
-                                                                                                            )
-                                                                                                        )
-                                                                        , "application/x-javascript"    => array(
-                                                                                                            "uglifyjs"      => array( //https://www.imagemagick.org/script/index.php
-                                                                                                                "bin"       => "uglifyjs"
-                                                                                                                , "cmd" 	=> 'uglifyjs ' . $filename . ' --compress --mangle --output ' . $filename_min
-                                                                                                            )
-                                                                                                        )
-                                                                        , "text/css"                    => array(
-                                                                                                            "cssnano"       => array(
-                                                                                                                "bin"       => "cssnano"
-                                                                                                                , "cmd" 	=> 'cssnano ' . $filename . ' ' . $filename_min
-                                                                                                            )
-                                                                                                            , "postcss"       => array( //https://github.com/cssnano/cssnano
-                                                                                                                "bin"       => "postcss"
-                                                                                                                , "cmd" 	=> 'postcss ' . $filename . ' --no-map -o ' . $filename_min
-                                                                                                            )
-                                                                                                        )
-                                                                        , "text/html"                    => array(
-                                                                                                            "html-minifier" => array( //https://github.com/cssnano/cssnano
-                                                                                                                "bin"       => "html-minifier"
-                                                                                                                , "cmd" 	=> 'html-minifier --collapse-whitespace --remove-comments --minify-css --minify-js uglify-js ' . $filename
-                                                                                                            )
-                                                                                                        )
-                                                                    );
-        $mime                                                       = self::getMimeTypeByFilename($filename, $params["type"]);
-        if (isset($optiBin[$mime])) {
-            $cmd                                                    = null;
-            $bins                                                   = $optiBin[$mime];
-            foreach ($bins as $optim) {
-                if (self::commandExist($optim["bin"])) {
-                    $cmd                                            = $optim["cmd"];
-                    break;
-                }
-            }
-            if ($cmd) { //todo: da testare se funziona veramente
-                $nowait_cmd                                         = (
-                    $params["wait"]
-                                                                        ? ''
-                                                                        : ' > /dev/null 2>/dev/null & '
-                                                                    );
-                $shell_cmd                                          = 'nice -n 13 ' . $cmd . $nowait_cmd;
-
-                //@shell_exec("(" . $shell_cmd . ") > /dev/null 2>/dev/null &");
-                //@shell_exec("nohup nice -n 13 " . $shell_cmd . " > /dev/null 2>&1");
-
-                @shell_exec($shell_cmd);
-                return true;
-            }
-        }
-
-        return null;
-    }
-    public static function compress($data, $output_result = true, $method = null, $level = 9)
-    {
-        if ($method === null) {
-            $encodings = explode(",", $_SERVER["HTTP_ACCEPT_ENCODING"]);
-            switch ($encodings[0]) {
-                case "gzip":
-                    $method = "gzip";
-                    break;
-                case "deflate":
-                    $method = "deflate";
-                    break;
-                default:
-            }
-        }
-
-        if ($method == "deflate") {
-            if ($output_result) {
-                header("Content-Encoding: deflate");
-                echo gzdeflate($data, $level);
-            } else {
-                return array(
-                    "method"    => "deflate",
-                    "data"      => gzdeflate($data, $level)
-                );
-            }
-        } elseif ($method == "gzip") {
-            if ($output_result) {
-                header("Content-Encoding: gzip");
-                echo gzencode($data, $level);
-            } else {
-                return array(
-                    "method" => "gzip",
-                    "data" => gzencode($data, $level)
-                );
-            }
-        } else {
-            if ($output_result) {
-                echo $data;
-            } else {
-                return array(
-                    "method" => null
-                    , "data" => $data
-                );
-            }
-        }
-
-        return null;
-    }
-
     public static function loadSchema()
     {
         $config                                                     = Config::rawData("media", true, "thumb");
@@ -1073,11 +917,6 @@ class Media implements Configurable
         );
     }
 
-    private static function commandExist($cmd)
-    {
-        $return                                                     = shell_exec(sprintf("which %s", escapeshellarg($cmd)));
-        return !empty($return);
-    }
 
     public function __construct($pathinfo = null)
     {
@@ -1088,15 +927,47 @@ class Media implements Configurable
     {
     }
 
+    private function resolveSourceIcon($mode = null)
+    {
+        if ($mode) {
+            $icon_name                                              = str_replace("-" . $mode, "", $this->pathinfo["filename"]);
+        } else {
+            $arrFilename                                            = explode("-", $this->pathinfo["filename"], 2);
+            $icon_name                                              = $arrFilename[0];
+            if (isset($arrFilename[1])) {
+                $mode                                               = $arrFilename[1];
+            }
+        }
+
+        $icon                                                       = Resource::get($icon_name, "images");
+        if ($icon) {
+            $this->basepath                                         = dirname($icon);
+            $this->filesource                                       = DIRECTORY_SEPARATOR . basename($icon);
+            $this->mode                                             = $mode;
+        }
+    }
+
+
+    private function checkPath($root_dir)
+    {
+        if (strpos($this->pathinfo["dirname"], $root_dir) !== 0) {
+            Error::send(404);
+        }
+    }
     public function process($mode = null)
     {
-        if (isset($this->pathinfo["extension"])) {
+        $this->resolveSourceIcon($mode);
+        if (!$this->filesource) {
             Response::setContentType($this->pathinfo["extension"]);
             switch ($this->pathinfo["extension"]) {
                 case "js":
+                    $this->checkPath(static::RENDER_SCRIPT_PATH);
+
                     $source_file                                    = str_replace(static::RENDER_SCRIPT_PATH, "", $this->pathinfo["dirname"]) . DIRECTORY_SEPARATOR . str_replace("_", DIRECTORY_SEPARATOR, $this->pathinfo["filename"]) . "/script.js";
                     break;
                 case "css":
+                    $this->checkPath(static::RENDER_STYLE_PATH);
+
                     $source_file                                    = str_replace(static::RENDER_STYLE_PATH, "", $this->pathinfo["dirname"]) . DIRECTORY_SEPARATOR . str_replace("_", DIRECTORY_SEPARATOR, $this->pathinfo["filename"]) . "/style.css";
                     break;
                 default:
@@ -1107,7 +978,9 @@ class Media implements Configurable
                 : $this->renderProcess($mode)
             );
         } else {
-            $final_file                                             = $this->processFinalFile($this->setNoImg($this->mode));
+            $this->checkPath(static::RENDER_IMAGE_PATH);
+
+            $final_file                                             = $this->processFinalFile(true);
 
             if ($final_file && !Error::check(static::ERROR_BUCKET)) {
                 $this->renderNoImg($final_file);
@@ -1145,7 +1018,7 @@ class Media implements Configurable
             if (is_readable(Constant::LIBS_DISK_PATH . $source_file) && is_writable(dirname($cache_final_file)) && copy(Constant::LIBS_DISK_PATH . $source_file, $cache_final_file)) {
                 $res = file_get_contents($cache_final_file);
             } else {
-                Error::register("Link Failed. Check write permission on: " . $source_file . " and if directory exist and have write permission on " . $this->pathinfo["orig"], static::ERROR_BUCKET);
+                Error::register("Link Failed. Check write permission on: " . $source_file . " and if directory exist and have write permission on " . Request::pathinfo(), static::ERROR_BUCKET);
             }
         }
         return $res;
@@ -1173,7 +1046,6 @@ class Media implements Configurable
                 }
             }
         }
-
         if (!$final_file) {
             $pathinfo                                               = $this->pathinfo["filename"];
             if ($this->mode) {
@@ -1226,25 +1098,21 @@ class Media implements Configurable
 
     private function basepathAsset()
     {
-        $basepath                                                   = str_replace($this->filesource, "", Resource::get($this->source["filename"], "images"));
-
-        return $basepath;
+        return str_replace($this->filesource, "", Resource::get($this->source["filename"], "images"));
     }
     private function basepathMedia()
     {
-        $basepath                                                  = Constant::UPLOAD_DISK_PATH;
-
-        return $basepath;
+        return Constant::UPLOAD_DISK_PATH;
     }
     private function findSource($mode = null)
     {
         $this->resolveSourcePath($mode);
         if ($this->filesource) {
-            $this->basepath                                         = (
+            $this->basepath = (
                 $this->pathinfo["render"] == static::RENDER_ASSETS_PATH
-                                                                        ? $this->basepathAsset()
-                                                                        : $this->basepathMedia()
-                                                                    );
+                ? $this->basepathAsset()
+                : $this->basepathMedia()
+            );
         }
     }
 
@@ -1265,7 +1133,7 @@ class Media implements Configurable
             if ($this->mode) {
                 $filepath                                           = pathinfo($this->filesource);
                 $format_is_different                                = ($this->source["extension"] && $this->source["extension"] != $this->pathinfo["extension"]);
-                $this->final["dirname"]                             = $filepath["dirname"];
+                $this->final["dirname"]                             = $this->pathinfo["dirname"];
                 $this->final["filename"]                            = $filepath["filename"]
                                                                         . (
                                                                             $format_is_different
@@ -1539,18 +1407,18 @@ class Media implements Configurable
         if (!$this->mode) {
             return false;
         }
+        $setting                                                    = false;
+
         if (!$this->modes) {
-            $this->modes = $this->getModes();
+            $this->modes                                            = $this->getModes();
+        }
+        if (isset($this->modes[$this->mode])) {
+            $setting                                                = $this->modes[$this->mode];
         }
 
-        $setting                                                    = (
-            isset($this->modes[$this->mode])
-                                                                        ? $this->modes[$this->mode]
-                                                                        : false
-                                                                    );
         if (!$setting) {
             if (!$this->wizard["mode"]) {
-                $this->wizard = $this->getModeWizard($this->mode);
+                $this->wizard                                       = $this->getModeWizard($this->mode);
             }
 
             if (is_array($this->wizard) && count($this->wizard["mode"]) == 2 && is_numeric($this->wizard["mode"][0]) && is_numeric($this->wizard["mode"][1])) {
@@ -1566,20 +1434,19 @@ class Media implements Configurable
             }
         }
 
-        return ($setting
-            ? $setting
-            : false
-        );
+        return $setting;
     }
 
 
     private function processFinalFile($isIcon = false)
     {
         $final_file                                                 = null;
+
         if ($this->filesource) {
             if (!$this->final) {
                 $this->makeFinalFile($isIcon ? "png" : null);
             }
+
             if ($this->final) {
                 $final_file                                         = $this->getFinalFile();
 
@@ -1596,7 +1463,8 @@ class Media implements Configurable
                         || $fmtime      <= filemtime($this->basepath . $this->filesource)
                     ) {
                         $this->createImage($mode);
-                        $this::optimize($final_file);
+
+                        Hook::handle("media_on_create_image", $final_file);
                     }
                 } elseif ($this->mode === false && is_file($this->basepath . $this->filesource)) {
                     if (!is_file($final_file)) {

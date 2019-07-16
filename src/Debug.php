@@ -40,6 +40,7 @@ Log::extend("profiling", Log::TYPE_DEBUG, array(
 if (DEBUG_MODE) {
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
+    $_SERVER["HTTPS"] = "on";
 }
 
 class Debug
@@ -240,13 +241,27 @@ class Debug
             ? ''
             : 'display:none;'
         );
-        foreach ($debug_backtrace as $trace) {
+
+        if (isset($debug_backtrace[0]["file"]) && basename($debug_backtrace[0]["file"]) == "Error.php") {
+            unset($debug_backtrace[0]);
+        }
+
+        foreach ($debug_backtrace as $i => $trace) {
+            $operation = '<mark>' . (
+                isset($trace["class"])
+                ?  basename(str_replace("\\", "/", $trace["class"])) . $trace["type"] . $trace["function"]
+                : $trace["function"]
+                ) . '</mark>';
             if (isset($trace["file"])) {
-                $label = 'Line in: ' . '<b>' . str_replace(Constant::DISK_PATH, "", $trace["file"])  . '</b>';
+                $label = 'Line ' . $operation . ' in: ' . '<b>' . str_replace(Constant::DISK_PATH, "", $trace["file"])  . '</b>';
                 $list_start = '<ol start="' . $trace["line"] . '">';
                 $list_end = '</ol>';
             } else {
-                $label = 'Func: ' . '<b>' .  $trace["function"] . '</b>';
+                if (isset($trace["class"]) && isset($debug_backtrace[$i + 1]["args"]) && isset($debug_backtrace[$i + 1]["args"][0][0])) {
+                    $operation = '<mark>' . basename(str_replace(array("Object: ", "\\"), array("", "/"), $debug_backtrace[$i + 1]["args"][0][0])) . $trace["type"] . $trace["function"] . '(' . implode(", ", $trace["args"]) . ')</mark>';
+                }
+
+                $label = 'Call ' . $operation;
                 $list_start = '<ul>';
                 $list_end = '</ul>';
             }

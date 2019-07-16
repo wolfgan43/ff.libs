@@ -34,7 +34,6 @@ use phpformsframework\libs\Error;
 class Orm implements Dumpable
 {
     const ERROR_BUCKET                                                                      = "orm";
-    const NAME_SPACE                                                                        = 'phpformsframework\\libs\\storage\\models\\';
 
     private static $singleton                                                               = null;
     private static $data                                                                    = array();
@@ -45,24 +44,25 @@ class Orm implements Dumpable
 
     /**
      * @param string $ormModel
+     * @param string $mainTable
      * @return OrmModel
      */
-    public static function getInstance($ormModel)
+    public static function getInstance($ormModel, $mainTable = null)
     {
-        return self::setSingleton($ormModel);
+        return self::setSingleton($ormModel, $mainTable);
     }
     public static function dump()
     {
         return self::$singleton;
     }
 
-    private static function setSingleton($ormModel)
+    private static function setSingleton($ormModel, $mainTable = null)
     {
-        if (!isset(self::$singleton[$ormModel])) {
-            self::$singleton[$ormModel]                                                     = new OrmModel($ormModel);
+        if (!isset(self::$singleton[$ormModel . $mainTable])) {
+            self::$singleton[$ormModel . $mainTable]                                        = new OrmModel($ormModel, $mainTable);
         }
 
-        return self::$singleton[$ormModel];
+        return self::$singleton[$ormModel . $mainTable];
     }
 
     /**
@@ -285,7 +285,7 @@ class Orm implements Dumpable
             $indexes                                                                        = $data["def"]["indexes"];
             $select                                                                         = self::getFields(
                 (
-                                                                                                    isset($data["select"])
+                    isset($data["select"])
                                                                                                     ? $data["select"]
                                                                                                     : null
                                                                                                 ),
@@ -302,7 +302,7 @@ class Orm implements Dumpable
                                                                                                 ->setStorage($data["def"], array("exts" => true, "rawdata" => false))
                                                                                                 ->read(
                                                                                                     (
-                                                                                                    $where === true
+                                                                                                        $where === true
                                                                                                     ? null
                                                                                                     : $where
                                                                                                 ),
@@ -834,7 +834,7 @@ class Orm implements Dumpable
             $regs                                                                           = $storage->cmd(
                 $command,
                 (
-                                                                                                    $where === true
+                    $where === true
                                                                                                     ? null
                                                                                                     : $where
                                                                                                 )
@@ -1025,8 +1025,6 @@ class Orm implements Dumpable
                     case "1":
                         $table                                                              = $mainTable;
                         $fIndex                                                             = null;
-
-                        // no break
                     default:
                 }
 
@@ -1061,16 +1059,17 @@ class Orm implements Dumpable
                 if (!isset(self::$data["sub"][$service][$table]["def"]["struct"][$parts[$fIndex]])) {
                     if ($scope == "select" && $parts[$fIndex] == "*") {
                         self::$data["sub"][$service][$table][$scope] = array_combine(array_keys(self::$data["sub"][$service][$table]["def"]["struct"]), array_keys(self::$data["sub"][$service][$table]["def"]["struct"]));
+                    } else {
+                        Error::register("missing field: `" . $parts[$fIndex] . "` on Table: `" . $table . "` Model: `" . $service . "`", static::ERROR_BUCKET);
                     }
-
-                    Error::register("missing field: " . $parts[$fIndex] . " on Table: " . $table . " Model: " . $service, static::ERROR_BUCKET);
-
                     continue;
                 }
 
                 if ($scope == "insert") {
                     self::$data["sub"][$service][$table]["insert"][$parts[$fIndex]]         = $alias;
-                    self::$data["sub"][$service][$table]["where"][$parts[$fIndex]]          = $alias;
+                    if (!isset(self::$data["sub"][$service][$table]["where"])) {
+                        self::$data["sub"][$service][$table]["where"][$parts[$fIndex]]      = $alias;
+                    }
                 } else {
                     if ($is_or) {
                         self::$data["sub"][$service][$table][$scope]['$or'][$parts[$fIndex]]= (

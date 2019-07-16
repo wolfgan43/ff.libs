@@ -73,7 +73,7 @@ class Globals
 
         return (isset(self::$instances[$bucket]->$name)
             ? self::$instances[$bucket]->$name
-            : false
+            : null
         );
     }
 

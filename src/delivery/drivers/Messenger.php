@@ -27,6 +27,7 @@ namespace phpformsframework\libs\delivery\drivers;
 
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
+use phpformsframework\libs\delivery\Notice;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\Request;
@@ -35,7 +36,7 @@ use phpformsframework\libs\security\Validator;
 class Messenger
 {
     const ERROR_BUCKET                                      = "messenger";
-    const NAME_SPACE                                        = 'phpformsframework\\libs\\delivery\\adapters\\';
+    const NAME_SPACE                                        = Notice::NAME_SPACE;
 
     const ADAPTER                                           = Constant::MESSENGER_ADAPTER;
 

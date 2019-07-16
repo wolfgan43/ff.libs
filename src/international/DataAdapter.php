@@ -173,28 +173,33 @@ class DataAdapter extends Mappable
     }
     public function GetDateTime($oData)
     {
+        $this->GetDateByRule($oData, "get_date_time");
+    }
+
+    private function GetDateByRule($oData, $rule_name)
+    {
         if ($oData->value_date_year == 0 || $oData->value_date_month == 0 || $oData->value_date_day == 0
             || !strlen($oData->ori_value)) {
             return "";
         } else {
-            $rule                       = $this->getRule("get_date_time");
+            $rule                       = $this->getRule($rule_name);
 
             return str_replace(
                 array(
-                    "YEAR"
-                    , "MONTH"
-                    , "DAY"
-                    , "HOUR"
-                    , "MINUTE"
-                    , "SECOND"
+                    "YEAR",
+                    "MONTH",
+                    "DAY",
+                    "HOUR",
+                    "MINUTE",
+                    "SECOND"
                 ),
                 array(
-                    sprintf("%04d", intval($oData->value_date_year))
-                    , sprintf("%02d", intval($oData->value_date_month))
-                    , sprintf("%02d", intval($oData->value_date_day))
-                    , sprintf("%02d", intval($oData->value_date_hours))
-                    , sprintf("%02d", intval($oData->value_date_minutes))
-                    , sprintf("%02d", intval($oData->value_date_seconds))
+                    sprintf("%04d", intval($oData->value_date_year)),
+                    sprintf("%02d", intval($oData->value_date_month)),
+                    sprintf("%02d", intval($oData->value_date_day)),
+                    sprintf("%02d", intval($oData->value_date_hours)),
+                    sprintf("%02d", intval($oData->value_date_minutes)),
+                    sprintf("%02d", intval($oData->value_date_seconds))
                 ),
                 $rule->prototype
             );
@@ -202,26 +207,7 @@ class DataAdapter extends Mappable
     }
     public function GetDate($oData)
     {
-        if ($oData->value_date_year == 0 || $oData->value_date_month == 0 || $oData->value_date_day == 0
-            || !strlen($oData->ori_value)) {
-            return "";
-        } else {
-            $rule                       = $this->getRule("get_date");
-
-            return str_replace(
-                array(
-                    "YEAR"
-                    , "MONTH"
-                    , "DAY"
-                ),
-                array(
-                    sprintf("%04d", intval($oData->value_date_year))
-                    , sprintf("%02d", intval($oData->value_date_month))
-                    , sprintf("%02d", intval($oData->value_date_day))
-                ),
-                $rule->prototype
-            );
-        }
+        $this->GetDateByRule($oData, "get_date");
     }
     public function GetTime($oData)
     {

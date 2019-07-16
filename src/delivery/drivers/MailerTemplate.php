@@ -36,8 +36,6 @@ use phpformsframework\libs\security\Validator;
 
 final class MailerTemplate extends Mailer
 {
-    const MAILER_TPL_PATH                                   = Constant::VENDOR_LIBS_DIR . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'email';
-
     //body
     private $fields                                         = array();
 
@@ -76,12 +74,11 @@ final class MailerTemplate extends Mailer
 
     protected function processSubject()
     {
-        $subject                                            = str_replace(
+        return str_replace(
             array_keys($this->fields),
             array_values($this->fields),
             Translator::get_word_by_code($this->subject)
-                                                            );
-        return $subject;
+        );
     }
 
     protected function processBody()
@@ -102,23 +99,9 @@ final class MailerTemplate extends Mailer
 
     private function loadTemplate($template)
     {
-        if ($template) {
-            if (is_file($template)) {
-                $this->tpl_html_path                = $template;
-            } else {
-                $mail_disk_path                     = Dir::getDiskPath("mail");
-                if (is_file($mail_disk_path . $template)) {
-                    $this->tpl_html_path            = $mail_disk_path . $template;
-                }
-            }
-        } else {
-            $tpl_name                               = (
-                is_array($this->fields) && count($this->fields)
-                                                        ? "default"
-                                                        : "empty"
-                                                    );
+        if ($template && is_file($template)) {
+            $this->tpl_html_path                = $template;
 
-            $this->tpl_html_path                    = $this::MAILER_TPL_PATH . $tpl_name . ".html";
         }
 
         if ($this->tpl_html_path) {
@@ -192,6 +175,8 @@ final class MailerTemplate extends Mailer
                                     $this->parse_mail_row($field_type);
                                 }
                                 break;
+                            default:
+                                Error::registerWarning("Type Template Mail not supported: " . $field_type, static::ERROR_BUCKET);
                         }
                         $count_row++;
                     }

@@ -152,8 +152,7 @@ class Array2XML
     {
         //convert boolean to text value.
         $v = $v === true ? 'true' : $v;
-        $v = $v === false ? 'false' : $v;
-        return $v;
+        return $v === false ? 'false' : $v;
     }
 
     /*

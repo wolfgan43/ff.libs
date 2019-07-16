@@ -142,8 +142,8 @@ abstract class ImageRender
         $this->src_res_dim_y = imagesy($this->src_res);
 
         // Determina se è necessario calcolare la dimensione finale dell'immagine
-        $calc_x = ($this->new_res_dim_real_x === null ? true : false);
-        $calc_y = ($this->new_res_dim_real_y === null ? true : false);
+        $calc_x = $this->new_res_dim_real_x === null;
+        $calc_y = $this->new_res_dim_real_y === null;
 
         $res_method = $this->new_res_method;
 

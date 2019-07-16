@@ -25,75 +25,52 @@
  */
 namespace phpformsframework\libs\storage\adapters;
 
-use phpformsframework\libs\Constant;
 use phpformsframework\libs\Dir;
-use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\FilemanagerAdapter;
 
 class FilemanagerPhp extends FilemanagerAdapter
 {
     const EXT                                                   = "php";
 
-    public function read($file_path = null, $search_keys = null, $search_flag = self::SEARCH_DEFAULT)
+    protected function load_file($file_path, $var = null)
     {
-        $res                                                    = array();
-
-        $params                                                 = $this->getParams($file_path);
-        if (!$params) {
-            return false;
-        }
-
-        $output                                                 = exec("php -l " . addslashes($params->file_path));
-
+        $return                                                 = null;
+        $output                                                 = exec("php -l " . addslashes($file_path));
         if (strpos($output, "No syntax errors") === 0) {
-            $include                                            = Dir::autoload($params->file_path);
+            $include                                            = Dir::autoload($file_path);
             if ($include === 1) {
-                if (!$params->var) {
+                if (!$var) {
                     $arrDefVars                                 = get_defined_vars();
                     end($arrDefVars);
-                    $params->var                                        = key($arrDefVars);
-                    if ($params->var == "output") {
-                        $params->var = null;
+                    $var                                        = key($arrDefVars);
+                    if ($var == "output") {
+                        $var                                    = null;
                     } else {
-                        $this->setVar($params->var);
+                        $this->setVar($var);
                     }
                 }
-                $return = ${$params->var};
+                $return                                         = ${$var};
             } else {
-                $return = $include;
-                if ($params->var) {
-                    $return = $return[$params->var];
+                $return                                         = $include;
+                if ($var) {
+                    $return                                     = $return[$var];
                 }
             }
-
-            if ($return) {
-                if ($search_keys) {
-                    $res                                        = $this->search($return, $search_keys, $search_flag);
-                } else {
-                    $res                                        = $return;
-                }
-            } else {
-                $res                                            = null;
-            }
-
-            return $this->getResult($res);
         } else {
-            Error::register("syntax errors into file" . (Constant::DEBUG ? ": " . $params->file_path : ""), static::ERROR_BUCKET);
+            $return                                             = false;
         }
 
-        return null;
+        return $return;
     }
 
-    public function write($data, $file_path = null, $var = null)
+    protected function output($data, $var)
     {
-        $params                                                 = $this->setParams($file_path, $var);
-
-        if ($params->var) {
-            $return = '$' . $params->var . ' = ';
+        if ($var) {
+            $return = '$' . $var . ' = ';
         } else {
             $return = 'return ';
         }
 
-        return $this->save("<?php\n" . ' '. $return . var_export($data, true) . ";", $params->file_path);
+        return "<?php\n" . ' '. $return . var_export($data, true) . ";";
     }
 }

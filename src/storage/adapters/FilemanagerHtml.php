@@ -30,12 +30,13 @@ use phpformsframework\libs\storage\FilemanagerAdapter;
 class FilemanagerHtml extends FilemanagerAdapter //todo: da finire
 {
     const EXT                                                   = "html";
-
-    public function read($file_path = null, $search_keys = null, $search_flag = self::SEARCH_DEFAULT)
+    protected function load_file($file_path, $var = null)
     {
+        // TODO: Implement load_file() method.
     }
 
-    public function write($data, $file_path = null, $var = null)
+    protected function output($data, $var)
     {
+        // TODO: Implement output() method.
     }
 }

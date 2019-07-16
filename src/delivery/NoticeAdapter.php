@@ -25,10 +25,9 @@
  */
 namespace phpformsframework\libs\delivery;
 
-use phpformsframework\libs\App;
 use phpformsframework\libs\Error;
 
-abstract class NoticeAdapter extends App
+abstract class NoticeAdapter
 {
     const ERROR_BUCKET                                      = "delivery";
 
@@ -78,9 +77,6 @@ abstract class NoticeAdapter extends App
     }
     protected function getResult()
     {
-        return (Error::check(static::ERROR_BUCKET)
-            ? Error::raise(static::ERROR_BUCKET)
-            : false
-        );
+        return Error::raise(static::ERROR_BUCKET);
     }
 }

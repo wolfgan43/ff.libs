@@ -31,7 +31,7 @@ use phpformsframework\libs\Constant;
 
 class Mem // apc | memcached | redis | globals
 {
-    const NAME_SPACE                      = 'phpformsframework\\libs\\cache\\adapters\\';
+    const NAME_SPACE                      = __NAMESPACE__ . '\\adapters\\';
 
     private static $singletons = null;
 

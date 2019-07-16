@@ -44,6 +44,9 @@ class Hook
     {
         if (is_callable($func)) {
             Debug::dumpCaller("addEvent::" . $name);
+            if (!isset(self::$events[$name])) {
+                self::$events[$name]                                = array();
+            }
             self::$events[$name][$priority + count((array)self::$events[$name])]    = $func;
         }
     }

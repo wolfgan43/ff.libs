@@ -51,7 +51,7 @@ abstract class Mailer
     private $lang                                           = null;
     private $charset                                        = "utf8";
     private $encoding                                       = "quoted-printable";
-    private $smtp                                           = null;
+
     //header
     protected $subject                                      = null;
     private $fromEmail                                      = null;
@@ -174,6 +174,8 @@ abstract class Mailer
                 case "bcc":
                     $this->bcc[$email] 			            = $name;
                     break;
+                default:
+                    Error::register("recipient not supported: " . $type, static::ERROR_BUCKET);
             }
         }
 
@@ -324,11 +326,12 @@ abstract class Mailer
         $mail->CharSet                                      = $this->charset;
         $mail->Encoding                                     = $this->encoding;
 
-        if ($this->adapter->host == "127.0.0.1" || $this->adapter->host == "localhost") {
-            $mail->IsMail();
-        } else {
-            $mail->IsSMTP();
-        }
+        /* if ($this->adapter->host == "127.0.0.1" || $this->adapter->host == "localhost") {
+             $mail->IsMail();
+         } else {
+             $mail->IsSMTP();
+         }*/
+        $mail->IsSMTP();
 
         $mail->Host                                         = $this->adapter->host;
         $mail->SMTPAuth                                     = $this->adapter->auth;
@@ -337,8 +340,7 @@ abstract class Mailer
         $mail->Password                                     = $this->adapter->password;
         $mail->SMTPSecure                                   = $this->adapter->secure;
         $mail->SMTPAutoTLS                                  = $this->adapter->autoTLS;
-
-        if ($mail->SMTPSecure === null) {
+        if (!$mail->SMTPSecure) {
             $mail->SMTPSecure                               = "none";
         }
 

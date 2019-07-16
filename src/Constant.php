@@ -29,6 +29,8 @@ class Constant
 {
     public static $disable_cache            = DISABLE_CACHE;
 
+    const NAME_SPACE                        = "phpformsframework\\libs\\";
+
     const VENDOR_LIBS_DIR                   = VENDOR_LIBS_DIR;
     const DOCUMENT_ROOT                     = DOCUMENT_ROOT;
     const SITE_PATH                         = SITE_PATH;
@@ -47,8 +49,6 @@ class Constant
 
     const HTTP_AUTH_USERNAME                = HTTP_AUTH_USERNAME;
     const HTTP_AUTH_PASSWORD                = HTTP_AUTH_PASSWORD;
-
-    const OPTIMIZE_IMAGE                    = true;
 
     const PHP_EXT                           = "php";
 

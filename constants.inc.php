@@ -23,13 +23,30 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-
+/**
+ * @todo sostituire con un installer
+ */
 
 //SITE_PATH
 //PHP_EXT
 //asset delivery
 //asset tpl
 
+if (!defined("DEBUG_MODE")) {
+    define("DEBUG_MODE", false);
+}
+
+if (DEBUG_MODE) {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+
+
+    $_SERVER["HTTPS"] = "on";
+
+    if(!isset($_SERVER["HTTP_HOST"])) {
+        $_SERVER["HTTP_HOST"] = null;
+    }
+}
 
 define("VENDOR_LIBS_DIR", DIRECTORY_SEPARATOR .  "vendor" . DIRECTORY_SEPARATOR . "phpformsframework" . DIRECTORY_SEPARATOR . "libs");
 if (!defined("DOCUMENT_ROOT")) {
@@ -57,9 +74,7 @@ if (!defined("APP_START")) {
 if (!defined("DEBUG_PROFILING")) {
     define("DEBUG_PROFILING", false);
 }
-if (!defined("DEBUG_MODE")) {
-    define("DEBUG_MODE", false);
-}
+
 if (!defined("DISABLE_CACHE")) {
     define("DISABLE_CACHE", isset($_GET["__nocache__"]));
 }

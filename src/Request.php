@@ -32,12 +32,12 @@ class Request implements Configurable
 {
     const TYPE                                                                                  = "request";
     const MAX_SIZE                                                                              = array(
-                                                                                                    "GET"       => 256
-                                                                                                    , "PUT"     => 10240
-                                                                                                    , "POST"    => 10240
-                                                                                                    , "HEAD"    => 2048
-                                                                                                    , "DEFAULT" => 128
-                                                                                                    , "FILES"   => 1024000
+                                                                                                    "GET"       => 256,
+                                                                                                    "PUT"       => 10240,
+                                                                                                    "POST"      => 10240,
+                                                                                                    "HEAD"      => 2048,
+                                                                                                    "DEFAULT"   => 128,
+                                                                                                    "FILES"     => 1024000
                                                                                                 );
     private static $request                                                                     = null;
     private static $rules                                                                       = null;

@@ -525,14 +525,34 @@ class Log
 
         return $content . self::fetchMessage($message, $format["message"], $format["encode"]);
     }
+
+    /**
+     * @todo gestire meglio l'array $_SERVER per valori di tipo array
+     *
+     * @param $content
+     * @param null $routine
+     * @param null $action
+     * @param null $status
+     * @param null $response
+     * @return mixed
+     */
     private static function fetch($content, $routine = null, $action = null, $status = null, $response = null)
     {
-        $content = str_replace(
-            array_keys($_SERVER),
-            array_values($_SERVER),
-            $content
-        );
+        $server = null;
+        foreach ($_SERVER as $key => $value) {
+            if(!is_array($value)) {
+                $server[$key] = $value;
+            }
+        }
 
+        if(is_array($server)) {
+            $content = str_replace(
+                array_keys($server),
+                array_values($server),
+                $content
+            );
+
+        }
         $content = str_replace(
             array(
                 "ROUTINE"

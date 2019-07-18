@@ -37,11 +37,7 @@ Log::extend("profiling", Log::TYPE_DEBUG, array(
     , "format"      => Log::FORMAT_CLE
 ));
 
-if (DEBUG_MODE) {
-    error_reporting(E_ALL);
-    ini_set('display_errors', 1);
-    $_SERVER["HTTPS"] = "on";
-}
+
 
 class Debug
 {

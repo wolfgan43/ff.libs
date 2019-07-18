@@ -1180,7 +1180,7 @@ abstract class DatabaseAdapter
                 case "arrayIncremental":
                 case "arrayOfNumber":
                 case "array":
-                    if (is_array($value)) {
+                    if (is_array($value) || is_object($value)) {
                         if ($struct_type == "arrayOfNumber") {
                             $fields[$name]                                  = array_map('intval', $value);
                         } else {
@@ -1210,7 +1210,7 @@ abstract class DatabaseAdapter
                     }
                     break;
                 case "boolean":
-                    if (is_array($value)) {
+                    if (is_array($value) || is_object($value)) {
                         $fields[$name]                                      = false;
                     } elseif (strrpos($value, "++") === strlen($value) -2) {
                         $fields[$name]                                      = false;
@@ -1234,7 +1234,7 @@ abstract class DatabaseAdapter
                 case "number":
                 case "timestamp":
                 case "primary":
-                    if (is_array($value)) {
+                    if (is_array($value) || is_object($value)) {
                         $fields[$name]                                      = 0;
                     } elseif (strrpos($value, "++") === strlen($value) -2) {
                         $op                                                 = "++";
@@ -1264,7 +1264,15 @@ abstract class DatabaseAdapter
                 case "char":
                 case "text":
                 default:
-                    if (strrpos($value, "++") === strlen($value) -2) {
+                    if (is_array($value)) {
+                        if ($this->isAssocArray($value)) {
+                            $fields[$name]                                  = json_encode($value);
+                        } else {
+                            $fields[$name]                                  = implode(",", array_unique($value));
+                        }
+                    } elseif(is_object($value)) {
+                        $fields[$name]                                      = json_encode(get_object_vars($value));
+                    } elseif (strrpos($value, "++") === strlen($value) -2) {
                         $op                                                 = "++";
                         $fields[$name]                                      = substr($value, -2);
                     } elseif (strrpos($value, "--") === strlen($value) -2) {
@@ -1273,12 +1281,6 @@ abstract class DatabaseAdapter
                     } elseif (strpos($value, "+") === 0) {
                         $op                                                 = "+";
                         $fields[$name]                                      = substr($value, 1);
-                    } elseif (is_array($value)) {
-                        if ($this->isAssocArray($value)) {
-                            $fields[$name]                                  = json_encode($value);
-                        } else {
-                            $fields[$name]                                  = implode(",", array_unique($value));
-                        }
                     } elseif (is_bool($value)) {
                         $fields[$name]                                      = (string)($value ? "1" : "0");
                     } elseif (is_numeric($value)) {

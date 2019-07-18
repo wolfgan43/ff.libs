@@ -153,11 +153,9 @@ class Config implements Dumpable
         if (!$name) {
             $name = "default";
         }
-
         $map_name                                                   = $bucket . "_" . $name;
 
         Debug::stopWatch("config/loadMap/" . $map_name);
-
         $cache                                                      = Mem::getInstance("maps");
         self::$maps[$bucket][$name]                                 = $cache->get($map_name);
         if (!self::$maps[$bucket][$name]) {

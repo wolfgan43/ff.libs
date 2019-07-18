@@ -227,8 +227,45 @@ class Debug
         }
         return $implements;
     }
+
+    private static function dumpCommandLine($error_message = null)
+    {
+        echo $error_message . "\n";
+        echo "---------------------------------\n";
+
+        $debug_backtrace = self::get_backtrace();
+
+        if (isset($debug_backtrace[0]["file"]) && basename($debug_backtrace[0]["file"]) == "Error.php") {
+            unset($debug_backtrace[0]);
+        }
+
+        foreach ($debug_backtrace as $i => $trace) {
+
+            if (isset($trace["file"])) {
+                print $trace["file"] . ":" . $trace["line"] . "\n";
+            } else {
+                if (isset($trace["class"]) && isset($debug_backtrace[$i + 1]["args"]) && isset($debug_backtrace[$i + 1]["args"][0][0])) {
+                    $operation = '<mark>' . basename(str_replace(array("Object: ", "\\"), array("", "/"), $debug_backtrace[$i + 1]["args"][0][0])) . $trace["type"] . $trace["function"] . '(' . implode(", ", $trace["args"]) . ')</mark>';
+                } else {
+                    $operation = (
+                    isset($trace["class"])
+                        ?  basename(str_replace("\\", "/", $trace["class"])) . $trace["type"] . $trace["function"]
+                        : $trace["function"]
+                    );
+                }
+                echo "Call " . $operation . "\n";
+
+            }
+        }
+        return null;
+    }
+
     public static function dump($error_message = null, $return = false)
     {
+        if(self::isCommandLineInterface()) {
+            return self::dumpCommandLine($error_message);
+        }
+
         $html_backtrace                     = "";
         $html_dumpable                      = "";
         $debug_backtrace                    = self::get_backtrace();
@@ -482,6 +519,10 @@ class Debug
 
         Debug::stopWatch("debug/benchmark");
         return null;
+    }
+    private static function isCommandLineInterface()
+    {
+        return (php_sapi_name() === 'cli');
     }
 
     public static function stackTraceOnce()

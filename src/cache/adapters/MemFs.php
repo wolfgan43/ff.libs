@@ -50,8 +50,8 @@ class MemFs extends MemAdapter
         Filemanager::getInstance("php")->write(
             $value,
             Dir::getDiskPath("cache/data")
-            . "/" . $bucket
-            . "/" . $name
+            . DIRECTORY_SEPARATOR . $bucket
+            . DIRECTORY_SEPARATOR . $name
         );
         return null;
     }

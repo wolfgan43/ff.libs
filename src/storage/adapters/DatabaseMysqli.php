@@ -232,7 +232,7 @@ class DatabaseMysqli extends DatabaseAdapter
                 }
 
                 $name                                                               = str_replace("`", "", $name);
-                if (!is_null($value) && !is_array($value)) {
+                if (!is_null($value) && !is_array($value) && !is_object($value)) {
                     $value                                                          = str_replace("`", "", $value);
                 }
                 if ($name == "key") {

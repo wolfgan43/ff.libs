@@ -69,7 +69,7 @@ abstract class DatabaseDriver
     abstract public function multiQuery($queries);
     abstract public function lookup($tabella, $chiave = null, $valorechiave = null, $defaultvalue = null, $nomecampo = null, $tiporestituito = null, $bReturnPlain = false);
     abstract public function nextRecord($obj = null);
-    abstract public function numRows($use_found_rows = false);
+    abstract public function numRows();
     abstract public function getRecordset();
     abstract public function getFieldset();
     abstract public function getInsertID($bReturnPlain = false);

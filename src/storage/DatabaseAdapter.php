@@ -134,9 +134,9 @@ abstract class DatabaseAdapter
                     break;
                 default:
                     $res                                = array(
-                                                            "recordset"     => $this->driver->getRecordset()
-                                                            , "fields"      => $this->driver->getFieldset()
-                                                            , "num_rows"    => $this->driver->numRows()
+                                                            "recordset"     => $this->driver->getRecordset(),
+                                                            "fields"        => $this->driver->getFieldset(),
+                                                            "num_rows"      => $this->driver->numRows()
                                                         );
             }
         } else {
@@ -278,6 +278,7 @@ abstract class DatabaseAdapter
         } else {
             Error::register("Connection failed to database: " . static::TYPE, static::ERROR_BUCKET);
         }
+
         return $query;
     }
 

@@ -67,6 +67,8 @@ class MySqli extends DatabaseDriver
     public $reconnect               = true;
     public $reconnect_tryed         = false;
 
+    private $use_found_rows         = false;
+
     public static function addEvent($event_name, $func_name, $priority = null)
     {
         Hook::register("mysqli:" . $event_name, $func_name, $priority);
@@ -137,6 +139,7 @@ class MySqli extends DatabaseDriver
         $this->field_primary= null;
         $this->buffered_affected_rows = null;
         $this->buffered_insert_id = null;
+        $this->use_found_rows = false;
     }
 
     // -----------------------------------------------
@@ -319,6 +322,12 @@ class MySqli extends DatabaseDriver
         } else {
             $res = mysqli_fetch_all($this->query_id, MYSQLI_ASSOC);
         }
+        if($this->use_found_rows) {
+            $this->numRows();
+        } elseif(is_array($res)) {
+            $this->num_rows = count($res);
+        }
+
         mysqli_free_result($this->query_id);
 
         if ($res === null && $this->checkError()) {
@@ -367,6 +376,7 @@ class MySqli extends DatabaseDriver
             $Query_String                                   = $query;
         }
 
+        $this->use_found_rows                               = strpos($Query_String, " SQL_CALC_FOUND_ROWS ") !== false;
         if ($Query_String == "") {
             $this->errorHandler("Query invoked With blank Query String");
         }
@@ -565,18 +575,17 @@ class MySqli extends DatabaseDriver
 
     /**
      * Conta il numero di righe
-     * @param bool $use_found_rows
      * @return bool|int|null
      */
-    public function numRows($use_found_rows = false)
+    public function numRows()
     {
-        if (!$this->query_id) {
+        if (!isset($this->query_id)) {
             $this->errorHandler("numRows() called with no query pending");
             return false;
         }
 
         if ($this->num_rows === null) {
-            if ($use_found_rows) {
+            if ($this->use_found_rows) {
                 $db = new MySqli();
                 $db->query("SELECT FOUND_ROWS() AS found_rows");
                 if ($db->nextRecord()) {

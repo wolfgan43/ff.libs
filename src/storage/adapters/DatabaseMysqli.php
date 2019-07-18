@@ -408,7 +408,7 @@ class DatabaseMysqli extends DatabaseAdapter
                                     } elseif (is_null($value)) {
                                         $res[$name] 							    = "`" . $field["name"] . "` " . " is null";
                                     } elseif (empty($value)) {
-                                        $res[$name] 							    = "`" . $field["name"] . "` " . " ''";
+                                        $res[$name] 							    = "`" . $field["name"] . "` = ''";
                                     } else {
                                         $res[$name] 							    = "`" . $field["name"] . "` = " . $this->valueToFunc($value, $struct_type);
                                     }

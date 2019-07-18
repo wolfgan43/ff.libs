@@ -670,10 +670,9 @@ class MongoDB extends DatabaseDriver
 
     /**
      * Conta il numero di righe
-     * @param bool $use_found_rows
      * @return int
      */
-    public function numRows($use_found_rows = false)
+    public function numRows()
     {
         if ($this->num_rows === null) {
             try {

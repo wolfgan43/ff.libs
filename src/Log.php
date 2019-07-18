@@ -553,6 +553,11 @@ class Log
             );
 
         }
+        $microtime  = explode(".", microtime(true));
+        $micro      = (isset($microtime[1])
+                        ? $microtime[1]
+                        : 0
+                    );
         $content = str_replace(
             array(
                 "ROUTINE"
@@ -584,7 +589,7 @@ class Log
             , strftime('%a')
             , strftime('%b')
             , strftime('%d')
-            , explode(".", microtime(true))[1]
+            , $micro
             , strftime('%Y')
             , getmypid()
             , (class_exists("Thread") ? \Thread::getCurrentThreadId() : null)

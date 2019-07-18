@@ -155,6 +155,10 @@ class Config implements Dumpable
         }
         $map_name                                                   = $bucket . "_" . $name;
 
+        if (!self::$file_maps) {
+            self::load(array(Constant::LIBS_DISK_PATH . "/hcore/*/conf" => array("filter" => array("xml", "json"))));
+        }
+
         Debug::stopWatch("config/loadMap/" . $map_name);
         $cache                                                      = Mem::getInstance("maps");
         self::$maps[$bucket][$name]                                 = $cache->get($map_name);
@@ -221,31 +225,24 @@ class Config implements Dumpable
 
     private static function loadRules()
     {
-        $cache                                                      = Mem::getInstance("config");
+        self::addRule("env", "replace");
+        self::addRule("locale", "replace");
+        self::addRule("dirs", "mergesub");
+        self::addRule("request", "mergesub", "phpformsframework\libs\Request::loadSchema");
+        self::addRule("patterns", "mergesub", "phpformsframework\libs\Request::loadSchema");
 
-        self::$rules                                                = $cache->get("rules");
-        if (!self::$rules) {
-            self::addRule("env", "replace");
-            self::addRule("locale", "replace");
-            self::addRule("dirs", "mergesub");
-            self::addRule("request", "mergesub", "phpformsframework\libs\Request::loadSchema");
-            self::addRule("patterns", "mergesub", "phpformsframework\libs\Request::loadSchema");
+        self::addRule("badpath", "mergesub", "phpformsframework\libs\security\Buckler::loadSchema");
+        self::addRule("alias", "mergesub", "phpformsframework\libs\Config::loadAlias");
 
-            self::addRule("badpath", "mergesub", "phpformsframework\libs\security\Buckler::loadSchema");
-            self::addRule("alias", "mergesub", "phpformsframework\libs\Config::loadAlias");
+        self::addRule("engine", "replace", "phpformsframework\libs\Config::loadEngine");
+        self::addRule("router", "mergesub", "phpformsframework\libs\Config::loadSchema");
+        self::addRule("pages", "mergesub", "phpformsframework\libs\Config::loadSchema");
+        self::addRule("snippet", "replace", "phpformsframework\libs\Config::loadSnippet");
+        self::addRule("mirror", "mergesub", "phpformsframework\libs\Config::loadMirror");
+        self::addRule("models", "replace", "phpformsframework\libs\Config::loadModels");
+        self::addRule("modelsview", "mergesub", "phpformsframework\libs\Config::loadModelsView");
 
-            self::addRule("engine", "replace", "phpformsframework\libs\Config::loadEngine");
-            self::addRule("router", "mergesub", "phpformsframework\libs\Config::loadSchema");
-            self::addRule("pages", "mergesub", "phpformsframework\libs\Config::loadSchema");
-            self::addRule("snippet", "replace", "phpformsframework\libs\Config::loadSnippet");
-            self::addRule("mirror", "mergesub", "phpformsframework\libs\Config::loadMirror");
-            self::addRule("models", "replace", "phpformsframework\libs\Config::loadModels");
-            self::addRule("modelsview", "mergesub", "phpformsframework\libs\Config::loadModelsView");
-
-            self::addRule("media", "mergesub", "phpformsframework\libs\storage\Media::loadSchema");
-
-            $cache->set("rules", self::$rules);
-        }
+        self::addRule("media", "mergesub", "phpformsframework\libs\storage\Media::loadSchema");
     }
 
     public static function load($paths = array())
@@ -286,6 +283,7 @@ class Config implements Dumpable
             self::loadSchema();
 
             $cache->set("rawdata", array(
+                "rules"         => self::$rules,
                 "config"        => self::$config,
                 "schema"        => self::$schema,
                 "engine"        => self::$engine,
@@ -297,6 +295,7 @@ class Config implements Dumpable
                 "file_scans"    => self::$file_scans
             ));
         } else {
+            self::$rules                                            = $res["rules"];
             self::$config                                           = $res["config"];
             self::$schema                                           = $res["schema"];
             self::$engine                                           = $res["engine"];

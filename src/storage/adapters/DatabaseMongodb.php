@@ -307,9 +307,6 @@ class DatabaseMongodb extends DatabaseAdapter
                             if (!is_array($value)) {
                                 $value                                              = $field["value"];
                             }
-                            if ($field["name"] == $this->key_name) {
-                                $value                                              = $this->driver->id2object($value);
-                            }
                             $res["where"][$field["name"]] 						    = $value;
 
                             if (isset($struct[$field["name"]])) {

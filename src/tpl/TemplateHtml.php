@@ -37,13 +37,13 @@ if (!defined("FF_TEMPLATE_ENABLE_TPL_JS")) {
     define("FF_TEMPLATE_ENABLE_TPL_JS", false);
 }
 
-class ffTemplate extends Hook
+class TemplateHtml extends Hook
 {
-    const ERROR_BUCKET                      = "tpl";
-    const REGEXP                            = '/\{([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)\}/U';
+    const ERROR_BUCKET                          = "tpl";
+    const REGEXP                                = '/\{([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)\}/U';
 
-    const APPLET                            = '/\{\[(.+)\]\}/U';
-    const COMMENTHTML                       = '/\{\{([\w\[\]\:\=\-\|\.]+)\}\}/U';
+    const APPLET                                = '/\{\[(.+)\]\}/U';
+    const COMMENTHTML                           = '/\{\{([\w\[\]\:\=\-\|\.]+)\}\}/U';
 
     public $root_element						= "main";
 
@@ -67,7 +67,7 @@ class ffTemplate extends Hook
 
     public static function fetch($template_file)
     {
-        $tmp = new ffTemplate();
+        $tmp = new TemplateHtml();
         $tmp->load_file($template_file);
 
         return $tmp;
@@ -155,7 +155,7 @@ class ffTemplate extends Hook
         }
 
         $matches = null;
-        $rc = preg_match_all(ffTemplate::REGEXP, $this->DBlocks[$this->root_element], $matches);
+        $rc = preg_match_all(static::REGEXP, $this->DBlocks[$this->root_element], $matches);
         if ($rc && $matches) {
             $this->DVars = array_flip($matches[1]);
             $this->translateDocument();
@@ -166,14 +166,14 @@ class ffTemplate extends Hook
     {
         if (!$this->DApplets) {
             $matches = null;
-            $rc = preg_match_all(ffTemplate::APPLET, $this->DBlocks[$this->root_element], $matches);
+            $rc = preg_match_all(static::APPLET, $this->DBlocks[$this->root_element], $matches);
             if ($rc && $matches) {
                 $applets = $matches[1];
                 if (is_array($applets) && count($applets)) {
                     foreach ($applets as $applet) {
                         if (strpos($applet, "{") !== false) {
                             $matches = null;
-                            $rc = preg_match_all(ffTemplate::REGEXP, $applet, $matches);
+                            $rc = preg_match_all(static::REGEXP, $applet, $matches);
                             if ($rc && $matches) {
                                 $applet = str_replace($matches[0], array_intersect_key($this->ParsedBlocks, array_flip($matches[1])), $applet);
                             }
@@ -185,7 +185,7 @@ class ffTemplate extends Hook
             }
 
             $matches = null;
-            $rc = preg_match_all(ffTemplate::APPLET, implode(" ", $this->ParsedBlocks), $matches);
+            $rc = preg_match_all(static::APPLET, implode(" ", $this->ParsedBlocks), $matches);
             if ($rc && $matches) {
                 $applets = $matches[1];
                 if (is_array($applets) && count($applets)) {
@@ -369,7 +369,7 @@ class ffTemplate extends Hook
         $sTpl = $this->DBlocks[$sTplName];
 
         $matches = array();
-        $rc = preg_match_all(ffTemplate::REGEXP, $sTpl, $matches);
+        $rc = preg_match_all(static::REGEXP, $sTpl, $matches);
         if ($rc) {
             $vars = $matches[1];
 

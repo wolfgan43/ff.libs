@@ -26,66 +26,81 @@
 
 namespace phpformsframework\libs\dto;
 
-class DataHtml extends DataAdapter {
-    const CONTENT_TYPE = "text/html";
-    /**
-     * @var null|string
-     */
-    public $html = null;
-
+class DataResponse extends DataAdapter
+{
+    const CONTENT_TYPE = "application/json";
     /**
      * @var null|array
      */
-    public $js = null;
-
+    public $data = null;
     /**
-     * @var null|array
+     * @var null|int
      */
-    public $css = null;
-
+    public $page = null;
     /**
-     * @var null|array
+     * @var null|int
      */
-    public $fonts = null;
-
+    public $count = null;
     /**
-     * @param string
+     * @param array $values
      * @return $this
      */
-    public function html($value)
+    public function fill($values)
     {
-        $this->set("html", $value);
+        $this->data = $values;
 
         return $this;
     }
 
     /**
-     * @param array $value
+     * @param string $key
+     * @param string|array $value
      * @return $this
      */
-    public function css($value)
+    public function set($key, $value)
     {
-        $this->set("css", $value);
+        $this->data[$key] = $value;
 
         return $this;
     }
 
     /**
-     * @param array $value
+     * @param string $key
+     * @return mixed|string|null
+     */
+    public function get($key)
+    {
+        return (isset($this->data[$key])
+            ? $this->data[$key]
+            : null
+        );
+    }
+
+    /**
+     * @param string $key
      * @return $this
      */
-    public function js($value)
+    public function unset($key)
     {
-        $this->set("js", $value);
+        unset($this->data[$key]);
 
         return $this;
     }
 
     /**
-     * @return null|string
+     * @return false|string
      */
     public function output()
     {
-        return $this->html;
+        return $this->toJson();
     }
+
+    /**
+     * @return array
+     */
+    public function toArray()
+    {
+        return $this->data;
+    }
+
 }

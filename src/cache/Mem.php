@@ -26,7 +26,6 @@
 
 namespace phpformsframework\libs\cache;
 
-use phpformsframework\libs\cache\adapters\MemGlobal;
 use phpformsframework\libs\Constant;
 
 class Mem // apc | memcached | redis | globals

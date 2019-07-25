@@ -28,6 +28,7 @@ namespace phpformsframework\libs\delivery\drivers;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\delivery\Notice;
+use phpformsframework\libs\dto\DataError;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\Request;
@@ -122,7 +123,9 @@ class Messenger
 
         $this->adapter->send($this->content, $this->to);
 
-        return $this->getResult(Debug::stopWatch("messenger/send"));
+        Debug::stopWatch("messenger/send");
+
+        return $this->getResult();
     }
 
     public function setMessage($content)
@@ -133,11 +136,11 @@ class Messenger
     }
 
     /**
-     * @param float $exTime
-     * @return array
+     * @return DataError
      */
-    private function getResult($exTime = null)
+    private function getResult()
     {
+        $dataError                                          = new DataError();
         if (Error::check(static::ERROR_BUCKET) || Constant::DEBUG) {
             $dump = array(
                 "source" => Debug::stackTrace()
@@ -146,7 +149,7 @@ class Messenger
                 , " content" => $this->content
                 , " from" => $this->adapter->from
                 , " error" => Error::raise(static::ERROR_BUCKET)
-                , " exTime" => $exTime
+                , " exTime" => Debug::exTime("messenger/send")
             );
             if (Error::check(static::ERROR_BUCKET)) {
                 Log::error($dump);
@@ -155,19 +158,12 @@ class Messenger
             }
         }
 
+        if (Error::check(static::ERROR_BUCKET)) {
+            $dataError->error(500, Error::raise(static::ERROR_BUCKET));
+        }
 
-        return (Error::check(static::ERROR_BUCKET)
-            ? array(
-                "status"    => 500
-                , "error"   => Error::raise(static::ERROR_BUCKET)
-                , "exTime"  => $exTime
-            )
-            : array(
-                "status"    => 0
-                , "error"   => ""
-                , "exTime"  => $exTime
-            )
-        );
+
+        return $dataError;
     }
 
     /**

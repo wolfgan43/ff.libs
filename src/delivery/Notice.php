@@ -25,6 +25,8 @@
  */
 namespace phpformsframework\libs\delivery;
 
+use phpformsframework\libs\dto\DataResponse;
+
 class Notice
 {
     const NAME_SPACE                                        = __NAMESPACE__ . '\\adapters\\';
@@ -63,32 +65,42 @@ class Notice
     }
 
 
+    /**
+     * @param string $title
+     * @param array $fields
+     * @param null|string $template
+     * @return DataResponse
+     */
     public function sendLongMessage($title, $fields, $template = null)
     {
-        $res                                                = null;
+        $dataResponse                                       = new DataResponse();
         foreach ($this->adapters as $key => $adapter) {
-            $res[$key]                                      = $adapter->sendLongMessage($title, $fields, $template);
+            $result                                         = $adapter->sendLongMessage($title, $fields, $template);
+            $dataResponse->set($key, $result->isError());
+            if ($result->isError()) {
+                $dataResponse->error(502, $result->error);
+            }
         }
 
-        return $res;
+        return $dataResponse;
     }
 
+    /**
+     * @param string $message
+     * @return DataResponse
+     */
     public function send($message)
     {
-        $error                                              = array();
-        $res                                                = null;
+        $dataResponse                                       = new DataResponse();
         foreach ($this->adapters as $key => $adapter) {
-            $error[$key]                                    = $adapter->send($message);
-            $res[$key]                                      = $error[$key] === false;
+            $result                                         = $adapter->send($message);
+            $dataResponse->set($key, $result->isError());
+            if ($result->isError()) {
+                $dataResponse->error(502, $result->error);
+            }
         }
 
-        $res["error"]                                       = implode(" ", $error);
-        $res["status"]                                      = (
-            $res["error"]
-                                                                ? 502
-                                                                : 200
-                                                            );
-        return $res;
+        return $dataResponse;
     }
 
 

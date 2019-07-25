@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\delivery;
 
+use phpformsframework\libs\dto\DataError;
 use phpformsframework\libs\Error;
 
 abstract class NoticeAdapter
@@ -45,7 +46,19 @@ abstract class NoticeAdapter
     }
 
     abstract public function checkRecipient($target);
+
+    /**
+     * @param string $message
+     * @return DataError
+     */
     abstract public function send($message);
+
+    /**
+     * @param string $title
+     * @param null|array $fields
+     * @param null|string $template
+     * @return DataError
+     */
     abstract public function sendLongMessage($title, $fields = null, $template = null);
 
     abstract protected function process();

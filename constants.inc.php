@@ -61,12 +61,6 @@ if (!defined("DOCUMENT_ROOT")) {
 if (!defined("SITE_PATH")) {
     define("SITE_PATH", str_replace(array(DOCUMENT_ROOT, VENDOR_LIBS_DIR), "", __DIR__));
 }
-if (!defined("CONF_PATH")) {
-    define("CONF_PATH", "/conf");
-}
-if (!defined("LIBS_PATH")) {
-    define("LIBS_PATH", "/vendor");
-}
 
 if (!defined("APP_START")) {
     define("APP_START", microtime(true));

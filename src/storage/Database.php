@@ -27,6 +27,7 @@
 namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\Constant;
+use phpformsframework\libs\Env;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dumpable;
@@ -36,9 +37,7 @@ class Database implements Dumpable
     const ERROR_BUCKET                                                      = "database";
     const NAME_SPACE                                                        = __NAMESPACE__ . '\\adapters\\';
     const ENABLE_CACHE                                                      = true;
-    const ADAPTER                                                           = "mysqli";
-
-    const MAX_RECURSION                                                     = 100;
+    const ADAPTER                                                           = Constant::DATABASE_ADAPTER;
 
     private static $singletons                                              = null;
     private static $cache                                                   = null;
@@ -338,8 +337,8 @@ class Database implements Dumpable
                                                         ? self::$cache[$cache_key]["count"] + 1
                                                         : 1
                                                     );
-                if (self::$cache[$cache_key]["count"] > self::MAX_RECURSION) {
-                    Debug::dump("Max Recursion: " . print_r($query, true));
+                if (self::$cache[$cache_key]["count"] > Env::get("DATABASE_MAX_RECURSION")) {
+                    Debug::dump("Max Recursion ("  . Env::get("DATABASE_MAX_RECURSION") . ") : " . print_r($query, true));
                     exit;
                 }
             }

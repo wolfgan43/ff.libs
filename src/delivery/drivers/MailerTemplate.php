@@ -26,12 +26,11 @@
 namespace phpformsframework\libs\delivery\drivers;
 
 use phpformsframework\libs\Constant;
-use phpformsframework\libs\Dir;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\storage\Filemanager;
-use phpformsframework\libs\tpl\ffTemplate;
+use phpformsframework\libs\tpl\TemplateHtml;
 use phpformsframework\libs\security\Validator;
 
 final class MailerTemplate extends Mailer
@@ -41,13 +40,13 @@ final class MailerTemplate extends Mailer
 
     private $tpl_html_path                                  = null;
     /**
-     * @var ffTemplate
+     * @var TemplateHtml
      */
     private $tpl_html                                       = null;
 
     private $tpl_text_path                                  = null;
     /**
-     * @var ffTemplate
+     * @var TemplateHtml
      */
     private $tpl_text                                       = null;
 
@@ -111,13 +110,13 @@ final class MailerTemplate extends Mailer
                 });
             }
 
-            $this->tpl_html = new ffTemplate();
+            $this->tpl_html = new TemplateHtml();
             $this->tpl_html->load_file($this->tpl_html_path, "main");
 
             if (is_file(dirname($this->tpl_html_path) . "/default.txt")) {
                 $this->tpl_text_path = dirname($this->tpl_html_path) . "/default.txt";
 
-                $this->tpl_text = new ffTemplate();
+                $this->tpl_text = new TemplateHtml();
                 $this->tpl_text->load_file($this->tpl_text_path, "main");
             }
         } else {

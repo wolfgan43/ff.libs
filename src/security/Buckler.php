@@ -35,9 +35,11 @@ use phpformsframework\libs\Config;
 
 class Buckler implements Configurable
 {
+    const SCHEMA_BUCKET                                         = "badpath";
+
     public static function loadSchema()
     {
-        $config                                                 = Config::rawData("badpath", true, "rule");
+        $config                                                 = Config::rawData(static::SCHEMA_BUCKET, true, "rule");
 
         if (is_array($config) && count($config)) {
             $schema                                             = array();
@@ -48,7 +50,7 @@ class Buckler implements Configurable
                 $schema[$key]                                   = $attr;
             }
 
-            Config::setSchema($schema, "badpath");
+            Config::setSchema($schema, static::SCHEMA_BUCKET);
         }
     }
     public static function protectMyAss()
@@ -82,7 +84,7 @@ class Buckler implements Configurable
 
     private static function checkAllowedPath()
     {
-        $rules                                                  = Config::getSchema("badpath");
+        $rules                                                  = Config::getSchema(static::SCHEMA_BUCKET);
 
         $path_info                                              = self::path_info();
         if ($path_info) {

@@ -65,7 +65,10 @@ abstract class App implements Dumpable
     }
     public static function env($name = null, $value = null)
     {
-        return Env::get($name, $value);
+        return ($value
+            ? Env::set($name, $value)
+            : Env::get($name)
+        );
     }
 
     protected static function hook($name, $func, $priority = null)

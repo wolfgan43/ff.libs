@@ -34,8 +34,7 @@ class Constant
     const VENDOR_LIBS_DIR                   = VENDOR_LIBS_DIR;
     const DOCUMENT_ROOT                     = DOCUMENT_ROOT;
     const SITE_PATH                         = SITE_PATH;
-    const CONF_PATH                         = CONF_PATH;
-    const LIBS_PATH                         = LIBS_PATH;
+    const LIBS_PATH                         = "/vendor";
     const CACHE_PATH                        = "/cache";
     const UPLOAD_PATH                       = "/uploads";
 
@@ -72,4 +71,6 @@ class Constant
     const SESSION_SAVE_PATH                 = SESSION_SAVE_PATH;
     const SESSION_PERMANENT                 = SESSION_PERMANENT;
     const SESSION_SHARE                     = SESSION_SHARE;
+
+    const DATABASE_ADAPTER                  = "mysqli";
 }

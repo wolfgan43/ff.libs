@@ -23,12 +23,12 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
+namespace phpformsframework\libs\tpl;
 
-namespace phpformsframework\libs\dto;
-
-class DataApi extends DataAdapter
+class TemplateAmp extends TemplateHtml
 {
-    const CONTENT_TYPE = "api";
+    const REGEXP                                = '/<<([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)>>/U';
 
-    public $data = null;
+    const APPLET                                = '/<<\[(.+)\]>>/U';
+    const COMMENTHTML                           = '/<<<([\w\[\]\:\=\-\|\.]+)>>>/U';
 }

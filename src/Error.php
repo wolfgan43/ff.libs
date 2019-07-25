@@ -27,7 +27,6 @@ namespace phpformsframework\libs;
 
 class Error
 {
-    const TYPE                                                  = "Error";
     const STATUS_CODE                                           = array(
                                                                       100 => "100 Continue"
                                                                     , 101 => "101 Switching Protocols"

@@ -27,10 +27,10 @@
 namespace phpformsframework\libs\security;
 
 use phpformsframework\libs\Constant;
+use phpformsframework\libs\dto\DataError;
 
 class Validator
 {
-    const TYPE                                              = "validator";
     const RULES                                             = array(
                                                                 "bool" => array(
                                                                     "filter"        => FILTER_VALIDATE_BOOLEAN
@@ -183,15 +183,11 @@ class Validator
      * @param string $what
      * @param null $type
      * @param array[range, fakename] $option
-     * @return array[status, error]
+     * @return DataError
      */
     public static function is(&$what, $type = null, $option = null)
     {
-        $res                                            = array(
-                                                            "status"    => 0
-                                                            , "error"   => ""
-                                                        );
-
+        $dataError                                   = new DataError();
         if (!array_key_exists($type, self::RULES)) {
             $type                                       = (
                 is_array($what)
@@ -206,7 +202,7 @@ class Validator
             self::setRuleOptions($rule, $option["range"]);
         }
         if (!self::isAllowedSize($what, $rule["length"])) {
-            $res                                        = self::isError(self::getErrorName($what) . " Max Length Exeeded", $type, 413);
+            $dataError                                  = self::isError(self::getErrorName($what) . " Max Length Exeeded", $type, 413);
         } else {
             $validation                                 = filter_var($what, $rule["filter"], array(
                                                             "flags"         => $rule["flags"]
@@ -214,35 +210,35 @@ class Validator
                                                         ));
 
             if ($validation === null) {
-                $res                                    = self::isError(self::getErrorName($what) . " is not a valid " . $type . (isset($option["range"]) ? ". The permitted values are [" . $option["range"] . "]" : ""), $type);
+                $dataError                              = self::isError(self::getErrorName($what) . " is not a valid " . $type . (isset($option["range"]) ? ". The permitted values are [" . $option["range"] . "]" : ""), $type);
             } elseif (is_array($validation)) {
                 if (is_array($what)) {
                     $diff                               = array_diff_key($what, array_filter($validation));
                     if (count($diff)) {
-                        $res                            = self::isError(self::getErrorName($what) . "[" . implode(", ", array_keys($diff)) . "] is not valid " . $type, $type);
+                        $dataError                      = self::isError(self::getErrorName($what) . "[" . implode(", ", array_keys($diff)) . "] is not valid " . $type, $type);
                     }
                 } else {
-                    $res                                = self::isError(self::getErrorName($what) . " is malformed");
+                    $dataError                          = self::isError(self::getErrorName($what) . " is malformed");
                 }
             } elseif ($validation != $what) {
                 if (isset($rule["normalize"])) {
                     $what                               = $validation;
                 } else {
-                    $res                                = self::isError(self::getErrorName($what) . " is not a valid " . $type . ($validation && $validation !== true ? ". (" . $validation . " is valid!)" : ""), $type);
+                    $dataError                          = self::isError(self::getErrorName($what) . " is not a valid " . $type . ($validation && $validation !== true ? ". (" . $validation . " is valid!)" : ""), $type);
                 }
             }
 
             if (isset($rule["callback"])) {
                 $error                                  = call_user_func($rule["callback"], $what);
                 if ($error) {
-                    $res                                = self::isError($error, $type);
+                    $dataError                          = self::isError($error, $type);
                 }
             }
         }
 
         self::transform($what, $type);
 
-        return $res;
+        return $dataError;
     }
 
     public static function transform(&$what, $in = null)
@@ -404,34 +400,23 @@ class Validator
                                                                                 ? '/^([\.0-9a-z_\-\+]+)@(([0-9a-z\-]+\.)+[0-9a-z]{2,12})$/i'
                                                                                 : '/^([\.0-9a-z_\-]+)@(([0-9a-z\-]+\.)+[0-9a-z]{2,12})$/i'
                                                                             );
-        $res                                                                = preg_match($regex, $value);
-
-
-        return $res;
+        return preg_match($regex, $value);
     }
     public static function isTel($value)
     {
-        $res                                                                = is_numeric(ltrim(str_replace(array(" ", ".", ",", "-"), array(""), $value), "+"));
-
-        return $res;
+        return is_numeric(ltrim(str_replace(array(" ", ".", ",", "-"), array(""), $value), "+"));
     }
 
     public static function isPassword($value, $rule = null)
     {
-        return (self::invalidPassword($value, $rule)
-            ? false
-            : true
-        );
+        return !(bool) self::invalidPassword($value, $rule);
     }
 
     public static function invalidUsername($value)
     {
-        $res = self::is($value, "username");
+        $dataError = self::is($value, "username");
 
-        return ($res["status"] === 0
-            ? $res["error"]
-            : true
-        );
+        return $dataError->isError();
     }
     public static function invalidPassword($value, $rule = null)
     {
@@ -809,15 +794,22 @@ class Validator
             : $name
         );
     }
+
+    /**
+     * @param string $error
+     * @param null|string $type
+     * @param int $status
+     * @return DataError
+     */
     private static function isError($error, $type = null, $status = 400)
     {
-        return array(
-            "status" => $status
-            , "error" => (
-                $type && isset(self::$errors[$type])
-                ? self::$errors[$type]
-                : $error
-            )
-        );
+        $dataError = new DataError();
+        $dataError->error($status, (
+            $type && isset(self::$errors[$type])
+            ? self::$errors[$type]
+            : $error
+        ));
+
+        return $dataError;
     }
 }

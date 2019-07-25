@@ -34,20 +34,33 @@ class Env implements Configurable
     private static $env                                             = array();
     private static $packages                                        = null;
 
-    public static function get($key = null, $value = null)
+    /**
+     * @param null|string $key
+     * @return mixed|null
+     */
+    public static function get($key = null)
     {
-        if ($key) {
-            $ref                                                    = &self::$env[$key];
-        } else {
-            $ref                                                    = &self::$env;
-        }
-        if ($value !== null) {
-            $ref                                                    = $value;
+        if (!isset(self::$env[$key])) {
+            self::$env[$key]                                        = null;
         }
 
-        return $ref;
+        return ($key
+            ? self::$env[$key]
+            : null
+        );
     }
 
+    /**
+     * @param string $key
+     * @param mixed $value
+     * @return mixed
+     */
+    public static function set($key, $value)
+    {
+        self::$env[$key]                                            = $value;
+
+        return self::$env[$key];
+    }
     public static function getPackage($key = null)
     {
         $package_disk_path                                          = Dir::getDiskPath("config/packages");
@@ -84,7 +97,7 @@ class Env implements Configurable
         $res                                                        = $cache->get("rawdata");
         if (!$res) {
             if (!$config) {
-                $config = Config::rawData("env", true);
+                $config = Config::rawData(Config::SCHEMA_ENV, true);
             }
             if (is_array($config) && count($config)) {
                 foreach ($config as $key => $value) {

@@ -27,6 +27,7 @@ namespace phpformsframework\libs\tpl;
 
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dir;
+use phpformsframework\libs\dto\DataHtml;
 use phpformsframework\libs\Error;
 
 abstract class Widget
@@ -50,7 +51,7 @@ abstract class Widget
     /**
      * @param string $filename
      * @param null|array $config
-     * @return ffTemplate
+     * @return TemplateHtml
      */
     abstract protected function processTemplate($filename, $config = null);
 
@@ -87,9 +88,9 @@ abstract class Widget
     }
     protected function inject($widget_data)
     {
-        $this->js                               = $widget_data["js"];
-        $this->css                              = $widget_data["css"];
-        $this->html                             = $widget_data["html"];
+        $this->js                               = $widget_data->js;
+        $this->css                              = $widget_data->css;
+        $this->html                             = $widget_data->html;
     }
     protected function loadTemplate()
     {
@@ -120,19 +121,26 @@ abstract class Widget
     {
         $this->loadTemplate();
 
+        $output                                 = new DataHtml();
         switch ($return) {
             case "snippet":
-                $output                         = array("html" => $this->getSnippet());
+                //$output                         = array("html" => $this->getSnippet());
+                $output->html($this->getSnippet());
                 break;
             case "page":
-                $output                         = array("html" =>  $this->getPage());
+               // $output                         = array("html" =>  $this->getPage());
+                $output->html($this->getPage());
                 break;
             default:
-                $output                         = array(
+                $output
+                    ->html($this->html)
+                    ->css($this->css)
+                    ->js($this->js);
+               /* $output                         = array(
                                                     "html"  => $this->html
                                                     , "css" => $this->css
                                                     , "js"  => $this->js
-                                                );
+                                                );*/
         }
 
         return $output;
@@ -164,12 +172,12 @@ abstract class Widget
     }
 
     /**
-     * @return null|ffTemplate
+     * @return null|TemplateHtml
      */
     protected function tpl()
     {
         if (!self::$tpl) {
-            self::$tpl = new ffTemplate();
+            self::$tpl = new TemplateHtml();
         }
 
         return self::$tpl;
@@ -177,7 +185,7 @@ abstract class Widget
 
     public function setConfig($config)
     {
-        $this->config = array_replace_recursive($this->getConfigDefault(), (array) $config) ;
+        $this->config = array_replace_recursive($this->getConfigDefault(), (array) $config);
 
         return $this;
     }

@@ -69,6 +69,8 @@ use phpformsframework\libs\tpl\Resource;
 class Media implements Configurable
 {
     const ERROR_BUCKET                                              = "storage";
+    const SCHEMA_BUCKET                                             = "media";
+
     const STRICT                                                    = false;
     const RENDER_MEDIA_PATH                                         = DIRECTORY_SEPARATOR . "media";
     const RENDER_ASSETS_PATH                                        = DIRECTORY_SEPARATOR . "assets";
@@ -584,17 +586,19 @@ class Media implements Configurable
     public function get($pathinfo)
     {
         $this->setPathInfo($pathinfo);
-        $res = $this->process();
+        $status                                                     = null;
+        $res                                                        = $this->process();
+        $content_type                                               = static::MIMETYPE[$this->pathinfo["extension"]];
+
 
         if (Error::check(static::ERROR_BUCKET)) {
-            Response::code(404);
-            header('Content-Type: image/png');
-            echo base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII=');
-            exit;
-        } else {
-            $_SERVER["HTTP_ACCEPT"]                                 = static::MIMETYPE[$this->pathinfo["extension"]];
-            return $res;
+            $status                                                 = 404;
+            $res                                                    = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII=');
+            $content_type                                           = "image/png";
         }
+
+        $_SERVER["HTTP_ACCEPT"]                                     = static::MIMETYPE[$this->pathinfo["extension"]];
+        Response::sendRawData($res, $content_type, $status);
     }
 
     public static function getIcon($name, $mode = null)
@@ -736,7 +740,7 @@ class Media implements Configurable
     }
     public static function loadSchema()
     {
-        $config                                                     = Config::rawData("media", true, "thumb");
+        $config                                                     = Config::rawData(static::SCHEMA_BUCKET, true, "thumb");
         if (is_array($config) && count($config)) {
             $schema                                                 = array();
             foreach ($config as $thumb) {
@@ -746,7 +750,7 @@ class Media implements Configurable
                 $schema[$key]                                       = $attr;
             }
 
-            Config::setSchema($schema, "media");
+            Config::setSchema($schema, static::SCHEMA_BUCKET);
         }
     }
 
@@ -756,7 +760,7 @@ class Media implements Configurable
      */
     public static function getModes($mode = null)
     {
-        $loaded_modes                                               = Config::getSchema("media");
+        $loaded_modes                                               = Config::getSchema(static::SCHEMA_BUCKET);
 
         if (!isset($loaded_modes[$mode])) {
             $loaded_modes[$mode] = null;

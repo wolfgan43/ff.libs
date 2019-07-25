@@ -25,6 +25,12 @@
  */
 namespace phpformsframework\libs;
 
+
+/**
+ * Interface Configurable
+ * @package phpformsframework\libs
+ * @todo da aggiungere getSchema e gestire meglio le dipendenze
+ */
 interface Configurable
 {
     public static function loadSchema();

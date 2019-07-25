@@ -31,7 +31,6 @@ use phpformsframework\libs\cache\Mem;
 
 class Router implements Configurable
 {
-    const TYPE                                              = "router";
     const ERROR_BUCKET                                      = "routing";
 
     const PRIORITY_TOP 			                            = 0;
@@ -60,7 +59,7 @@ class Router implements Configurable
     }
     public static function loadSchema()
     {
-        $config                                             = Config::rawData("router", true, "rule");
+        $config                                             = Config::rawData(Config::SCHEMA_ROUTER, true, "rule");
         if (is_array($config) && count($config)) {
             $schema                                         = array();
             foreach ($config as $rule) {
@@ -72,7 +71,7 @@ class Router implements Configurable
                                                             );
                 $schema[$key]                               = $attr;
             }
-            Config::setSchema($schema, "router");
+            Config::setSchema($schema, Config::SCHEMA_ROUTER);
         }
     }
 
@@ -82,7 +81,7 @@ class Router implements Configurable
         $res = $cache->get("rawdata");
 
         if (!$res) {
-            $this->addRules(Config::getSchema("router"));
+            $this->addRules(Config::getSchema(Config::SCHEMA_ROUTER));
 
             $cache->set("rawdata", array(
                 "rules" => $this->rules,

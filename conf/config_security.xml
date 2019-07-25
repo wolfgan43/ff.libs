@@ -1,32 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <configdata>
     <badpath>
-        <!--<rule source="*/actexparse*"                    destination="500" log="true" />-->
-        <rule source="*/parsedata*"                     destination="500" log="true" />
-        <rule source="*/aparsedata*"                    destination="500" log="true" />
-        <rule source="*/atparsedata*"                   destination="500" log="true" />
-
-        <rule source="^/applet/*"                       destination="500" log="true" />
-        <rule source="^/block/*"                        destination="500" log="true" />
-        <rule source="^/anagraph/*"                     destination="500" log="true" />
-        <rule source="^/gallery/*"                      destination="500" log="true" />
-        <rule source="^/publish/*"                      destination="500" log="true" />
-        <rule source="^/marker/*"                       destination="500" log="true" />
-        <rule source="^/menu/*"                         destination="500" log="true" />
-        <rule source="^/album/*"                        destination="500" log="true" />
-        <rule source="^/tag/*"                          destination="500" log="true" />
-        <rule source="^/install/*"                      destination="500" log="true" />
-        <rule source="^/updater/check/*"                destination="500" log="true" />
-
-        <rule source="^/applets*"                       destination="404" />
         <rule source="^/cache*"                         destination="404" />
-        <rule source="^/cm*"                            destination="404" />
-        <rule source="^/conf*"                          destination="404" />
-        <rule source="^/contents*"                      destination="404" />
-        <rule source="^/ff*"                            destination="404" />
-        <rule source="^/installer*"                     destination="404" />
-        <rule source="^/library*"                       destination="404" />
-        <rule source="^/modules*"                       destination="404" />
         <rule source="^/uploads*"                       destination="404" />
         <rule source="^/vendor*"                        destination="404" />
         <rule source="*/index*"                         destination="$1" />

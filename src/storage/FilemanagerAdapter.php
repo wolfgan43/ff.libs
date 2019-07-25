@@ -27,7 +27,6 @@ namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Error;
-use Exception;
 
 abstract class FilemanagerAdapter
 {

@@ -26,11 +26,11 @@
 
 namespace phpformsframework\libs;
 
+use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\security\Validator;
 
 class Request implements Configurable
 {
-    const TYPE                                                                                  = "request";
     const MAX_SIZE                                                                              = array(
                                                                                                     "GET"       => 256,
                                                                                                     "PUT"       => 10240,
@@ -45,7 +45,7 @@ class Request implements Configurable
 
     public static function loadSchema()
     {
-        $config                                                                                 = Config::rawData("request", true);
+        $config                                                                                 = Config::rawData(Config::SCHEMA_REQUEST, true);
         $schema                                                                                 = array();
         if (isset($config["page"]) && is_array($config["page"]) && count($config["page"])) {
             foreach ($config["page"] as $request) {
@@ -62,13 +62,13 @@ class Request implements Configurable
             self::loadAccessControl($config["accesscontrol"]);
         }
 
-        Config::setSchema($schema, "request");
+        Config::setSchema($schema, Config::SCHEMA_REQUEST);
     }
 
     private static function loadAccessControl($config)
     {
         if (is_array($config) && count($config)) {
-            $schema                                             = Config::getSchema("accesscontrol");
+            $schema                                             = Config::getSchema(Config::SCHEMA_REQUEST_ACCESSCONTROL);
             if (is_array($config) && count($config)) {
                 foreach ($config as $accesscontrol) {
                     $attr                                       = Dir::getXmlAttr($accesscontrol);
@@ -83,13 +83,13 @@ class Request implements Configurable
                 }
             }
 
-            Config::setSchema($schema, "accesscontrol");
+            Config::setSchema($schema, Config::SCHEMA_REQUEST_ACCESSCONTROL);
         }
     }
     private static function loadPatterns($config)
     {
         if (is_array($config) && count($config)) {
-            $schema                                             = Config::getSchema("patterns");
+            $schema                                             = Config::getSchema(Config::SCHEMA_REQUEST_PATTERNS);
             foreach ($config as $pattern) {
                 $attr                                           = Dir::getXmlAttr($pattern);
                 $key                                            = (
@@ -107,7 +107,7 @@ class Request implements Configurable
                 }
             }
 
-            Config::setSchema($schema, "patterns");
+            Config::setSchema($schema, Config::SCHEMA_REQUEST_PATTERNS);
         }
     }
 
@@ -274,7 +274,7 @@ class Request implements Configurable
     public static function setRulesByPage($page)
     {
         $rules                                                  = array();
-        $request                                                = Config::getSchema("request");
+        $request                                                = Config::getSchema(Config::SCHEMA_REQUEST);
         $request_path                                           = (
             isset($page["alias"])
                                                                     ? rtrim($page["alias"] . $page["user_path"], DIRECTORY_SEPARATOR)
@@ -287,7 +287,7 @@ class Request implements Configurable
         $rules["query"]                                         = array();
         $rules["body"]                                          = array();
         $rules["header"]                                        = array();
-        $rules["access_control"]                                = Config::getSchema("accesscontrol");
+        $rules["access_control"]                                = Config::getSchema(Config::SCHEMA_REQUEST_ACCESSCONTROL);
 
         do {
             if (isset($request[$request_path])) {
@@ -552,8 +552,8 @@ class Request implements Configurable
                         : null
                     );
                     $validator                                                          = Validator::is($_SERVER[$header_name], $validator_rule, array("fakename" => $header_key . " (in header)", "range" => $validator_range));
-                    if ($validator["status"] !== 0) {
-                        $errors[400][] = $validator["error"];
+                    if ($validator->isError()) {
+                        $errors[$validator->status][] = $validator->error;
                     }
 
                     self::$headers[$header_key]                                         = $_SERVER[$header_name];
@@ -651,8 +651,8 @@ class Request implements Configurable
         }
 
         $validator                                                                      = Validator::is($value, $type, $params);
-        if (isset($validator["status"]) && $validator["status"] !== 0) {
-            $errors[$validator["status"]][] = $validator["error"];
+        if ($validator->isError()) {
+            $errors[$validator->status][] = $validator->error;
         }
 
 
@@ -668,8 +668,8 @@ class Request implements Configurable
                     $errors[400][]                                                      = $file_name . " must be type " . self::$rules["body"][$file_name]["validator"];
                 } else {
                     $validator                                                          = Validator::is($file_name, "file", array("fakename" => $file_name));
-                    if ($validator["status"] !== 0) {
-                        $errors[$validator["status"]][] = $validator["error"];
+                    if ($validator->isError()) {
+                        $errors[$validator->status][] = $validator->error;
                     }
                 }
             }
@@ -820,9 +820,8 @@ class Request implements Configurable
 
     private static function isError($error, $status = 400)
     {
-        Response::send(array(
-            "status" => $status
-            , "error" => $error
-        ));
+        $dataResponse                           = new DataResponse();
+        $dataResponse->error($status, $error);
+        Response::send($dataResponse);
     }
 }

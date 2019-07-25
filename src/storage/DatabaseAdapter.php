@@ -569,8 +569,10 @@ abstract class DatabaseAdapter
         return $this->process($query);
     }
 
+
     /**
-     * @param $field
+     * @param string $field
+     * @return bool
      */
     protected function getFieldAlias($field)
     {

@@ -41,6 +41,7 @@ class NoticeEmail extends NoticeAdapter
     {
         return Validator::isEmail($target);
     }
+
     public function send($message)
     {
         $this->title                        = $message;
@@ -70,7 +71,7 @@ class NoticeEmail extends NoticeAdapter
 
     protected function process()
     {
-        Mailer::getInstance($this->template, $this->connection_service)
+        return Mailer::getInstance($this->template, $this->connection_service)
             ->setSmtp($this->connection)
             ->setFrom($this->fromKey, $this->fromLabel)
             ->addAddresses($this->recipients, "to")
@@ -78,9 +79,5 @@ class NoticeEmail extends NoticeAdapter
             ->setSubject($this->title)
             ->setMessage($this->fields)
             ->send();
-
-        Error::transfer(Mailer::ERROR_BUCKET, static::ERROR_BUCKET);
-
-        return $this->getResult();
     }
 }

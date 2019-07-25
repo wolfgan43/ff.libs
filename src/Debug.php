@@ -25,7 +25,6 @@
  */
 namespace phpformsframework\libs;
 
-use phpformsframework\libs\storage\Database;
 use phpformsframework\libs\storage\Filemanager;
 use ReflectionClass;
 use Exception;
@@ -37,7 +36,21 @@ Log::extend("profiling", Log::TYPE_DEBUG, array(
     , "format"      => Log::FORMAT_CLE
 ));
 
+if (Constant::DEBUG) {
+    register_shutdown_function(function () {
+        $time = Debug::exTimeApp();
+        if ($time > 10000) {
+            Log::error("Timeout: " . $time);
+        }
+    });
+}
 
+/**
+ * Performance Profiling
+ */
+if (Constant::PROFILING) {
+    Debug::benchmark();
+}
 
 class Debug
 {
@@ -49,6 +62,10 @@ class Debug
 
     private static $debug                   = array();
 
+    /**
+     * @param $bucket
+     * @return float|null
+     */
     public static function stopWatch($bucket)
     {
         if (isset(self::$exTime[$bucket])) {
@@ -58,13 +75,19 @@ class Debug
         if (isset(self::$startWatch[$bucket])) {
             self::$exTime[$bucket]          = number_format(microtime(true) - self::$startWatch[$bucket], 4, '.', '');
 
-            return self::$exTime[$bucket];
+            return (float) self::$exTime[$bucket];
         } else {
             self::$startWatch[$bucket]      = microtime(true);
-            //self::$exTime[$bucket]          = null;
-
             return null;
         }
+    }
+
+    public static function exTime($bucket)
+    {
+        return (isset(self::$startWatch[$bucket])
+            ? number_format(self::$startWatch[$bucket], 3, '.', '')
+            : null
+        );
     }
 
     public static function exTimeApp()
@@ -240,7 +263,6 @@ class Debug
         }
 
         foreach ($debug_backtrace as $i => $trace) {
-
             if (isset($trace["file"])) {
                 print $trace["file"] . ":" . $trace["line"] . "\n";
             } else {
@@ -248,13 +270,12 @@ class Debug
                     $operation = '<mark>' . basename(str_replace(array("Object: ", "\\"), array("", "/"), $debug_backtrace[$i + 1]["args"][0][0])) . $trace["type"] . $trace["function"] . '(' . implode(", ", $trace["args"]) . ')</mark>';
                 } else {
                     $operation = (
-                    isset($trace["class"])
+                        isset($trace["class"])
                         ?  basename(str_replace("\\", "/", $trace["class"])) . $trace["type"] . $trace["function"]
                         : $trace["function"]
                     );
                 }
                 echo "Call " . $operation . "\n";
-
             }
         }
         return null;
@@ -262,7 +283,7 @@ class Debug
 
     public static function dump($error_message = null, $return = false)
     {
-        if(self::isCommandLineInterface()) {
+        if (self::isCommandLineInterface()) {
             return self::dumpCommandLine($error_message);
         }
 
@@ -415,6 +436,14 @@ class Debug
                     : ""
                 );
 
+        $html_benchmark = "";
+        if (Constant::PROFILING) {
+            $benchmark = self::benchmark(true);
+            $html_benchmark = '<span style="padding:15px;">Mem: ' . $benchmark["mem"] . '</span>'
+                . '<span style="padding:15px;">MemPeak: ' . $benchmark["mem_peak"] . '</span>'
+                . '<span style="padding:15px;">CPU: ' . $benchmark["cpu"] . '</span>';
+        }
+
         $html .= '<hr />' . '<center>'
             . '<span style="padding:15px;">BackTrace: ' . count($debug_backtrace) . '</span>'
             . '<span style="padding:15px;">Errors: ' . $errors_count . '</span>'
@@ -423,7 +452,10 @@ class Debug
             . '<span style="padding:15px;">Files: ' . $files_count . '</span>'
             . '<span style="padding:15px;">DB Query: ' . $db_query_count . ' (' . $db_query_cache_count . ' cached)'. '</span>'
             . '<span style="padding:15px;">ExTime: ' . self::exTimeApp() . '</span>'
+            . $html_benchmark
             . '</center>';
+
+
 
         $html   .= '<table>';
         $html   .= '<thead>';
@@ -443,6 +475,13 @@ class Debug
         }
     }
 
+    private static function convertMem($size)
+    {
+        $unit=array('B','KB','MB','GB','TB','PB');
+        return @round($size/pow(1024, ($i=(int) floor(log($size, 1024)))), 2).' '.$unit[$i];
+    }
+
+
     /**
      * @param bool $end
      * @return mixed
@@ -455,13 +494,9 @@ class Debug
         if (function_exists("getrusage")) {
             $ru = getrusage();
             if ($end) {
-                $res["mem"] 			= number_format(memory_get_usage(true) - $res["mem"], 0, ',', '.');
-                $res["mem_peak"] 		= number_format(memory_get_peak_usage(true) - $res["mem_peak"], 0, ',', '.');
+                $res["mem"] 			= self::convertMem(memory_get_usage());
+                $res["mem_peak"] 		= self::convertMem(memory_get_peak_usage());
                 $res["cpu"] 			= number_format(abs(($ru['ru_utime.tv_usec'] + $ru['ru_stime.tv_usec']) - $res["cpu"]), 0, ',', '.');
-                $res["includes"] 		= get_included_files();
-                $res["classes"] 		= get_declared_classes();
-                $res["db"] 				= Database::dump();
-                $res["exTime"] 			= microtime(true) - $res["exTime"];
 
                 if (extension_loaded('xhprof') && is_dir(Constant::DISK_PATH . "/xhprof_lib") && class_exists("XHProfRuns_Default")) {
                     $path_info          = (
@@ -499,14 +534,11 @@ class Debug
                     $res["url"] = sprintf("http" . ($_SERVER["HTTPS"] ? "s" : "") . "://" . $_SERVER["HTTP_HOST"] . '/xhprof_html/index.php?run=%s&source=%s', $run_id, $profiler_namespace);
                 }
 
-                Log::write($res, "profiling", null, (Request::isAjax() ? "xhr" : "page"));
+                Log::write($res, "benchmark", null, (Request::isAjax() ? "xhr" : "page"));
 
                 return $res;
             } else {
-                $res["mem"]             = memory_get_usage(true);
-                $res["mem_peak"]        = memory_get_peak_usage(true);
                 $res["cpu"]             = $ru['ru_utime.tv_usec'] + $ru['ru_stime.tv_usec'];
-                $res["exTime"] 			= microtime(true);
 
                 if (extension_loaded('xhprof') && is_dir(Constant::DISK_PATH . "/xhprof_lib")) {
                     Dir::autoload(Constant::DISK_PATH . '/xhprof_lib/utils/xhprof_lib.php', true);

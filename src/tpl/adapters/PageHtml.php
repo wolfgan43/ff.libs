@@ -35,7 +35,7 @@ use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\Response;
 use phpformsframework\libs\storage\Media;
-use phpformsframework\libs\tpl\ffTemplate;
+use phpformsframework\libs\tpl\TemplateHtml;
 use phpformsframework\libs\tpl\Gridsystem;
 use phpformsframework\libs\tpl\Resource;
 
@@ -301,7 +301,7 @@ class PageHtml extends Mappable
             $description = Error::getErrorMessage($code);
         }
 
-        $tpl                                    = new ffTemplate();
+        $tpl                                    = new TemplateHtml();
         $tpl->load_file(Constant::DISK_PATH . $this->getAsset("error", "common"));
         $tpl->set_var("site_path", Constant::SITE_PATH);
         $tpl->set_var("title", Translator::get_word_by_code($title));

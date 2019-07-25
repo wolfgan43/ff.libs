@@ -26,7 +26,6 @@
 namespace phpformsframework\libs\delivery\adapters;
 
 use phpformsframework\libs\delivery\NoticeAdapter;
-use phpformsframework\libs\Error;
 use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\delivery\drivers\Messenger;
 
@@ -53,14 +52,10 @@ class NoticeSms extends NoticeAdapter
 
     protected function process()
     {
-        Messenger::getInstance($this->connection_service)
+        return Messenger::getInstance($this->connection_service)
             ->setConnection($this->connection)
             ->setFrom($this->fromKey, $this->fromLabel)
             ->addAddresses($this->recipients)
             ->send($this->content);
-
-        Error::transfer(Messenger::ERROR_BUCKET, static::ERROR_BUCKET);
-
-        return $this->getResult();
     }
 }

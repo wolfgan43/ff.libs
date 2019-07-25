@@ -36,7 +36,7 @@ use Exception;
  * Time: 10:11
  */
 
-class ffSmarty extends Smarty
+class TemplateSmarty extends Smarty
 {
     public $tpl_file;
 

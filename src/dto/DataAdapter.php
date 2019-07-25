@@ -26,24 +26,142 @@
 
 namespace phpformsframework\libs\dto;
 
+use phpformsframework\libs\Constant;
+
 abstract class DataAdapter
 {
-    const CONTENT_TYPE = null;
+    const CONTENT_TYPE                      = null;
 
-    public $error = null;
-    public $status = null;
+    /**
+     * @var string
+     */
+    public $error                           = "";
+    /**
+     * @var int
+     */
+    public $status                          = 0;
+    /**
+     * @var null|mixed
+     */
+    private $debug                           = null;
 
+    abstract public function output();
+
+    /**
+     * @return array
+     */
     protected function get_vars()
     {
-        return get_object_vars($this);
+        $vars                               = get_object_vars($this);
+        if (!Constant::DEBUG) {
+            unset($vars["debug"]);
+        }
+
+        return $vars;
     }
 
+    /**
+     * @return array
+     */
     public function toArray()
     {
         return $this->get_vars();
     }
+
+    /**
+     * @return false|string
+     */
     public function toJson()
     {
         return json_encode($this->get_vars());
+    }
+
+    /**
+     * @param $status
+     * @param null|string $msg
+     * @return $this
+     */
+    public function error($status, $msg = null)
+    {
+        $this->status                       = $status;
+        $this->error                        = (
+            $this->error
+            ? $this->error . " "
+            : ""
+        ) . $msg;
+
+        return $this;
+    }
+
+    /**
+     * @param null|int $code
+     * @return bool
+     */
+    public function isError($code = null)
+    {
+        return (bool) (
+            $code
+            ? isset($this->status[$code])
+            : $this->status
+        );
+    }
+
+    /**
+     * @param mixed $data
+     * @return DataAdapter
+     */
+    public function debug($data)
+    {
+        $this->debug                        = $data;
+
+        return $this;
+    }
+
+    /**
+     * @param array $values
+     * @return DataAdapter
+     */
+    public function fill($values)
+    {
+        foreach ($values as $key => $value) {
+            $this->$key                     = $value;
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param string $key
+     * @param string|array $value
+     * @return $this
+     */
+    public function set($key, $value)
+    {
+        $this->$key                         = $value;
+
+        return $this;
+    }
+
+    /**
+     * @param string $key
+     * @return string|null
+     */
+    public function get($key)
+    {
+        return (isset($this->$key)
+            ? $this->$key
+            : null
+        );
+    }
+
+    /**
+     * @param string $key
+     * @return DataAdapter
+     */
+    public function unset($key)
+    {
+        unset($this->$key);
+
+        return $this;
     }
 }

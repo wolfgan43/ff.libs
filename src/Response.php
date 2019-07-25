@@ -25,11 +25,14 @@
  */
 namespace phpformsframework\libs;
 
-use phpformsframework\libs\international\Translator;
-use phpformsframework\libs\storage\Media;
+use phpformsframework\libs\dto\DataAdapter;
+use phpformsframework\libs\storage\drivers\Array2XML;
+use Exception;
 
 class Response
 {
+    const ERROR_BUCKET                              = "response";
+
     private static $content_type = null;
 
     public static function setContentType($content_type)
@@ -37,83 +40,108 @@ class Response
         self::$content_type                         = $content_type;
     }
 
-    public static function error($status = 404, $response = null, $headers = null, $type = null)
+    public static function error($status = 404, $response = null, $content_type = "text/html")
     {
-        self::send($response, $headers, $type, $status);
+        self::sendRawData($response, $content_type, $status);
     }
-    public static function send($response = null, $headers = null, $type = null, $status = null)
+
+    public static function sendRawData($data, $content_type, $status = null)
     {
-        if ($status) {
-            Response::code($status);
-        }
-
-        if (!$type) {
-            $type = self::$content_type;
-        }
-
-        if (is_array($headers) && count($headers)) {
-            foreach ($headers as $header) {
-                header($header);
-            }
-        }
-
-        if (!$type) {
-            $type                                   = "text";
-            if (is_array($response)) {
-                if (isset($response["html"])) {
-                    $type                           = "html";
-                } elseif (Request::isAjax() || Request::method() != "GET") {
-                    $type                           = "json";
-                }
-            }
-        }
-
-        if (0 &&  self::invalidAccept($type)) {
-            Response::code(501);
-            echo "content type " . $type . "is different to http_accept";
-        } else {
-            if (isset($response["error"]) && $response["error"]) {
-                $response["error"] = Translator::get_word_by_code($response["error"]);
+        if (self::isValidContentType($content_type)) {
+            self::sendHeadersByMimeType($content_type);
+            if ($status) {
+                Response::code($status);
             }
 
-            self::sendHeadersByType($type);
-            switch ($type) {
-                case "js":
-                    echo $response;
+            switch ($content_type) {
+                case "application/json":
+                case "text/json":
+                    echo self::toJson($data);
                     break;
-                case "css":
-                    echo $response;
+                case "application/xml":
+                case "text/xml":
+                    echo self::toXml($data);
                     break;
-                case "html":
-                    if (isset($response["error"]) && $response["error"]) {
-                        echo $response["error"];
-                    } elseif (isset($response["html"])) {
-                        echo $response["html"];
-                    }
-                    break;
-                case "xml":
-                    echo $response;
-                    break;
-                case "soap":
-                    //todo: da fare
-                    break;
-                case "json":
-                    echo json_encode((array) $response);
-                    break;
-                case "text":
                 default:
-                    if (isset($response["error"]) && $response["error"]) {
-                        echo $response["error"];
-                    } elseif (isset($response["data"])) {
-                        if (is_array($response["data"])) {
-                            echo implode(" ", $response["data"]);
-                        } else {
-                            echo $response["data"];
-                        }
-                    }
+                    echo self::toPlainText($data);
             }
         }
 
+        exit;
+    }
+
+    private static function toXml($data)
+    {
+        if (is_object($data)) {
+            $data                                   = get_object_vars($data);
+        } elseif (!is_array($data)) {
+            $data                                   = array($data);
+        }
+
+        try {
+            $data                                   = Array2XML::createXML("root", $data);
+        } catch (Exception $e) {
+            Error::register($e, static::ERROR_BUCKET);
+        }
+
+        return $data;
+    }
+
+    private static function toPlainText($data)
+    {
+        if (is_array($data)) {
+            $data                                   = implode(" ", $data);
+        } elseif (is_object($data)) {
+            $data                                   = implode(" ", get_object_vars($data));
+        }
+
+        return $data;
+    }
+
+    private static function toJson($data)
+    {
+        if (!is_array($data) && !is_object($data)) {
+            $data                                   = array($data);
+        }
+
+        return json_encode($data);
+    }
+
+    /**
+     * @param string $content_type
+     * @return bool
+     */
+    private static function isValidContentType($content_type)
+    {
+        if (self::invalidAccept($content_type)) {
+            /**
+             * @todo da gestire i tipi accepted self::sendHeadersByMimeType(...)
+             */
+            Response::code(501);
+            echo "content type " . $content_type . " is different to http_accept: " . $_SERVER["HTTP_ACCEPT"];
+            exit;
+        }
+
+        return true;
+    }
+
+    /**
+     * @param DataAdapter $response
+     * @param null $status
+     */
+    public static function send($response, $status = null)
+    {
+        if (self::isValidContentType($response::CONTENT_TYPE)) {
+            if ($response->status) {
+                Response::code($status);
+            }
+            // if (Request::isAjax() || Request::method() != "GET") {
+
+            // } else {
+            self::sendHeadersByMimeType($response::CONTENT_TYPE);
+            echo $response->output();
+            // }
+        }
         exit;
     }
 
@@ -153,10 +181,9 @@ class Response
          );
     }
 
-    private static function sendHeadersByType($type)
+    private static function sendHeadersByMimeType($mimetype)
     {
         if (!headers_sent()) {
-            $mimetype = Media::MIMETYPE[$type];
             if (0) {
                 self::sendHeaders(array("mimetype" => $mimetype));
             } else {
@@ -274,8 +301,8 @@ class Response
         }
     }
 
-    private static function invalidAccept($ext)
+    private static function invalidAccept($content_type)
     {
-        return isset($_SERVER["HTTP_ACCEPT"]) && $_SERVER["HTTP_ACCEPT"] && strpos($_SERVER["HTTP_ACCEPT"], Media::getMimeTypeByExtension($ext)) === false;
+        return isset($_SERVER["HTTP_ACCEPT"]) && $_SERVER["HTTP_ACCEPT"] && strpos($_SERVER["HTTP_ACCEPT"], $content_type) === false;
     }
 }

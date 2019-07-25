@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <configdata>
+    <env>
+        <DATABASE_MAX_RECURSION value="100" />
+    </env>
     <pages>
         <page path="/media"     engine="media" validate_url="false" />
         <page path="/assets"    engine="media" validate_url="false" />

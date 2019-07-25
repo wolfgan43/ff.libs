@@ -27,6 +27,7 @@ namespace phpformsframework\libs\delivery\drivers;
 
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
+use phpformsframework\libs\dto\DataError;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\Log;
@@ -315,7 +316,9 @@ abstract class Mailer
             $this->phpmailer();
         }
 
-        return $this->getResult(Debug::stopWatch("mailer/send"));
+        Debug::stopWatch("mailer/send");
+
+        return $this->getResult();
     }
 
     private function phpmailer()
@@ -434,11 +437,11 @@ abstract class Mailer
     }
 
     /**
-     * @param float $exTime
-     * @return array
+     * @return DataError
      */
-    private function getResult($exTime = null)
+    private function getResult()
     {
+        $dataError                                          = new DataError();
         if (Error::check(static::ERROR_BUCKET) || Constant::DEBUG) {
             $dump = array(
                 "source" => Debug::stackTrace()
@@ -451,7 +454,7 @@ abstract class Mailer
                 , " cc" => $this->cc
                 , " bcc" => $this->bcc
                 , " error" => Error::raise(static::ERROR_BUCKET)
-                , " exTime" => $exTime
+                , " exTime" => Debug::exTime("mailer/send")
             );
             if (Error::check(static::ERROR_BUCKET)) {
                 Log::error($dump);
@@ -460,19 +463,11 @@ abstract class Mailer
             }
         }
 
+        if (Error::check(static::ERROR_BUCKET)) {
+            $dataError->error(500, Error::raise(static::ERROR_BUCKET));
+        }
 
-        return (Error::check(static::ERROR_BUCKET)
-            ? array(
-                "status"    => 500
-                , "error"   => Error::raise(static::ERROR_BUCKET)
-                , "exTime"  => $exTime
-            )
-            : array(
-                "status"    => 0
-                , "error"   => ""
-                , "exTime"  => $exTime
-            )
-        );
+        return $dataError;
     }
 
     public function preview($subject = null, $message = null)

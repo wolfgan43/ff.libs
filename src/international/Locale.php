@@ -136,7 +136,7 @@ class Locale implements Configurable
         $res                                                            = $cache->get("rawdata");
 
         if (!$res) {
-            $config                                                     = Config::rawData("locale", true);
+            $config                                                     = Config::rawData(Config::SCHEMA_LOCALE, true);
 
             if (is_array($config)) {
                 $lang_tiny_code                                         = Env::get("LANG_TINY_CODE");

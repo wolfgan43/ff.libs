@@ -156,6 +156,15 @@ abstract class DataAdapter
 
     /**
      * @param string $key
+     * @return bool
+     */
+    public function isset($key)
+    {
+        return !empty($this->$key);
+    }
+
+    /**
+     * @param string $key
      * @return DataAdapter
      */
     public function unset($key)

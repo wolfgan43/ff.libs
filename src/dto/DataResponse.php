@@ -59,21 +59,40 @@ class DataResponse extends DataAdapter
      */
     public function set($key, $value)
     {
-        $this->data[$key] = $value;
+        $this->data[$key] = (
+            is_object($value)
+            ? (array) $value
+            : $value
+        );
 
         return $this;
     }
 
     /**
      * @param string $key
-     * @return mixed|string|null
+     * @return object|string|null
      */
     public function get($key)
     {
-        return (isset($this->data[$key])
+        $res = (
+            isset($this->data[$key])
             ? $this->data[$key]
             : null
         );
+
+        return (is_array($res)
+            ? (object) $res
+            : $res
+        );
+    }
+
+    /**
+     * @param string $key
+     * @return bool
+     */
+    public function isset($key)
+    {
+        return !empty($this->data[$key]);
     }
 
     /**
@@ -102,5 +121,4 @@ class DataResponse extends DataAdapter
     {
         return $this->data;
     }
-
 }

@@ -174,7 +174,7 @@ class Config implements Dumpable
         $map_name                                                   = $bucket . "_" . $name;
 
         if (!self::$file_maps) {
-            self::load();
+            self::load(); //@todo: da eliminare
         }
 
         Debug::stopWatch("config/loadMap/" . $map_name);

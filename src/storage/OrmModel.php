@@ -72,7 +72,7 @@ class OrmModel extends Mappable
         } elseif ($databaseAdapters) {
             $this->adapters[$databaseAdapters]                                              = $this->setConnector($databaseAdapters);
         } else {
-            $this->adapters                                                                 = array_intersect_key($this->connectors, $this->adapters);
+            $this->adapters                                                                 = array_intersect_key($this->connectors, (array) $this->adapters);
         }
 
         return $this;

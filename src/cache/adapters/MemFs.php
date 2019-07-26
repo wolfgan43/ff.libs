@@ -49,7 +49,7 @@ class MemFs extends MemAdapter
 
         Filemanager::getInstance("php")->write(
             $value,
-            Dir::getDiskPath("cache/data")
+            self::getCacheDiskPath()
             . DIRECTORY_SEPARATOR . $bucket
             . DIRECTORY_SEPARATOR . $name
         );
@@ -87,7 +87,7 @@ class MemFs extends MemAdapter
     {
         $this->getKey("del", $bucket, $name);
         Filemanager::xpurge_dir(
-            Dir::getDiskPath("cache/data")
+            self::getCacheDiskPath()
             . "/" . $bucket
             . "/" . $name
         );
@@ -99,8 +99,14 @@ class MemFs extends MemAdapter
     {
         $this->getKey("clear", $bucket);
         Filemanager::xpurge_dir(
-            Dir::getDiskPath("cache/data")
+            self::getCacheDiskPath()
             . "/" . $bucket
         );
+    }
+
+
+    private function getCacheDiskPath()
+    {
+        return Constant::DISK_PATH . Dir::getDiskPath("cache/data", true);
     }
 }

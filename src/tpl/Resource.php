@@ -29,13 +29,16 @@ namespace phpformsframework\libs\tpl;
 use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\Config;
 use phpformsframework\libs\Debug;
+use phpformsframework\libs\Dir;
 use phpformsframework\libs\Dumpable;
+use phpformsframework\libs\Error;
 use phpformsframework\libs\Mappable;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\storage\Filemanager;
 
 class Resource extends Mappable implements Dumpable
 {
+    const ERROR_BUCKET                          = "resource";
     /**
      * @var Resource
      */
@@ -106,5 +109,17 @@ class Resource extends Mappable implements Dumpable
         }
 
         return $file;
+    }
+
+    public static function load($name, $type)
+    {
+        $path                                   = self::get($name, $type);
+        if ($path) {
+            return Dir::loadFile($path);
+        } else {
+            Error::register("Layout not Found: " . $name, static::ERROR_BUCKET);
+        }
+
+        return null;
     }
 }

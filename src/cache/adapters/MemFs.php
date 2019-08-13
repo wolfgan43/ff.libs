@@ -74,6 +74,7 @@ class MemFs extends MemAdapter
                     . "/" . $name
                 );
         }
+
         return $res;
     }
 

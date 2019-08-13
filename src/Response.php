@@ -33,7 +33,7 @@ class Response
 {
     const ERROR_BUCKET                              = "response";
 
-    private static $content_type = null;
+    private static $content_type                    = null;
 
     public static function setContentType($content_type)
     {
@@ -303,6 +303,12 @@ class Response
 
     private static function invalidAccept($content_type)
     {
-        return isset($_SERVER["HTTP_ACCEPT"]) && $_SERVER["HTTP_ACCEPT"] && strpos($_SERVER["HTTP_ACCEPT"], $content_type) === false;
+        $accept = Request::accept();
+
+        if ($accept == '*/*' && isset($_SERVER["CONTENT_TYPE"])) {
+            $accept = $_SERVER["CONTENT_TYPE"];
+        }
+
+        return $accept && strpos($accept, $content_type) === false;
     }
 }

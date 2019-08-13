@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\international\adapters;
 
+use phpformsframework\libs\Dir;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\international\TranslatorAdapter;
 
@@ -46,7 +47,7 @@ class TranslatorTransltr extends TranslatorAdapter
         } else {
             $res                                        = parent::translate($words, $toLang, $fromLang);
             if (!$res) {
-                $transalted = file_get_contents("http://www.transltr.org/api/translate?text=" . urlencode($words) . "&to=" . strtolower(substr($toLang, 0, 2)) . "&from=" . strtolower(substr($fromLang, 0, 2)) . ($this->code ? "&key=" . $this->code : ""));
+                $transalted = Dir::loadFile("http://www.transltr.org/api/translate?text=" . urlencode($words) . "&to=" . strtolower(substr($toLang, 0, 2)) . "&from=" . strtolower(substr($fromLang, 0, 2)) . ($this->code ? "&key=" . $this->code : ""));
                 if ($transalted) {
                     $buffer                             = json_decode($transalted, true);
                     if ($buffer["translationText"]) {

@@ -250,7 +250,7 @@ class DatabaseMysqli extends DatabaseAdapter
 
                 if ($action == "sort") {
                     $res[$name] 													= "`" . str_replace(".", "`.`", $name) ."` " . (
-                        $value === "-1" || $value === "DESC"
+                        $value === "-1" || $value === "DESC" || $value === "desc"
                                                                                         ? "DESC"
                                                                                         : "ASC"
                                                                                     );

@@ -130,10 +130,10 @@ class Locale implements Configurable
 
     public static function loadSchema()
     {
-        Debug::stopWatch("locale/load");
+        Debug::stopWatch("load/locale");
 
-        $cache                                                          = Mem::getInstance("locale");
-        $res                                                            = $cache->get("rawdata");
+        $cache                                                          = Mem::getInstance("config");
+        $res                                                            = $cache->get("locale");
 
         if (!$res) {
             $config                                                     = Config::rawData(Config::SCHEMA_LOCALE, true);
@@ -173,7 +173,7 @@ class Locale implements Configurable
                 }
             }
 
-            $cache->set("rawdata", array(
+            $cache->set("locale", array(
                 "locale"            => self::$locale,
                 "langDefault"       => self::$langDefault,
                 "countryDefault"    => self::$countryDefault,
@@ -185,7 +185,7 @@ class Locale implements Configurable
             self::$countryDefault                                           = $res["countryDefault"];
         }
 
-        Debug::stopWatch("locale/load");
+        Debug::stopWatch("load/locale");
     }
 
     private static function acceptLanguage($key = null)

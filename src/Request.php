@@ -42,9 +42,12 @@ class Request implements Configurable
     private static $request                                                                     = null;
     private static $rules                                                                       = null;
     private static $headers                                                                     = null;
+    private static $server                                                                      = null;
 
     public static function loadSchema()
     {
+        Debug::stopWatch("load/request");
+
         $config                                                                                 = Config::rawData(Config::SCHEMA_REQUEST, true);
         $schema                                                                                 = array();
         if (isset($config["page"]) && is_array($config["page"]) && count($config["page"])) {
@@ -53,7 +56,7 @@ class Request implements Configurable
                 $schema                                                                         = self::setSchema($request, $page_attr["path"], $schema);
             }
         }
-        $schema                                                 = self::setSchema($config, DIRECTORY_SEPARATOR, $schema);
+        $schema                                                                                 = self::setSchema($config, DIRECTORY_SEPARATOR, $schema);
 
         if (isset($config["pattern"])) {
             self::loadPatterns($config["pattern"]);
@@ -63,6 +66,8 @@ class Request implements Configurable
         }
 
         Config::setSchema($schema, Config::SCHEMA_REQUEST);
+
+        Debug::stopWatch("load/request");
     }
 
     private static function loadAccessControl($config)
@@ -216,6 +221,8 @@ class Request implements Configurable
 
     public static function capture()
     {
+        //self::setServer();
+
         self::security();
 
         self::captureHeaders();
@@ -375,7 +382,13 @@ class Request implements Configurable
             : $referer
         );
     }
-
+    public static function userAgent()
+    {
+        return (isset($_SERVER["HTTP_USER_AGENT"])
+            ? $_SERVER["HTTP_USER_AGENT"]
+            : null
+        );
+    }
     public static function method()
     {
         return (isset($_SERVER["REQUEST_METHOD"])
@@ -388,7 +401,31 @@ class Request implements Configurable
         return isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
     }
 
+    private static function isCommandLineInterface()
+    {
+        return (php_sapi_name() === 'cli');
+    }
 
+    /**
+     * @todo: da terminare
+     */
+    private static function setServer()
+    {
+        self::$server = (
+            self::isCommandLineInterface()
+            ? null
+            : $_SERVER
+        );
+
+        unset($_SERVER);
+    }
+    private static function server($key = null)
+    {
+        return ($key
+            ? self::$server[$key]
+            : self::$server
+        );
+    }
 
     private static function getAccessControl($origin, $key = null)
     {
@@ -820,8 +857,16 @@ class Request implements Configurable
 
     private static function isError($error, $status = 400)
     {
-        $dataResponse                           = new DataResponse();
-        $dataResponse->error($status, $error);
-        Response::send($dataResponse);
+        Response::sendRawData($error, self::accept(), $status);
+    }
+
+    public static function accept()
+    {
+        $arrAccept = array('*/*');
+        if (isset($_SERVER["HTTP_ACCEPT"])) {
+            $arrAccept = explode(",", $_SERVER["HTTP_ACCEPT"]);
+        }
+
+        return $arrAccept[0];
     }
 }

@@ -27,6 +27,8 @@ namespace phpformsframework\libs\tpl\adapters;
 
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
+use phpformsframework\libs\Dir;
+use phpformsframework\libs\dto\DataHtml;
 use phpformsframework\libs\Env;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Mappable;
@@ -34,6 +36,7 @@ use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\Response;
+use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\storage\Media;
 use phpformsframework\libs\tpl\TemplateHtml;
 use phpformsframework\libs\tpl\Gridsystem;
@@ -46,9 +49,9 @@ class PageHtml extends Mappable
 
     private $encoding                           = Constant::ENCODING;
     private $path                               = null;
-    private $css                                = array();
-    private $js                                 = array();
-    private $fonts                              = array();
+    protected $css                              = array();
+    protected $js                               = array();
+    protected $fonts                            = array();
     private $title                              = null;
     private $description                        = null;
     private $lang                               = null;
@@ -69,21 +72,22 @@ class PageHtml extends Mappable
 
     private $GridSystem                         = null;
     private $doctype                            = '<!DOCTYPE html>';
-    private $layout                             = "<main>{content}</main>";
-    private $contents                           = null;
+
+    protected $layout                           = "<main>{content}</main>";
+    private $contents                           = array();
     private $statusCode                         = 200;
     private $email_support                      = null;
 
     public function __construct($map_name = "default")
     {
-        parent::__construct($map_name);
+        parent::__construct($map_name, self::class);
 
         $this->GridSystem                       = Gridsystem::getInstance();
         $this->lang                             = Locale::getLang("tiny_code");
         $this->region                           = Locale::getCountry("tiny_code");
-        $this->js                               = $this->GridSystem->js();
-        $this->css                              = $this->GridSystem->css();
-        $this->fonts                            = $this->GridSystem->fonts();
+        $this->js                               = $this->GridSystem->js() + $this->js;
+        $this->css                              = $this->GridSystem->css() + $this->css;
+        $this->fonts                            = $this->GridSystem->fonts() + $this->fonts;
         $this->path                             = Request::pathinfo();
     }
 
@@ -161,8 +165,8 @@ class PageHtml extends Mappable
     public function addMeta($key, $content, $type = "name")
     {
         $this->meta[$key]                       = array(
-                                                    $type => $key
-                                                    , "content" => $content
+                                                    $type       => $key,
+                                                    "content"   => $content
                                                 );
 
         return $this;
@@ -170,16 +174,69 @@ class PageHtml extends Mappable
 
     public function setLayout($name)
     {
-        $this->layout                           = file_get_contents(Constant::DISK_PATH . $this->getAsset($name, "layout"));
+        $this->layout                           = Resource::load($name, "layouts");
 
         return $this;
     }
 
     public function addContent($content, $where = self::MAIN_CONTENT)
     {
-        $this->contents["{" . $where . "}"]     = $content;
+        $this->setContent($this->getHtml($content), $where);
 
         return $this;
+    }
+
+    /**
+     * @param string|DataHtml|TemplateHtml $content
+     * @return false|string|null
+     */
+    private function getHtml($content)
+    {
+        $html                                   = null;
+        if (is_object($content)) {
+            $html                               = $this->getHtmlByObject($content);
+        } elseif (is_array($content)) {
+            $html                               = false;
+        } elseif (!empty($content)) {
+            $html                               = $this->getHtmlByString($content);
+        }
+
+        return $html;
+    }
+
+    private function getHtmlByObject($obj)
+    {
+        $html                                   = null;
+        if ($obj instanceof TemplateHtml) {
+            $html                               = $obj->display();
+        } elseif ($obj instanceof DataHtml) {
+            $this->addAssets($obj->js, $obj->css, $obj->fonts);
+            $html                               = $obj->html;
+        }
+
+        return $html;
+    }
+    private function getHtmlByString($string)
+    {
+        $html                                   = null;
+        if (strpos($string, DIRECTORY_SEPARATOR) === 0) {
+            if (strpos($string, Constant::DISK_PATH) !== 0) {
+                $string                         = Dir::getDiskPath("views") . $string;
+            }
+            if (pathinfo($string, PATHINFO_EXTENSION) == "php") {
+                ob_start();
+                Dir::autoload($string);
+                $html                           = ob_get_contents();
+                ob_end_clean();
+            } else {
+                $html                           = Dir::loadFile($string);
+            }
+        } elseif (0 && Validator::is($string, "url")) {
+            $html                               = Dir::loadFile($string);
+        } else {
+            $html                               = $string;
+        }
+        return $html;
     }
 
     private function getTitle($include_appname = true)
@@ -286,9 +343,9 @@ class PageHtml extends Mappable
             : null
         );
     }
-    private function setContent($name, $value)
+    private function setContent($content, $key)
     {
-        $this->contents["{" . $name . "}"]      = $value;
+        $this->contents["{" . $key . "}"]      = $content;
         return $this;
     }
 
@@ -312,20 +369,37 @@ class PageHtml extends Mappable
             $tpl->parse("SezButtonSupport", false);
         }
 
-        return $tpl->rpparse("main", false);
+        return $tpl->display();
     }
 
     private function parseLayout()
     {
-        if ($this->statusCode != 200) {
-            $this->setContent(self::MAIN_CONTENT, $this->getPageError($this->getContent(self::MAIN_CONTENT), $this->statusCode));
-        }
-
-        return str_replace(
+        $layout = str_replace(
             array_keys($this->contents),
             array_values($this->contents),
             $this->layout
         );
+        $commons = array();
+        $resources = Resource::type("common");
+        foreach ($resources as $key => $path) {
+            $tpl_key = "{" . $key . "}";
+            if (strpos($layout, $tpl_key) !== false) {
+                $class_name = ucfirst($key);
+                if (class_exists($class_name)) {
+                    $path = new $class_name();
+                }
+
+                $commons[$tpl_key] = $this->getHtml($path);
+            }
+        }
+
+        $layout = str_replace(
+            array_keys($commons),
+            array_values($commons),
+            $layout
+        );
+
+        return $layout;
     }
 
     private function parseHead()
@@ -379,16 +453,28 @@ class PageHtml extends Mappable
             ;
     }
 
-    public function process()
+    /**
+     * @return DataHtml
+     */
+    public function render()
     {
         //       \phpformsframework\cms\Cm::widget("SeoCheckUp", array("url" => "http://miodottore.it/ginecologo/milano"));
 //        \phpformsframework\cms\Cm::widget("SeoCheckUp", array("url" => "https://paginemediche.it/medici-online/search/ginecologo/lombardia/mi/milano"));
-        return $this->parseHtml();
+
+        if ($this->statusCode != 200) {
+            $this->js = array();
+            $this->setContent($this->getPageError($this->getContent(self::MAIN_CONTENT), $this->statusCode), self::MAIN_CONTENT);
+        }
+
+        $dataHtml = new DataHtml();
+        $dataHtml->html($this->parseHtml());
+
+        return $dataHtml;
     }
 
 
 
-    private function getAsset($what, $type)
+    protected function getAsset($what, $type)
     {
         $asset = null;
         foreach ((array) $what as $name) {

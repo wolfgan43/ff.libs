@@ -29,6 +29,7 @@ namespace phpformsframework\libs\storage;
 use phpformsframework\libs\Config;
 use phpformsframework\libs\Configurable;
 use phpformsframework\libs\Constant;
+use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dir;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Hook;
@@ -702,7 +703,7 @@ class Media implements Configurable
 
     private static function image2base64($path, $ext = "svg")
     {
-        $data = file_get_contents($path);
+        $data = Dir::loadFile($path);
 
         return 'data:image/' . $ext . ';base64,' . base64_encode($data);
     }
@@ -740,6 +741,8 @@ class Media implements Configurable
     }
     public static function loadSchema()
     {
+        Debug::stopWatch("load/media");
+
         $config                                                     = Config::rawData(static::SCHEMA_BUCKET, true, "thumb");
         if (is_array($config) && count($config)) {
             $schema                                                 = array();
@@ -752,6 +755,8 @@ class Media implements Configurable
 
             Config::setSchema($schema, static::SCHEMA_BUCKET);
         }
+
+        Debug::stopWatch("load/media");
     }
 
     /**
@@ -1020,7 +1025,7 @@ class Media implements Configurable
             $cache_final_file                                       = $this->basepathCache() . $this->pathinfo["orig"];
             Filemanager::makeDir(dirname($cache_final_file), 0775, $this->basepathCache());
             if (is_readable(Constant::LIBS_DISK_PATH . $source_file) && is_writable(dirname($cache_final_file)) && copy(Constant::LIBS_DISK_PATH . $source_file, $cache_final_file)) {
-                $res = file_get_contents($cache_final_file);
+                $res = Dir::loadFile($cache_final_file);
             } else {
                 Error::register("Link Failed. Check write permission on: " . $source_file . " and if directory exist and have write permission on " . Request::pathinfo(), static::ERROR_BUCKET);
             }

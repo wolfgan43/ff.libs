@@ -32,6 +32,7 @@ use phpformsframework\libs\Log;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\Response;
 use phpformsframework\libs\Config;
+use phpformsframework\libs\Debug;
 
 class Buckler implements Configurable
 {
@@ -39,6 +40,8 @@ class Buckler implements Configurable
 
     public static function loadSchema()
     {
+        Debug::stopWatch("load/buckler");
+
         $config                                                 = Config::rawData(static::SCHEMA_BUCKET, true, "rule");
 
         if (is_array($config) && count($config)) {
@@ -52,6 +55,8 @@ class Buckler implements Configurable
 
             Config::setSchema($schema, static::SCHEMA_BUCKET);
         }
+
+        Debug::stopWatch("load/buckler");
     }
     public static function protectMyAss()
     {

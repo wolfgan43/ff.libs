@@ -61,6 +61,19 @@ class Env implements Configurable
 
         return self::$env[$key];
     }
+
+    /**
+     * @param array $values
+     * @return array
+     */
+    public static function fill($values)
+    {
+        self::$env                                                  = array_replace(self::$env, $values);
+
+        return self::$env;
+    }
+
+
     public static function getPackage($key = null)
     {
         $package_disk_path                                          = Dir::getDiskPath("config/packages");
@@ -92,12 +105,12 @@ class Env implements Configurable
 
     public static function loadSchema($config = null, $bucket = "default")
     {
-        Debug::stopWatch("env/config");
-        $cache                                                      = Mem::getInstance("env");
-        $res                                                        = $cache->get("rawdata");
+        Debug::stopWatch("load/env");
+        $cache                                                      = Mem::getInstance("config");
+        $res                                                        = $cache->get("env");
         if (!$res) {
             if (!$config) {
-                $config = Config::rawData(Config::SCHEMA_ENV, true);
+                $config                                             = Config::rawData(Config::SCHEMA_ENV, true);
             }
             if (is_array($config) && count($config)) {
                 foreach ($config as $key => $value) {
@@ -107,7 +120,7 @@ class Env implements Configurable
                 }
             }
 
-            $cache->set("rawdata", array(
+            $cache->set("env", array(
                 "env"       => self::$env,
                 "packages"  => self::$packages,
             ));
@@ -115,6 +128,6 @@ class Env implements Configurable
             self::$env                                              = $res["env"];
             self::$packages                                         = $res["packages"];
         }
-        Debug::stopWatch("env/config");
+        Debug::stopWatch("load/env");
     }
 }

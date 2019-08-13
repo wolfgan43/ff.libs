@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\storage\adapters;
 
+use phpformsframework\libs\Dir;
 use phpformsframework\libs\storage\drivers\Array2XML;
 use phpformsframework\libs\storage\FilemanagerAdapter;
 use Exception;
@@ -36,7 +37,7 @@ class FilemanagerXml extends FilemanagerAdapter
 
     protected function load_file($file_path, $var = null)
     {
-        $xmlstring                                              = file_get_contents($file_path);
+        $xmlstring                                              = Dir::loadFile($file_path);
         return ($xmlstring
             ? Array2XML::XML_TO_ARR($xmlstring)
             : false

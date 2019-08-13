@@ -76,7 +76,8 @@ abstract class FilemanagerAdapter
                 $res                                                    = $return;
             }
         } elseif ($return === false) {
-            Error::register("syntax errors into file" . (Constant::DEBUG ? ": " . $params->file_path : ""), static::ERROR_BUCKET);
+            Error::registerWarning("syntax errors into file" . (Constant::DEBUG ? ": " . $params->file_path : ""), static::ERROR_BUCKET);
+            return false;
         }
 
         return $this->getResult($res);
@@ -231,7 +232,10 @@ abstract class FilemanagerAdapter
      */
     private function isValid($file_path)
     {
-        return strpos($file_path, Constant::DISK_PATH) === 0;
+        return (Constant::DEBUG
+            ? true
+            : strpos($file_path, Constant::DISK_PATH) === 0
+        );
     }
 
     /**
@@ -259,18 +263,17 @@ abstract class FilemanagerAdapter
 
     /**
      * @param string $file_path
-     * @param null|string $ext
      */
-    public function setFilePath($file_path, $ext = null)
+    public function setFilePath($file_path)
     {
         Error::clear(static::ERROR_BUCKET);
-        if (!$ext) {
-            $ext = $this::EXT;
-        }
 
-        $abs_path                                                   = dirname($file_path) . DIRECTORY_SEPARATOR . basename($file_path, "." . $ext) . "." . $ext;
+        $abs_path                                                   = $file_path;
+        if (!pathinfo($abs_path, PATHINFO_EXTENSION)) {
+            $abs_path                                               .= "." . $this::EXT;
+        }
         if (strpos($file_path, Constant::DISK_PATH) !== 0) {
-            $abs_path = Constant::DISK_PATH . $abs_path;
+            $abs_path                                               = Constant::DISK_PATH . $abs_path;
         }
         $this->file_path                                            = $abs_path;
     }

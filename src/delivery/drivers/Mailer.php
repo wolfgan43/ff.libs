@@ -377,7 +377,6 @@ abstract class Mailer
         $mail->AllowEmpty                                   = true;
         $mail->Body                                         = $this->processBody();
         $mail->AltBody                                      = $this->processBodyAlt();
-
         /*
          * Images
          */

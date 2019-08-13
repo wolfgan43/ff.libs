@@ -27,6 +27,7 @@ namespace phpformsframework\libs\tpl;
 
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
+use phpformsframework\libs\Dir;
 use phpformsframework\libs\Hook;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\cache\Mem;
@@ -98,7 +99,7 @@ class TemplateHtml extends Hook
             if ($root_element !== null) {
                 $this->root_element = $root_element;
             }
-            $this->DBlocks[$this->root_element] = @file_get_contents($template_path);
+            $this->DBlocks[$this->root_element] = Dir::loadFile($template_path);
             if ($this->DBlocks[$this->root_element] !== false) {
                 $this->getDVars();
                 $nName = $this->NextDBlockName($this->root_element);
@@ -274,6 +275,13 @@ class TemplateHtml extends Hook
         return $this->DBlocks[$sName];
     }
 
+    /**
+     * @param string $sName
+     * @param string  $sValue
+     * @return bool
+     *
+     * @todo Da eliminare
+     */
     public function set_var($sName, $sValue)
     {
         $this->ParsedBlocks[$sName] = $sValue;
@@ -290,10 +298,6 @@ class TemplateHtml extends Hook
     {
         return (bool)($this->ParsedBlocks[$sName]);
     }
-
-
-
-
 
     public function parse($sTplName, $bRepeat, $bBefore = false)
     {
@@ -315,17 +319,39 @@ class TemplateHtml extends Hook
         return false;
     }
 
+    /**
+     * @deprecated
     public function pparse($block_name, $is_repeat)
     {
         echo $this->rpparse($block_name, $is_repeat);
     }
-
-    public function rpparse($block_name, $is_repeat)
+    private function rpparse($block_name, $is_repeat)
     {
         $this->parse($block_name, $is_repeat);
         return $this->getBlockContent($block_name);
     }
+    */
 
+    /**
+     * @param string $name
+     * @param string $value
+     * @return $this
+     */
+    public function assign($name, $value)
+    {
+        $this->ParsedBlocks[$name] = $value;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function display()
+    {
+        $this->parse($this->root_element, false);
+        return $this->getBlockContent($this->root_element);
+    }
     public function getBlockContent($block_name, $minify = null)
     {
         $minify = ($minify === null ? $this->minify : $minify);

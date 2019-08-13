@@ -28,33 +28,48 @@ namespace phpformsframework\libs;
 abstract class Mappable
 {
     const ERROR_BUCKET          = "mappable";
-    public function __construct($map_name)
+
+    public function __construct($map, $prefix = null)
     {
-        $this->loadMap($map_name);
+        if (is_array($map)) {
+            $this->autoMapping($map);
+        } else {
+            $this->loadMap($map, $prefix);
+        }
     }
 
-    private function getPrefix()
+    private function getPrefix($class_name = null)
     {
-        $arrClass               = explode("\\", static::class);
+        if (!$class_name) {
+            $class_name         = static::class;
+        }
+        $arrClass               = explode("\\", $class_name);
 
         return strtolower(end($arrClass));
     }
 
-    protected function loadMap($name)
+    protected function loadMap($name, $prefix = null)
     {
-        $prefix                 = self::getPrefix();
         Debug::stopWatch("mapping/" . $prefix . "_" . $name);
 
-        $extensions             = Config::mapping($prefix, $name);
-        if (is_array($extensions) && count($extensions)) {
-            $has                = get_object_vars($this);
-            foreach ($has as $key => $oldValue) {
-                $this->$key    = isset($extensions[$key]) ? $extensions[$key] : $oldValue;
-            }
+        $prefix                 = self::getPrefix($prefix);
+        $map                    = Config::mapping($prefix, $name);
+        if (is_array($map) && count($map)) {
+            $this->autoMapping($map);
         } else {
-            Error::register(basename(str_replace("\\", DIRECTORY_SEPARATOR, get_called_class())) . ": " . $name . " not found", static::ERROR_BUCKET);
+            Error::register(basename(str_replace("\\", DIRECTORY_SEPARATOR, get_called_class())) . ": " . $prefix . "_" . $name . " not found", static::ERROR_BUCKET);
         }
 
         Debug::stopWatch("mapping/" . $prefix . "_" . $name);
+    }
+
+    protected function autoMapping($map)
+    {
+        $has                    = get_object_vars($this);
+        $properties             = array_intersect_key($map, $has);
+
+        foreach ($properties as $key => $value) {
+            $this->$key         = $value;
+        }
     }
 }

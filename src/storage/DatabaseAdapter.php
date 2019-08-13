@@ -1253,13 +1253,13 @@ abstract class DatabaseAdapter
                     } elseif (!is_numeric($value) && strtotime($value)) {
                         $fields[$name]                                      = strtotime($value);
                     } elseif (strpos($value, ".") !== false || strpos($value, ",") !== false) {
-                        $fields[$name]                                      = (double) str_replace(".", ",", $value);
+                        $fields[$name]                                      = (double) str_replace(",", ".", $value);
                     } elseif ($value == "empty") {
                         $fields[$name]                                      = 0;
                     } else {
                         $fields[$name]                                      = (int)$value;
                         if ($fields[$name] >= pow(2, 31)) {
-                            Error::register($name . "is too long", static::ERROR_BUCKET);
+                            Error::register($name . " is too long", static::ERROR_BUCKET);
                         }
                     }
                     break;
@@ -1273,7 +1273,7 @@ abstract class DatabaseAdapter
                         } else {
                             $fields[$name]                                  = implode(",", array_unique($value));
                         }
-                    } elseif(is_object($value)) {
+                    } elseif (is_object($value)) {
                         $fields[$name]                                      = json_encode(get_object_vars($value));
                     } elseif (strrpos($value, "++") === strlen($value) -2) {
                         $op                                                 = "++";

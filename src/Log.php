@@ -48,7 +48,6 @@ class Log
     const FORMAT_CLE                                            = "cle";
     const FORMAT_LSS                                            = "lss";
 
-
     const REQUEST                                               = array(
                                                                     "message"           => "message"
                                                                     , "routine"         => "routine"

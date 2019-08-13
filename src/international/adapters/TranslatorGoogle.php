@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\international\adapters;
 
+use phpformsframework\libs\Dir;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\international\TranslatorAdapter;
 
@@ -46,7 +47,7 @@ class TranslatorGoogle extends TranslatorAdapter
         } else {
             $res                                        = parent::translate($words, $toLang, $fromLang);
             if (!$res) {
-                $transalted                             = file_get_contents("https://translation.googleapis.com/language/translate/v2?q=" . urlencode($words) . "&target=" . substr($toLang, 0, 2) . "&source=" . substr($fromLang, 0, 2) . ($this->code ? "&key=" . $this->code : ""));
+                $transalted                             = Dir::loadFile("https://translation.googleapis.com/language/translate/v2?q=" . urlencode($words) . "&target=" . substr($toLang, 0, 2) . "&source=" . substr($fromLang, 0, 2) . ($this->code ? "&key=" . $this->code : ""));
                 if ($transalted) {
                     $buffer                             = json_decode($transalted, true);
                     if (!$buffer["error"] && $buffer["responseData"]["translatedText"]) {

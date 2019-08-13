@@ -26,6 +26,7 @@
 namespace phpformsframework\libs\security;
 
 use InvalidArgumentException;
+use phpformsframework\libs\Request;
 
 class Discover
 {
@@ -84,18 +85,14 @@ class Discover
      * @author Jesse G. Donat <donatj@gmail.com>
      * @link https://github.com/donatj/PhpUserAgent
      * @link http://donatstudios.com/PHP-Parser-HTTP_USER_AGENT
-     * @param string|null $u_agent User agent string to parse or null. Uses $_SERVER['HTTP_USER_AGENT'] on NULL
+     * @param string|null $u_agent User agent string to parse or null. Uses HTTP_USER_AGENT on NULL
      * @throws InvalidArgumentException on not having a proper user agent to parse.
      * @return string[] an array with browser, version and platform keys
      */
     public static function parse_user_agent($u_agent = null)
     {
-        if (is_null($u_agent)) {
-            if (isset($_SERVER['HTTP_USER_AGENT'])) {
-                $u_agent = $_SERVER['HTTP_USER_AGENT'];
-            } else {
-                throw new InvalidArgumentException('parse_user_agent requires a user agent');
-            }
+        if (!$u_agent) {
+            $u_agent = Request::userAgent();
         }
         $platform = null;
         $browser  = null;
@@ -243,7 +240,7 @@ class Discover
     {
         $visitor                        = false;
         if ($user_agent === null) {
-            $user_agent = $_SERVER["HTTP_USER_AGENT"];
+            $user_agent = Request::userAgent();
         }
 
         if (!self::isCrawler($user_agent)) {

@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\international\adapters;
 
+use phpformsframework\libs\Dir;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\international\TranslatorAdapter;
 
@@ -46,7 +47,7 @@ class TranslatorTranslated extends TranslatorAdapter
         } else {
             $res                                        = parent::translate($words, $toLang, $fromLang);
             if (!$res) {
-                $transalted                             = file_get_contents("http://api.mymemory.translated.net/get?q=" . urlencode($words) . "&langpair=" . $fromLang . "|" . $toLang . ($this->code ? "&key=" . $this->code : ""));
+                $transalted                             = Dir::loadFile("http://api.mymemory.translated.net/get?q=" . urlencode($words) . "&langpair=" . $fromLang . "|" . $toLang . ($this->code ? "&key=" . $this->code : ""));
                 if ($transalted) {
                     $buffer                             = json_decode($transalted, true);
                     if ($buffer["responseStatus"] == 200 && $buffer["responseData"]["translatedText"]) {

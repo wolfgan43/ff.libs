@@ -59,6 +59,9 @@ class Router implements Configurable
     }
     public static function loadSchema()
     {
+        Debug::stopWatch("load/router");
+
+        $schema                                             = null;
         $config                                             = Config::rawData(Config::SCHEMA_ROUTER, true, "rule");
         if (is_array($config) && count($config)) {
             $schema                                         = array();
@@ -73,17 +76,19 @@ class Router implements Configurable
             }
             Config::setSchema($schema, Config::SCHEMA_ROUTER);
         }
+
+        Debug::stopWatch("load/router");
     }
 
     public function __construct()
     {
-        $cache = Mem::getInstance("router");
-        $res = $cache->get("rawdata");
-
+        Debug::stopWatch("load/router");
+        $cache = Mem::getInstance("config");
+        $res = $cache->get("router");
         if (!$res) {
             $this->addRules(Config::getSchema(Config::SCHEMA_ROUTER));
 
-            $cache->set("rawdata", array(
+            $cache->set("router", array(
                 "rules" => $this->rules,
                 "alias" => $this->alias
             ));
@@ -91,6 +96,7 @@ class Router implements Configurable
             $this->rules = $res["rules"];
             $this->alias = $res["alias"];
         }
+        Debug::stopWatch("load/router");
     }
 
     public function check($path, $source = null)

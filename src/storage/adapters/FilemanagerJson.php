@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\storage\adapters;
 
+use phpformsframework\libs\Dir;
 use phpformsframework\libs\storage\FilemanagerAdapter;
 
 class FilemanagerJson extends FilemanagerAdapter //todo: da finire
@@ -33,7 +34,8 @@ class FilemanagerJson extends FilemanagerAdapter //todo: da finire
 
     protected function load_file($file_path, $var = null)
     {
-        $json                                                   = file_get_contents($file_path);
+        $json                                                   = Dir::loadFile($file_path);
+
         return ($json
             ? json_decode($json, true)
             : false

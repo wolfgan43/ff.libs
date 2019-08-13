@@ -26,66 +26,15 @@
 
 namespace phpformsframework\libs\dto;
 
-class DataHtml extends DataAdapter {
-    const CONTENT_TYPE = "text/html";
-    /**
-     * @var null|string
-     */
-    public $html = null;
+use phpformsframework\libs\Mappable;
+use phpformsframework\libs\Request;
 
-    /**
-     * @var null|array
-     */
-    public $js = null;
+class DataRequestHeader extends Mappable
+{
+    use Manipulation;
 
-    /**
-     * @var null|array
-     */
-    public $css = null;
-
-    /**
-     * @var null|array
-     */
-    public $fonts = null;
-
-    /**
-     * @param string
-     * @return $this
-     */
-    public function html($value)
+    public function __construct()
     {
-        $this->set("html", $value);
-
-        return $this;
-    }
-
-    /**
-     * @param array $values
-     * @return $this
-     */
-    public function css($values = null)
-    {
-        $this->set("css", $values);
-
-        return $this;
-    }
-
-    /**
-     * @param array $values
-     * @return $this
-     */
-    public function js($values)
-    {
-        $this->set("js", $values);
-
-        return $this;
-    }
-
-    /**
-     * @return null|string
-     */
-    public function output()
-    {
-        return $this->html;
+        parent::__construct(Request::headers());
     }
 }

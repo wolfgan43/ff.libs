@@ -30,9 +30,9 @@ class DataResponse extends DataAdapter
 {
     const CONTENT_TYPE = "application/json";
     /**
-     * @var null|array
+     * @var array
      */
-    public $data = null;
+    public $data = array();
     /**
      * @var null|int
      */
@@ -47,7 +47,23 @@ class DataResponse extends DataAdapter
      */
     public function fill($values)
     {
-        $this->data = $values;
+        $this->data = array_replace($this->data, $values);
+
+        return $this;
+    }
+
+    /**
+     * @param array $values
+     * @param null|string $bucket
+     * @return DataAdapter
+     */
+    public function filter($values, $bucket = null)
+    {
+        if (isset($this->data[$bucket])) {
+            $this->data[$bucket]    = array_diff_key($this->data[$bucket], array_fill_keys($values, true));
+        } elseif (!$bucket) {
+            $this->data             = array_diff_key($this->data, $values);
+        }
 
         return $this;
     }
@@ -70,7 +86,7 @@ class DataResponse extends DataAdapter
 
     /**
      * @param string $key
-     * @return object|string|null
+     * @return \stdClass|string|null
      */
     public function get($key)
     {

@@ -184,7 +184,7 @@ class OrmModel extends Mappable
      */
     public function read($fields = null, $where = null, $sort = null, $limit = null)
     {
-        if (!$where && !$sort && !$limit) {
+        if (0 && !$where && !$sort && !$limit) {
             $where                                                                          = $fields;
             $fields                                                                         = null;
         }
@@ -200,7 +200,7 @@ class OrmModel extends Mappable
      */
     public function readRawData($fields = null, $where = null, $sort = null, $limit = null)
     {
-        if (!$where && !$sort && !$limit) {
+        if (0 && !$where && !$sort && !$limit) {
             $where                                                                          = $fields;
             $fields                                                                         = null;
         }

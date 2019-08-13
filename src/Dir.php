@@ -63,6 +63,17 @@ class Dir
         return $rc;
     }
 
+    public static function loadFile($path, $context = null)
+    {
+        return file_get_contents($path, false, $context);
+    }
+
+
+    /**
+     * @param array $item
+     * @param null|string $key
+     * @return mixed
+     */
     public static function getXmlAttr($item, $key = null)
     {
         $res = (

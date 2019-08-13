@@ -63,13 +63,6 @@ abstract class App implements Dumpable
     {
         self::$page = (array) $page;
     }
-    public static function env($name = null, $value = null)
-    {
-        return ($value
-            ? Env::set($name, $value)
-            : Env::get($name)
-        );
-    }
 
     protected static function hook($name, $func, $priority = null)
     {
@@ -95,6 +88,12 @@ abstract class App implements Dumpable
         return $res;
     }
 
+    /**
+     * @param string $name
+     * @param null|array $config
+     * @param null|string $return
+     * @return dto\DataHtml
+     */
     public static function widget($name, $config = null, $return = null)
     {
         $schema                         = Config::getSchema("widgets");
@@ -111,7 +110,7 @@ abstract class App implements Dumpable
 
         return Widget::getInstance($name, $class_name::NAME_SPACE)
             ->setConfig($config)
-            ->process($return);
+            ->render($return);
     }
     public static function page($name, $config = null)
     {

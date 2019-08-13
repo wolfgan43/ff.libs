@@ -112,7 +112,7 @@ abstract class DataAdapter
      */
     public function debug($data)
     {
-        $this->debug                        = $data;
+        $this->debug                        = ($this->debug ? $this->debug . " " : "") . $data;
 
         return $this;
     }
@@ -125,6 +125,22 @@ abstract class DataAdapter
     {
         foreach ($values as $key => $value) {
             $this->$key                     = $value;
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param array $values
+     * @return DataAdapter
+     */
+    public function filter($values)
+    {
+        $vars                               = get_object_vars($this);
+        foreach ($vars as $key => $value) {
+            if (isset($values[$key])) {
+                unset($this->$key);
+            }
         }
 
         return $this;

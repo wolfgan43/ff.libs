@@ -37,6 +37,7 @@ ServerTokens Prod
   - ext-dom
   - ext-simplexml
   - ext-libxml
+  - ext-mbstring
 
 >Ambiente Dev: Installazione di Xhprof https://www.php.net/manual/en/book.xhprof.php
 

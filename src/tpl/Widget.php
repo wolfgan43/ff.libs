@@ -60,6 +60,10 @@ abstract class Widget
     {
         return null;
     }
+
+    /**
+     * @return DataHtml
+     */
     private function getPage()
     {
         return Page::getInstance("html")
@@ -67,7 +71,7 @@ abstract class Widget
             ->addAssets($this->js, $this->css)
             //->setLayout("empty")
             ->addContent($this->html)
-            ->process();
+            ->render();
     }
     /**
      * @param string $name
@@ -103,7 +107,7 @@ abstract class Widget
         $script_name                            = Resource::get($widget_name . "/js", "widget");
         if ($html_name) {
             $tpl                                = $this->processTemplate($html_name, $config);
-            $this->html                         = $tpl->rpparse("main", false);
+            $this->html                         = $tpl->display();
             if ($css_name) {
                 $this->addCss($widget_name, $css_name);
             }
@@ -117,30 +121,27 @@ abstract class Widget
         Debug::stopWatch("widget/" . $widget_name);
     }
 
-    public function process($return = null)
+    /**
+     * @param null|string $return
+     * @return DataHtml
+     */
+    public function render($return = null)
     {
         $this->loadTemplate();
 
         $output                                 = new DataHtml();
         switch ($return) {
             case "snippet":
-                //$output                         = array("html" => $this->getSnippet());
                 $output->html($this->getSnippet());
                 break;
             case "page":
-               // $output                         = array("html" =>  $this->getPage());
-                $output->html($this->getPage());
+                $output                         = $this->getPage();
                 break;
             default:
                 $output
                     ->html($this->html)
                     ->css($this->css)
                     ->js($this->js);
-               /* $output                         = array(
-                                                    "html"  => $this->html
-                                                    , "css" => $this->css
-                                                    , "js"  => $this->js
-                                                );*/
         }
 
         return $output;

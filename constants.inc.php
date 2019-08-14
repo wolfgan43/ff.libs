@@ -42,10 +42,9 @@ if (DEBUG_MODE) {
 
 
     $_SERVER["HTTPS"] = "on";
-
-    if(!isset($_SERVER["HTTP_HOST"])) {
-        $_SERVER["HTTP_HOST"] = null;
-    }
+}
+if (!isset($_SERVER["HTTP_HOST"])) {
+    $_SERVER["HTTP_HOST"] = null;
 }
 
 define("VENDOR_LIBS_DIR", DIRECTORY_SEPARATOR .  "vendor" . DIRECTORY_SEPARATOR . "phpformsframework" . DIRECTORY_SEPARATOR . "libs");

@@ -25,13 +25,30 @@
  */
 namespace phpformsframework\libs;
 
-
 /**
  * Interface Configurable
  * @package phpformsframework\libs
- * @todo da aggiungere getSchema e gestire meglio le dipendenze
  */
 interface Configurable
 {
-    public static function loadSchema();
+    const METHOD_MERGE      = Config::RAWDATA_XML_MERGE_RECOURSIVE;
+    const METHOD_REPLACE    = Config::RAWDATA_XML_REPLACE;
+
+    /**
+     * @param dto\ConfigRules $configRules
+     * @return dto\ConfigRules
+     */
+    public static function loadConfigRules($configRules);
+
+    /**
+     * @param array $config
+     * @return void
+     */
+    public static function loadConfig($config);
+
+    /**
+     * @param array $rawdata
+     * @return array
+     */
+    public static function loadSchema($rawdata);
 }

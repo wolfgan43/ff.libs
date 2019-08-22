@@ -25,11 +25,10 @@
  */
 namespace phpformsframework\libs;
 
-use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\storage\Filemanager;
 use DirectoryIterator;
 
-class Env implements Configurable
+class Env implements Configurable, Dumpable
 {
     private static $env                                             = array();
     private static $packages                                        = null;
@@ -103,31 +102,35 @@ class Env implements Configurable
         );
     }
 
-    public static function loadSchema($config = null, $bucket = "default")
+    public static function loadConfigRules($configRules)
     {
-        Debug::stopWatch("load/env");
-        $cache                                                      = Mem::getInstance("config");
-        $res                                                        = $cache->get("env");
-        if (!$res) {
-            if (!$config) {
-                $config                                             = Config::rawData(Config::SCHEMA_ENV, true);
-            }
-            if (is_array($config) && count($config)) {
-                foreach ($config as $key => $value) {
-                    self::$packages[$bucket][$key]                  = Dir::getXmlAttr($value);
+        return $configRules
+            ->add("env", self::METHOD_REPLACE);
+    }
+    public static function loadConfig($config)
+    {
+        self::$env                                                  = $config["env"];
+        self::$packages                                             = $config["packages"];
+    }
 
-                    self::$env[$key]                                = self::$packages[$bucket][$key]["value"];
-                }
-            }
+    public static function loadSchema($rawdata, $bucket = "default")
+    {
+        if (is_array($rawdata) && count($rawdata)) {
+            foreach ($rawdata as $key => $value) {
+                self::$packages[$bucket][$key]                  = Dir::getXmlAttr($value);
 
-            $cache->set("env", array(
-                "env"       => self::$env,
-                "packages"  => self::$packages,
-            ));
-        } else {
-            self::$env                                              = $res["env"];
-            self::$packages                                         = $res["packages"];
+                self::$env[$key]                                = self::$packages[$bucket][$key]["value"];
+            }
         }
-        Debug::stopWatch("load/env");
+
+        return array(
+            "env"       => self::$env,
+            "packages"  => self::$packages,
+        );
+    }
+
+    public static function dump()
+    {
+        return self::$env;
     }
 }

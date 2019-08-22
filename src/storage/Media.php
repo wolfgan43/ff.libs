@@ -26,10 +26,8 @@
 
 namespace phpformsframework\libs\storage;
 
-use phpformsframework\libs\Config;
 use phpformsframework\libs\Configurable;
 use phpformsframework\libs\Constant;
-use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dir;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Hook;
@@ -70,7 +68,6 @@ use phpformsframework\libs\tpl\Resource;
 class Media implements Configurable
 {
     const ERROR_BUCKET                                              = "storage";
-    const SCHEMA_BUCKET                                             = "media";
 
     const STRICT                                                    = false;
     const RENDER_MEDIA_PATH                                         = DIRECTORY_SEPARATOR . "media";
@@ -550,11 +547,11 @@ class Media implements Configurable
      * @var Media
      */
     private static $singleton                                       = null;
+    private static $modes                                           = null;
 
     private $basepath                                               = null;
-    private $pathinfo                                               = null;
 
-    private $modes                                                  = null;
+    private $pathinfo                                               = null;
 
     private $wmk                                                    = null;
     private $filesource                                             = null;
@@ -739,41 +736,34 @@ class Media implements Configurable
 
         Response::sendHeaders($params);
     }
-    public static function loadSchema()
-    {
-        Debug::stopWatch("load/media");
 
-        $config                                                     = Config::rawData(static::SCHEMA_BUCKET, true, "thumb");
-        if (is_array($config) && count($config)) {
+    public static function loadConfigRules($configRules)
+    {
+        return $configRules
+            ->add("media", self::METHOD_REPLACE);
+    }
+
+    public static function loadConfig($config)
+    {
+        self::$modes                                                = $config["modes"];
+    }
+
+    public static function loadSchema($rawdata)
+    {
+        if (is_array($rawdata) && count($rawdata)) {
             $schema                                                 = array();
-            foreach ($config as $thumb) {
+            foreach ($rawdata as $thumb) {
                 $attr                                               = Dir::getXmlAttr($thumb);
                 $key                                                = $attr["name"];
                 unset($attr["name"]);
                 $schema[$key]                                       = $attr;
             }
 
-            Config::setSchema($schema, static::SCHEMA_BUCKET);
+            self::$modes                                            = $schema;
         }
 
-        Debug::stopWatch("load/media");
-    }
-
-    /**
-     * @param null $mode
-     * @return mixed
-     */
-    public static function getModes($mode = null)
-    {
-        $loaded_modes                                               = Config::getSchema(static::SCHEMA_BUCKET);
-
-        if (!isset($loaded_modes[$mode])) {
-            $loaded_modes[$mode] = null;
-        }
-
-        return ($mode
-            ? $loaded_modes[$mode]
-            : $loaded_modes
+        return array(
+            "modes" => self::$modes
         );
     }
 
@@ -872,11 +862,12 @@ class Media implements Configurable
         $arrFilename   			                                    = explode("-", $filename);
 
         $offset                                                     = count($arrFilename) - 1;
-        $modes                                                      = self::getModes();
-        foreach ($modes as $key => $value) {
-            if (strpos($basename, ($offset ? "-" : "") . $key . ".")) {
-                $mode                                           = $key;
-                break;
+        if (is_array(self::$modes) && count(self::$modes)) {
+            foreach (self::$modes as $key => $value) {
+                if (strpos($basename, ($offset ? "-" : "") . $key . ".")) {
+                    $mode                                           = $key;
+                    break;
+                }
             }
         }
         if (!$mode) {
@@ -1418,11 +1409,8 @@ class Media implements Configurable
         }
         $setting                                                    = false;
 
-        if (!$this->modes) {
-            $this->modes                                            = $this->getModes();
-        }
-        if (isset($this->modes[$this->mode])) {
-            $setting                                                = $this->modes[$this->mode];
+        if (isset(self::$modes[$this->mode])) {
+            $setting                                                = self::$modes[$this->mode];
         }
 
         if (!$setting) {

@@ -28,26 +28,27 @@ namespace phpformsframework\libs\dto;
 
 class DataResponse extends DataAdapter
 {
-    const CONTENT_TYPE = "application/json";
+    const CONTENT_TYPE              = "application/json";
+
     /**
      * @var array
      */
-    public $data = array();
+    public $data                    = array();
     /**
      * @var null|int
      */
-    public $page = null;
+    public $page                    = null;
     /**
      * @var null|int
      */
-    public $count = null;
+    public $count                   = null;
     /**
-     * @param array $values
+     * @param mixed $values
      * @return $this
      */
     public function fill($values)
     {
-        $this->data = array_replace($this->data, $values);
+        $this->data                 = array_replace($this->data, (array) $values);
 
         return $this;
     }

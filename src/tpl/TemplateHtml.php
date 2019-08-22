@@ -28,9 +28,9 @@ namespace phpformsframework\libs\tpl;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dir;
-use phpformsframework\libs\Hook;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\cache\Mem;
+use phpformsframework\libs\Hook;
 use phpformsframework\libs\international\Translator;
 use stdClass;
 
@@ -38,7 +38,7 @@ if (!defined("FF_TEMPLATE_ENABLE_TPL_JS")) {
     define("FF_TEMPLATE_ENABLE_TPL_JS", false);
 }
 
-class TemplateHtml extends Hook
+class TemplateHtml
 {
     const ERROR_BUCKET                          = "tpl";
     const REGEXP                                = '/\{([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)\}/U';
@@ -125,7 +125,7 @@ class TemplateHtml extends Hook
             $this->root_element = $res["root_element"];
         }
 
-        $this->handle("on_loaded_data", $this);
+        Hook::handle("on_loaded_data", $this);
 
         Debug::stopWatch("tpl/" . $tpl_name);
 
@@ -146,7 +146,7 @@ class TemplateHtml extends Hook
             $nName = $this->NextDBlockName($this->root_element);
         }
 
-        $this->handle("on_loaded_data", $this);
+        Hook::handle("on_loaded_data", $this);
     }
 
     private function getDVars()

@@ -96,15 +96,7 @@ abstract class App implements Dumpable
      */
     public static function widget($name, $config = null, $return = null)
     {
-        $schema                         = Config::getSchema("widgets");
         $class_name                     = get_called_class();
-        $user_path                      = Request::pathinfo();
-
-        if (isset($schema[$user_path]) && is_array($schema[$user_path])) {
-            $config                     = array_replace_recursive($config, $schema[$user_path]);
-        } elseif (isset($schema[$name]) && is_array($schema[$name])) {
-            $config                     = array_replace_recursive($config, $schema[$name]);
-        }
 
         Log::registerProcedure($class_name, "widget:" . $name);
 

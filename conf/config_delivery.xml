@@ -4,7 +4,7 @@
         <MAILER_ADAPTER value="localhost" />
     </env>
     <media>
-        <thumb
+        <mode
             name="thumb"
             dim_x="200"
             dim_y="200"

@@ -1,14 +1,12 @@
 <?php
 namespace phpformsframework\libs;
 
-use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\storage\Orm;
 
 class Model implements Configurable, Dumpable
 {
     const ERROR_BUCKET                                  = "model";
-    const SCHEMA_MODELS                                 = "models";
-    const SCHEMA_MODELSVIEW                             = "modelsview";
+
 
     private static $models                              = null;
     private static $models_view                         = null;
@@ -20,26 +18,6 @@ class Model implements Configurable, Dumpable
             "models"    => self::$models,
             "views"     => self::$models_view
         );
-    }
-
-    public static function loadSchema()
-    {
-        Debug::stopWatch("load/models");
-        $cache                                          = Mem::getInstance("config");
-        $res                                            = $cache->get("models");
-        if (!$res) {
-            self::loadModels();
-            self::loadModelsView();
-
-            $cache->set("models", array(
-                "models"       => self::$models,
-                "models_view"  => self::$models_view,
-            ));
-        } else {
-            self::$models                               = $res["models"];
-            self::$models_view                          = $res["models_view"];
-        }
-        Debug::stopWatch("load/models");
     }
 
     private static function get($scope, $name)
@@ -115,64 +93,93 @@ class Model implements Configurable, Dumpable
         return array_filter($model);
     }
 
-
-    private static function loadModels()
+    public static function loadConfigRules($configRules)
     {
-        Debug::stopWatch("load/models");
+        return $configRules
+            ->add("models")
+            ->add("modelsview");
+    }
+    public static function loadConfig($config)
+    {
+        self::$models                                           = $config["models"];
+        self::$models_view                                      = $config["models_view"];
+    }
 
-        $config                                                 = Config::rawData(static::SCHEMA_MODELS, true);
-        if (is_array($config) && count($config)) {
-            $schema                                             = array();
-            foreach ($config as $model_name => $model) {
-                foreach ($model["field"] as $field) {
-                    $attr                                       = Dir::getXmlAttr($field);
-                    if (!isset($attr["name"])) {
-                        continue;
-                    }
-                    $key                                        = $attr["name"];
-                    if (isset($attr["fake"])) {
-                        $schema[$model_name]["fake"][$key]      = $attr["fake"];
-                    }
-                    if (isset($attr["db"])) {
-                        $schema[$model_name]["read"][$attr["db"]] = $key;
+    public static function loadSchema($rawdata)
+    {
+        if (isset($rawdata["model"])) {
+            self::loadModels($rawdata["model"]);
+        }
+        if (isset($rawdata["view"])) {
+            self::loadModelsView($rawdata["view"]);
+        }
 
-                        if (isset($attr["source"])) {
-                            $schema[$model_name]["insert"][$attr["db"]]   = $attr["source"];
+        return array(
+            "models"       => self::$models,
+            "models_view"  => self::$models_view,
+        );
+    }
+
+    private static function loadModels($models)
+    {
+        if (is_array($models) && count($models)) {
+            $schema                                                                 = array();
+            foreach ($models as $model) {
+                $model_attr                                                         = Dir::getXmlAttr($model);
+                if (isset($model_attr["name"]) && isset($model["field"])) {
+                    $model_name                                                     = $model_attr["name"];
+                    $fields                                                         = $model["field"];
+
+                    foreach ($fields as $field) {
+                        $attr                                                       = Dir::getXmlAttr($field);
+                        if (!isset($attr["name"])) {
+                            continue;
+                        }
+                        $key                                                        = $attr["name"];
+                        if (isset($attr["fake"])) {
+                            $schema[$model_name]["fake"][$key]                      = $attr["fake"];
+                        }
+                        if (isset($attr["db"])) {
+                            $schema[$model_name]["read"][$attr["db"]]               = $key;
+
+                            if (isset($attr["source"])) {
+                                $schema[$model_name]["insert"][$attr["db"]]         = $attr["source"];
+                            }
                         }
                     }
-
+                } else {
+                    Error::registerWarning("Model name not set or Fields empty", static::ERROR_BUCKET);
                 }
             }
 
-            self::$models                                       = $schema;
+            self::$models                                                           = $schema;
         }
-
-        Debug::stopWatch("load/models");
     }
 
-    private static function loadModelsView()
+    private static function loadModelsView($views)
     {
-        Debug::stopWatch("load/modelsview");
-
-        $config                                                 = Config::rawData(static::SCHEMA_MODELSVIEW, true, "view");
-        if (is_array($config) && count($config)) {
+        if (is_array($views) && count($views)) {
             $schema                                             = array();
-            foreach ($config as $view) {
+            foreach ($views as $view) {
                 $view_attr                                      = Dir::getXmlAttr($view);
-                $model_name                                     = $view_attr["model"];
-                $view_name                                      = $view_attr["name"];
-                foreach ($view["field"] as $field) {
-                    $attr                                       = Dir::getXmlAttr($field);
-                    if (!isset($attr["name"])) {
-                        continue;
+                if (isset($view_attr["model"]) && isset($view_attr["name"]) && isset($view["field"])) {
+                    $model_name                                     = $view_attr["model"];
+                    $view_name                                      = $view_attr["name"];
+                    $fields                                         = $view["field"];
+
+                    foreach ($fields as $field) {
+                        $attr                                       = Dir::getXmlAttr($field);
+                        if (!isset($attr["name"])) {
+                            continue;
+                        }
+                        $schema[$model_name][$view_name][]          = $attr["name"];
                     }
-                    $schema[$model_name][$view_name][]          = $attr["name"];
+                } else {
+                    Error::registerWarning("ModelView Model Name not set or View Name not set or Fields empty", static::ERROR_BUCKET);
                 }
             }
 
             self::$models_view                                  = $schema;
         }
-
-        Debug::stopWatch("load/modelsview");
     }
 }

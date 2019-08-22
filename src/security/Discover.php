@@ -278,8 +278,8 @@ class Discover
                 }
             } else {
                 $access = explode("E", hexdec(md5(
-                    $_SERVER["REMOTE_ADDR"]
-                    . $_SERVER["HTTP_USER_AGENT"]
+                    Request::remoteAddr()
+                    . Request::userAgent()
                 )));
 
                 $offset = (strlen($access[0]) - 9);
@@ -330,7 +330,7 @@ class Discover
         );
 
         if ($user_agent === null) {
-            $user_agent = $_SERVER["HTTP_USER_AGENT"];
+            $user_agent = Request::userAgent();
         }
         if ($user_agent) {
             $crawlers_agents = implode("|", $crawlers);

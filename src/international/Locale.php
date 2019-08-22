@@ -25,23 +25,20 @@
  */
 namespace phpformsframework\libs\international;
 
-use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\Configurable;
-use phpformsframework\libs\Config;
 use phpformsframework\libs\Constant;
-use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dir;
 use phpformsframework\libs\Env;
 
 class Locale implements Configurable
 {
-    const ACCEPTED_LANG                                     = Constant::ACCEPTED_LANG;
+    const ACCEPTED_LANG                                             = Constant::ACCEPTED_LANG;
 
-    private static $lang                                    = null;
-    private static $country                                 = null;
-    private static $langDefault                             = null;
-    private static $countryDefault                          = null;
-    private static $locale                                  = null;
+    private static $lang                                            = null;
+    private static $country                                         = null;
+    private static $langDefault                                     = null;
+    private static $countryDefault                                  = null;
+    private static $locale                                          = null;
 
     public static function isMultiLang()
     {
@@ -94,10 +91,10 @@ class Locale implements Configurable
 
     public static function setByPath($path)
     {
-        $arrPathInfo                                        = explode(DIRECTORY_SEPARATOR, trim($path, DIRECTORY_SEPARATOR), "2");
-        $lang_tiny_code                                     = $arrPathInfo[0];
+        $arrPathInfo                                                = explode(DIRECTORY_SEPARATOR, trim($path, DIRECTORY_SEPARATOR), "2");
+        $lang_tiny_code                                             = $arrPathInfo[0];
         if (isset(self::$locale["lang"][$lang_tiny_code])) {
-            $path                                           = DIRECTORY_SEPARATOR . $arrPathInfo[1];
+            $path                                                   = DIRECTORY_SEPARATOR . $arrPathInfo[1];
         }
         self::set($lang_tiny_code);
 
@@ -106,108 +103,105 @@ class Locale implements Configurable
 
     public static function set($locale)
     {
-        $locale                                             = str_replace("_", "-", $locale);
-        $arrLocale                                          = explode("-", $locale, 2);
+        $locale                                                     = str_replace("_", "-", $locale);
+        $arrLocale                                                  = explode("-", $locale, 2);
 
 
         if (isset(self::$locale["lang"][$arrLocale[0]])) {
-            $lang_tiny_code                                 = $arrLocale[0];
-            $country_tiny_code                              = (
+            $lang_tiny_code                                         = $arrLocale[0];
+            $country_tiny_code                                      = (
                 isset($arrLocale[1]) && isset(self::$locale["lang"][$arrLocale[1]])
-                                                                ? $arrLocale[1]
-                                                                : null
-                                                            );
+                                                                        ? $arrLocale[1]
+                                                                        : null
+                                                                    );
         } else {
-            $acceptLanguage                                 = self::acceptLanguage();
+            $acceptLanguage                                         = self::acceptLanguage();
 
-            $lang_tiny_code                                 = $acceptLanguage["lang"];
-            $country_tiny_code                              = $acceptLanguage["country"];
+            $lang_tiny_code                                         = $acceptLanguage["lang"];
+            $country_tiny_code                                      = $acceptLanguage["country"];
         }
 
         self::setLang($lang_tiny_code);
         self::setCountry($country_tiny_code);
     }
 
-    public static function loadSchema()
+    public static function loadConfigRules($configRules)
     {
-        Debug::stopWatch("load/locale");
+        return $configRules
+            ->add("locale");
+    }
 
-        $cache                                                          = Mem::getInstance("config");
-        $res                                                            = $cache->get("locale");
+    public static function loadConfig($config)
+    {
+        self::$locale                                               = $config["locale"];
+        self::$langDefault                                          = $config["langDefault"];
+        self::$countryDefault                                       = $config["countryDefault"];
+    }
 
-        if (!$res) {
-            $config                                                     = Config::rawData(Config::SCHEMA_LOCALE, true);
+    public static function loadSchema($rawdata)
+    {
+        if (is_array($rawdata) && count($rawdata)) {
+            $lang_tiny_code                                         = Env::get("LANG_TINY_CODE");
+            $country_tiny_code                                      = Env::get("COUNTRY_TINY_CODE");
 
-            if (is_array($config)) {
-                $lang_tiny_code                                         = Env::get("LANG_TINY_CODE");
-                $country_tiny_code                                      = Env::get("COUNTRY_TINY_CODE");
-
-                /**
-                 * Lang
-                 */
-                if (is_array($config["lang"]) && count($config["lang"])) {
-                    foreach ($config["lang"] as $code => $lang) {
-                        $attr                                           = Dir::getXmlAttr($lang);
-                        self::$locale["lang"][$code]                    = $attr;
-                        self::$locale["lang"][$code]["tiny_code"]       = $code;
-                    }
-
-                    if (isset(self::$locale["lang"][$lang_tiny_code])) {
-                        self::$langDefault                              = self::$locale["lang"][$lang_tiny_code];
-                    }
+            /**
+             * Lang
+             */
+            if (is_array($rawdata["lang"]) && count($rawdata["lang"])) {
+                foreach ($rawdata["lang"] as $code => $lang) {
+                    $attr                                           = Dir::getXmlAttr($lang);
+                    self::$locale["lang"][$code]                    = $attr;
+                    self::$locale["lang"][$code]["tiny_code"]       = $code;
                 }
 
-                /**
-                 * Country
-                 */
-                if (is_array($config["country"]) && count($config["country"])) {
-                    foreach ($config["country"] as $code => $country) {
-                        $attr                                           = Dir::getXmlAttr($country);
-                        self::$locale["country"][$code]                 = $attr;
-                        self::$locale["country"][$code]["tiny_code"]    = strtolower($code);
-                    }
-
-                    if (isset(self::$locale["lang"][$lang_tiny_code])) {
-                        self::$countryDefault                           = self::$locale["country"][$country_tiny_code];
-                    }
+                if (isset(self::$locale["lang"][$lang_tiny_code])) {
+                    self::$langDefault                              = self::$locale["lang"][$lang_tiny_code];
                 }
             }
 
-            $cache->set("locale", array(
-                "locale"            => self::$locale,
-                "langDefault"       => self::$langDefault,
-                "countryDefault"    => self::$countryDefault,
+            /**
+             * Country
+             */
+            if (is_array($rawdata["country"]) && count($rawdata["country"])) {
+                foreach ($rawdata["country"] as $code => $country) {
+                    $attr                                           = Dir::getXmlAttr($country);
+                    self::$locale["country"][$code]                 = $attr;
+                    self::$locale["country"][$code]["tiny_code"]    = strtolower($code);
+                }
 
-            ));
-        } else {
-            self::$locale                                                   = $res["locale"];
-            self::$langDefault                                              = $res["langDefault"];
-            self::$countryDefault                                           = $res["countryDefault"];
+                if (isset(self::$locale["lang"][$lang_tiny_code])) {
+                    self::$countryDefault                           = self::$locale["country"][$country_tiny_code];
+                }
+            }
         }
 
-        Debug::stopWatch("load/locale");
+        return array(
+            "locale"            => self::$locale,
+            "langDefault"       => self::$langDefault,
+            "countryDefault"    => self::$countryDefault
+        );
     }
 
     private static function acceptLanguage($key = null)
     {
-        static $res                                                     = null;
+        static $res                                                 = null;
 
         if (!$res && isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
             foreach (explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE']) as $locale) {
-                $pattern                                                = '/^(?P<primarytag>[a-zA-Z]{2,8})'.
+                $pattern                                            = '/^(?P<primarytag>[a-zA-Z]{2,8})'.
                     '(?:-(?P<subtag>[a-zA-Z]{2,8}))?(?:(?:;q=)'.
                     '(?P<quantifier>\d\.\d))?$/';
 
-                $splits                                                 = array();
+                $splits                                             = array();
                 if (preg_match($pattern, $locale, $splits)) {
-                    $res                                                = array(
-                                                                            "lang"      => strtolower($splits["primarytag"])
-                                                                            , "country" => (
-                                                                                isset($splits["subtag"])
-                                                                                            ? strtoupper($splits["subtag"])
-                                                                                            : null
-                                                                                        )
-                                                                        );
+                    $res                                            = array(
+                                                                        "lang"      => strtolower($splits["primarytag"])
+                                                                        , "country" => (
+                                                                            isset($splits["subtag"])
+                                                                                        ? strtoupper($splits["subtag"])
+                                                                                        : null
+                                                                                    )
+                                                                    );
                 }
             }
         }
@@ -220,22 +214,22 @@ class Locale implements Configurable
 
     private static function setLang($lang_tiny_code = null)
     {
-        self::$lang                                         = (
+        self::$lang                                                 = (
             isset(self::$locale["lang"][$lang_tiny_code])
-                                                                ? self::$locale["lang"][$lang_tiny_code]
-                                                                : self::$langDefault
-                                                            );
+                                                                        ? self::$locale["lang"][$lang_tiny_code]
+                                                                        : self::$langDefault
+                                                                    );
     }
     private static function setCountry($country_tiny_code = null)
     {
         if (!isset(self::$locale["country"][$country_tiny_code]) && isset(self::$lang["country"])) {
-            $country_tiny_code                              = self::$lang["country"];
+            $country_tiny_code                                      = self::$lang["country"];
         }
 
-        self::$country                                      = (
+        self::$country                                              = (
             isset(self::$locale["country"][$country_tiny_code])
-                                                                ? self::$locale["country"][$country_tiny_code]
-                                                                : self::$countryDefault
-                                                            );
+                                                                        ? self::$locale["country"][$country_tiny_code]
+                                                                        : self::$countryDefault
+                                                                    );
     }
 }

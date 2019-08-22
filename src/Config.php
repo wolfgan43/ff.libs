@@ -25,9 +25,13 @@
  */
 namespace phpformsframework\libs;
 
+use Composer\Autoload\ClassLoader;
+use Composer\Composer;
+use Exception;
 use phpformsframework\libs\cache\Mem;
-use phpformsframework\libs\international\Locale;
+use phpformsframework\libs\dto\ConfigRules;
 use phpformsframework\libs\storage\Filemanager;
+use ReflectionClass;
 
 class Config implements Dumpable
 {
@@ -37,56 +41,76 @@ class Config implements Dumpable
     const LIBS_NAME                                                 = "libs";
     const CONFIG_PATH                                               = array();
 
-    const SCHEMA_ENV                                                = "env";
-    const SCHEMA_LOCALE                                             = "locale";
-    const SCHEMA_ROUTER                                             = "router";
-    const SCHEMA_REQUEST                                            = "request";
-    const SCHEMA_REQUEST_ACCESSCONTROL                              = "request/accesscontrol";
-    const SCHEMA_REQUEST_PATTERNS                                   = "request/patterns";
+    const SCHEMA_CONF                                               = "config";
+    const SCHEMA_DIRSTRUCT                                          = "dirs";
     const SCHEMA_PAGES                                              = "pages";
     const SCHEMA_ENGINE                                             = "engine";
-    const SCHEMA_SNIPPET                                            = "snippet";
-    const SCHEMA_ALIAS                                              = "alias";
-    const SCHEMA_MIRROR                                             = "mirror";
-    const SCHEMA_CACHE                                              = "cache";
 
     const RAWDATA_XML_REPLACE                                        = 1;
     const RAWDATA_XML_MERGE                                          = 2;
     const RAWDATA_XML_MERGE_RECOURSIVE                               = 3;
 
     private static $config                                          = null;
+    private static $config_unknown                                  = null;
     private static $maps                                            = null;
-    private static $schema                                          = null;
     private static $engine                                          = null;
-    private static $rules                                           = null;
+
+    private static $config_rules                                    = array(
+        Config::SCHEMA_DIRSTRUCT    => ["method" => Config::RAWDATA_XML_MERGE_RECOURSIVE,   "context" => Config::SCHEMA_DIRSTRUCT],
+        Config::SCHEMA_PAGES        => ["method" => Config::RAWDATA_XML_MERGE_RECOURSIVE,   "context" => Config::SCHEMA_PAGES],
+        Config::SCHEMA_ENGINE       => ["method" => Config::RAWDATA_XML_REPLACE,            "context" => Config::SCHEMA_ENGINE],
+    );
     private static $autoloads                                       = array();
     private static $webroot                                         = null;
     private static $dirstruct                                       = null;
     private static $file_config                                     = null;
     private static $file_maps                                       = null;
     private static $file_scans                                      = null;
+    private static $class_configurable                              = null;
+    private static $class_dumpable                                  = null;
 
     public static function dump()
     {
         return array(
-            "config"        => self::$config,
-            "schema"        => self::$schema,
-            "engine"        => self::$engine,
-            "rules"         => self::$rules,
-            "maps"          => self::$maps,
-            "dirstruct"     => self::$dirstruct,
-            "autoloads"     => self::$autoloads,
-            "file_config"   => self::$file_config,
-            "file_maps"     => self::$file_maps,
-            "file_scans"    => self::$file_scans
+            "config_rules"          => self::$config_rules,
+            "config"                => self::$config,
+            "config_unknown"        => self::$config_unknown,
+            "engine"                => self::$engine,
+            "maps"                  => self::$maps,
+            "autoloads"             => self::$autoloads,
+            "webroot"               => self::$webroot,
+            "dirstruct"             => self::$dirstruct,
+            "file_config"           => self::$file_config,
+            "file_maps"             => self::$file_maps,
+            "file_scans"            => self::$file_scans,
+            "class_configurable"    => self::$class_configurable,
+            "class_dumpable"        => self::$class_dumpable
         );
     }
 
+    private static function loadRawData($rawdata)
+    {
+        self::$config               = $rawdata["config"];
+        self::$config_unknown       = $rawdata["config_unknown"];
+        self::$engine               = $rawdata["engine"];
+        self::$config_rules         = $rawdata["config_rules"];
+        self::$maps                 = $rawdata["maps"];
+        self::$autoloads            = $rawdata["autoloads"];
+        self::$webroot              = $rawdata["webroot"];
+        self::$dirstruct            = $rawdata["dirstruct"];
+        self::$file_config          = $rawdata["file_config"];
+        self::$file_maps            = $rawdata["file_maps"];
+        self::$file_scans           = $rawdata["file_scans"];
+        self::$class_configurable   = $rawdata["class_configurable"];
+        self::$class_dumpable       = $rawdata["class_dumpable"];
+    }
+
+
     public static function loadDirStruct()
     {
-        Debug::stopWatch("config/loadDirStruct");
+        Debug::stopWatch(static::SCHEMA_CONF . "/" . static::SCHEMA_DIRSTRUCT);
 
-        $config                                                     = self::rawData("dirs", true);
+        $config                                                     = self::rawData(static::SCHEMA_DIRSTRUCT, true);
         $scans                                                      = [self::LIBS_BASE_NAME => [], self::LIBS_NAME => [], self::APP_BASE_NAME => []];
 
         if (is_array($config["dir"]) && count($config["dir"])) {
@@ -129,7 +153,7 @@ class Config implements Dumpable
             self::$file_scans                                       = $scans[self::LIBS_BASE_NAME] + $scans[self::LIBS_NAME] + $scans[self::APP_BASE_NAME];
         }
 
-        Debug::stopWatch("config/loadDirStruct");
+        Debug::stopWatch(static::SCHEMA_CONF . "/" . static::SCHEMA_DIRSTRUCT);
     }
 
     public static function webRoot()
@@ -158,9 +182,15 @@ class Config implements Dumpable
 
         return null;
     }
-    public static function getAutoloads()
+    public static function autoloadRegister()
     {
-        return self::$autoloads;
+        if (is_array(self::$autoloads) && count(self::$autoloads)) {
+            spl_autoload_register(function ($class_name) {
+                foreach (self::$autoloads as $autoload) {
+                    Dir::autoload($autoload . DIRECTORY_SEPARATOR . $class_name . "." . Constant::PHP_EXT);
+                }
+            });
+        }
     }
 
     public static function loadMap($bucket, $name = null)
@@ -170,11 +200,7 @@ class Config implements Dumpable
         }
         $map_name                                                   = $bucket . "_" . $name;
 
-        if (!self::$file_maps) {
-            self::load(); //@todo: da eliminare
-        }
-
-        Debug::stopWatch("load/map/" . $map_name);
+        Debug::stopWatch(static::SCHEMA_CONF . "/map/" . $map_name);
         $cache                                                      = Mem::getInstance("maps");
         self::$maps[$bucket][$name]                                 = $cache->get($map_name);
         if (!self::$maps[$bucket][$name]) {
@@ -186,7 +212,7 @@ class Config implements Dumpable
 
             $cache->set($map_name, self::$maps[$bucket][$name]);
         }
-        Debug::stopWatch("load/map/". $map_name);
+        Debug::stopWatch(static::SCHEMA_CONF . "/map/". $map_name);
     }
 
     public static function mapping($bucket, $name = null)
@@ -205,78 +231,78 @@ class Config implements Dumpable
             : $extension
         );
     }
-    public static function addEngine($bucket, $callback)
-    {
-        self::$engine[$bucket]                                      = $callback;
-    }
-    public static function addRule($key, $method, $callback = null)
-    {
-        self::$rules[$key]                                          = array(
-                                                                        "method"        => $method
-                                                                        , "callback"    => $callback
-                                                                    );
-    }
 
-    public static function rawData($key = null, $remove = false, $sub_key = null)
+    /**
+     * @param ConfigRules $rules
+     */
+    public static function addRules($rules)
     {
-        if ($key && !isset(self::$config[$key])) {
-            self::$config[$key] = null;
+        self::$config_rules                                         = self::$config_rules + $rules->toArray();
+    }
+    private static function rawData($key, $remove = false)
+    {
+        $res = null;
+        if (isset(self::$config[$key])) {
+            $res = self::$config[$key];
+            if ($remove) {
+                unset(self::$config[$key]);
+            }
         }
-
-        $res                                                        = (
-            $key
-                                                                        ? self::$config[$key]
-                                                                        : self::$config
-                                                                    );
-        if ($remove && $key) {
-            unset(self::$config[$key]);
-        }
-
-        return ($sub_key
-            ? $res[$sub_key]
-            : $res
-        );
-    }
-
-    private static function loadRules()
-    {
-        self::addRule("env", self::RAWDATA_XML_REPLACE);
-        self::addRule("locale", self::RAWDATA_XML_REPLACE);
-        self::addRule("dirs", self::RAWDATA_XML_MERGE_RECOURSIVE);
-
-        self::addRule("alias", self::RAWDATA_XML_MERGE_RECOURSIVE, "phpformsframework\libs\Config::loadAlias");
-        self::addRule("engine", self::RAWDATA_XML_REPLACE, "phpformsframework\libs\Config::loadEngine");
-        self::addRule("router", self::RAWDATA_XML_MERGE_RECOURSIVE, "phpformsframework\libs\Router::loadSchema");
-        self::addRule("pages", self::RAWDATA_XML_MERGE_RECOURSIVE);
-        self::addRule("mirror", self::RAWDATA_XML_MERGE_RECOURSIVE, "phpformsframework\libs\Config::loadMirror");
-        self::addRule("snippet", self::RAWDATA_XML_REPLACE, "phpformsframework\libs\Config::loadSnippet");
-
-        self::addRule("models", self::RAWDATA_XML_REPLACE);
-        self::addRule("modelsview", self::RAWDATA_XML_MERGE_RECOURSIVE);
-
-        self::addRule("request", self::RAWDATA_XML_MERGE_RECOURSIVE, "phpformsframework\libs\Request::loadSchema");
-        self::addRule("patterns", self::RAWDATA_XML_MERGE_RECOURSIVE, "phpformsframework\libs\Request::loadSchema");
-
-        self::addRule("badpath", self::RAWDATA_XML_MERGE_RECOURSIVE, "phpformsframework\libs\security\Buckler::loadSchema");
-        self::addRule("media", self::RAWDATA_XML_MERGE_RECOURSIVE, "phpformsframework\libs\storage\Media::loadSchema");
+        return $res;
     }
 
     public static function load($paths = array())
     {
-        Debug::stopWatch("config/load");
+        Debug::stopWatch(static::SCHEMA_CONF . "/load");
+
         $cache                                                      = Mem::getInstance("config");
-        $res                                                        = $cache->get("rawdata");
-        if (!$res) {
+        $rawdata                                                    = $cache->get("rawdata");
+        if (!$rawdata) {
+            $rawdata                                                = array();
+
+            $classes                                                = get_declared_classes();
+            //@todo: da trovare un modo per importare anche queste
+            $classes[] = 'phpformsframework\\libs\\Model';
+            foreach ($classes as $class_name) {
+                try {
+                    $reflect                                        = new ReflectionClass($class_name);
+                    if ($reflect->implementsInterface(__NAMESPACE__ . '\\Dumpable')) {
+                        $parent                                     = $reflect->getParentClass();
+                        if (!$parent || !isset(self::$class_dumpable[strtolower(basename(str_replace('\\', '/', $parent->getName())))])) {
+                            self::$class_dumpable[strtolower(basename(str_replace('\\', '/', $class_name)))]  = $class_name;
+                        }
+                    }
+
+                    if ($reflect->implementsInterface(__NAMESPACE__ . '\\Configurable')) {
+                        $parent                                     = $reflect->getParentClass();
+
+                        if (!$parent || !isset(self::$class_configurable[strtolower(basename(str_replace('\\', '/', $parent->getName())))])) {
+                            $class_basename                         = strtolower(basename(str_replace('\\', '/', $class_name)));
+                            self::$class_configurable[$class_basename] = $class_name;
+                            /**
+                             * @var Configurable $class_name
+                             */
+                            $configRules                            = new ConfigRules($class_basename);
+                            self::addRules($class_name::loadConfigRules($configRules));
+                        }
+                    }
+                } catch (Exception $exception) {
+                    Error::register($exception->getMessage(), static::ERROR_BUCKET);
+                }
+            }
+
+            /**
+             * Find Config.xml
+             */
             $paths = array_replace(
                 array(
-                Constant::CONFIG_FF_DISK_PATH => array("filter" => array("xml", "map"))),
+                    Constant::CONFIG_FF_DISK_PATH => array("filter" => array("xml", "map"))),
                 static::CONFIG_PATH,
                 $paths
             );
-            self::loadRules();
 
             Filemanager::scan($paths, function ($file) {
-                $pathinfo = pathinfo($file);
+                $pathinfo                                           = pathinfo($file);
                 switch ($pathinfo["extension"]) {
                     case "xml":
                         self::$file_config[$file]                   = filemtime($file);
@@ -291,86 +317,72 @@ class Config implements Dumpable
                 }
             });
 
-            self::loadSchema();
+            /**
+             * Load Kernel Config by Xml
+             */
+            Config::loadDirStruct();
+            Config::loadEngine();
+            Config::loadPages();
 
+            /**
+             * @var Configurable $class_name
+             */
 
+            foreach (self::$class_configurable as $class_basename => $class_name) {
+                Debug::stopWatch(static::SCHEMA_CONF . "/" . $class_basename);
 
-            $cache->set("rawdata", array(
-                "rules"         => self::$rules,
-                "config"        => self::$config,
-                "schema"        => self::$schema,
-                "engine"        => self::$engine,
-                "autoloads"     => self::$autoloads,
-                "webroot"       => self::$webroot,
-                "dirstruct"     => self::$dirstruct,
-                "file_config"   => self::$file_config,
-                "file_maps"     => self::$file_maps,
-                "file_scans"    => self::$file_scans
-            ));
+                $rawdata[$class_basename]                           = $class_name::loadSchema(self::$config[$class_basename]);
+                unset(self::$config[$class_basename]);
+
+                Debug::stopWatch(static::SCHEMA_CONF . "/" . $class_basename);
+            }
+
+            $cache->set("rawdata", self::dump() + $rawdata);
         } else {
-            self::$rules                                            = $res["rules"];
-            self::$config                                           = $res["config"];
-            self::$schema                                           = $res["schema"];
-            self::$engine                                           = $res["engine"];
-            self::$autoloads                                        = $res["autoloads"];
-            self::$webroot                                          = $res["webroot"];
-            self::$dirstruct                                        = $res["dirstruct"];
-            self::$file_config                                      = $res["file_config"];
-            self::$file_maps                                        = $res["file_maps"];
-            self::$file_scans                                       = $res["file_scans"];
+            self::loadRawData($rawdata);
+
+            if (is_array($rawdata["class_configurable"]) && count($rawdata["class_configurable"])) {
+                foreach ($rawdata["class_configurable"] as $class_basename => $class_name) {
+                    $class_name::loadConfig($rawdata[$class_basename]);
+                }
+            }
         }
 
-
-        /**
-         * Load Env by Xml.
-         */
-        Env::loadSchema();
-
-        /**
-         * Load Locale and Lang by Xml.
-         */
-        Locale::loadSchema();
-
-        /**
-         * Load Model and Modelview by Xml.
-         */
-        Model::loadSchema();
-
-        Debug::stopWatch("config/load");
+        Debug::stopWatch(static::SCHEMA_CONF . "/load");
     }
 
     private static function loadXml($file)
     {
-        Debug::stopWatch("config/loadXml");
+        Debug::stopWatch(static::SCHEMA_CONF . "/loadXml");
 
-        self::$file_config[$file]                               = filemtime($file);
-        $configs                                                = Filemanager::getInstance("xml")->read($file);
+        self::$file_config[$file]                                   = filemtime($file);
+        $configs                                                    = Filemanager::getInstance("xml")->read($file);
+
         foreach ($configs as $key => $config) {
-            if (!isset(self::$config[$key])) {
-                self::$config[$key] = array();
-            }
-            $method                                             = (
-                isset(self::$rules[$key]["method"])
-                                                                    ? self::$rules[$key]["method"]
-                                                                    : null
-                                                                );
+            if (isset(self::$config_rules[$key])) {
+                $context                                            = self::$config_rules[$key]["context"];
 
-            switch ($method) {
-                case self::RAWDATA_XML_REPLACE:
-                    self::loadXmlReplace($key, $config);
-                    break;
-                case self::RAWDATA_XML_MERGE:
-                    self::loadXmlMerge($key, $config);
-                    break;
-                case self::RAWDATA_XML_MERGE_RECOURSIVE:
-                    self::loadXmlMergeSub($key, $config);
-                    break;
-                default:
-                    self::$config[$key]                         = $config;
+                if (!isset(self::$config[$context])) {
+                    self::$config[$context]                         = array();
+                }
+
+                switch (self::$config_rules[$key]["method"]) {
+                    case self::RAWDATA_XML_REPLACE:
+                        self::loadXmlReplace($context, $config);
+                        break;
+                    case self::RAWDATA_XML_MERGE:
+                        self::loadXmlMerge($context, $config);
+                        break;
+                    case self::RAWDATA_XML_MERGE_RECOURSIVE:
+                    default:
+                        self::loadXmlMergeSub($context, $config);
+                }
+            } else {
+                self::$config_unknown[$key]                         = $config;
             }
         }
 
-        Debug::stopWatch("config/loadXml");
+        Debug::stopWatch(static::SCHEMA_CONF . "/loadXml");
     }
     private static function loadXmlReplace($key, $config)
     {
@@ -401,72 +413,31 @@ class Config implements Dumpable
         }
     }
 
-    public static function setSchema($data, $bucket = null)
+    public static function loadConfig($config)
     {
-        if (is_array($data)) {
-            if ($bucket) {
-                if (isset(self::$schema[$bucket])) {
-                    self::$schema[$bucket]                          = array_replace(self::$schema[$bucket], $data);
-                } else {
-                    self::$schema[$bucket]                          = $data;
-                }
-            } else {
-                self::$schema                                       = $data;
-            }
-        }
-    }
-    public static function getSchema($bucket = null)
-    {
-        if ($bucket && !isset(self::$schema[$bucket])) {
-            self::$schema[$bucket]                                  = array();
-
-            if (isset(self::$config[$bucket]) && isset(self::$rules[$bucket]["callback"])) {
-                $callback                                           = self::$rules[$bucket]["callback"];
-                $callback();
-            }
-
-
-            /*if (isset(self::$config[$bucket])) {
-
-                $callback                                           = (
-                    isset(self::$rules[$bucket]["callback"])
-                                                                        ? self::$rules[$bucket]["callback"]
-                                                                        : null
-                                                                    );
-                if (is_callable($callback)) {
-                    $callback();
-                }
-            }*/
-        }
-
-        return (array) (
-            $bucket
-            ? self::$schema[$bucket]
-            : self::$schema
-        );
+        self::$config_rules                                         = $config["config_rules"];
+        self::$config                                               = $config["config"];
+        self::$engine                                               = $config["engine"];
+        self::$autoloads                                            = $config["autoloads"];
+        self::$webroot                                              = $config["webroot"];
+        self::$dirstruct                                            = $config["dirstruct"];
+        self::$file_config                                          = $config["file_config"];
+        self::$file_maps                                            = $config["file_maps"];
+        self::$file_scans                                           = $config["file_scans"];
     }
 
-
-    private static function loadSchema()
+    public static function loadPages()
     {
-        Debug::stopWatch("load/config");
+        Debug::stopWatch(static::SCHEMA_CONF . "/" . static::SCHEMA_PAGES);
 
-        /**
-         * Load Env and DirStruct by Xml
-         */
-        Config::loadDirStruct();
+        $config                                                     = Config::rawData(static::SCHEMA_PAGES, true);
+        $router                                                     = array();
+        $request                                                    = array();
 
-        $config                                                 = Config::rawData(static::SCHEMA_PAGES, true, "page");
-        $router                                                 = Config::getSchema(static::SCHEMA_ROUTER);
-
-        $request                                                = Config::getSchema(static::SCHEMA_REQUEST);
-
-        if (is_array($config) && count($config)) {
-            $schema                                             = array();
-            $engine                                             = Config::getSchema(static::SCHEMA_ENGINE);
-            foreach ($config as $page) {
-                $attr                                           = Dir::getXmlAttr($page);
-                $key                                            = (
+        if (isset($config["page"]) && is_array($config["page"]) && count($config["page"])) {
+            foreach ($config["page"] as $page) {
+                $attr                                               = Dir::getXmlAttr($page);
+                $key                                                = (
                     isset($attr["path"])
                     ? $attr["path"]
                     : $attr["source"]
@@ -482,42 +453,38 @@ class Config implements Dumpable
                 }
 
                 if (isset($attr["source"]) && isset($attr["destination"])) {
-                    $router[$key]                               = $attr;
+                    $router[$key]                                   = $attr;
                     unset($attr["destination"]);
-                } elseif (isset($attr["engine"]) && isset($engine[$attr["engine"]])) {
-                    $router[$key]                               = $engine[$attr["engine"]]["router"];
+                } elseif (isset($attr["engine"]) && isset(self::$engine[$attr["engine"]])) {
+                    $router[$key]                                   = self::$engine[$attr["engine"]]["router"];
                 } elseif (!isset($router[$key])) {
-                    $router[$key]                               = null;
+                    $router[$key]                                   = null;
                 }
 
 
                 if (isset($attr["priority"])) {
-                    $router[$key]["priority"]                   = $attr["priority"];
+                    $router[$key]["priority"]                       = $attr["priority"];
                     unset($attr["priority"]);
                 }
 
-                if (isset($attr["engine"]) && isset($engine[$attr["engine"]]) && $engine[$attr["engine"]]["properties"]) {
-                    $attr = array_replace($engine[$attr["engine"]]["properties"], $attr);
+                if (isset($attr["engine"]) && isset(self::$engine[$attr["engine"]]) && self::$engine[$attr["engine"]]["properties"]) {
+                    $attr = array_replace(self::$engine[$attr["engine"]]["properties"], $attr);
                 }
-                if (!isset($schema[$key])) {
-                    $schema[$key] = array();
-                }
-                $schema[$key]                                   = array_replace($schema[$key], $attr);
 
-                $request                                        = Request::setSchema($page, $key, $request);
+                $request[$key]                                      = $page;
+                $request[$key]["config"]                            = $attr;
             }
 
-            Config::setSchema($router, static::SCHEMA_ROUTER);
-            Config::setSchema($request, static::SCHEMA_REQUEST);
-            Config::setSchema($schema, static::SCHEMA_PAGES);
+            self::$config["router"]["pages"]                        = $router;
+            self::$config["request"]["pages"]                       = $request;
         }
 
-        Debug::stopWatch("load/config");
+        Debug::stopWatch(static::SCHEMA_CONF . "/" . static::SCHEMA_PAGES);
     }
 
     public static function loadEngine()
     {
-        Debug::stopWatch("load/engine");
+        Debug::stopWatch(static::SCHEMA_CONF . "/" . static::SCHEMA_ENGINE);
 
         $schema                                                             = array();
         $config                                                             = Config::rawData(static::SCHEMA_ENGINE, true);
@@ -561,95 +528,9 @@ class Config implements Dumpable
                 $schema[$key]["properties"]                                 = $attr;
             }
 
-            Config::setSchema($schema, static::SCHEMA_ENGINE);
+            self::$engine                                                   = $schema;
         }
 
-        Debug::stopWatch("load/engine");
-    }
-
-
-
-    public static function loadSnippet()
-    {
-        Debug::stopWatch("load/snippet");
-
-        $config                                                 = Config::rawData(static::SCHEMA_SNIPPET, true);
-        if (is_array($config) && count($config)) {
-            $schema                                             = array();
-            foreach ($config as $key => $snippet) {
-                $attr                                           = Dir::getXmlAttr($snippet);
-
-                if (isset($attr["params"])) {
-                    $attr["params"] = explode(",", $attr["params"]);
-                }
-
-                $schema[$key]                                   = $attr;
-            }
-
-            Config::setSchema($schema, static::SCHEMA_SNIPPET);
-        }
-
-        Debug::stopWatch("load/snippet");
-    }
-
-    public static function loadAlias()
-    {
-        Debug::stopWatch("load/alias");
-
-        $config                                                 = Config::rawData(static::SCHEMA_ALIAS, true, "domain");
-        if (is_array($config) && count($config)) {
-            $schema                                             = array();
-            foreach ($config as $domain) {
-                $attr                                           = Dir::getXmlAttr($domain);
-                $schema[$attr["name"]]                          = $attr["path"];
-            }
-
-            Config::setSchema($schema, static::SCHEMA_ALIAS);
-        }
-
-        Debug::stopWatch("load/alias");
-    }
-    public static function loadMirror()
-    {
-        Debug::stopWatch("load/mirror");
-
-        $config                                                 = Config::rawData(static::SCHEMA_MIRROR, true, "domain");
-        if (is_array($config) && count($config)) {
-            $schema                                             = array();
-            foreach ($config as $domain) {
-                $attr                                           = Dir::getXmlAttr($domain);
-                $schema[$attr["name"]]                          = $attr["proxy"];
-            }
-
-            Config::setSchema($schema, static::SCHEMA_MIRROR);
-        }
-
-        Debug::stopWatch("load/mirror");
-    }
-
-    public static function loadCache()
-    {
-        Debug::stopWatch("load/cache");
-
-        $config                                                 = Config::rawData(static::SCHEMA_CACHE, true);
-        $schema                                                 = array();
-        if (is_array($config["rule"]) && count($config["rule"])) {
-            foreach ($config["rule"] as $cache) {
-                $attr                                           = Dir::getXmlAttr($cache);
-                $key                                            = $attr["path"];
-                unset($attr["path"]);
-                $schema["rule"][$key]                           = $attr;
-            }
-        }
-        if (is_array($config["priority"]) && count($config["priority"])) {
-            foreach ($config["priority"] as $cache) {
-                $attr                                           = Dir::getXmlAttr($cache);
-                $schema["priority"][]                           = $attr["path"];
-            }
-        }
-
-        Config::setSchema($schema, static::SCHEMA_CACHE);
-
-        Debug::stopWatch("load/cache");
+        Debug::stopWatch(static::SCHEMA_CONF . "/" . static::SCHEMA_ENGINE);
     }
 }

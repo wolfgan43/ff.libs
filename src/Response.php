@@ -26,6 +26,8 @@
 namespace phpformsframework\libs;
 
 use phpformsframework\libs\dto\DataAdapter;
+use phpformsframework\libs\dto\DataHtml;
+use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\storage\drivers\Array2XML;
 use Exception;
 
@@ -40,9 +42,26 @@ class Response
         self::$content_type                         = $content_type;
     }
 
-    public static function error($status = 404, $response = null, $content_type = "text/html")
+    /**
+     * @param int $status
+     * @param null $msg
+     * @todo da inserire la pagina html per la response DataHtml
+     */
+    public static function error($status = 404, $msg = null)
     {
-        self::sendRawData($response, $content_type, $status);
+        switch (Request::accept()) {
+            case "application/json":
+            case "text/json":
+                $response = new DataResponse();
+                $response->error($status, $msg);
+                break;
+            default:
+                $response = new DataHtml();
+                $response->error($status, $msg);
+                $response->html = $msg;
+        }
+
+        self::send($response, $status);
     }
 
     public static function sendRawData($data, $content_type, $status = null)
@@ -118,7 +137,7 @@ class Response
              * @todo da gestire i tipi accepted self::sendHeadersByMimeType(...)
              */
             Response::code(501);
-            echo "content type " . $content_type . " is different to http_accept: " . $_SERVER["HTTP_ACCEPT"];
+            echo "content type " . $content_type . " is different to http_accept: " . Request::accept();
             exit;
         }
 
@@ -135,12 +154,9 @@ class Response
             if ($response->status) {
                 Response::code($status);
             }
-            // if (Request::isAjax() || Request::method() != "GET") {
 
-            // } else {
             self::sendHeadersByMimeType($response::CONTENT_TYPE);
             echo $response->output();
-            // }
         }
         exit;
     }
@@ -305,10 +321,6 @@ class Response
     {
         $accept = Request::accept();
 
-        if ($accept == '*/*' && isset($_SERVER["CONTENT_TYPE"])) {
-            $accept = $_SERVER["CONTENT_TYPE"];
-        }
-
-        return $accept && strpos($accept, $content_type) === false;
+        return $accept != '*/*' && strpos($accept, $content_type) === false;
     }
 }

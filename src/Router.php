@@ -27,9 +27,8 @@
 namespace phpformsframework\libs;
 
 use Exception;
-use phpformsframework\libs\cache\Mem;
 
-class Router implements Configurable
+class Router implements Configurable, Dumpable
 {
     const ERROR_BUCKET                                      = "routing";
 
@@ -44,10 +43,11 @@ class Router implements Configurable
 
     private static $cache                                   = array();
 
-    private $alias                                          = null;
-    private $rules                                          = null;
+    private static $alias                                   = null;
+    private static $rules                                   = null;
 
-    private $sorted                                         = false;
+    private static $sorted                                  = false;
+    private static $target                                  = null;
 
     public static function regexp($rule)
     {
@@ -57,85 +57,98 @@ class Router implements Configurable
                 : $rule
             ) . "#i";
     }
-    public static function loadSchema()
-    {
-        Debug::stopWatch("load/router");
 
+
+    public static function loadConfigRules($configRules)
+    {
+        return $configRules
+            ->add("router");
+    }
+
+    public static function loadConfig($config)
+    {
+        self::$alias                                        = $config["alias"];
+        self::$rules                                        = $config["rules"];
+    }
+
+    public static function loadSchema($rawdata)
+    {
         $schema                                             = null;
-        $config                                             = Config::rawData(Config::SCHEMA_ROUTER, true, "rule");
-        if (is_array($config) && count($config)) {
+        if (is_array($rawdata) && count($rawdata)) {
             $schema                                         = array();
-            foreach ($config as $rule) {
-                $attr                                       = Dir::getXmlAttr($rule);
-                $key                                        = (
-                    $attr["path"]
+            if (isset($rawdata["rule"])) {
+                $rules                                      = $rawdata["rule"];
+                foreach ($rules as $rule) {
+                    $attr                                   = Dir::getXmlAttr($rule);
+                    $key                                    = (
+                        $attr["path"]
                                                                 ? $attr["path"]
                                                                 : $attr["source"]
                                                             );
-                $schema[$key]                               = $attr;
+                    $schema[$key]                           = $attr;
+                }
             }
-            Config::setSchema($schema, Config::SCHEMA_ROUTER);
+
+            if (isset($rawdata["pages"])) {
+                $schema                                     = array_replace($rawdata["pages"], $schema);
+            }
+
+            self::addRules($schema);
         }
 
-        Debug::stopWatch("load/router");
+        return array(
+            "alias" => self::$alias,
+            "rules" => self::$rules
+        );
+    }
+    public static function dump()
+    {
+        return array(
+            "alias" => self::$alias,
+            "rules" => self::$rules
+        );
     }
 
-    public function __construct()
+    public static function find($path, $source = null)
     {
-        Debug::stopWatch("load/router");
-        $cache = Mem::getInstance("config");
-        $res = $cache->get("router");
-        if (!$res) {
-            $this->addRules(Config::getSchema(Config::SCHEMA_ROUTER));
-
-            $cache->set("router", array(
-                "rules" => $this->rules,
-                "alias" => $this->alias
-            ));
-        } else {
-            $this->rules = $res["rules"];
-            $this->alias = $res["alias"];
-        }
-        Debug::stopWatch("load/router");
-    }
-
-    public function check($path, $source = null)
-    {
-        Debug::stopWatch("router/check");
-
-        if (!isset(self::$cache[$path . ":" . $source])) {
-            self::$cache[$path . ":" . $source] = (
+        $target                                             = $path . ":" . $source;
+        if (!isset(self::$cache[$target])) {
+            self::$target                                   = $target;
+            self::$cache[$target] = (
                 $source
-                ? preg_match($this->regexp($source), $path)
-                : $this->find($path)
+                ? preg_match(self::regexp($source), $path)
+                : self::process($path)
             );
         }
 
-        Debug::stopWatch("router/check");
-
-        return self::$cache[$path . ":" . $source];
+        return self::$cache[$target];
     }
-    public function run($path = null)
+
+    public static function run($path = null)
     {
-        $rule                                               = $this->check($path);
+        $rule = (
+            $path
+            ? self::$cache[self::$target]
+            : self::find($path)
+        );
 
         if (is_array($rule)) {
             $destination                                    = $rule["destination"];
             if ($destination) {
                 if (is_array($destination)) {
-                    Response::send(self::caller($destination["obj"], $destination["method"], $this->replaceMatches($rule["matches"], $destination["params"])));
+                    Response::send(self::caller($destination["obj"], $destination["method"], self::replaceMatches($rule["matches"], $destination["params"])));
                 } elseif ($rule["redirect"]) {
-                    Response::redirect($this->replaceMatches($rule["matches"], $destination), $rule["redirect"]);
+                    Response::redirect(self::replaceMatches($rule["matches"], $destination), $rule["redirect"]);
                 } elseif (is_numeric($destination) || ctype_digit($destination)) {
                     Error::send($destination);
                 } else {
-                    $this->execute($destination . $path);
+                    self::execute($destination . $path);
                 }
             }
         } elseif ($rule) {
-            $this->execute(Constant::DISK_PATH . $rule . $path);
+            self::execute(Constant::DISK_PATH . $rule . $path);
         } else {
-            $this->runWebRoot($path);
+            self::runWebRoot($path);
         }
 
         if (Constant::DEBUG) {
@@ -146,7 +159,7 @@ class Router implements Configurable
         Error::send(404);
     }
 
-    private function runWebRoot($path)
+    private static function runWebRoot($path)
     {
         $webroot = Config::webRoot();
         if ($webroot) {
@@ -163,20 +176,20 @@ class Router implements Configurable
             }
 
             if ($file) {
-                $this->execute($webroot . $file);
+                self::execute($webroot . $file);
             }
         }
     }
-    public function addRules($rules)
+    private static function addRules($rules)
     {
         if (is_array($rules) && count($rules)) {
             foreach ($rules as $path => $params) {
-                $this->addRule($path, $params);
+                self::addRule($path, $params);
             }
         }
     }
 
-    public function addRule($path, $params, $priority = null, $redirect = false)
+    private static function addRule($path, $params, $priority = null, $redirect = false)
     {
         $rule                           = false;
         $source                         = null;
@@ -210,15 +223,14 @@ class Router implements Configurable
                                         );
             }
 
-            if (!$this->setAlias($path, $rule) && $rule) {
-                $this->sorted           = false;
-                $key                    = $this->getPriority($priority) . "-" . (9 - substr_count($path, DIRECTORY_SEPARATOR)) . "-" . $source;
-                $this->rules[$key]      = $rule;
+            if (!self::setAlias($path, $rule) && $rule) {
+                $key                    = self::getPriority($priority) . "-" . (9 - substr_count($path, DIRECTORY_SEPARATOR)) . "-" . $source;
+                self::$rules[$key]      = $rule;
             }
         }
     }
 
-    private function execute($script)
+    private static function execute($script)
     {
         /*
          * Anti injection, prevent error fs
@@ -229,18 +241,18 @@ class Router implements Configurable
         exit;
     }
 
-    private function setAlias($source, $rule)
+    private static function setAlias($source, $rule)
     {
         $key = rtrim(rtrim(rtrim(ltrim($source, "^"), "$"), "*"), DIRECTORY_SEPARATOR);
         if (strpos($key, "*") === false && strpos($key, "+") === false && strpos($key, "(") === false && strpos($key, "[") === false) {
-            $this->alias[$key] = $rule;
+            self::$alias[$key] = $rule;
             return true;
         }
 
         return null;
     }
 
-    private function getPriority($priority = null)
+    private static function getPriority($priority = null)
     {
         if ($priority === null) {
             $priority = Router::PRIORITY_DEFAULT;
@@ -251,7 +263,7 @@ class Router implements Configurable
             : constant("Router::PRIORITY_" . strtoupper($priority))
         );
     }
-    private function replaceMatches($matches, $in)
+    private static function replaceMatches($matches, $in)
     {
         if (is_array($matches)) {
             foreach ($matches as $key => $match) {
@@ -268,16 +280,16 @@ class Router implements Configurable
         return $in;
     }
 
-    private function sort()
+    private static function sort()
     {
-        if (!$this->sorted) {
-            ksort($this->rules);
-            $this->sorted = true;
+        if (!self::$sorted) {
+            ksort(self::$rules);
+            self::$sorted = true;
         }
     }
-    private function find($path)
+    private static function process($path)
     {
-        Debug::stopWatch("router/find");
+        Debug::stopWatch("router/process");
 
         $res                                            = null;
         $matches                                        = array();
@@ -285,12 +297,12 @@ class Router implements Configurable
         $tmp_path                                       = rtrim($path, DIRECTORY_SEPARATOR);
         if ($tmp_path) {
             do {
-                if (isset($this->alias[$tmp_path])) {
+                if (isset(self::$alias[$tmp_path])) {
                     if (!$match_path) {
                         $match_path                     = $tmp_path;
                     }
-                    if ($this->alias[$tmp_path]) {
-                        $res                            = $this->alias[$tmp_path];
+                    if (self::$alias[$tmp_path]) {
+                        $res                            = self::$alias[$tmp_path];
                         break;
                     }
                 }
@@ -300,13 +312,13 @@ class Router implements Configurable
 
         if ($res) {
             $res["path"]                                = $match_path;
-            if (isset($res["source"]) && preg_match($this->regexp($res["source"]), $path, $matches)) {
+            if (isset($res["source"]) && preg_match(self::regexp($res["source"]), $path, $matches)) {
                 $res["matches"]                         = $matches;
             }
-        } elseif (is_array($this->rules)) {
-            $this->sort();
-            foreach ($this->rules as $rule) {
-                if (preg_match($this->regexp($rule["source"]), $path, $matches)) {
+        } elseif (is_array(self::$rules)) {
+            self::sort();
+            foreach (self::$rules as $rule) {
+                if (preg_match(self::regexp($rule["source"]), $path, $matches)) {
                     $res                                = $rule;
                     $res["path"]                        = $rule["source"];
                     $res["matches"]                     = $matches;
@@ -315,7 +327,8 @@ class Router implements Configurable
             }
         }
 
-        Debug::stopWatch("router/find");
+        Debug::stopWatch("router/process");
+
         return $res;
     }
 

@@ -240,7 +240,7 @@ class Debug
                     $classDumpable              = $class_name;
                     $parent                     = $reflect->getParentClass();
 
-                    if (!$parent || !isset($implements[$parent->getName()])) {
+                    if (!$parent || !isset($implements[basename(str_replace('\\', '/', $parent->getName()))])) {
                         $implements[basename(str_replace('\\', '/', $class_name))]    = (array) $classDumpable::dump();
                     }
                 }
@@ -254,7 +254,7 @@ class Debug
     private static function dumpCommandLine($error_message = null)
     {
         echo $error_message . "\n";
-        echo "---------------------------------\n";
+        echo "---------------------------------------------------------------------\n";
 
         $debug_backtrace = self::get_backtrace();
 
@@ -283,7 +283,7 @@ class Debug
 
     public static function dump($error_message = null, $return = false)
     {
-        if (self::isCommandLineInterface()) {
+        if (self::isCommandLineInterface() || Request::accept() != "text/html") {
             return self::dumpCommandLine($error_message);
         }
 

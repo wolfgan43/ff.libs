@@ -26,33 +26,64 @@
 
 namespace phpformsframework\libs;
 
-class Hook
+class Hook implements Configurable, Dumpable
 {
-    const EVENT_PRIORITY_HIGH                                       = 1000;
-    const EVENT_PRIORITY_NORMAL                                     = 100;
-    const EVENT_PRIORITY_LOW                                        = 10;
+    const HOOK_PRIORITY_HIGH                                                        = 1000;
+    const HOOK_PRIORITY_NORMAL                                                      = 100;
+    const HOOK_PRIORITY_LOW                                                         = 10;
 
-    private static $events                                          = null;
+    private static $events                                                          = null;
+
+    public static function loadConfigRules($configRules)
+    {
+        return $configRules
+            ->add("hooks");
+    }
+    public static function loadConfig($config)
+    {
+        self::$events = $config["events"];
+    }
+    public static function loadSchema($rawdata)
+    {
+        if (isset($rawdata["hook"]) && is_array($rawdata["hook"]) && count($rawdata["hook"])) {
+            foreach ($rawdata["hook"] as $hook) {
+                $attr                                                               = Dir::getXmlAttr($hook);
+                $func                                                               = $attr["obj"] . "::" . $attr["method"];
+
+
+
+                self::register($attr["name"], $func);
+            }
+        }
+
+        return [
+            "events" => self::$events
+        ];
+    }
+    public static function dump()
+    {
+        return self::$events;
+    }
 
     /**
-     * AddEvent
+     * AddHook
      * @param $name
      * @param $func
      * @param int $priority
      */
-    public static function register($name, $func, $priority = self::EVENT_PRIORITY_NORMAL)
+    public static function register($name, $func, $priority = self::HOOK_PRIORITY_NORMAL)
     {
         if (is_callable($func)) {
-            Debug::dumpCaller("addEvent::" . $name);
+            Debug::dumpCaller("addHook::" . $name);
             if (!isset(self::$events[$name])) {
-                self::$events[$name]                                = array();
+                self::$events[$name]                                                = array();
             }
             self::$events[$name][$priority + count((array)self::$events[$name])]    = $func;
         }
     }
 
     /**
-     * DoEvent
+     * DoHook
      * @param $name
      * @param null|$ref
      * @param null $params
@@ -60,11 +91,11 @@ class Hook
      */
     public static function handle($name, &$ref = null, $params = null)
     {
-        $res                                                        = null;
+        $res                                                                        = null;
         if (isset(self::$events[$name]) && is_array(self::$events[$name])) {
             krsort(self::$events[$name], SORT_NUMERIC);
             foreach (self::$events[$name] as $func) {
-                $res[]                                              = $func($ref, $params);
+                $res[]                                                              = $func($ref, $params);
             }
         }
 

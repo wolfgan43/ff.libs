@@ -31,32 +31,39 @@ use phpformsframework\libs\Error;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\Response;
-use phpformsframework\libs\Config;
-use phpformsframework\libs\Debug;
 
 class Buckler implements Configurable
 {
-    const SCHEMA_BUCKET                                         = "badpath";
+    private static $rules                                       = null;
 
-    public static function loadSchema()
+    public static function loadConfigRules($configRules)
     {
-        Debug::stopWatch("load/buckler");
+        return $configRules
+            ->add("badpath");
+    }
 
-        $config                                                 = Config::rawData(static::SCHEMA_BUCKET, true, "rule");
+    public static function loadConfig($config)
+    {
+        self::$rules                                            = $config["rules"];
+    }
 
-        if (is_array($config) && count($config)) {
+    public static function loadSchema($rawdata)
+    {
+        if (isset($rawdata["rule"]) && is_array($rawdata["rule"]) && count($rawdata["rule"])) {
             $schema                                             = array();
-            foreach ($config as $badpath) {
+            foreach ($rawdata["rule"] as $badpath) {
                 $attr                                           = Dir::getXmlAttr($badpath);
                 $key                                            = $attr["source"];
                 unset($attr["source"]);
                 $schema[$key]                                   = $attr;
             }
 
-            Config::setSchema($schema, static::SCHEMA_BUCKET);
+            self::$rules                                        = $schema;
         }
 
-        Debug::stopWatch("load/buckler");
+        return array(
+            "rules"     => self::$rules
+        );
     }
     public static function protectMyAss()
     {
@@ -89,14 +96,12 @@ class Buckler implements Configurable
 
     private static function checkAllowedPath()
     {
-        $rules                                                  = Config::getSchema(static::SCHEMA_BUCKET);
-
         $path_info                                              = self::path_info();
         if ($path_info) {
             $matches                                            = array();
 
-            if (is_array($rules) && count($rules)) {
-                foreach ($rules as $source => $rule) {
+            if (is_array(self::$rules) && count(self::$rules)) {
+                foreach (self::$rules as $source => $rule) {
                     $src                                        = self::regexp($source);
                     if (preg_match($src, $path_info, $matches)
                         && (is_numeric($rule["destination"]) || ctype_digit($rule["destination"]))

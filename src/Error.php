@@ -158,7 +158,7 @@ class Error
             $arrHost                                    = explode(".", (
                 $host_name
                                                             ? $host_name
-                                                            : $_SERVER["HTTP_HOST"]
+                                                            : Request::hostname()
                                                         ));
 
             $res                                        = isset(self::$rules["host"][$arrHost[0]]);

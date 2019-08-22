@@ -29,6 +29,7 @@ namespace phpformsframework\libs\storage;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Dumpable;
+use phpformsframework\libs\Request;
 
 class Filemanager implements Dumpable
 {
@@ -176,7 +177,7 @@ class Filemanager implements Dumpable
                 $conn_id = @ftp_connect("127.0.0.1");
             }
             if ($conn_id === false) {
-                $conn_id = @ftp_connect($_SERVER["SERVER_ADDR"]);
+                $conn_id = @ftp_connect(Request::serverAddr());
             }
 
             if ($conn_id !== false && @ftp_login($conn_id, self::FTP_USERNAME, self::FTP_PASSWORD)) {

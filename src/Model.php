@@ -70,6 +70,10 @@ class Model implements Configurable, Dumpable
             $request_key                                        = array();
             $request_value                                      = array();
             foreach ($request as $key => $value) {
+                if (is_array($value)) {
+                    $value                                      = json_encode($value);
+                }
+
                 $request_key[]                                  = '$' . $key . "#";
                 $request_key[]                                  = '$' . $key . " ";
                 $request_value[]                                = $value . "#";

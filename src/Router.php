@@ -128,8 +128,8 @@ class Router implements Configurable, Dumpable
     {
         $rule = (
             $path
-            ? self::$cache[self::$target]
-            : self::find($path)
+            ? self::find($path)
+            : self::$cache[self::$target]
         );
 
         if (is_array($rule)) {

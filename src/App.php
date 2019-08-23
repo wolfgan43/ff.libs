@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs;
 
+use phpformsframework\libs\dto\RequestPage;
 use phpformsframework\libs\tpl\Widget;
 
 abstract class App implements Dumpable
@@ -33,35 +34,30 @@ abstract class App implements Dumpable
     const ERROR_BUCKET                                              = 'app';
 
     protected static $script_engine                                 = null;
-    protected static $page                                          = null;
 
-    public static function getPage($key = null)
-    {
-        if ($key && !isset(self::$page[$key])) {
-            self::$page[$key]                                       = null;
-        }
+    private static $config                                          = null;
 
-        return ($key
-            ? self::$page[$key]
-            : self::$page
-        );
+
+    /**
+     * @return RequestPage
+     */
+    public static function &config() {
+        return self::$config;
     }
 
+    /**
+     * @param RequestPage $page
+     */
+    public static function setConfig(&$page) {
+        self::$config =& $page;
+    }
 
     public static function dump()
     {
         return array(
             "isRunnedAs"    => self::$script_engine,
-            "page"          => self::$page
+            "config"        => (array) self::$config
         );
-    }
-
-    /**
-     * @param array|object $page
-     */
-    public static function setPage($page)
-    {
-        self::$page = (array) $page;
     }
 
     protected static function hook($name, $func, $priority = null)

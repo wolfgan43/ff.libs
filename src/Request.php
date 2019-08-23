@@ -47,9 +47,14 @@ class Request implements Configurable, Dumpable
     private static $patterns                                        = null;
     private static $server                                          = null;
 
-    private static $page_request                                    = null;
-    private static $page_rules                                      = null;
-    private static $page_headers                                    = null;
+    /**
+     * @var RequestPage $page
+     */
+    private static $page                                            = null;
+
+    //private static $page_request                                    = null;
+    //private static $page_rules                                      = null;
+    //private static $page_headers                                    = null;
 
     private static $orig_path_info                                  = null;
     private static $root_path                                       = null;
@@ -358,7 +363,7 @@ class Request implements Configurable, Dumpable
 
 
         if (Request::isAjax()) {
-            $_SERVER["XHR_PATH_INFO"]                       = rtrim(self::$root_path . parse_url(Request::referer(), PHP_URL_PATH), "/");
+            $_SERVER["XHR_PATH_INFO"]                       = rtrim(self::$root_path . Request::referer(PHP_URL_PATH), "/");
         }
 
         if (!self::isCommandLineInterface() && self::remoteAddr() == self::serverAddr()) {
@@ -449,14 +454,14 @@ class Request implements Configurable, Dumpable
      */
     public static function getQuery($with_unknown = false)
     {
-        if (!self::$page_request) {
+        if (!self::$page->request) {
             self::captureBody();
         }
 
         $res                                                    = array_filter(
             $with_unknown
-                                                                    ? self::$page_request["rawdata"]
-                                                                    : self::$page_request["valid"]
+                                                                    ? self::$page->request["rawdata"]
+                                                                    : self::$page->request["valid"]
                                                                 );
 
         return (is_array($res) && count($res)
@@ -536,21 +541,9 @@ class Request implements Configurable, Dumpable
             $request_path = DIRECTORY_SEPARATOR;
         }
 
-        $rules["query"]                                         = array();
-        $rules["body"]                                          = array();
-        $rules["header"]                                        = array();
-
         do {
             if (isset(self::$pages[$request_path])) {
-                if (isset(self::$pages[$request_path]["query"]) && is_array(self::$pages[$request_path]["query"])) {
-                    $rules["query"]                            = array_replace(self::$pages[$request_path]["query"], $rules["query"]);
-                }
-                if (isset(self::$pages[$request_path]["body"]) && is_array(self::$pages[$request_path]["body"])) {
-                    $rules["body"]                              = array_replace(self::$pages[$request_path]["body"], $rules["body"]);
-                }
-                if (isset(self::$pages[$request_path]["header"]) && is_array(self::$pages[$request_path]["header"])) {
-                    $rules["header"]                            = array_replace((array) self::$pages[$request_path]["header"], $rules["header"]);
-                }
+                $rules->set(self::$pages[$request_path]);
             }
         } while ($request_path != DIRECTORY_SEPARATOR && $request_path = dirname($request_path));
 
@@ -637,17 +630,17 @@ class Request implements Configurable, Dumpable
     {
         return self::protocol_host() . Constant::SITE_PATH . self::pathinfo();
     }
-    public static function url($pathinfo_part = null)
+    public static function url($phpurl_part = null)
     {
         $url                                                    = self::protocol_host_pathinfo() . self::getQuery(false);
 
-        return ($pathinfo_part && $url
-            ? pathinfo($url, $pathinfo_part)
+        return ($phpurl_part && $url
+            ? parse_url($url, $phpurl_part)
             : $url
         );
     }
 
-    public static function referer($pathinfo_part = null)
+    public static function referer($phpurl_part = null)
     {
         $referer                                                = (
             isset($_SERVER["HTTP_REFERER"])
@@ -655,8 +648,8 @@ class Request implements Configurable, Dumpable
                                                                     : null
                                                                 );
 
-        return ($pathinfo_part && $referer
-            ? pathinfo($referer, $pathinfo_part)
+        return ($phpurl_part && $referer
+            ? parse_url($referer, $phpurl_part)
             : $referer
         );
     }
@@ -854,7 +847,7 @@ class Request implements Configurable, Dumpable
     {
         $errors                                                                         = array();
         if (self::isAllowedSize(self::getRequestHeaders(), "HEAD")) {
-            foreach (self::$page_rules["header"] as $rule) {
+            foreach (self::$page->rules->header as $rule) {
                 $header_key                                                             = str_replace("-", "_", $rule["name"]);
                 if ($rule["name"] == "Authorization") {
                     $header_name                                                        = "Authorization";
@@ -882,7 +875,7 @@ class Request implements Configurable, Dumpable
                         $errors[$validator->status][] = $validator->error;
                     }
 
-                    self::$page_headers[$header_key]                                         = $_SERVER[$header_name];
+                    self::$page->headers[$header_key]                                   = $_SERVER[$header_name];
                 }
             }
         } else {
@@ -901,10 +894,10 @@ class Request implements Configurable, Dumpable
                                                                                             : "body"
                                                                                         );
         if (self::isAllowedSize($request, $method) && self::isAllowedSize(self::getRequestHeaders(), "HEAD")) {
-            self::$page_request["valid"]                                                = array();
+            self::$page->request["valid"]                                               = array();
             //Mapping Request by Rules
-            if (is_array(self::$page_rules[$bucket]) && count(self::$page_rules[$bucket]) && is_array($request)) {
-                foreach (self::$page_rules[$bucket] as $rule) {
+            if (is_array(self::$page->rules->$bucket) && count(self::$page->rules->$bucket) && is_array($request)) {
+                foreach (self::$page->rules->$bucket as $rule) {
                     if (isset($rule["required"]) && $rule["required"] === true && !isset($request[$rule["name"]])) {
                         $errors[400][]                                                  = $rule["name"] . " is required";
                     } elseif (isset($rule["required_ifnot"]) && !isset($_SERVER[$rule["required_ifnot"]]) && !isset($request[$rule["name"]])) {
@@ -925,10 +918,10 @@ class Request implements Configurable, Dumpable
 
 
                         if (isset($rule["scope"])) {
-                            self::$page_request[$rule["scope"]][$rule["name"]]          = $request[$rule["name"]];
+                            self::$page->request[$rule["scope"]][$rule["name"]]         = $request[$rule["name"]];
                         }
                         if (!isset($rule["hide"]) || $rule["hide"] === false) {
-                            self::$page_request["valid"][$rule["name"]]                 = $request[$rule["name"]];
+                            self::$page->request["valid"][$rule["name"]]                = $request[$rule["name"]];
                         } else {
                             unset($request[$rule["name"]]);
                         }
@@ -938,22 +931,22 @@ class Request implements Configurable, Dumpable
                                                                                             ? $rule["default"]
                                                                                             : null
                                                                                         );
-                        self::$page_request["valid"][$rule["name"]]                     = $request[$rule["name"]];
+                        self::$page->request["valid"][$rule["name"]]                    = $request[$rule["name"]];
                         if (isset($rule["scope"])) {
-                            self::$page_request[$rule["scope"]][$rule["name"]]          = $request[$rule["name"]];
+                            self::$page->request[$rule["scope"]][$rule["name"]]         = $request[$rule["name"]];
                         }
                     }
                 }
 
-                self::$page_request["rawdata"]                                          = $request;
+                self::$page->request["rawdata"]                                         = $request;
                 if ($method == "GET") {
-                    self::$page_request["get"]                                          = $request;
+                    self::$page->request["get"]                                         = $request;
                 } elseif ($method == "POST" || $method == "PATCH" || $method == "DELETE") {
-                    self::$page_request["post"]                                         = $request;
+                    self::$page->request["post"]                                        = $request;
                 }
-                self::$page_request["unknown"]                                          = array_diff_key($request, self::$page_request["valid"]);
-                if (isset(self::$page_request["unknown"]) && is_array(self::$page_request["unknown"]) && count(self::$page_request["unknown"])) {
-                    foreach (self::$page_request["unknown"] as $unknown_key => $unknown) {
+                self::$page->request["unknown"]                                         = array_diff_key($request, self::$page->request["valid"]);
+                if (isset(self::$page->request["unknown"]) && is_array(self::$page->request["unknown"]) && count(self::$page->request["unknown"])) {
+                    foreach (self::$page->request["unknown"] as $unknown_key => $unknown) {
                         $errors                                                         = $errors + self::securityValidation($unknown, null, $unknown_key);
                     }
                 }
@@ -990,8 +983,8 @@ class Request implements Configurable, Dumpable
         $errors                                                                         = array();
         if (is_array($_FILES) && count($_FILES)) {
             foreach ($_FILES as $file_name => $file) {
-                if (isset(self::$page_rules["body"][$file_name]) && self::$page_rules["body"][$file_name]["validator"] != "file") {
-                    $errors[400][]                                                      = $file_name . " must be type " . self::$page_rules["body"][$file_name]["validator"];
+                if (isset(self::$page->rules->body[$file_name]) && self::$page->rules->body[$file_name]["validator"] != "file") {
+                    $errors[400][]                                                      = $file_name . " must be type " . self::$page->rules->body[$file_name]["validator"];
                 } else {
                     $validator                                                          = Validator::is($file_name, "file", array("fakename" => $file_name));
                     if ($validator->isError()) {
@@ -1051,10 +1044,9 @@ class Request implements Configurable, Dumpable
     {
         static $last_update                                                                     = 0;
 
-        if (self::$page_headers === null || $last_update < self::$page_rules["last_update"]) {
-            self::$page_headers                                                                 = array();
-            if (is_array(self::$page_rules["header"]) && count(self::$page_rules["header"])) {
-                $last_update                                                                    = self::$page_rules["last_update"];
+        if ($last_update < self::$page->rules->last_update) {
+            if (is_array(self::$page->rules->header) && count(self::$page->rules->header)) {
+                $last_update                                                                    = self::$page->rules->last_update;
 
                 $errors                                                                         = self::securityHeaderParams();
                 if (is_array($errors) && count($errors)) {
@@ -1066,15 +1058,13 @@ class Request implements Configurable, Dumpable
             }
         }
 
-        return self::$page_headers;
+        return self::$page->headers;
     }
 
     private static function getRequestMethod()
     {
-        return (isset(self::$page_rules["method"])
-            ? self::$page_rules["method"]
-            : self::method()
-        );
+        return self::$page->method;
+
     }
     /**
      * @param null|string $key
@@ -1085,9 +1075,8 @@ class Request implements Configurable, Dumpable
     {
         static $last_update                                                                     = 0;
 
-        if (self::$page_request === null || $last_update < self::$page_rules["last_update"]) {
-            self::$page_request                                                             = array();
-            $last_update                                                                    = self::$page_rules["last_update"];
+        if ($last_update < self::$page->rules->last_update) {
+            $last_update                                                                    = self::$page->rules->last_update;
 
             if (!$method) {
                 $method = self::getRequestMethod();
@@ -1108,19 +1097,19 @@ class Request implements Configurable, Dumpable
             }
         }
 
-        if ($key && !isset(self::$page_request[$key])) {
-            self::$page_request[$key] = null;
+        if ($key && !isset(self::$page->request[$key])) {
+            self::$page->request[$key] = null;
         }
 
         return ($key
-            ? self::$page_request[$key]
-            : self::$page_request
+            ? self::$page->request[$key]
+            : self::$page->request
         );
     }
 
     private static function isInvalidHTTPS()
     {
-        return (self::$page_rules["https"] && !isset($_SERVER["HTTPS"])
+        return (self::$page->https && !isset($_SERVER["HTTPS"])
             ? "Request Method Must Be In HTTPS"
             : null
         );
@@ -1128,10 +1117,11 @@ class Request implements Configurable, Dumpable
     private static function isInvalidReqMethod($exit = false)
     {
         $error                                                                                  = self::isInvalidHTTPS();
-        if (!$error && self::$page_rules["method"] && self::method() != self::$page_rules["method"]) {
-            $error                                                                              = "Request Method Must Be " . self::$page_rules["method"]
+
+        if (!$error && self::method() != self::$page->method) {
+            $error                                                                              = "Request Method Must Be " . self::$page->method
                                                                                                     . (
-                                                                                                        self::$page_rules["https"] && isset($_SERVER["HTTP_REFERER"]) && strpos($_SERVER["HTTP_REFERER"], "http://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]) === 0
+                                                                                                        self::$page->https && self::referer(PHP_URL_HOST) == self::hostname()
                                                                                                         ? " (Redirect Https may Change Request Method)"
                                                                                                         : ""
                                                                                                     );

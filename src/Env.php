@@ -25,13 +25,17 @@
  */
 namespace phpformsframework\libs;
 
+use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\storage\Filemanager;
 use DirectoryIterator;
 
 class Env implements Configurable, Dumpable
 {
+    const CACHE_BUCKET                                              = "env";
+
     private static $env                                             = array();
     private static $packages                                        = null;
+    private static $permanent                                       = null;
 
     /**
      * @param null|string $key
@@ -52,11 +56,18 @@ class Env implements Configurable, Dumpable
     /**
      * @param string $key
      * @param mixed $value
+     * @param bool $permanent
      * @return mixed
      */
-    public static function set($key, $value)
+    public static function set($key, $value, $permanent = false)
     {
         self::$env[$key]                                            = $value;
+
+        if ($permanent) {
+            self::$permanent[$key]                                  = self::$env[$key];
+            $cache                                                  = Mem::getInstance(static::CACHE_BUCKET);
+            $cache->set("permanent", self::$permanent);
+        }
 
         return self::$env[$key];
     }
@@ -102,6 +113,13 @@ class Env implements Configurable, Dumpable
         );
     }
 
+    private static function loadEnv($env = array()) {
+        $cache                                                      = Mem::getInstance(static::CACHE_BUCKET);
+        self::$permanent                                            = $cache->get("permanent");
+
+        return array_replace((array) $env, (array) self::$permanent);
+    }
+
     public static function loadConfigRules($configRules)
     {
         return $configRules
@@ -109,7 +127,7 @@ class Env implements Configurable, Dumpable
     }
     public static function loadConfig($config)
     {
-        self::$env                                                  = $config["env"];
+        self::$env                                                  = self::loadEnv($config["env"]);
         self::$packages                                             = $config["packages"];
     }
 
@@ -124,7 +142,7 @@ class Env implements Configurable, Dumpable
         }
 
         return array(
-            "env"       => self::$env,
+            "env"       => self::loadEnv(self::$env),
             "packages"  => self::$packages,
         );
     }

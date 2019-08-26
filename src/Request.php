@@ -26,6 +26,8 @@
 
 namespace phpformsframework\libs;
 
+use phpformsframework\libs\dto\RequestPage;
+use phpformsframework\libs\dto\RequestPageRules;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\security\Validator;
 
@@ -232,10 +234,90 @@ class Request implements Configurable, Dumpable
         }
     }
 
-    public static function page()
+    private static function findPageByPathInfo()
+    {
+        $page                                                   = array();
+        $router                                                 = Router::find(self::$orig_path_info);
+        $page_path                                              = rtrim($router["path"], "/");
+        if (!$page_path) {
+            $page_path = DIRECTORY_SEPARATOR;
+        }
+
+        do {
+            if (isset(self::$pages[$page_path])) {
+                $page                                           = array_replace(self::$pages[$page_path]["config"], $page);
+            }
+            $page_path                                          = dirname($page_path);
+        } while ($page_path != DIRECTORY_SEPARATOR);
+
+        $page["path_info"] = (
+            isset($page["strip_path"]) && strpos(self::$path_info, $page["strip_path"]) === 0
+            ? substr(self::$path_info, strlen($page["strip_path"]))
+            : self::$path_info
+        );
+        if (!$page["path_info"]) {
+            $page["path_info"] = DIRECTORY_SEPARATOR;
+        }
+
+        if (is_array(self::$patterns) && count(self::$patterns)) {
+            $matches = null;
+            foreach (self::$patterns as $pattern => $rule) {
+                if (preg_match(Router::regexp($pattern), $page["path_info"], $matches)) {
+                    $page = (
+                        $router["path"] == $page["path_info"]
+                        ? array_replace($rule, $page)
+                        : array_replace($page, $rule)
+                    );
+                }
+            }
+        }
+
+        $page["rules"]                                      = self::setRulesByPage($page["path_info"]);
+
+        self::$page                                         = new RequestPage($page);
+    }
+
+    private static function urlVerify()
+    {
+        $redirect                                           = null;
+        //necessario XHR perche le request a servizi esterni path del domain alias non triggerano piu
+        if (Request::method() == "GET" && !Request::isAjax()) {
+            // Evita pagine duplicate quando i link vengono gestiti dagli alias o altro
+            if (count(Request::unknown())) {
+                $redirect                                   = Request::url();
+            }
+        }
+
+        if ($redirect) {
+            Response::redirect($redirect);
+        }
+    }
+
+
+    public static function &page()
     {
         self::rewritePathInfo();
 
+        self::findPageByPathInfo();
+
+        self::capture();
+
+        Constant::$disable_cache = self::$page->nocache;
+
+        if (isset(self::$page->root_path) && self::$page->root_path == self::$root_path) {
+            $_SERVER["PATH_INFO"]                           = self::$orig_path_info;
+        }
+        if (self::$page->validation) {
+            self::urlVerify();
+        }
+        if (self::$page->log) {
+            Log::write(self::rawdata(), self::$page->log);
+        }
+
+        return self::$page;
+
+
+        /*
         $page                                                   = array(
                                                                     "user_path"     => null,
                                                                     "strip_path"    => null,
@@ -248,7 +330,7 @@ class Request implements Configurable, Dumpable
         $router                                                 = Router::find(self::$orig_path_info);
         $page_path                                              = rtrim($router["path"], "/");
         if (!$page_path) {
-            $page_path = "/";
+            $page_path = DIRECTORY_SEPARATOR;
         }
 
         do {
@@ -285,9 +367,7 @@ class Request implements Configurable, Dumpable
                 Constant::$disable_cache = true;
             }
 
-            /**
-             * Set Request based on current Page. Descend into father page
-             */
+
             self::setRulesByPage($page);
             self::capture();
 
@@ -296,18 +376,7 @@ class Request implements Configurable, Dumpable
             }
         }
 
-/*
-        print_r(self::$orig_path_info);
-        print_r(self::$root_path);
-        print_r(self::$path_info);
-
-
-        print_r(self::$page_rules);
-        print_r(self::$page_request);
-        print_r(self::$page_headers);
-        print_r(self::MAX_SIZE);*/
-
-        return $page;
+        return $page;*/
     }
 
 
@@ -470,7 +539,7 @@ class Request implements Configurable, Dumpable
         );
     }
 
-    public static function capture()
+    private static function capture()
     {
         self::captureServer();
 
@@ -529,17 +598,14 @@ class Request implements Configurable, Dumpable
                      );
      */
 
-    public static function setRulesByPage($page)
+    /**
+     * @param $path_info
+     * @return RequestPageRules
+     */
+    private static function setRulesByPage($path_info)
     {
-        $rules                                                  = array();
-        $request_path                                           = (
-            isset($page["alias"])
-                                                                    ? rtrim($page["alias"] . $page["user_path"], DIRECTORY_SEPARATOR)
-                                                                    : $page["user_path"]
-                                                                );
-        if (!$request_path) {
-            $request_path = DIRECTORY_SEPARATOR;
-        }
+        $rules                                                  = new RequestPageRules();
+        $request_path                                           = $path_info;
 
         do {
             if (isset(self::$pages[$request_path])) {
@@ -547,19 +613,7 @@ class Request implements Configurable, Dumpable
             }
         } while ($request_path != DIRECTORY_SEPARATOR && $request_path = dirname($request_path));
 
-        $rules["https"]                                         = (
-            isset($page["https"])
-                                                                    ? $page["https"]
-                                                                    : null
-                                                                );
-        $rules["method"]                                        = (
-            isset($page["method"])
-                                                                    ? strtoupper($page["method"])
-                                                                    : self::method()
-                                                                );
-        self::$page_rules                                       = $rules;
-
-        self::$page_rules["last_update"]                        = microtime(true);
+        return $rules;
     }
 
     public static function proxy($hostname = null)
@@ -725,7 +779,7 @@ class Request implements Configurable, Dumpable
         );
     }
 
-    private static function CORS_prefight($origin)
+    private static function CORS_preflight($origin)
     {
         // return only the headers and not the content
         // only allow CORS
@@ -777,7 +831,7 @@ class Request implements Configurable, Dumpable
 
         switch (self::method()) {
             case "OPTIONS":
-                self::CORS_prefight($origin);
+                self::CORS_preflight($origin);
                 break;
             case "TRACE": //todo: to manage
                 Response::error(405);

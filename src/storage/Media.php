@@ -588,14 +588,13 @@ class Media implements Configurable
         $res                                                        = $this->process();
         $content_type                                               = static::MIMETYPE[$this->pathinfo["extension"]];
 
-
         if (Error::check(static::ERROR_BUCKET)) {
             $status                                                 = 404;
             $res                                                    = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII=');
             $content_type                                           = "image/png";
         }
 
-        $_SERVER["HTTP_ACCEPT"]                                     = static::MIMETYPE[$this->pathinfo["extension"]];
+        $_SERVER["HTTP_ACCEPT"]                                     = $content_type;
         Response::sendRawData($res, $content_type, $status);
     }
 
@@ -958,8 +957,14 @@ class Media implements Configurable
     {
         $this->resolveSourceIcon($mode);
         if (!$this->filesource) {
+            $base_path                                              = Constant::LIBS_PATH;
             Response::setContentType($this->pathinfo["extension"]);
             switch ($this->pathinfo["extension"]) {
+                case "svg":
+                    $this->checkPath(static::RENDER_IMAGE_PATH);
+                    $source_file                                    = $this->pathinfo["render"] . $this->pathinfo["orig"];
+                    $base_path                                      = Constant::DISK_PATH . "/app";
+                    break;
                 case "js":
                     $this->checkPath(static::RENDER_SCRIPT_PATH);
 
@@ -973,8 +978,9 @@ class Media implements Configurable
                 default:
                     $source_file                                    = null;
             }
+
             return ($source_file
-                ? $this->staticProcess($source_file)
+                ? $this->staticProcess($source_file, $base_path)
                 : $this->renderProcess($mode)
             );
         } else {
@@ -1009,18 +1015,20 @@ class Media implements Configurable
             $this->pathinfo["orig"]                                 = $path;
         }
     }
-    private function staticProcess($source_file)
+    private function staticProcess($source_file, $base_path = Constant::LIBS_DISK_PATH)
     {
         $res                                                        = null;
-        if (is_file(Constant::LIBS_DISK_PATH . $source_file)) {
+
+        if (is_file($base_path . $source_file)) {
             $cache_final_file                                       = $this->basepathCache() . $this->pathinfo["orig"];
             Filemanager::makeDir(dirname($cache_final_file), 0775, $this->basepathCache());
-            if (is_readable(Constant::LIBS_DISK_PATH . $source_file) && is_writable(dirname($cache_final_file)) && copy(Constant::LIBS_DISK_PATH . $source_file, $cache_final_file)) {
+            if (is_readable($base_path . $source_file) && is_writable(dirname($cache_final_file)) && copy($base_path . $source_file, $cache_final_file)) {
                 $res = Dir::loadFile($cache_final_file);
             } else {
                 Error::register("Link Failed. Check write permission on: " . $source_file . " and if directory exist and have write permission on " . Request::pathinfo(), static::ERROR_BUCKET);
             }
         }
+
         return $res;
     }
     private function renderProcess($mode = null)
@@ -1031,11 +1039,12 @@ class Media implements Configurable
 
         $status                                                     = null;
         $final_file                                                 = null;
+
         if ($this->filesource && $this->basepath && is_file($this->basepath . $this->filesource)) {
             if ($this->mode) {
                 $final_file                                         = $this->processFinalFile();
             } else {
-                $cache_basepath                                    = $this->basepathCache();
+                $cache_basepath                                     = $this->basepathCache();
                 if ($cache_basepath && !is_file($cache_basepath . $this->pathinfo["orig"])) {
                     Filemanager::makeDir($this->pathinfo["dirname"], 0775, $cache_basepath);
                     if (!link($this->basepath . $this->filesource, $cache_basepath . $this->pathinfo["orig"])) {

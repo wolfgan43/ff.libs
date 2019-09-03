@@ -28,14 +28,16 @@ class ErrorHandler
     private static $errors_arrays   = array();
     private static $errors_handled  = array();
 
-    private static $hide			= FF_ERROR_HANDLER_HIDE;
-    private static $minimal_report	= FF_ERROR_HANDLER_MINIMAL;
-    private static $whenErrorDo500	= FF_ERROR_HANDLER_500;
-    private static $log				= FF_ERROR_HANDLER_LOG;
+    private static $hide			= false;
+    private static $minimal_report	= false;
+    private static $whenErrorDo500	= true;
+    private static $log				= true;
+    private static $custom_tpl	    = null;
+    private static $max_recursion   = null;
 
     private static $log_path		= Constant::CACHE_DISK_PATH . DIRECTORY_SEPARATOR . "errors";
     private static $log_fp          = null;
-    private static $error_types		= FF_ERROR_TYPES;
+    private static $error_types		= E_USER_ERROR | E_USER_WARNING | E_USER_NOTICE;
 
     /**
      * Questa funzione genera un errore, che verrà poi gestito dalla funzione apposita della classe (ffErrorHandler::errorHandler)
@@ -271,8 +273,8 @@ EOD
         }
 
         if (self::hideEnabled() && self::$minimal_report) {
-            if (strlen(FF_ERROR_HANDLER_CUSTOM_TPL) && is_file(Constant::DISK_PATH . FF_ERROR_HANDLER_CUSTOM_TPL)) {
-                readfile(Constant::DISK_PATH . FF_ERROR_HANDLER_CUSTOM_TPL);
+            if (self::$custom_tpl && is_file(Constant::DISK_PATH . self::$custom_tpl)) {
+                readfile(Constant::DISK_PATH . self::$custom_tpl);
             } else {
                 echo "<pre>-=| FORMS FRAMEWORK |=- ERROR CATCHED";
                 if (self::logEnabled()) {
@@ -405,7 +407,7 @@ EOD
             self::out("[$key] => ");
             if (is_object($value)) {
                 self::out("Object <b>[type = " . get_class($value) . "]</b> ");
-                if (FF_ERRORS_MAXRECURSION !== null && $recursion >= FF_ERRORS_MAXRECURSION) {
+                if (self::$max_recursion !== null && $recursion >= self::$max_recursion) {
                     self::out("<b>MAX RECURSION</b>");
                 } elseif (get_class($value) == "com") {
                     self::out("<b>SKIPPED</b>");
@@ -452,7 +454,7 @@ EOD
                     reset(self::$errors_arrays);
 
                     if ($bFind === false) {
-                        if (FF_ERRORS_MAXRECURSION !== null && $recursion >= FF_ERRORS_MAXRECURSION) {
+                        if (self::$max_recursion !== null && $recursion >= self::$max_recursion) {
                             self::out("<b>MAX RECURSION</b>");
                         } elseif (count($value)) {
                             $bFind = uniqid(rand(), true);

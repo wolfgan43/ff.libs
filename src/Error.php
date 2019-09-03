@@ -245,7 +245,7 @@ class Error
     {
         if ($error) {
             self::$errors[$bucket][]                    = $error;
-            if (Constant::DEBUG) {
+            if (Kernel::$Environment::DEBUG) {
                 Debug::dump($error);
                 exit;
             } else {

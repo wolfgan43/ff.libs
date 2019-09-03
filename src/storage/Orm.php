@@ -25,9 +25,9 @@
  */
 namespace phpformsframework\libs\storage;
 
-use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dumpable;
+use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\Error;
 
@@ -91,7 +91,7 @@ class Orm implements Dumpable
 
         $res                                                                                = self::get($where, $fields, $sort, $limit, $ormModel, true);
 
-        if (Constant::DEBUG) {
+        if (Kernel::$Environment::DEBUG) {
             Log::debugging(array(
                 "action"    => "readRawData"
                 , "data"    => self::$data
@@ -118,7 +118,7 @@ class Orm implements Dumpable
         $res                                                                                = self::get($where, $fields, $sort, $limit, $ormModel, false);
 
         $exTime = Debug::stopWatch("orm/read");
-        if (Constant::DEBUG) {
+        if (Kernel::$Environment::DEBUG) {
             Log::debugging(array(
                 "action"    => "read"
                 , "data"    => self::$data
@@ -501,7 +501,7 @@ class Orm implements Dumpable
         $res                                                                                = self::set(null, null, $insert, $ormModel);
 
         $exTime = Debug::stopWatch("orm/insert");
-        if (Constant::DEBUG) {
+        if (Kernel::$Environment::DEBUG) {
             Log::debugging(array(
                 "action"    => "insert"
                 , "data"    => self::$data
@@ -525,7 +525,7 @@ class Orm implements Dumpable
         $res                                                                                = self::set($where, $set, null, $ormModel);
 
         $exTime = Debug::stopWatch("orm/update");
-        if (Constant::DEBUG) {
+        if (Kernel::$Environment::DEBUG) {
             Log::debugging(array(
                 "action"    => "insert"
                 , "data"    => self::$data
@@ -550,7 +550,7 @@ class Orm implements Dumpable
         $res                                                                                = self::set($where, $set, $insert, $ormModel);
 
         $exTime = Debug::stopWatch("orm/write");
-        if (Constant::DEBUG) {
+        if (Kernel::$Environment::DEBUG) {
             Log::debugging(array(
                 "action"    => "write"
                 , "data"    => self::$data
@@ -573,7 +573,7 @@ class Orm implements Dumpable
         $res = !(bool) $ormModel;
 
         $exTime = Debug::stopWatch("orm/delete");
-        if (Constant::DEBUG) {
+        if (Kernel::$Environment::DEBUG) {
             Log::debugging(array(
                 "action"    => "insert"
                 , "data"    => self::$data
@@ -1000,7 +1000,7 @@ class Orm implements Dumpable
                 $parts                                                                      = explode(".", $key);
                 switch (count($parts)) {
                     case "4":
-                        if (Constant::DEBUG) {
+                        if (Kernel::$Environment::DEBUG) {
                             Debug::dump("Wrong Format: " . $key);
                             exit;
                         }

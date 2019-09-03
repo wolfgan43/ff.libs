@@ -28,6 +28,7 @@ namespace phpformsframework\libs\security;
 
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\dto\DataError;
+use phpformsframework\libs\Kernel;
 
 class Validator
 {
@@ -396,7 +397,7 @@ class Validator
     public static function isEmail($value)
     {
         $regex                                                              = (
-            Constant::DEBUG
+            Kernel::$Environment::DEBUG
                                                                                 ? '/^([\.0-9a-z_\-\+]+)@(([0-9a-z\-]+\.)+[0-9a-z]{2,12})$/i'
                                                                                 : '/^([\.0-9a-z_\-]+)@(([0-9a-z\-]+\.)+[0-9a-z]{2,12})$/i'
                                                                             );

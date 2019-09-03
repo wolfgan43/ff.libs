@@ -28,6 +28,7 @@ namespace phpformsframework\libs\cache\adapters;
 use phpformsframework\libs\cache\MemAdapter;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Dir;
+use phpformsframework\libs\Kernel;
 use phpformsframework\libs\storage\Filemanager;
 
 class MemFs extends MemAdapter
@@ -65,7 +66,7 @@ class MemFs extends MemAdapter
     public function get($name, $bucket = null)
     {
         $res = false;
-        if (!Constant::$disable_cache) {
+        if (Kernel::useCache()) {
             $this->getKey("get", $bucket, $name);
             $res = Filemanager::getInstance("php")
                 ->read(

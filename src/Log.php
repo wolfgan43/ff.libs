@@ -358,7 +358,7 @@ class Log
                                                                     );
 
             if ($rule["write_if"] === null) {
-                $rule["write_if"] = Constant::DEBUG;
+                $rule["write_if"]                                   = Kernel::$Environment::DEBUG;
             }
 
             if ($rule["write_if"]) {
@@ -400,7 +400,7 @@ class Log
     {
         $log_path                                                   = self::getLogDir();
         if ($log_path) {
-            $file                                                   = $log_path . '/' . Constant::APPNAME . "_" . date("Y-m-d") . "_" . $filename . '.txt';
+            $file                                                   = $log_path . '/' . Kernel::$Environment::APPNAME . "_" . date("Y-m-d") . "_" . $filename . '.txt';
 
             if ($override) {
                 Filemanager::fsave($data, $file);
@@ -539,21 +539,21 @@ class Log
     {
         $server = null;
         foreach ($_SERVER as $key => $value) {
-            if(!is_array($value)) {
+            if (!is_array($value)) {
                 $server[$key] = $value;
             }
         }
 
-        if(is_array($server)) {
+        if (is_array($server)) {
             $content = str_replace(
                 array_keys($server),
                 array_values($server),
                 $content
             );
-
         }
         $microtime  = explode(".", microtime(true));
-        $micro      = (isset($microtime[1])
+        $micro      = (
+            isset($microtime[1])
                         ? $microtime[1]
                         : 0
                     );
@@ -643,5 +643,4 @@ class Log
      * {
      * }
      */
-
 }

@@ -26,8 +26,8 @@
 namespace phpformsframework\libs\cache\adapters;
 
 use phpformsframework\libs\cache\MemAdapter;
-use phpformsframework\libs\Constant;
 use Memcached as MC;
+use phpformsframework\libs\Kernel;
 
 class MemMemcached extends MemAdapter
 {
@@ -41,12 +41,12 @@ class MemMemcached extends MemAdapter
     {
         parent::__construct($bucket);
 
-        $this->conn = new MC(Constant::APPID);
+        $this->conn = new MC(Kernel::$Environment::APPID);
 
         if (static::$auth) {
             $this->conn->setOption(MC::OPT_BINARY_PROTOCOL, true);
             $this->conn->addServer(static::$server, static::$port);
-            $this->conn->setSaslAuthData(Constant::APPID, static::$auth);
+            $this->conn->setSaslAuthData(Kernel::$Environment::APPID, static::$auth);
         } else {
             $this->conn->addServer(static::$server, static::$port);
         }
@@ -80,7 +80,7 @@ class MemMemcached extends MemAdapter
     public function get($name, $bucket = null)
     {
         $res = false;
-        if (!Constant::$disable_cache) {
+        if (Kernel::useCache()) {
             $key = $this->getKey("get", $bucket, $name);
             if ($name) {
                 $this->conn->get($key);

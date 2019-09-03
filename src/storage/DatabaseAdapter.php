@@ -25,15 +25,16 @@
  */
 namespace phpformsframework\libs\storage;
 
-use phpformsframework\libs\Constant;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\international\Data;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\international\Translator;
+use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\tpl\Gridsystem;
 use phpformsframework\libs\security\Validator;
+use Exception;
 
 abstract class DatabaseAdapter
 {
@@ -145,71 +146,45 @@ abstract class DatabaseAdapter
 
         return $res;
     }
-
     protected function getConnector($key = null)
     {
-        $connection                                                                     = $this->connection;
+        $connector                                      = array();
 
-        $prefix                                                                         = (
-            isset($connection["prefix"]) && defined($connection["prefix"] . "NAME") && constant($connection["prefix"] . "NAME")
-                                                                                            ? $connection["prefix"]
-                                                                                            : static::PREFIX
-                                                                                        );
+        try {
+            $env                                        = Kernel::$Environment;
+            $connection                                 = $this->connection;
+            $prefix                                     = $env . '::' . (
+                isset($connection["prefix"]) && defined($env . '::' . $connection["prefix"] . "NAME")
+                ? $connection["prefix"]
+                : static::PREFIX
+            );
 
-        $connector["host"]                                                              = (
-            $connection["host"]
-                                                                                            ? $connection["host"]
-                                                                                            : (
-                                                                                                defined($prefix . "HOST")
-                                                                                                ? constant($prefix . "HOST")
-                                                                                                : "localhost"
-                                                                                            )
-                                                                                        );
-        $connector["username"]                                                          = (
-            $connection["username"]
-                                                                                            ? $connection["username"]
-                                                                                            : (
-                                                                                                defined($prefix . "USER")
-                                                                                                ? constant($prefix . "USER")
-                                                                                                : null
-                                                                                            )
-                                                                                        );
-        $connector["password"]                                                          = (
-            $connection["password"]
-                                                                                            ? $connection["password"]
-                                                                                            : (
-                                                                                                defined($prefix . "PASSWORD")
-                                                                                                ? constant($prefix . "PASSWORD")
-                                                                                                : null
-                                                                                            )
-                                                                                        );
-        $connector["name"]                                                              = (
-            $connection["name"]
-                                                                                            ? $connection["name"]
-                                                                                            : (
-                                                                                                defined($prefix . "NAME")
-                                                                                                ? constant($prefix . "NAME")
-                                                                                                : null
-                                                                                            )
-                                                                                        );
-        $connector["table"]                                                             = (
-            $connection["table"]
-                                                                                            ? $connection["table"]
-                                                                                            : null
-                                                                                        );
-        $connector["key"]                                                               = (
-            $connection["key"]
-                                                                                            ? $connection["key"]
-                                                                                            : static::KEY
-                                                                                        );
+            $connector["host"]                          = constant($prefix . "HOST");
+            $connector["username"]                      = constant($prefix . "USER");
+            $connector["password"]                      = constant($prefix . "PASSWORD");
+            $connector["name"]                          = constant($prefix . "NAME");
+            $connector["host"]                          = constant($prefix . "HOST");
 
-        if (!$this->table && $connector["table"]) {
-            $this->setTable($connector["table"]);
-        }
+            $connector["table"]                         = (
+                empty($connection["table"])
+                ? null
+                : $connection["table"]
+            );
+            $connector["key"]                           = (
+                empty($connection["key"])
+                ? static::KEY
+                : $connection["key"]
+            );
 
-        if (!$connector["name"]) {
-            Error::register(static::TYPE . "_database_connection_failed", static::ERROR_BUCKET);
-            return false;
+            if (!$this->table && $connector["table"]) {
+                $this->setTable($connector["table"]);
+            }
+
+            if (empty($connector["name"])) {
+                Error::register(static::TYPE . " database connection failed", static::ERROR_BUCKET);
+            }
+        } catch (Exception $e) {
+            Error::register("Connection Params Missing: " . $e->getMessage(), static::ERROR_BUCKET);
         }
 
         return ($key
@@ -625,7 +600,7 @@ abstract class DatabaseAdapter
     {
         static $hits                                                    = array();
 
-        if (Constant::DEBUG) {
+        if (Kernel::$Environment::DEBUG) {
             $hash                                                       = md5(serialize($this->where));
 
             $hits["count"]                                              = (

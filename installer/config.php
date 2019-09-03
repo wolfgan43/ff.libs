@@ -187,5 +187,3 @@ define("PHP_EXT_JSON", true);
 define("PHP_EXT_GD", true);
 define("APACHE_MODULE_EXPIRES", false);
 define("MYSQLI_EXTENSIONS", true);
-
-define("AUTH_SECURITY_LEVEL", 3);

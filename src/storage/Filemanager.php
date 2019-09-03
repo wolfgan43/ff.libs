@@ -29,6 +29,8 @@ namespace phpformsframework\libs\storage;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Dumpable;
+use phpformsframework\libs\Env;
+use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Request;
 
 class Filemanager implements Dumpable
@@ -43,9 +45,6 @@ class Filemanager implements Dumpable
      */
     private static $callback                                            = null;
     private static $patterns                                            = null;
-
-    const FTP_USERNAME                                                  = Constant::FTP_USERNAME;
-    const FTP_PASSWORD                                                  = Constant::FTP_PASSWORD;
 
     const SCAN_DIR                                                      = 1;
     const SCAN_DIR_RECURSIVE                                            = 2;
@@ -171,7 +170,7 @@ class Filemanager implements Dumpable
     private static function ftp_xconnect()
     {
         $res                                                            = null;
-        if (self::FTP_USERNAME && self::FTP_PASSWORD) {
+        if (Kernel::$Environment::FTP_USERNAME && Kernel::$Environment::FTP_PASSWORD) {
             $conn_id = @ftp_connect("localhost");
             if ($conn_id === false) {
                 $conn_id = @ftp_connect("127.0.0.1");
@@ -180,7 +179,7 @@ class Filemanager implements Dumpable
                 $conn_id = @ftp_connect(Request::serverAddr());
             }
 
-            if ($conn_id !== false && @ftp_login($conn_id, self::FTP_USERNAME, self::FTP_PASSWORD)) {
+            if ($conn_id !== false && @ftp_login($conn_id, Constant::FTP_USERNAME, Constant::FTP_USERNAME)) {
                 $local_path = Constant::DISK_PATH;
                 $part_path = "";
                 $real_ftp_path = null;

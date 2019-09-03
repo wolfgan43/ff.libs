@@ -34,10 +34,6 @@ use phpformsframework\libs\Hook;
 use phpformsframework\libs\international\Translator;
 use stdClass;
 
-if (!defined("FF_TEMPLATE_ENABLE_TPL_JS")) {
-    define("FF_TEMPLATE_ENABLE_TPL_JS", false);
-}
-
 class TemplateHtml
 {
     const ERROR_BUCKET                          = "tpl";
@@ -53,7 +49,7 @@ class TemplateHtml
 
     public $debug_msg							= false;
     public $display_unparsed_sect				= false;
-    public $doublevar_to_commenthtml 			= FF_TEMPLATE_ENABLE_TPL_JS;
+    public $doublevar_to_commenthtml 			= false;
 
     public $DBlocks 							= null;
     public $DVars 								= null;

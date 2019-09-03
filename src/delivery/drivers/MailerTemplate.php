@@ -25,9 +25,9 @@
  */
 namespace phpformsframework\libs\delivery\drivers;
 
-use phpformsframework\libs\Constant;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\international\Translator;
+use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\tpl\TemplateHtml;
@@ -54,11 +54,11 @@ final class MailerTemplate extends Mailer
     private $bodyAlt                                        = null;
 
 
-    public function __construct($template, $mailerAdapter = null)
+    public function __construct($template)
     {
         $this->loadTemplate($template);
 
-        parent::__construct($mailerAdapter);
+        parent::__construct();
     }
 
     public function setMessage($fields)
@@ -120,7 +120,7 @@ final class MailerTemplate extends Mailer
                 $this->tpl_text->load_file($this->tpl_text_path, "main");
             }
         } else {
-            Error::register("Template not found" . (Constant::DEBUG ? ": " . $this->tpl_html_path : ""), static::ERROR_BUCKET);
+            Error::register("Template not found" . (Kernel::$Environment::DEBUG ? ": " . $this->tpl_html_path : ""), static::ERROR_BUCKET);
         }
     }
     private function processTemplate()

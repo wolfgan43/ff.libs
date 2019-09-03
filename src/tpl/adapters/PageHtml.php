@@ -31,6 +31,7 @@ use phpformsframework\libs\Dir;
 use phpformsframework\libs\dto\DataHtml;
 use phpformsframework\libs\Env;
 use phpformsframework\libs\Error;
+use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Mappable;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\international\Translator;
@@ -247,7 +248,7 @@ class PageHtml extends Mappable
                                                     : ucfirst(basename($this->path))
                                                 );
         if ($include_appname) {
-            $title                              .= " - " . Constant::APPNAME;
+            $title                              .= " - " . Kernel::$Environment::APPNAME;
         }
         return $title;
     }
@@ -419,7 +420,7 @@ class PageHtml extends Mappable
 
     private function parseDebug()
     {
-        return (Constant::DEBUG
+        return (Kernel::$Environment::DEBUG
             ? Debug::dump("", true) . $this::NL
             : ""
         );

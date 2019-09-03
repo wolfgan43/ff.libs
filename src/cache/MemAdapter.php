@@ -25,7 +25,6 @@
  */
 namespace phpformsframework\libs\cache;
 
-use phpformsframework\libs\Constant;
 use phpformsframework\libs\Dumpable;
 
 abstract class MemAdapter implements Dumpable
@@ -48,7 +47,7 @@ abstract class MemAdapter implements Dumpable
 
     public function __construct($bucket = null)
     {
-        $this->bucket = Constant::APPID . "/" . $bucket;
+        $this->bucket = $bucket;
     }
 
     private function cache($bucket, $action, $name = "*")

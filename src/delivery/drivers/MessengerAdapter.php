@@ -25,7 +25,10 @@
  */
 namespace phpformsframework\libs\delivery\drivers;
 
+use phpformsframework\libs\Error;
+use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Request;
+use Exception;
 
 abstract class MessengerAdapter
 {
@@ -42,26 +45,24 @@ abstract class MessengerAdapter
 
     public function __construct()
     {
-        $sms_prefix                                         = (
-            defined(static::PREFIX . "_SMS_SID")
-                                                                ? static::PREFIX . "_SMS_"
-                                                                : "SMS_"
-                                                            );
 
-        $this->setProperty("sid", $sms_prefix);
-        $this->setProperty("token", $sms_prefix);
+        try {
+            $env                                            = Kernel::$Environment;
+            $prefix                                         = $env . '::' . (
+                isset($connection["prefix"]) && defined($env . '::' . static::PREFIX . "_SMS_SID")
+                    ? static::PREFIX . "_SMS_SID"
+                    : "SMS_"
+                );
 
-        $this->setProperty("from");
-        $this->setProperty("debug");
-    }
-
-    private function setProperty($name, $prefix = "")
-    {
-        $const                                              = strtoupper($prefix . $name);
-
-        if (defined($const)) {
-            $this->$name = constant($const);
+            $this->sid                                      = constant($prefix . "SID");
+            $this->token                                    = constant($prefix . "TOKEN");
+            $this->from                                     = constant($prefix . "FROM");
+            $this->debug                                    = constant($prefix . "DEBUG");
+        } catch (Exception $e) {
+            Error::register("SMS Params Missing: " . $e->getMessage(), static::ERROR_BUCKET);
         }
+
+
     }
 
     protected function getAppName()

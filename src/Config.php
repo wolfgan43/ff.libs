@@ -25,8 +25,6 @@
  */
 namespace phpformsframework\libs;
 
-use Composer\Autoload\ClassLoader;
-use Composer\Composer;
 use Exception;
 use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\dto\ConfigRules;
@@ -39,7 +37,6 @@ class Config implements Dumpable
     const APP_BASE_NAME                                             = "app";
     const LIBS_BASE_NAME                                            = "libs-base";
     const LIBS_NAME                                                 = "libs";
-    const CONFIG_PATH                                               = array();
 
     const SCHEMA_CONF                                               = "config";
     const SCHEMA_DIRSTRUCT                                          = "dirs";
@@ -261,8 +258,6 @@ class Config implements Dumpable
             $rawdata                                                = array();
 
             $classes                                                = get_declared_classes();
-            //@todo: da trovare un modo per importare anche queste
-            $classes[] = 'phpformsframework\\libs\\Model';
             foreach ($classes as $class_name) {
                 try {
                     $reflect                                        = new ReflectionClass($class_name);
@@ -295,9 +290,7 @@ class Config implements Dumpable
              * Find Config.xml
              */
             $paths = array_replace(
-                array(
-                    Constant::CONFIG_FF_DISK_PATH => array("filter" => array("xml", "map"))),
-                static::CONFIG_PATH,
+                Constant::CONFIG_DISK_PATHS,
                 $paths
             );
 
@@ -330,10 +323,12 @@ class Config implements Dumpable
 
             foreach (self::$class_configurable as $class_basename => $class_name) {
                 Debug::stopWatch(static::SCHEMA_CONF . "/" . $class_basename);
-
-                $rawdata[$class_basename]                           = $class_name::loadSchema(self::$config[$class_basename]);
-                unset(self::$config[$class_basename]);
-
+                if (isset(self::$config[$class_basename])) {
+                    $rawdata[$class_basename]                           = $class_name::loadSchema(self::$config[$class_basename]);
+                    unset(self::$config[$class_basename]);
+                } else {
+                    Error::registerWarning("no configuration for: " . $class_basename, static::ERROR_BUCKET);
+                }
                 Debug::stopWatch(static::SCHEMA_CONF . "/" . $class_basename);
             }
 
@@ -343,7 +338,9 @@ class Config implements Dumpable
 
             if (is_array($rawdata["class_configurable"]) && count($rawdata["class_configurable"])) {
                 foreach ($rawdata["class_configurable"] as $class_basename => $class_name) {
-                    $class_name::loadConfig($rawdata[$class_basename]);
+                    if (!empty($rawdata[$class_basename])) {
+                        $class_name::loadConfig($rawdata[$class_basename]);
+                    }
                 }
             }
         }

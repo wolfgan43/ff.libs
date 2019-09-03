@@ -25,24 +25,20 @@
  */
 namespace phpformsframework\libs\delivery\drivers;
 
-use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\dto\DataError;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\international\Locale;
+use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\security\Validator;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
 
-if (!defined("MAILER_SMTP")) {
-    define("MAILER_SMTP", "localhost");
-}
 abstract class Mailer
 {
     const ERROR_BUCKET                                      = "mailer";
-    const MAILER_SMTP                                       = MAILER_SMTP;
 
     /**
      * @var MailerAdapter
@@ -81,26 +77,25 @@ abstract class Mailer
 
     /**
      * @param null|string $template
-     * @param null|string $mailerAdapter
      * @return Mailer
      */
-    public static function getInstance($template = null, $mailerAdapter = null)
+    public static function getInstance($template = null)
     {
-        if (!self::$singletons[$template . $mailerAdapter]) {
-            self::$singletons[$template . $mailerAdapter]   = (
+        if (!self::$singletons[$template]) {
+            self::$singletons[$template]   = (
                 $template
-                ? new MailerTemplate($template, $mailerAdapter)
-                : new MailerSimple($mailerAdapter)
+                ? new MailerTemplate($template)
+                : new MailerSimple()
             );
         }
 
-        return self::$singletons[$template . $mailerAdapter];
+        return self::$singletons[$template];
     }
 
 
-    public function __construct($mailerAdapter = null)
+    public function __construct()
     {
-        $this->setAdapter($mailerAdapter);
+        $this->setAdapter();
     }
 
     public function from($email, $name = null)
@@ -308,7 +303,7 @@ abstract class Mailer
             $this->setMessage($message);
         }
 
-        if (Constant::DEBUG) {
+        if (Kernel::$Environment::DEBUG) {
             $this->addBCC($this->adapter->debug_email);
         }
 
@@ -329,12 +324,13 @@ abstract class Mailer
         $mail->CharSet                                      = $this->charset;
         $mail->Encoding                                     = $this->encoding;
 
-        /* if ($this->adapter->host == "127.0.0.1" || $this->adapter->host == "localhost") {
-             $mail->IsMail();
-         } else {
-             $mail->IsSMTP();
-         }*/
-        $mail->IsSMTP();
+
+
+        if ($this->adapter->driver == "smtp") {
+            $mail->IsSMTP();
+        } elseif ($this->adapter->driver == "mail") {
+            $mail->IsMail();
+        }
 
         $mail->Host                                         = $this->adapter->host;
         $mail->SMTPAuth                                     = $this->adapter->auth;
@@ -414,16 +410,9 @@ abstract class Mailer
         }
     }
 
-    /**
-     * @param null|string $mailerSmtp
-     */
-    private function setAdapter($mailerSmtp = null)
+    private function setAdapter()
     {
-        if (!$this->adapter && !$mailerSmtp) {
-            $mailerSmtp = static::MAILER_SMTP;
-        }
-
-        $this->adapter                                      = new MailerAdapter($mailerSmtp);
+        $this->adapter                                      = new MailerAdapter();
     }
 
     private function clearResult()
@@ -441,7 +430,7 @@ abstract class Mailer
     private function getResult()
     {
         $dataError                                          = new DataError();
-        if (Error::check(static::ERROR_BUCKET) || Constant::DEBUG) {
+        if (Error::check(static::ERROR_BUCKET) || Kernel::$Environment::DEBUG) {
             $dump = array(
                 "source" => Debug::stackTrace()
                 , "URL" => Request::url()
@@ -504,7 +493,7 @@ abstract class Mailer
         if (!$this->lang) {
             $this->lang       = Locale::getLang("tiny_code");
         }
-        if (Constant::DEBUG) {
+        if (Kernel::$Environment::DEBUG) {
             $this->addBCC($this->adapter->debug_email);
         }
 

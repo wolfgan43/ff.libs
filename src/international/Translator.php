@@ -27,8 +27,8 @@
 namespace phpformsframework\libs\international;
 
 use phpformsframework\libs\cache\Mem;
-use phpformsframework\libs\Constant;
 use phpformsframework\libs\Error;
+use phpformsframework\libs\Kernel;
 use phpformsframework\libs\storage\Orm;
 
 class Translator
@@ -48,8 +48,11 @@ class Translator
     private static $cache                               = null;
 
 
-    public static function getInstance($translatorAdapter = Constant::TRANSLATOR_ADAPTER, $auth = null)
+    public static function getInstance($translatorAdapter = null, $auth = null)
     {
+        if (!$translatorAdapter) {
+            $translatorAdapter                          = Kernel::$Environment::TRANSLATOR_ADAPTER;
+        }
         if (!isset(self::$singletons[$translatorAdapter])) {
             $class_name                                 = static::NAME_SPACE . "Translator" . ucfirst($translatorAdapter);
             self::$singletons[$translatorAdapter]       = new $class_name($auth);
@@ -108,8 +111,8 @@ class Translator
             return $code;
         }
         $lang_code                                      = self::getLang($language);
-        if (array_search($lang_code, Locale::ACCEPTED_LANG) === false) {
-            Error::register("Lang not accepted: " . $lang_code . " Lang allowed: " . implode(", ", Locale::ACCEPTED_LANG), static::ERROR_BUCKET);
+        if (array_search($lang_code, Kernel::$Environment::ACCEPTED_LANG) === false) {
+            Error::register("Lang not accepted: " . $lang_code . " Lang allowed: " . implode(", ", Kernel::$Environment::ACCEPTED_LANG), static::ERROR_BUCKET);
         }
         if (!isset(self::$cache[$lang_code][$code])) {
             $cache                                      = Mem::getInstance(static::CACHE_BUCKET . $lang_code);
@@ -129,7 +132,7 @@ class Translator
 
     private static function getCode($code)
     {
-        return (Constant::DEBUG
+        return (Kernel::$Environment::DEBUG
             ? "{" . $code . "}"
             : $code
         );

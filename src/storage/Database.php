@@ -26,18 +26,17 @@
 
 namespace phpformsframework\libs\storage;
 
-use phpformsframework\libs\Constant;
 use phpformsframework\libs\Env;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dumpable;
+use phpformsframework\libs\Kernel;
 
 class Database implements Dumpable
 {
     const ERROR_BUCKET                                                      = "database";
     const NAME_SPACE                                                        = __NAMESPACE__ . '\\adapters\\';
     const ENABLE_CACHE                                                      = true;
-    const ADAPTER                                                           = Constant::DATABASE_ADAPTER;
 
     private static $singletons                                              = null;
     private static $cache                                                   = null;
@@ -104,8 +103,12 @@ class Database implements Dumpable
      * @param array|string $databaseAdapters
      * @param null $params
      */
-    public function __construct($databaseAdapters = self::ADAPTER, $params = null)
+    public function __construct($databaseAdapters = null, $params = null)
     {
+        if (!$databaseAdapters) {
+            $databaseAdapters                                               = Kernel::$Environment::DATABASE_ADAPTER;
+        }
+
         if (is_array($databaseAdapters)) {
             foreach ($databaseAdapters as $adapter => $connection) {
                 if (is_numeric($adapter) && strlen($connection)) {
@@ -331,7 +334,7 @@ class Database implements Dumpable
 
         if (self::ENABLE_CACHE) {
             $cache_key                              = Database::getCacheKey($query);
-            if (Constant::DEBUG) {
+            if (Kernel::$Environment::DEBUG) {
                 self::$cache[$cache_key]["count"]   = (
                     isset(self::$cache[$cache_key])
                                                         ? self::$cache[$cache_key]["count"] + 1
@@ -344,7 +347,7 @@ class Database implements Dumpable
             }
 
             if (isset(self::$cache[$cache_key]["data"])) {
-                if (Constant::DEBUG) {
+                if (Kernel::$Environment::DEBUG) {
                     Debug::dumpLog("query_duplicate", $query);
                 }
                 $res                                = self::$cache[$cache_key]["data"];
@@ -358,7 +361,7 @@ class Database implements Dumpable
     {
         if (self::ENABLE_CACHE) {
             $cache_key                                                  = Database::getCacheKey($query);
-            if (Constant::DEBUG) {
+            if (Kernel::$Environment::DEBUG) {
                 $from_cache                                             = isset(self::$cache[$cache_key]["data"]) && self::$cache[$cache_key]["data"];
                 self::$cache_rawdata[(count(self::$cache_rawdata) + 1) . ". " . $cache_key] = ($from_cache ? $from_cache : $query);
             }

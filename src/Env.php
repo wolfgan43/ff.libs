@@ -29,13 +29,34 @@ use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\storage\Filemanager;
 use DirectoryIterator;
 
-class Env implements Configurable, Dumpable
+class Env implements Configurable
 {
     const CACHE_BUCKET                                              = "env";
 
-    private static $env                                             = array();
+    private static $dotenv                                          = array();
+    private static $vars                                            = array();
     private static $packages                                        = null;
-    private static $permanent                                       = null;
+    private static $permanent                                       = array();
+
+    public static function loadDotEnv()
+    {
+        $file                                                       = file_get_contents(
+            Constant::DISK_PATH . '/.env' .
+            (
+                isset(self::$vars["ENVIRONMENT"])
+                ? "." . self::$vars["ENVIRONMENT"]
+                : ""
+            )
+        );
+        $arrEnv                                                     = array();
+
+        $envString                                                  = str_replace(array("\r\n", "\n\n", "\n", '"true"', '"false"', '"null"'), array("\n", "&", "&", 'true', 'false', 'null'), $file);
+        parse_str($envString, $arrEnv);
+
+        self::$dotenv                                               = $arrEnv;
+
+        return self::$dotenv;
+    }
 
     /**
      * @param null|string $key
@@ -43,13 +64,13 @@ class Env implements Configurable, Dumpable
      */
     public static function get($key = null)
     {
-        if (!isset(self::$env[$key])) {
-            self::$env[$key]                                        = null;
+        if ($key && !isset(self::$vars[$key])) {
+            self::$vars[$key]                                       = null;
         }
 
         return ($key
-            ? self::$env[$key]
-            : null
+            ? self::$vars[$key]
+            : self::$vars
         );
     }
 
@@ -61,15 +82,15 @@ class Env implements Configurable, Dumpable
      */
     public static function set($key, $value, $permanent = false)
     {
-        self::$env[$key]                                            = $value;
+        self::$vars[$key]                                            = $value;
 
         if ($permanent) {
-            self::$permanent[$key]                                  = self::$env[$key];
+            self::$permanent[$key]                                  = self::$vars[$key];
             $cache                                                  = Mem::getInstance(static::CACHE_BUCKET);
             $cache->set("permanent", self::$permanent);
         }
 
-        return self::$env[$key];
+        return self::$vars[$key];
     }
 
     /**
@@ -78,9 +99,9 @@ class Env implements Configurable, Dumpable
      */
     public static function fill($values)
     {
-        self::$env                                                  = array_replace(self::$env, $values);
+        self::$vars                                                  = array_replace(self::$vars, $values);
 
-        return self::$env;
+        return self::$vars;
     }
 
 
@@ -108,18 +129,31 @@ class Env implements Configurable, Dumpable
         }
 
         return ($key
-            ? self::$env["packages"][$key]
+            ? self::$vars["packages"][$key]
             : self::$packages
         );
     }
 
-    private static function loadEnv($env = array()) {
+    private static function loadPermanent()
+    {
         $cache                                                      = Mem::getInstance(static::CACHE_BUCKET);
-        self::$permanent                                            = $cache->get("permanent");
+        $permanent                                                  = $cache->get("permanent");
+        if ($permanent) {
+            self::$permanent                                        = $permanent;
+        }
 
-        return array_replace((array) $env, (array) self::$permanent);
+        return self::$permanent;
     }
 
+    private static function setGlobalVars($vars)
+    {
+        self::$vars                                                 = $vars + self::loadPermanent();
+    }
+
+    /**
+     * @param $configRules
+     * @return dto\ConfigRules
+     */
     public static function loadConfigRules($configRules)
     {
         return $configRules
@@ -127,28 +161,31 @@ class Env implements Configurable, Dumpable
     }
     public static function loadConfig($config)
     {
-        self::$env                                                  = self::loadEnv($config["env"]);
+        self::$dotenv                                               = $config["dotenv"];
         self::$packages                                             = $config["packages"];
+
+        self::setGlobalVars($config["vars"]);
     }
 
     public static function loadSchema($rawdata, $bucket = "default")
     {
+        self::loadDotEnv();
+
         if (is_array($rawdata) && count($rawdata)) {
             foreach ($rawdata as $key => $value) {
-                self::$packages[$bucket][$key]                  = Dir::getXmlAttr($value);
+                self::$packages[$bucket][$key]                      = Dir::getXmlAttr($value);
 
-                self::$env[$key]                                = self::$packages[$bucket][$key]["value"];
+                self::$vars[$key]                                   = self::$packages[$bucket][$key]["value"];
             }
         }
+        $vars                                                       = self::$dotenv + self::$vars;
+
+        self::setGlobalVars($vars);
 
         return array(
-            "env"       => self::loadEnv(self::$env),
-            "packages"  => self::$packages,
+            "dotenv"                => self::$dotenv,
+            "vars"                  => $vars,
+            "packages"              => self::$packages
         );
-    }
-
-    public static function dump()
-    {
-        return self::$env;
     }
 }

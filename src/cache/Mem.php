@@ -26,7 +26,7 @@
 
 namespace phpformsframework\libs\cache;
 
-use phpformsframework\libs\Constant;
+use phpformsframework\libs\Kernel;
 
 class Mem // apc | memcached | redis | globals
 {
@@ -41,10 +41,10 @@ class Mem // apc | memcached | redis | globals
      */
     public static function getInstance($bucket = null, $memAdapter = Constant::CACHE_MEM)
     {
+        if (!$memAdapter) {
+            $memAdapter = Kernel::$Environment::CACHE_MEM_ADAPTER;
+        }
         if (!isset(self::$singletons[$memAdapter][$bucket])) {
-            if(!$memAdapter) {
-                $memAdapter = "Global";
-            }
             $class_name                 = static::NAME_SPACE . "Mem" . ucfirst($memAdapter);
             self::$singletons[$memAdapter][$bucket] = new $class_name($bucket);
         }

@@ -54,10 +54,6 @@ class Request implements Configurable, Dumpable
      */
     private static $page                                            = null;
 
-    //private static $page_request                                    = null;
-    //private static $page_rules                                      = null;
-    //private static $page_headers                                    = null;
-
     private static $orig_path_info                                  = null;
     private static $root_path                                       = null;
     private static $path_info                                       = null;
@@ -302,7 +298,7 @@ class Request implements Configurable, Dumpable
 
         self::capture();
 
-        Constant::$disable_cache = self::$page->nocache;
+        Kernel::useCache(!self::$page->nocache);
 
         if (isset(self::$page->root_path) && self::$page->root_path == self::$root_path) {
             $_SERVER["PATH_INFO"]                           = self::$orig_path_info;
@@ -315,68 +311,6 @@ class Request implements Configurable, Dumpable
         }
 
         return self::$page;
-
-
-        /*
-        $page                                                   = array(
-                                                                    "user_path"     => null,
-                                                                    "strip_path"    => null,
-                                                                    "log"           => false,
-                                                                    "validate_url"  => true,
-                                                                    "nocache"       => false
-                                                                );
-        $pages                                                  = self::$pages;
-
-        $router                                                 = Router::find(self::$orig_path_info);
-        $page_path                                              = rtrim($router["path"], "/");
-        if (!$page_path) {
-            $page_path = DIRECTORY_SEPARATOR;
-        }
-
-        do {
-            if (isset($pages[$page_path])) {
-                $page                                           = array_replace($pages[$page_path]["config"], (array) $page);
-            }
-            $page_path                                          = dirname($page_path);
-        } while ($page_path != DIRECTORY_SEPARATOR);
-
-        if (is_array($page) && count($page)) {
-            $page["user_path"] = (
-                isset($page["strip_path"]) && strpos(self::$path_info, $page["strip_path"]) === 0
-                ? substr(self::$path_info, strlen($page["strip_path"]))
-                : self::$path_info
-            );
-            if (!$page["user_path"]) {
-                $page["user_path"] = "/";
-            }
-
-            if (is_array(self::$patterns) && count(self::$patterns)) {
-                $matches = null;
-                foreach (self::$patterns as $pattern => $rule) {
-                    if (preg_match(Router::regexp($pattern), $page["user_path"], $matches)) {
-                        $page = (
-                            $router["path"] == $page["user_path"]
-                            ? array_replace($rule, $page)
-                            : array_replace($page, $rule)
-                        );
-                    }
-                }
-            }
-
-            if (isset($page["nocache"]) && $page["nocache"] === true) {
-                Constant::$disable_cache = true;
-            }
-
-
-            self::setRulesByPage($page);
-            self::capture();
-
-            if (isset($page["root_path"]) && $page["root_path"] == self::$root_path) {
-                $_SERVER["PATH_INFO"]                           = self::$orig_path_info;
-            }
-        }
-
-        return $page;*/
     }
 
 
@@ -457,7 +391,7 @@ class Request implements Configurable, Dumpable
                 unset($_POST["cookie"]);
             }
 
-            if (Constant::DEBUG) {
+            if (Kernel::$Environment::DEBUG) {
                 register_shutdown_function(function () {
                     $data["pathinfo"] = $_SERVER["PATH_INFO"];
                     $data["error"] = error_get_last();
@@ -752,8 +686,6 @@ class Request implements Configurable, Dumpable
             ? null
             : $_SERVER
         );
-
-        //unset($_SERVER);
     }
     private static function server($key)
     {
@@ -949,7 +881,7 @@ class Request implements Configurable, Dumpable
                                                                                         );
         if (self::isAllowedSize($request, $method) && self::isAllowedSize(self::getRequestHeaders(), "HEAD")) {
             self::$page->request["valid"]                                               = array();
-            //Mapping Request by Rules
+
             if (is_array(self::$page->rules->$bucket) && count(self::$page->rules->$bucket) && is_array($request)) {
                 foreach (self::$page->rules->$bucket as $rule) {
                     if (isset($rule["required"]) && $rule["required"] === true && !isset($request[$rule["name"]])) {

@@ -25,11 +25,12 @@
  */
 namespace phpformsframework\libs\delivery\drivers;
 
-use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\delivery\Notice;
 use phpformsframework\libs\dto\DataError;
+use phpformsframework\libs\Env;
 use phpformsframework\libs\Error;
+use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\security\Validator;
@@ -38,8 +39,6 @@ class Messenger
 {
     const ERROR_BUCKET                                      = "messenger";
     const NAME_SPACE                                        = Notice::NAME_SPACE;
-
-    const ADAPTER                                           = Constant::MESSENGER_ADAPTER;
 
     private $to                                             = null;
     private $content                                        = null;
@@ -117,7 +116,7 @@ class Messenger
             $this->setMessage($message);
         }
 
-        if (Constant::DEBUG) {
+        if (Kernel::$Environment::DEBUG) {
             $this->addAddress($this->adapter->debug);
         }
 
@@ -141,7 +140,7 @@ class Messenger
     private function getResult()
     {
         $dataError                                          = new DataError();
-        if (Error::check(static::ERROR_BUCKET) || Constant::DEBUG) {
+        if (Error::check(static::ERROR_BUCKET) || Kernel::$Environment::DEBUG) {
             $dump = array(
                 "source" => Debug::stackTrace()
                 , "URL" => Request::url()
@@ -192,7 +191,7 @@ class Messenger
     private function setAdapter($messengerAdapter = null)
     {
         if (!$this->adapter && !$messengerAdapter) {
-            $messengerAdapter = static::ADAPTER;
+            $messengerAdapter = Kernel::$Environment::MESSENGER_ADAPTER;
         }
 
         $className                                          = self::NAME_SPACE . "Messenger" . ucfirst($messengerAdapter);

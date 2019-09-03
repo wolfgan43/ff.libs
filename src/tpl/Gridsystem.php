@@ -25,18 +25,10 @@
  */
 namespace phpformsframework\libs\tpl;
 
-if (!defined("FRAMEWORK_CSS")) {
-    define("FRAMEWORK_CSS", "bootstrap4");
-}
-if (!defined("FONT_ICON")) {
-    define("FONT_ICON", "fontawesome4");
-}
+use phpformsframework\libs\Kernel;
 
 class Gridsystem
 {
-    const FRAMEWORK_CSS                                     = FRAMEWORK_CSS;
-    const FONT_ICON                                         = FONT_ICON;
-
     private static $singleton                               = null;
     private static $buttons                                 = null;
     private static $components                              = null;
@@ -191,9 +183,15 @@ class Gridsystem
      * @param null|string $fontIcon
      * @return FrameworkCss
      */
-    public static function getInstance($frameworkCss = self::FRAMEWORK_CSS, $fontIcon = self::FONT_ICON)
+    public static function getInstance($frameworkCss = null, $fontIcon = null)
     {
         if (!self::$singleton) {
+            if (!$frameworkCss) {
+                $frameworkCss                               = Kernel::$Environment::FRAMEWORK_CSS;
+            }
+            if (!$fontIcon) {
+                $fontIcon                                   = Kernel::$Environment::FONT_ICON;
+            }
             self::$singleton                                = new FrameworkCss($frameworkCss, $fontIcon, self::$buttons);
         }
 

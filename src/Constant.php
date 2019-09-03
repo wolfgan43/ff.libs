@@ -25,18 +25,27 @@
  */
 namespace phpformsframework\libs;
 
+define("DOCUMENT_ROOT", str_replace(Constant::VENDOR_LIBS_DIR . DIRECTORY_SEPARATOR . "src", "", __DIR__));
+define("SITE_PATH", isset($_SERVER["DOCUMENT_ROOT"]) ? str_replace($_SERVER["DOCUMENT_ROOT"], "", DOCUMENT_ROOT) : null);
+
 class Constant
 {
-    public static $disable_cache            = DISABLE_CACHE;
-
     const NAME_SPACE                        = "phpformsframework\\libs\\";
-
-    const VENDOR_LIBS_DIR                   = VENDOR_LIBS_DIR;
+    const CONFIG_DISK_PATHS                 = array(
+        self::CONFIG_FF_DISK_PATH           => array("filter" => array("xml", "map"))
+    );
     const DOCUMENT_ROOT                     = DOCUMENT_ROOT;
     const SITE_PATH                         = SITE_PATH;
-    const LIBS_PATH                         = "/vendor";
-    const CACHE_PATH                        = "/cache";
-    const UPLOAD_PATH                       = "/uploads";
+    const APPID                             = null;
+    const APPNAME                           = null;
+
+    /**
+     * Disk Settings
+     */
+    const LIBS_PATH                         = DIRECTORY_SEPARATOR . "vendor";
+    const CACHE_PATH                        = DIRECTORY_SEPARATOR . "cache";
+    const UPLOAD_PATH                       = DIRECTORY_SEPARATOR . "uploads";
+    const VENDOR_LIBS_DIR                   = self::LIBS_PATH . DIRECTORY_SEPARATOR . "phpformsframework" . DIRECTORY_SEPARATOR . "libs";
 
     const DISK_PATH                         = self::DOCUMENT_ROOT . self::SITE_PATH;
     const LIBS_DISK_PATH                    = self::DOCUMENT_ROOT . self::LIBS_PATH;
@@ -46,31 +55,69 @@ class Constant
     const CACHE_DISK_PATH                   = self::DISK_PATH . self::CACHE_PATH;
     const UPLOAD_DISK_PATH                  = self::DISK_PATH . self::UPLOAD_PATH;
 
-    const HTTP_AUTH_USERNAME                = HTTP_AUTH_USERNAME;
-    const HTTP_AUTH_PASSWORD                = HTTP_AUTH_PASSWORD;
-
-    const PHP_EXT                           = "php";
-
-    const APP_START                         = APP_START;
-    const APPID                             = APPID;
-    const APPNAME                           = APPNAME;
-    const ENCODING                          = "utf-8";
-
-    const PROFILING                         = DEBUG_PROFILING;
-    const DEBUG                             = DEBUG_MODE;
-
+    /**
+     * App Settings
+     */
+    const PROFILING                         = false;
+    const DEBUG                             = true;
+    const DISABLE_CACHE                     = false;
     const ACCEPTED_LANG                     = array("en");
-    const CACHE_MEM                         = CACHE_MEM;
+
+    /**
+     * Connection Credential
+     */
+    const DATABASE_HOST                     = null;
+    const DATABASE_NAME                     = null;
+    const DATABASE_USER                     = null;
+    const DATABASE_PASSWORD                 = null;
+
+    const SMTP_HOST                         = null;
+    const SMTP_AUTH                         = false;
+    const SMTP_USER                         = null;
+    const SMTP_PASSWORD                     = null;
+    const SMTP_PORT                         = 25;
+    const SMTP_SECURE                       = false;
+
+    const FROM_EMAIL                        = 'noreply@' . self::APPNAME;
+    const FROM_NAME                         = self::APPNAME;
+    const DEBUG_EMAIL                       = null;
+
+    const SMS_SID                           = null;
+    const SMS_TOKEN                         = null;
+    const SMS_FROM                          = self::APPNAME;
+
+    const SUPERADMIN_USERNAME               = null; //todo: da togliere
+    const SUPERADMIN_PASSWORD               = null; //todo: da togliere
+
+
+    /**
+     * Access Credential
+     */
+    const HTTP_AUTH_USERNAME                = null;
+    const HTTP_AUTH_PASSWORD                = null;
+
+    const FTP_USERNAME                      = null;
+    const FTP_PASSWORD                      = null;
+
+    const SESSION_NAME                      = self::APPNAME;
+    const SESSION_SAVE_PATH                 = DIRECTORY_SEPARATOR . "tmp";
+    const SESSION_PERMANENT                 = true;
+    const SESSION_SHARE                     = true;
+
+    /**
+     * Adapter settings
+     */
     const MESSENGER_ADAPTER                 = "Twilio";
     const TRANSLATOR_ADAPTER                = "Google";
-
-    const FTP_USERNAME                      = FTP_USERNAME;
-    const FTP_PASSWORD                      = FTP_PASSWORD;
-
-    const SESSION_NAME                      = SESSION_NAME;
-    const SESSION_SAVE_PATH                 = SESSION_SAVE_PATH;
-    const SESSION_PERMANENT                 = SESSION_PERMANENT;
-    const SESSION_SHARE                     = SESSION_SHARE;
-
     const DATABASE_ADAPTER                  = "mysqli";
+    const CACHE_MEM_ADAPTER                 = "fs";
+
+    /**
+     * System settings
+     */
+    const PHP_EXT                           = "php";
+    const ENCODING                          = "utf-8";
+    const FRAMEWORK_CSS                     = "bootstrap4";
+    const FONT_ICON                         = "fontawesome4";
+
 }

@@ -25,12 +25,15 @@
  */
 namespace phpformsframework\libs\delivery\drivers;
 
-use phpformsframework\libs\Mappable;
+use Exception;
+use phpformsframework\libs\Error;
+use phpformsframework\libs\Kernel;
 
-class MailerAdapter extends Mappable
+class MailerAdapter
 {
-    protected $prefix                                       = null;
+    const PREFIX                                            = null;
 
+    public $driver                                          = "smtp";
     public $host                                            = null;
     public $username                                        = null;
     public $password                                        = null;
@@ -43,36 +46,36 @@ class MailerAdapter extends Mappable
     public $from_name                                       = null;
     public $debug_email                                     = null;
 
-    public function __construct($map_name)
+    public function __construct()
     {
-        parent::__construct($map_name);
+        try {
+            $env                                            = Kernel::$Environment;
+            $prefix                                         = $env . '::' . (
+                isset($connection["prefix"]) && defined($env . '::' . static::PREFIX . "_SMTP_HOST")
+                    ? static::PREFIX . "_SMTP_"
+                    : "SMTP_"
+                );
 
+            $this->host                                     = constant($prefix . "SID");
+            $this->username                                 = constant($prefix . "USERNAME");
+            $this->password                                 = constant($prefix . "PASSWORD");
+            $this->auth                                     = constant($prefix . "AUTH");
+            $this->port                                     = constant($prefix . "PORT");
+            $this->secure                                   = constant($prefix . "SECURE");
+            $this->from_email                               = constant($prefix . "FROM_EMAIL");
+            $this->from_name                                = constant($prefix . "FROM_NAME");
+            if (defined($prefix . "DRIVER")) {
+                $this->driver                               = constant($prefix . "DRIVER");
+            }
+            if (defined($prefix . "AUTOTLS")) {
+                $this->autoTLS                              = constant($prefix . "AUTOTLS");
+            }
+            if (defined($prefix . "DEBUG_EMAIL")) {
+                $this->debug_email                          = constant($prefix . "DEBUG_EMAIL");
+            }
 
-        $smtp_prefix                                        = (
-            defined($this->prefix . "_SMTP_PASSWORD")
-            ? $this->prefix . "_SMTP_"
-            : "SMTP_"
-        );
-
-        $this->setProperty("host", $smtp_prefix);
-        $this->setProperty("username", $smtp_prefix);
-        $this->setProperty("password", $smtp_prefix);
-        $this->setProperty("auth", $smtp_prefix);
-        $this->setProperty("port", $smtp_prefix);
-        $this->setProperty("secure", $smtp_prefix);
-        $this->setProperty("autoTLS", $smtp_prefix);
-
-        $this->setProperty("from_email");
-        $this->setProperty("from_name");
-        $this->setProperty("debug_email");
-    }
-
-    private function setProperty($name, $prefix = "")
-    {
-        $const                                          = strtoupper($prefix . $name);
-
-        if (defined($const)) {
-            $this->$name = constant($const);
+        } catch (Exception $e) {
+            Error::register("Mailer Params Missing: " . $e->getMessage(), Mailer::ERROR_BUCKET);
         }
     }
 }

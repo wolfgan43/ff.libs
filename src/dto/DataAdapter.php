@@ -26,7 +26,7 @@
 
 namespace phpformsframework\libs\dto;
 
-use phpformsframework\libs\Constant;
+use phpformsframework\libs\Kernel;
 
 abstract class DataAdapter
 {
@@ -118,7 +118,7 @@ abstract class DataAdapter
     protected function get_vars()
     {
         $vars                               = get_object_vars($this);
-        if (!Constant::DEBUG) {
+        if (!Kernel::$Environment::DEBUG) {
             unset($vars["debug"]);
         }
 

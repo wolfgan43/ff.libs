@@ -27,6 +27,7 @@ namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Error;
+use phpformsframework\libs\Kernel;
 
 abstract class FilemanagerAdapter
 {
@@ -76,7 +77,7 @@ abstract class FilemanagerAdapter
                 $res                                                    = $return;
             }
         } elseif ($return === false) {
-            Error::registerWarning("syntax errors into file" . (Constant::DEBUG ? ": " . $params->file_path : ""), static::ERROR_BUCKET);
+            Error::registerWarning("syntax errors into file" . (Kernel::$Environment::DEBUG ? ": " . $params->file_path : ""), static::ERROR_BUCKET);
             return false;
         }
 
@@ -232,7 +233,7 @@ abstract class FilemanagerAdapter
      */
     private function isValid($file_path)
     {
-        return (Constant::DEBUG
+        return (Kernel::$Environment::DEBUG
             ? true
             : strpos($file_path, Constant::DISK_PATH) === 0
         );

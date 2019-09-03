@@ -43,7 +43,7 @@ class Router implements Configurable, Dumpable
 
     private static $cache                                   = array();
 
-    private static $alias                                   = null;
+    private static $routes                                  = null;
     private static $rules                                   = null;
 
     private static $sorted                                  = false;
@@ -67,7 +67,7 @@ class Router implements Configurable, Dumpable
 
     public static function loadConfig($config)
     {
-        self::$alias                                        = $config["alias"];
+        self::$routes                                       = $config["routes"];
         self::$rules                                        = $config["rules"];
     }
 
@@ -97,14 +97,14 @@ class Router implements Configurable, Dumpable
         }
 
         return array(
-            "alias" => self::$alias,
+            "routes" => self::$routes,
             "rules" => self::$rules
         );
     }
     public static function dump()
     {
         return array(
-            "alias" => self::$alias,
+            "routes" => self::$routes,
             "rules" => self::$rules
         );
     }
@@ -151,7 +151,7 @@ class Router implements Configurable, Dumpable
             self::runWebRoot($path);
         }
 
-        if (Constant::DEBUG) {
+        if (Kernel::$Environment::DEBUG) {
             Response::code(404);
             Debug::dump("Page Not Found!");
         }
@@ -223,7 +223,7 @@ class Router implements Configurable, Dumpable
                                         );
             }
 
-            if (!self::setAlias($path, $rule) && $rule) {
+            if (!self::setRoutes($path, $rule) && $rule) {
                 $key                    = self::getPriority($priority) . "-" . (9 - substr_count($path, DIRECTORY_SEPARATOR)) . "-" . $source;
                 self::$rules[$key]      = $rule;
             }
@@ -241,11 +241,11 @@ class Router implements Configurable, Dumpable
         exit;
     }
 
-    private static function setAlias($source, $rule)
+    private static function setRoutes($source, $rule)
     {
         $key = rtrim(rtrim(rtrim(ltrim($source, "^"), "$"), "*"), DIRECTORY_SEPARATOR);
         if (strpos($key, "*") === false && strpos($key, "+") === false && strpos($key, "(") === false && strpos($key, "[") === false) {
-            self::$alias[$key] = $rule;
+            self::$routes[$key] = $rule;
             return true;
         }
 
@@ -297,12 +297,12 @@ class Router implements Configurable, Dumpable
         $tmp_path                                       = rtrim($path, DIRECTORY_SEPARATOR);
         if ($tmp_path) {
             do {
-                if (isset(self::$alias[$tmp_path])) {
+                if (isset(self::$routes[$tmp_path])) {
                     if (!$match_path) {
                         $match_path                     = $tmp_path;
                     }
-                    if (self::$alias[$tmp_path]) {
-                        $res                            = self::$alias[$tmp_path];
+                    if (self::$routes[$tmp_path]) {
+                        $res                            = self::$routes[$tmp_path];
                         break;
                     }
                 }

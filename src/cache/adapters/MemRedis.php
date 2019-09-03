@@ -27,6 +27,8 @@ namespace phpformsframework\libs\cache\adapters;
 
 use phpformsframework\libs\cache\MemAdapter;
 use phpformsframework\libs\Constant;
+use phpformsframework\libs\Env;
+use phpformsframework\libs\Kernel;
 use Redis as MC;
 
 class MemRedis extends MemAdapter
@@ -42,7 +44,7 @@ class MemRedis extends MemAdapter
         parent::__construct($bucket);
 
         $this->conn = new MC();
-        $this->conn->pconnect(static::$server, static::$port, $this->getTTL(), Constant::APPID); // x is sent as persistent_id and would be another connection than the three before.
+        $this->conn->pconnect(static::$server, static::$port, $this->getTTL(), Kernel::$Environment::APPID); // x is sent as persistent_id and would be another connection than the three before.
         if (static::$auth) {
             $this->conn->auth(static::$auth);
         }
@@ -96,7 +98,7 @@ class MemRedis extends MemAdapter
     public function get($name, $bucket = null)
     {
         $res = false;
-        if (!Constant::$disable_cache) {
+        if (Kernel::useCache()) {
             $this->getKey("get", $bucket, $name);
 
             if ($bucket) {

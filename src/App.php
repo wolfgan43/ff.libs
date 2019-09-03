@@ -35,36 +35,65 @@ abstract class App implements Dumpable
 
     protected static $script_engine                                 = null;
 
-    private static $config                                          = null;
+    protected static $Environment                                   = null;
+    private static $Server                                          = null;
+    private static $Page                                            = null;
 
 
     /**
      * @return RequestPage
      */
-    public static function &config() {
-        return self::$config;
+    public static function &config()
+    {
+        return self::$Page;
+    }
+
+    /**
+     * @return Kernel
+     */
+    private static function &Server()
+    {
+        return self::$Server;
+    }
+
+    protected static function &Error()
+    {
+        return self::Server()->Error;
     }
 
     /**
      * @param RequestPage $page
+     * @param Kernel $server
      */
-    public static function setConfig(&$page) {
-        self::$config =& $page;
+    public static function setup(&$page, &$server)
+    {
+        self::$Page             =& $page;
+        self::$Environment      =& $server::$Environment;
+        self::$Server           =& $server;
     }
 
     public static function dump()
     {
         return array(
             "isRunnedAs"    => self::$script_engine,
-            "config"        => (array) self::$config
+            "Page"          => self::$Page,
+            "Vars"          => Env::get(),
+            "Server"        => '*protected*'
         );
     }
 
-    protected static function hook($name, $func, $priority = null)
+    public static function env($name, $value = null)
+    {
+        return ($value
+            ? Env::set($name, $value)
+            : Env::get($name)
+        );
+    }
+    public static function on($name, $func, $priority = null)
     {
         Hook::register($name, $func, $priority);
     }
-    protected static function doHook($name, &$ref = null, $params = null)
+    protected static function hook($name, &$ref = null, $params = null)
     {
         return Hook::handle($name, $ref, $params);
     }

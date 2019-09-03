@@ -26,14 +26,12 @@
 namespace phpformsframework\libs\international;
 
 use phpformsframework\libs\Configurable;
-use phpformsframework\libs\Constant;
 use phpformsframework\libs\Dir;
 use phpformsframework\libs\Env;
+use phpformsframework\libs\Kernel;
 
 class Locale implements Configurable
 {
-    const ACCEPTED_LANG                                             = Constant::ACCEPTED_LANG;
-
     private static $lang                                            = null;
     private static $country                                         = null;
     private static $langDefault                                     = null;
@@ -42,7 +40,7 @@ class Locale implements Configurable
 
     public static function isMultiLang()
     {
-        return count(static::ACCEPTED_LANG) > 1;
+        return count(Kernel::$Environment::ACCEPTED_LANG) > 1;
     }
 
     public static function getLangDefault($key = null)

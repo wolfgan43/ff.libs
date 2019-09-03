@@ -31,6 +31,7 @@ use phpformsframework\libs\Constant;
 use phpformsframework\libs\Dir;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Hook;
+use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\Response;
 use phpformsframework\libs\storage\drivers\ImageCanvas;
@@ -1463,7 +1464,7 @@ class Media implements Configurable
                                                                         ? filemtime($final_file)
                                                                         : "-1"
                                                                     );
-                    if (Constant::DEBUG
+                    if (Kernel::$Environment::DEBUG
                         || !$this->final["exist"]
                        // || $fmtime      <= $mode["last_update"] //todo: da fare controllo sul file di importazione dei mode
                         || $fmtime      <= filemtime($this->basepath . $this->filesource)

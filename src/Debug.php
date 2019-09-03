@@ -29,39 +29,55 @@ use phpformsframework\libs\storage\Filemanager;
 use ReflectionClass;
 use Exception;
 
-Log::extend("profiling", Log::TYPE_DEBUG, array(
-    "bucket"        => "profiling"
-    , "write_if"    => DEBUG_PROFILING
-    , "override"    => true
-    , "format"      => Log::FORMAT_CLE
-));
-
-if (Constant::DEBUG) {
-    register_shutdown_function(function () {
-        $time = Debug::exTimeApp();
-        if ($time > 10000) {
-            Log::error("Timeout: " . $time);
-        }
-    });
-}
-
-/**
- * Performance Profiling
- */
-if (Constant::PROFILING) {
-    Debug::benchmark();
-}
-
 class Debug
 {
     const ERROR_BUCKET                      = "exception";
-    const STOPWATCH                         = APP_START;
+
+    private static $app_start               = null;
 
     private static $startWatch              = array();
     private static $exTime                  = array();
 
     private static $debug                   = array();
 
+    public function __construct()
+    {
+        self::$app_start                   = microtime(true);
+
+        Log::extend("profiling", Log::TYPE_DEBUG, array(
+            "bucket"        => "profiling",
+            "write_if"    => Kernel::$Environment::PROFILING,
+            "override"    => true,
+            "format"      => Log::FORMAT_CLE,
+        ));
+
+        if (self::isEnabled()) {
+            error_reporting(E_ALL);
+            ini_set('display_errors', "On");
+
+            $_SERVER["HTTPS"]               = "on";
+
+
+            register_shutdown_function(function () {
+                $time                       = self::exTimeApp();
+                if ($time > 10000) {
+                    Log::error("Timeout: " . $time);
+                }
+            });
+
+            /**
+             * Performance Profiling
+             */
+            if (Kernel::$Environment::PROFILING) {
+                self::benchmark();
+            }
+        }
+    }
+
+    public static function isEnabled()
+    {
+        return Kernel::$Environment::DEBUG;
+    }
     /**
      * @param $bucket
      * @return float|null
@@ -92,7 +108,7 @@ class Debug
 
     public static function exTimeApp()
     {
-        $duration                           = microtime(true) - self::STOPWATCH;
+        $duration                           = microtime(true) - self::$app_start;
         return number_format($duration, 3, '.', '');
     }
 
@@ -154,7 +170,7 @@ class Debug
 
     public static function dumpCaller($note = null, $backtrace = null)
     {
-        if (Constant::PROFILING) {
+        if (Kernel::$Environment::PROFILING) {
             $debug_backtrace                    = (
                 is_array($backtrace)
                                                     ? $backtrace
@@ -437,7 +453,7 @@ class Debug
                 );
 
         $html_benchmark = "";
-        if (Constant::PROFILING) {
+        if (Kernel::$Environment::PROFILING) {
             $benchmark = self::benchmark(true);
             $html_benchmark = '<span style="padding:15px;">Mem: ' . $benchmark["mem"] . '</span>'
                 . '<span style="padding:15px;">MemPeak: ' . $benchmark["mem_peak"] . '</span>'

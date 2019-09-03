@@ -1,14 +1,17 @@
 {
     "name": "phpformsframework/libs",
     "description": "php FormsFramework libs",
+    "license": "LGPL-3.0",
     "type": "library",
-    "minimum-stability": "dev",
+    "version": "0.3",
     "authors": [
         {
-            "name": "Alessandro Stucchi", 
+            "name": "Alessandro Stucchi",
             "email": "wolfgan@gmail.com"
         }
     ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "config": {
         "optimize-autoloader": true,
         "classmap-authoritative": true,

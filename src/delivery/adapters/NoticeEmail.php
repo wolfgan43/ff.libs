@@ -65,7 +65,7 @@ class NoticeEmail extends NoticeAdapter
             : $template
         );
         if (!$this->template) {
-            Error::register("Template mail not found: " .  $template, static::ERROR_BUCKET);
+            Error::register("Template mail not found: " .  $template . " (check cache also)", static::ERROR_BUCKET);
         }
     }
 

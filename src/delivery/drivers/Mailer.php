@@ -309,6 +309,8 @@ abstract class Mailer
 
         if ($this->to) {
             $this->phpmailer();
+        } else {
+            Error::registerWarning("Mailer: Recipients is empty", static::ERROR_BUCKET);
         }
 
         Debug::stopWatch("mailer/send");

@@ -50,20 +50,21 @@ class MailerAdapter
     {
         try {
             $env                                            = Kernel::$Environment;
-            $prefix                                         = $env . '::' . (
-                isset($connection["prefix"]) && defined($env . '::' . static::PREFIX . "_SMTP_HOST")
+            $class_name                                     = $env . '::';
+            $prefix                                         = $class_name . (
+                isset($connection["prefix"]) && defined($class_name . static::PREFIX . "_SMTP_HOST")
                     ? static::PREFIX . "_SMTP_"
                     : "SMTP_"
                 );
 
-            $this->host                                     = constant($prefix . "SID");
-            $this->username                                 = constant($prefix . "USERNAME");
+            $this->host                                     = constant($prefix . "HOST");
+            $this->username                                 = constant($prefix . "USER");
             $this->password                                 = constant($prefix . "PASSWORD");
             $this->auth                                     = constant($prefix . "AUTH");
             $this->port                                     = constant($prefix . "PORT");
             $this->secure                                   = constant($prefix . "SECURE");
-            $this->from_email                               = constant($prefix . "FROM_EMAIL");
-            $this->from_name                                = constant($prefix . "FROM_NAME");
+            $this->from_email                               = constant($class_name . "FROM_EMAIL");
+            $this->from_name                                = constant($class_name . "FROM_NAME");
             if (defined($prefix . "DRIVER")) {
                 $this->driver                               = constant($prefix . "DRIVER");
             }
@@ -71,7 +72,7 @@ class MailerAdapter
                 $this->autoTLS                              = constant($prefix . "AUTOTLS");
             }
             if (defined($prefix . "DEBUG_EMAIL")) {
-                $this->debug_email                          = constant($prefix . "DEBUG_EMAIL");
+                $this->debug_email                          = constant($class_name . "DEBUG_EMAIL");
             }
 
         } catch (Exception $e) {

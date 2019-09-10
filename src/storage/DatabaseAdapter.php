@@ -232,22 +232,22 @@ abstract class DatabaseAdapter
                 $query["from"]                                      = $this->getTable("name");
 
                 if ($action == "read") {
-                    $query = $query + $this->convertFields($this->select, "select");
+                    $query                                          = $query + $this->convertFields($this->select, "select");
                 }
                 if ($action == "insert" || $action == "write") {
-                    $query = $query + $this->convertFields($this->insert, "insert");
+                    $query                                          = $query + $this->convertFields($this->insert, "insert");
                 }
                 if ($action == "update" || $action == "write") {
-                    $query = $query + $this->convertFields($this->set, "update");
+                    $query                                          = $query + $this->convertFields($this->set, "update");
                 }
                 if ($action != "insert") {
-                    $query = $query + $this->convertFields($this->where, "where");
+                    $query                                          = $query + $this->convertFields($this->where, "where");
                 }
                 if ($action == "read" && $this->sort) {
-                    $query = $query + $this->convertFields($this->sort, "sort");
+                    $query                                          = $query + $this->convertFields($this->sort, "sort");
                 }
                 if ($action == "read" && $this->limit) {
-                    $query["limit"] = $this->limit;
+                    $query["limit"]                                 = $this->limit;
                 }
             }
         } else {
@@ -1189,6 +1189,7 @@ abstract class DatabaseAdapter
                     }
                     break;
                 case "boolean":
+                case "bool":
                     if (is_array($value) || is_object($value)) {
                         $fields[$name]                                      = false;
                     } elseif (strrpos($value, "++") === strlen($value) -2) {

@@ -179,6 +179,70 @@ class DatabaseMongodb extends DatabaseAdapter
     }
 
 
+    private function parser_WhereField($field)
+    {
+        $res 						                    = $field["value"];
+
+        if (isset($this->struct[$field["name"]])) {
+            if (is_array($this->struct[$field["name"]])) {
+                $struct_type 							= "array";
+            } else {
+                $arrStructType 							= explode(":", $this->struct[$field["name"]], 2);
+                $struct_type 							= $arrStructType[0];
+            }
+        } else {
+            $struct_type                                = null;
+        }
+        switch ($struct_type) {
+            case "arrayIncremental":
+            case "arrayOfNumber":
+            case "array":
+                if (is_array($field["value"]) && count($field["value"])) {
+                    if (!$this->isAssocArray($field["value"])) {
+                        $res 		                    = array('$in' => $field["value"]);
+                    }
+                } elseif (is_array($field["value"]) && !count($field["value"])) {
+                    $res                                = array();
+                } else {
+                    $res                                = null;
+                }
+                break;
+            case "boolean":
+            case "bool":
+                break;
+            case "date":
+            case "number":
+            case "timestamp":
+            case "primary":
+                if (is_array($field["value"]) && count($field["value"])) {
+                    $res 			                    = array(
+                                                            '$in' => (
+                                                                ($field["name"] == $this->key_name)
+                                                                ? $field["value"]
+                                                                : array_map('intval', $field["value"])
+                                                            )
+                                                        );
+                }
+                break;
+            case "string":
+            case "char":
+            case "text":
+            default:
+                if (is_array($field["value"]) && count($field["value"])) {
+                    $res 			                    = array(
+                                                            '$in' => (
+                                                                ($field["name"] == $this->key_name)
+                                                                ? $field["value"]
+                                                                : array_map('strval', $field["value"])
+                                                            )
+                                                        );
+                }
+        }
+
+        return $res;
+    }
+
+
     /**
      * @param $fields
      * @param bool $flag
@@ -188,7 +252,6 @@ class DatabaseMongodb extends DatabaseAdapter
     {
         $result                                                                     = null;
         $res 																		= array();
-        $struct 																	= $this->struct;
         if (is_array($fields) && count($fields)) {
             $fields                                                                 = $this->convertKey("ID", $fields);
 
@@ -232,10 +295,15 @@ class DatabaseMongodb extends DatabaseAdapter
                                                                                     );
                     continue;
                 }
-
-
-
-                $field 																= $this->normalizeField($name, $value);
+                $parser_action_or                                                   = false;
+                if (isset($value['$or'])) {
+                    $parser_action_or                                               = true;
+                    $field 													        = $this->normalizeField($name, $value['$or']);
+                } elseif (isset($value['$and'])) {
+                    $field 															= $this->normalizeField($name, $value['$and']);
+                } else {
+                    $field 															= $this->normalizeField($name, $value);
+                }
 
                 if ($field == "special") {
                     $res[$flag][$name]                                              = $value;
@@ -303,6 +371,25 @@ class DatabaseMongodb extends DatabaseAdapter
 
                             break;
                         case "where":
+                            if (is_array($value)) {
+                                $field["value"]                                     = $value;
+                            }
+
+                            if ($parser_action_or) {
+                                $res['$or'][][$field["name"]]                       = $this->parser_WhereField($field);
+                            } else {
+                                $res["where"][$field["name"]]                       = $this->parser_WhereField($field);
+
+                            }
+                            break;
+                        case "where_OR":
+                            if (is_array($value)) {
+                                $field["value"]                                     = $value;
+                            }
+                            $res[][$field["name"]]                                  = $this->parser_WhereField($field);
+                            break;
+                        /**
+                        case "where":
                         case "where_OR":
                             if (!is_array($value)) {
                                 $value                                              = $field["value"];
@@ -334,6 +421,7 @@ class DatabaseMongodb extends DatabaseAdapter
                                     }
                                     break;
                                 case "boolean":
+                                case "bool":
                                     break;
                                 case "date":
                                 case "number":
@@ -364,6 +452,7 @@ class DatabaseMongodb extends DatabaseAdapter
                                     }
                             }
                             break;
+                         **/
                         default:
                     }
                 }

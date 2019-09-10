@@ -269,10 +269,7 @@ class Debug
 
     private static function dumpCommandLine($error_message = null)
     {
-        echo $error_message . "\n";
-        echo "---------------------------------------------------------------------\n";
-
-        $debug_backtrace = self::get_backtrace();
+        $debug_backtrace = array_reverse(self::get_backtrace());
 
         if (isset($debug_backtrace[0]["file"]) && basename($debug_backtrace[0]["file"]) == "Error.php") {
             unset($debug_backtrace[0]);
@@ -282,18 +279,22 @@ class Debug
             if (isset($trace["file"])) {
                 print $trace["file"] . ":" . $trace["line"] . "\n";
             } else {
-                if (isset($trace["class"]) && isset($debug_backtrace[$i + 1]["args"]) && isset($debug_backtrace[$i + 1]["args"][0][0])) {
-                    $operation = '<mark>' . basename(str_replace(array("Object: ", "\\"), array("", "/"), $debug_backtrace[$i + 1]["args"][0][0])) . $trace["type"] . $trace["function"] . '(' . implode(", ", $trace["args"]) . ')</mark>';
+                if (0 && isset($trace["class"]) && isset($debug_backtrace[$i + 1]["args"]) && isset($debug_backtrace[$i + 1]["args"][0])) {
+                    $operation = str_replace(array("Object: ", "\\"), array("", "/"), $debug_backtrace[$i + 1]["args"][0]) . $trace["type"] . $trace["function"] . '(' . implode(", ", $trace["args"]) . ')';
                 } else {
                     $operation = (
                         isset($trace["class"])
-                        ?  basename(str_replace("\\", "/", $trace["class"])) . $trace["type"] . $trace["function"]
+                        ?  basename(str_replace("\\", "/", $trace["class"])) . $trace["type"] . $trace["function"] . '(' . implode(", ", $trace["args"]) . ')'
                         : $trace["function"]
                     );
                 }
                 echo "Call " . $operation . "\n";
             }
         }
+
+        echo "---------------------------------------------------------------------\n";
+        echo $error_message . "\n";
+
         return null;
     }
 

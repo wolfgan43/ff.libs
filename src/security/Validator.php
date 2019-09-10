@@ -98,14 +98,14 @@ class Validator
                                                                 )
                                                                 , "string" => array(
                                                                     "filter"        => FILTER_SANITIZE_STRING
-                                                                    , "flags"       => FILTER_FLAG_NO_ENCODE_QUOTES | FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH
+                                                                    , "flags"       => FILTER_FLAG_NO_ENCODE_QUOTES | FILTER_FLAG_STRIP_LOW //| FILTER_FLAG_STRIP_HIGH
                                                                     , "options"     => null
                                                                     , "callback"    => "\phpformsframework\libs\security\Validator::checkSpecialChars"
                                                                     , "length"      => 128
                                                                 )
                                                                 , "array" => array(
                                                                     "filter"        => FILTER_SANITIZE_STRING
-                                                                    , "flags"       => FILTER_REQUIRE_ARRAY | FILTER_FLAG_NO_ENCODE_QUOTES | FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH
+                                                                    , "flags"       => FILTER_REQUIRE_ARRAY | FILTER_FLAG_NO_ENCODE_QUOTES | FILTER_FLAG_STRIP_LOW //| FILTER_FLAG_STRIP_HIGH
                                                                     , "options"     => null
                                                                     , "callback"    => "\phpformsframework\libs\security\Validator::checkSpecialChars"
                                                                     , "length"      => 128
@@ -280,7 +280,7 @@ class Validator
     {
         $errors                                         = array();
         if (!$spellcheck) {
-            $spellcheck = array("'", '"', '\\', '../', './');
+            $spellcheck = array("''", '""', '\\"', '\\', '../', './');
         }
 
         if (!is_array($value)) {

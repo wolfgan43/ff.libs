@@ -200,6 +200,187 @@ class DatabaseMysqli extends DatabaseAdapter
         return $res;
     }
 
+
+    private function parser_SpecialFields($name, $values, $action = "AND")
+    {
+        $res                                            = array();
+        foreach ($values as $op => $value) {
+            switch ($op) {
+                case '$gt':
+                    $res[$op] 				            = "`" . $name . "`" . " > " . $this->driver->toSql($value, "Number");
+                    break;
+                case '$gte':
+                    $res[$op] 				            = "`" . $name . "`" . " >= " . $this->driver->toSql($value, "Number");
+                    break;
+                case '$lt':
+                    $res[$op] 						    = "`" . $name . "`" . " < " . $this->driver->toSql($value, "Number");
+                    break;
+                case '$lte':
+                    $res[$op] 						    = "`" . $name . "`" . " <= " . $this->driver->toSql($value, "Number");
+                    break;
+                case '$eq':
+                    $res[$op] 						    = "`" . $name . "`" . " = " . $this->driver->toSql($value);
+                    break;
+                case '$regex':
+                    $res[$op] 						    = "`" . $name . "`" . " LIKE " . $this->driver->toSql(str_replace(array("(.*)", "(.+)", ".*", ".+", "*", "+"), "%", $value));
+                    break;
+                case '$in':
+                    if (is_array($value)) {
+                        $res[$op]                       = "`" . $name . "`" . " IN('" . str_replace(", ", "', '", $this->driver->toSql(implode(", ", $value), "Text", false)) . "')";
+                    } else {
+                        $res[$op]                       = "`" . $name . "`" . " IN('" . str_replace(",", "', '", $this->driver->toSql($value, "Text", false)) . "')";
+                    }
+                    break;
+                case '$nin':
+                    if (is_array($value)) {
+                        $res[$op] 					    = "`" . $name . "`" . " NOT IN('" . str_replace(", ", "', '", $this->driver->toSql(implode(", ", $value), "Text", false)) . "')";
+                    } else {
+                        $res[$op] 					    = "`" . $name . "`" . " NOT IN('" . str_replace(",", "', '", $this->driver->toSql($value, "Text", false)) . "')";
+                    }
+                    break;
+                case '$ne':
+                    $res[$op] 						    = "`" . $name . "`" . " <> " . $this->driver->toSql($value);
+                    break;
+                case '$inset':
+                    $res[$op] 						    = " FIND_IN_SET(" . $this->driver->toSql(str_replace(",", "','", $value)) . ", `" . $name . "`)";
+                    break;
+                default:
+            }
+        }
+
+        return "(" . implode(" " . $action . " ", $res) . ")";
+    }
+
+    private function parser_SelectField($field)
+    {
+        return $field["name"];
+    }
+
+    private function parser_InsertField($field)
+    {
+        $res                                            = null;
+        if (is_array($field["value"])) {
+            if ($this->isAssocArray($field["value"])) {
+                $res                                    = "'" . str_replace("'", "\\'", json_encode($field["value"])) . "'";
+            } else {
+                $res                                    = $this->driver->toSql(implode(",", array_unique($field["value"])));
+            }
+        } elseif (is_null($field["value"])) {
+            $res         						        = "NULL";
+        } elseif (is_bool($field["value"])) {
+            $res         						        = (int) $field["value"];
+        } else {
+            $res         						        = $this->driver->toSql($field["value"]);
+        }
+
+        return $res;
+    }
+
+    private function parser_UpdateField($field)
+    {
+        $res                                            = null;
+        if (is_array($field["value"])) {
+            switch ($field["op"]) {
+                case "++":
+                    break;
+                case "--":
+                    break;
+                case "+":
+                    if ($this->isAssocArray($field["value"])) {
+                    } else {
+                        $res 							= "`" . $field["name"] . "` = " . "CONCAT(`"  . $field["name"] . "`, IF(`"  . $field["name"] . "` = '', '', ','), " . $this->driver->toSql(implode(",", array_unique($field["value"]))) . ")";
+                    }
+                    break;
+                default:
+                    if ($this->isAssocArray($field["value"])) {
+                        $res                            = "`" . $field["name"] . "` = " . "'" . str_replace("'", "\\'", json_encode($field["value"])) . "'";
+                    } else {
+                        $res                            = "`" . $field["name"] . "` = " . $this->driver->toSql(implode(",", array_unique($field["value"])));
+                    }
+            }
+        } else {
+            switch ($field["op"]) {
+                case "++":
+                    $res                                = "`" . $field["name"] . "` = `" . $field["name"] . "` + 1";
+                    break;
+                case "--":
+                    $res                                = "`" . $field["name"] . "` = `" . $field["name"] . "` - 1";
+                    break;
+                case "+":
+                    $res 						        = "`" . $field["name"] . "` = " . "CONCAT(`"  . $field["name"] . "`, IF(`"  . $field["name"] . "` = '', '', ','), " . $this->driver->toSql($field["value"]) . ")";
+                    break;
+                default:
+                    if (is_null($field["value"])) {
+                        $res         			        = "`" . $field["name"] . "` = NULL";
+                    } elseif (is_bool($field["value"])) {
+                        $res         			        = "`" . $field["name"] . "` = " . (int) $field["value"];
+                    } else {
+                        $res         			        = "`" . $field["name"] . "` = " . $this->driver->toSql($field["value"]);
+                    }
+            }
+        }
+        return $res;
+    }
+    private function parser_DeleteField($field)
+    {
+        //todo: to implement
+    }
+
+    private function parser_WhereField($field)
+    {
+        $res                                            = null;
+        $value                                          = $field["value"];
+
+        if ($field["name"] == $this->key_name) {
+            $value 										= $this->convertID($value);
+        }
+        if (isset($this->struct[$field["name"]])) {
+            if (is_array($this->struct[$field["name"]])) {
+                $struct_type 							= "array";
+            } else {
+                $arrStructType 							= explode(":", $this->struct[$field["name"]], 2);
+                $struct_type 							= $arrStructType[0];
+            }
+        } else {
+            $struct_type                                = null;
+        }
+        switch ($struct_type) {
+            case "arrayIncremental":
+            case "arrayOfNumber":
+            case "array":
+                if (is_array($value) && count($value)) {
+                    foreach ($value as $item) {
+                        $res[] 							= "FIND_IN_SET(" . $this->driver->toSql($item) . ", `" . $field["name"] . "`)";
+                    }
+                    $res 								= "(" . implode(" OR ", $res) . ")";
+                }
+                break;
+            case "boolean":
+            case "bool":
+            case "date":
+            case "number":
+            case "timestamp":
+            case "primary":
+            case "string":
+            case "char":
+            case "text":
+            default:
+                if (is_array($value)) {
+                    if (count($value)) {
+                        $res                            = "`" . $field["name"] . "` " . "IN(" . $this->valueToFunc($value, $struct_type) . ")";
+                    }
+                } elseif (is_null($value)) {
+                    $res 							    = "`" . $field["name"] . "` " . " is null";
+                } elseif (empty($value)) {
+                    $res 							    = "`" . $field["name"] . "` = ''";
+                } else {
+                    $res 							    = "`" . $field["name"] . "` = " . $this->valueToFunc($value, $struct_type);
+                }
+        }
+
+        return $res;
+    }
+
     /**
      * @param $fields
      * @param bool $action
@@ -209,17 +390,16 @@ class DatabaseMysqli extends DatabaseAdapter
     {
         $result                                                                     = null;
         $res 																		= array();
-        $struct 																	= $this->struct;
         if (is_array($fields) && count($fields)) {
             $fields                                                                 = $this->convertKey("_id", $fields);
             if ($action == "where" && isset($fields['$or']) && is_array($fields['$or'])) {
                 $or                                                                 = $this->convertFields($fields['$or'], "where_OR");
                 if ($or) {
-                    $res['$or'] = $or;
+                    $res['$or']                                                     = $or;
                 }
             }
-
             unset($fields['$or']);
+
             foreach ($fields as $name => $value) {
                 if ($name == "*") {
                     if ($action == "select") {
@@ -257,164 +437,45 @@ class DatabaseMysqli extends DatabaseAdapter
                     continue;
                 }
 
-                $field 																= $this->normalizeField($name, $value);
+                if (isset($value['$or'])) {
+                    $parser_action                                                  = "OR";
+                    $field 													        = $this->normalizeField($name, $value['$or']);
+                    $special                                                        = $value['$or'];
+                } elseif (isset($value['$and'])) {
+                    $parser_action                                                  = "AND";
+                    $field 															= $this->normalizeField($name, $value['$and']);
+                    $special                                                        = $value['$and'];
+                } else {
+                    $parser_action                                                  = "AND";
+                    $field 															= $this->normalizeField($name, $value);
+                    $special                                                        = $value;
+                }
+
+
                 if ($field == "special") {
-                    if ($action == "where" || $action == "where_OR") {
-                        foreach ($value as $op => $subvalue) {
-                            switch ($op) {
-                                case '$gt':
-                                    $res[$name . '-' . $op] 				        = "`" . $name . "`" . " > " . $this->driver->toSql($subvalue, "Number");
-                                    break;
-                                case '$gte':
-                                    $res[$name . '-' . $op] 				        = "`" . $name . "`" . " >= " . $this->driver->toSql($subvalue, "Number");
-                                    break;
-                                case '$lt':
-                                    $res[$name . '-' . $op] 						= "`" . $name . "`" . " < " . $this->driver->toSql($subvalue, "Number");
-                                    break;
-                                case '$lte':
-                                    $res[$name . '-' . $op] 						= "`" . $name . "`" . " <= " . $this->driver->toSql($subvalue, "Number");
-                                    break;
-                                case '$eq':
-                                    $res[$name . '-' . $op] 						= "`" . $name . "`" . " = " . $this->driver->toSql($subvalue);
-                                    break;
-                                case '$regex':
-                                    $res[$name . '-' . $op] 						= "`" . $name . "`" . " LIKE " . $this->driver->toSql(str_replace(array("(.*)", "(.+)", ".*", ".+", "*", "+"), "%", $subvalue));
-                                    break;
-                                case '$in':
-                                    if (is_array($subvalue)) {
-                                        $res[$name . '-' . $op]                     = "`" . $name . "`" . " IN('" . str_replace(", ", "', '", $this->driver->toSql(implode(", ", $subvalue), "Text", false)) . "')";
-                                    } else {
-                                        $res[$name . '-' . $op]                     = "`" . $name . "`" . " IN('" . str_replace(",", "', '", $this->driver->toSql($subvalue, "Text", false)) . "')";
-                                    }
-                                    break;
-                                case '$nin':
-                                    if (is_array($subvalue)) {
-                                        $res[$name . '-' . $op] 					= "`" . $name . "`" . " NOT IN('" . str_replace(", ", "', '", $this->driver->toSql(implode(", ", $subvalue), "Text", false)) . "')";
-                                    } else {
-                                        $res[$name . '-' . $op] 					= "`" . $name . "`" . " NOT IN('" . str_replace(",", "', '", $this->driver->toSql($subvalue, "Text", false)) . "')";
-                                    }
-                                    break;
-                                case '$ne':
-                                    $res[$name . '-' . $op] 						= "`" . $name . "`" . " <> " . $this->driver->toSql($subvalue);
-                                    break;
-                                case '$inset':
-                                    $res[$name . '-' . $op] 						= " FIND_IN_SET(" . $this->driver->toSql(str_replace(",", "','", $subvalue)) . ", `" . $name . "`)";
-                                    break;
-                                default:
-                            }
-                        }
-                    }
+                    $res[$name]                                                     = self::parser_SpecialFields($name, $special, $parser_action);
                 } else {
                     switch ($action) {
                         case "select":
-                            $res[$name]         									= $field["name"];
+                            $res[$name]         							        = self::parser_SelectField($field);
                             break;
                         case "insert":
                             $res["head"][$name]         							= $field["name"];
-                            if (is_array($field["value"])) {
-                                if ($this->isAssocArray($field["value"])) {
-                                    $res["body"][$name]                             = "'" . str_replace("'", "\\'", json_encode($field["value"])) . "'";
-                                } else {
-                                    $res["body"][$name]                             = $this->driver->toSql(implode(",", array_unique($field["value"])));
-                                }
-                            } elseif (is_null($field["value"])) {
-                                $res["body"][$name]         						= "NULL";
-                            } else {
-                                $res["body"][$name]         						= $this->driver->toSql($field["value"]);
-                            }
+                            $res["body"][$name]         							= self::parser_InsertField($field);
                             break;
                         case "update":
-                            if (is_array($field["value"])) {
-                                switch ($field["op"]) {
-                                    case "++":
-                                        break;
-                                    case "--":
-                                        break;
-                                    case "+":
-                                        if ($this->isAssocArray($field["value"])) {
-                                        } else {
-                                            $res[$name] 							= "`" . $field["name"] . "` = " . "CONCAT(`"  . $field["name"] . "`, IF(`"  . $field["name"] . "` = '', '', ','), " . $this->driver->toSql(implode(",", array_unique($field["value"]))) . ")";
-                                        }
-                                        break;
-                                    default:
-                                        if ($this->isAssocArray($field["value"])) {
-                                            $res[$name]                             = "`" . $field["name"] . "` = " . "'" . str_replace("'", "\\'", json_encode($field["value"])) . "'";
-                                        } else {
-                                            $res[$name]                             = "`" . $field["name"] . "` = " . $this->driver->toSql(implode(",", array_unique($field["value"])));
-                                        }
-                                }
-                            } else {
-                                switch ($field["op"]) {
-                                    case "++":
-                                        $res[$name] = $res[$name] . " + 1";
-                                        break;
-                                    case "--":
-                                        $res[$name] = $res[$name] . " - 1";
-                                        break;
-                                    case "+":
-                                        $res[$name] 								= "`" . $field["name"] . "` = " . "CONCAT(`"  . $field["name"] . "`, IF(`"  . $field["name"] . "` = '', '', ','), " . $this->driver->toSql($field["value"]) . ")";
-                                        break;
-                                    default:
-                                        if (is_null($field["value"])) {
-                                            $res[$name]         			        = "`" . $field["name"] . "` = NULL";
-                                        } else {
-                                            $res[$name]         			        = "`" . $field["name"] . "` = " . $this->driver->toSql($field["value"]);
-                                        }
-                                }
-                            }
+                            $res[$name]         							        = self::parser_UpdateField($field);
+                            break;
+                        case "delete":
+                            $res[$name]         							        = self::parser_DeleteField($field);
                             break;
                         case "where":
                         case "where_OR":
-                            if (!is_array($value)) {
-                                $value                                              = $field["value"];
+                            if (is_array($value)) {
+                                $field["value"]                                     = $value;
                             }
-                            if ($field["name"] == $this->key_name) {
-                                $value 												= $this->convertID($value);
-                            }
-                            if (isset($struct[$field["name"]])) {
-                                if (is_array($struct[$field["name"]])) {
-                                    $struct_type 								    = "array";
-                                } else {
-                                    $arrStructType 									= explode(":", $struct[$field["name"]], 2);
-                                    $struct_type 									= $arrStructType[0];
-                                }
-                            } else {
-                                $struct_type                                        = null;
-                            }
-                            switch ($struct_type) {
-                                case "arrayIncremental":
-                                case "arrayOfNumber":
-                                case "array":
-                                    if (is_array($value) && count($value)) {
-                                        foreach ($value as $item) {
-                                            $res[$name][] 							= "FIND_IN_SET(" . $this->driver->toSql($item) . ", `" . $field["name"] . "`)";
-                                        }
-                                        $res[$name] 								= "(" . implode(" OR ", $res[$name]) . ")";
-                                    }
-                                    break;
-                                case "boolean":
-                                case "date":
-                                case "number":
-                                case "timestamp":
-                                case "primary":
-                                case "string":
-                                case "char":
-                                case "text":
-                                default:
-                                    if (is_array($value)) {
-                                        if (count($value)) {
-                                            $res[$name]                             = "`" . $field["name"] . "` " . "IN(" . $this->valueToFunc($value, $struct_type) . ")";
-                                        }
-                                    } elseif (is_null($value)) {
-                                        $res[$name] 							    = "`" . $field["name"] . "` " . " is null";
-                                    } elseif (empty($value)) {
-                                        $res[$name] 							    = "`" . $field["name"] . "` = ''";
-                                    } else {
-                                        $res[$name] 							    = "`" . $field["name"] . "` = " . $this->valueToFunc($value, $struct_type);
-                                    }
-                            }
+                            $res[$name]         							        = self::parser_WhereField($field);
                             break;
-                        default:
                     }
                 }
             }

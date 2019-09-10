@@ -291,8 +291,9 @@ abstract class DatabaseAdapter
                             }
                         }
 
-                        if ($db["num_rows"] < $this::MAX_NUMROWS) {
-                            if ($this->rawdata || $db["num_rows"] > $this::MAX_RESULTS) {
+                        $count_recordset                            = count($db["recordset"]);
+                        if (!empty($query["limit"]) || $count_recordset < $this::MAX_NUMROWS) {
+                            if ($this->rawdata || $count_recordset > $this::MAX_RESULTS) {
                                 $res["rawdata"]                     = $db["recordset"];
                             } else {
                                 $key                                = $this->getFieldAlias($query["key"]);

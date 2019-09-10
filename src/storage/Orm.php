@@ -493,6 +493,29 @@ class Orm implements Dumpable
      * @param null|OrmModel $ormModel
      * @return array|bool|null
      */
+    public static function insertUnique($insert, $ormModel = null)
+    {
+        Debug::dumpCaller("Insert unique: " . print_r($insert, true));
+        Debug::stopWatch("orm/unique");
+
+        $res                                                                                = self::set(array(), null, $insert, $ormModel);
+
+        $exTime = Debug::stopWatch("orm/unique");
+        if (Kernel::$Environment::DEBUG) {
+            Log::debugging(array(
+                "action"    => "insertUnique",
+                "data"      => self::$data,
+                "exTime"    => $exTime
+            ));
+        }
+        return $res;
+    }
+
+    /**
+     * @param array $insert
+     * @param null|OrmModel $ormModel
+     * @return array|bool|null
+     */
     public static function insert($insert, $ormModel = null)
     {
         Debug::dumpCaller("Insert: " . print_r($insert, true));
@@ -646,7 +669,7 @@ class Orm implements Dumpable
         $storage                                                                            = $ormModel->setStorage($data["def"]);
         $key_name                                                                           = self::getFieldAlias(array_search("primary", $data["def"]["struct"]), $data["def"]["alias"]);
 
-        if (isset($data["insert"]) && !isset($data["set"])) {
+        if (isset($data["insert"]) && !isset($data["set"]) && isset($data["where"])) {
             $data["insert"]                                                                 = self::getFields($data["insert"], $data["def"]["alias"]);
             $regs                                                                           = $storage->read($data["insert"], array($key_name => true));
 
@@ -661,7 +684,13 @@ class Orm implements Dumpable
                     $key                                                                    = $regs["keys"][0];
                 }
             }
-        } elseif (isset($data["set"]) && !isset($data["insert"]) && !isset($data["where"])) {
+        } elseif (isset($data["insert"]) && !isset($data["set"]) && !isset($data["where"])) {
+            $data["insert"]                                                                 = self::getFields($data["insert"], $data["def"]["alias"]);
+            $regs                                                                           = $storage->insert($data["insert"], $data["def"]["table"]["name"]);
+            if (is_array($regs)) {
+                $key                                                                        = $regs["keys"][0];
+            }
+        } elseif (!isset($data["insert"]) && isset($data["set"]) && !isset($data["where"])) {
             if (isset($data["def"]["relationship"][self::$data["main"]["def"]["mainTable"]]) && isset(self::$data["main"]["where"])) {
                 $key_main_primary                                                           = $data["def"]["relationship"][self::$data["main"]["def"]["mainTable"]]["primary"];
                 if (!isset(self::$data["main"]["where"][$key_main_primary])) {
@@ -692,13 +721,13 @@ class Orm implements Dumpable
                     self::$result["update"][$data["def"]["table"]["alias"]]                 = true;
                 }
             }
-        } elseif (isset($data["set"]) && isset($data["where"]) && !isset($data["insert"])) {
+        } elseif (!isset($data["insert"]) && isset($data["set"]) && isset($data["where"])) {
             self::$result["update"][$data["def"]["table"]["alias"]]                         = false;
             $regs                                                                           = $storage->update($data["set"], $data["where"], $data["def"]["table"]["name"]);
             if ($regs === true) {
                 self::$result["update"][$data["def"]["table"]["alias"]]                     = true;
             }
-        } elseif (isset($data["where"]) && !isset($data["insert"]) && !isset($data["set"])) {
+        } elseif (!isset($data["insert"]) && !isset($data["set"]) && isset($data["where"])) {
             $regs                                                                           = $storage->read($data["where"], array($key_name => true), null, null, $data["def"]["table"]["name"]);
             if (is_array($regs)) {
                 $key                                                                        = $regs["keys"][0];

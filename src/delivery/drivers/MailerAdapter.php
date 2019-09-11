@@ -52,7 +52,7 @@ class MailerAdapter
             $env                                            = Kernel::$Environment;
             $class_name                                     = $env . '::';
             $prefix                                         = $class_name . (
-                isset($connection["prefix"]) && defined($class_name . static::PREFIX . "_SMTP_HOST")
+                defined($class_name . static::PREFIX . "_SMTP_HOST")
                     ? static::PREFIX . "_SMTP_"
                     : "SMTP_"
                 );

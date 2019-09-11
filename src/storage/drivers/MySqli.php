@@ -109,19 +109,17 @@ class MySqli extends DatabaseDriver
     private function cleanup($force = false)
     {
         $this->freeResult();
-        if (is_object($this->link_id)) {
-            if ($force || !$this->persistent) {
-                @mysqli_kill($this->link_id, mysqli_thread_id($this->link_id));
-                @mysqli_close($this->link_id);
-                $dbkey = $this->host . "|" . $this->user . "|" . $this->password;
-                if (isset(static::$_dbs[$dbkey])) {
-                    unset(static::$_dbs[$dbkey]);
-                }
+        if (is_object($this->link_id) && ($force || !$this->persistent)) {
+            @mysqli_kill($this->link_id, mysqli_thread_id($this->link_id));
+            @mysqli_close($this->link_id);
+            $dbkey = $this->host . "|" . $this->user . "|" . $this->password;
+            if (isset(static::$_dbs[$dbkey])) {
+                unset(static::$_dbs[$dbkey]);
             }
         }
-        $this->link_id = false;
-        $this->errno = 0;
-        $this->error = "";
+        $this->link_id      = false;
+        $this->errno        = 0;
+        $this->error        = "";
     }
 
     // LIBERA LA RISORSA DELLA QUERY SENZA CHIUDERE LA CONNESSIONE
@@ -263,16 +261,41 @@ class MySqli extends DatabaseDriver
     // -------------------------------------------
     //  FUNZIONI PER LA GESTIONE DELLE OPERAZIONI
 
-    public function insert($Query_String, $table = null)
+    public function insert($query, $table = null)
     {
+        if (is_array($query)) {
+            $Query_String               = "INSERT INTO " .  $query["from"] . "
+                                        (
+                                            " . $query["insert"]["head"] . "
+                                        ) VALUES (
+                                            " . $query["insert"]["body"] . "
+                                        )";
+        } else {
+            $Query_String               = $query;
+        }
+
         return $this->execute($Query_String);
     }
-    public function update($Query_String, $table = null)
+    public function update($query, $table = null)
     {
+        if (is_array($query)) {
+            $Query_String               = "UPDATE " . $query["from"] . " SET 
+                                                " . $query["update"] . "
+                                            WHERE " . $query["where"];
+        } else {
+            $Query_String               = $query;
+        }
         return $this->execute($Query_String);
     }
-    public function delete($Query_String, $table = null)
+    public function delete($query, $table = null)
     {
+        if (is_array($query)) {
+            $Query_String               = "DELETE FROM " .  $query["from"] . "  
+                                            WHERE " . $query["where"];
+        } else {
+            $Query_String               = $query;
+        }
+
         return $this->execute($Query_String);
     }
     /**
@@ -322,9 +345,9 @@ class MySqli extends DatabaseDriver
         } else {
             $res = mysqli_fetch_all($this->query_id, MYSQLI_ASSOC);
         }
-        if($this->use_found_rows) {
+        if ($this->use_found_rows) {
             $this->numRows();
-        } elseif(is_array($res)) {
+        } elseif (is_array($res)) {
             $this->num_rows = count($res);
         }
 
@@ -342,6 +365,43 @@ class MySqli extends DatabaseDriver
         return $this->fields_names;
     }
 
+    private function querySelect($query)
+    {
+        return "SELECT " . (
+            isset($query["limit"]["calc_found_rows"])
+                ? " SQL_CALC_FOUND_ROWS "
+                : ""
+            ) . $query["select"];
+    }
+
+    private function queryFrom($query)
+    {
+        return " FROM " .  $query["from"];
+    }
+    private function queryWhere($query)
+    {
+        return " WHERE " . $query["where"];
+    }
+    private function querySort($query)
+    {
+        return (isset($query["sort"])
+            ? " ORDER BY " . $query["sort"]
+            : ""
+        );
+    }
+    private function queryLimit($query)
+    {
+        if (!isset($query["limit"])) {
+            return null;
+        }
+
+        return " LIMIT " . (
+            is_array($query["limit"])
+            ? $query["limit"]["skip"] . ", " . $query["limit"]["limit"]
+            : $query["limit"]
+        );
+    }
+
     /**
      * Esegue una query
      * @param string|array $query
@@ -350,28 +410,11 @@ class MySqli extends DatabaseDriver
     public function query($query)
     {
         if (is_array($query)) {
-            $Query_String                                   = "SELECT "
-                . (
-                    isset($query["limit"]["calc_found_rows"])
-                    ? " SQL_CALC_FOUND_ROWS "
-                    : ""
-                ) . $query["select"] . "  
-                                                                FROM " .  $query["from"] . "
-                                                                WHERE " . $query["where"]
-                . (
-                    isset($query["sort"])
-                    ? " ORDER BY " . $query["sort"]
-                    : ""
-                )
-                . (
-                    isset($query["limit"])
-                    ? " LIMIT " . (
-                        is_array($query["limit"])
-                        ? $query["limit"]["skip"] . ", " . $query["limit"]["limit"]
-                        : $query["limit"]
-                    )
-                    : ""
-                );
+            $Query_String                                   = $this->querySelect($query)    .
+                                                            $this->queryFrom($query)        .
+                                                            $this->queryWhere($query)       .
+                                                            $this->querySort($query)        .
+                                                            $this->queryLimit($query);
         } else {
             $Query_String                                   = $query;
         }
@@ -422,6 +465,11 @@ class MySqli extends DatabaseDriver
                 if ($this->nextRecord()) {
                     $res = $this->record["count"];
                 }
+                break;
+            case "processlist":
+                $query["select"] = "SHOW FULL PROCESSLIST";
+                $this->query($query);
+                $res = $this->getRecordset();
                 break;
             default:
                 $this->errorHandler("Command not supported");

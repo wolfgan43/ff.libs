@@ -25,7 +25,6 @@
  */
 namespace phpformsframework\libs\storage\adapters;
 
-use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\DatabaseAdapter;
 use phpformsframework\libs\storage\drivers\MySqli as sql;
 
@@ -48,38 +47,12 @@ class DatabaseMysqli extends DatabaseAdapter
 
     protected function processRead($query)
     {
-        $sSQL                                           = "SELECT "
-                                                            . (
-                                                                isset($query["limit"]) && is_array($query["limit"]) && isset($query["limit"]["calc_found_rows"])
-                                                                ? " SQL_CALC_FOUND_ROWS "
-                                                                : ""
-                                                            ) . $query["select"] . "  
-                                                            FROM " .  $query["from"] . "
-                                                            WHERE " . $query["where"]
-                                                            . (
-                                                                isset($query["sort"])
-                                                                ? " ORDER BY " . $query["sort"]
-                                                                : ""
-                                                            )
-                                                            . (
-                                                                isset($query["limit"])
-                                                                ? " LIMIT " . (
-                                                                    is_array($query["limit"])
-                                                                    ? $query["limit"]["skip"] . ", " . $query["limit"]["limit"]
-                                                                    : $query["limit"]
-                                                                )
-                                                                : ""
-                                                            );
-        $res                                            = $this->processRawQuery($sSQL);
-        if ($res) {
-            if (isset($query["limit"]) && is_array($query["limit"]) && isset($query["limit"]["calc_found_rows"])) {
-                $this->driver->query("SELECT FOUNT_ROWS() AS tot_row");
-                if ($this->driver->nextRecord()) {
-                    $res["count"]                       = $this->driver->getField("tot_row", "Number", true);
-                }
+        $res                                            = $this->processRawQuery($query);
+        if ($res && isset($query["limit"]) && is_array($query["limit"]) && isset($query["limit"]["calc_found_rows"])) {
+            $this->driver->query("SELECT FOUNT_ROWS() AS tot_row");
+            if ($this->driver->nextRecord()) {
+                $res["count"]                           = $this->driver->getField("tot_row", "Number", true);
             }
-        } else {
-            Error::register("MySqli Unable to Read: " . $sSQL, static::ERROR_BUCKET);
         }
 
         return $res;
@@ -88,18 +61,10 @@ class DatabaseMysqli extends DatabaseAdapter
     protected function processInsert($query)
     {
         $res                                            = null;
-        $sSQL                                           = "INSERT INTO " .  $query["from"] . "
-                                                            (
-                                                                " . $query["insert"]["head"] . "
-                                                            ) VALUES (
-                                                                " . $query["insert"]["body"] . "
-                                                            )";
-        if ($this->driver->execute($sSQL)) {
+        if ($this->driver->insert($query)) {
             $res                                        = array(
                                                             "keys" => array($this->driver->getInsertID(true))
                                                         );
-        } else {
-            Error::register("MySqli Unable to Insert: " . $sSQL, static::ERROR_BUCKET);
         }
 
         return $res;
@@ -108,15 +73,8 @@ class DatabaseMysqli extends DatabaseAdapter
     protected function processUpdate($query)
     {
         $res                                            = null;
-        $sSQL                                           = "UPDATE " . $query["from"] . " SET 
-                                                                " . $query["update"] . "
-                                                            WHERE " . $query["where"];
-
-
-        if ($this->driver->execute($sSQL)) {
+        if ($this->driver->update($query)) {
             $res = true;
-        } else {
-            Error::register("MySqli Unable to Update: " . $sSQL, static::ERROR_BUCKET);
         }
 
         return $res;
@@ -125,13 +83,8 @@ class DatabaseMysqli extends DatabaseAdapter
     protected function processDelete($query)
     {
         $res                                            = null;
-
-        $sSQL                                           = "DELETE FROM " .  $query["from"] . "  
-                                                            WHERE " . $query["where"];
-        if ($this->driver->execute($sSQL)) {
+        if ($this->driver->delete($query)) {
             $res = true;
-        } else {
-            Error::register("MySqli Unable to Delete: " . $sSQL, static::ERROR_BUCKET);
         }
 
         return $res;
@@ -142,44 +95,32 @@ class DatabaseMysqli extends DatabaseAdapter
         //todo: da valutare se usare REPLACE INTO. Necessario test benckmark
         $res                                            = null;
         $keys                                           = null;
-
-        $sSQL                                           = "SELECT " . $query["key"] . " 
-                                                            FROM " .  $query["from"] . "
-                                                            WHERE " . $query["where"];
-        if ($this->driver->query($sSQL)) {
+        if ($this->driver->query(array(
+            "select"			                        => $query["key"],
+            "from" 			                            => $query["from"],
+            "where" 			                        => $query["where"]
+        ))) {
             $keys                                       = $this->extractKeys($this->driver->getRecordset(), $query["key"]);
-        } else {
-            Error::register("MySqli Unable to Read(Write): " . $sSQL, static::ERROR_BUCKET);
         }
 
-        if (!Error::check(static::ERROR_BUCKET)) {
-            if (is_array($keys)) {
-                $sSQL                                   = "UPDATE " .  $query["from"] . " SET 
-                                                                " . $query["update"] . "
-                                                            WHERE " . $query["key"] . " IN(" . $this->driver->toSql(implode(",", $keys), "Text", false) . ")";
-                if ($this->driver->execute($sSQL)) {
-                    $res                                = array(
-                                                            "keys"      => $keys
-                                                            , "action"  => "update"
+        if (is_array($keys)) {
+            if ($this->driver->update(array(
+                "from"                              => $query["from"],
+                "update"                            => $query["update"],
+                "where"                             => $query["key"] . " IN(" . $this->driver->toSql(implode(",", $keys), "Text", false) . ")"
+
+            ))) {
+                $res                                = array(
+                                                        "keys"      => $keys,
+                                                        "action"  => "update"
+                                                    );
+            }
+        } elseif ($query["insert"]) {
+            if ($this->driver->insert($query)) {
+                $res                                    = array(
+                                                            "keys"      => array($this->driver->getInsertID(true))
+                                                            , "action"  => "insert"
                                                         );
-                } else {
-                    Error::register("MySqli Unable to Update(Write): " . $sSQL, static::ERROR_BUCKET);
-                }
-            } elseif ($query["insert"]) {
-                $sSQL                                   = "INSERT INTO " .  $query["from"] . "
-                                                            (
-                                                                " . $query["insert"]["head"] . "
-                                                            ) VALUES (
-                                                                " . $query["insert"]["body"] . "
-                                                            )";
-                if ($this->driver->execute($sSQL)) {
-                    $res                                    = array(
-                                                                "keys"      => array($this->driver->getInsertID(true))
-                                                                , "action"  => "insert"
-                                                            );
-                } else {
-                    Error::register("MySqli Unable to Insert(Write): " . $sSQL, static::ERROR_BUCKET);
-                }
             }
         }
 
@@ -193,8 +134,6 @@ class DatabaseMysqli extends DatabaseAdapter
         $success                                        = $this->driver->cmd($query, $query["action"]);
         if ($success !== null) {
             $res                                        = $success;
-        } else {
-            Error::register("MySqli: Unable to Execute Command" . print_r($query, true), static::ERROR_BUCKET);
         }
 
         return $res;
@@ -324,6 +263,7 @@ class DatabaseMysqli extends DatabaseAdapter
     private function parser_DeleteField($field)
     {
         //todo: to implement
+        return $field;
     }
 
     private function parser_WhereField($field)

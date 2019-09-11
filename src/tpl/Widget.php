@@ -100,14 +100,12 @@ abstract class Widget
     {
         $widget_name                            = $this->name;
 
-
-        $config                                 = $this->getConfig();
         $html_name                              = Resource::get($widget_name . "/html", "widget");
         $css_name                               = Resource::get($widget_name . "/css", "widget");
         $script_name                            = Resource::get($widget_name . "/js", "widget");
         if ($html_name) {
-            $tpl                                = $this->processTemplate($html_name, $config);
-            $this->html                         = $tpl->display();
+            $this->html                         = $this->processTemplate($html_name, $this->getConfig())
+                                                    ->display();
             if ($css_name) {
                 $this->addCss($widget_name, $css_name);
             }

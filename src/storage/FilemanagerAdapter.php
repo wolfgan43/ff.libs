@@ -43,12 +43,8 @@ abstract class FilemanagerAdapter
 
     public function __construct($file_path = null, $var = null)
     {
-        if ($file_path) {
-            $this->file_path = $file_path;
-        }
-        if ($var) {
-            $this->setVar($var);
-        }
+        $this->setFilePath($file_path);
+        $this->setVar($var);
     }
 
     abstract protected function load_file($file_path, $var = null);
@@ -176,9 +172,7 @@ abstract class FilemanagerAdapter
     public function fetch($file_path, $var = null)
     {
         $this->setFilePath($file_path);
-        if ($var) {
-            $this->setVar($var);
-        }
+        $this->setVar($var);
 
         return $this;
     }
@@ -233,10 +227,7 @@ abstract class FilemanagerAdapter
      */
     private function isValid($file_path)
     {
-        return (Kernel::$Environment::DEBUG
-            ? true
-            : strpos($file_path, Constant::DISK_PATH) === 0
-        );
+        return (Kernel::$Environment::DEBUG || strpos($file_path, Constant::DISK_PATH) === 0);
     }
 
     /**
@@ -267,16 +258,18 @@ abstract class FilemanagerAdapter
      */
     public function setFilePath($file_path)
     {
-        Error::clear(static::ERROR_BUCKET);
+        if ($file_path) {
+            Error::clear(static::ERROR_BUCKET);
 
-        $abs_path                                                   = $file_path;
-        if (!pathinfo($abs_path, PATHINFO_EXTENSION)) {
-            $abs_path                                               .= "." . $this::EXT;
+            $abs_path                                               = $file_path;
+            if (!pathinfo($abs_path, PATHINFO_EXTENSION)) {
+                $abs_path                                           .= "." . $this::EXT;
+            }
+            if (strpos($file_path, Constant::DISK_PATH) !== 0) {
+                $abs_path                                           = Constant::DISK_PATH . $abs_path;
+            }
+            $this->file_path                                        = $abs_path;
         }
-        if (strpos($file_path, Constant::DISK_PATH) !== 0) {
-            $abs_path                                               = Constant::DISK_PATH . $abs_path;
-        }
-        $this->file_path                                            = $abs_path;
     }
 
     /**
@@ -292,40 +285,30 @@ abstract class FilemanagerAdapter
      */
     public function setVar($var)
     {
-        $this->var                                                      = $var;
+        if ($var) {
+            $this->var                                              = $var;
+        }
     }
     protected function setParams($file_path, $var)
     {
-        if ($file_path) {
-            $this->setFilePath($file_path);
-        }
-        if ($var) {
-            $this->setVar($var);
-        }
-
-        $file_path                                              = $this->getFilePath();
-        $var                                                    = $this->getVar();
+        $this->setFilePath($file_path);
+        $this->setVar($var);
 
         return (object) array(
-            "file_path"     => $file_path,
-            "var"           => $var
+            "file_path"     => $this->getFilePath(),
+            "var"           => $this->getVar()
         );
     }
     protected function getParams($file_path)
     {
-        if ($file_path) {
-            $this->setFilePath($file_path);
-        }
-        $file_path                                              = $this->getFilePath();
-        if (!$this->exist($file_path)) {
+        $this->setFilePath($file_path);
+        if (!$this->exist($this->getFilePath())) {
             return false;
         }
 
-        $var                                                    = $this->getVar();
-
         return (object) array(
-            "file_path"     => $file_path,
-            "var"           => $var
+            "file_path"     => $this->getFilePath(),
+            "var"           => $this->getVar()
         );
     }
 

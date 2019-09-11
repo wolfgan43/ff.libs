@@ -277,11 +277,9 @@ class Request implements Configurable, Dumpable
     {
         $redirect                                           = null;
         //necessario XHR perche le request a servizi esterni path del domain alias non triggerano piu
-        if (Request::method() == "GET" && !Request::isAjax()) {
+        if (Request::method() == "GET" && !Request::isAjax() && count(Request::unknown())) {
             // Evita pagine duplicate quando i link vengono gestiti dagli alias o altro
-            if (count(Request::unknown())) {
-                $redirect                                   = Request::url();
-            }
+            $redirect                                       = Request::url();
         }
 
         if ($redirect) {
@@ -1030,17 +1028,17 @@ class Request implements Configurable, Dumpable
     {
         static $last_update                                                                     = 0;
 
-        if ($last_update < self::$page->rules->last_update) {
-            if (is_array(self::$page->rules->header) && count(self::$page->rules->header)) {
-                $last_update                                                                    = self::$page->rules->last_update;
+        if ($last_update < self::$page->rules->last_update
+            && is_array(self::$page->rules->header) && count(self::$page->rules->header)
+        ) {
+            $last_update                                                                        = self::$page->rules->last_update;
 
-                $errors                                                                         = self::securityHeaderParams();
-                if (is_array($errors) && count($errors)) {
-                    asort($errors);
-                    $status = key($errors);
+            $errors                                                                             = self::securityHeaderParams();
+            if (is_array($errors) && count($errors)) {
+                asort($errors);
+                $status = key($errors);
 
-                    self::isError(implode(", ", $errors[$status]), $status);
-                }
+                self::isError(implode(", ", $errors[$status]), $status);
             }
         }
 

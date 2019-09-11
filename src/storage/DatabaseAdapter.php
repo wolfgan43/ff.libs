@@ -152,10 +152,9 @@ abstract class DatabaseAdapter
 
         try {
             $env                                        = Kernel::$Environment;
-            $connection                                 = $this->connection;
             $prefix                                     = $env . '::' . (
-                isset($connection["prefix"]) && defined($env . '::' . $connection["prefix"] . "NAME")
-                ? $connection["prefix"]
+                isset($this->connection["prefix"]) && defined($env . '::' . $this->connection["prefix"] . "NAME")
+                ? $this->connection["prefix"]
                 : static::PREFIX
             );
 
@@ -166,14 +165,14 @@ abstract class DatabaseAdapter
             $connector["host"]                          = constant($prefix . "HOST");
 
             $connector["table"]                         = (
-                empty($connection["table"])
+                empty($this->connection["table"])
                 ? null
-                : $connection["table"]
+                : $this->connection["table"]
             );
             $connector["key"]                           = (
-                empty($connection["key"])
+                empty($this->connection["key"])
                 ? static::KEY
-                : $connection["key"]
+                : $this->connection["key"]
             );
 
             if (!$this->table && $connector["table"]) {
@@ -275,18 +274,18 @@ abstract class DatabaseAdapter
                     }
 
                     if ($db) {
-                        $exts                                       = array();
+                        $extsData                                   = array();
 
                         if ($this->exts && is_array($db["fields"]) && count($db["fields"])) {
                             foreach ($db["fields"] as $name) {
                                 if ($name == $query["key"]) {
-                                    $exts[$name]                    = null;
+                                    $extsData[$name]                = null;
                                 } elseif (strpos($name, "ID_") === 0) {
-                                    $exts[$name]                    = null;
+                                    $extsData[$name]                = null;
                                 } elseif (isset($this->relationship[$name])) {
-                                    $exts[$name]                    = null;
+                                    $extsData[$name]                = null;
                                 } elseif (isset($this->alias[$name]) && isset($this->relationship[$this->alias[$name]])) {
-                                    $exts[$name]                    = $this->alias[$name];
+                                    $extsData[$name]                = $this->alias[$name];
                                 }
                             }
                         }
@@ -299,8 +298,8 @@ abstract class DatabaseAdapter
                                 $key                                = $this->getFieldAlias($query["key"]);
                                 foreach ($db["recordset"] as $record) {
                                     $res["keys"][]                  = $record[$key];
-                                    if ($exts) {
-                                        foreach ($exts as $field_name => $field_alias) {
+                                    if (count($extsData)) {
+                                        foreach ($extsData as $field_name => $field_alias) {
                                             if ($record[$field_name]) {
                                                 $ids = explode(",", $record[$field_name]);
                                                 foreach ($ids as $id) {
@@ -679,24 +678,24 @@ abstract class DatabaseAdapter
                     }
 
                     if (!$toField) {
-                        $struct                                         = null;
+                        $structCurrent                                  = null;
                         if ($arrValue && isset($this->struct[$arrValue[0]]) && is_array($this->struct[$arrValue[0]])) {
-                            $struct                                     = (
+                            $structCurrent                              = (
                                 isset($this->struct[$arrValue[0]][$arrValue[1]]) && $this->struct[$arrValue[0]][$arrValue[1]]
                                                                             ? $this->struct[$arrValue[0]][$arrValue[1]]
                                                                             : $this->struct[$arrValue[0]]["default"]
                                                                         );
                         }
-                        if (!$struct) {
+                        if (!$structCurrent) {
                             $struct_field                               = $this->getStructField($name);
-                            $struct                                     = (
+                            $structCurrent                              = (
                                 is_array($struct_field)
                                                                             ? $struct_field["default"]
                                                                             : $struct_field
                                                                         );
                         }
-                        if ($struct) {
-                            $toField = $this->convert($struct, "to");
+                        if ($structCurrent) {
+                            $toField = $this->convert($structCurrent, "to");
                         }
                     }
 

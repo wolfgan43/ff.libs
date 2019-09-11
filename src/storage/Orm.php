@@ -210,6 +210,19 @@ class Orm implements Dumpable
         return self::getResult($result_raw_data);
     }
 
+    private static function getCurrentData($controller, $table)
+    {
+        $data       = self::$data["main"];
+        if ($controller || $table) {
+            $data   = (self::$data["sub"][$controller][(
+                $table
+                ? $table
+                : self::getModel($controller)->getMainTable()
+            )]);
+        }
+
+        return $data;
+    }
     /**
      * @param null|string $controller
      * @param null|string $table
@@ -222,22 +235,9 @@ class Orm implements Dumpable
         $table_rel                                                                          = false;
         $where                                                                              = null;
         $sort                                                                               = null;
-        $data                                                                               = (
-            !$controller && !$table
-                                                                                                ? self::$data["main"]
-                                                                                                : self::$data["sub"][$controller][(
-                                                                                                    $table
-                                                                                                    ? $table
-                                                                                                    : self::getModel($controller)->getMainTable()
-                                                                                                )]
-                                                                                            );
-        if (isset($data["where"])) {
-            $where                                                                          = (
-                $data["where"] === true
-                                                                                                ? true
-                                                                                                : self::getFields($data["where"], $data["def"]["alias"])
-                                                                                            );
-        }
+
+        $data                                                                               = self::getCurrentData($controller, $table);
+        $where                                                                              = self::getCurrentWhere($data);
 
         if (isset($data["sort"])) {
             $sort                                                                           = self::getFields($data["sort"], $data["def"]["alias"]);
@@ -333,7 +333,7 @@ class Orm implements Dumpable
                             $ids                                                            = (
                                 isset($regs["exts"][$field_ext])
                                                                                                 ? array_keys($regs["exts"][$field_ext])
-                                                                                                : false
+                                                                                                : null
                                                                                             );
                             if ($ids) {
                                 self::$data["main"]["where"][$field_key]                    = (
@@ -442,9 +442,9 @@ class Orm implements Dumpable
         if ($data) {
             $regs                                                                           = self::getModel(
                 isset($data["service"])
-                                                                                                        ? $data["service"]
-                                                                                                        : $controller
-                                                                                                    )
+                                                                                                    ? $data["service"]
+                                                                                                    : $controller
+                                                                                                )
                                                                                                 ->setStorage($data["def"], array("exts" => false, "rawdata" => true))
                                                                                                 ->read(
                                                                                                     (
@@ -464,10 +464,8 @@ class Orm implements Dumpable
                                                                                                     ),
                                                                                                     $limit
                                                                                                 );
-            if (is_array($regs)) {
-                if ($regs["rawdata"]) {
-                    self::$result = $regs["rawdata"];
-                }
+            if (is_array($regs) && $regs["rawdata"]) {
+                self::$result                                                               = $regs["rawdata"];
             }
         } else {
             Error::register("normalize data is empty", static::ERROR_BUCKET);
@@ -646,15 +644,7 @@ class Orm implements Dumpable
     private static function setData($controller = null, $table = null)
     {
         $key                                                                                = null;
-        $data                                                                               = (
-            !$controller && !$table
-                                                                                                ? self::$data["main"]
-                                                                                                : self::$data["sub"][$controller][(
-                                                                                                    $table
-                                                                                                    ? $table
-                                                                                                    : self::getModel($controller)->getMainTable()
-                                                                                                )]
-                                                                                            );
+        $data                                                                               = self::getCurrentData($controller, $table);
         $modelName                                                                          = (
             isset($data["service"])
                                                                                                 ? $data["service"]
@@ -831,22 +821,22 @@ class Orm implements Dumpable
 
         return self::getResult(true);
     }
+
+    private static function getCurrentWhere($data)
+    {
+        if (!isset($data["where"])) {
+            return null;
+        }
+
+        return ($data["where"] === true
+            ? true
+            : self::getFields($data["where"], $data["def"]["alias"])
+        );
+    }
     private static function cmdData($command, $controller = null, $table = null)
     {
-        $data                                                                               = (
-            !$controller && !$table
-                                                                                                ? self::$data["main"]
-                                                                                                : self::$data["sub"][$controller][(
-                                                                                                    $table
-                                                                                                    ? $table
-                                                                                                    : self::getModel($controller)->getMainTable()
-                                                                                                )]
-                                                                                            );
-        $where                                                                              = (
-            $data["where"] === true
-                                                                                                ? true
-                                                                                                : self::getFields($data["where"], $data["def"]["alias"])
-                                                                                            );
+        $data                                                                               = self::getCurrentData($controller, $table);
+        $where                                                                              = self::getCurrentWhere($data);
 
         if ($where) {
             $ormModel                                                                       = self::getModel(
@@ -917,11 +907,7 @@ class Orm implements Dumpable
             self::resolveFields($fields, $scope);
         }
 
-        $is_single_service                                                                  = (
-            count(self::$services_by_data["services"]) == 1
-                                                                                                ? true
-                                                                                                : false
-                                                                                            );
+        $is_single_service                                                                  = (count(self::$services_by_data["services"]) == 1);
 
         if (isset(self::$services_by_data["last"]) && $is_single_service) {
             self::$service                                                                  = self::setSingleton(self::$services_by_data["last"]);
@@ -973,10 +959,7 @@ class Orm implements Dumpable
         }
 
 
-        return (!isset(self::$services_by_data["use_alias"]) && is_array(self::$services_by_data["tables"]) && count(self::$services_by_data["tables"]) === 1
-            ? true
-            : false
-        );
+        return (!isset(self::$services_by_data["use_alias"]) && is_array(self::$services_by_data["tables"]) && count(self::$services_by_data["tables"]) === 1);
     }
 
     /**
@@ -1049,6 +1032,7 @@ class Orm implements Dumpable
                     case "1":
                         $table                                                              = $mainTable;
                         $fIndex                                                             = null;
+                        // no break
                     default:
                 }
 

@@ -102,8 +102,8 @@ class ImageCanvas
         ksort($this->tmb_res);
 
         if ($this->cvs_res_dim_x === null || $this->cvs_res_dim_y === null) {
-            $calc_x = ($this->cvs_res_dim_x === null ? true : false);
-            $calc_y = ($this->cvs_res_dim_y === null ? true : false);
+            $calc_x = ($this->cvs_res_dim_x === null);
+            $calc_y = ($this->cvs_res_dim_y === null);
             
             foreach ($this->tmb_res as $zkey => $zvalue) {
                 foreach ($this->tmb_res[$zkey] as $key => $value) {

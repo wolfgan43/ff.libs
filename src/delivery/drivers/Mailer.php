@@ -98,13 +98,6 @@ abstract class Mailer
         $this->setAdapter();
     }
 
-    public function from($email, $name = null)
-    {
-        $this->fromEmail                                    = $email;
-        $this->fromName                                     = ($name ? $name : $email);
-
-        return $this;
-    }
     public function setSubject($subject)
     {
         $this->subject                  = $subject;

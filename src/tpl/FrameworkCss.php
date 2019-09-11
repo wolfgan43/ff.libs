@@ -190,13 +190,13 @@ class FrameworkCss extends Mappable
     public function container($fluid = true, $additional_class = null)
     {
         $res                                            = array();
-        $container                                      = (
+        $containerCurrent                               = (
             $fluid
                                                             ? $this->container_fluid
                                                             : $this->container
                                                         );
         if ($this->container) {
-            $res[] = $container;
+            $res[] = $containerCurrent;
         }
         if ($additional_class) {
             $res[] = $additional_class;

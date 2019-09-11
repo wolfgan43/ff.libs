@@ -296,7 +296,7 @@ class Validator
 
         return (count($errors)
             ? implode(", ", $errors)
-            : false
+            : null
         );
     }
     public static function isValidTimeStamp($timestamp)
@@ -307,10 +307,7 @@ class Validator
     }
     public static function isFile($value)
     {
-        return (self::invalidFile($value)
-            ? false
-            : true
-        );
+        return !self::invalidFile($value);
     }
     public static function invalidFile($value)
     {
@@ -454,6 +451,19 @@ class Validator
                         self::$errors["password"]                           = $res;
                     }
                     break;
+                case "pin":
+                    if (strlen($value) < 5) {
+                        $error[] = "Password too short!";
+                    }
+                    if (!preg_match("#[0-9]+#", $value)) {
+                        $error[] = "Password must include at least one number!";
+                    }
+
+                    if (count($error)) {
+                        $res                                                = implode(", ", $error);
+                        self::$errors["password"]                           = $res;
+                    }
+                    break;
                 default:
                     if (strlen($value) < 8) {
                         $error[] = "Password too short!";
@@ -490,9 +500,7 @@ class Validator
         $testo = preg_replace('/[^\p{L}0-9\-]+/u', ' ', $testo);
         $testo = trim($testo);
         $testo = preg_replace('/ +/', $char_sep, $testo);
-        $testo = preg_replace('/-+/', $char_sep, $testo);
-
-        return $testo;
+        return preg_replace('/-+/', $char_sep, $testo);
     }
     private static function seems_utf8($str)
     {

@@ -26,7 +26,6 @@
 
 namespace phpformsframework\libs\storage\adapters;
 
-use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\DatabaseAdapter;
 use phpformsframework\libs\storage\drivers\MongoDB as nosql;
 
@@ -58,21 +57,17 @@ class DatabaseMongodb extends DatabaseAdapter
         }
 
         $res                                            = $this->processRawQuery(array(
-                                                            "select" 	    => $query["select"]
-                                                            , "from" 	    => $query["from"]
-                                                            , "where" 	    => $query["where"]
-                                                            , "sort" 	    => $query["sort"]
-                                                            , "limit"	    => $query["limit"]
+                                                            "select" 	    => $query["select"],
+                                                            "from" 	        => $query["from"],
+                                                            "where" 	    => $query["where"],
+                                                            "sort" 	        => $query["sort"],
+                                                            "limit"	        => $query["limit"]
                                                         ));
-        if ($res) {
-            if ($query["limit"]["calc_found_rows"]) {
-                $res["count"]                           = $this->driver->cmd(array(
-                                                            "from" 	        => $query["from"]
-                                                            , "where" 	    => $query["where"]
+        if ($res && $query["limit"]["calc_found_rows"]) {
+            $res["count"]                               = $this->driver->cmd(array(
+                                                            "from" 	        => $query["from"],
+                                                            "where" 	    => $query["where"]
                                                         ), "count");
-            }
-        } elseif ($res !== false) {
-            Error::register("MongoDB: Unable to Read: " . print_r($query, true), static::ERROR_BUCKET);
         }
 
         return $res;
@@ -85,8 +80,6 @@ class DatabaseMongodb extends DatabaseAdapter
             $res                                        = array(
                                                             "keys" => array($this->driver->getInsertID(true))
                                                         );
-        } else {
-            Error::register("MongoDB: Unable to Insert: " . print_r($query, true), static::ERROR_BUCKET);
         }
 
         return $res;
@@ -97,12 +90,10 @@ class DatabaseMongodb extends DatabaseAdapter
         $res                                            = null;
 
         if ($this->driver->update(array(
-            "set" 				        => $query["update"]
-            , "where" 			        => $query["where"]
+            "set" 				        => $query["update"],
+            "where" 			        => $query["where"]
         ), $query["from"])) {
             $res                                        = true;
-        } else {
-            Error::register("MongoDB: Unable to Update: " . print_r($query, true), static::ERROR_BUCKET);
         }
 
         return $res;
@@ -113,8 +104,6 @@ class DatabaseMongodb extends DatabaseAdapter
         $res                                            = null;
         if ($this->driver->delete($query["where"], $query["from"])) {
             $res                                        = true;
-        } else {
-            Error::register("MongoDB: Unable to Delete: " . print_r($query, true), static::ERROR_BUCKET);
         }
 
         return $res;
@@ -126,38 +115,30 @@ class DatabaseMongodb extends DatabaseAdapter
         $keys                                           = null;
 
         if ($this->driver->query(array(
-            "select"			        => array($query["key"] => 1)
-            , "from" 			        => $query["from"]
-            , "where" 			        => $query["where"]
+            "select"			                        => array($query["key"] => 1),
+            "from" 			                            => $query["from"],
+            "where" 			                        => $query["where"]
         ))) {
             $keys                                       = $this->extractKeys($this->driver->getRecordset(), $query["key"]);
-        } else {
-            Error::register("MongoDB: Unable to Read(Write): " . print_r($query, true), static::ERROR_BUCKET);
         }
 
-        if (!Error::check(static::ERROR_BUCKET)) {
-            if (is_array($keys)) {
-                $update 				    = $this->convertFields(array($query["key"] => $keys), "where");
-                $update["set"] 			    = $query["update"];
-                $update["from"] 		    = $query["from"];
+        if (is_array($keys)) {
+            $update 				                    = $this->convertFields(array($query["key"] => $keys), "where");
+            $update["set"] 			                    = $query["update"];
+            $update["from"] 		                    = $query["from"];
 
-                if ($this->driver->update($update, $update["from"])) {
-                    $res                                = array(
-                                                            "keys"      => $keys
-                                                            , "action"  => "update"
+            if ($this->driver->update($update, $update["from"])) {
+                $res                                    = array(
+                                                            "keys"          => $keys,
+                                                            "action"        => "update"
                                                         );
-                } else {
-                    Error::register("MongoDB: Unable to Update(Write): " . print_r($query, true), static::ERROR_BUCKET);
-                }
-            } elseif ($query["insert"]) {
-                if ($this->driver->insert($query["insert"], $query["from"])) {
-                    $res                                = array(
-                                                            "keys"      => array($this->driver->getInsertID(true))
-                                                            , "action"  => "insert"
+            }
+        } elseif ($query["insert"]) {
+            if ($this->driver->insert($query["insert"], $query["from"])) {
+                $res                                    = array(
+                                                            "keys"          => array($this->driver->getInsertID(true)),
+                                                            "action"        => "insert"
                                                         );
-                } else {
-                    Error::register("MongoDB: Unable to Insert(Write): " . print_r($query, true), static::ERROR_BUCKET);
-                }
             }
         }
 
@@ -171,8 +152,6 @@ class DatabaseMongodb extends DatabaseAdapter
         $success                                        = $this->driver->cmd($query, $query["action"]);
         if ($success) {
             $res                                        = $success;
-        } else {
-            Error::register("MongoDB: Unable to Execute Command" . print_r($query, true), static::ERROR_BUCKET);
         }
 
         return $res;
@@ -310,11 +289,7 @@ class DatabaseMongodb extends DatabaseAdapter
                 } else {
                     switch ($flag) {
                         case "select":
-                            $res["select"][$field["name"]] 						    = (
-                                $field["value"]
-                                                                                        ? true
-                                                                                        : false
-                                                                                    );
+                            $res["select"][$field["name"]] 						    = !empty($field["value"]);
                             break;
                         case "insert":
                             $res["insert"][$field["name"]] 							= $field["value"];
@@ -388,71 +363,6 @@ class DatabaseMongodb extends DatabaseAdapter
                             }
                             $res[][$field["name"]]                                  = $this->parser_WhereField($field);
                             break;
-                        /**
-                        case "where":
-                        case "where_OR":
-                            if (!is_array($value)) {
-                                $value                                              = $field["value"];
-                            }
-                            $res["where"][$field["name"]] 						    = $value;
-
-                            if (isset($struct[$field["name"]])) {
-                                if (is_array($struct[$field["name"]])) {
-                                    $struct_type 									= "array";
-                                } else {
-                                    $arrStructType 									= explode(":", $struct[$field["name"]], 2);
-                                    $struct_type 									= $arrStructType[0];
-                                }
-                            } else {
-                                $struct_type                                        = null;
-                            }
-                            switch ($struct_type) {
-                                case "arrayIncremental":
-                                case "arrayOfNumber":
-                                case "array":
-                                    if (is_array($value) && count($value)) {
-                                        if (!$this->isAssocArray($value)) {
-                                            $res["where"][$field["name"]] 		    = array('$in' => $value);
-                                        }
-                                    } elseif (is_array($value) && !count($value)) {
-                                        $res["where"][$field["name"]]               = array();
-                                    } else {
-                                        unset($res["where"][$field["name"]]);
-                                    }
-                                    break;
-                                case "boolean":
-                                case "bool":
-                                    break;
-                                case "date":
-                                case "number":
-                                case "timestamp":
-                                case "primary":
-                                    if (is_array($value) && count($value)) {
-                                        $res["where"][$field["name"]] 			    = array(
-                                                                                        '$in' => (
-                                                                                            ($field["name"] == $this->key_name)
-                                                                                            ? $value
-                                                                                            : array_map('intval', $value)
-                                                                                        )
-                                                                                    );
-                                    }
-                                    break;
-                                case "string":
-                                case "char":
-                                case "text":
-                                default:
-                                    if (is_array($value) && count($value)) {
-                                        $res["where"][$field["name"]] 			    = array(
-                                                                                        '$in' => (
-                                                                                            ($field["name"] == $this->key_name)
-                                                                                            ? $value
-                                                                                            : array_map('strval', $value)
-                                                                                        )
-                                                                                    );
-                                    }
-                            }
-                            break;
-                         **/
                         default:
                     }
                 }

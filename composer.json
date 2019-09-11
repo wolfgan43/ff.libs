@@ -22,7 +22,6 @@
         "ext-json" : "*",
         "ext-openssl": "*",
         "ext-mysqli": "*",
-
         "ext-zlib": "*",
         "ext-gd": "*",
         "ext-dom": "*",
@@ -36,9 +35,14 @@
         "phpunit/phpunit": "^8"
     },
     "suggest": {
+        "ext-apache": "to use apache functions",
         "mongodb/mongodb": "to use MongoDb",
+        "ext-mongodb": "to use MongoDb",
         "ext-posix": "to extend log info",
+        "ext-apc": "to manage cache in memory",
+        "ext-memcached": "to manage cache in memory",
         "ext-redis": "to manage cache in memory",
+        "ext-xhprof": "to profiling code",
         "twilio/sdk" : "to use SMS notifications [composer require twilio/sdk:^5.31.3]"
     },
     "autoload": {

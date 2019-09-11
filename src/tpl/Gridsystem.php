@@ -96,7 +96,7 @@ class Gridsystem
         }
     }
 
-    public static function setResolution($resolution, $rev = false)
+    public static function calcResolution($resolution, $rev = false)
     {
         $res = null;
         if ($resolution) {
@@ -150,8 +150,6 @@ class Gridsystem
         $ref =& self::findComponent($name);
 
         $ref = $data;
-
-        return $ref;
     }
 
     public static function extend($data, $what)

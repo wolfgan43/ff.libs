@@ -557,48 +557,47 @@ class Log
                         ? $microtime[1]
                         : 0
                     );
-        $content = str_replace(
-            array(
-                "ROUTINE"
-                , "ACTION"
-                , "IDENTD"
-                , "AUTH"
-                , "DATE"
-                , "TIME"
-                , "ZONE"
-                , "DAYN"
-                , "MONTHN"
-                , "DAY"
-                , "MICRO"
-                , "YEAR"
-                , "PID"
-                , "TID"
-                , "EXTIME"
-                , "STATUS_CODE"
-                , "RESPONSE"
-            ),
+        return str_replace(
             [
-                $routine
-            , $action
-            , (function_exists("posix_getpwuid") ? posix_getpwuid(posix_geteuid())['name'] : "NULL")
-            , self::getUser()
-            , strftime('%d/%b/%Y')
-            , strftime('%H:%M:%S')
-            , strftime('%z')
-            , strftime('%a')
-            , strftime('%b')
-            , strftime('%d')
-            , $micro
-            , strftime('%Y')
-            , getmypid()
-            , (class_exists("Thread") ? \Thread::getCurrentThreadId() : null)
-            , Debug::exTimeApp()
-            , Response::code($status)
-            , $response
+                "ROUTINE",
+                "ACTION",
+                "IDENTD",
+                "AUTH",
+                "DATE",
+                "TIME",
+                "ZONE",
+                "DAYN",
+                "MONTHN",
+                "DAY",
+                "MICRO",
+                "YEAR",
+                "PID",
+                "TID",
+                "EXTIME",
+                "STATUS_CODE",
+                "RESPONSE"
+            ],
+            [
+                $routine,
+                $action,
+                (function_exists("posix_getpwuid") ? posix_getpwuid(posix_geteuid())['name'] : "NULL"),
+                self::getUser(),
+                strftime('%d/%b/%Y'),
+                strftime('%H:%M:%S'),
+                strftime('%z'),
+                strftime('%a'),
+                strftime('%b'),
+                strftime('%d'),
+                $micro,
+                strftime('%Y'),
+                getmypid(),
+                (class_exists("Thread") ? \Thread::getCurrentThreadId() : null),
+                Debug::exTimeApp(),
+                Response::code($status),
+                $response
             ],
             $content
         );
-        return $content;
     }
     private static function encodeMessage($message, $encode = null)
     {
@@ -619,15 +618,14 @@ class Log
     }
     private static function fetchMessage($message, $format, $encode = null)
     {
-        $content = null;
-        if ($message) {
-            $content = str_replace(
+        return ($message
+            ? str_replace(
                 "MESSAGE",
                 self::encodeMessage($message, $encode),
                 $format
-            );
-        }
-        return $content;
+            )
+            : null
+        );
     }
 
     /**

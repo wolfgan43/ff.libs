@@ -547,6 +547,10 @@ class MongoDB extends DatabaseDriver
                 case "count":
                     $res = $this->numRows();
                     break;
+                case "processlist":
+                    //@todo: da implementare
+                    $res = null;
+                    break;
                 default:
                     $this->errorHandler("Command not supported");
             }

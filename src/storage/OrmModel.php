@@ -207,6 +207,16 @@ class OrmModel extends Mappable
 
         return Orm::readRawData($where, $fields, $sort, $limit, $this);
     }
+
+    /**
+     * @param array $data
+     * @return array|bool|null
+     */
+    public function insertUnique($data)
+    {
+        return Orm::insertUnique($data, $this);
+    }
+
     /**
          * @param array $data
          * @return array|bool|null

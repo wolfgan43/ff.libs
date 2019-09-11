@@ -242,15 +242,15 @@ class PageHtml extends Mappable
 
     private function getTitle($include_appname = true)
     {
-        $title                                  = (
+        $res                                    = (
             $this->title
                                                     ? $this->title
                                                     : ucfirst(basename($this->path))
                                                 );
         if ($include_appname) {
-            $title                              .= " - " . Kernel::$Environment::APPNAME;
+            $res                                .= " - " . Kernel::$Environment::APPNAME;
         }
-        return $title;
+        return $res;
     }
     private function parseTitle()
     {
@@ -259,14 +259,14 @@ class PageHtml extends Mappable
 
     private function parseDescription()
     {
-        $description                            = (
+        $res                                    = (
             $this->description
                                                     ? $this->description
                                                     : $this->getTitle(false)
                                                 );
 
 
-        return $this::NL .'<meta name="description" content="' . $description . '" />';
+        return $this::NL .'<meta name="description" content="' . $res . '" />';
     }
 
     private function parseEncoding()
@@ -375,32 +375,32 @@ class PageHtml extends Mappable
 
     private function parseLayout()
     {
-        $layout = str_replace(
+        $res = str_replace(
             array_keys($this->contents),
             array_values($this->contents),
             $this->layout
         );
         $commons = array();
         $resources = Resource::type("common");
-        foreach ($resources as $key => $path) {
+        foreach ($resources as $key => $content) {
             $tpl_key = "{" . $key . "}";
-            if (strpos($layout, $tpl_key) !== false) {
+            if (strpos($res, $tpl_key) !== false) {
                 $class_name = ucfirst($key);
                 if (class_exists($class_name)) {
-                    $path = new $class_name();
+                    $content = new $class_name();
                 }
 
-                $commons[$tpl_key] = $this->getHtml($path);
+                $commons[$tpl_key] = $this->getHtml($content);
             }
         }
 
-        $layout = str_replace(
+        $res = str_replace(
             array_keys($commons),
             array_values($commons),
-            $layout
+            $res
         );
 
-        return $layout;
+        return $res;
     }
 
     private function parseHead()
@@ -431,23 +431,28 @@ class PageHtml extends Mappable
             . $this->parseLayout()
             . $this::NL
             . $this->parseDebug()
-        . '</body>';
+            . '</body>';
+    }
+
+    private function parseHtmlLang()
+    {
+        return ($this->lang
+            ? ' lang="' . $this->lang . '"'
+            : ""
+        );
+    }
+    private function parseHtmlRegion()
+    {
+        return ($this->lang
+            ? ' region="' . $this->region . '"'
+            : ""
+        );
     }
 
     private function parseHtml()
     {
-        $lang                                   = (
-            $this->lang
-                                                    ? ' lang="' . $this->lang . '"'
-                                                    : ""
-                                                );
-        $region                                 = (
-            $this->region
-                                                    ? ' region="' . $this->region . '"'
-                                                    : ""
-                                                );
         return /** @lang text */ $this->doctype
-            . $this::NL . '<html ' . $lang . $region . '>'
+            . $this::NL . '<html ' . $this->parseHtmlLang() . $this->parseHtmlRegion() . '>'
             . $this::NL . $this->parseHead()
             . $this::NL . $this->parseBody()
             . $this::NL . '</html>'

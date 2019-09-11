@@ -958,7 +958,7 @@ class Media implements Configurable
     {
         $this->resolveSourceIcon($mode);
         if (!$this->filesource) {
-            $base_path                                              = Constant::LIBS_PATH;
+            $base_path                                              = Constant::LIBS_DISK_PATH;
             Response::setContentType($this->pathinfo["extension"]);
             switch ($this->pathinfo["extension"]) {
                 case "svg":
@@ -1057,16 +1057,16 @@ class Media implements Configurable
             }
         }
         if (!$final_file) {
-            $pathinfo                                               = $this->pathinfo["filename"];
+            $filename                                               = $this->pathinfo["filename"];
             if ($this->mode) {
-                $pathinfo                                           = str_replace(array("-" . $this->mode, $this->mode), "", $pathinfo);
-                if (!$pathinfo) {
-                    $pathinfo = $this->pathinfo["extension"];
+                $filename                                           = str_replace(array("-" . $this->mode, $this->mode), "", $filename);
+                if (!$filename) {
+                    $filename = $this->pathinfo["extension"];
                 }
             }
 
             $final_file                                             = $this->processFinalFile($this->setNoImg($this->mode));
-            if ($pathinfo != pathinfo($this->filesource, PATHINFO_FILENAME)) {
+            if ($filename != pathinfo($this->filesource, PATHINFO_FILENAME)) {
                 $status = 404;
             }
         }
@@ -1090,9 +1090,9 @@ class Media implements Configurable
     private function waterMark()
     {
         $this->wmk                                                  = array();
-        $pathinfo                                                   = $this->pathinfo["orig"];
-        if (strpos($pathinfo, "/wmk") !== false) {
-            $arrWmk                                                 = explode("/wmk", substr($pathinfo, strpos($pathinfo, "/wmk") + strlen("/wmk")));
+        $orig                                                       = $this->pathinfo["orig"];
+        if (strpos($orig, "/wmk") !== false) {
+            $arrWmk                                                 = explode("/wmk", substr($orig, strpos($orig, "/wmk") + strlen("/wmk")));
             if (is_array($arrWmk) && count($arrWmk)) {
                 foreach ($arrWmk as $arrWmk_file) {
                     $wmk_abs_file                                   = Constant::UPLOAD_DISK_PATH . $arrWmk_file;
@@ -1102,7 +1102,7 @@ class Media implements Configurable
                 }
             }
 
-            $this->setPathInfo(substr($pathinfo, 0, strpos($pathinfo, "/wmk")));
+            $this->setPathInfo(substr($orig, 0, strpos($orig, "/wmk")));
         }
     }
 
@@ -1169,10 +1169,10 @@ class Media implements Configurable
 
     private function getFinalFile($abs = true)
     {
-        $final                                                      = false;
+        $final_path                                                 = false;
 
         if ($this->final) {
-            $final                                                  = (
+            $final_path                                             = (
                 $abs
                                                                             ? $this->basepathCache()
                                                                             : ""
@@ -1187,7 +1187,7 @@ class Media implements Configurable
                                                                         . "." . $this->final["extension"];
         }
 
-        return $final;
+        return $final_path;
     }
 
     private function createImage($params)
@@ -1369,7 +1369,7 @@ class Media implements Configurable
     private function getModeWizard($mode)
     {
         $char                                                       = strtolower(preg_replace('/[0-9]+/', '', $mode));
-        $wizard                                                     = array(
+        $wizard_mode                                                = array(
                                                                         "alignment" => "center"
                                                                         , "mode"    => explode($char, $mode)
                                                                         , "method"  => "crop"
@@ -1378,38 +1378,38 @@ class Media implements Configurable
 
         switch ($char) {
             case "x":
-                $wizard["alignment"]                                = "center";
-                $wizard["method"]                                   = "proportional";
+                $wizard_mode["alignment"]                           = "center";
+                $wizard_mode["method"]                              = "proportional";
                 break;
             case "q":
-                $wizard["alignment"]                                = "top-left";
+                $wizard_mode["alignment"]                           = "top-left";
                 break;
             case "w":
-                $wizard["alignment"]                                = "top-middle";
+                $wizard_mode["alignment"]                           = "top-middle";
                 break;
             case "e":
-                $wizard["alignment"]                                = "top-right";
+                $wizard_mode["alignment"]                           = "top-right";
                 break;
             case "a":
-                $wizard["alignment"]                                = "middle-left";
+                $wizard_mode["alignment"]                           = "middle-left";
                 break;
             case "d":
-                $wizard["alignment"]                                = "middle-right";
+                $wizard_mode["alignment"]                           = "middle-right";
                 break;
             case "z":
-                $wizard["alignment"]                                = "bottom-left";
+                $wizard_mode["alignment"]                           = "bottom-left";
                 break;
             case "s":
-                $wizard["alignment"]                                = "bottom-middle";
+                $wizard_mode["alignment"]                           = "bottom-middle";
                 break;
             case "c":
-                $wizard["alignment"]                                = "bottom-right";
+                $wizard_mode["alignment"]                           = "bottom-right";
                 break;
             default:
-                $wizard                                             = null;
+                $wizard_mode                                        = null;
         }
 
-        return $wizard;
+        return $wizard_mode;
     }
 
     private function getMode()
@@ -1457,8 +1457,8 @@ class Media implements Configurable
             if ($this->final) {
                 $final_file                                         = $this->getFinalFile();
 
-                $mode                                               = $this->getMode();
-                if (is_array($mode)) {
+                $modeCurrent                                        = $this->getMode();
+                if (is_array($modeCurrent)) {
                     $fmtime                                         = (
                         $this->final["exist"]
                                                                         ? filemtime($final_file)
@@ -1466,10 +1466,10 @@ class Media implements Configurable
                                                                     );
                     if (Kernel::$Environment::DEBUG
                         || !$this->final["exist"]
-                       // || $fmtime      <= $mode["last_update"] //todo: da fare controllo sul file di importazione dei mode
+                       // || $fmtime      <= $modeCurrent["last_update"] //todo: da fare controllo sul file di importazione dei mode
                         || $fmtime      <= filemtime($this->basepath . $this->filesource)
                     ) {
-                        $this->createImage($mode);
+                        $this->createImage($modeCurrent);
 
                         Hook::handle("media_on_create_image", $final_file);
                     }
@@ -1498,22 +1498,23 @@ class Media implements Configurable
         return $final_file;
     }
 
-    private function setNoImg($mode = null, $icon = null)
+    /**
+     * @param null $mode
+     * @param null $icon_name
+     * @return bool
+     */
+    private function setNoImg($mode = null, $icon_name = null)
     {
-        $icon_name                                                  = (
-            $icon
-                                                                        ? $icon
-                                                                        : (
-                                                                            isset($this->pathinfo["extension"])
-                                                                            ? $this->pathinfo["extension"]
-                                                                            : $this->pathinfo["basename"]
-                                                                        )
-                                                                    );
-        $mode                                                       = (
-            $mode
-                                                                        ? $mode
-                                                                        : self::getModeByNoImg($this->pathinfo["basename"])
-                                                                    );
+        if (!$icon_name) {
+            $icon_name                                              = (
+                isset($this->pathinfo["extension"])
+                ? $this->pathinfo["extension"]
+                : $this->pathinfo["basename"]
+            );
+        }
+        if (!$mode) {
+            $mode                                                   = self::getModeByNoImg($this->pathinfo["basename"]);
+        }
         if ($mode) {
             $icon_name                                              = str_replace("-". $mode, "", $icon_name);
         }
@@ -1522,11 +1523,9 @@ class Media implements Configurable
             $this->basepath                                         = dirname($icon);
             $this->filesource                                       = DIRECTORY_SEPARATOR . basename($icon);
             $this->mode                                             = $mode;
-
-            return true;
         }
 
-        return null;
+        return (bool) $icon;
     }
 
     private function renderNoImg($final_file, $code = null)

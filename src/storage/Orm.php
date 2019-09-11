@@ -498,7 +498,7 @@ class Orm implements Dumpable
         Debug::dumpCaller("Insert unique: " . print_r($insert, true));
         Debug::stopWatch("orm/unique");
 
-        $res                                                                                = self::set(array(), null, $insert, $ormModel);
+        $res                                                                                = self::set($insert, null, $insert, $ormModel);
 
         $exTime = Debug::stopWatch("orm/unique");
         if (Kernel::$Environment::DEBUG) {
@@ -608,20 +608,15 @@ class Orm implements Dumpable
 
 
     /**
-     * @param array $where
+     * @param null|array $where
      * @param null|array $set
      * @param null|array $insert
      * @param OrmModel $ormModel
      * @return array|bool|null
      */
-    private static function set($where, $set = null, $insert = null, $ormModel = null)
+    private static function set($where = null, $set = null, $insert = null, $ormModel = null)
     {
         self::clearResult($ormModel);
-
-        if (!$set && !$insert) {
-            $insert                                                                         = $where;
-            $where                                                                          = null;
-        }
 
         self::resolveFieldsByScopes(array(
             "insert"                                                                        => $insert
@@ -1100,9 +1095,6 @@ class Orm implements Dumpable
 
                 if ($scope == "insert") {
                     self::$data["sub"][$service][$table]["insert"][$parts[$fIndex]]         = $alias;
-                    if (!isset(self::$data["sub"][$service][$table]["where"])) {
-                        self::$data["sub"][$service][$table]["where"][$parts[$fIndex]]      = $alias;
-                    }
                 } else {
                     if ($is_or) {
                         self::$data["sub"][$service][$table][$scope]['$or'][$parts[$fIndex]]= (

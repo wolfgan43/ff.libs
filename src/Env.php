@@ -86,7 +86,7 @@ class Env implements Configurable
 
         if ($permanent) {
             self::$permanent[$key]                                  = self::$vars[$key];
-            $cache                                                  = Mem::getInstance(static::CACHE_BUCKET);
+            $cache                                                  = Mem::getInstance(static::CACHE_BUCKET, true);
             $cache->set("permanent", self::$permanent);
         }
 
@@ -151,7 +151,7 @@ class Env implements Configurable
     }
 
     /**
-     * @param $configRules
+     * @param dto\ConfigRules $configRules
      * @return dto\ConfigRules
      */
     public static function loadConfigRules($configRules)

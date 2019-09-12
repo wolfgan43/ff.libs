@@ -80,7 +80,7 @@ class MemMemcached extends MemAdapter
     public function get($name, $bucket = null)
     {
         $res = false;
-        if (Kernel::useCache()) {
+        if ($this->is_readable) {
             $key = $this->getKey("get", $bucket, $name);
             if ($name) {
                 $this->conn->get($key);

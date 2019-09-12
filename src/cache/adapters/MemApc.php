@@ -32,8 +32,6 @@ use function apc_store;
 use function apc_fetch;
 use function apc_delete;
 use function apc_clear_cache;
-use phpformsframework\libs\Constant;
-use phpformsframework\libs\Kernel;
 
 class MemApc extends MemAdapter
 {
@@ -65,7 +63,7 @@ class MemApc extends MemAdapter
     public function get($name, $bucket = null)
     {
         $res = false;
-        if (Kernel::useCache()) {
+        if ($this->is_readable) {
             $key = $this->getKey("get", $bucket, $name);
 
             if ($name) {

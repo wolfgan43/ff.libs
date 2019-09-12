@@ -36,17 +36,22 @@ class Mem // apc | memcached | redis | globals
 
     /**
      * @param bool|string $memAdapter
+     * @param null|bool $readable
      * @param null|string $bucket
      * @return MemAdapter
      */
     public static function getInstance($bucket = null, $memAdapter = Constant::CACHE_MEM)
     {
         if (!$memAdapter) {
-            $memAdapter = Kernel::$Environment::CACHE_MEM_ADAPTER;
+            $memAdapter                                 = Kernel::$Environment::CACHE_MEM_ADAPTER;
         }
+        if ($readable === null) {
+            $readable                                   = Kernel::useCache();
+        }
+
         if (!isset(self::$singletons[$memAdapter][$bucket])) {
-            $class_name                 = static::NAME_SPACE . "Mem" . ucfirst($memAdapter);
-            self::$singletons[$memAdapter][$bucket] = new $class_name($bucket);
+            $class_name                                 = static::NAME_SPACE . "Mem" . ucfirst($memAdapter);
+            self::$singletons[$memAdapter][$bucket]     = new $class_name($bucket, $readable);
         }
 
         return self::$singletons[$memAdapter][$bucket];

@@ -117,11 +117,19 @@ class Database implements Dumpable
                 }
 
                 $class_name                                                 = static::NAME_SPACE . "Database" . ucfirst($adapter);
-                $this->adapters[$adapter]                                   = new $class_name($connection, $params["table"], $params["struct"], $params["relationship"], $params["indexes"], $params["alias"], (bool) $params["exts"], (bool) $params["rawdata"]);
+                if (class_exists($class_name)) {
+                    $this->adapters[$adapter]                               = new $class_name($connection, $params["table"], $params["struct"], $params["relationship"], $params["indexes"], $params["alias"], (bool) $params["exts"], (bool) $params["rawdata"]);
+                } else {
+                    Error::register("Database Adapter not supported: " . $adapter, static::ERROR_BUCKET);
+                }
             }
         } elseif ($databaseAdapters) {
             $class_name                                                     = static::NAME_SPACE . "Database" . ucfirst($databaseAdapters);
-            $this->adapters[$databaseAdapters]                              = new $class_name($params["connection"], $params["table"], $params["struct"], $params["relationship"], $params["indexes"], $params["alias"], (bool) $params["exts"], (bool) $params["rawdata"]);
+            if (class_exists($class_name)) {
+                $this->adapters[$databaseAdapters]                          = new $class_name($params["connection"], $params["table"], $params["struct"], $params["relationship"], $params["indexes"], $params["alias"], (bool) $params["exts"], (bool) $params["rawdata"]);
+            } else {
+                Error::register("Database Adapter not supported: " . $databaseAdapters, static::ERROR_BUCKET);
+            }
         }
     }
 

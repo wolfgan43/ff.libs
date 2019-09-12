@@ -72,9 +72,10 @@ class MemRedis extends MemAdapter
      */
     public function set($name, $value = null, $bucket = null)
     {
+        $res = false;
         if ($value === null) {
             $res = $this->del($name, $bucket);
-        } else {
+        } elseif ($this->is_writeable) {
             $this->getKey("set", $bucket, $name);
 
             $res = (

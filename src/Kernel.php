@@ -76,7 +76,7 @@ class Kernel
 
     public static function useCache($cache = null)
     {
-        if (!is_null($cache)) {
+        if (self::$use_cache && !is_null($cache)) {
             self::$use_cache        = $cache;
         }
 
@@ -105,7 +105,6 @@ class Kernel
 
         $this->Request              = new $this->Request();
         $this->Response             = new $this->Response();
-
 
         $this->useCache(!self::$Environment::DISABLE_CACHE && !isset($_GET["__nocache__"]));
 

@@ -42,18 +42,20 @@ class MemFs extends MemAdapter
      */
     public function set($name, $value = null, $bucket = null)
     {
+        $res = false;
         if ($value === null) {
-            return $this->del($name, $bucket);
-        }
-        $this->getKey("set", $bucket, $name);
+            $res = $this->del($name, $bucket);
+        } elseif ($this->is_writeable) {
+            $this->getKey("set", $bucket, $name);
 
-        Filemanager::getInstance("php")->write(
-            $value,
-            self::getCacheDiskPath()
-            . DIRECTORY_SEPARATOR . $bucket
-            . DIRECTORY_SEPARATOR . $name
-        );
-        return null;
+            $res = Filemanager::getInstance("php")->write(
+                $value,
+                self::getCacheDiskPath()
+                . DIRECTORY_SEPARATOR . $bucket
+                . DIRECTORY_SEPARATOR . $name
+            );
+        }
+        return $res;
     }
 
     /**

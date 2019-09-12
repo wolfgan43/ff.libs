@@ -62,13 +62,15 @@ class MemMemcached extends MemAdapter
      */
     public function set($name, $value = null, $bucket = null)
     {
+        $res = false;
         if ($value === null) {
-            return $this->del($name, $bucket);
+            $res = $this->del($name, $bucket);
+        } elseif ($this->is_writeable) {
+            $key = $this->getKey("set", $bucket, $name);
+            $res = $this->conn->set($key, $this->setValue($value), $this->getTTL());
         }
 
-        $key = $this->getKey("set", $bucket, $name);
-
-        return $this->conn->set($key, $this->setValue($value), $this->getTTL());
+        return $res;
     }
 
     /**

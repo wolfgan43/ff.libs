@@ -136,7 +136,7 @@ class Env implements Configurable
 
     private static function loadPermanent()
     {
-        $cache                                                      = Mem::getInstance(static::CACHE_BUCKET);
+        $cache                                                      = Mem::getInstance(static::CACHE_BUCKET, true);
         $permanent                                                  = $cache->get("permanent");
         if ($permanent) {
             self::$permanent                                        = $permanent;

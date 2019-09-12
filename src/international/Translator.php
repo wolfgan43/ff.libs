@@ -55,7 +55,11 @@ class Translator
         }
         if (!isset(self::$singletons[$translatorAdapter])) {
             $class_name                                 = static::NAME_SPACE . "Translator" . ucfirst($translatorAdapter);
-            self::$singletons[$translatorAdapter]       = new $class_name($auth);
+            if (class_exists($class_name)) {
+                self::$singletons[$translatorAdapter]   = new $class_name($auth);
+            } else {
+                Error::register("Translator Adapter not supported: " . $translatorAdapter, static::ERROR_BUCKET);
+            }
         }
 
         return self::$singletons[$translatorAdapter];

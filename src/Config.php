@@ -113,12 +113,12 @@ class Config implements Dumpable
         if (is_array($config["dir"]) && count($config["dir"])) {
             foreach ($config["dir"] as $dir) {
                 $dir_attr                                           = Dir::getXmlAttr($dir);
+                $dir_attr["path"]                                   = str_replace("[PROJECT_DOCUMENT_ROOT]", Kernel::$Environment::PROJECT_DOCUMENT_ROOT, $dir_attr["path"]);
                 $dir_key                                            = (
                     isset($dir_attr["type"]) && self::APP_BASE_NAME != $dir_attr["type"]
                                                                         ? $dir_attr["type"] . "/"
                                                                         : ""
                                                                     ) . basename($dir_attr["path"]);
-
                 if (isset($dir_attr["scan"])) {
                     $scan_type                                      = self::APP_BASE_NAME;
                     $scan_path                                      = str_replace("[LIBS_PATH]", Constant::LIBS_PATH, $dir_attr["path"]);
@@ -143,7 +143,7 @@ class Config implements Dumpable
 
                 self::$dirstruct[$dir_key]                          = $dir_attr;
                 if (isset(self::$dirstruct[$dir_key]["autoload"])) {
-                    self::$autoloads[]                              = Constant::DISK_PATH . $dir_attr["path"];
+                    self::$autoloads[]                              = self::$dirstruct[$dir_key]["autoload"];
                 }
             }
 
@@ -184,7 +184,7 @@ class Config implements Dumpable
         if (is_array(self::$autoloads) && count(self::$autoloads)) {
             spl_autoload_register(function ($class_name) {
                 foreach (self::$autoloads as $autoload) {
-                    Dir::autoload($autoload . DIRECTORY_SEPARATOR . $class_name . "." . Constant::PHP_EXT);
+                    Dir::autoload($autoload . DIRECTORY_SEPARATOR . str_replace('\\', '/', $class_name) . "." . Constant::PHP_EXT);
                 }
             });
         }

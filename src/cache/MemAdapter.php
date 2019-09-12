@@ -35,6 +35,7 @@ abstract class MemAdapter implements Dumpable
     private $ttl                    = 0;
     private $bucket                 = null;
     protected $is_readable          = true;
+    protected $is_writeable         = true;
 
     public static function dump()
     {
@@ -46,10 +47,11 @@ abstract class MemAdapter implements Dumpable
     abstract public function del($name, $bucket = null);
     abstract public function clear($bucket = null);
 
-    public function __construct($bucket = null, $readable = true)
+    public function __construct($bucket = null, $readable = true, $writeable = true)
     {
         $this->bucket       = $bucket;
         $this->is_readable  = $readable;
+        $this->is_writeable = $writeable;
     }
 
     private function cache($bucket, $action, $name = "*")

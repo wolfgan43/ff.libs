@@ -26,32 +26,37 @@
 
 namespace phpformsframework\libs\cache;
 
+use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 
 class Mem // apc | memcached | redis | globals
 {
-    const NAME_SPACE                      = __NAMESPACE__ . '\\adapters\\';
+    const NAME_SPACE                                    = __NAMESPACE__ . '\\adapters\\';
 
-    private static $singletons = null;
+    private static $singletons                          = null;
 
     /**
      * @param bool|string $memAdapter
-     * @param null|bool $readable
+     * @param bool $force
      * @param null|string $bucket
      * @return MemAdapter
      */
-    public static function getInstance($bucket = null, $memAdapter = Constant::CACHE_MEM)
+    public static function getInstance($bucket = null, $force = false, $memAdapter = null)
     {
         if (!$memAdapter) {
             $memAdapter                                 = Kernel::$Environment::CACHE_MEM_ADAPTER;
         }
-        if ($readable === null) {
-            $readable                                   = Kernel::useCache();
+        if (!$force) {
+            $force                                      = Kernel::useCache();
         }
 
         if (!isset(self::$singletons[$memAdapter][$bucket])) {
             $class_name                                 = static::NAME_SPACE . "Mem" . ucfirst($memAdapter);
-            self::$singletons[$memAdapter][$bucket]     = new $class_name($bucket, $readable);
+            if (class_exists($class_name)) {
+                self::$singletons[$memAdapter][$bucket] = new $class_name($bucket, $force, $force);
+            } else {
+                Error::register("Cache Mem Adapter not supported: " . $memAdapter);
+            }
         }
 
         return self::$singletons[$memAdapter][$bucket];

@@ -38,6 +38,7 @@ class Constant
     const SITE_PATH                         = SITE_PATH;
     const APPID                             = null;
     const APPNAME                           = null;
+    const PROJECT_DOCUMENT_ROOT             = null;
 
     /**
      * Disk Settings
@@ -86,10 +87,6 @@ class Constant
     const SMS_TOKEN                         = null;
     const SMS_FROM                          = self::APPNAME;
 
-    const SUPERADMIN_USERNAME               = null; //todo: da togliere
-    const SUPERADMIN_PASSWORD               = null; //todo: da togliere
-
-
     /**
      * Access Credential
      */
@@ -105,11 +102,24 @@ class Constant
     const SESSION_SHARE                     = true;
 
     /**
-     * Adapter settings
+     * Adapters
+     */
+
+    /**
+     * @var string[Twilio]
      */
     const MESSENGER_ADAPTER                 = "Twilio";
+    /**
+     * @var string[Google|Translated|Transltr]
+     */
     const TRANSLATOR_ADAPTER                = "Google";
+    /**
+     * @var string[Mysqli|Mongodb]
+     */
     const DATABASE_ADAPTER                  = "mysqli";
+    /**
+     * @var string[Apc|Fs|Global|Memcached|Redis]
+     */
     const CACHE_MEM_ADAPTER                 = "fs";
 
     /**

@@ -28,7 +28,6 @@ namespace phpformsframework\libs\delivery\drivers;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\delivery\Notice;
 use phpformsframework\libs\dto\DataError;
-use phpformsframework\libs\Env;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Log;
@@ -195,7 +194,10 @@ class Messenger
         }
 
         $className                                          = self::NAME_SPACE . "Messenger" . ucfirst($messengerAdapter);
-
-        $this->adapter                                      = new $className();
+        if (class_exists($className)) {
+            $this->adapter                                  = new $className();
+        } else {
+            Error::register("Messenger Adapter not supported: " . $messengerAdapter, static::ERROR_BUCKET);
+        }
     }
 }

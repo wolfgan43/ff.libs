@@ -964,7 +964,7 @@ class Media implements Configurable
                 case "svg":
                     $this->checkPath(static::RENDER_IMAGE_PATH);
                     $source_file                                    = $this->pathinfo["render"] . $this->pathinfo["orig"];
-                    $base_path                                      = Constant::DISK_PATH . "/app";
+                    $base_path                                      = Constant::DISK_PATH . Kernel::$Environment::PROJECT_DOCUMENT_ROOT;
                     break;
                 case "js":
                     $this->checkPath(static::RENDER_SCRIPT_PATH);
@@ -979,7 +979,6 @@ class Media implements Configurable
                 default:
                     $source_file                                    = null;
             }
-
             return ($source_file
                 ? $this->staticProcess($source_file, $base_path)
                 : $this->renderProcess($mode)
@@ -1021,12 +1020,16 @@ class Media implements Configurable
         $res                                                        = null;
 
         if (is_file($base_path . $source_file)) {
-            $cache_final_file                                       = $this->basepathCache() . $this->pathinfo["orig"];
-            Filemanager::makeDir(dirname($cache_final_file), 0775, $this->basepathCache());
-            if (is_readable($base_path . $source_file) && is_writable(dirname($cache_final_file)) && copy($base_path . $source_file, $cache_final_file)) {
-                $res = Dir::loadFile($cache_final_file);
+            if (Kernel::useCache()) {
+                $cache_final_file                                   = $this->basepathCache() . $this->pathinfo["orig"];
+                Filemanager::makeDir(dirname($cache_final_file), 0775, $this->basepathCache());
+                if (is_readable($base_path . $source_file) && is_writable(dirname($cache_final_file)) && copy($base_path . $source_file, $cache_final_file)) {
+                    $res                                            = Dir::loadFile($cache_final_file);
+                } else {
+                    Error::register("Link Failed. Check write permission on: " . $source_file . " and if directory exist and have write permission on " . Request::pathinfo(), static::ERROR_BUCKET);
+                }
             } else {
-                Error::register("Link Failed. Check write permission on: " . $source_file . " and if directory exist and have write permission on " . Request::pathinfo(), static::ERROR_BUCKET);
+                $res                                                = Dir::loadFile($base_path . $source_file);
             }
         }
 

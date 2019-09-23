@@ -951,7 +951,7 @@ class Media implements Configurable
     private function checkPath($root_dir)
     {
         if (strpos($this->pathinfo["dirname"], $root_dir) !== 0) {
-            Error::send(404);
+            Response::sendError(404);
         }
     }
     public function process($mode = null)
@@ -969,12 +969,12 @@ class Media implements Configurable
                 case "js":
                     $this->checkPath(static::RENDER_SCRIPT_PATH);
 
-                    $source_file                                    = str_replace(static::RENDER_SCRIPT_PATH, "", $this->pathinfo["dirname"]) . DIRECTORY_SEPARATOR . str_replace("_", DIRECTORY_SEPARATOR, $this->pathinfo["filename"]) . "/script.js";
+                    $source_file                                    = str_replace(static::RENDER_SCRIPT_PATH, "", $this->pathinfo["dirname"]) . DIRECTORY_SEPARATOR . str_replace("_", DIRECTORY_SEPARATOR, $this->pathinfo["filename"]) . "/index.js"; //@todo: da togliere causa problemi con le widget
                     break;
                 case "css":
                     $this->checkPath(static::RENDER_STYLE_PATH);
 
-                    $source_file                                    = str_replace(static::RENDER_STYLE_PATH, "", $this->pathinfo["dirname"]) . DIRECTORY_SEPARATOR . str_replace("_", DIRECTORY_SEPARATOR, $this->pathinfo["filename"]) . "/style.css";
+                    $source_file                                    = str_replace(static::RENDER_STYLE_PATH, "", $this->pathinfo["dirname"]) . DIRECTORY_SEPARATOR . str_replace("_", DIRECTORY_SEPARATOR, $this->pathinfo["filename"]) . "/index.css"; //@todo: da togliere causa problemi con le widget
                     break;
                 default:
                     $source_file                                    = null;
@@ -1026,7 +1026,7 @@ class Media implements Configurable
                 if (is_readable($base_path . $source_file) && is_writable(dirname($cache_final_file)) && copy($base_path . $source_file, $cache_final_file)) {
                     $res                                            = Dir::loadFile($cache_final_file);
                 } else {
-                    Error::register("Link Failed. Check write permission on: " . $source_file . " and if directory exist and have write permission on " . Request::pathinfo(), static::ERROR_BUCKET);
+                    Error::register("Link Failed. Check write permission on: " . $source_file . " and if directory exist and have write permission on " . Constant::CACHE_PATH . Request::pathinfo(), static::ERROR_BUCKET);
                 }
             } else {
                 $res                                                = Dir::loadFile($base_path . $source_file);

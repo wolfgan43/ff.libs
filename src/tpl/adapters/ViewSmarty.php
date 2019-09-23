@@ -23,22 +23,18 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\tpl;
+namespace phpformsframework\libs\tpl\adapters;
 
 use phpformsframework\libs\Constant;
+use phpformsframework\libs\tpl\ViewAdapter;
 use Smarty;
 use Exception;
 
-/**
- * Created by PhpStorm.
- * User: crumma
- * Date: 30/10/2017
- * Time: 10:11
- */
-
-class TemplateSmarty extends Smarty
+class ViewSmarty extends Smarty implements ViewAdapter
 {
-    public $tpl_file;
+    const PATH                  = DIRECTORY_SEPARATOR . "smarty" . DIRECTORY_SEPARATOR;
+
+    private $tpl_file;
 
     public function __construct($file = null)
     {
@@ -46,11 +42,10 @@ class TemplateSmarty extends Smarty
 
         $this->tpl_file         = $file;
 
-
-        $this->template_dir     = Constant::DISK_PATH . '/cache/smarty/templates';
-        $this->compile_dir      = Constant::DISK_PATH . '/cache/smarty/templates_c';
-        $this->config_dir       = Constant::DISK_PATH . '/cache/smarty/configs';
-        $this->cache_dir        = Constant::DISK_PATH . '/cache/smarty/cache';
+        $this->template_dir     = Constant::CACHE_DISK_PATH . $this::PATH . 'templates';
+        $this->compile_dir      = Constant::CACHE_DISK_PATH . $this::PATH . 'templates_c';
+        $this->config_dir       = Constant::CACHE_DISK_PATH . $this::PATH . 'configs';
+        $this->cache_dir        = Constant::CACHE_DISK_PATH . $this::PATH . 'cache';
 
         $this->caching          = false;
 
@@ -67,13 +62,12 @@ class TemplateSmarty extends Smarty
         return $res;
     }
 
-    public function process()
+    public function isset($name)
     {
-        try {
-            $res = $this->fetch($this->tpl_file);
-        } catch (Exception $exc) {
-            $res = false;
-        }
-        return $res;
+        // TODO: Implement isset() method.
+    }
+    public function parse($sectionName, $repeat = false)
+    {
+        // TODO: Implement parse() method.
     }
 }

@@ -109,6 +109,11 @@ class Translator
         );
     }
 
+    /**
+     * @param string $code
+     * @param string $language Upper Code (es: ENG, ITA, SPA)
+     * @return string
+     */
     public static function get_word_by_code($code, $language = null)
     {
         if (!$code || !Locale::isMultiLang()) {

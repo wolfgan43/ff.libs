@@ -26,7 +26,7 @@
 namespace phpformsframework\libs;
 
 define("DOCUMENT_ROOT", str_replace(Constant::VENDOR_LIBS_DIR . DIRECTORY_SEPARATOR . "src", "", __DIR__));
-define("SITE_PATH", isset($_SERVER["DOCUMENT_ROOT"]) ? str_replace($_SERVER["DOCUMENT_ROOT"], "", DOCUMENT_ROOT) : null);
+define("SITE_PATH", !empty($_SERVER["DOCUMENT_ROOT"]) ? str_replace($_SERVER["DOCUMENT_ROOT"], "", DOCUMENT_ROOT) : null);
 
 class Constant
 {
@@ -121,6 +121,11 @@ class Constant
      * @var string[Apc|Fs|Global|Memcached|Redis]
      */
     const CACHE_MEM_ADAPTER                 = "fs";
+
+    /**
+     * @var string[Html|Amp|Smarty|Blade]
+     */
+    const TEMPLATE_ADAPTER                  = "Html";
 
     /**
      * System settings

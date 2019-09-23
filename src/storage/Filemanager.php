@@ -29,7 +29,6 @@ namespace phpformsframework\libs\storage;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Dumpable;
-use phpformsframework\libs\Env;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Request;
 
@@ -573,7 +572,7 @@ class Filemanager implements Dumpable
     private static function rglobfilter($pattern, $opt = null)
     {
         $final_dir = basename(dirname($pattern)); //todo:: da togliere
-        if (self::$scanExclude[$final_dir]) {
+        if (isset(self::$scanExclude[$final_dir])) {
             return;
         }
         foreach (glob($pattern) as $file) {
@@ -590,18 +589,35 @@ class Filemanager implements Dumpable
 
     private static function setStorage($file_info, $opt)
     {
-        if (isset($opt["prototype"])) {
-            $file_info["parentname"]        = basename($file_info["dirname"]);
-            $key                            = str_replace(array_keys($file_info), array_values($file_info), $opt["prototype"]);
-        } else {
-            $key                            = $file_info["filename"];
+        $file                                           = $file_info["dirname"] . "/" . $file_info["basename"];
+        $type                                           = (
+            isset($opt["type"])
+            ? $opt["type"]
+            : "unknowns"
+        );
+
+        $file_info["parentname"]                        = basename($file_info["dirname"]);
+        if (isset($opt["rootpath"])) {
+            $file_info["rootpath"]                      = realpath($file_info["dirname"] . DIRECTORY_SEPARATOR . $opt["rootpath"]);
+            $file_info["rootname"]                      = basename($file_info["rootpath"]);
         }
 
-        $file = $file_info["dirname"] . "/" . $file_info["basename"];
-        if (isset($opt["type"])) {
-            self::$storage[$opt["type"]][$key] = $file;
+        if (isset($opt["prototype"])) {
+            $key                                        = str_replace(array_keys($file_info), array_values($file_info), $opt["prototype"]);
         } else {
-            self::$storage["unknowns"][$key] = $file;
+            $key                                        = $file_info["filename"];
         }
+
+        if (isset($opt["groupby"])) {
+            $file_info["/"]                             = '"]["';
+            $group                                      = str_replace(array_keys($file_info), array_values($file_info), $opt["groupby"]);
+            eval('self::$storage[$type]["' . $group . '"][$key]   = $file;');
+        } else {
+            self::$storage[$type][$key]                 = $file;
+        }
+
+
+
+
     }
 }

@@ -25,13 +25,14 @@
  */
 namespace phpformsframework\libs\tpl;
 
-use phpformsframework\libs\Debug;
-use phpformsframework\libs\Dir;
 use phpformsframework\libs\dto\DataHtml;
-use phpformsframework\libs\Error;
+use phpformsframework\libs\EndUserManager;
 
 abstract class Widget
 {
+    use AssetsManager;
+    use EndUserManager;
+
     const ERROR_BUCKET                          = "widget";
     const NAME_SPACE_BASIC                      = "widgets\\";
 
@@ -49,11 +50,24 @@ abstract class Widget
     abstract protected function getConfigDefault();
 
     /**
-     * @param string $filename
-     * @param null|array $config
-     * @return TemplateHtml
+     * @param array $config
+     * @param string $callToAction
+     * @return void|DataHtml
      */
-    abstract protected function processTemplate($filename, $config = null);
+    abstract protected function controller(&$config, $callToAction);
+
+    /**
+     * @param View $view
+     * @param array $config
+     */
+    abstract protected function renderTemplate(&$view, $config);
+
+    public function __construct($name, $config)
+    {
+        $this->config                           = array_replace_recursive($this->getConfigDefault(), (array) $config);
+        $this->name                             = $name;
+
+    }
 
     //todo: da fare
     private function getSnippet()
@@ -67,7 +81,6 @@ abstract class Widget
     private function getPage()
     {
         return Page::getInstance("html")
-            ->setStatus($this->status)
             ->addAssets($this->js, $this->css)
             //->setLayout("empty")
             ->addContent($this->html)
@@ -75,49 +88,69 @@ abstract class Widget
     }
     /**
      * @param string $name
+     * @param null|array $config
      * @param null|string $bucket
      * @return Widget
      */
-    public static function getInstance($name, $bucket = null)
+    public static function getInstance($name, $config = null, $bucket = null)
     {
         Debug::stopWatch("widget/" . $name);
 
         $class_name                             = $bucket . self::NAME_SPACE_BASIC . ucfirst($name);
         if (!isset(self::$singleton[$class_name])) {
-            self::$singleton[$class_name]       = new $class_name();
-            self::$singleton[$class_name]->name = $name;
+            self::$singleton[$class_name]       = new $class_name($name, $config);
         }
 
         return self::$singleton[$class_name];
     }
-    protected function inject($widget_data)
+
+    private function inject($widget_data)
     {
         $this->js                               = $widget_data->js;
         $this->css                              = $widget_data->css;
         $this->html                             = $widget_data->html;
     }
-    protected function loadTemplate()
+
+    private function getSkin()
     {
-        $widget_name                            = $this->name;
-
-        $html_name                              = Resource::get($widget_name . "/html", "widget");
-        $css_name                               = Resource::get($widget_name . "/css", "widget");
-        $script_name                            = Resource::get($widget_name . "/js", "widget");
-        if ($html_name) {
-            $this->html                         = $this->processTemplate($html_name, $this->getConfig())
-                                                    ->display();
-            if ($css_name) {
-                $this->addCss($widget_name, $css_name);
-            }
-            if ($script_name) {
-                $this->addJs($widget_name, $script_name);
-            }
-        } else {
-            Error::register("Widget Template not found: " . $widget_name, static::ERROR_BUCKET);
-        }
-
-        Debug::stopWatch("widget/" . $widget_name);
+        return $this->name . (
+            $this->skin
+            ? "-" . $this->skin
+            : ""
+        );
     }
+
+    protected function getResources()
+    {
+        return Resource::widget($this->getSkin());
+    }
+
+    /**
+     * @param string|object $name
+     * @param array $data
+     */
+    protected function view($name = "index", $data = array())
+    {
+        if (is_object($name)) {
+            $this->inject($name);
+        } else {
+            $widget_name                            = $this->getSkin();
+            $view                                   = new View();
+
+            $resources                              = $this->getResources();
+
+            $this->addJs($widget_name, $resources->js[$name]);
+            $this->addCss($widget_name, $resources->css[$name]);
+
+            $this->html                             = $view
+                                                        ->fetch($resources->html[$name])
+                                                        ->assign(function (&$view) use ($data) {
+                                                            $this->renderTemplate($view, $data);
+                                                        })
+                                                        ->display();
+        }
+    }
+
 
     /**
      * @param null|string $return
@@ -125,15 +158,17 @@ abstract class Widget
      */
     public function render($return = null)
     {
-        $this->loadTemplate();
+        $this->controller($this->getConfig(), $this->request()->method());
 
-        $output                                 = new DataHtml();
+        self::stopwatch("widget/" . $this->name);
+
+        $output                                     = new DataHtml();
         switch ($return) {
             case "snippet":
                 $output->html($this->getSnippet());
                 break;
             case "page":
-                $output                         = $this->getPage();
+                $output                             = $this->getPage();
                 break;
             default:
                 $output
@@ -143,19 +178,6 @@ abstract class Widget
         }
 
         return $output;
-    }
-
-    protected function addJs($key, $url)
-    {
-        if (!Dir::checkDiskPath($url) || filesize($url)) {
-            $this->js[$key] = $url;
-        }
-    }
-    protected function addCss($key, $url)
-    {
-        if (!Dir::checkDiskPath($url) || filesize($url)) {
-            $this->css[$key] = $url;
-        }
     }
 
     /**
@@ -170,25 +192,7 @@ abstract class Widget
         return self::$grid_system;
     }
 
-    /**
-     * @return null|TemplateHtml
-     */
-    protected function tpl()
-    {
-        if (!self::$tpl) {
-            self::$tpl = new TemplateHtml();
-        }
-
-        return self::$tpl;
-    }
-
-    public function setConfig($config)
-    {
-        $this->config = array_replace_recursive($this->getConfigDefault(), (array) $config);
-
-        return $this;
-    }
-    public function getConfig()
+    private function &getConfig()
     {
         return $this->config;
     }

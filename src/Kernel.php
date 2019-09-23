@@ -19,15 +19,12 @@ class Kernel
     /**
      * @var Dir
      */
-    public $Dir                     = Dir::class;
-    /**
-     * @var Debug
-     */
     public $Debug                   = Debug::class;
+
     /**
-     * @var Error
+     * @var Dir
      */
-    public $Error                   = Error::class;
+    public $Dir                     = Dir::class;
 
     /**
      * @var Request
@@ -68,7 +65,7 @@ class Kernel
     public static function getInstance($constant = null)
     {
         if (!self::$singleton) {
-            self::$singleton        = new static($constant);
+            self::$singleton        = new static($environment);
         }
 
         return self::$singleton;
@@ -85,9 +82,9 @@ class Kernel
 
     /**
      * Kernel constructor.
-     * @param string $environment
+     * @param bool|string $environment
      */
-    public function __construct($environment = null)
+    public function __construct($environment = false)
     {
         if ($environment) {
             Dir::autoload(Constant::DISK_PATH . DIRECTORY_SEPARATOR . str_replace('\\', '/', $environment) . "." . Constant::PHP_EXT);
@@ -117,6 +114,9 @@ class Kernel
         Config::load(self::$Environment::CONFIG_DISK_PATHS);
     }
 
+    /**
+     * @access private
+     */
     public function run()
     {
         App::setup(Request::page(), $this);

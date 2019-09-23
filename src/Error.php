@@ -131,10 +131,6 @@ class Error
             : null
         );
     }
-    public static function send($code = 404, $template = null)
-    {
-        Response::error($code, $template);
-    }
 
     private static function find($path_info)
     {
@@ -204,14 +200,14 @@ class Error
         if ($rule) {
             switch ($rule["type"]) {
                 case "media":
-                    self::send("404");
+                    Response::sendError("404");
                     break;
                     break;
                 case "html":
-                    self::send("403");
+                    Response::sendError("403");
                     break;
                 default:
-                    self::send("404");
+                    Response::sendError("404");
             }
         }
 

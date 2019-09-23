@@ -23,9 +23,9 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\tpl;
+namespace phpformsframework\libs\tpl\adapters;
 
-class TemplateAmp extends TemplateHtml
+class ViewAmp extends ViewHtml
 {
     const REGEXP                                = '/<<([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)>>/U';
 

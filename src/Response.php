@@ -26,10 +26,10 @@
 namespace phpformsframework\libs;
 
 use phpformsframework\libs\dto\DataAdapter;
-use phpformsframework\libs\dto\DataHtml;
 use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\storage\drivers\Array2XML;
 use Exception;
+use phpformsframework\libs\tpl\Page;
 
 class Response
 {
@@ -45,9 +45,10 @@ class Response
     /**
      * @param int $status
      * @param null $msg
+     * @return void
      * @todo da inserire la pagina html per la response DataHtml
      */
-    public static function error($status = 404, $msg = null)
+    public static function sendError($status = 404, $msg = null)
     {
         switch (Request::accept()) {
             case "application/json":
@@ -56,14 +57,21 @@ class Response
                 $response->error($status, $msg);
                 break;
             default:
-                $response = new DataHtml();
-                $response->error($status, $msg);
-                $response->html = $msg;
+                $response = Page::getInstance("html")
+                    ->setStatus($status)
+                    ->addContent($msg)
+                    ->render();
         }
 
-        self::send($response, $status);
+        self::send($response);
     }
 
+    /**
+     * @param mixed $data
+     * @param string $content_type
+     * @param null|int $status
+     * @return void
+     */
     public static function sendRawData($data, $content_type, $status = null)
     {
         if (self::isValidContentType($content_type)) {
@@ -147,19 +155,41 @@ class Response
     /**
      * @param DataAdapter $response
      * @param null $status
+     * @return void
      */
     public static function send($response, $status = null)
     {
         if (self::isValidContentType($response::CONTENT_TYPE)) {
-            if ($response->status) {
-                Response::code($status);
-            }
 
+            Response::code(
+                $status === null
+                ? $response->status
+                : $status
+            );
             self::sendHeadersByMimeType($response::CONTENT_TYPE);
             echo $response->output();
         }
         exit;
     }
+
+    /**
+     * @param string $response
+     * @return void
+     */
+    public function sendHtml($response)
+    {
+        Response::sendRawData($response, "text/html");
+    }
+
+    /**
+     * @param string $response
+     * @return void
+     */
+    public function sendJson($response)
+    {
+        Response::sendRawData($response, "application/json");
+    }
+
 
     public static function redirect($destination, $http_response_code = null, $headers = null)
     {

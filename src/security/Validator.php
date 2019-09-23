@@ -120,7 +120,7 @@ class Validator
                                                                     "filter"        => FILTER_CALLBACK
                                                                     , "flags"       => null
                                                                     , "options"     => '\phpformsframework\libs\security\Validator::isJson'
-                                                                    , "length"      => 1024
+                                                                    , "length"      => 10240
                                                                 )
                                                                 , "password" => array(
                                                                     "filter"        => FILTER_CALLBACK
@@ -203,7 +203,7 @@ class Validator
             self::setRuleOptions($rule, $option["range"]);
         }
         if (!self::isAllowedSize($what, $rule["length"])) {
-            $dataError                                  = self::isError(self::getErrorName($what) . " Max Length Exeeded", $type, 413);
+            $dataError                                  = self::isError(self::getErrorName($what) . " Max Length Exeeded: " . $type, $type, 413);
         } else {
             $validation                                 = filter_var($what, $rule["filter"], array(
                                                             "flags"         => $rule["flags"]

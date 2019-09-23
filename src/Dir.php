@@ -65,7 +65,12 @@ class Dir
 
     public static function loadFile($path, $context = null)
     {
-        return file_get_contents($path, false, $context);
+        $res = @file_get_contents($path, false, $context);
+        if ($res === false) {
+            Error::register("File inaccessible: " . ($path ? $path : "empty"));
+        }
+
+        return $res;
     }
 
 

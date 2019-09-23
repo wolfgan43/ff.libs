@@ -25,25 +25,24 @@
  */
 namespace phpformsframework\libs;
 
-use phpformsframework\libs\dto\RequestPage;
 use phpformsframework\libs\tpl\Widget;
 
 abstract class App implements Dumpable
 {
+    use EndUserManager;
+
     const NAME_SPACE                                                = __NAMESPACE__ . '\\';
     const ERROR_BUCKET                                              = 'app';
 
     protected static $script_engine                                 = null;
 
-    protected static $Environment                                   = null;
-    private static $Server                                          = null;
-    private static $Page                                            = null;
-
-
     /**
-     * @return RequestPage
+     * @var Constant
      */
-    public static function &config()
+    public static $Environment                                      = null;
+
+
+    protected static function &config()
     {
         return self::$Page;
     }
@@ -78,25 +77,12 @@ abstract class App implements Dumpable
             "isRunnedAs"    => self::$script_engine,
             "Page"          => self::$Page,
             "Vars"          => Env::get(),
+            "userVars"      => $userVars,
             "Server"        => '*protected*'
         );
     }
 
-    public static function env($name, $value = null)
-    {
-        return ($value
-            ? Env::set($name, $value)
-            : Env::get($name)
-        );
-    }
-    public static function on($name, $func, $priority = null)
-    {
-        Hook::register($name, $func, $priority);
-    }
-    protected static function hook($name, &$ref = null, $params = null)
-    {
-        return Hook::handle($name, $ref, $params);
-    }
+
 
     public static function setRunner($what)
     {
@@ -121,12 +107,11 @@ abstract class App implements Dumpable
      */
     public static function widget($name, $config = null, $return = null)
     {
-        $class_name                     = get_called_class();
+        $class_name                                                 = get_called_class();
 
         Log::registerProcedure($class_name, "widget:" . $name);
 
-        return Widget::getInstance($name, $class_name::NAME_SPACE)
-            ->setConfig($config)
+        return Widget::getInstance($name, $config, $class_name::NAME_SPACE)
             ->render($return);
     }
     public static function page($name, $config = null)

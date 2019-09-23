@@ -1,11 +1,6 @@
 <?php
 namespace phpformsframework\libs\dto;
 
-use phpformsframework\libs\Constant;
-use phpformsframework\libs\Mappable;
-use phpformsframework\libs\Request;
-use phpformsframework\libs\Router;
-
 /**
  * Class ConfigPage
  * @package phpformsframework\libs\dto
@@ -22,7 +17,8 @@ class RequestPageRules
         $this->last_update  = microtime(true);
     }
 
-    public function set($pageRules) {
+    public function set($pageRules)
+    {
         if (isset($pageRules["header"])) {
             $this->setVar($pageRules["header"], $this->header);
         }
@@ -34,10 +30,8 @@ class RequestPageRules
         }
     }
 
-    private function setVar($rules, &$vars) {
+    private function setVar($rules, &$vars)
+    {
         $vars = array_replace((array) $rules, $vars);
     }
-
 }
-
-

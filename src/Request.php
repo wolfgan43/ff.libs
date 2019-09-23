@@ -764,17 +764,17 @@ class Request implements Configurable, Dumpable
                 self::CORS_preflight($origin);
                 break;
             case "TRACE": //todo: to manage
-                Response::error(405);
+                Response::sendError(405);
                 break;
             case "CONNECT": //todo: to manage
-                Response::error(405);
+                Response::sendError(405);
                 break;
             case "HEAD": //todo: to manage
                 self::securityHeaders($origin);
                 exit;
                 break;
             case "PROPFIND": //todo: to manage
-                Response::error(405);
+                Response::sendError(405);
                 break;
             case "GET":
             case "POST":
@@ -782,10 +782,10 @@ class Request implements Configurable, Dumpable
                 self::securityHeaders($origin);
                 break;
             case "DELETE": //todo: to manage
-                Response::error(405);
+                Response::sendError(405);
                 break;
             default:
-                Response::error(405);
+                Response::sendError(405);
         }
 
         return true;
@@ -1120,7 +1120,7 @@ class Request implements Configurable, Dumpable
 
     private static function isError($error, $status = 400)
     {
-        Response::error($status, $error);
+        Response::sendError($status, $error);
     }
 
     public static function accept()

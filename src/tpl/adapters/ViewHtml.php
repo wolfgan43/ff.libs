@@ -23,7 +23,7 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\tpl;
+namespace phpformsframework\libs\tpl\adapters;
 
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
@@ -32,11 +32,11 @@ use phpformsframework\libs\Error;
 use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\Hook;
 use phpformsframework\libs\international\Translator;
+use phpformsframework\libs\tpl\ViewAdapter;
 use stdClass;
 
-class TemplateHtml
+class ViewHtml implements ViewAdapter
 {
-    const ERROR_BUCKET                          = "tpl";
     const REGEXP                                = '/\{([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)\}/U';
 
     const APPLET                                = '/\{\[(.+)\]\}/U';
@@ -51,23 +51,27 @@ class TemplateHtml
     public $display_unparsed_sect				= false;
     public $doublevar_to_commenthtml 			= false;
 
-    public $DBlocks 							= null;
-    public $DVars 								= null;
-    public $DBlockVars 						    = null;
-    public $ParsedBlocks 						= array();
-    public $DApplets							= null;
+    private $DBlocks 							= null;
+    private $DVars 								= null;
+    private $DBlockVars 					    = null;
+    private $ParsedBlocks 						= array();
+    private $DApplets							= null;
 
     /**
      * @var bool|string[strip|strong_strip|minify]
      */
     public $minify								= false;
 
-    public static function fetch($template_file)
+    public function fetch($template_file)
     {
-        $tmp = new TemplateHtml();
-        $tmp->load_file($template_file);
+        $this->load_file($template_file);
 
-        return $tmp;
+        return $this;
+    }
+
+    public function isset($name)
+    {
+        return isset($this->DBlocks[$name]);
     }
 
     public function load_file($template_path, $root_element = null)
@@ -278,7 +282,7 @@ class TemplateHtml
      *
      * @todo Da eliminare
      */
-    public function set_var($sName, $sValue)
+    private function set_var($sName, $sValue)
     {
         $this->ParsedBlocks[$sName] = $sValue;
 
@@ -295,7 +299,7 @@ class TemplateHtml
         return (bool)($this->ParsedBlocks[$sName]);
     }
 
-    public function parse($sTplName, $bRepeat, $bBefore = false)
+    public function parse($sTplName, $bRepeat = false, $bBefore = false)
     {
         if (isset($this->DBlocks[$sTplName])) {
             if ($bRepeat && isset($this->ParsedBlocks[$sTplName])) {
@@ -329,13 +333,17 @@ class TemplateHtml
     */
 
     /**
-     * @param string $name
-     * @param string $value
+     * @param array|string $data
+     * @param null|mixed $value
      * @return $this
      */
-    public function assign($name, $value)
+    public function assign($data, $value = null)
     {
-        $this->ParsedBlocks[$name] = $value;
+        if (is_array($data)) {
+            $this->ParsedBlocks             = array_replace($this->ParsedBlocks, $data);
+        } else {
+            $this->ParsedBlocks[$data]      = $value;
+        }
 
         return $this;
     }

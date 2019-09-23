@@ -47,7 +47,7 @@ class Resource extends Mappable implements Dumpable
     protected $rules                            = null;
     private $resources                          = null;
 
-    public function __construct($map_name)
+    public function __construct($map_name = "default")
     {
         parent::__construct($map_name);
 
@@ -56,6 +56,10 @@ class Resource extends Mappable implements Dumpable
 
     public static function dump()
     {
+        if (!self::$singleton) {
+            self::$singleton = new Resource();
+        }
+
         return self::$singleton->resources;
     }
 
@@ -75,10 +79,10 @@ class Resource extends Mappable implements Dumpable
 
         Debug::stopWatch("resource/loadResources");
     }
-    public static function type($type, $rule_name = "default")
+    public static function type($type)
     {
         if (!self::$singleton) {
-            self::$singleton = new Resource($rule_name);
+            self::$singleton = new Resource();
         }
 
         return (isset(self::$singleton->resources[$type])
@@ -86,10 +90,10 @@ class Resource extends Mappable implements Dumpable
             : array()
         );
     }
-    public static function get($name, $type, $rule_name = "default")
+    public static function get($name, $type)
     {
         if (!self::$singleton) {
-            self::$singleton = new Resource($rule_name);
+            self::$singleton = new Resource();
         }
 
 
@@ -110,7 +114,17 @@ class Resource extends Mappable implements Dumpable
 
         return $file;
     }
+    public static function widget($name)
+    {
+        if (!self::$singleton) {
+            self::$singleton = new Resource();
+        }
 
+        return (isset(self::$singleton->resources["widget"][$name])
+            ? (object) self::$singleton->resources["widget"][$name]
+            : null
+        );
+    }
     public static function load($name, $type)
     {
         $path                                   = self::get($name, $type);

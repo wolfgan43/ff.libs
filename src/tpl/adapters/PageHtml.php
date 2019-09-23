@@ -39,9 +39,9 @@ use phpformsframework\libs\Request;
 use phpformsframework\libs\Response;
 use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\storage\Media;
-use phpformsframework\libs\tpl\TemplateHtml;
 use phpformsframework\libs\tpl\Gridsystem;
 use phpformsframework\libs\tpl\Resource;
+use phpformsframework\libs\tpl\View;
 
 class PageHtml extends Mappable
 {
@@ -188,7 +188,7 @@ class PageHtml extends Mappable
     }
 
     /**
-     * @param string|DataHtml|TemplateHtml $content
+     * @param string|DataHtml|View $content
      * @return false|string|null
      */
     private function getHtml($content)
@@ -208,7 +208,7 @@ class PageHtml extends Mappable
     private function getHtmlByObject($obj)
     {
         $html                                   = null;
-        if ($obj instanceof TemplateHtml) {
+        if ($obj instanceof View) {
             $html                               = $obj->display();
         } elseif ($obj instanceof DataHtml) {
             $this->addAssets($obj->js, $obj->css, $obj->fonts);
@@ -359,14 +359,14 @@ class PageHtml extends Mappable
             $description = Error::getErrorMessage($code);
         }
 
-        $tpl                                    = new TemplateHtml();
-        $tpl->load_file(Constant::DISK_PATH . $this->getAsset("error", "common"));
-        $tpl->set_var("site_path", Constant::SITE_PATH);
-        $tpl->set_var("title", Translator::get_word_by_code($title));
-        $tpl->set_var("description", Translator::get_word_by_code($description));
+        $tpl                                    = new View();
+        $tpl->fetch(Constant::DISK_PATH . $this->getAsset("error", "common"));
+        $tpl->assign("site_path", Constant::SITE_PATH);
+        $tpl->assign("title", Translator::get_word_by_code($title));
+        $tpl->assign("description", Translator::get_word_by_code($description));
 
         if ($this->email_support) {
-            $tpl->set_var("email_support", $this->email_support);
+            $tpl->assign("email_support", $this->email_support);
             $tpl->parse("SezButtonSupport", false);
         }
 

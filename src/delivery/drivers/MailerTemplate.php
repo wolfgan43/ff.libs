@@ -30,8 +30,8 @@ use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\storage\Filemanager;
-use phpformsframework\libs\tpl\TemplateHtml;
 use phpformsframework\libs\security\Validator;
+use phpformsframework\libs\tpl\View;
 
 final class MailerTemplate extends Mailer
 {
@@ -40,13 +40,13 @@ final class MailerTemplate extends Mailer
 
     private $tpl_html_path                                  = null;
     /**
-     * @var TemplateHtml
+     * @var View
      */
     private $tpl_html                                       = null;
 
     private $tpl_text_path                                  = null;
     /**
-     * @var TemplateHtml
+     * @var View
      */
     private $tpl_text                                       = null;
 
@@ -110,14 +110,14 @@ final class MailerTemplate extends Mailer
                 });
             }
 
-            $this->tpl_html = new TemplateHtml();
-            $this->tpl_html->load_file($this->tpl_html_path, "main");
+            $this->tpl_html = new View("Html");
+            $this->tpl_html->fetch($this->tpl_html_path);
 
             if (is_file(dirname($this->tpl_html_path) . "/default.txt")) {
                 $this->tpl_text_path = dirname($this->tpl_html_path) . "/default.txt";
 
-                $this->tpl_text = new TemplateHtml();
-                $this->tpl_text->load_file($this->tpl_text_path, "main");
+                $this->tpl_text = new View("Html");
+                $this->tpl_text->fetch($this->tpl_text_path);
             }
         } else {
             Error::register("Template not found" . (Kernel::$Environment::DEBUG ? ": " . $this->tpl_html_path : ""), static::ERROR_BUCKET);
@@ -180,9 +180,9 @@ final class MailerTemplate extends Mailer
                         $count_row++;
                     }
                 } else {
-                    $this->tpl_html->set_var($fields_key, $fields_value); //custom vars
+                    $this->tpl_html->assign($fields_key, $fields_value); //custom vars
                     if ($this->tpl_text) {
-                        $this->tpl_text->set_var($fields_key, $fields_value); //custom vars
+                        $this->tpl_text->assign($fields_key, $fields_value); //custom vars
                     }
                 }
 
@@ -223,23 +223,23 @@ final class MailerTemplate extends Mailer
         $this->tpl_html->parse("SezStyle" . $type, false);
         foreach ($groups as $group_key => $group_value) {
             if ($group_key != $type) {
-                $this->tpl_html->set_var("SezStyle" . $group_key, "");
+                $this->tpl_html->assign("SezStyle" . $group_key, "");
             }
         }
         if ($type) {
-            $this->tpl_html->set_var("SezStyle", "");
+            $this->tpl_html->assign("SezStyle", "");
         }
-        $this->tpl_html->set_var("real_name", $this->process_mail_field($value, "smart_url"));
-        $this->tpl_html->set_var("group_name", $this->process_mail_field($value));
+        $this->tpl_html->assign("real_name", $this->process_mail_field($value, "smart_url"));
+        $this->tpl_html->assign("group_name", $this->process_mail_field($value));
         $this->tpl_html->parse("SezGroups", true);
 
-        $this->tpl_html->set_var("SezFieldLabel", "");
-        $this->tpl_html->set_var("SezField", "");
+        $this->tpl_html->assign("SezFieldLabel", "");
+        $this->tpl_html->assign("SezField", "");
 
         foreach ($groups as $group_key => $group_value) {
-            $this->tpl_html->set_var("Sez" . $group_key . "FieldLabel", "");
-            $this->tpl_html->set_var("Sez" . $group_key . "Field", "");
-            $this->tpl_html->set_var("Sez" . $group_key . "Row", "");
+            $this->tpl_html->assign("Sez" . $group_key . "FieldLabel", "");
+            $this->tpl_html->assign("Sez" . $group_key . "Field", "");
+            $this->tpl_html->assign("Sez" . $group_key . "Row", "");
         }
 
         /*
@@ -249,23 +249,23 @@ final class MailerTemplate extends Mailer
             $this->tpl_text->parse("SezStyle" . $type, false);
             foreach ($groups as $group_key => $group_value) {
                 if ($group_key != $type) {
-                    $this->tpl_text->set_var("SezStyle" . $group_key, "");
+                    $this->tpl_text->assign("SezStyle" . $group_key, "");
                 }
             }
             if ($type) {
-                $this->tpl_text->set_var("SezStyle", "");
+                $this->tpl_text->assign("SezStyle", "");
             }
-            $this->tpl_text->set_var("real_name", $this->process_mail_field($value, "smart_url"));
-            $this->tpl_text->set_var("group_name", $this->process_mail_field($value));
+            $this->tpl_text->assign("real_name", $this->process_mail_field($value, "smart_url"));
+            $this->tpl_text->assign("group_name", $this->process_mail_field($value));
             $this->tpl_text->parse("SezGroups", true);
 
-            $this->tpl_text->set_var("SezFieldLabel", "");
-            $this->tpl_text->set_var("SezField", "");
+            $this->tpl_text->assign("SezFieldLabel", "");
+            $this->tpl_text->assign("SezField", "");
 
             foreach ($groups as $group_key => $group_value) {
-                $this->tpl_text->set_var("Sez" . $group_key . "FieldLabel", "");
-                $this->tpl_text->set_var("Sez" . $group_key . "Field", "");
-                $this->tpl_text->set_var("Sez" . $group_key . "Row", "");
+                $this->tpl_text->assign("Sez" . $group_key . "FieldLabel", "");
+                $this->tpl_text->assign("Sez" . $group_key . "Field", "");
+                $this->tpl_text->assign("Sez" . $group_key . "Row", "");
             }
         }
     }
@@ -278,24 +278,24 @@ final class MailerTemplate extends Mailer
      */
     private function parse_mail_field($value, $name, $type = null, $skip_label = false)
     {
-        $this->tpl_html->set_var($name, $value); //custom vars
+        $this->tpl_html->assign($name, $value); //custom vars
         if ($this->tpl_text) {
-            $this->tpl_text->set_var($name, $value); //custom vars
+            $this->tpl_text->assign($name, $value); //custom vars
         }
 
         /*
          * Parse field html(label, value, real_name)
          */
         if (!$skip_label) {
-            $this->tpl_html->set_var("fields_label", $this->process_mail_field($name));
+            $this->tpl_html->assign("fields_label", $this->process_mail_field($name));
             $this->tpl_html->parse("Sez" . $type . "FieldLabel", true);
         }
 
-        $this->tpl_html->set_var("real_name", $this->process_mail_field($name, "smart_url"));
-        $this->tpl_html->set_var("fields_value", $this->process_mail_field($value, $name));
+        $this->tpl_html->assign("real_name", $this->process_mail_field($name, "smart_url"));
+        $this->tpl_html->assign("fields_value", $this->process_mail_field($value, $name));
         $this->tpl_html->parse("Sez" . $type . "Field", true);
 
-        $this->tpl_html->set_var(                      //custom vars
+        $this->tpl_html->assign(                      //custom vars
             $this->process_mail_field($name),
             $this->process_mail_field($value)
         );
@@ -305,14 +305,14 @@ final class MailerTemplate extends Mailer
          */
         if ($this->tpl_text) {
             if (!$skip_label) {
-                $this->tpl_text->set_var("fields_label", $this->process_mail_field($name));
+                $this->tpl_text->assign("fields_label", $this->process_mail_field($name));
                 $this->tpl_text->parse("Sez" . $type . "FieldLabel", true);
             }
 
-            $this->tpl_text->set_var("fields_value", $this->process_mail_field($value, $name));
+            $this->tpl_text->assign("fields_value", $this->process_mail_field($value, $name));
             $this->tpl_text->parse("SezField", true);
 
-            $this->tpl_text->set_var(                  //custom vars
+            $this->tpl_text->assign(                  //custom vars
                 $this->process_mail_field($name),
                 $this->process_mail_field($value)
             );
@@ -329,16 +329,16 @@ final class MailerTemplate extends Mailer
         $this->tpl_html->parse("SezRow" . $type, false); //custom vars
 
         if ($reset_field) {
-            $this->tpl_html->set_var("Sez" . $type . "Field", "");
-            $this->tpl_html->set_var("Sez" . $type . "FieldLabel", "");
+            $this->tpl_html->assign("Sez" . $type . "Field", "");
+            $this->tpl_html->assign("Sez" . $type . "FieldLabel", "");
         }
 
         if ($this->tpl_text) {
             $this->tpl_text->parse("Sez" . $type . "Row", false);
             $this->tpl_text->parse("SezRow" . $type, false); //custom vars
             if ($reset_field) {
-                $this->tpl_text->set_var("Sez" . $type . "Field", "");
-                $this->tpl_text->set_var("Sez" . $type . "FieldLabel", "");
+                $this->tpl_text->assign("Sez" . $type . "Field", "");
+                $this->tpl_text->assign("Sez" . $type . "FieldLabel", "");
             }
         }
     }

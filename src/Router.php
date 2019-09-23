@@ -140,7 +140,7 @@ class Router implements Configurable, Dumpable
                 } elseif ($rule["redirect"]) {
                     Response::redirect(self::replaceMatches($rule["matches"], $destination), $rule["redirect"]);
                 } elseif (is_numeric($destination) || ctype_digit($destination)) {
-                    Error::send($destination);
+                    Response::sendError($destination);
                 } else {
                     self::execute($destination . $path);
                 }
@@ -156,7 +156,7 @@ class Router implements Configurable, Dumpable
             Debug::dump("Page Not Found!");
         }
 
-        Error::send(404);
+        Response::sendError(404);
     }
 
     private static function runWebRoot($path)

@@ -38,7 +38,7 @@ class Env implements Configurable
     private static $packages                                        = null;
     private static $permanent                                       = array();
 
-    public static function loadDotEnv()
+    private static function loadDotEnv()
     {
         $file                                                       = file_get_contents(
             Constant::DISK_PATH . '/.env' .
@@ -169,7 +169,7 @@ class Env implements Configurable
 
     public static function loadSchema($rawdata, $bucket = "default")
     {
-        self::loadDotEnv();
+        //self::loadDotEnv();
 
         if (is_array($rawdata) && count($rawdata)) {
             foreach ($rawdata as $key => $value) {

@@ -63,7 +63,20 @@ class Config implements Dumpable
     private static $file_config                                     = null;
     private static $file_maps                                       = null;
     private static $file_scans                                      = null;
-    private static $class_configurable                              = null;
+    private static $class_configurable                              = array(
+        Config::SCHEMA_ROUTER       => Router::class,
+        Config::SCHEMA_ENV          => Env::class
+    );
+    //@todo: da sistemare togliendo il configurable e il dumpable e farlo fisso con 1 unica variabile
+    private static $config_rules                                    = array(
+        Config::SCHEMA_DIRSTRUCT    => ["method" => Config::RAWDATA_XML_MERGE_RECOURSIVE,   "context" => Config::SCHEMA_DIRSTRUCT],
+        Config::SCHEMA_PAGES        => ["method" => Config::RAWDATA_XML_MERGE_RECOURSIVE,   "context" => Config::SCHEMA_PAGES],
+        Config::SCHEMA_ENGINE       => ["method" => Config::RAWDATA_XML_REPLACE,            "context" => Config::SCHEMA_ENGINE],
+        Config::SCHEMA_ROUTER       => ["method" => Config::RAWDATA_XML_MERGE_RECOURSIVE,   "context" => Config::SCHEMA_ROUTER],
+        Config::SCHEMA_ENV          => ["method" => Config::RAWDATA_XML_REPLACE,            "context" => Config::SCHEMA_ENV],
+        Config::SCHEMA_LOCALE       => ["method" => Config::RAWDATA_XML_MERGE_RECOURSIVE,   "context" => Config::SCHEMA_LOCALE],
+    );
+
     private static $class_dumpable                                  = null;
 
     public static function dump()

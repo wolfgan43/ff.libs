@@ -54,13 +54,43 @@
       ]
     },
     "widgets": {
-      "flag": 8,
+      "flag": 4,
       "type": "widget",
-      "prototype" : "parentname/extension",
+      "prototype" : "filename",
+      "groupby": "parentname/extension",
       "filter": [
         "html",
         "css",
         "js"
+      ]
+    },
+    "widgets/images": {
+      "flag": 4,
+      "type": "widget",
+      "prototype" : "filename",
+      "rootpath": "../",
+      "groupby": "rootname/images",
+      "filter": [
+        "jpg",
+        "png",
+        "svg",
+        "jpeg",
+        "gif"
+      ]
+    },
+    "widgets/fonts": {
+      "flag": 4,
+      "type": "widget",
+      "prototype" : "basename",
+      "rootpath": "../../",
+      "groupby": "rootname/fonts",
+      "filter": [
+        "otf",
+        "eot",
+        "svg",
+        "ttf",
+        "woff",
+        "woff2"
       ]
     },
     "xml": {

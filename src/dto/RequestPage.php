@@ -1,7 +1,6 @@
 <?php
 namespace phpformsframework\libs\dto;
 
-use phpformsframework\libs\Constant;
 use phpformsframework\libs\Mappable;
 use phpformsframework\libs\Request;
 

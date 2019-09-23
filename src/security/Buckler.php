@@ -27,7 +27,6 @@ namespace phpformsframework\libs\security;
 
 use phpformsframework\libs\Configurable;
 use phpformsframework\libs\Dir;
-use phpformsframework\libs\Error;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\Response;
@@ -75,7 +74,7 @@ class Buckler implements Configurable
         if (function_exists("sys_getloadavg")) {
             $load = sys_getloadavg();
             if ($load[0] > 80) {
-                Error::send(503);
+                Response::sendError(503);
                 Log::emergency("server busy");
                 exit;
             }

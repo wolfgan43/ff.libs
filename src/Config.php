@@ -25,11 +25,12 @@
  */
 namespace phpformsframework\libs;
 
-use Exception;
 use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\dto\ConfigRules;
+use phpformsframework\libs\international\Locale;
+use phpformsframework\libs\security\Buckler;
 use phpformsframework\libs\storage\Filemanager;
-use ReflectionClass;
+use phpformsframework\libs\storage\Media;
 
 class Config implements Dumpable
 {
@@ -52,32 +53,30 @@ class Config implements Dumpable
     private static $maps                                            = null;
     private static $engine                                          = null;
 
-    private static $config_rules                                    = array(
-        Config::SCHEMA_DIRSTRUCT    => ["method" => Config::RAWDATA_XML_MERGE_RECOURSIVE,   "context" => Config::SCHEMA_DIRSTRUCT],
-        Config::SCHEMA_PAGES        => ["method" => Config::RAWDATA_XML_MERGE_RECOURSIVE,   "context" => Config::SCHEMA_PAGES],
-        Config::SCHEMA_ENGINE       => ["method" => Config::RAWDATA_XML_REPLACE,            "context" => Config::SCHEMA_ENGINE],
-    );
+
     private static $autoloads                                       = array();
     private static $webroot                                         = null;
     private static $dirstruct                                       = null;
     private static $file_config                                     = null;
     private static $file_maps                                       = null;
     private static $file_scans                                      = null;
+    //@todo: da popolare con l'installer
     private static $class_configurable                              = array(
-        Config::SCHEMA_ROUTER       => Router::class,
-        Config::SCHEMA_ENV          => Env::class
+        "router"        => Router::class,
+        "request"       => Request::class,
+        "env"           => Env::class,
+        "hook"          => Hook::class,
+        "locale"        => Locale::class,
+        "model"         => Model::class,
+        "buckler"       => Buckler::class,
+        "media"         => Media::class
     );
     //@todo: da sistemare togliendo il configurable e il dumpable e farlo fisso con 1 unica variabile
     private static $config_rules                                    = array(
         Config::SCHEMA_DIRSTRUCT    => ["method" => Config::RAWDATA_XML_MERGE_RECOURSIVE,   "context" => Config::SCHEMA_DIRSTRUCT],
         Config::SCHEMA_PAGES        => ["method" => Config::RAWDATA_XML_MERGE_RECOURSIVE,   "context" => Config::SCHEMA_PAGES],
         Config::SCHEMA_ENGINE       => ["method" => Config::RAWDATA_XML_REPLACE,            "context" => Config::SCHEMA_ENGINE],
-        Config::SCHEMA_ROUTER       => ["method" => Config::RAWDATA_XML_MERGE_RECOURSIVE,   "context" => Config::SCHEMA_ROUTER],
-        Config::SCHEMA_ENV          => ["method" => Config::RAWDATA_XML_REPLACE,            "context" => Config::SCHEMA_ENV],
-        Config::SCHEMA_LOCALE       => ["method" => Config::RAWDATA_XML_MERGE_RECOURSIVE,   "context" => Config::SCHEMA_LOCALE],
     );
-
-    private static $class_dumpable                                  = null;
 
     public static function dump()
     {
@@ -94,7 +93,6 @@ class Config implements Dumpable
             "file_maps"             => self::$file_maps,
             "file_scans"            => self::$file_scans,
             "class_configurable"    => self::$class_configurable,
-            "class_dumpable"        => self::$class_dumpable
         );
     }
 
@@ -112,7 +110,6 @@ class Config implements Dumpable
         self::$file_maps            = $rawdata["file_maps"];
         self::$file_scans           = $rawdata["file_scans"];
         self::$class_configurable   = $rawdata["class_configurable"];
-        self::$class_dumpable       = $rawdata["class_dumpable"];
     }
 
 
@@ -270,34 +267,15 @@ class Config implements Dumpable
         if (!$rawdata) {
             $rawdata                                                = array();
 
-            $classes                                                = get_declared_classes();
-            foreach ($classes as $class_name) {
-                try {
-                    $reflect                                        = new ReflectionClass($class_name);
-                    if ($reflect->implementsInterface(__NAMESPACE__ . '\\Dumpable')) {
-                        $parent                                     = $reflect->getParentClass();
-                        if (!$parent || !isset(self::$class_dumpable[strtolower(basename(str_replace('\\', '/', $parent->getName())))])) {
-                            self::$class_dumpable[strtolower(basename(str_replace('\\', '/', $class_name)))]  = $class_name;
-                        }
-                    }
 
-                    if ($reflect->implementsInterface(__NAMESPACE__ . '\\Configurable')) {
-                        $parent                                     = $reflect->getParentClass();
-
-                        if (!$parent || !isset(self::$class_configurable[strtolower(basename(str_replace('\\', '/', $parent->getName())))])) {
-                            $class_basename                         = strtolower(basename(str_replace('\\', '/', $class_name)));
-                            self::$class_configurable[$class_basename] = $class_name;
-                            /**
-                             * @var Configurable $class_name
-                             */
-                            $configRules                            = new ConfigRules($class_basename);
-                            self::addRules($class_name::loadConfigRules($configRules));
-                        }
-                    }
-                } catch (Exception $exception) {
-                    Error::register($exception->getMessage(), static::ERROR_BUCKET);
-                }
+            foreach (self::$class_configurable as $class_basename => $class_name) {
+                /**
+                 * @var Configurable $class_name
+                 */
+                $configRules                            = new ConfigRules($class_basename);
+                self::addRules($class_name::loadConfigRules($configRules));
             }
+
 
             /**
              * Find Config.xml

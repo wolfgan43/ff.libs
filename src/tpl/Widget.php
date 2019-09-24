@@ -41,11 +41,11 @@ abstract class Widget
     private static $tpl                         = null;
 
     private $name                               = null;
-    protected $config                           = array();
-    protected $js                               = null;
-    protected $css                              = null;
-    protected $html                             = null;
-    protected $status                           = null;
+
+    protected $skin                             = null;
+
+    private $config                             = array();
+
 
     abstract protected function getConfigDefault();
 
@@ -94,7 +94,7 @@ abstract class Widget
      */
     public static function getInstance($name, $config = null, $bucket = null)
     {
-        Debug::stopWatch("widget/" . $name);
+        self::stopwatch("widget/" . $name);
 
         $class_name                             = $bucket . self::NAME_SPACE_BASIC . ucfirst($name);
         if (!isset(self::$singleton[$class_name])) {

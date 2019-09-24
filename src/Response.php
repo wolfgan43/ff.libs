@@ -154,7 +154,7 @@ class Response
 
     /**
      * @param DataAdapter $response
-     * @param null $status
+     * @param null|int $status
      * @return void
      */
     public static function send($response, $status = null)

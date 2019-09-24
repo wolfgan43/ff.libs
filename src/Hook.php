@@ -34,15 +34,31 @@ class Hook implements Configurable, Dumpable
 
     private static $events                                                          = null;
 
+    /**
+     * @access private
+     * @param dto\ConfigRules $configRules
+     * @return dto\ConfigRules
+     */
     public static function loadConfigRules($configRules)
     {
         return $configRules
             ->add("hooks");
     }
+
+    /**
+     * @access private
+     * @param array $config
+     */
     public static function loadConfig($config)
     {
         self::$events = $config["events"];
     }
+
+    /**
+     * @access private
+     * @param array $rawdata
+     * @return array
+     */
     public static function loadSchema($rawdata)
     {
         if (isset($rawdata["hook"]) && is_array($rawdata["hook"]) && count($rawdata["hook"])) {

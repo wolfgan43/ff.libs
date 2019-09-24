@@ -35,17 +35,31 @@ class Buckler implements Configurable
 {
     private static $rules                                       = null;
 
+    /**
+     * @access private
+     * @param \phpformsframework\libs\dto\ConfigRules $configRules
+     * @return \phpformsframework\libs\dto\ConfigRules
+     */
     public static function loadConfigRules($configRules)
     {
         return $configRules
             ->add("badpath");
     }
 
+    /**
+     * @access private
+     * @param array $config
+     */
     public static function loadConfig($config)
     {
         self::$rules                                            = $config["rules"];
     }
 
+    /**
+     * @access private
+     * @param array $rawdata
+     * @return array
+     */
     public static function loadSchema($rawdata)
     {
         if (isset($rawdata["rule"]) && is_array($rawdata["rule"]) && count($rawdata["rule"])) {

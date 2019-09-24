@@ -29,6 +29,7 @@ namespace phpformsframework\libs;
 use phpformsframework\libs\dto\RequestPage;
 use phpformsframework\libs\dto\RequestPageRules;
 use phpformsframework\libs\international\Locale;
+use phpformsframework\libs\security\Buckler;
 use phpformsframework\libs\security\Validator;
 
 class Request implements Configurable, Dumpable
@@ -70,6 +71,11 @@ class Request implements Configurable, Dumpable
         );
     }
 
+    /**
+     * @access private
+     * @param dto\ConfigRules $configRules
+     * @return dto\ConfigRules
+     */
     public static function loadConfigRules($configRules)
     {
         return $configRules
@@ -78,6 +84,10 @@ class Request implements Configurable, Dumpable
             ->add("patterns");
     }
 
+    /**
+     * @access private
+     * @param array $config
+     */
     public static function loadConfig($config)
     {
         self::$params                                               = $config["params"];
@@ -87,6 +97,12 @@ class Request implements Configurable, Dumpable
         self::$gateway                                              = $config["gateway"];
         self::$patterns                                             = $config["patterns"];
     }
+
+    /**
+     * @access private
+     * @param array $rawdata
+     * @return array
+     */
     public static function loadSchema($rawdata)
     {
         self::loadParams($rawdata, self::$params);
@@ -287,8 +303,11 @@ class Request implements Configurable, Dumpable
         }
     }
 
-
-    public static function &page()
+    /**
+     * @access private
+     * @return RequestPage
+     */
+    public static function &pageConfiguration()
     {
         self::rewritePathInfo();
 
@@ -301,6 +320,12 @@ class Request implements Configurable, Dumpable
         if (isset(self::$page->root_path) && self::$page->root_path == self::$root_path) {
             $_SERVER["PATH_INFO"]                           = self::$orig_path_info;
         }
+
+        //@todo: da sistemare
+        if (Env::get("REQUEST_SECURITY_LEVEL")) {
+            Buckler::protectMyAss();
+        }
+
         if (self::$page->validation) {
             self::urlVerify();
         }

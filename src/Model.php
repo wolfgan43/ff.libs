@@ -97,18 +97,33 @@ class Model implements Configurable, Dumpable
         return array_filter($model);
     }
 
+    /**
+     * @access private
+     * @param dto\ConfigRules $configRules
+     * @return dto\ConfigRules
+     */
     public static function loadConfigRules($configRules)
     {
         return $configRules
             ->add("models")
             ->add("modelsview");
     }
+
+    /**
+     * @access private
+     * @param array $config
+     */
     public static function loadConfig($config)
     {
         self::$models                                           = $config["models"];
         self::$models_view                                      = $config["models_view"];
     }
 
+    /**
+     * @access private
+     * @param array $rawdata
+     * @return array
+     */
     public static function loadSchema($rawdata)
     {
         if (isset($rawdata["model"])) {

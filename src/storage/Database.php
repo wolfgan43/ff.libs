@@ -348,6 +348,7 @@ class Database implements Dumpable
                                                         ? self::$cache[$cache_key]["count"] + 1
                                                         : 1
                                                     );
+
                 if (self::$cache[$cache_key]["count"] > Env::get("DATABASE_MAX_RECURSION")) {
                     Debug::dump("Max Recursion ("  . Env::get("DATABASE_MAX_RECURSION") . ") : " . print_r($query, true));
                     exit;

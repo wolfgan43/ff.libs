@@ -614,6 +614,12 @@ class Media implements Configurable
         return self::getModeByFile($file);
     }
 
+    /**
+     * @param string $file
+     * @param null|string $mode
+     * @param null|string $key
+     * @return array|string
+     */
     public static function getUrl($file, $mode = null, $key = null)
     {
         $query                                                      = null;
@@ -737,17 +743,31 @@ class Media implements Configurable
         Response::sendHeaders($params);
     }
 
+    /**
+     * @access private
+     * @param \phpformsframework\libs\dto\ConfigRules $configRules
+     * @return \phpformsframework\libs\dto\ConfigRules
+     */
     public static function loadConfigRules($configRules)
     {
         return $configRules
             ->add("media", self::METHOD_REPLACE);
     }
 
+    /**
+     * @access private
+     * @param array $config
+     */
     public static function loadConfig($config)
     {
         self::$modes                                                = $config["modes"];
     }
 
+    /**
+     * @access private
+     * @param array $rawdata
+     * @return array
+     */
     public static function loadSchema($rawdata)
     {
         if (is_array($rawdata) && count($rawdata)) {

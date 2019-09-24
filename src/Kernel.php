@@ -1,15 +1,21 @@
 <?php
 namespace phpformsframework\libs;
 
+use phpformsframework\libs\storage\Orm;
+
 /**
  * Class Kernel
  * @package phpformsframework\libs
+ *
  */
 class Kernel
 {
     const NAMESPACE                 = null;
-
-    private static $singleton       = null;
+    /**
+     * @var Kernel
+     * @access private
+     */
+    private static $singleton        = null;
     private static $use_cache       = true;
     /**
      * @var Constant
@@ -17,52 +23,29 @@ class Kernel
     public static $Environment      = null;
 
     /**
-     * @var Dir
+     * @var array
      */
-    public $Debug                   = Debug::class;
+    public $configuration           = null;
 
     /**
-     * @var Dir
+     * @var Debug
      */
-    public $Dir                     = Dir::class;
-
+    public $Debug                   = Debug::class;
     /**
      * @var Request
      */
     public $Request                 = Request::class;
-
     /**
      * @var Response
      */
     public $Response                = Response::class;
 
-    //public $Locale                  = Locale::class;
-    //public $Env                     = Env::class;
-    //public $Hook                    = Hook::class;
-    //public $Model                   = Model::class;
-    //public $Resource                = $Resource::class;
 
-    /*
-    public $Translator              = null;
-    public $Media                   = null;
-    public $Filemanager             = null;
-
-    public $Discover                = null;
-    public $Router                  = null;
-
-    public $Widget                  = null;
-
-
-
-
-    public $Orm = null;
-    public $OrmModel = null;
-    public $Cache                   = null;
-
-    public $Firewall = null;
-*/
-
-    public static function getInstance($constant = null)
+    /**
+     * @param null|false|string $environment
+     * @return Kernel
+     */
+    public static function &load($environment = null)
     {
         if (!self::$singleton) {
             self::$singleton        = new static($environment);
@@ -84,7 +67,7 @@ class Kernel
      * Kernel constructor.
      * @param bool|string $environment
      */
-    public function __construct($environment = false)
+    protected function __construct($environment = false)
     {
         if ($environment) {
             Dir::autoload(Constant::DISK_PATH . DIRECTORY_SEPARATOR . str_replace('\\', '/', $environment) . "." . Constant::PHP_EXT);
@@ -95,11 +78,7 @@ class Kernel
 
         self::$Environment          = $Constant;
 
-
         $this->Debug                = new $this->Debug();
-        $this->Error                = new $this->Error();
-        $this->Dir                  = new $this->Dir();
-
         $this->Request              = new $this->Request();
         $this->Response             = new $this->Response();
 
@@ -109,8 +88,6 @@ class Kernel
             $_SERVER["HTTP_HOST"]   = null;
         }
 
-
-
         Config::load(self::$Environment::CONFIG_DISK_PATHS);
     }
 
@@ -119,7 +96,14 @@ class Kernel
      */
     public function run()
     {
-        App::setup(Request::page(), $this);
+        /**
+         * @var App $app
+         */
+        $app                        = static::NAMESPACE . "App";
+        $app::$Environment          =& $this::$Environment;
+
+        $this->configuration        =& Request::pageConfiguration();
+
         Config::autoloadRegister();
 
         Router::run();

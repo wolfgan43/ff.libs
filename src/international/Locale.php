@@ -123,12 +123,21 @@ class Locale implements Configurable
         self::setCountry($country_tiny_code);
     }
 
+    /**
+     * @access private
+     * @param \phpformsframework\libs\dto\ConfigRules $configRules
+     * @return \phpformsframework\libs\dto\ConfigRules
+     */
     public static function loadConfigRules($configRules)
     {
         return $configRules
             ->add("locale");
     }
 
+    /**
+     * @access private
+     * @param array $config
+     */
     public static function loadConfig($config)
     {
         self::$locale                                               = $config["locale"];
@@ -136,6 +145,11 @@ class Locale implements Configurable
         self::$countryDefault                                       = $config["countryDefault"];
     }
 
+    /**
+     * @access private
+     * @param array $rawdata
+     * @return array
+     */
     public static function loadSchema($rawdata)
     {
         if (is_array($rawdata) && count($rawdata)) {

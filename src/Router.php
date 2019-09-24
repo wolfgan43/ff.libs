@@ -59,18 +59,32 @@ class Router implements Configurable, Dumpable
     }
 
 
+    /**
+     * @access private
+     * @param dto\ConfigRules $configRules
+     * @return dto\ConfigRules
+     */
     public static function loadConfigRules($configRules)
     {
         return $configRules
             ->add("router");
     }
 
+    /**
+     * @access private
+     * @param array $config
+     */
     public static function loadConfig($config)
     {
         self::$routes                                       = $config["routes"];
         self::$rules                                        = $config["rules"];
     }
 
+    /**
+     * @access private
+     * @param array $rawdata
+     * @return array
+     */
     public static function loadSchema($rawdata)
     {
         $schema                                             = null;
@@ -179,6 +193,15 @@ class Router implements Configurable, Dumpable
                 self::execute($webroot . $file);
             }
         }
+    }
+
+    /**
+     * @param string $path
+     * @param string $destination
+     */
+    public static function addRoute($path, $destination)
+    {
+        //@todo to implement
     }
     private static function addRules($rules)
     {
@@ -353,5 +376,4 @@ class Router implements Configurable, Dumpable
         }
         return $output;
     }
-
 }

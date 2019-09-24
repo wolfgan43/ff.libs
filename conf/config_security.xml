@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <configdata>
+    <env>
+        <REQUEST_SECURITY_LEVEL value="1" />
+        <RESPONSE_SECURITY_LEVEL value="1" />
+    </env>
     <badpath>
         <rule source="^/cache*"                         destination="404" />
         <rule source="^/uploads*"                       destination="404" />

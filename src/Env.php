@@ -151,6 +151,7 @@ class Env implements Configurable
     }
 
     /**
+     * @access private
      * @param dto\ConfigRules $configRules
      * @return dto\ConfigRules
      */
@@ -159,6 +160,11 @@ class Env implements Configurable
         return $configRules
             ->add("env", self::METHOD_REPLACE);
     }
+
+    /**
+     * @access private
+     * @param array $config
+     */
     public static function loadConfig($config)
     {
         self::$dotenv                                               = $config["dotenv"];
@@ -167,6 +173,12 @@ class Env implements Configurable
         self::setGlobalVars($config["vars"]);
     }
 
+    /**
+     * @access private
+     * @param array $rawdata
+     * @param string $bucket
+     * @return array
+     */
     public static function loadSchema($rawdata, $bucket = "default")
     {
         //self::loadDotEnv();

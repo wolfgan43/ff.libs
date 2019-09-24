@@ -806,7 +806,14 @@ class Orm implements Dumpable
         }
     }
 
-    public static function cmd($name, $where = null, $fields = null, $ormModel = null)
+    /**
+     * @param string $action
+     * @param null|array $where
+     * @param null|array $fields
+     * @param null|OrmModel $ormModel
+     * @return array|mixed|null
+     */
+    public static function cmd($action, $where = null, $fields = null, $ormModel = null)
     {
         self::clearResult($ormModel);
 
@@ -815,9 +822,9 @@ class Orm implements Dumpable
             , "where"                                                                       => $where
         ));
 
-        self::execSub($name);
+        self::execSub($action);
 
-        self::cmdData($name);
+        self::cmdData($action);
 
         return self::getResult(true);
     }

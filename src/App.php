@@ -34,7 +34,7 @@ abstract class App implements Dumpable
     const NAME_SPACE                                                = __NAMESPACE__ . '\\';
     const ERROR_BUCKET                                              = 'app';
 
-    protected static $script_engine                                 = null;
+    private static $script_engine                                   = null;
 
     /**
      * @var Constant
@@ -42,43 +42,19 @@ abstract class App implements Dumpable
     public static $Environment                                      = null;
 
 
-    protected static function &config()
+    protected static function &configuration()
     {
-        return self::$Page;
+        return self::Server()->configuration;
     }
 
-    /**
-     * @return Kernel
-     */
-    private static function &Server()
-    {
-        return self::$Server;
-    }
-
-    protected static function &Error()
-    {
-        return self::Server()->Error;
-    }
-
-    /**
-     * @param RequestPage $page
-     * @param Kernel $server
-     */
-    public static function setup(&$page, &$server)
-    {
-        self::$Page             =& $page;
-        self::$Environment      =& $server::$Environment;
-        self::$Server           =& $server;
-    }
-
-    public static function dump()
+    public static function dump($userVars = null)
     {
         return array(
             "isRunnedAs"    => self::$script_engine,
-            "Page"          => self::$Page,
+            "Configuration" => self::Server()->configuration,
             "Vars"          => Env::get(),
             "userVars"      => $userVars,
-            "Server"        => '*protected*'
+            "Environment"   => '*protected*'
         );
     }
 

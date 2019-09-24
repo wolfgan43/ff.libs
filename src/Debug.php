@@ -79,7 +79,7 @@ class Debug
         return Kernel::$Environment::DEBUG;
     }
     /**
-     * @param $bucket
+     * @param string $bucket
      * @return float|null
      */
     public static function stopWatch($bucket)

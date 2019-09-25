@@ -291,7 +291,7 @@ EOD
         }
 
         if (self::$whenErrorDo500) {
-            Response::code(500);
+            Response::httpCode(500);
         }
 
         if ($halt_script) {

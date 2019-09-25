@@ -63,6 +63,10 @@ class Kernel
         return self::$use_cache;
     }
 
+    protected function getFoldersStructure()
+    {
+        return Config::getDir();
+    }
     /**
      * Kernel constructor.
      * @param bool|string $environment

@@ -593,7 +593,7 @@ class Log
                 getmypid(),
                 (class_exists("Thread") ? \Thread::getCurrentThreadId() : null),
                 Debug::exTimeApp(),
-                Response::code($status),
+                Response::httpCode($status),
                 $response
             ],
             $content

@@ -355,7 +355,7 @@ class PageHtml extends Mappable
     public function getPageError($title, $code = null, $description = null)
     {
         if ($code) {
-            Response::code($code);
+            Response::httpCode($code);
         }
         if (!$description) {
             $description = Error::getErrorMessage($code);

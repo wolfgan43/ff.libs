@@ -119,7 +119,7 @@ class Buckler implements Configurable
                     if (preg_match($src, $path_info, $matches)
                         && (is_numeric($rule["destination"]) || ctype_digit($rule["destination"]))
                     ) {
-                        Response::code($rule["destination"]);
+                        Response::httpCode($rule["destination"]);
 
                         if (isset($rule["log"])) {
                             Log::write(

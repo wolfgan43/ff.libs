@@ -1558,7 +1558,7 @@ class Media implements Configurable
         $this->headers["mimetype"]                                  = $this::getMimeTypeByFilename($final_file);
 
         if ($code) {
-            Response::code($code);
+            Response::httpCode($code);
         }
 
         $this->sendHeaders($final_file, $this->headers);

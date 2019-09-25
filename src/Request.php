@@ -293,9 +293,9 @@ class Request implements Configurable, Dumpable
     {
         $redirect                                           = null;
         //necessario XHR perche le request a servizi esterni path del domain alias non triggerano piu
-        if (Request::method() == "GET" && !Request::isAjax() && count(Request::unknown())) {
+        if (self::method() == "GET" && !self::isAjax() && count(self::unknown())) {
             // Evita pagine duplicate quando i link vengono gestiti dagli alias o altro
-            $redirect                                       = Request::url();
+            $redirect                                       = self::url();
         }
 
         if ($redirect) {
@@ -339,7 +339,7 @@ class Request implements Configurable, Dumpable
 
     private static function rewritePathInfo()
     {
-        $hostname                                           = Request::hostname();
+        $hostname                                           = self::hostname();
         $aliasname                                          = (
             $hostname && isset(self::$alias[$hostname])
             ? self::$alias[$hostname]
@@ -388,8 +388,8 @@ class Request implements Configurable, Dumpable
         $_SERVER["PATH_INFO"]                               = $path_info;
 
 
-        if (Request::isAjax()) {
-            $_SERVER["XHR_PATH_INFO"]                       = rtrim(self::$root_path . Request::referer(PHP_URL_PATH), "/");
+        if (self::isAjax()) {
+            $_SERVER["XHR_PATH_INFO"]                       = rtrim(self::$root_path . self::referer(PHP_URL_PATH), "/");
         }
 
         if (!self::isCommandLineInterface() && self::remoteAddr() == self::serverAddr()) {

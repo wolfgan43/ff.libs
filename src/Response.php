@@ -77,7 +77,7 @@ class Response
         if (self::isValidContentType($content_type)) {
             self::sendHeadersByMimeType($content_type);
             if ($status) {
-                Response::code($status);
+                self::httpCode($status);
             }
 
             switch ($content_type) {
@@ -144,7 +144,7 @@ class Response
             /**
              * @todo da gestire i tipi accepted self::sendHeadersByMimeType(...)
              */
-            Response::code(501);
+            self::httpCode(501);
             echo "content type " . $content_type . " is different to http_accept: " . Request::accept();
             exit;
         }
@@ -161,7 +161,7 @@ class Response
     {
         if (self::isValidContentType($response::CONTENT_TYPE)) {
 
-            Response::code(
+            self::httpCode(
                 $status === null
                 ? $response->status
                 : $status
@@ -178,7 +178,7 @@ class Response
      */
     public function sendHtml($response)
     {
-        Response::sendRawData($response, "text/html");
+        self::sendRawData($response, "text/html");
     }
 
     /**
@@ -187,7 +187,7 @@ class Response
      */
     public function sendJson($response)
     {
-        Response::sendRawData($response, "application/json");
+        self::sendRawData($response, "application/json");
     }
 
 
@@ -213,13 +213,17 @@ class Response
                 }
             }
         } else {
-            Response::code(400);
+            self::httpCode(400);
         }
 
         exit;
     }
 
-    public static function code($code = null)
+    /**
+     * @param null|int $code
+     * @return int
+     */
+    public static function httpCode($code = null)
     {
         return ($code
              ? http_response_code($code)

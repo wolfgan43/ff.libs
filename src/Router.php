@@ -166,7 +166,7 @@ class Router implements Configurable, Dumpable
         }
 
         if (Kernel::$Environment::DEBUG) {
-            Response::code(404);
+            Response::httpCode(404);
             Debug::dump("Page Not Found!");
         }
 

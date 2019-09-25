@@ -1,0 +1,111 @@
+Index: src/storage/Orm.php
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/storage/Orm.php	(revision c9d57849f93c55521c923405f73efd46df2ee1aa)
++++ src/storage/Orm.php	(revision 4057743d3de0d461f470b2ab7432a0213a67aba9)
+@@ -488,6 +488,29 @@
+         return $res;
+     }
+ 
++    /**
++     * @param array $insert
++     * @param null|OrmModel $ormModel
++     * @return array|bool|null
++     */
++    public static function insertUnique($insert, $ormModel = null)
++    {
++        Debug::dumpCaller("Insert unique: " . print_r($insert, true));
++        Debug::stopWatch("orm/unique");
++
++        $res                                                                                = self::set($insert, null, $insert, $ormModel);
++
++        $exTime = Debug::stopWatch("orm/unique");
++        if (Kernel::$Environment::DEBUG) {
++            Log::debugging(array(
++                "action"    => "insertUnique",
++                "data"      => self::$data,
++                "exTime"    => $exTime
++            ));
++        }
++        return $res;
++    }
++
+     /**
+      * @param array $insert
+      * @param null|OrmModel $ormModel
+@@ -585,21 +608,16 @@
+ 
+ 
+     /**
+-     * @param array $where
++     * @param null|array $where
+      * @param null|array $set
+      * @param null|array $insert
+      * @param OrmModel $ormModel
+      * @return array|bool|null
+      */
+-    private static function set($where, $set = null, $insert = null, $ormModel = null)
++    private static function set($where = null, $set = null, $insert = null, $ormModel = null)
+     {
+         self::clearResult($ormModel);
+ 
+-        if (!$set && !$insert) {
+-            $insert                                                                         = $where;
+-            $where                                                                          = null;
+-        }
+-
+         self::resolveFieldsByScopes(array(
+             "insert"                                                                        => $insert
+             , "set"                                                                         => $set
+@@ -646,7 +664,7 @@
+         $storage                                                                            = $ormModel->setStorage($data["def"]);
+         $key_name                                                                           = self::getFieldAlias(array_search("primary", $data["def"]["struct"]), $data["def"]["alias"]);
+ 
+-        if (isset($data["insert"]) && !isset($data["set"])) {
++        if (isset($data["insert"]) && !isset($data["set"]) && isset($data["where"])) {
+             $data["insert"]                                                                 = self::getFields($data["insert"], $data["def"]["alias"]);
+             $regs                                                                           = $storage->read($data["insert"], array($key_name => true));
+ 
+@@ -661,7 +679,13 @@
+                     $key                                                                    = $regs["keys"][0];
+                 }
+             }
+-        } elseif (isset($data["set"]) && !isset($data["insert"]) && !isset($data["where"])) {
++        } elseif (isset($data["insert"]) && !isset($data["set"]) && !isset($data["where"])) {
++            $data["insert"]                                                                 = self::getFields($data["insert"], $data["def"]["alias"]);
++            $regs                                                                           = $storage->insert($data["insert"], $data["def"]["table"]["name"]);
++            if (is_array($regs)) {
++                $key                                                                        = $regs["keys"][0];
++            }
++        } elseif (!isset($data["insert"]) && isset($data["set"]) && !isset($data["where"])) {
+             if (isset($data["def"]["relationship"][self::$data["main"]["def"]["mainTable"]]) && isset(self::$data["main"]["where"])) {
+                 $key_main_primary                                                           = $data["def"]["relationship"][self::$data["main"]["def"]["mainTable"]]["primary"];
+                 if (!isset(self::$data["main"]["where"][$key_main_primary])) {
+@@ -692,13 +716,13 @@
+                     self::$result["update"][$data["def"]["table"]["alias"]]                 = true;
+                 }
+             }
+-        } elseif (isset($data["set"]) && isset($data["where"]) && !isset($data["insert"])) {
++        } elseif (!isset($data["insert"]) && isset($data["set"]) && isset($data["where"])) {
+             self::$result["update"][$data["def"]["table"]["alias"]]                         = false;
+             $regs                                                                           = $storage->update($data["set"], $data["where"], $data["def"]["table"]["name"]);
+             if ($regs === true) {
+                 self::$result["update"][$data["def"]["table"]["alias"]]                     = true;
+             }
+-        } elseif (isset($data["where"]) && !isset($data["insert"]) && !isset($data["set"])) {
++        } elseif (!isset($data["insert"]) && !isset($data["set"]) && isset($data["where"])) {
+             $regs                                                                           = $storage->read($data["where"], array($key_name => true), null, null, $data["def"]["table"]["name"]);
+             if (is_array($regs)) {
+                 $key                                                                        = $regs["keys"][0];
+@@ -1071,9 +1095,6 @@
+ 
+                 if ($scope == "insert") {
+                     self::$data["sub"][$service][$table]["insert"][$parts[$fIndex]]         = $alias;
+-                    if (!isset(self::$data["sub"][$service][$table]["where"])) {
+-                        self::$data["sub"][$service][$table]["where"][$parts[$fIndex]]      = $alias;
+-                    }
+                 } else {
+                     if ($is_or) {
+                         self::$data["sub"][$service][$table][$scope]['$or'][$parts[$fIndex]]= (

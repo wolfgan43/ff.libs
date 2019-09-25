@@ -60,12 +60,14 @@ class PageHtml extends Mappable
     /**
      * @todo da finire
      *
-     * private $hreflang                           = null;
-     * private $canonical                          = null;
-     * private $next                               = null;
-     * private $prev                               = null;
-     * private $author                             = null;
-     * private $manifest                           = null;
+     * private $hreflang                            = null;
+     * private $canonical                           = null;
+     * private $next                                = null;
+     * private $prev                                = null;
+     * private $author                              = null;
+     * private $manifest                            = null;
+     * private $amp                                 = null;
+     * private $rss                                 = null;
      */
 
     protected $meta                             = array();

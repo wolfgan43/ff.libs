@@ -67,8 +67,8 @@ class Resource extends Mappable implements Dumpable
     {
         Debug::stopWatch("resource/loadResources");
 
-        $cache = Mem::getInstance("resource");
-        $this->resources = $cache->get("rawdata");
+        $cache                                  = Mem::getInstance("resource");
+        $this->resources                        = $cache->get("rawdata");
         if (!$this->resources) {
             $patterns                           = Config::getScans($this->rules);
             Filemanager::scanExclude($excludeDirname);

@@ -1,0 +1,33 @@
+Index: src/security/Validator.php
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/security/Validator.php	(revision 029793e0d44023f0e712ebfedcfb8264e5b12a28)
++++ src/security/Validator.php	(revision c9d57849f93c55521c923405f73efd46df2ee1aa)
+@@ -98,14 +98,14 @@
+                                                                 )
+                                                                 , "string" => array(
+                                                                     "filter"        => FILTER_SANITIZE_STRING
+-                                                                    , "flags"       => FILTER_FLAG_NO_ENCODE_QUOTES | FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH
++                                                                    , "flags"       => FILTER_FLAG_NO_ENCODE_QUOTES | FILTER_FLAG_STRIP_LOW //| FILTER_FLAG_STRIP_HIGH
+                                                                     , "options"     => null
+                                                                     , "callback"    => "\phpformsframework\libs\security\Validator::checkSpecialChars"
+                                                                     , "length"      => 128
+                                                                 )
+                                                                 , "array" => array(
+                                                                     "filter"        => FILTER_SANITIZE_STRING
+-                                                                    , "flags"       => FILTER_REQUIRE_ARRAY | FILTER_FLAG_NO_ENCODE_QUOTES | FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH
++                                                                    , "flags"       => FILTER_REQUIRE_ARRAY | FILTER_FLAG_NO_ENCODE_QUOTES | FILTER_FLAG_STRIP_LOW //| FILTER_FLAG_STRIP_HIGH
+                                                                     , "options"     => null
+                                                                     , "callback"    => "\phpformsframework\libs\security\Validator::checkSpecialChars"
+                                                                     , "length"      => 128
+@@ -280,7 +280,7 @@
+     {
+         $errors                                         = array();
+         if (!$spellcheck) {
+-            $spellcheck = array("'", '"', '\\', '../', './');
++            $spellcheck = array("''", '""', '\\"', '\\', '../', './');
+         }
+ 
+         if (!is_array($value)) {

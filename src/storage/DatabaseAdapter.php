@@ -260,17 +260,18 @@ abstract class DatabaseAdapter
     private function process($query)
     {
         $res                                                        = null;
-
         if (is_array($query)) {
             switch ($query["action"]) {
                 case "read":
+
                     $db                                              = null;
 
                     if (1 || !$this->exts) {
-                        $res = Database::cache($query);
-                    } //todo: da verificare
+                        $res                                        = Database::cache($query);
+                    }
+
                     if (!$res) {
-                        $db = $this->processRead($query);
+                        $db                                         = $this->processRead($query);
                     }
 
                     if ($db) {
@@ -321,6 +322,7 @@ abstract class DatabaseAdapter
 
                     break;
                 case "insert":
+                    //@todo da alterare la cache in funzione dei dati inseriti
                     $res                                            = $this->processInsert($query);
                     break;
                 case "update":

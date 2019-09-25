@@ -275,20 +275,6 @@ class ViewHtml implements ViewAdapter
         return $this->DBlocks[$sName];
     }
 
-    /**
-     * @param string $sName
-     * @param string  $sValue
-     * @return bool
-     *
-     * @todo Da eliminare
-     */
-    private function set_var($sName, $sValue)
-    {
-        $this->ParsedBlocks[$sName] = $sValue;
-
-        return isset($this->DVars[$sName]) || isset($this->DBlocks[$sName]);
-    }
-
     public function isset_var($sName)
     {
         return isset($this->DVars[$sName]) || isset($this->DBlocks[$sName]);

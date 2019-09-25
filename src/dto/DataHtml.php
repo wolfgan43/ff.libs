@@ -26,7 +26,8 @@
 
 namespace phpformsframework\libs\dto;
 
-class DataHtml extends DataAdapter {
+class DataHtml extends DataAdapter
+{
     const CONTENT_TYPE = "text/html";
     /**
      * @var null|string

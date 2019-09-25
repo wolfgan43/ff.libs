@@ -5,7 +5,7 @@ use Exception;
 use phpformsframework\libs\dto\ConfigRules;
 use ReflectionClass;
 
-Class Installer
+class Installer
 {
     private static function loadRules()
     {

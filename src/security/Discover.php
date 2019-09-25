@@ -58,7 +58,7 @@ class Discover
 
         /*
                 $ua 										    = get_browser();
-        
+
                 return ($ua
                     ? array(
                         "name"  => $ua["browser"]
@@ -73,7 +73,7 @@ class Discover
         return "windows";
         /*
                 $ua 										    = get_browser();
-        
+
                 return $ua["platform"];
         */
     }

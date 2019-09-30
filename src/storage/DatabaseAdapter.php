@@ -1278,10 +1278,10 @@ abstract class DatabaseAdapter
             }
 
             $res                                                            = array(
-                                                                                "value"     => $this->in($fields[$name], $toField)
-                                                                                , "name"    => $name
-                                                                                , "op"      => $op
-                                                                                , "type"    => $struct_type
+                                                                                "value"     => $this->in($fields[$name], $toField),
+                                                                                "name"      => $name,
+                                                                                "op"        => $op,
+                                                                                "type"      => $struct_type
                                                                             );
         }
 

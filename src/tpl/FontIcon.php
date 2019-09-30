@@ -117,7 +117,7 @@ class FontIcon extends Mappable
         $res                                            = $this->icon($value, $params);
 
         return (strlen($res)
-            ? '<i class="' . $res . '"></i>'
+            ? '<span class="' . $res . '"></span>'
             : null
         );
     }

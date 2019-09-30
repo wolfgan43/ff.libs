@@ -276,7 +276,7 @@ class DatabaseMysqli extends DatabaseAdapter
         }
         if (isset($this->struct[$field["name"]])) {
             if (is_array($this->struct[$field["name"]])) {
-                $struct_type 							= "array";
+                $struct_type 							= self::FTYPE_ARRAY;
             } else {
                 $arrStructType 							= explode(":", $this->struct[$field["name"]], 2);
                 $struct_type 							= $arrStructType[0];
@@ -285,9 +285,9 @@ class DatabaseMysqli extends DatabaseAdapter
             $struct_type                                = null;
         }
         switch ($struct_type) {
-            case "arrayIncremental":
-            case "arrayOfNumber":
-            case "array":
+            case self::FTYPE_ARRAY_INCREMENTAL:
+            case self::FTYPE_ARRAY_OF_NUMBER:
+            case self::FTYPE_ARRAY:
                 if (is_array($value) && count($value)) {
                     foreach ($value as $item) {
                         $res[] 							= "FIND_IN_SET(" . $this->driver->toSql($item) . ", `" . $field["name"] . "`)";
@@ -295,15 +295,15 @@ class DatabaseMysqli extends DatabaseAdapter
                     $res 								= "(" . implode(" OR ", $res) . ")";
                 }
                 break;
-            case "boolean":
-            case "bool":
-            case "date":
-            case "number":
-            case "timestamp":
-            case "primary":
-            case "string":
-            case "char":
-            case "text":
+            case self::FTYPE_BOOLEAN:
+            case self::FTYPE_BOOL:
+            case self::FTYPE_DATE:
+            case self::FTYPE_NUMBER:
+            case self::FTYPE_TIMESTAMP:
+            case self::FTYPE_PRIMARY:
+            case self::FTYPE_STRING:
+            case self::FTYPE_CHAR:
+            case self::FTYPE_TEXT:
             default:
                 if (is_array($value)) {
                     if (count($value)) {

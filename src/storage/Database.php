@@ -36,7 +36,6 @@ class Database implements Dumpable
 {
     const ERROR_BUCKET                                                      = "database";
     const NAME_SPACE                                                        = __NAMESPACE__ . '\\adapters\\';
-    const ENABLE_CACHE                                                      = true;
 
     private static $singletons                                              = null;
     private static $cache                                                   = null;
@@ -303,8 +302,8 @@ class Database implements Dumpable
 
     private static function getCacheKey($query)
     {
-        $action                                     = $query["action"];
-        $table                                      = $query["from"];
+        $action                                                             = $query["action"];
+        $table                                                              = $query["from"];
 
         $where = (
             isset($query["where"])
@@ -338,16 +337,15 @@ class Database implements Dumpable
 
     public static function cache($query)
     {
-        $res                                        = null;
-
-        if (self::ENABLE_CACHE) {
-            $cache_key                              = Database::getCacheKey($query);
+        $res                                                                = null;
+        if (Kernel::$Environment::CACHE_DATABASE_ADAPTER) {
+            $cache_key                                                      = Database::getCacheKey($query);
             if (Kernel::$Environment::DEBUG) {
-                self::$cache[$cache_key]["count"]   = (
+                self::$cache[$cache_key]["count"]                           = (
                     isset(self::$cache[$cache_key])
-                                                        ? self::$cache[$cache_key]["count"] + 1
-                                                        : 1
-                                                    );
+                    ? self::$cache[$cache_key]["count"] + 1
+                    : 1
+                );
 
                 if (self::$cache[$cache_key]["count"] > Env::get("DATABASE_MAX_RECURSION")) {
                     Debug::dump("Max Recursion ("  . Env::get("DATABASE_MAX_RECURSION") . ") : " . print_r($query, true));
@@ -359,7 +357,7 @@ class Database implements Dumpable
                 if (Kernel::$Environment::DEBUG) {
                     Debug::dumpLog("query_duplicate", $query);
                 }
-                $res                                = self::$cache[$cache_key]["data"];
+                $res                                                        = self::$cache[$cache_key]["data"];
             }
         }
 
@@ -368,17 +366,17 @@ class Database implements Dumpable
 
     public static function setCache($data, $query)
     {
-        if (self::ENABLE_CACHE) {
-            $cache_key                                                  = Database::getCacheKey($query);
+        if (Kernel::$Environment::CACHE_DATABASE_ADAPTER) {
+            $cache_key                                                      = Database::getCacheKey($query);
             if (Kernel::$Environment::DEBUG) {
-                $from_cache                                             = isset(self::$cache[$cache_key]["data"]) && self::$cache[$cache_key]["data"];
+                $from_cache                                                 = isset(self::$cache[$cache_key]["data"]) && self::$cache[$cache_key]["data"];
                 self::$cache_rawdata[(count(self::$cache_rawdata) + 1) . ". " . $cache_key] = ($from_cache ? $from_cache : $query);
             }
-            self::$cache[$cache_key]["query"]                           = $query;
+            self::$cache[$cache_key]["query"]                               = $query;
             if (isset($data["exts"]) && $data["exts"] === true) {
-                self::$cache[$cache_key][serialize($data["exts"])]      = $data;
+                self::$cache[$cache_key][serialize($data["exts"])]          = $data;
             } else {
-                self::$cache[$cache_key]["data"]                        = $data;
+                self::$cache[$cache_key]["data"]                            = $data;
             }
         }
     }

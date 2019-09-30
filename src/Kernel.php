@@ -1,8 +1,6 @@
 <?php
 namespace phpformsframework\libs;
 
-use phpformsframework\libs\storage\Orm;
-
 /**
  * Class Kernel
  * @package phpformsframework\libs
@@ -15,7 +13,7 @@ class Kernel
      * @var Kernel
      * @access private
      */
-    private static $singleton        = null;
+    private static $singleton       = null;
     private static $use_cache       = true;
     /**
      * @var Constant

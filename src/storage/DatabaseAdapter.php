@@ -47,6 +47,19 @@ abstract class DatabaseAdapter
     const MAX_NUMROWS                   = 10000;
     const MAX_RESULTS                   = 1000;
 
+    const FTYPE_ARRAY                   = "array";
+    const FTYPE_ARRAY_INCREMENTAL       = "arrayIncremental";
+    const FTYPE_ARRAY_OF_NUMBER         = "arrayOfNumber";
+    const FTYPE_BOOLEAN                 = "boolean";
+    const FTYPE_BOOL                    = "bool";
+    const FTYPE_DATE                    = "date";
+    const FTYPE_NUMBER                  = "number";
+    const FTYPE_TIMESTAMP               = "timestamp";
+    const FTYPE_PRIMARY                 = "primary";
+    const FTYPE_STRING                  = "string";
+    const FTYPE_CHAR                    = "char";
+    const FTYPE_TEXT                    = "text";
+
     private $connection                 = array(
                                             "host"          => null
                                             , "username"    => null
@@ -723,16 +736,16 @@ abstract class DatabaseAdapter
         if (is_array($record) && count($record)) {
             foreach ($record as $key => $value) {
                 switch ($this->getStructField($key)) {
-                    case "array":
+                    case self::FTYPE_ARRAY:
                         $record[$key]                                   = (
                             is_array($value)
                                                                             ? $value
                                                                             : $this->decode($value)
                                                                         );
                         break;
-                    case "number":
-                    case "timestamp":
-                    case "primary":
+                    case self::FTYPE_NUMBER:
+                    case self::FTYPE_TIMESTAMP:
+                    case self::FTYPE_PRIMARY:
                         if (!$value) {
                             $record[$key]                               = 0;
                         } elseif (strpos($value, ".") !== false || strpos($value, ",") !== false) {
@@ -1148,7 +1161,7 @@ abstract class DatabaseAdapter
 
             $struct_field                                                   = $this->getStructField($name);
             if (is_array($struct_field)) {
-                $struct_type                                                = "array";
+                $struct_type                                                = self::FTYPE_ARRAY;
             } else {
                 $arrType                                                    = $this->convert($struct_field);
                 $struct_type                                                = $arrType["field"];
@@ -1157,11 +1170,11 @@ abstract class DatabaseAdapter
                 }
             }
             switch ($struct_type) {
-                case "arrayIncremental":
-                case "arrayOfNumber":
-                case "array":
+                case self::FTYPE_ARRAY_INCREMENTAL:
+                case self::FTYPE_ARRAY_OF_NUMBER:
+                case self::FTYPE_ARRAY:
                     if (is_array($value) || is_object($value)) {
-                        if ($struct_type == "arrayOfNumber") {
+                        if ($struct_type == self::FTYPE_ARRAY_OF_NUMBER) {
                             $fields[$name]                                  = array_map('intval', $value);
                         } else {
                             $fields[$name]                                  = $value;
@@ -1175,7 +1188,7 @@ abstract class DatabaseAdapter
                         $fields[$name]                                      = substr($value, 1);
                     } elseif (is_bool($value)) {
                         $fields[$name] = array((int)$value);
-                    } elseif (is_numeric($value) || $struct_type == "arrayOfNumber" || $struct_type == "arrayIncremental") {
+                    } elseif (is_numeric($value) || $struct_type == self::FTYPE_ARRAY_OF_NUMBER || $struct_type == self::FTYPE_ARRAY_INCREMENTAL) {
                         if (strpos($value, ".") !== false || strpos($value, ",") !== false) {
                             $fields[$name]                                  = array((double)$value);
                         } else {
@@ -1189,8 +1202,8 @@ abstract class DatabaseAdapter
                         $fields[$name]                                      = array((string)$value);
                     }
                     break;
-                case "boolean":
-                case "bool":
+                case self::FTYPE_BOOLEAN:
+                case self::FTYPE_BOOL:
                     if (is_array($value) || is_object($value)) {
                         $fields[$name]                                      = false;
                     } elseif (strrpos($value, "++") === strlen($value) -2) {
@@ -1209,12 +1222,12 @@ abstract class DatabaseAdapter
                         $fields[$name]                                      = (bool)$value;
                     }
                     break;
-                case "date":
+                case self::FTYPE_DATE:
                     $fields[$name] = $value;
                     break;
-                case "number":
-                case "timestamp":
-                case "primary":
+                case self::FTYPE_NUMBER:
+                case self::FTYPE_TIMESTAMP:
+                case self::FTYPE_PRIMARY:
                     if (is_array($value) || is_object($value)) {
                         $fields[$name]                                      = 0;
                     } elseif (strrpos($value, "++") === strlen($value) -2) {
@@ -1241,9 +1254,9 @@ abstract class DatabaseAdapter
                         }
                     }
                     break;
-                case "string":
-                case "char":
-                case "text":
+                case self::FTYPE_STRING:
+                case self::FTYPE_CHAR:
+                case self::FTYPE_TEXT:
                 default:
                     if (is_array($value)) {
                         if ($this->isAssocArray($value)) {

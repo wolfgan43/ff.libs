@@ -116,12 +116,15 @@ class Constant
     /**
      * @var string[Mysqli|Mongodb]
      */
-    const DATABASE_ADAPTER                  = "mysqli";
+    const DATABASE_ADAPTER                  = "Mysqli";
     /**
      * @var string[Apc|Fs|Global|Memcached|Redis]
      */
-    const CACHE_MEM_ADAPTER                 = "fs";
-
+    const CACHE_MEM_ADAPTER                 = "Fs";
+    /**
+     * @var string[Native|ElasticSearch]
+     */
+    const CACHE_DATABASE_ADAPTER            = "Native";
     /**
      * @var string[Html|Amp|Smarty|Blade]
      */

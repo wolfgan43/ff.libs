@@ -164,7 +164,7 @@ class DatabaseMongodb extends DatabaseAdapter
 
         if (isset($this->struct[$field["name"]])) {
             if (is_array($this->struct[$field["name"]])) {
-                $struct_type 							= "array";
+                $struct_type 							= self::FTYPE_ARRAY;
             } else {
                 $arrStructType 							= explode(":", $this->struct[$field["name"]], 2);
                 $struct_type 							= $arrStructType[0];
@@ -173,9 +173,9 @@ class DatabaseMongodb extends DatabaseAdapter
             $struct_type                                = null;
         }
         switch ($struct_type) {
-            case "arrayIncremental":
-            case "arrayOfNumber":
-            case "array":
+            case self::FTYPE_ARRAY_INCREMENTAL:
+            case self::FTYPE_ARRAY_OF_NUMBER:
+            case self::FTYPE_ARRAY:
                 if (is_array($field["value"]) && count($field["value"])) {
                     if (!$this->isAssocArray($field["value"])) {
                         $res 		                    = array('$in' => $field["value"]);
@@ -186,13 +186,13 @@ class DatabaseMongodb extends DatabaseAdapter
                     $res                                = null;
                 }
                 break;
-            case "boolean":
-            case "bool":
+            case self::FTYPE_BOOLEAN:
+            case self::FTYPE_BOOL:
                 break;
-            case "date":
-            case "number":
-            case "timestamp":
-            case "primary":
+            case self::FTYPE_DATE:
+            case self::FTYPE_NUMBER:
+            case self::FTYPE_TIMESTAMP:
+            case self::FTYPE_PRIMARY:
                 if (is_array($field["value"]) && count($field["value"])) {
                     $res 			                    = array(
                                                             '$in' => (
@@ -203,9 +203,9 @@ class DatabaseMongodb extends DatabaseAdapter
                                                         );
                 }
                 break;
-            case "string":
-            case "char":
-            case "text":
+            case self::FTYPE_STRING:
+            case self::FTYPE_CHAR:
+            case self::FTYPE_TEXT:
             default:
                 if (is_array($field["value"]) && count($field["value"])) {
                     $res 			                    = array(
@@ -295,9 +295,9 @@ class DatabaseMongodb extends DatabaseAdapter
                             $res["insert"][$field["name"]] 							= $field["value"];
                             break;
                         case "update":
-                            if ($field["type"] == "arrayIncremental"
-                                || $field["type"] == "arrayOfNumber"
-                                || $field["type"] == "array"
+                            if ($field["type"] == self::FTYPE_ARRAY_INCREMENTAL
+                                || $field["type"] == self::FTYPE_ARRAY_OF_NUMBER
+                                || $field["type"] == self::FTYPE_ARRAY
                             ) {
                                 switch ($field["op"]) {
                                     case "++":
@@ -310,8 +310,8 @@ class DatabaseMongodb extends DatabaseAdapter
                                     default:
                                         $res["update"]['$set'][$field["name"]]      = $field["value"];
                                 }
-                            } elseif ($field["type"] == "number"
-                                || $field["type"] == "primary"
+                            } elseif ($field["type"] == self::FTYPE_NUMBER
+                                || $field["type"] == self::FTYPE_PRIMARY
                             ) {
                                 switch ($field["op"]) {
                                     case "++":
@@ -325,9 +325,9 @@ class DatabaseMongodb extends DatabaseAdapter
                                     default:
                                         $res["update"]['$set'][$field["name"]]      = $field["value"];
                                 }
-                            } elseif ($field["type"] == "string"
-                                || $field["type"] == "char"
-                                || $field["type"] == "text"
+                            } elseif ($field["type"] == self::FTYPE_STRING
+                                || $field["type"] == self::FTYPE_CHAR
+                                || $field["type"] == self::FTYPE_TEXT
                             ) {
                                 switch ($field["op"]) {
                                     case "++":

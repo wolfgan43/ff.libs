@@ -299,7 +299,7 @@ class ViewHtml implements ViewAdapter
             }
             return true;
         } elseif ($this->debug_msg) {
-            echo "<br><b>Block with name <u><span style=\"color: red; \">$sTplName</span></u> does't exist</b><br>";
+            echo "<br><strong>Block with name <u><span style=\"color: red; \">$sTplName</span></u> does't exist</strong><br>";
         }
 
         return false;

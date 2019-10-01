@@ -34,14 +34,7 @@ class DataResponse extends DataAdapter
      * @var array
      */
     public $data                    = array();
-    /**
-     * @var null|int
-     */
-    public $page                    = null;
-    /**
-     * @var null|int
-     */
-    public $count                   = null;
+
     /**
      * @param mixed $values
      * @return $this

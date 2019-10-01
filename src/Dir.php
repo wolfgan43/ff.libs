@@ -25,6 +25,8 @@
  */
 namespace phpformsframework\libs;
 
+use phpformsframework\libs\dto\DataResponse;
+
 class Dir
 {
     public static function getDiskPath($what = null, $relative = false)
@@ -81,6 +83,10 @@ class Dir
      */
     public static function getXmlAttr($item, $key = null)
     {
+        /*return new DataResponse(isset($item["@attributes"])
+            ? $item["@attributes"]
+            : $item);*/
+
         $res = (
             isset($item["@attributes"])
             ? $item["@attributes"]

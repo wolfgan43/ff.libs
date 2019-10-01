@@ -141,19 +141,17 @@ class Config implements Dumpable
                     }
 
                     $scans[$scan_type][$scan_path]                          = $dir_attr["scan"];
-
                     continue;
                 }
 
                 if (isset($dir_attr["webroot"])) {
                     self::$webroot                                          = Constant::DISK_PATH . $dir_attr["path"];
-
                     continue;
                 }
 
                 self::$dirstruct[$dir_key]                                  = $dir_attr;
                 if (isset(self::$dirstruct[$dir_key]["autoload"])) {
-                    self::$autoloads[]                                      = self::$dirstruct[$dir_key]["autoload"];
+                    self::$autoloads[]                                      = self::$dirstruct[$dir_key]["path"];
                 }
             }
 
@@ -201,7 +199,7 @@ class Config implements Dumpable
         if (is_array(self::$autoloads) && count(self::$autoloads)) {
             spl_autoload_register(function ($class_name) {
                 foreach (self::$autoloads as $autoload) {
-                    Dir::autoload($autoload . DIRECTORY_SEPARATOR . str_replace('\\', '/', $class_name) . "." . Constant::PHP_EXT);
+                    Dir::autoload(Constant::DISK_PATH . $autoload . DIRECTORY_SEPARATOR . str_replace('\\', '/', $class_name) . "." . Constant::PHP_EXT);
                 }
             });
         }

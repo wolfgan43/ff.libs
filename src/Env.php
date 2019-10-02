@@ -107,7 +107,7 @@ class Env implements Configurable
 
     public static function getPackage($key = null)
     {
-        $package_disk_path                                          = Dir::getDiskPath("config/packages");
+        $package_disk_path                                          = Dir::findAppPath("packages");
         if (!self::$packages && $key === null) {
             $fs                                                     = Filemanager::getInstance("xml");
             $packages                                               = new DirectoryIterator($package_disk_path);

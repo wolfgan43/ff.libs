@@ -635,8 +635,8 @@ class Media implements Configurable
             array(
                 Constant::UPLOAD_DISK_PATH . DIRECTORY_SEPARATOR
                 , Constant::UPLOAD_PATH. DIRECTORY_SEPARATOR
-                , Dir::getDiskPath("cache/assets", true) . DIRECTORY_SEPARATOR
-                , Dir::getDiskPath("cache/.thumbs", true) . DIRECTORY_SEPARATOR
+                , Dir::findCachePath("assets", true) . DIRECTORY_SEPARATOR
+                , Dir::findCachePath("thumbs", true) . DIRECTORY_SEPARATOR
                 , Constant::DISK_PATH . DIRECTORY_SEPARATOR
             ),
             DIRECTORY_SEPARATOR,
@@ -1384,8 +1384,8 @@ class Media implements Configurable
     private function basepathCache()
     {
         return ($this->pathinfo["render"] == static::RENDER_ASSETS_PATH
-            ? Dir::getDiskPath("cache/assets")
-            : Dir::getDiskPath("cache/.thumbs")
+            ? Dir::findCachePath("assets")
+            : Dir::findCachePath("thumbs")
         );
     }
 

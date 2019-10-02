@@ -224,7 +224,7 @@ class PageHtml extends Mappable
         $html                                   = null;
         if (strpos($string, DIRECTORY_SEPARATOR) === 0) {
             if (strpos($string, Constant::DISK_PATH) !== 0) {
-                $string                         = Dir::getDiskPath("views") . $string;
+                $string                         = Dir::findAppPath("views") . $string;
             }
             if (pathinfo($string, PATHINFO_EXTENSION) == "php") {
                 ob_start();

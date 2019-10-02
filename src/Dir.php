@@ -25,22 +25,66 @@
  */
 namespace phpformsframework\libs;
 
-use phpformsframework\libs\dto\DataResponse;
-
+/**
+ * Class Dir
+ * @package phpformsframework\libs
+ */
 class Dir
 {
-    public static function getDiskPath($what = null, $relative = false)
+    /**
+     * @param string $what
+     * @param bool $relative
+     * @return string|null
+     */
+    public static function findAssetPath(string $what, $relative = false) : ?string
     {
-        $path                                                       = Config::getDir($what);
+        return self::getDiskPath($what, "asset", $relative);
+    }
+    /**
+     * @param string $what
+     * @param bool $relative
+     * @return string|null
+     */
+    public static function findAppPath(string $what, $relative = false) : ?string
+    {
+        return self::getDiskPath($what, Config::APP_BASE_NAME, $relative);
+    }
+
+    /**
+     * @param string $what
+     * @param bool $relative
+     * @return string|null
+     */
+    public static function findCachePath(string $what, $relative = false) : ?string
+    {
+        return self::getDiskPath($what, "cache", $relative);
+    }
+
+    /**
+     * @param string $what
+     * @param string $bucket
+     * @param bool $relative
+     * @return string|null
+     */
+    private static function getDiskPath(string $what, string $bucket, $relative = false) : ?string
+    {
+        $path                                                       = Config::getDir($what, $bucket);
         if ($path) {
             return ($relative
                 ? $path
                 : realpath(Constant::DISK_PATH . $path)
             );
         } else {
-            return null;
+            Error::registerWarning("path not found: " . $what);
+
+            return false;
         }
     }
+
+    /**
+     * @param string $abs_path
+     * @return bool
+     */
     public static function checkDiskPath($abs_path)
     {
         return strpos(realpath($abs_path), Constant::DISK_PATH) === 0;
@@ -65,6 +109,11 @@ class Dir
         return $rc;
     }
 
+    /**
+     * @param string $path
+     * @param null|resource $context
+     * @return false|string
+     */
     public static function loadFile($path, $context = null)
     {
         $res = @file_get_contents($path, false, $context);

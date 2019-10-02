@@ -61,9 +61,13 @@ class Kernel
         return self::$use_cache;
     }
 
-    protected function getFoldersStructure()
+    /**
+     * @param string|null $bucket
+     * @return array|null
+     */
+    protected function dirStruct(string $bucket = null)
     {
-        return Config::getDir();
+        return Config::getDirBucket($bucket);
     }
     /**
      * Kernel constructor.

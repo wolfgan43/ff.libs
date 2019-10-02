@@ -32,35 +32,105 @@ use phpformsframework\libs\security\Buckler;
 use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\storage\Media;
 
+/**
+ * Class Config
+ * @package phpformsframework\libs
+ */
 class Config implements Dumpable
 {
+    /**
+     *
+     */
     const ERROR_BUCKET                                                      = "config";
+    /**
+     *
+     */
     const APP_BASE_NAME                                                     = "app";
+    /**
+     *
+     */
     const LIBS_BASE_NAME                                                    = "libs-base";
+    /**
+     *
+     */
     const LIBS_NAME                                                         = "libs";
 
+    /**
+     *
+     */
     const SCHEMA_CONF                                                       = "config";
+    /**
+     *
+     */
     const SCHEMA_DIRSTRUCT                                                  = "dirs";
+    /**
+     *
+     */
     const SCHEMA_PAGES                                                      = "pages";
+    /**
+     *
+     */
     const SCHEMA_ENGINE                                                     = "engine";
 
+    /**
+     *
+     */
     const RAWDATA_XML_REPLACE                                               = 1;
+    /**
+     *
+     */
     const RAWDATA_XML_MERGE                                                 = 2;
+    /**
+     *
+     */
     const RAWDATA_XML_MERGE_RECOURSIVE                                      = 3;
 
+    /**
+     * @var null
+     */
     private static $config_files                                            = null;
+    /**
+     * @var null
+     */
     private static $config_data                                             = null;
+    /**
+     * @var null
+     */
     private static $config_unknown                                          = null;
+    /**
+     * @var null
+     */
     private static $engine                                                  = null;
 
+    /**
+     * @var array
+     */
     private static $autoloads                                               = array();
+    /**
+     * @var null
+     */
     private static $webroot                                                 = null;
+    /**
+     * @var null
+     */
     private static $dirstruct                                               = null;
+    /**
+     * @var null
+     */
     private static $mapping_files                                           = null;
+    /**
+     * @var null
+     */
     private static $mapping_data                                            = null;
+    /**
+     * @var null
+     */
     private static $file_scans                                              = null;
 
     //@todo: da popolare con l'installer
+    /**
+     * @var array
+     */
     private static $class_configurable                                      = array(
                                                                                 "router"        => Router::class,
                                                                                 "request"       => Request::class,
@@ -72,12 +142,18 @@ class Config implements Dumpable
                                                                                 "media"         => Media::class
                                                                             );
     //@todo: da sistemare togliendo il configurable e il dumpable e farlo fisso con 1 unica variabile
+    /**
+     * @var array
+     */
     private static $config_rules                                    = array(
         Config::SCHEMA_DIRSTRUCT    => ["method" => Config::RAWDATA_XML_MERGE_RECOURSIVE,   "context" => Config::SCHEMA_DIRSTRUCT],
         Config::SCHEMA_PAGES        => ["method" => Config::RAWDATA_XML_MERGE_RECOURSIVE,   "context" => Config::SCHEMA_PAGES],
         Config::SCHEMA_ENGINE       => ["method" => Config::RAWDATA_XML_REPLACE,            "context" => Config::SCHEMA_ENGINE],
     );
 
+    /**
+     * @return array
+     */
     public static function dump()
     {
         return array(
@@ -96,7 +172,10 @@ class Config implements Dumpable
         );
     }
 
-    private static function loadRawData($rawdata)
+    /**
+     * @param array $rawdata
+     */
+    private static function loadRawData(array $rawdata) : void
     {
         self::$config_rules                                                 = $rawdata["config_rules"];
         self::$config_files                                                 = $rawdata["config_files"];
@@ -112,7 +191,9 @@ class Config implements Dumpable
         self::$class_configurable                                           = $rawdata["class_configurable"];
     }
 
-
+    /**
+     * LoadSchema: Directory Structure
+     */
     public static function loadDirStruct()
     {
         Debug::stopWatch(static::SCHEMA_CONF . "/" . static::SCHEMA_DIRSTRUCT);
@@ -124,14 +205,13 @@ class Config implements Dumpable
             foreach ($config["dir"] as $dir) {
                 $dir_attr                                                   = Dir::getXmlAttr($dir);
                 $dir_attr["path"]                                           = str_replace("[PROJECT_DOCUMENT_ROOT]", Kernel::$Environment::PROJECT_DOCUMENT_ROOT, $dir_attr["path"]);
-                $dir_key                                                    = (
-                    isset($dir_attr["type"]) && self::APP_BASE_NAME != $dir_attr["type"]
-                    ? $dir_attr["type"] . "/"
-                    : ""
-                ) . basename($dir_attr["path"]);
+
+                $dir_key                                                    = $dir_attr["type"];
+                $dir_name                                                   = ltrim(basename($dir_attr["path"]), ".");
                 if (isset($dir_attr["scan"])) {
                     $scan_type                                              = self::APP_BASE_NAME;
                     $scan_path                                              = str_replace("[LIBS_PATH]", Constant::LIBS_PATH, $dir_attr["path"]);
+
                     if ($scan_path != $dir_attr["path"]) {
                         $scan_type                                          = (
                             strpos($scan_path, Constant::LIBS_FF_PATH) === false
@@ -149,7 +229,7 @@ class Config implements Dumpable
                     continue;
                 }
 
-                self::$dirstruct[$dir_key]                                  = $dir_attr;
+                self::$dirstruct[$dir_key][$dir_name]                       = $dir_attr;
                 if (isset(self::$dirstruct[$dir_key]["autoload"])) {
                     self::$autoloads[]                                      = self::$dirstruct[$dir_key]["path"];
                 }
@@ -161,25 +241,59 @@ class Config implements Dumpable
         Debug::stopWatch(static::SCHEMA_CONF . "/" . static::SCHEMA_DIRSTRUCT);
     }
 
+    /**
+     * @return string|null
+     */
     public static function webRoot()
     {
         return self::$webroot;
     }
-    public static function getFilesMap($bucket)
+
+    /**
+     * @param string $bucket
+     * @return array|null
+     */
+    public static function getFilesMap(string $bucket) : ?array
     {
         return (isset(self::$mapping_files[$bucket])
             ? self::$mapping_files[$bucket]
             : null
         );
     }
-    public static function getDir($name = null)
+
+    /**
+     * @param string|null $name
+     * @param string $bucket
+     * @return string|null
+     */
+    public static function getDir(string $name = null, string $bucket = "app") : ?string
     {
-        return (isset(self::$dirstruct[$name])
-            ? self::$dirstruct[$name]["path"]
-            : self::$dirstruct
+        return (isset(self::$dirstruct[$bucket][$name])
+            ? self::$dirstruct[$bucket][$name]["path"]
+            : null
         );
     }
-    public static function getScans($rules)
+
+    /**
+     * @param string|false $bucket
+     * @return array|null
+     */
+    public static function getDirBucket(string $bucket = "app") : ?array
+    {
+        if (!$bucket) {
+            return self::$dirstruct;
+        }
+        return (isset(self::$dirstruct[$bucket])
+            ? self::$dirstruct[$bucket]
+            : null
+        );
+    }
+
+    /**
+     * @param array $rules
+     * @return array|null
+     */
+    public static function getScans(array $rules) : ?array
     {
         if (is_array($rules) && count($rules)) {
             $pattens                                                        = null;
@@ -194,7 +308,11 @@ class Config implements Dumpable
 
         return null;
     }
-    public static function autoloadRegister()
+
+    /**
+     *
+     */
+    public static function autoloadRegister() : void
     {
         if (is_array(self::$autoloads) && count(self::$autoloads)) {
             spl_autoload_register(function ($class_name) {
@@ -205,7 +323,11 @@ class Config implements Dumpable
         }
     }
 
-    private static function loadMap($bucket, $name = null)
+    /**
+     * @param string $bucket
+     * @param string|null $name
+     */
+    private static function loadMap(string $bucket, string $name = null) : void
     {
         if (!$name) {
             $name                                                           = "default";
@@ -227,31 +349,37 @@ class Config implements Dumpable
         Debug::stopWatch(static::SCHEMA_CONF . "/map/". $map_name);
     }
 
-    public static function mapping($bucket, $name = null)
+    /**
+     * @param string $bucket
+     * @param string $name
+     * @return mixed
+     */
+    public static function mapping(string $bucket, string $name) : ?array
     {
         if (!isset(self::$mapping_data[$bucket][$name])) {
             self::loadMap($bucket, $name);
         }
 
-        $extension                                                          = self::$mapping_data[$bucket];
-        if ($name && !isset($extension[$name])) {
-            $extension[$name]                                               = null;
-        }
-
-        return ($name
-            ? $extension[$name]
-            : $extension
+        return (isset(self::$mapping_data[$bucket][$name])
+            ? self::$mapping_data[$bucket][$name]
+            : null
         );
     }
 
     /**
      * @param ConfigRules $rules
      */
-    public static function addRules($rules)
+    public static function addRules(ConfigRules $rules) : void
     {
         self::$config_rules                                                 = self::$config_rules + $rules->toArray();
     }
-    private static function rawData($key, $remove = false)
+
+    /**
+     * @param string $key
+     * @param bool $remove
+     * @return array|null
+     */
+    private static function rawData(string $key, $remove = false) : ?array
     {
         $res = null;
         if (isset(self::$config_data[$key])) {
@@ -263,7 +391,10 @@ class Config implements Dumpable
         return $res;
     }
 
-    public static function load($paths = array())
+    /**
+     * @param array $paths
+     */
+    public static function load(array $paths = array()) : void
     {
         Debug::stopWatch(static::SCHEMA_CONF . "/load");
 
@@ -345,7 +476,10 @@ class Config implements Dumpable
         Debug::stopWatch(static::SCHEMA_CONF . "/load");
     }
 
-    private static function loadXml($file)
+    /**
+     * @param string $file
+     */
+    private static function loadXml(string $file) : void
     {
         Debug::stopWatch(static::SCHEMA_CONF . "/loadXml");
 
@@ -378,11 +512,22 @@ class Config implements Dumpable
 
         Debug::stopWatch(static::SCHEMA_CONF . "/loadXml");
     }
-    private static function loadXmlReplace($key, $config)
+
+
+    /**
+     * @param string $key
+     * @param array $config
+     */
+    private static function loadXmlReplace(string $key, array $config) : void
     {
         self::$config_data[$key]                                            = array_replace(self::$config_data[$key], (array)$config);
     }
-    private static function loadXmlMerge($key, $config)
+
+    /**
+     * @param string $key
+     * @param array $config
+     */
+    private static function loadXmlMerge(string $key, array $config) : void
     {
         if (is_array($config) && count($config)) {
             if (!isset($config[0])) {
@@ -391,7 +536,12 @@ class Config implements Dumpable
             self::$config_data[$key]                                        = array_merge(self::$config_data[$key], $config);
         }
     }
-    private static function loadXmlMergeSub($key, $config)
+
+    /**
+     * @param string $key
+     * @param array $config
+     */
+    private static function loadXmlMergeSub(string $key, array $config) : void
     {
         if (is_array($config) && count($config)) {
             foreach ($config as $sub_key => $sub_config) {
@@ -407,7 +557,10 @@ class Config implements Dumpable
         }
     }
 
-    public static function loadConfig($config)
+    /**
+     * @param array $config
+     */
+    public static function loadConfig(array $config) : void
     {
         self::$config_rules                                                 = $config["config_rules"];
         self::$config_files                                                 = $config["config_files"];
@@ -422,6 +575,9 @@ class Config implements Dumpable
         self::$file_scans                                                   = $config["file_scans"];
     }
 
+    /**
+     *
+     */
     public static function loadPages()
     {
         Debug::stopWatch(static::SCHEMA_CONF . "/" . static::SCHEMA_PAGES);
@@ -478,6 +634,9 @@ class Config implements Dumpable
         Debug::stopWatch(static::SCHEMA_CONF . "/" . static::SCHEMA_PAGES);
     }
 
+    /**
+     *
+     */
     public static function loadEngine()
     {
         Debug::stopWatch(static::SCHEMA_CONF . "/" . static::SCHEMA_ENGINE);

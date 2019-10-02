@@ -391,15 +391,17 @@ class Debug
 
         $errors = array_filter((array) Error::raise());
         $errors_count = 0;
-        $dirstruct = Config::getDir();
+        $dirstruct = Config::getDirBucket(false);
         if (is_array($dirstruct) && count($dirstruct)) {
-            foreach ($dirstruct as $dir) {
-                if (isset($dir["path"]) && !is_dir(Constant::DISK_PATH . $dir["path"]) && !Filemanager::makeDir($dir["path"])) {
-                    $errors["dirstruct"][] = "Failed to Write " . $dir["path"] . " Check permission";
-                } elseif (isset($dir["writable"]) && $dir["writable"] && !is_writable(Constant::DISK_PATH . $dir["path"])) {
-                    $errors["dirstruct"][] = "Dir " . $dir["path"] . " is not Writable";
-                } elseif (!is_readable(Constant::DISK_PATH . $dir["path"])) {
-                    $errors["dirstruct"][] = "Dir " . $dir["path"] . " is not Readible";
+            foreach ($dirstruct as $dirBucket) {
+                foreach ($dirBucket as $dir) {
+                    if (isset($dir["path"]) && !is_dir(Constant::DISK_PATH . $dir["path"]) && !Filemanager::makeDir($dir["path"])) {
+                        $errors["dirstruct"][] = "Failed to Write " . $dir["path"] . " Check permission";
+                    } elseif (isset($dir["writable"]) && $dir["writable"] && !is_writable(Constant::DISK_PATH . $dir["path"])) {
+                        $errors["dirstruct"][] = "Dir " . $dir["path"] . " is not Writable";
+                    } elseif (!is_readable(Constant::DISK_PATH . $dir["path"])) {
+                        $errors["dirstruct"][] = "Dir " . $dir["path"] . " is not Readible";
+                    }
                 }
             }
         }

@@ -30,7 +30,11 @@
     </request>
     <dirs>
         <dir type="cache" path="/cache/.thumbs" writable="true" />
-        <dir type="cache" path="/cache/assets" writable="true" />
+        <dir type="cache" path="/cache/assets" writable="false" />
+        <dir type="cache" path="/cache/assets/images" writable="true" />
+        <dir type="cache" path="/cache/assets/css" writable="true" />
+        <dir type="cache" path="/cache/assets/js" writable="true" />
+        <dir type="cache" path="/cache/assets/fonts" writable="true" />
         <dir type="cache" path="/cache/logs" writable="true" />
         <dir type="cache" path="/cache/error" writable="true" />
         <dir type="cache" path="/cache/data" writable="true" />

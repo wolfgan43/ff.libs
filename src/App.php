@@ -27,6 +27,10 @@ namespace phpformsframework\libs;
 
 use phpformsframework\libs\tpl\Widget;
 
+/**
+ * Class App
+ * @package phpformsframework\libs
+ */
 abstract class App implements Dumpable
 {
     use EndUserManager;
@@ -41,13 +45,19 @@ abstract class App implements Dumpable
      */
     public static $Environment                                      = null;
 
-
+    /**
+     * @return array
+     */
     protected static function &configuration()
     {
         return self::Server()->configuration;
     }
 
-    public static function dump($userVars = null)
+    /**
+     * @param array|null $userVars
+     * @return array
+     */
+    public static function dump(array $userVars = null)
     {
         return array(
             "isRunnedAs"    => self::$script_engine,
@@ -59,17 +69,24 @@ abstract class App implements Dumpable
     }
 
 
-
-    public static function setRunner($what)
+    /**
+     * @param string $what
+     */
+    public static function setRunner(string $what) : void
     {
         self::$script_engine                                        = basename(str_replace('\\', '/', $what));
     }
-    public static function isRunnedAs($what)
+
+    /**
+     * @param string $what
+     * @return bool
+     */
+    public static function isRunnedAs(string $what) : bool
     {
         if (self::$script_engine) {
             $res                                                    = self::$script_engine == ucfirst($what);
         } else {
-            $path                                                   = Dir::getDiskPath($what, true);
+            $path                                                   = Dir::findAppPath($what, true);
             $res                                                    = $path && strpos(Request::pathinfo(), $path) === 0;
         }
         return $res;
@@ -77,11 +94,11 @@ abstract class App implements Dumpable
 
     /**
      * @param string $name
-     * @param null|array $config
-     * @param null|string $return
+     * @param array|null $config
+     * @param string|null $return
      * @return dto\DataHtml
      */
-    public static function widget($name, $config = null, $return = null)
+    public static function widget(string $name, array $config = null, string $return = null) : dto\DataHtml
     {
         $class_name                                                 = get_called_class();
 
@@ -90,7 +107,13 @@ abstract class App implements Dumpable
         return Widget::getInstance($name, $config, $class_name::NAME_SPACE)
             ->render($return);
     }
-    public static function page($name, $config = null)
+
+    /**
+     * @param string $name
+     * @param array|null $config
+     * @return dto\DataHtml
+     */
+    public static function page(string $name, array $config = null) : dto\DataHtml
     {
         return self::widget($name, $config, "page");
     }

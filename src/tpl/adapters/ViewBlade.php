@@ -42,7 +42,7 @@ class ViewBlade extends BladeOne implements ViewAdapter
 
     public function __construct()
     {
-        parent::__construct(Dir::getDiskPath("views"), Constant::CACHE_DISK_PATH . $this::PATH);
+        parent::__construct(Dir::findAppPath("views"), Constant::CACHE_DISK_PATH . $this::PATH);
     }
     public function isset($name)
     {

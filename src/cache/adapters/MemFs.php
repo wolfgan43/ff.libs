@@ -110,6 +110,6 @@ class MemFs extends MemAdapter
 
     private function getCacheDiskPath()
     {
-        return Constant::DISK_PATH . Dir::getDiskPath("cache/data", true);
+        return Constant::DISK_PATH . Dir::findCachePath("data", true);
     }
 }

@@ -11,7 +11,7 @@
         <media source="(.*)" obj="phpformsframework\libs\storage\Media" method="get" params="$1" />
     </engine>
     <dirs>
-        <dir type="config" path="/conf/packages" />
+        <dir type="app" path="/app/conf/packages" />
         <dir type="app" path="/uploads"  writable="true" />
 
         <dir type="asset" path="[LIBS_PATH]/phpformsframework/libs/assets/common" scan="common" />

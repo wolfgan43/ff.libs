@@ -342,7 +342,7 @@ class Log
 
     public static function getLogDir()
     {
-        return Dir::getDiskPath("cache/logs");
+        return Dir::findCachePath("logs");
     }
 
     private static function run($message, $type = null, $routine = null, $action = null, $status = null, $response = null)

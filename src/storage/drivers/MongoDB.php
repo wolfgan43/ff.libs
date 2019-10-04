@@ -204,7 +204,7 @@ class MongoDB extends DatabaseDriver
 
         if ($do_connect) {
             $rc = null;
-            try {
+            if (class_exists("\MongoDB\Driver\Manager")) {
                 $this->link_id = new Manager(
                     "mongodb://"
                     . $this->auth
@@ -216,8 +216,8 @@ class MongoDB extends DatabaseDriver
                         : "")
                 );
                 $rc = is_object($this->link_id);
-            } catch (Exception $e) {
-                $this->errorHandler("Server Error: " . $e->getMessage());
+            } else {
+                $this->errorHandler("Class not found: MongoDB\Driver\Manager");
             }
 
             if (!$rc) {
@@ -385,7 +385,7 @@ class MongoDB extends DatabaseDriver
             return false;
         }
 
-        try {
+        if (class_exists("\MongoDB\Driver\Query")) {
             $cursor = $this->link_id->executeQuery($this->database . "." . $this->query_params["table"], new Query($this->query_params["where"], $this->query_params["options"]));
             if (!$cursor) {
                 $this->errorHandler("fetch_assoc_error");
@@ -398,8 +398,8 @@ class MongoDB extends DatabaseDriver
                     $res[$key]["_id"] = $this->objectID2string($res[$key]["_id"]);
                 }
             }
-        } catch (Exception $e) {
-            $this->errorHandler("Server Error: " . $e->getMessage());
+        } else {
+            $this->errorHandler("Class not found: MongoDB\Driver\Query");
         }
         return $res;
     }
@@ -489,7 +489,7 @@ class MongoDB extends DatabaseDriver
                         $this->query_params["options"]["limit"] = $mongoDB["limit"];
                     }
 
-                    try {
+                    if (class_exists("\MongoDB\Driver\Query")) {
                         $cursor = $this->link_id->executeQuery($this->database . "." . $this->query_params["table"], new Query($this->query_params["where"], $this->query_params["options"]));
                         if (!$cursor) {
                             $this->errorHandler("Invalid SQL: " . print_r($query, true));
@@ -500,8 +500,8 @@ class MongoDB extends DatabaseDriver
                             $this->query_id = new IteratorIterator($cursor);
                             $this->query_id->rewind(); // Very important
                         }
-                    } catch (Exception $e) {
-                        $this->errorHandler("Server Error: " . $e->getMessage());
+                    } else {
+                        $this->errorHandler("Class not found: MongoDB\Driver\Query");
                     }
                 }
                 break;
@@ -605,7 +605,7 @@ class MongoDB extends DatabaseDriver
                         break;
                     case "select":
                     case "":
-                        try {
+                        if (class_exists("\MongoDB\Driver\Query")) {
                             $cursor = $this->link_id->executeQuery($this->database . "." . $mongoDB["table"], new Query($mongoDB["sql"]));
                             if (!$cursor) {
                                 $this->errorHandler("Invalid SQL: " . print_r($query, true));
@@ -617,8 +617,8 @@ class MongoDB extends DatabaseDriver
                                 $this->query_id->rewind(); // Very important
                                 $this->num_rows = iterator_count(new IteratorIterator($this->link_id->executeQuery($this->database . "." . $mongoDB["table"], new Query($mongoDB["select"]))));
                             }
-                        } catch (Exception $e) {
-                            $this->errorHandler("Server Error: " . $e->getMessage());
+                        } else {
+                            $this->errorHandler("Class not found: MongoDB\Driver\Query");
                         }
                         break;
                     default:
@@ -687,7 +687,7 @@ class MongoDB extends DatabaseDriver
                 $cursor = $this->link_id->executeCommand($this->database, $Command);
                 $this->num_rows = $cursor->toArray()[0]->n;
             } catch (Exception $e) {
-                $this->errorHandler("Server Error: " . $e->getMessage());
+                $this->errorHandler("Class not found: MongoDB\Driver\Command");
             }
         }
         return $this->num_rows;

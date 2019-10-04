@@ -821,10 +821,11 @@ class Request implements Configurable, Dumpable
         if ($allow_origin) {
             header('Access-Control-Allow-Origin: ' . $allow_origin);
         }
-        header("X-Frame-Options: SAMEORIGIN");
-        header("X-XSS-Protection: 1; mode=block");
-        header("X-Content-Type-Options: nosniff");
-        header("Strict-Transport-Security: max-age=31536000");
+        //@todo: da delegare all'htaccess
+        //header("X-Frame-Options: SAMEORIGIN");
+        //header("X-XSS-Protection: 1; mode=block");
+        //header("X-Content-Type-Options: nosniff");
+        //header("Strict-Transport-Security: max-age=31536000");
         /**
          * @todo: da verificare e implementare
          *

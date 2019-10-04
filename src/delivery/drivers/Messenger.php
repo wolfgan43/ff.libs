@@ -190,7 +190,7 @@ class Messenger
     private function setAdapter($messengerAdapter = null)
     {
         if (!$this->adapter && !$messengerAdapter) {
-            $messengerAdapter = Kernel::$Environment::MESSENGER_ADAPTER;
+            $messengerAdapter                               = Kernel::$Environment::MESSENGER_ADAPTER;
         }
 
         $className                                          = self::NAME_SPACE . "Messenger" . ucfirst($messengerAdapter);

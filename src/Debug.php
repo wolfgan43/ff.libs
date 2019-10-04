@@ -242,7 +242,10 @@ class Debug
         return $res;
     }
 
-    private static function dumpInterface()
+    /**
+     * @return array
+     */
+    private static function dumpInterface() : array
     {
         $classes                                = get_declared_classes();
         $implements                             = array();
@@ -267,17 +270,21 @@ class Debug
         return $implements;
     }
 
-    private static function dumpCommandLine($error_message = null)
+    /**
+     * @param string|null $error_message
+     * @return string
+     */
+    private static function dumpCommandLine(string $error_message = null) : string
     {
+        $cli = null;
         $debug_backtrace = array_reverse(self::get_backtrace());
-
         if (isset($debug_backtrace[0]["file"]) && basename($debug_backtrace[0]["file"]) == "Error.php") {
             unset($debug_backtrace[0]);
         }
 
         foreach ($debug_backtrace as $i => $trace) {
             if (isset($trace["file"])) {
-                print $trace["file"] . ":" . $trace["line"] . "\n";
+                $cli .= $trace["file"] . ":" . $trace["line"] . "\n";
             } else {
                 if (0 && isset($trace["class"]) && isset($debug_backtrace[$i + 1]["args"]) && isset($debug_backtrace[$i + 1]["args"][0])) {
                     $operation = str_replace(array("Object: ", "\\"), array("", "/"), $debug_backtrace[$i + 1]["args"][0]) . $trace["type"] . $trace["function"] . '(' . implode(", ", $trace["args"]) . ')';
@@ -288,20 +295,26 @@ class Debug
                         : $trace["function"]
                     );
                 }
-                echo "Call " . $operation . "\n";
+                $cli .= "Call " . $operation . "\n";
             }
         }
 
-        echo "---------------------------------------------------------------------\n";
-        echo $error_message . "\n";
+        $cli .= "---------------------------------------------------------------------\n";
+        $cli .= $error_message . "\n";
 
-        return null;
+        return $cli;
     }
 
-    public static function dump($error_message = null, $return = false)
+    /**
+     * @param string|null $error_message
+     * @param bool $return
+     * @return string|null
+     */
+    public static function dump(string $error_message = null, bool $return = false) : ?string
     {
         if (self::isCommandLineInterface() || Request::accept() != "text/html") {
-            return self::dumpCommandLine($error_message);
+            echo self::dumpCommandLine($error_message);
+            return null;
         }
 
         $html_backtrace                     = "";

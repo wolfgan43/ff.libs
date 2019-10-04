@@ -4,6 +4,10 @@ namespace phpformsframework\libs\tpl;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 
+/**
+ * Class View
+ * @package phpformsframework\libs\tpl
+ */
 class View
 {
     const ERROR_BUCKET                              = "view";
@@ -14,7 +18,11 @@ class View
      */
     private $adapter                                = null;
 
-    public function __construct($templateAdapter = null)
+    /**
+     * View constructor.
+     * @param string|null $templateAdapter
+     */
+    public function __construct(string $templateAdapter = null)
     {
         if (!$templateAdapter) {
             $templateAdapter                        = Kernel::$Environment::TEMPLATE_ADAPTER;
@@ -32,7 +40,7 @@ class View
      * @param string $file_disk_path
      * @return $this
      */
-    public function fetch($file_disk_path)
+    public function fetch(string $file_disk_path) : View
     {
         $this->adapter->fetch($file_disk_path);
 
@@ -44,7 +52,7 @@ class View
      * @param bool $repeat
      * @return $this
      */
-    public function parse($sectionName, $repeat = false)
+    public function parse(string $sectionName, bool $repeat = false) : View
     {
         $this->adapter->parse($sectionName, $repeat);
 
@@ -55,7 +63,7 @@ class View
      * @param string $name
      * @return bool
      */
-    public function isset($name)
+    public function isset(string $name) : bool
     {
         return $this->adapter->isset($name);
     }
@@ -65,7 +73,7 @@ class View
      * @param null|string $value
      * @return $this
      */
-    public function assign($data, $value = null)
+    public function assign($data, $value = null) : View
     {
         if (is_callable($data)) {
             $data($this);
@@ -79,7 +87,7 @@ class View
     /**
      * @return string
      */
-    public function display()
+    public function display() : string
     {
         return $this->adapter->display();
     }

@@ -125,7 +125,7 @@ class Config implements Dumpable
     /**
      * @var null
      */
-    private static $file_scans                                              = null;
+    private static $dirstruct_scan                                          = null;
 
     //@todo: da popolare con l'installer
     /**
@@ -165,9 +165,9 @@ class Config implements Dumpable
             "autoloads"                                                     => self::$autoloads,
             "webroot"                                                       => self::$webroot,
             "dirstruct"                                                     => self::$dirstruct,
+            "dirstruct_scan"                                                => self::$dirstruct_scan,
             "mapping_files"                                                 => self::$mapping_files,
             "mapping_data"                                                  => self::$mapping_data,
-            "scan_folder"                                                   => self::$file_scans,
             "class_configurable"                                            => self::$class_configurable,
         );
     }
@@ -187,7 +187,7 @@ class Config implements Dumpable
         self::$dirstruct                                                    = $rawdata["dirstruct"];
         self::$mapping_files                                                = $rawdata["mapping_files"];
         self::$mapping_data                                                 = $rawdata["mapping_data"];
-        self::$file_scans                                                   = $rawdata["file_scans"];
+        self::$dirstruct_scan                                               = $rawdata["dirstruct_scan"];
         self::$class_configurable                                           = $rawdata["class_configurable"];
     }
 
@@ -235,7 +235,7 @@ class Config implements Dumpable
                 }
             }
 
-            self::$file_scans                                               = $scans[self::LIBS_BASE_NAME] + $scans[self::LIBS_NAME] + $scans[self::APP_BASE_NAME];
+            self::$dirstruct_scan                                           = $scans[self::LIBS_BASE_NAME] + $scans[self::LIBS_NAME] + $scans[self::APP_BASE_NAME];
         }
 
         Debug::stopWatch(static::SCHEMA_CONF . "/" . static::SCHEMA_DIRSTRUCT);
@@ -297,7 +297,7 @@ class Config implements Dumpable
     {
         if (is_array($rules) && count($rules)) {
             $pattens                                                        = null;
-            foreach (self::$file_scans as $path => $key) {
+            foreach (self::$dirstruct_scan as $path => $key) {
                 if (isset($rules[$key])) {
                     $pattens[$path]                                         = $rules[$key];
                 }
@@ -352,7 +352,7 @@ class Config implements Dumpable
     /**
      * @param string $bucket
      * @param string $name
-     * @return mixed
+     * @return array|null
      */
     public static function mapping(string $bucket, string $name) : ?array
     {
@@ -570,9 +570,9 @@ class Config implements Dumpable
         self::$autoloads                                                    = $config["autoloads"];
         self::$webroot                                                      = $config["webroot"];
         self::$dirstruct                                                    = $config["dirstruct"];
+        self::$dirstruct_scan                                               = $config["dirstruct_scan"];
         self::$mapping_files                                                = $config["mapping_files"];
         self::$mapping_data                                                 = $config["mapping_data"];
-        self::$file_scans                                                   = $config["file_scans"];
     }
 
     /**

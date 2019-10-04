@@ -25,6 +25,10 @@
  */
 namespace phpformsframework\libs\tpl\adapters;
 
+/**
+ * Class ViewAmp
+ * @package phpformsframework\libs\tpl\adapters
+ */
 class ViewAmp extends ViewHtml
 {
     const REGEXP                                = '/<<([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)>>/U';

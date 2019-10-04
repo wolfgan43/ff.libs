@@ -38,7 +38,7 @@ class Dir
      */
     public static function findAssetPath(string $what, $relative = false) : ?string
     {
-        return self::getDiskPath($what, "asset", $relative);
+        return self::getDiskPath($what, "assets", $relative);
     }
     /**
      * @param string $what
@@ -58,6 +58,16 @@ class Dir
     public static function findCachePath(string $what, $relative = false) : ?string
     {
         return self::getDiskPath($what, "cache", $relative);
+    }
+
+    /**
+     * @param string $what
+     * @param bool $relative
+     * @return string|null
+     */
+    public static function findViewPath(string $what, $relative = false) : ?string
+    {
+        return self::getDiskPath($what, "views", $relative);
     }
 
     /**

@@ -32,9 +32,13 @@ use phpformsframework\libs\Error;
 use phpformsframework\libs\tpl\ViewAdapter;
 use eftec\bladeone\BladeOne;
 
+/**
+ * Class ViewBlade
+ * @package phpformsframework\libs\tpl\adapters
+ */
 class ViewBlade extends BladeOne implements ViewAdapter
 {
-    const PATH                          = DIRECTORY_SEPARATOR . "blade";
+    const VIEW_PATH                     = DIRECTORY_SEPARATOR . "blade";
 
 
     private $tpl_file                   = null;
@@ -42,13 +46,25 @@ class ViewBlade extends BladeOne implements ViewAdapter
 
     public function __construct()
     {
-        parent::__construct(Dir::findAppPath("views"), Constant::CACHE_DISK_PATH . $this::PATH);
+        parent::__construct(Dir::findAppPath("views"), Constant::CACHE_DISK_PATH . $this::VIEW_PATH);
     }
-    public function isset($name)
+
+    /**
+     * @param string $name
+     * @return bool
+     */
+    public function isset(string $name) : bool
     {
         // TODO: Implement isset() method.
+        return false;
     }
-    public function assign($data, $value = null)
+
+    /**
+     * @param array|callable|string $data
+     * @param mixed|null $value
+     * @return ViewAdapter
+     */
+    public function assign($data, $value = null) : ViewAdapter
     {
         if ($value) {
             $this->data[$data]          = $value;
@@ -58,13 +74,22 @@ class ViewBlade extends BladeOne implements ViewAdapter
 
         return $this;
     }
-    public function fetch($file_disk_path)
+
+    /**
+     * @param string $file_disk_path
+     * @return ViewAdapter
+     */
+    public function fetch(string $file_disk_path) : ViewAdapter
     {
         $this->tpl_file                 = $file_disk_path;
 
         return $this;
     }
-    public function display()
+
+    /**
+     * @return string
+     */
+    public function display() : string
     {
         $tpl                            = null;
         try {
@@ -76,13 +101,16 @@ class ViewBlade extends BladeOne implements ViewAdapter
 
         return $tpl;
     }
-    public function parse($sectionName, $repeat = false)
+
+    /**
+     * @param string $sectionName
+     * @param bool $repeat
+     * @param bool $appendBefore
+     * @return bool
+     */
+    public function parse(string $sectionName, $repeat = false, bool $appendBefore = false) : bool
     {
         // TODO: Implement parse() method.
-    }
-
-    public function getTemplateFile($templateName = '')
-    {
-        return $this->tpl_file;
+        return false;
     }
 }

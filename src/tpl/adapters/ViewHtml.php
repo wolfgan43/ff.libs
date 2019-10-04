@@ -35,6 +35,10 @@ use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\tpl\ViewAdapter;
 use stdClass;
 
+/**
+ * Class ViewHtml
+ * @package phpformsframework\libs\tpl\adapters
+ */
 class ViewHtml implements ViewAdapter
 {
     const REGEXP                                = '/\{([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)\}/U';
@@ -62,19 +66,31 @@ class ViewHtml implements ViewAdapter
      */
     public $minify								= false;
 
-    public function fetch($template_file)
+    /**
+     * @param string $template_file
+     * @return ViewAdapter
+     */
+    public function fetch(string $template_file) : ViewAdapter
     {
-        $this->load_file($template_file);
+        $this->loadFile($template_file);
 
         return $this;
     }
 
-    public function isset($name)
+    /**
+     * @param string $name
+     * @return bool
+     */
+    public function isset(string $name) : bool
     {
         return isset($this->DBlocks[$name]);
     }
 
-    public function load_file($template_path, $root_element = null)
+    /**
+     * @param string $template_path
+     * @param string|null $root_element
+     */
+    private function loadFile(string $template_path, string $root_element = null) : void
     {
         $tpl_name = Translator::checkLang() . "-" . str_replace(
             array(
@@ -102,11 +118,11 @@ class ViewHtml implements ViewAdapter
             $this->DBlocks[$this->root_element] = Dir::loadFile($template_path);
             if ($this->DBlocks[$this->root_element] !== false) {
                 $this->getDVars();
-                $nName = $this->NextDBlockName($this->root_element);
+                $nName = $this->nextDBlockName($this->root_element);
                 while ($nName != "") {
-                    $this->SetBlock($this->root_element, $nName);
+                    $this->setBlock($this->root_element, $nName);
                     $this->blockVars($nName);
-                    $nName = $this->NextDBlockName($this->root_element);
+                    $nName = $this->nextDBlockName($this->root_element);
                 }
             } else {
                 Error::register("Unable to find the template", static::ERROR_BUCKET);
@@ -128,11 +144,13 @@ class ViewHtml implements ViewAdapter
         Hook::handle("on_loaded_data", $this);
 
         Debug::stopWatch("tpl/" . $tpl_name);
-
-        return null;
     }
 
-    public function load_content($content, $root_element = null)
+    /**
+     * @param string $content
+     * @param string|null $root_element
+     */
+    public function fetchContent(string $content, string $root_element = null) : void
     {
         if ($root_element !== null) {
             $this->root_element = $root_element;
@@ -140,16 +158,19 @@ class ViewHtml implements ViewAdapter
 
         $this->DBlocks[$this->root_element] = $content;
         $this->getDVars();
-        $nName = $this->NextDBlockName($this->root_element);
+        $nName = $this->nextDBlockName($this->root_element);
         while ($nName != "") {
-            $this->SetBlock($this->root_element, $nName);
-            $nName = $this->NextDBlockName($this->root_element);
+            $this->setBlock($this->root_element, $nName);
+            $nName = $this->nextDBlockName($this->root_element);
         }
 
         Hook::handle("on_loaded_data", $this);
     }
 
-    private function getDVars()
+    /**
+     *
+     */
+    private function getDVars() : void
     {
         if ($this->doublevar_to_commenthtml) {
             $this->DBlocks[$this->root_element] = preg_replace('/\{\{([\w\[\]\:\=\-\|\.]+)\}\}/U', "<!--{\{$1\}\}-->", $this->DBlocks[$this->root_element]);
@@ -159,11 +180,14 @@ class ViewHtml implements ViewAdapter
         $rc = preg_match_all(static::REGEXP, $this->DBlocks[$this->root_element], $matches);
         if ($rc && $matches) {
             $this->DVars = array_flip($matches[1]);
-            $this->translateDocument();
+            $this->translateView();
         }
     }
 
-    public function getDApplets()
+    /**
+     * @return array|null
+     */
+    public function getDApplets() : ?array
     {
         if (!$this->DApplets) {
             $matches = null;
@@ -200,7 +224,10 @@ class ViewHtml implements ViewAdapter
         return $this->DApplets;
     }
 
-    private function setApplet($applet)
+    /**
+     * @param string $applet
+     */
+    private function setApplet(string $applet) : void
     {
         $arrApplet = explode(":", $applet, 2);
         $appletid = "[" . $applet . "]";
@@ -210,7 +237,11 @@ class ViewHtml implements ViewAdapter
         parse_str(str_replace(":", "&", $arrApplet[1]), $this->DApplets[$appletid]["params"]);
     }
 
-    private function NextDBlockName($sTemplateName)
+    /**
+     * @param string $sTemplateName
+     * @return string
+     */
+    private function nextDBlockName(string $sTemplateName) : string
     {
         $sTemplate = $this->DBlocks[$sTemplateName];
         $BTag = strpos($sTemplate, "<!--" . $this->BeginTag);
@@ -227,23 +258,31 @@ class ViewHtml implements ViewAdapter
         }
     }
 
-
-    private function SetBlock($sTplName, $sBlockName)
+    /**
+     * @param string $sTplName
+     * @param string $sBlockName
+     */
+    private function setBlock(string $sTplName, string $sBlockName) : void
     {
         if (!isset($this->DBlocks[$sBlockName])) {
             $this->DBlocks[$sBlockName] = $this->getBlock($this->DBlocks[$sTplName], $sBlockName);
         }
         $this->DBlocks[$sTplName] = $this->replaceBlock($this->DBlocks[$sTplName], $sBlockName);
 
-        $nName = $this->NextDBlockName($sBlockName);
+        $nName = $this->nextDBlockName($sBlockName);
 
         while ($nName != "") {
-            $this->SetBlock($sBlockName, $nName);
-            $nName = $this->NextDBlockName($sBlockName);
+            $this->setBlock($sBlockName, $nName);
+            $nName = $this->nextDBlockName($sBlockName);
         }
     }
 
-    private function getBlock($sTemplate, $sName)
+    /**
+     * @param string $sTemplate
+     * @param string $sName
+     * @return string
+     */
+    private function getBlock(string $sTemplate, string $sName) : string
     {
         $alpha = strlen($sName) + 12;
 
@@ -257,8 +296,12 @@ class ViewHtml implements ViewAdapter
         }
     }
 
-
-    private function replaceBlock($sTemplate, $sName)
+    /**
+     * @param string $sTemplate
+     * @param string $sName
+     * @return string
+     */
+    private function replaceBlock(string $sTemplate, string $sName) : string
     {
         $BBlock = strpos($sTemplate, "<!--" . $this->BeginTag . $sName . "-->");
         $EBlock = strpos($sTemplate, "<!--" . $this->EndTag . $sName . "-->");
@@ -270,32 +313,50 @@ class ViewHtml implements ViewAdapter
         }
     }
 
-    public function GetVar($sName)
+    /**
+     * @param string $sName
+     * @return string
+     */
+    public function getVar(string $sName) : string
     {
         return $this->DBlocks[$sName];
     }
 
-    public function isset_var($sName)
+    /**
+     * @param string $sName
+     * @return bool
+     */
+    public function issetVar(string $sName) : bool
     {
         return isset($this->DVars[$sName]) || isset($this->DBlocks[$sName]);
     }
 
-    public function isset_block($sName)
+    /**
+     * @param string $sName
+     * @return bool
+     */
+    public function issetBlock(string $sName) : bool
     {
         return (bool)($this->ParsedBlocks[$sName]);
     }
 
-    public function parse($sTplName, $bRepeat = false, $bBefore = false)
+    /**
+     * @param string $sTplName
+     * @param bool $bRepeat
+     * @param bool $bBefore
+     * @return bool
+     */
+    public function parse(string $sTplName, bool $bRepeat = false, bool $bBefore = false) : bool
     {
         if (isset($this->DBlocks[$sTplName])) {
             if ($bRepeat && isset($this->ParsedBlocks[$sTplName])) {
                 if ($bBefore) {
-                    $this->ParsedBlocks[$sTplName] = $this->ProceedTpl($sTplName) . $this->ParsedBlocks[$sTplName];
+                    $this->ParsedBlocks[$sTplName] = $this->proceedTpl($sTplName) . $this->ParsedBlocks[$sTplName];
                 } else {
-                    $this->ParsedBlocks[$sTplName] .= $this->ProceedTpl($sTplName);
+                    $this->ParsedBlocks[$sTplName] .= $this->proceedTpl($sTplName);
                 }
             } else {
-                $this->ParsedBlocks[$sTplName] = $this->ProceedTpl($sTplName);
+                $this->ParsedBlocks[$sTplName] = $this->proceedTpl($sTplName);
             }
             return true;
         } elseif ($this->debug_msg) {
@@ -306,24 +367,11 @@ class ViewHtml implements ViewAdapter
     }
 
     /**
-     * @deprecated
-    public function pparse($block_name, $is_repeat)
-    {
-        echo $this->rpparse($block_name, $is_repeat);
-    }
-    private function rpparse($block_name, $is_repeat)
-    {
-        $this->parse($block_name, $is_repeat);
-        return $this->getBlockContent($block_name);
-    }
-    */
-
-    /**
      * @param array|string $data
-     * @param null|mixed $value
+     * @param mixed|null $value
      * @return $this
      */
-    public function assign($data, $value = null)
+    public function assign($data, $value = null) : ViewAdapter
     {
         if (is_array($data)) {
             $this->ParsedBlocks             = array_replace($this->ParsedBlocks, $data);
@@ -337,24 +385,30 @@ class ViewHtml implements ViewAdapter
     /**
      * @return string
      */
-    public function display()
+    public function display() : string
     {
         $this->parse($this->root_element, false);
         return $this->getBlockContent($this->root_element);
     }
-    public function getBlockContent($block_name, $minify = null)
+
+    /**
+     * @param string $block_name
+     * @param string|null $minify
+     * @return string|null
+     */
+    private function getBlockContent(string $block_name, string $minify = null) : ?string
     {
         $minify = ($minify === null ? $this->minify : $minify);
 
         if ($minify === false) {
             return (isset($this->ParsedBlocks[$block_name])
-                ? $this->entities_replace($this->ParsedBlocks[$block_name])
+                ? $this->entitiesReplace($this->ParsedBlocks[$block_name])
                 : null
             );
         } elseif ($minify === "strip") {
-            return $this->entities_replace(preg_replace("/\n\s*/", "\n", $this->ParsedBlocks[$block_name], -1, $count));
+            return $this->entitiesReplace(preg_replace("/\n\s*/", "\n", $this->ParsedBlocks[$block_name], -1, $count));
         } elseif ($minify === "strong_strip") {
-            return $this->entities_replace(preg_replace(
+            return $this->entitiesReplace(preg_replace(
                 array(
                     '/\>[^\S ]+/s',  // strip whitespaces after tags, except space
                     '/[^\S ]+\</s',  // strip whitespaces before tags, except space
@@ -376,7 +430,11 @@ class ViewHtml implements ViewAdapter
         return null;
     }
 
-    private function blockVars($sTplName)
+    /**
+     * @param string $sTplName
+     * @return array|null
+     */
+    private function blockVars(string $sTplName) : ?array
     {
         if (isset($this->DBlockVars[$sTplName])) {
             return $this->DBlockVars[$sTplName];
@@ -393,11 +451,14 @@ class ViewHtml implements ViewAdapter
 
             return $vars;
         } else {
-            return false;
+            return null;
         }
     }
 
-    private function translateDocument()
+    /**
+     *
+     */
+    private function translateView(): void
     {
         $translation = new stdClass();
         foreach ($this->DVars as $nName => $count) {
@@ -410,7 +471,12 @@ class ViewHtml implements ViewAdapter
             $this->DBlocks[$this->root_element] = str_replace($translation->key, $translation->value, $this->DBlocks[$this->root_element]);
         }
     }
-    private function ProceedTpl($sTplName)
+
+    /**
+     * @param string $sTplName
+     * @return string
+     */
+    private function proceedTpl(string $sTplName) : string
     {
         $vars = $this->blockVars($sTplName);
         $sTpl = $this->DBlocks[$sTplName];
@@ -444,7 +510,11 @@ class ViewHtml implements ViewAdapter
         return $sTpl;
     }
 
-    private function entities_replace($text)
+    /**
+     * @param string $text
+     * @return string
+     */
+    private function entitiesReplace(string $text) : string
     {
         return str_replace(array("{\\","\\}"), array("{","}"), $text);
     }

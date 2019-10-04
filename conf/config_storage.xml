@@ -14,13 +14,13 @@
         <dir type="app" path="/app/conf/packages" />
         <dir type="app" path="/uploads"  writable="true" />
 
-        <dir type="asset" path="[LIBS_PATH]/phpformsframework/libs/assets/common" scan="common" />
-        <dir type="asset" path="[LIBS_PATH]/phpformsframework/libs/assets/css" scan="css" />
-        <dir type="asset" path="[LIBS_PATH]/phpformsframework/libs/assets/fonts" scan="fonts" />
-        <dir type="asset" path="[LIBS_PATH]/phpformsframework/libs/assets/images" scan="images" />
-        <dir type="asset" path="[LIBS_PATH]/phpformsframework/libs/assets/js" scan="js" />
-        <dir type="asset" path="[LIBS_PATH]/phpformsframework/libs/assets/layouts" scan="layouts" />
-        <dir type="asset" path="[LIBS_PATH]/phpformsframework/libs/assets/widgets" scan="widgets" />
-        <dir type="asset" path="[LIBS_PATH]/phpformsframework/libs/assets/xml" scan="xml" />
+        <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/common" scan="common" />
+        <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/css" scan="css" />
+        <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/fonts" scan="fonts" />
+        <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/images" scan="images" />
+        <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/js" scan="js" />
+        <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/layouts" scan="layouts" />
+        <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/widgets" scan="widgets" />
+        <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/xml" scan="xml" />
     </dirs>
 </configdata>

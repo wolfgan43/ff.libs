@@ -1,6 +1,10 @@
 <?php
 namespace phpformsframework\libs\tpl;
 
+/**
+ * Interface ViewAdapter
+ * @package phpformsframework\libs\tpl
+ */
 interface ViewAdapter
 {
     const ERROR_BUCKET = "template";
@@ -9,30 +13,31 @@ interface ViewAdapter
      * @param string $file_disk_path
      * @return $this
      */
-    public function fetch($file_disk_path);
+    public function fetch(string $file_disk_path) : ViewAdapter;
 
     /**
      * @param array|string|callable $data
-     * @param null|string $value
+     * @param mixed|null $value
      * @return $this
      */
-    public function assign($data, $value = null);
+    public function assign($data, $value = null) : ViewAdapter;
 
     /**
      * @return string
      */
-    public function display();
+    public function display() : string;
 
     /**
-     * @param string$sectionName
+     * @param string $sectionName
      * @param bool $repeat
-     * @return $this
+     * @param bool $appendBefore
+     * @return bool
      */
-    public function parse($sectionName, $repeat = false);
+    public function parse(string $sectionName, bool $repeat = false, bool $appendBefore = false) : bool;
 
     /**
      * @param string $name
      * @return bool
      */
-    public function isset($name);
+    public function isset(string $name) : bool;
 }

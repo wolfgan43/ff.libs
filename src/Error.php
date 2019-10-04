@@ -122,7 +122,7 @@ class Error
     {
         self::$rules[$type][$source]                            = $engine;
     }
-    public static function getErrorMessage($code)
+    public static function getErrorMessage(int $code)
     {
         $status_code                                            = self::STATUS_CODE;
 

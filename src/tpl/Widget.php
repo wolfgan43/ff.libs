@@ -27,7 +27,13 @@ namespace phpformsframework\libs\tpl;
 
 use phpformsframework\libs\dto\DataHtml;
 use phpformsframework\libs\EndUserManager;
+use phpformsframework\optimizer\Resources;
 
+/**
+ * Class Widget
+ * @package phpformsframework\libs\tpl
+ * @todo private function getSnippet()
+ */
 abstract class Widget
 {
     use AssetsManager;
@@ -46,53 +52,52 @@ abstract class Widget
 
     private $config                             = array();
 
-
-    abstract protected function getConfigDefault();
+    /**
+     * @return array
+     */
+    abstract protected function getConfigDefault() : array;
 
     /**
      * @param array $config
      * @param string $callToAction
-     * @return void|DataHtml
      */
-    abstract protected function controller(&$config, $callToAction);
+    abstract protected function controller(array &$config, string $callToAction);
 
     /**
      * @param View $view
      * @param array $config
      */
-    abstract protected function renderTemplate(&$view, $config);
+    abstract protected function renderTemplate(View &$view, array $config);
 
-    public function __construct($name, $config)
+    /**
+     * Widget constructor.
+     * @param string $name
+     * @param array|null $config
+     */
+    public function __construct(string $name, array $config = null)
     {
         $this->config                           = array_replace_recursive($this->getConfigDefault(), (array) $config);
         $this->name                             = $name;
-
-    }
-
-    //todo: da fare
-    private function getSnippet()
-    {
-        return null;
     }
 
     /**
      * @return DataHtml
      */
-    private function getPage()
+    private function getPage() : DataHtml
     {
         return Page::getInstance("html")
             ->addAssets($this->js, $this->css)
-            //->setLayout("empty")
             ->addContent($this->html)
             ->render();
     }
+
     /**
      * @param string $name
-     * @param null|array $config
-     * @param null|string $bucket
+     * @param array|null $config
+     * @param string|null $bucket
      * @return Widget
      */
-    public static function getInstance($name, $config = null, $bucket = null)
+    public static function getInstance(string $name, array $config = null, string $bucket = null) : Widget
     {
         self::stopwatch("widget/" . $name);
 
@@ -104,14 +109,20 @@ abstract class Widget
         return self::$singleton[$class_name];
     }
 
-    private function inject($widget_data)
+    /**
+     * @param DataHtml $widget
+     */
+    private function inject(DataHtml $widget) : void
     {
-        $this->js                               = $widget_data->js;
-        $this->css                              = $widget_data->css;
-        $this->html                             = $widget_data->html;
+        $this->js                               = $widget->js;
+        $this->css                              = $widget->css;
+        $this->html                             = $widget->html;
     }
 
-    private function getSkin()
+    /**
+     * @return string
+     */
+    private function getSkin() : string
     {
         return $this->name . (
             $this->skin
@@ -120,16 +131,19 @@ abstract class Widget
         );
     }
 
-    protected function getResources()
+    /**
+     * @return object|null
+     */
+    protected function getResources() : ?object
     {
         return Resource::widget($this->getSkin());
     }
 
     /**
-     * @param string|object $name
+     * @param string|DataHtml $name
      * @param array $data
      */
-    protected function view($name = "index", $data = array())
+    protected function view($name = "index", array $data = array()) : void
     {
         if (is_object($name)) {
             $this->inject($name);
@@ -138,7 +152,6 @@ abstract class Widget
             $view                                   = new View();
 
             $resources                              = $this->getResources();
-
             $this->addJs($widget_name, $resources->js[$name]);
             $this->addCss($widget_name, $resources->css[$name]);
 
@@ -156,7 +169,7 @@ abstract class Widget
      * @param null|string $return
      * @return DataHtml
      */
-    public function render($return = null)
+    public function render(string $return = null) : DataHtml
     {
         $this->controller($this->getConfig(), $this->request()->method());
 
@@ -165,7 +178,7 @@ abstract class Widget
         $output                                     = new DataHtml();
         switch ($return) {
             case "snippet":
-                $output->html($this->getSnippet());
+                $output                             = $this->getSnippet();
                 break;
             case "page":
                 $output                             = $this->getPage();
@@ -181,9 +194,9 @@ abstract class Widget
     }
 
     /**
-     * @return null|FrameworkCss
+     * @return FrameworkCss|null
      */
-    protected function gridSystem()
+    protected function gridSystem() : ?FrameworkCss
     {
         if (!self::$grid_system) {
             self::$grid_system = Gridsystem::getInstance();
@@ -192,6 +205,9 @@ abstract class Widget
         return self::$grid_system;
     }
 
+    /**
+     * @return array
+     */
     private function &getConfig()
     {
         return $this->config;

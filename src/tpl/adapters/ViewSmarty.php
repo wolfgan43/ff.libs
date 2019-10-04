@@ -28,46 +28,111 @@ namespace phpformsframework\libs\tpl\adapters;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\tpl\ViewAdapter;
 use Smarty;
-use Exception;
+use SmartyException;
 
+/**
+ * Class ViewSmarty
+ * @package phpformsframework\libs\tpl\adapters
+ */
 class ViewSmarty extends Smarty implements ViewAdapter
 {
-    const PATH                  = DIRECTORY_SEPARATOR . "smarty" . DIRECTORY_SEPARATOR;
+    const VIEW_PATH             = DIRECTORY_SEPARATOR . "smarty" . DIRECTORY_SEPARATOR;
 
     private $tpl_file;
 
+    /**
+     * ViewSmarty constructor.
+     * @param null $file
+     */
     public function __construct($file = null)
     {
         parent::__construct();
 
         $this->tpl_file         = $file;
 
-        $this->template_dir     = Constant::CACHE_DISK_PATH . $this::PATH . 'templates';
-        $this->compile_dir      = Constant::CACHE_DISK_PATH . $this::PATH . 'templates_c';
-        $this->config_dir       = Constant::CACHE_DISK_PATH . $this::PATH . 'configs';
-        $this->cache_dir        = Constant::CACHE_DISK_PATH . $this::PATH . 'cache';
+        $this->template_dir     = Constant::CACHE_DISK_PATH . $this::VIEW_PATH . 'templates';
+        $this->compile_dir      = Constant::CACHE_DISK_PATH . $this::VIEW_PATH . 'templates_c';
+        $this->config_dir       = Constant::CACHE_DISK_PATH . $this::VIEW_PATH . 'configs';
+        $this->cache_dir        = Constant::CACHE_DISK_PATH . $this::VIEW_PATH . 'cache';
 
         $this->caching          = false;
 
         $this->cache_lifetime   = 10;
     }
 
-    public function is_cached()
+    /**
+     * @param array|callable|string $tpl_var
+     * @param mixed|null $value
+     * @param bool $nocache
+     * @return ViewAdapter
+     */
+    public function assign($tpl_var, $value = null, $nocache = false) : ViewAdapter
     {
-        try {
-            $res = $this->isCached($this->tpl_file);
-        } catch (Exception $exc) {
-            $res = false;
-        }
-        return $res;
+        parent::assign($tpl_var, $value, $nocache);
+
+        return $this;
     }
 
-    public function isset($name)
+    /**
+     * @param string|null $file_disk_path
+     * @param null $cache_id
+     * @param null $compile_id
+     * @param null $parent
+     * @return ViewAdapter
+     * @throws SmartyException
+     */
+    public function fetch($file_disk_path = null, $cache_id = null, $compile_id = null, $parent = null): ViewAdapter
+    {
+        parent::fetch($file_disk_path);
+
+        return $this;
+    }
+
+    /**
+     * @param null $template
+     * @param null $cache_id
+     * @param null $compile_id
+     * @param null $parent
+     * @return string
+     * @throws SmartyException
+     */
+    public function display($template = null, $cache_id = null, $compile_id = null, $parent = null) : string
+    {
+        return parent::display();
+    }
+
+    /**
+     * @param null $template
+     * @param null $cache_id
+     * @param null $compile_id
+     * @param null $parent
+     * @return bool
+     * @throws SmartyException
+     */
+    public function isCached($template = null, $cache_id = null, $compile_id = null, $parent = null)
+    {
+        return parent::isCached($this->tpl_file);
+    }
+
+    /**
+     * @param string $name
+     * @return bool
+     */
+    public function isset(string $name): bool
     {
         // TODO: Implement isset() method.
+        return false;
     }
-    public function parse($sectionName, $repeat = false)
+
+    /**
+     * @param string $sectionName
+     * @param bool $repeat
+     * @param bool $appendBefore
+     * @return bool
+     */
+    public function parse(string $sectionName, bool $repeat = false, bool $appendBefore = false): bool
     {
         // TODO: Implement parse() method.
+        return false;
     }
 }

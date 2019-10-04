@@ -1,6 +1,8 @@
 <?php
 namespace phpformsframework\libs;
 
+use phpformsframework\libs\util\TypesConverter;
+
 /**
  * Class Kernel
  * @package phpformsframework\libs
@@ -8,6 +10,8 @@ namespace phpformsframework\libs;
  */
 class Kernel
 {
+    use TypesConverter;
+
     const NAMESPACE                 = null;
     /**
      * @var Kernel
@@ -63,11 +67,18 @@ class Kernel
 
     /**
      * @param string|null $bucket
-     * @return array|null
+     * @param bool $toArray
+     * @return array|object|null
+     * @todo far ritornare ?array|object quando sara supportato da php
      */
-    protected function dirStruct(string $bucket = null)
+    protected function dirStruct(string $bucket = null, bool $toArray = true)
     {
-        return Config::getDirBucket($bucket);
+        $res                        = Config::getDirBucket($bucket);
+
+        return (!$toArray && $res
+            ? $this->array2object($res)
+            : $res
+        );
     }
     /**
      * Kernel constructor.

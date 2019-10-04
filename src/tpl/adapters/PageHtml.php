@@ -43,9 +43,13 @@ use phpformsframework\libs\tpl\Gridsystem;
 use phpformsframework\libs\tpl\Resource;
 use phpformsframework\libs\tpl\View;
 
+/**
+ * Class PageHtml
+ * @package phpformsframework\libs\tpl\adapters
+ */
 class PageHtml extends Mappable
 {
-    const NL                                    = "\n";
+    const NEWLINE                               = "\n";
     const MAIN_CONTENT                          = "content";
 
     private $encoding                           = Constant::ENCODING;
@@ -81,7 +85,11 @@ class PageHtml extends Mappable
     private $statusCode                         = 200;
     private $email_support                      = null;
 
-    public function __construct($map_name = "default")
+    /**
+     * PageHtml constructor.
+     * @param string $map_name
+     */
+    public function __construct(string $map_name = "default")
     {
         parent::__construct($map_name, self::class);
 
@@ -94,14 +102,22 @@ class PageHtml extends Mappable
         $this->path                             = Request::pathinfo();
     }
 
-    public function setEncoding($encoding)
+    /**
+     * @param string $encoding
+     * @return PageHtml
+     */
+    public function setEncoding(string $encoding) : PageHtml
     {
         $this->encoding = $encoding;
 
         return $this;
     }
 
-    public function setStatus($code)
+    /**
+     * @param int $code
+     * @return PageHtml
+     */
+    public function setStatus(int $code) : PageHtml
     {
         $this->statusCode                       = (
             $code > 0
@@ -111,7 +127,13 @@ class PageHtml extends Mappable
         return $this;
     }
 
-    public function addAssets($js = null, $css = null, $fonts = null)
+    /**
+     * @param array|null $js
+     * @param array|null $css
+     * @param array|null $fonts
+     * @return PageHtml
+     */
+    public function addAssets(array $js = null, array $css = null, array $fonts = null) : PageHtml
     {
         if (is_array($js) && count($js)) {
             foreach ($js as $key => $url) {
@@ -132,26 +154,47 @@ class PageHtml extends Mappable
         return $this;
     }
 
-    public function addJs($key, $url = null)
+    /**
+     * @param string $key
+     * @param string $url
+     * @return PageHtml
+     */
+    public function addJs(string $key, string $url) : PageHtml
     {
         $this->js[$key]                         = $this->mask($url);
 
         return $this;
     }
-    public function addCss($key, $url = null)
+
+    /**
+     * @param string $key
+     * @param string $url
+     * @return PageHtml
+     */
+    public function addCss(string $key, string $url) : PageHtml
     {
         $this->css[$key]                        = $this->mask($url);
 
         return $this;
     }
-    public function addFont($key, $url)
+
+    /**
+     * @param string $key
+     * @param string $url
+     * @return PageHtml
+     */
+    public function addFont(string $key, string $url) : PageHtml
     {
         $this->fonts[$key]                      = $this->mask($url);
 
         return $this;
     }
 
-    private function mask($url)
+    /**
+     * @param string $url
+     * @return string
+     */
+    private function mask(string $url) : string
     {
         $env                                    = Env::get();
         $env["{"]                               = "";
@@ -165,7 +208,13 @@ class PageHtml extends Mappable
         );
     }
 
-    public function addMeta($key, $content, $type = "name")
+    /**
+     * @param string $key
+     * @param string $content
+     * @param string $type
+     * @return PageHtml
+     */
+    public function addMeta(string $key, string $content, string $type = "name") : PageHtml
     {
         $this->meta[$key]                       = array(
                                                     $type       => $key,
@@ -175,14 +224,23 @@ class PageHtml extends Mappable
         return $this;
     }
 
-    public function setLayout($name)
+    /**
+     * @param string $name
+     * @return PageHtml
+     */
+    public function setLayout(string $name) : PageHtml
     {
         $this->layout                           = Resource::load($name, "layouts");
 
         return $this;
     }
 
-    public function addContent($content, $where = self::MAIN_CONTENT)
+    /**
+     * @param string $content
+     * @param string $where
+     * @return PageHtml
+     */
+    public function addContent(string $content, string $where = self::MAIN_CONTENT) : PageHtml
     {
         $this->setContent($this->getHtml($content), $where);
 
@@ -207,7 +265,11 @@ class PageHtml extends Mappable
         return $html;
     }
 
-    private function getHtmlByObject($obj)
+    /**
+     * @param View|DataHtml $obj
+     * @return string|null
+     */
+    private function getHtmlByObject($obj) : ?string
     {
         $html                                   = null;
         if ($obj instanceof View) {
@@ -219,7 +281,12 @@ class PageHtml extends Mappable
 
         return $html;
     }
-    private function getHtmlByString($string)
+
+    /**
+     * @param string $string
+     * @return string|null
+     */
+    private function getHtmlByString(string $string) : ?string
     {
         $html                                   = null;
         if (strpos($string, DIRECTORY_SEPARATOR) === 0) {
@@ -242,7 +309,11 @@ class PageHtml extends Mappable
         return $html;
     }
 
-    private function getTitle($include_appname = true)
+    /**
+     * @param bool $include_appname
+     * @return string
+     */
+    private function getTitle(bool $include_appname = true) : string
     {
         $res                                    = (
             $this->title
@@ -254,12 +325,19 @@ class PageHtml extends Mappable
         }
         return $res;
     }
-    private function parseTitle()
+
+    /**
+     * @return string
+     */
+    private function parseTitle() : string
     {
-        return $this::NL . '<title>' . $this->getTitle() . '</title>';
+        return $this::NEWLINE . '<title>' . $this->getTitle() . '</title>';
     }
 
-    private function parseDescription()
+    /**
+     * @return string
+     */
+    private function parseDescription() : string
     {
         $res                                    = (
             $this->description
@@ -268,59 +346,82 @@ class PageHtml extends Mappable
                                                 );
 
 
-        return $this::NL .'<meta name="description" content="' . $res . '" />';
+        return $this::NEWLINE .'<meta name="description" content="' . $res . '" />';
     }
 
-    private function parseEncoding()
+    /**
+     * @return string
+     */
+    private function parseEncoding() : string
     {
         return '<meta http-equiv="Content-Type" content="text/html; charset=' . $this->encoding . '"/>';
     }
 
-    private function parseMeta()
+    /**
+     * @return string
+     */
+    private function parseMeta() : string
     {
         $res                                    = "";
         if (is_array($this->meta) && count($this->meta)) {
             foreach ($this->meta as $meta) {
                 if (isset($meta["name"])) {
-                    $res                        .= $this::NL . '<meta name="' . $meta["name"] . '" content="' . $meta["content"] . '">';
+                    $res                        .= $this::NEWLINE . '<meta name="' . $meta["name"] . '" content="' . $meta["content"] . '">';
                 } elseif (isset($meta["property"])) {
-                    $res                        .= $this::NL . '<meta property="' . $meta["property"] . '" content="' . $meta["content"] . '">';
+                    $res                        .= $this::NEWLINE . '<meta property="' . $meta["property"] . '" content="' . $meta["content"] . '">';
                 }
             }
         }
         return $res;
     }
 
-    private function parseFavicons()
+    /**
+     * @return string
+     */
+    private function parseFavicons() : string
     {
         $res                                    = "";
         $favicon = $this->getAsset("favicon", "images");
         if ($favicon) {
             foreach ($this->favicons as $properties) {
-                $res                            .= $this::NL . '<link rel="' . $properties["rel"] . '" sizes="' . $properties["sizes"] . '" href="' . Media::getUrl($favicon, $properties["sizes"], "url") . '">';
+                $res                            .= $this::NEWLINE . '<link rel="' . $properties["rel"] . '" sizes="' . $properties["sizes"] . '" href="' . Media::getUrl($favicon, $properties["sizes"], "url") . '">';
             }
         }
 
         return $res;
     }
-    private function parseFonts()
+
+    /**
+     * @return string
+     */
+    private function parseFonts() : string
     {
         $res                                    = "";
         if (is_array($this->fonts) && count($this->fonts)) {
             foreach ($this->fonts as $font) {
-                $res                            .= $this::NL .'<link rel="preload" as="font" type="font/' . pathinfo($font, PATHINFO_EXTENSION) . '" crossorigin="anonymous" href="' . $font . '" />';
+                $res                            .= $this::NEWLINE .'<link rel="preload" as="font" type="font/' . pathinfo($font, PATHINFO_EXTENSION) . '" crossorigin="anonymous" href="' . $font . '" />';
             }
         }
 
         return $res;
     }
-    private function parseCss()
+
+    /**
+     * @return string
+     */
+    private function parseCss() : string
     {
-        $css_tag                                = $this::NL . '<link rel="stylesheet" type="text/css" crossorigin="anonymous" href="';
+        $css_tag                                = $this::NEWLINE . '<link rel="stylesheet" type="text/css" crossorigin="anonymous" href="';
 
         return $css_tag . implode('" />' . $css_tag, $this->css) . '" />';
     }
-    private function parseJs($async = false, $defer = true)
+
+    /**
+     * @param bool $async
+     * @param bool $defer
+     * @return string
+     */
+    private function parseJs(bool $async = false, bool $defer = true) : string
     {
         $async_attr                             = (
             $async
@@ -334,25 +435,41 @@ class PageHtml extends Mappable
                                                     : ""
                                                 );
 
-        $script_tag                             = $this::NL . '<script ' . $async_attr . $defer_attr . 'crossorigin="anonymous" src="';
+        $script_tag                             = $this::NEWLINE . '<script ' . $async_attr . $defer_attr . 'crossorigin="anonymous" src="';
 
         return $script_tag . implode('"></script>' . $script_tag, $this->js) . '"></script>';
     }
 
-    private function getContent($name)
+    /**
+     * @param string $name
+     * @return string
+     */
+    private function getContent(string $name) : string
     {
         return (isset($this->contents["{" . $name . "}"])
             ? $this->contents["{" . $name . "}"]
             : null
         );
     }
-    private function setContent($content, $key)
+
+    /**
+     * @param string $content
+     * @param string $key
+     * @return PageHtml
+     */
+    private function setContent(string $content, string $key) : PageHtml
     {
         $this->contents["{" . $key . "}"]      = $content;
         return $this;
     }
 
-    public function getPageError($title, $code = null, $description = null)
+    /**
+     * @param string $title
+     * @param int|null $code
+     * @param string|null $description
+     * @return string
+     */
+    public function getPageError(string $title, int $code = null, string $description = null) : string
     {
         if ($code) {
             Response::httpCode($code);
@@ -375,7 +492,10 @@ class PageHtml extends Mappable
         return $tpl->display();
     }
 
-    private function parseLayout()
+    /**
+     * @return string
+     */
+    private function parseLayout() : string
     {
         $res = str_replace(
             array_keys($this->contents),
@@ -405,7 +525,10 @@ class PageHtml extends Mappable
         return $res;
     }
 
-    private function parseHead()
+    /**
+     * @return string
+     */
+    private function parseHead() : string
     {
         return /** @lang text */ '<head>'
             . $this->parseEncoding()
@@ -416,34 +539,48 @@ class PageHtml extends Mappable
             . $this->parseFonts()
             . $this->parseCss()
             . $this->parseJs()
-            . $this::NL
+            . $this::NEWLINE
         . '</head>';
     }
 
-    private function parseDebug()
+    /**
+     * @return string
+     */
+    private function parseDebug() : string
     {
         return (Kernel::$Environment::DEBUG
-            ? Debug::dump("", true) . $this::NL
+            ? Debug::dump("", true) . $this::NEWLINE
             : ""
         );
     }
-    private function parseBody()
+
+    /**
+     * @return string
+     */
+    private function parseBody() : string
     {
         return '<body>'
             . $this->parseLayout()
-            . $this::NL
+            . $this::NEWLINE
             . $this->parseDebug()
             . '</body>';
     }
 
-    private function parseHtmlLang()
+    /**
+     * @return string
+     */
+    private function parseHtmlLang() : string
     {
         return ($this->lang
             ? ' lang="' . $this->lang . '"'
             : ""
         );
     }
-    private function parseHtmlRegion()
+
+    /**
+     * @return string
+     */
+    private function parseHtmlRegion() : string
     {
         return ($this->lang
             ? ' region="' . $this->region . '"'
@@ -451,20 +588,23 @@ class PageHtml extends Mappable
         );
     }
 
-    private function parseHtml()
+    /**
+     * @return string
+     */
+    private function parseHtml() : string
     {
         return /** @lang text */ $this->doctype
-            . $this::NL . '<html ' . $this->parseHtmlLang() . $this->parseHtmlRegion() . '>'
-            . $this::NL . $this->parseHead()
-            . $this::NL . $this->parseBody()
-            . $this::NL . '</html>'
+            . $this::NEWLINE . '<html ' . $this->parseHtmlLang() . $this->parseHtmlRegion() . '>'
+            . $this::NEWLINE . $this->parseHead()
+            . $this::NEWLINE . $this->parseBody()
+            . $this::NEWLINE . '</html>'
             ;
     }
 
     /**
      * @return DataHtml
      */
-    public function render()
+    public function render() : DataHtml
     {
         //       \phpformsframework\cms\Cm::widget("SeoCheckUp", array("url" => "http://miodottore.it/ginecologo/milano"));
 //        \phpformsframework\cms\Cm::widget("SeoCheckUp", array("url" => "https://paginemediche.it/medici-online/search/ginecologo/lombardia/mi/milano"));
@@ -481,17 +621,13 @@ class PageHtml extends Mappable
     }
 
 
-
-    protected function getAsset($what, $type)
+    /**
+     * @param string $what
+     * @param string $type
+     * @return string
+     */
+    protected function getAsset(string $what, string $type) : string
     {
-        $asset = null;
-        foreach ((array) $what as $name) {
-            $asset = Resource::get($name, $type);
-            if ($asset) {
-                break;
-            }
-        }
-
-        return str_replace(Constant::DISK_PATH, "", $asset);
+        return str_replace(Constant::DISK_PATH, "", Resource::get($what, $type));
     }
 }

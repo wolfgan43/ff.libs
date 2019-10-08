@@ -29,58 +29,56 @@ namespace phpformsframework\libs\dto;
 class DataHtml extends DataAdapter
 {
     const CONTENT_TYPE = "text/html";
-    /**
-     * @var null|string
-     */
-    public $html = null;
 
     /**
-     * @var null|array
+     * @param string $key
+     * @return string|null
      */
-    public $js = null;
-
-    /**
-     * @var null|array
-     */
-    public $css = null;
-
-    /**
-     * @var null|array
-     */
-    public $fonts = null;
-
-    /**
-     * @param string
-     * @return $this
-     */
-    public function html($value)
+    public function getJs(string $key): ?string
     {
-        $this->set("html", $value);
-
-        return $this;
+        return (isset($this->js[$key])
+            ? $this->js[$key]
+            : null
+        );
     }
 
     /**
-     * @param array $values
-     * @return $this
+     * @param string $key
+     * @return string|null
      */
-    public function css($values = null)
+    public function getCss(string $key): ?string
     {
-        $this->set("css", $values);
-
-        return $this;
+        return (isset($this->css[$key])
+            ? $this->css[$key]
+            : null
+        );
     }
 
     /**
-     * @param array $values
-     * @return $this
+     * @param string $key
+     * @return string|null
      */
-    public function js($values)
+    public function getImage(string $key): ?string
     {
-        $this->set("js", $values);
-
-        return $this;
+        return (isset($this->images[$key])
+            ? $this->images[$key]
+            : null
+        );
     }
+
+    /**
+     * @param string $key
+     * @return string|null
+     */
+    public function getFont(string $key): ?string
+    {
+        return (isset($this->fonts[$key])
+            ? $this->fonts[$key]
+            : null
+        );
+    }
+
+
 
     /**
      * @return null|string

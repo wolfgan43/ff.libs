@@ -27,7 +27,6 @@ namespace phpformsframework\libs\tpl;
 
 use phpformsframework\libs\dto\DataHtml;
 use phpformsframework\libs\EndUserManager;
-use phpformsframework\optimizer\Resources;
 
 /**
  * Class Widget
@@ -46,10 +45,9 @@ abstract class Widget
     private static $grid_system                 = null;
     private static $tpl                         = null;
 
-    private $name                               = null;
-
     protected $skin                             = null;
 
+    private $name                               = null;
     private $config                             = array();
 
     /**
@@ -86,7 +84,7 @@ abstract class Widget
     private function getPage() : DataHtml
     {
         return Page::getInstance("html")
-            ->addAssets($this->js, $this->css)
+            ->injectAssets($this)
             ->addContent($this->html)
             ->render();
     }
@@ -109,15 +107,7 @@ abstract class Widget
         return self::$singleton[$class_name];
     }
 
-    /**
-     * @param DataHtml $widget
-     */
-    private function inject(DataHtml $widget) : void
-    {
-        $this->js                               = $widget->js;
-        $this->css                              = $widget->css;
-        $this->html                             = $widget->html;
-    }
+
 
     /**
      * @return string
@@ -143,17 +133,17 @@ abstract class Widget
      * @param string|DataHtml $name
      * @param array $data
      */
-    protected function view($name = "index", array $data = array()) : void
+    protected function view($name, array $data = array()) : void
     {
         if (is_object($name)) {
-            $this->inject($name);
+            $this->injectAssets($name);
         } else {
             $widget_name                            = $this->getSkin();
             $view                                   = new View();
 
             $resources                              = $this->getResources();
-            $this->addJs($widget_name, $resources->js[$name]);
-            $this->addCss($widget_name, $resources->css[$name]);
+            $this->addJs($widget_name, $resources->getJs($name));
+            $this->addCss($widget_name, $resources->getCss($name));
 
             $this->html                             = $view
                                                         ->fetch($resources->html[$name])
@@ -172,27 +162,38 @@ abstract class Widget
     public function render(string $return = null) : DataHtml
     {
         $this->controller($this->getConfig(), $this->request()->method());
-
+        if (!$this->html) {
+            $this->view("index", $this->getConfig());
+        }
         self::stopwatch("widget/" . $this->name);
 
-        $output                                     = new DataHtml();
         switch ($return) {
             case "snippet":
-                $output                             = $this->getSnippet();
+                $output                             = null; //$this->getSnippet();
                 break;
             case "page":
                 $output                             = $this->getPage();
                 break;
             default:
-                $output
-                    ->html($this->html)
-                    ->css($this->css)
-                    ->js($this->js);
+                $output                             = $this->toDataHtml();
         }
 
         return $output;
     }
 
+    /**
+     * @return DataHtml
+     */
+    private function toDataHtml() : DataHtml
+    {
+        return new DataHtml([
+            "js"        => $this->js,
+            "css"       => $this->css,
+            "fonts"     => $this->fonts,
+            "images"    => $this->images,
+            "html"      => $this->html
+        ]);
+    }
     /**
      * @return FrameworkCss|null
      */

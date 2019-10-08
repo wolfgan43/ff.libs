@@ -28,6 +28,10 @@ namespace phpformsframework\libs;
 
 use Exception;
 
+/**
+ * Class Router
+ * @package phpformsframework\libs
+ */
 class Router implements Configurable, Dumpable
 {
     const ERROR_BUCKET                                      = "routing";
@@ -49,7 +53,11 @@ class Router implements Configurable, Dumpable
     private static $sorted                                  = false;
     private static $target                                  = null;
 
-    public static function regexp($rule)
+    /**
+     * @param string $rule
+     * @return string
+     */
+    public static function regexp(string $rule) : string
     {
         return "#" . (
             strpos($rule, "[") === false && strpos($rule, "^") === false && strpos($rule, "$") === false && strpos($rule, "(") === false
@@ -64,7 +72,7 @@ class Router implements Configurable, Dumpable
      * @param dto\ConfigRules $configRules
      * @return dto\ConfigRules
      */
-    public static function loadConfigRules($configRules)
+    public static function loadConfigRules(dto\ConfigRules $configRules) : dto\ConfigRules
     {
         return $configRules
             ->add("router");
@@ -111,19 +119,23 @@ class Router implements Configurable, Dumpable
         }
 
         return array(
-            "routes" => self::$routes,
-            "rules" => self::$rules
-        );
-    }
-    public static function dump()
-    {
-        return array(
-            "routes" => self::$routes,
-            "rules" => self::$rules
+            "routes"    => self::$routes,
+            "rules"     => self::$rules
         );
     }
 
-    public static function find($path, $source = null)
+    /**
+     * @return array
+     */
+    public static function dump() : array
+    {
+        return array(
+            "routes"    => self::$routes,
+            "rules"     => self::$rules
+        );
+    }
+
+    public static function find(string $path, string $source = null)
     {
         $target                                             = $path . ":" . $source;
         if (!isset(self::$cache[$target])) {
@@ -138,7 +150,10 @@ class Router implements Configurable, Dumpable
         return self::$cache[$target];
     }
 
-    public static function run($path = null)
+    /**
+     * @param string|null $path
+     */
+    public static function run(string $path = null) : void
     {
         $rule = (
             $path
@@ -173,7 +188,10 @@ class Router implements Configurable, Dumpable
         Response::sendError(404);
     }
 
-    private static function runWebRoot($path)
+    /**
+     * @param string $path
+     */
+    private static function runWebRoot(string $path) : void
     {
         $webroot = Config::webRoot();
         if ($webroot) {
@@ -203,18 +221,26 @@ class Router implements Configurable, Dumpable
     {
         //@todo to implement
     }
-    private static function addRules($rules)
+
+    /**
+     * @param array $rules
+     */
+    private static function addRules(array $rules) : void
     {
-        if (is_array($rules) && count($rules)) {
-            foreach ($rules as $path => $params) {
-                self::addRule($path, $params);
-            }
+        foreach ($rules as $path => $params) {
+            self::addRule($path, $params);
         }
     }
 
-    private static function addRule($path, $params, $priority = null, $redirect = false)
+    /**
+     * @param string $path
+     * @param array|null $params
+     * @param int|null $priority
+     * @param bool $redirect
+     */
+    private static function addRule(string $path, array $params = null, int $priority = null, bool $redirect = false) : void
     {
-        $rule                           = false;
+        $rule                           = null;
         $source                         = null;
         $destination                    = null;
         if (is_array($params)) {
@@ -253,7 +279,10 @@ class Router implements Configurable, Dumpable
         }
     }
 
-    private static function execute($script)
+    /**
+     * @param string $script
+     */
+    private static function execute(string $script) : void
     {
         /*
          * Anti injection, prevent error fs
@@ -264,7 +293,12 @@ class Router implements Configurable, Dumpable
         exit;
     }
 
-    private static function setRoutes($source, $rule)
+    /**
+     * @param string $source
+     * @param array|null $rule
+     * @return bool
+     */
+    private static function setRoutes(string $source, array $rule = null) : bool
     {
         $key = rtrim(rtrim(rtrim(ltrim($source, "^"), "$"), "*"), DIRECTORY_SEPARATOR);
         if (strpos($key, "*") === false && strpos($key, "+") === false && strpos($key, "(") === false && strpos($key, "[") === false) {
@@ -272,10 +306,14 @@ class Router implements Configurable, Dumpable
             return true;
         }
 
-        return null;
+        return false;
     }
 
-    private static function getPriority($priority = null)
+    /**
+     * @param int|null $priority
+     * @return int
+     */
+    private static function getPriority(int $priority = null) : int
     {
         if ($priority === null) {
             $priority = Router::PRIORITY_DEFAULT;
@@ -286,23 +324,24 @@ class Router implements Configurable, Dumpable
             : constant("Router::PRIORITY_" . strtoupper($priority))
         );
     }
-    private static function replaceMatches($matches, $in)
+    private static function replaceMatches(array $matches, $in)
     {
-        if (is_array($matches)) {
-            foreach ($matches as $key => $match) {
-                if (is_array($in)) {
-                    foreach ($in as $i => $value) {
-                        $in[$i]         = str_replace('$' . $key, $match, $value);
-                    }
-                } else {
-                    $in                 = str_replace('$' . $key, $match, $in);
+        foreach ($matches as $key => $match) {
+            if (is_array($in)) {
+                foreach ($in as $i => $value) {
+                    $in[$i]             = str_replace('$' . $key, $match, $value);
                 }
+            } else {
+                $in                     = str_replace('$' . $key, $match, $in);
             }
         }
 
         return $in;
     }
 
+    /**
+     *
+     */
     private static function sort()
     {
         if (!self::$sorted) {
@@ -310,7 +349,12 @@ class Router implements Configurable, Dumpable
             self::$sorted = true;
         }
     }
-    private static function process($path)
+
+    /**
+     * @param string $path
+     * @return array|null
+     */
+    private static function process(string $path) : ?array
     {
         Debug::stopWatch("router/process");
 
@@ -355,9 +399,13 @@ class Router implements Configurable, Dumpable
         return $res;
     }
 
-
-
-    public static function caller($class_name, $method, $params)
+    /**
+     * @param string $class_name
+     * @param string $method
+     * @param array $params
+     * @return mixed|null
+     */
+    public static function caller(string $class_name, string $method, array $params)
     {
         $output                                                     = null;
         if ($class_name) {

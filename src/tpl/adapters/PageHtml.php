@@ -29,7 +29,6 @@ use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dir;
 use phpformsframework\libs\dto\DataHtml;
-use phpformsframework\libs\Env;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Mappable;
@@ -39,6 +38,7 @@ use phpformsframework\libs\Request;
 use phpformsframework\libs\Response;
 use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\storage\Media;
+use phpformsframework\libs\tpl\AssetsManager;
 use phpformsframework\libs\tpl\Gridsystem;
 use phpformsframework\libs\tpl\Resource;
 use phpformsframework\libs\tpl\View;
@@ -49,14 +49,13 @@ use phpformsframework\libs\tpl\View;
  */
 class PageHtml extends Mappable
 {
+    use AssetsManager;
+
     const NEWLINE                               = "\n";
     const MAIN_CONTENT                          = "content";
 
     private $encoding                           = Constant::ENCODING;
     private $path                               = null;
-    protected $css                              = array();
-    protected $js                               = array();
-    protected $fonts                            = array();
     private $title                              = null;
     private $description                        = null;
     private $lang                               = null;
@@ -128,87 +127,6 @@ class PageHtml extends Mappable
     }
 
     /**
-     * @param array|null $js
-     * @param array|null $css
-     * @param array|null $fonts
-     * @return PageHtml
-     */
-    public function addAssets(array $js = null, array $css = null, array $fonts = null) : PageHtml
-    {
-        if (is_array($js) && count($js)) {
-            foreach ($js as $key => $url) {
-                $this->addJs($key, $url);
-            }
-        }
-        if (is_array($css) && count($css)) {
-            foreach ($css as $key => $url) {
-                $this->addCss($key, $url);
-            }
-        }
-        if (is_array($fonts) && count($fonts)) {
-            foreach ($fonts as $key => $url) {
-                $this->addFont($key, $url);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @param string $key
-     * @param string $url
-     * @return PageHtml
-     */
-    public function addJs(string $key, string $url) : PageHtml
-    {
-        $this->js[$key]                         = $this->mask($url);
-
-        return $this;
-    }
-
-    /**
-     * @param string $key
-     * @param string $url
-     * @return PageHtml
-     */
-    public function addCss(string $key, string $url) : PageHtml
-    {
-        $this->css[$key]                        = $this->mask($url);
-
-        return $this;
-    }
-
-    /**
-     * @param string $key
-     * @param string $url
-     * @return PageHtml
-     */
-    public function addFont(string $key, string $url) : PageHtml
-    {
-        $this->fonts[$key]                      = $this->mask($url);
-
-        return $this;
-    }
-
-    /**
-     * @param string $url
-     * @return string
-     */
-    private function mask(string $url) : string
-    {
-        $env                                    = Env::get();
-        $env["{"]                               = "";
-        $env["}"]                               = "";
-
-        $url                                    = str_ireplace(array_keys($env), array_values($env), $url);
-
-        return (strpos($url, Constant::DISK_PATH) === 0
-            ? Media::getUrl($url)
-            : $url
-        );
-    }
-
-    /**
      * @param string $key
      * @param string $content
      * @param string $type
@@ -275,7 +193,7 @@ class PageHtml extends Mappable
         if ($obj instanceof View) {
             $html                               = $obj->display();
         } elseif ($obj instanceof DataHtml) {
-            $this->addAssets($obj->js, $obj->css, $obj->fonts);
+            $this->injectAssets($obj);
             $html                               = $obj->html;
         }
 
@@ -615,7 +533,7 @@ class PageHtml extends Mappable
         }
 
         $dataHtml = new DataHtml();
-        $dataHtml->html($this->parseHtml());
+        $dataHtml->html = $this->parseHtml();
 
         return $dataHtml;
     }

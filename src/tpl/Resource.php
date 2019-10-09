@@ -30,6 +30,7 @@ use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\Config;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dir;
+use phpformsframework\libs\dto\DataHtml;
 use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Mappable;
@@ -114,7 +115,12 @@ class Resource extends Mappable implements Dumpable
 
         return $file;
     }
-    public static function widget($name)
+
+    /**
+     * @param string $name
+     * @return DataHtml
+     */
+    public static function widget(string $name) : DataHtml
     {
         if (!self::$singleton) {
             self::$singleton = new Resource();

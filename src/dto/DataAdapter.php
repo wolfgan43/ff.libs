@@ -113,6 +113,15 @@ abstract class DataAdapter
     abstract public function output();
 
     /**
+     * DataAdapter constructor.
+     * @param array $data
+     */
+    public function __construct(array $data = array())
+    {
+        $this->fill($data);
+    }
+
+    /**
      * @return array
      */
     protected function get_vars()

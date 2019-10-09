@@ -30,6 +30,10 @@ use phpformsframework\libs\Dir;
 use phpformsframework\libs\Env;
 use phpformsframework\libs\Kernel;
 
+/**
+ * Class Locale
+ * @package phpformsframework\libs\international
+ */
 class Locale implements Configurable
 {
     private static $lang                                            = null;
@@ -38,47 +42,90 @@ class Locale implements Configurable
     private static $countryDefault                                  = null;
     private static $locale                                          = null;
 
-    public static function isMultiLang()
+    /**
+     * @return bool
+     */
+    public static function isMultiLang() : bool
     {
         return count(Kernel::$Environment::ACCEPTED_LANG) > 1;
     }
 
-    public static function getLangDefault($key = null)
+    /**
+     * @param string $key
+     * @return string
+     */
+    public static function getLangDefault(string $key) : ?string
     {
-        return ($key
+        return (isset(self::$langDefault[$key])
             ? self::$langDefault[$key]
-            : self::$langDefault
+            : null
         );
     }
-    public static function getLang($key = null)
+
+    /**
+     * @param string $key
+     * @return string|null
+     */
+    public static function getLang(string $key) : ?string
     {
-        return ($key
+        return (isset(self::$lang[$key])
             ? self::$lang[$key]
-            : self::$lang
+            : null
         );
     }
-    public static function getLangs($key = null)
+
+    /**
+     * @param string $key
+     * @return string|null
+     */
+    public static function getCountryDefault(string $key) : ?string
+    {
+        return (isset(self::$countryDefault[$key])
+            ? self::$countryDefault[$key]
+            : null
+        );
+    }
+
+    /**
+     * @param string $key
+     * @return string|null
+     */
+    public static function getCountry(string $key) : ?string
+    {
+        return (isset(self::$country[$key])
+            ? self::$country[$key]
+            : null
+        );
+    }
+
+    /**
+     * @param string|null $key
+     * @return array
+     */
+    public static function getLangs(string $key = null) : array
     {
         return ($key
             ? self::$locale["lang"][$key]
             : self::$locale["lang"]
         );
     }
-    public static function getCountryDefault($key = null)
+
+    /**
+     * @param string|null $key
+     * @return array
+     */
+    public static function getCountries(string $key = null) : array
     {
         return ($key
-            ? self::$countryDefault[$key]
-            : self::$countryDefault
+            ? self::$locale["country"][$key]
+            : self::$locale["country"]
         );
     }
-    public static function getCountry($key = null)
-    {
-        return ($key
-            ? self::$country[$key]
-            : self::$country
-        );
-    }
-    public static function get()
+
+    /**
+     * @return string
+     */
+    public static function get() : string
     {
         return (self::$lang["tiny_code"] == self::$country["code"]
             ? self::$lang["tiny_code"]
@@ -86,8 +133,11 @@ class Locale implements Configurable
         );
     }
 
-
-    public static function setByPath($path)
+    /**
+     * @param string $path
+     * @return string
+     */
+    public static function setByPath(string $path) : string
     {
         $arrPathInfo                                                = explode(DIRECTORY_SEPARATOR, trim($path, DIRECTORY_SEPARATOR), "2");
         $lang_tiny_code                                             = $arrPathInfo[0];
@@ -99,7 +149,10 @@ class Locale implements Configurable
         return $path;
     }
 
-    public static function set($locale)
+    /**
+     * @param string $locale
+     */
+    public static function set(string $locale) : void
     {
         $locale                                                     = str_replace("_", "-", $locale);
         $arrLocale                                                  = explode("-", $locale, 2);
@@ -138,7 +191,7 @@ class Locale implements Configurable
      * @access private
      * @param array $config
      */
-    public static function loadConfig($config)
+    public static function loadConfig(array $config)
     {
         self::$locale                                               = $config["locale"];
         self::$langDefault                                          = $config["langDefault"];
@@ -146,11 +199,10 @@ class Locale implements Configurable
     }
 
     /**
-     * @access private
      * @param array $rawdata
      * @return array
      */
-    public static function loadSchema($rawdata)
+    public static function loadSchema(array $rawdata) : array
     {
         if (is_array($rawdata) && count($rawdata)) {
             $lang_tiny_code                                         = Env::get("LANG_TINY_CODE");
@@ -194,7 +246,10 @@ class Locale implements Configurable
         );
     }
 
-    private static function acceptLanguage($key = null)
+    /**
+     * @return array|null
+     */
+    private static function acceptLanguage() : ?array
     {
         static $res                                                 = null;
 
@@ -218,13 +273,13 @@ class Locale implements Configurable
             }
         }
 
-        return ($key
-            ? $res[$key]
-            : $res
-        );
+        return $res;
     }
 
-    private static function setLang($lang_tiny_code = null)
+    /**
+     * @param string|null $lang_tiny_code
+     */
+    private static function setLang(string $lang_tiny_code = null) : void
     {
         self::$lang                                                 = (
             isset(self::$locale["lang"][$lang_tiny_code])
@@ -232,7 +287,11 @@ class Locale implements Configurable
                                                                         : self::$langDefault
                                                                     );
     }
-    private static function setCountry($country_tiny_code = null)
+
+    /**
+     * @param string|null $country_tiny_code
+     */
+    private static function setCountry(string $country_tiny_code = null) : void
     {
         if (!isset(self::$locale["country"][$country_tiny_code]) && isset(self::$lang["country"])) {
             $country_tiny_code                                      = self::$lang["country"];

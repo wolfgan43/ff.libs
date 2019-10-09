@@ -39,6 +39,8 @@ use phpformsframework\libs\storage\drivers\ImageThumb;
 use phpformsframework\libs\tpl\Resource;
 
 /**
+ * Class Media
+ *
  * Immagine Originale
  * @example http://xoduslab.com/test/demo/domains/skeleton/uploads/mod_article/32/img/tiroide-malfunzionamento-esami.jpg
  *
@@ -65,6 +67,7 @@ use phpformsframework\libs\tpl\Resource;
  * @example Crop automatico: http://xoduslab.com/test/demo/domains/skeleton/static/50-100/mod_article/32/img/tiroide-malfunzionamento-esami.jpg
  * @example Da impostazioni DB (showfiles_modes): http://xoduslab.com/test/demo/domains/skeleton/static/thumb/mod_article/32/img/tiroide-malfunzionamento-esami.jpg
  * @example Cambiando il mime dell'immagine: http://xoduslab.com/test/demo/domains/skeleton/static/thumb-jpg/mod_article/32/img/tiroide-malfunzionamento-esami.png
+ * @package phpformsframework\libs\storage
  */
 class Media implements Configurable
 {
@@ -582,13 +585,18 @@ class Media implements Configurable
         return self::$singleton;
     }
 
-    public function get($pathinfo)
+    /**
+     * @param string $pathinfo
+     */
+    public function get(string $pathinfo) : void
     {
         $this->setPathInfo($pathinfo);
         $status                                                     = null;
         $res                                                        = $this->process();
         $content_type                                               = static::MIMETYPE[$this->pathinfo["extension"]];
-
+        if (!$res) {
+            $status                                                 = 404;
+        }
         if (Error::check(static::ERROR_BUCKET)) {
             $status                                                 = 404;
             $res                                                    = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII=');
@@ -599,7 +607,11 @@ class Media implements Configurable
         Response::sendRawData($res, $content_type, $status);
     }
 
-    public static function getIcon($name, $mode = null)
+    /**
+     * @param string $name
+     * @param string|null $mode
+     */
+    public static function getIcon(string $name, string $mode = null) : void
     {
         $icon = new Media(false);
         $icon->setNoImg($mode, $name);
@@ -609,18 +621,22 @@ class Media implements Configurable
         //da fare con la gestione delle iconde di ffImafge
     }
 
-    public static function getInfo($file)
+    /**
+     * @param string $file
+     * @return array|null
+     */
+    public static function getInfo(string $file) : ?array
     {
         return self::getModeByFile($file);
     }
 
     /**
      * @param string $file
-     * @param null|string $mode
-     * @param null|string $key
+     * @param string|null $mode
+     * @param string|null $key
      * @return array|string
      */
-    public static function getUrl($file, $mode = null, $key = null)
+    public static function getUrl(string $file, string $mode = null, string $key = null)
     {
         $query                                                      = null;
         if ($mode === null && $key === null) {
@@ -657,7 +673,7 @@ class Media implements Configurable
             case "js":
                 $showfiles                                          = Constant::SITE_PATH . static::RENDER_ASSETS_PATH . static::RENDER_SCRIPT_PATH;
                 if (strpos($arrFile["dirname"], $libs_path) === 0) {
-                    $arrFile["filename"]                            = str_replace(DIRECTORY_SEPARATOR, "_", ltrim(substr($arrFile["dirname"], strlen($libs_path)), DIRECTORY_SEPARATOR));
+                    $arrFile["filename"]                            = str_replace(DIRECTORY_SEPARATOR, "_", ltrim(substr($arrFile["dirname"], strlen($libs_path)), DIRECTORY_SEPARATOR)) . "_" . $arrFile["filename"];
                     $arrFile["dirname"]                             = DIRECTORY_SEPARATOR;
                     $query                                          = "?" . filemtime($file); //todo:: genera redirect con Kernel::urlVerify
                 }
@@ -665,7 +681,7 @@ class Media implements Configurable
             case "css":
                 $showfiles                                          = Constant::SITE_PATH . static::RENDER_ASSETS_PATH . static::RENDER_STYLE_PATH;
                 if (strpos($arrFile["dirname"], $libs_path) === 0) {
-                    $arrFile["filename"]                            = str_replace(DIRECTORY_SEPARATOR, "_", ltrim(substr($arrFile["dirname"], strlen($libs_path)), DIRECTORY_SEPARATOR));
+                    $arrFile["filename"]                            = str_replace(DIRECTORY_SEPARATOR, "_", ltrim(substr($arrFile["dirname"], strlen($libs_path)), DIRECTORY_SEPARATOR)) . "_" . $arrFile["filename"];
                     $arrFile["dirname"]                             = DIRECTORY_SEPARATOR;
                     $query                                          = "?" . filemtime($file); //todo:: genera redirect con Kernel::urlVerify
                 }
@@ -696,19 +712,22 @@ class Media implements Configurable
                                                                         , "file"                => $dirfilename
                                                                         , "mode"                => $mode
                                                                     );
-
         return ($key
             ? $pathinfo[$key]
             : $pathinfo
         );
     }
 
-
-    private static function image2base64($path, $ext = "svg")
+    /**
+     * @param string $path
+     * @param string $ext
+     * @return string
+     */
+    private static function image2base64(string $path, string $ext = "svg") : string
     {
         $data = Dir::loadFile($path);
 
-        return 'data:image/' . $ext . ';base64,' . base64_encode($data);
+        return 'data:' . self::MIMETYPE[$ext] . ';base64,' . base64_encode($data);
     }
 
     /**
@@ -758,7 +777,7 @@ class Media implements Configurable
      * @access private
      * @param array $config
      */
-    public static function loadConfig($config)
+    public static function loadConfig(array $config)
     {
         self::$modes                                                = $config["modes"];
     }
@@ -768,7 +787,7 @@ class Media implements Configurable
      * @param array $rawdata
      * @return array
      */
-    public static function loadSchema($rawdata)
+    public static function loadSchema(array $rawdata) : array
     {
         if (is_array($rawdata) && count($rawdata)) {
             $schema                                                 = array();
@@ -787,14 +806,24 @@ class Media implements Configurable
         );
     }
 
-    public static function getMimeTypeByFilename($filename, $default = "text/plain")
+    /**
+     * @param string $filename
+     * @param string $default
+     * @return string
+     */
+    public static function getMimeTypeByFilename(string $filename, string $default = "text/plain") : string
     {
         $ext                                                        = pathinfo($filename, PATHINFO_EXTENSION);
 
         return self::getMimeTypeByExtension($ext, $default);
     }
 
-    public static function getMimeTypeByExtension($ext, $default = "text/plain")
+    /**
+     * @param string $ext
+     * @param string $default
+     * @return string
+     */
+    public static function getMimeTypeByExtension(string $ext, string $default = "text/plain") : string
     {
         $mime                                                       = $default;
         if ($ext) {
@@ -807,7 +836,12 @@ class Media implements Configurable
         return $mime;
     }
 
-    public static function getIconPath($ext = null, $abs = false)
+    /**
+     * @param string|null $ext
+     * @param bool $abs
+     * @return string
+     */
+    public static function getIconPath(string $ext = null, bool $abs = false) : string
     {
         if ($ext) {
             $arrExt                                                 = explode(".", $ext);
@@ -870,7 +904,11 @@ class Media implements Configurable
         return $res;
     }
 
-    private static function getModeByNoImg($basename)
+    /**
+     * @param string $basename
+     * @return string|null
+     */
+    private static function getModeByNoImg(string $basename) : ?string
     {
         $mode                                                       = null;
         $source                                                     = explode(".", strrev($basename), 2);
@@ -914,12 +952,21 @@ class Media implements Configurable
         return $mode;
     }
 
-    private static function getModeAuto($value, $char)
+    /**
+     * @param string $value
+     * @param string $char
+     * @return bool
+     */
+    private static function getModeAuto(string $value, string $char) : bool
     {
         return is_numeric(str_replace($char, "", $value)) && substr_count($value, $char) == 1;
     }
 
-    private static function getModeByFile($file, $key = null)
+    /**
+     * @param string $file
+     * @return array|null
+     */
+    private static function getModeByFile(string $file) : ?array
     {
         $res                                                        = null;
         $source                                                     = pathinfo($file);
@@ -931,23 +978,29 @@ class Media implements Configurable
             $res["basename"]                                        = $res["filename"] . "." . $source["extension"];
         }
 
-        return ($key
-            ? $res[$key]
-            : $res
-        );
+        return $res;
     }
 
-
-    public function __construct($pathinfo = null)
+    /**
+     * Media constructor.
+     * @param string|null $pathinfo
+     */
+    public function __construct(string $pathinfo = null)
     {
         $this->setPathInfo($pathinfo);
     }
 
-    public function resize($mode)
+    /**
+     * @param string $mode
+     */
+    public function resize(string $mode)
     {
     }
 
-    private function resolveSourceIcon($mode = null)
+    /**
+     * @param string|null $mode
+     */
+    private function resolveSrcIcon(string $mode = null) : void
     {
         if ($mode) {
             $icon_name                                              = str_replace("-" . $mode, "", $this->pathinfo["filename"]);
@@ -967,16 +1020,23 @@ class Media implements Configurable
         }
     }
 
-
-    private function checkPath($root_dir)
+    /**
+     * @param string $root_dir
+     */
+    private function checkPath(string $root_dir) : void
     {
         if (strpos($this->pathinfo["dirname"], $root_dir) !== 0) {
             Response::sendError(404);
         }
     }
-    public function process($mode = null)
+
+    /**
+     * @param string|null $mode
+     * @return string|null
+     */
+    public function process(string $mode = null) : ?string
     {
-        $this->resolveSourceIcon($mode);
+        $this->resolveSrcIcon($mode);
         if (!$this->filesource) {
             $base_path                                              = Constant::LIBS_DISK_PATH;
             Response::setContentType($this->pathinfo["extension"]);
@@ -989,16 +1049,17 @@ class Media implements Configurable
                 case "js":
                     $this->checkPath(static::RENDER_SCRIPT_PATH);
 
-                    $source_file                                    = str_replace(static::RENDER_SCRIPT_PATH, "", $this->pathinfo["dirname"]) . DIRECTORY_SEPARATOR . str_replace("_", DIRECTORY_SEPARATOR, $this->pathinfo["filename"]) . "/index.js"; //@todo: da togliere causa problemi con le widget
+                    $source_file                                    = str_replace(static::RENDER_SCRIPT_PATH, "", $this->pathinfo["dirname"]) . DIRECTORY_SEPARATOR . str_replace("_", DIRECTORY_SEPARATOR, $this->pathinfo["filename"]) . ".js";
                     break;
                 case "css":
                     $this->checkPath(static::RENDER_STYLE_PATH);
 
-                    $source_file                                    = str_replace(static::RENDER_STYLE_PATH, "", $this->pathinfo["dirname"]) . DIRECTORY_SEPARATOR . str_replace("_", DIRECTORY_SEPARATOR, $this->pathinfo["filename"]) . "/index.css"; //@todo: da togliere causa problemi con le widget
+                    $source_file                                    = str_replace(static::RENDER_STYLE_PATH, "", $this->pathinfo["dirname"]) . DIRECTORY_SEPARATOR . str_replace("_", DIRECTORY_SEPARATOR, $this->pathinfo["filename"]) . ".css";
                     break;
                 default:
                     $source_file                                    = null;
             }
+
             return ($source_file
                 ? $this->staticProcess($source_file, $base_path)
                 : $this->renderProcess($mode)
@@ -1016,7 +1077,10 @@ class Media implements Configurable
         }
     }
 
-    public function setPathInfo($path = null)
+    /**
+     * @param string|null $path
+     */
+    public function setPathInfo(string $path = null) : void
     {
         if ($path) {
             if (strpos($path, $this::RENDER_MEDIA_PATH) === 0) {
@@ -1035,7 +1099,13 @@ class Media implements Configurable
             $this->pathinfo["orig"]                                 = $path;
         }
     }
-    private function staticProcess($source_file, $base_path = Constant::LIBS_DISK_PATH)
+
+    /**
+     * @param string $source_file
+     * @param string $base_path
+     * @return string|null
+     */
+    private function staticProcess(string $source_file, string $base_path = Constant::LIBS_DISK_PATH) : ?string
     {
         $res                                                        = null;
 
@@ -1055,7 +1125,12 @@ class Media implements Configurable
 
         return $res;
     }
-    private function renderProcess($mode = null)
+
+    /**
+     * @param string|null $mode
+     * @return string
+     */
+    private function renderProcess(string $mode = null) : string
     {
         $this->clear();
         $this->waterMark();
@@ -1097,7 +1172,7 @@ class Media implements Configurable
             $this->renderNoImg($final_file, $status);
         }
 
-        return null;
+        return $final_file;
     }
 
     private function clear()
@@ -1110,6 +1185,7 @@ class Media implements Configurable
         $this->filesource                                           = null;
         $this->final                                                = null;
     }
+
     private function waterMark()
     {
         $this->wmk                                                  = array();
@@ -1129,17 +1205,28 @@ class Media implements Configurable
         }
     }
 
-    private function basepathAsset()
+    /**
+     * @return string
+     */
+    private function basepathAsset() : string
     {
         return str_replace($this->filesource, "", Resource::get($this->source["filename"], "images"));
     }
-    private function basepathMedia()
+
+    /**
+     * @return string
+     */
+    private function basepathMedia() : string
     {
         return Constant::UPLOAD_DISK_PATH;
     }
-    private function findSource($mode = null)
+
+    /**
+     * @param string|null $mode
+     */
+    private function findSource(string $mode = null)
     {
-        $this->resolveSourcePath($mode);
+        $this->resolveSrcPath($mode);
         if ($this->filesource) {
             $this->basepath = (
                 $this->pathinfo["render"] == static::RENDER_ASSETS_PATH
@@ -1149,7 +1236,11 @@ class Media implements Configurable
         }
     }
 
-    private function makeFinalFile($ext = null)
+    /**
+     * @param string|null $ext
+     * @return array|null
+     */
+    private function makeFinalFile(string $ext = null) : ?array
     {
         if ($this->filesource) {
             $str_wmk_file                                           = "";
@@ -1190,7 +1281,11 @@ class Media implements Configurable
         return $this->final;
     }
 
-    private function getFinalFile($abs = true)
+    /**
+     * @param bool $abs
+     * @return string
+     */
+    private function getFinalFile(bool $abs = true) : string
     {
         $final_path                                                 = false;
 
@@ -1213,24 +1308,27 @@ class Media implements Configurable
         return $final_path;
     }
 
-    private function createImage($params)
+    /**
+     * @param array $params
+     */
+    private function createImage(array $params) : void
     {
         $default_params                                             = array(
-                                                                        "dim_x"                     => null
-                                                                        , "dim_y"                   => null
-                                                                        , "resize"                  => false
-                                                                        , "when"                    => "ever"
-                                                                        , "alignment"               => "center"
-                                                                        , "mode"                    => "proportional"
-                                                                        , "transparent"             => true
-                                                                        , "bgcolor"                 => "FFFFFF"
-                                                                        , "alpha"                   => 0
-                                                                        , "format"                  => "jpg"
-                                                                        , "frame_size"              => 0
-                                                                        , "frame_color"             => "FFFFFF"
-                                                                        , "wmk_enable"              => false
-                                                                        , "enable_thumb_word_dir"   => false
-                                                                        , "enable_thumb_word_file"  => false
+                                                                        "dim_x"                     => null,
+                                                                        "dim_y"                     => null,
+                                                                        "resize"                    => false,
+                                                                        "when"                      => "ever",
+                                                                        "alignment"                 => "center",
+                                                                        "mode"                      => "proportional",
+                                                                        "transparent"               => true,
+                                                                        "bgcolor"                   => "FFFFFF",
+                                                                        "alpha"                     => 0,
+                                                                        "format"                    => "jpg",
+                                                                        "frame_size"                => 0,
+                                                                        "frame_color"               => "FFFFFF",
+                                                                        "wmk_enable"                => false,
+                                                                        "enable_thumb_word_dir"     => false,
+                                                                        "enable_thumb_word_file"    => false
                                                                     );
         $params                                                     = array_replace_recursive($default_params, $params);
         $extend                                                     = true;
@@ -1381,7 +1479,11 @@ class Media implements Configurable
 
         $cCanvas->process($final_file);
     }
-    private function basepathCache()
+
+    /**
+     * @return string
+     */
+    private function basepathCache() : string
     {
         return ($this->pathinfo["render"] == static::RENDER_ASSETS_PATH
             ? Dir::findCachePath("assets")
@@ -1389,7 +1491,11 @@ class Media implements Configurable
         );
     }
 
-    private function getModeWizard($mode)
+    /**
+     * @param string $mode
+     * @return array|null
+     */
+    private function getModeWizard(string $mode) : ?array
     {
         $char                                                       = strtolower(preg_replace('/[0-9]+/', '', $mode));
         $wizard_mode                                                = array(
@@ -1435,6 +1541,9 @@ class Media implements Configurable
         return $wizard_mode;
     }
 
+    /**
+     * @return array|bool
+     */
     private function getMode()
     {
         if (!$this->mode) {
@@ -1467,8 +1576,11 @@ class Media implements Configurable
         return $setting;
     }
 
-
-    private function processFinalFile($isIcon = false)
+    /**
+     * @param bool $isIcon
+     * @return string|null
+     */
+    private function processFinalFile(bool $isIcon = false) : ?string
     {
         $final_file                                                 = null;
 
@@ -1522,11 +1634,11 @@ class Media implements Configurable
     }
 
     /**
-     * @param null $mode
-     * @param null $icon_name
+     * @param string|null $mode
+     * @param string|null $icon_name
      * @return bool
      */
-    private function setNoImg($mode = null, $icon_name = null)
+    private function setNoImg(string $mode = null, string $icon_name = null) : bool
     {
         if (!$icon_name) {
             $icon_name                                              = (
@@ -1551,7 +1663,11 @@ class Media implements Configurable
         return (bool) $icon;
     }
 
-    private function renderNoImg($final_file, $code = null)
+    /**
+     * @param string $final_file
+     * @param int|null $code
+     */
+    private function renderNoImg(string $final_file, int $code = null)
     {
         $this->headers["cache"]                                     = "must-revalidate";
         $this->headers["filename"]                                  = $this->pathinfo["basename"];
@@ -1560,12 +1676,20 @@ class Media implements Configurable
         if ($code) {
             Response::httpCode($code);
         }
-
+        //todo: https://local.hcore.app/assets/images/nobrand-100x50.png non funziona cancellando la cache
         $this->sendHeaders($final_file, $this->headers);
         readfile($final_file);
         exit;
     }
-    private function overrideSourcePath(&$source, $image, $sep, $mode = null)
+
+    /**
+     * @param array $source
+     * @param array $image
+     * @param string $sep
+     * @param string|null $mode
+     * @return string
+     */
+    private function overrideSrcPath(array &$source, array $image, string $sep, string $mode = null) : string
     {
         $file 					                                    = explode("-" . $sep . "-", $image["filename"]);
         $source["extension"] 	                                    = $sep;
@@ -1576,7 +1700,11 @@ class Media implements Configurable
             : $file[1]
         );
     }
-    private function resolveSourcePath($mode = null)
+
+    /**
+     * @param string|null $mode
+     */
+    private function resolveSrcPath(string $mode = null) : void
     {
         $image                                                      = $this->pathinfo;
 
@@ -1585,11 +1713,11 @@ class Media implements Configurable
         $source["filename"] 	                                    = $image["filename"];
 
         if (strpos($image["filename"], "-png-") !== false) {
-            $mode                                                   = $this->overrideSourcePath($source, $image, "png", $mode);
+            $mode                                                   = $this->overrideSrcPath($source, $image, "png", $mode);
         } elseif (strpos($image["filename"], "-jpg-") !== false) {
-            $mode                                                   = $this->overrideSourcePath($source, $image, "jpg", $mode);
+            $mode                                                   = $this->overrideSrcPath($source, $image, "jpg", $mode);
         } elseif (strpos($image["filename"], "-jpeg-") !== false) {
-            $mode                                                   = $this->overrideSourcePath($source, $image, "jpeg", $mode);
+            $mode                                                   = $this->overrideSrcPath($source, $image, "jpeg", $mode);
         } elseif (!$mode) {
             $res                                                    = $this->getModeByFile($source["dirname"] . DIRECTORY_SEPARATOR . $image["filename"] . "." . $source["extension"]);
             if ($res) {

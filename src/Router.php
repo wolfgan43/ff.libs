@@ -82,7 +82,7 @@ class Router implements Configurable, Dumpable
      * @access private
      * @param array $config
      */
-    public static function loadConfig($config)
+    public static function loadConfig(array $config)
     {
         self::$routes                                       = $config["routes"];
         self::$rules                                        = $config["rules"];
@@ -93,7 +93,7 @@ class Router implements Configurable, Dumpable
      * @param array $rawdata
      * @return array
      */
-    public static function loadSchema($rawdata)
+    public static function loadSchema(array $rawdata) : array
     {
         $schema                                             = null;
         if (is_array($rawdata) && count($rawdata)) {

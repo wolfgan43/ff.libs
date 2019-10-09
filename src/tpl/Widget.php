@@ -122,9 +122,9 @@ abstract class Widget
     }
 
     /**
-     * @return object|null
+     * @return DataHtml
      */
-    protected function getResources() : ?object
+    protected function getResources() : DataHtml
     {
         return Resource::widget($this->getSkin());
     }

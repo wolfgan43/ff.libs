@@ -29,6 +29,10 @@ use phpformsframework\libs\storage\Filemanager;
 use ReflectionClass;
 use Exception;
 
+/**
+ * Class Debug
+ * @package phpformsframework\libs
+ */
 class Debug
 {
     const ERROR_BUCKET                      = "exception";
@@ -40,6 +44,9 @@ class Debug
 
     private static $debug                   = array();
 
+    /**
+     * Debug constructor.
+     */
     public function __construct()
     {
         self::$app_start                   = microtime(true);
@@ -74,15 +81,19 @@ class Debug
         }
     }
 
-    public static function isEnabled()
+    /**
+     * @return bool
+     */
+    public static function isEnabled() : bool
     {
         return Kernel::$Environment::DEBUG;
     }
+
     /**
      * @param string $bucket
      * @return float|null
      */
-    public static function stopWatch($bucket)
+    public static function stopWatch(string $bucket) : ?float
     {
         if (isset(self::$exTime[$bucket])) {
             $bucket                         = $bucket . "-" . (count(self::$exTime) + 1);
@@ -98,7 +109,11 @@ class Debug
         }
     }
 
-    public static function exTime($bucket)
+    /**
+     * @param $bucket
+     * @return string|null
+     */
+    public static function exTime(string $bucket) : ?string
     {
         return (isset(self::$startWatch[$bucket])
             ? number_format(self::$startWatch[$bucket], 3, '.', '')
@@ -106,13 +121,19 @@ class Debug
         );
     }
 
-    public static function exTimeApp()
+    /**
+     * @return string
+     */
+    public static function exTimeApp() : string
     {
         $duration                           = microtime(true) - self::$app_start;
         return number_format($duration, 3, '.', '');
     }
 
-    public static function registerErrors()
+    /**
+     *
+     */
+    public static function registerErrors() : void
     {
         declare(ticks=1);
 
@@ -160,15 +181,24 @@ class Debug
             }
         });
     }
-    public static function dumpLog($filename, $data = null)
+
+    /**
+     * @param string $filename
+     * @param array|null $data
+     */
+    public static function dumpLog(string $filename, array $data = null) : void
     {
-        $trace                                  = self::get_backtrace();
+        $trace                                  = self::getBacktrace();
 
         $data["source"]                         = $trace;
         Log::write($data, $filename);
     }
 
-    public static function dumpCaller($note = null, $backtrace = null)
+    /**
+     * @param string|null $note
+     * @param array|null $backtrace
+     */
+    public static function dumpCaller(string $note = null, array $backtrace = null) : void
     {
         if (Kernel::$Environment::PROFILING) {
             $debug_backtrace                    = (
@@ -177,29 +207,31 @@ class Debug
                                                     : debug_backtrace()
                                                 );
             foreach ($debug_backtrace as $i => $trace) {
-                if ($i) {
-                    if (basename($trace["file"]) == "Debug.php") {
-                        continue;
-                    }
-                    if (basename($trace["file"]) == "cm.php") {
-                        break;
-                    }
+                if (basename($trace["file"]) == "Debug.php") {
+                    continue;
+                }
+                if (basename($trace["file"]) == "cm.php") {
+                    break;
+                }
 
-                    if ($trace["file"]) {
-                        $res = $trace["line"] . ' Line in: ' . str_replace(Constant::DISK_PATH, "", $trace["file"]);
-                    } else {
-                        $res = 'Func: ' . $trace["function"];
-                    }
-                    if ($res) {
-                        self::$debug[] = $res . "\n" . str_repeat(" ", 8) . (is_array($note) ? print_r($note, true) : $note);
-                        break;
-                    }
+                if ($trace["file"]) {
+                    $res = $trace["line"] . ' Line in: ' . str_replace(Constant::DISK_PATH, "", $trace["file"]);
+                } else {
+                    $res = 'Func: ' . $trace["function"];
+                }
+                if ($res) {
+                    self::$debug[] = $res . "\n" . str_repeat(" ", 8) . (is_array($note) ? print_r($note, true) : $note);
+                    break;
                 }
             }
         }
     }
 
-    private static function get_backtrace($backtrace = null)
+    /**
+     * @param array|null $backtrace
+     * @return array|null
+     */
+    private static function getBacktrace(array $backtrace = null) : ?array
     {
         $res                                = null;
         $debug_backtrace                    = (
@@ -277,7 +309,7 @@ class Debug
     private static function dumpCommandLine(string $error_message = null) : string
     {
         $cli = null;
-        $debug_backtrace = array_reverse(self::get_backtrace());
+        $debug_backtrace = array_reverse(self::getBacktrace());
         if (isset($debug_backtrace[0]["file"]) && basename($debug_backtrace[0]["file"]) == "Error.php") {
             unset($debug_backtrace[0]);
         }
@@ -312,14 +344,14 @@ class Debug
      */
     public static function dump(string $error_message = null, bool $return = false) : ?string
     {
-        if (self::isCommandLineInterface() || Request::accept() != "text/html") {
+        if (Request::isCli() || Request::accept() != "text/html") {
             echo self::dumpCommandLine($error_message);
             return null;
         }
 
         $html_backtrace                     = "";
         $html_dumpable                      = "";
-        $debug_backtrace                    = self::get_backtrace();
+        $debug_backtrace                    = self::getBacktrace();
         $collapse = (
             Request::isAjax() && Request::method() != "GET"
             ? ''
@@ -476,7 +508,7 @@ class Debug
                 . '<span style="padding:15px;">CPU: ' . $benchmark["cpu"] . '</span>';
         }
 
-        $html .= '<hr />' . '<center>'
+        $html .= '<hr />' . '<div style="text-align: center;">'
             . '<span style="padding:15px;">BackTrace: ' . count($debug_backtrace) . '</span>'
             . '<span style="padding:15px;">Errors: ' . $errors_count . '</span>'
             . '<span style="padding:15px;">Includes: ' . $included_files_count . ' (' . $included_files_autoload_count . ' autoloads)' . '</span>'
@@ -485,7 +517,7 @@ class Debug
             . '<span style="padding:15px;">DB Query: ' . $db_query_count . ' (' . $db_query_cache_count . ' cached)'. '</span>'
             . '<span style="padding:15px;">ExTime: ' . self::exTimeApp() . '</span>'
             . $html_benchmark
-            . '</center>';
+            . '</div>';
 
 
 
@@ -494,7 +526,7 @@ class Debug
         $html   .= '<tr>'         . '<th>BACKTRACE</th>'      . '<th>VARIABLES</th>'           . '</tr>';
         $html   .= '</thead>';
         $html   .= '<tbody>';
-        $html   .= '<tr>'         . '<td valign="top">' . $html_backtrace . '</td>'  . '<td valign="top">' . $html_dumpable . '</td>'  . '</tr>';
+        $html   .= '<tr>'         . '<td style="vertical-align: text-top">' . $html_backtrace . '</td>'  . '<td style="vertical-align: text-top">' . $html_dumpable . '</td>'  . '</tr>';
         $html   .= '</tr>';
         $html   .= '</tbody>';
         $html   .= '</table>';
@@ -507,7 +539,11 @@ class Debug
         }
     }
 
-    private static function convertMem($size)
+    /**
+     * @param int $size
+     * @return float
+     */
+    private static function convertMem(int $size) : float
     {
         $unit=array('B','KB','MB','GB','TB','PB');
         return @round($size/pow(1024, ($i=(int) floor(log($size, 1024)))), 2).' '.$unit[$i];
@@ -584,12 +620,11 @@ class Debug
         Debug::stopWatch("debug/benchmark");
         return null;
     }
-    private static function isCommandLineInterface()
-    {
-        return (php_sapi_name() === 'cli');
-    }
 
-    public static function stackTraceOnce()
+    /**
+     * @return string
+     */
+    public static function stackTraceOnce() : string
     {
         $debug_backtrace                    = debug_backtrace();
         $trace                              = $debug_backtrace[2];
@@ -603,7 +638,10 @@ class Debug
         return $res;
     }
 
-    public static function stackTrace($plainText = false)
+    /**
+     * @return array|null
+     */
+    public static function stackTrace() : ?array
     {
         $res                                = null;
         $debug_backtrace                    = debug_backtrace();
@@ -617,17 +655,6 @@ class Debug
             }
         }
 
-        return ($plainText
-            ? implode(", ", $res)
-            : $res
-        );
-    }
-
-    public static function page($page)
-    {
-        Log::debugging(array(
-            "page"      => $page
-            , "isXHR"   => Request::isAjax()
-        ), "Dump", "page");
+        return $res;
     }
 }

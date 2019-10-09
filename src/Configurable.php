@@ -25,6 +25,8 @@
  */
 namespace phpformsframework\libs;
 
+
+
 /**
  * Interface Configurable
  * @package phpformsframework\libs
@@ -38,17 +40,17 @@ interface Configurable
      * @param dto\ConfigRules $configRules
      * @return dto\ConfigRules
      */
-    public static function loadConfigRules($configRules);
+    public static function loadConfigRules(dto\ConfigRules $configRules);
 
     /**
      * @param array $config
      * @return void
      */
-    public static function loadConfig($config);
+    public static function loadConfig(array $config);
 
     /**
      * @param array $rawdata
      * @return array
      */
-    public static function loadSchema($rawdata);
+    public static function loadSchema(array $rawdata) : array;
 }

@@ -32,6 +32,10 @@ use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\security\Buckler;
 use phpformsframework\libs\security\Validator;
 
+/**
+ * Class Request
+ * @package phpformsframework\libs
+ */
 class Request implements Configurable, Dumpable
 {
     const MAX_SIZE                                                  = array(
@@ -59,7 +63,10 @@ class Request implements Configurable, Dumpable
     private static $root_path                                       = null;
     private static $path_info                                       = null;
 
-    public static function dump()
+    /**
+     * @return array
+     */
+    public static function dump() : array
     {
         return array(
             "params"            => self::$params,
@@ -88,7 +95,7 @@ class Request implements Configurable, Dumpable
      * @access private
      * @param array $config
      */
-    public static function loadConfig($config)
+    public static function loadConfig(array $config)
     {
         self::$params                                               = $config["params"];
         self::$access_control                                       = $config["access_control"];
@@ -103,23 +110,23 @@ class Request implements Configurable, Dumpable
      * @param array $rawdata
      * @return array
      */
-    public static function loadSchema($rawdata)
+    public static function loadSchema(array $rawdata) : array
     {
         self::loadParams($rawdata, self::$params);
 
-        if (isset($rawdata["accesscontrol"])) {
+        if (isset($rawdata["accesscontrol"]) && is_array($rawdata["accesscontrol"])) {
             self::loadAccessControl($rawdata["accesscontrol"]);
         }
-        if (isset($rawdata["pages"])) {
+        if (isset($rawdata["pages"]) && is_array($rawdata["pages"])) {
             self::loadPages($rawdata["pages"]);
         }
-        if (isset($rawdata["domain"])) {
+        if (isset($rawdata["domain"]) && is_array($rawdata["domain"])) {
             self::loadDomain($rawdata["domain"]);
         }
-        if (isset($rawdata["gateway"])) {
+        if (isset($rawdata["gateway"]) && is_array($rawdata["gateway"])) {
             self::loadGateway($rawdata["gateway"]);
         }
-        if (isset($rawdata["pattern"])) {
+        if (isset($rawdata["pattern"]) && is_array($rawdata["pattern"])) {
             self::loadPatterns($rawdata["pattern"]);
         }
 
@@ -133,7 +140,11 @@ class Request implements Configurable, Dumpable
         );
     }
 
-    private static function loadParams($rawdata, &$obj)
+    /**
+     * @param array $rawdata
+     * @param array $obj
+     */
+    private static function loadParams(array $rawdata, &$obj) : void
     {
         if (isset($rawdata["header"]) && is_array($rawdata["header"]) && count($rawdata["header"])) {
             foreach ($rawdata["header"] as $header) {
@@ -152,7 +163,12 @@ class Request implements Configurable, Dumpable
         }
     }
 
-    private static function loadRequestMapping(&$obj, $attr, $bucket = "body")
+    /**
+     * @param array $obj
+     * @param array $attr
+     * @param string $bucket
+     */
+    private static function loadRequestMapping(&$obj, array $attr, string $bucket = "body") : void
     {
         $key                                                    = (
             isset($attr["scope"])
@@ -162,90 +178,102 @@ class Request implements Configurable, Dumpable
 
         $obj[$bucket][$key]                                     = $attr;
     }
-    private static function loadAccessControl($config)
-    {
-        if (is_array($config) && count($config)) {
-            $schema                                             = array();
-            if (is_array($config) && count($config)) {
-                foreach ($config as $access_control) {
-                    $attr                                       = Dir::getXmlAttr($access_control);
-                    $key                                        = $attr["origin"];
-                    if (!$key) {
-                        continue;
-                    }
-                    unset($attr["origin"]);
-                    if (is_array($attr) && count($attr)) {
-                        $schema[$key] = $attr;
-                    }
-                }
-            }
 
-            self::$access_control                                = $schema;
-        }
-    }
-    private static function loadPages($config)
+    /**
+     * @param array $config
+     */
+    private static function loadAccessControl(array $config) : void
     {
+        $schema                                             = array();
         if (is_array($config) && count($config)) {
-            foreach ($config as $page) {
-                $attr                                           = Dir::getXmlAttr($page);
-                if (isset($attr["path"])) {
-                    $key                                        = $attr["path"];
-                    self::$pages[$key]                          = null;
-                    self::loadParams($page, self::$pages[$key]);
-                    self::$pages[$key]["config"]                = $page["config"];
-                }
-            }
-        }
-    }
-
-    private static function loadDomain($config)
-    {
-        if (is_array($config) && count($config)) {
-            $schema                                             = array();
-            foreach ($config as $domain) {
-                $attr                                           = Dir::getXmlAttr($domain);
-                $schema[$attr["name"]]                          = $attr["path"];
-            }
-            self::$alias                                        = $schema;
-        }
-    }
-    private static function loadGateway($config)
-    {
-        if (is_array($config) && count($config)) {
-            $schema                                             = array();
-            foreach ($config as $gateway) {
-                $attr                                           = Dir::getXmlAttr($gateway);
-                $schema[$attr["name"]]                          = $attr["proxy"];
-            }
-
-            self::$gateway                                        = $schema;
-        }
-    }
-    private static function loadPatterns($config)
-    {
-        if (is_array($config) && count($config)) {
-            $schema                                             = array();
-            foreach ($config as $pattern) {
-                $attr                                           = Dir::getXmlAttr($pattern);
-                $key                                            = (
-                    $attr["path"]
-                                                                    ? $attr["path"]
-                                                                    : $attr["source"]
-                                                                );
+            foreach ($config as $access_control) {
+                $attr                                       = Dir::getXmlAttr($access_control);
+                $key                                        = $attr["origin"];
                 if (!$key) {
                     continue;
                 }
-                unset($attr["source"]);
-                unset($attr["path"]);
+                unset($attr["origin"]);
                 if (is_array($attr) && count($attr)) {
-                    $schema[$key]                               = $attr;
+                    $schema[$key] = $attr;
                 }
             }
+        }
 
-            self::$patterns                                     = $schema;
+        self::$access_control                                = $schema;
+    }
+
+    /**
+     * @param array $config
+     */
+    private static function loadPages(array $config) : void
+    {
+        foreach ($config as $page) {
+            $attr                                           = Dir::getXmlAttr($page);
+            if (isset($attr["path"])) {
+                $key                                        = $attr["path"];
+                self::$pages[$key]                          = null;
+                self::loadParams($page, self::$pages[$key]);
+                self::$pages[$key]["config"]                = $page["config"];
+            }
         }
     }
 
+    /**
+     * @param array $config
+     */
+    private static function loadDomain(array $config) : void
+    {
+        $schema                                             = array();
+        foreach ($config as $domain) {
+            $attr                                           = Dir::getXmlAttr($domain);
+            $schema[$attr["name"]]                          = $attr["path"];
+        }
+        self::$alias                                        = $schema;
+    }
+
+    /**
+     * @param array $config
+     */
+    private static function loadGateway(array $config) : void
+    {
+        $schema                                             = array();
+        foreach ($config as $gateway) {
+            $attr                                           = Dir::getXmlAttr($gateway);
+            $schema[$attr["name"]]                          = $attr["proxy"];
+        }
+
+        self::$gateway                                        = $schema;
+    }
+
+    /**
+     * @param array $config
+     */
+    private static function loadPatterns(array $config) : void
+    {
+        $schema                                             = array();
+        foreach ($config as $pattern) {
+            $attr                                           = Dir::getXmlAttr($pattern);
+            $key                                            = (
+                $attr["path"]
+                                                                ? $attr["path"]
+                                                                : $attr["source"]
+                                                            );
+            if (!$key) {
+                continue;
+            }
+            unset($attr["source"]);
+            unset($attr["path"]);
+            if (is_array($attr) && count($attr)) {
+                $schema[$key]                               = $attr;
+            }
+        }
+
+        self::$patterns                                     = $schema;
+    }
+
+    /**
+     *
+     */
     private static function findPageByPathInfo()
     {
         $page                                                   = array();
@@ -289,6 +317,9 @@ class Request implements Configurable, Dumpable
         self::$page                                         = new RequestPage($page);
     }
 
+    /**
+     *
+     */
     private static function urlVerify()
     {
         $redirect                                           = null;
@@ -307,7 +338,7 @@ class Request implements Configurable, Dumpable
      * @access private
      * @return RequestPage
      */
-    public static function &pageConfiguration()
+    public static function &pageConfiguration() : RequestPage
     {
         self::rewritePathInfo();
 
@@ -336,7 +367,9 @@ class Request implements Configurable, Dumpable
         return self::$page;
     }
 
-
+    /**
+     *
+     */
     private static function rewritePathInfo()
     {
         $hostname                                           = self::hostname();
@@ -392,7 +425,7 @@ class Request implements Configurable, Dumpable
             $_SERVER["XHR_PATH_INFO"]                       = rtrim(self::$root_path . self::referer(PHP_URL_PATH), "/");
         }
 
-        if (!self::isCommandLineInterface() && self::remoteAddr() == self::serverAddr()) {
+        if (!self::isCli() && self::remoteAddr() == self::serverAddr()) {
             if (isset($_POST["pathinfo"])) {
                 $_SERVER["PATH_INFO"]                       = rtrim($_POST["pathinfo"], "/");
                 if (!$_SERVER["PATH_INFO"]) {
@@ -429,48 +462,48 @@ class Request implements Configurable, Dumpable
         self::$path_info                                    = $path_info;
     }
 
-    public static function rawdata($toObj = false)
+    public static function rawdata(bool $toObj = false)
     {
         return (array) self::body(null, null, $toObj, "rawdata");
     }
-    public static function valid($toObj = false)
+    public static function valid(bool $toObj = false)
     {
         return (array) self::body(null, null, $toObj, "valid");
     }
-    public static function unknown($toObj = false)
+    public static function unknown(bool $toObj = false)
     {
         return (array) self::body(null, null, $toObj, "unknown");
     }
-    public static function get($key, $toObj = false)
+    public static function get(string $key, bool $toObj = false)
     {
         return self::body($key, "GET", $toObj, "get");
     }
-    public static function post($key, $toObj = false)
+    public static function post(string $key, bool $toObj = false)
     {
         return self::body($key, "POST", $toObj, "post");
     }
-    public static function patch($key, $toObj = false)
+    public static function patch(string $key, bool $toObj = false)
     {
         return self::body($key, "PATCH", $toObj, "post");
     }
-    public static function delete($key, $toObj = false)
+    public static function delete(string $key, bool $toObj = false)
     {
         return self::body($key, "DELETE", $toObj, "post");
     }
-    public static function put($key, $toObj = false)
+    public static function put(string $key, bool $toObj = false)
     {
         return self::body($key, "PUT", $toObj, "rawdata");
     }
 
-    public static function cookie($key, $toObj = false)
+    public static function cookie(string $key, bool $toObj = false)
     {
         return self::body($key, "COOKIE", $toObj);
     }
-    public static function session($key, $toObj = false)
+    public static function session(string $key, bool $toObj = false)
     {
         return self::body($key, "SESSION", $toObj);
     }
-    public static function getModel($scope, $toObj = true)
+    public static function getModel(string $scope, bool $toObj = true)
     {
         return self::body(null, null, $toObj, $scope);
     }
@@ -478,7 +511,7 @@ class Request implements Configurable, Dumpable
      * @param bool $with_unknown
      * @return string
      */
-    public static function getQuery($with_unknown = false)
+    public static function getQuery(bool $with_unknown = false) : string
     {
         if (!self::$page->request) {
             self::captureBody();
@@ -496,6 +529,9 @@ class Request implements Configurable, Dumpable
         );
     }
 
+    /**
+     *
+     */
     private static function capture()
     {
         self::captureServer();
@@ -505,7 +541,8 @@ class Request implements Configurable, Dumpable
         self::captureHeaders();
         self::captureBody();
     }
-    public static function headers($key = null)
+
+    public static function headers(string $key = null)
     {
         $res                                                    = self::captureHeaders();
         return ($key
@@ -522,7 +559,7 @@ class Request implements Configurable, Dumpable
      * @param string $scope
      * @return array|object|null
      */
-    private static function body($key = null, $method = null, $toObj = false, $scope = "rawdata")
+    private static function body(string $key = null, string $method = null, bool $toObj = false, string $scope = "rawdata")
     {
         $rawdata                                                = self::captureBody($scope, $method);
         if ($key && !isset($rawdata[$key])) {
@@ -556,10 +593,10 @@ class Request implements Configurable, Dumpable
      */
 
     /**
-     * @param $path_info
+     * @param string $path_info
      * @return RequestPageRules
      */
-    private static function setRulesByPage($path_info)
+    private static function setRulesByPage(string $path_info) : RequestPageRules
     {
         $rules                                                  = new RequestPageRules();
         $request_path                                           = $path_info;
@@ -573,7 +610,11 @@ class Request implements Configurable, Dumpable
         return $rules;
     }
 
-    public static function proxy($hostname = null)
+    /**
+     * @param string|null $hostname
+     * @return string
+     */
+    public static function proxy(string $hostname = null) : string
     {
         if (!$hostname) {
             $hostname                                           = self::hostname();
@@ -583,7 +624,12 @@ class Request implements Configurable, Dumpable
             : $hostname
         );
     }
-    public static function alias($hostname = null)
+
+    /**
+     * @param string|null $hostname
+     * @return string|null
+     */
+    public static function alias(string $hostname = null) : ?string
     {
         if (!$hostname) {
             $hostname                                           = self::hostname();
@@ -594,54 +640,90 @@ class Request implements Configurable, Dumpable
         );
     }
 
-    public static function isHTTPS()
+    /**
+     * @return bool
+     */
+    public static function isHTTPS() : bool
     {
         return (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || (isset($_SERVER["HTTP_ORIGIN"]) && strpos($_SERVER["HTTP_ORIGIN"], "https://") === 0);
     }
-    public static function protocol()
+
+    /**
+     * @return string
+     */
+    public static function protocol() : string
     {
         return (self::isHTTPS() ? "https" : "http") . "://";
     }
-    public static function hostname()
+
+    /**
+     * @return string|null
+     */
+    public static function hostname() : ?string
     {
         return (isset($_SERVER["HTTP_HOST"])
             ? $_SERVER["HTTP_HOST"]
             : null
         );
     }
-    public static function protocol_host()
+
+    /**
+     * @return string|null
+     */
+    public static function protocol_host() : ?string
     {
         return (self::hostname()
             ?  self::protocol() . self::hostname()
-            : ""
+            : null
         );
     }
-    public static function pathinfo()
+
+    /**
+     * @return string
+     */
+    public static function pathinfo() : string
     {
         return (isset($_SERVER["PATH_INFO"])
             ? $_SERVER["PATH_INFO"]
             : DIRECTORY_SEPARATOR
         );
     }
-    public static function requestURI()
+
+    /**
+     * @return string|null
+     */
+    public static function requestURI() : ?string
     {
         return (isset($_SERVER["REQUEST_URI"])
             ? $_SERVER["REQUEST_URI"]
             : null
         );
     }
-    public static function rawQuery()
+
+    /**
+     * @return string|null
+     */
+    public static function rawQuery() : ?string
     {
         return (empty($_SERVER["QUERY_STRING"])
             ? null
             : $_SERVER["QUERY_STRING"]
         );
     }
-    public static function protocol_host_pathinfo()
+
+    /**
+     * @return string
+     */
+    public static function protocol_host_pathinfo() : string
     {
         return self::protocol_host() . Constant::SITE_PATH . self::pathinfo();
     }
-    public static function url($phpurl_part = null)
+
+    /**
+     * @param string|null $phpurl_part
+     * @return string
+     */
+    public static function url(string $phpurl_part = null) : string
     {
         $url                                                    = self::protocol_host_pathinfo() . self::getQuery(false);
 
@@ -651,7 +733,11 @@ class Request implements Configurable, Dumpable
         );
     }
 
-    public static function referer($phpurl_part = null)
+    /**
+     * @param string|null $phpurl_part
+     * @return string|null
+     */
+    public static function referer(string $phpurl_part = null) : ?string
     {
         $referer                                                = (
             isset($_SERVER["HTTP_REFERER"])
@@ -664,53 +750,84 @@ class Request implements Configurable, Dumpable
             : $referer
         );
     }
-    public static function userAgent()
+
+    /**
+     * @return string|null
+     */
+    public static function userAgent() : ?string
     {
         return (isset($_SERVER["HTTP_USER_AGENT"])
             ? $_SERVER["HTTP_USER_AGENT"]
             : null
         );
     }
-    public static function remoteAddr()
+
+    /**
+     * @return string|null
+     */
+    public static function remoteAddr() : ?string
     {
         return (isset($_SERVER["REMOTE_ADDR"])
             ? $_SERVER["REMOTE_ADDR"]
             : null
         );
     }
-    public static function serverAddr()
+
+    /**
+     * @return string|null
+     */
+    public static function serverAddr() : ?string
     {
         return (isset($_SERVER["SERVER_ADDR"])
             ? $_SERVER["SERVER_ADDR"]
             : null
         );
     }
-    public static function method()
+
+    /**
+     * @return string|null
+     */
+    public static function method() : ?string
     {
         return (isset($_SERVER["REQUEST_METHOD"])
             ? strtoupper($_SERVER["REQUEST_METHOD"])
             : null
         );
     }
-    public static function isAjax()
+
+    /**
+     * @return bool
+     */
+    public static function isAjax() : bool
     {
         return isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
     }
 
-    private static function isCommandLineInterface()
+    /**
+     * @return bool
+     */
+    public static function isCli() : bool
     {
         return (php_sapi_name() === 'cli');
     }
 
+    /**
+     *
+     */
     private static function captureServer()
     {
         self::$server = (
-            self::isCommandLineInterface()
+            self::isCli()
             ? null
             : $_SERVER
         );
     }
-    private static function server($key)
+
+    /**
+     * @param string $key
+     * @return string|null
+     */
+    private static function server(string $key) : ?string
     {
         return (isset(self::$server[$key])
             ? self::$server[$key]
@@ -718,7 +835,7 @@ class Request implements Configurable, Dumpable
         );
     }
 
-    private static function getAccessControl($origin, $key = null)
+    private static function getAccessControl(string $origin, $key = null)
     {
         $access_control                                         = false;
         if (isset(self::$access_control)) {
@@ -734,7 +851,10 @@ class Request implements Configurable, Dumpable
         );
     }
 
-    private static function CORS_preflight($origin)
+    /**
+     * @param string $origin
+     */
+    private static function corsPreflight(string $origin) : void
     {
         // return only the headers and not the content
         // only allow CORS
@@ -768,7 +888,11 @@ class Request implements Configurable, Dumpable
         }
         exit;
     }
-    private static function security()
+
+    /**
+     * @return bool
+     */
+    private static function security() : bool
     {
         if (headers_sent()) {
             return false;
@@ -786,7 +910,7 @@ class Request implements Configurable, Dumpable
 
         switch (self::method()) {
             case "OPTIONS":
-                self::CORS_preflight($origin);
+                self::corsPreflight($origin);
                 break;
             case "TRACE": //todo: to manage
                 Response::sendError(405);
@@ -815,11 +939,17 @@ class Request implements Configurable, Dumpable
 
         return true;
     }
-    private static function securityHeaders($origin)
+
+    /**
+     * @param string|null $origin
+     */
+    private static function securityHeaders(string $origin = null) : void
     {
-        $allow_origin = self::getAccessControl($origin, "allow-origin");
-        if ($allow_origin) {
-            header('Access-Control-Allow-Origin: ' . $allow_origin);
+        if ($origin) {
+            $allow_origin = self::getAccessControl($origin, "allow-origin");
+            if ($allow_origin) {
+                header('Access-Control-Allow-Origin: ' . $allow_origin);
+            }
         }
         //@todo: da delegare all'htaccess
         //header("X-Frame-Options: SAMEORIGIN");
@@ -834,9 +964,13 @@ class Request implements Configurable, Dumpable
          * header("Referrer-Policy: origin-when-cross-origin");
          * header("Expect-CT: max-age=7776000, enforce");
          */
-        self::isInvalidReqMethod(true);
+        self::verifyInvalidRequest();
     }
-    private static function getRequestHeaders()
+
+    /**
+     * @return array
+     */
+    private static function getRequestHeaders() : array
     {
         if (function_exists("getallheaders")) {
             $headers = getallheaders();
@@ -853,7 +987,10 @@ class Request implements Configurable, Dumpable
         return $headers;
     }
 
-    private static function securityHeaderParams()
+    /**
+     * @return array
+     */
+    private static function securityHeaderParams() : array
     {
         $errors                                                                         = array();
         if (self::isAllowedSize(self::getRequestHeaders(), "HEAD")) {
@@ -895,7 +1032,12 @@ class Request implements Configurable, Dumpable
         return $errors;
     }
 
-    private static function securityParams($request, $method)
+    /**
+     * @param array $request
+     * @param string $method
+     * @return array
+     */
+    private static function securityParams(array $request, string $method) : array
     {
         $errors                                                                         = array();
         $bucket                                                                         = (
@@ -968,7 +1110,14 @@ class Request implements Configurable, Dumpable
         return $errors;
     }
 
-    private static function securityValidation(&$value, $type = null, $fakename = null, $range = null)
+    /**
+     * @param $value
+     * @param null $type
+     * @param string|null $fakename
+     * @param string|null $range
+     * @return array
+     */
+    private static function securityValidation(&$value, $type = null, string $fakename = null, string $range = null) : array
     {
         $errors                                                                         = array();
         $params                                                                         = array();
@@ -988,7 +1137,10 @@ class Request implements Configurable, Dumpable
         return $errors;
     }
 
-    private static function securityFileParams()
+    /**
+     * @return array
+     */
+    private static function securityFileParams() : array
     {
         $errors                                                                         = array();
         if (is_array($_FILES) && count($_FILES)) {
@@ -1007,7 +1159,11 @@ class Request implements Configurable, Dumpable
         return $errors;
     }
 
-    private static function getReq($method = null)
+    /**
+     * @param string|null $method
+     * @return array
+     */
+    private static function getReq(string $method = null) : array
     {
         switch ($method) {
             case "POST":
@@ -1033,13 +1189,14 @@ class Request implements Configurable, Dumpable
         return $req;
     }
 
-    private static function isAllowedSize($req, $method)
+    /**
+     * @param array $req
+     * @param string $method
+     * @return bool
+     */
+    private static function isAllowedSize(array $req, string $method) : bool
     {
-        $request_size                                                                           = strlen((
-            is_array($req)
-                                                                                                    ? http_build_query($req, '', '')
-                                                                                                    : $req
-                                                                                                ));
+        $request_size                                                                           = strlen(http_build_query($req, '', ''));
 
         $max_size                                                                               = static::MAX_SIZE;
         $request_max_size                                                                       = (
@@ -1050,7 +1207,10 @@ class Request implements Configurable, Dumpable
         return $request_size < $request_max_size;
     }
 
-    private static function captureHeaders()
+    /**
+     * @return array
+     */
+    private static function captureHeaders() : array
     {
         static $last_update                                                                     = 0;
 
@@ -1071,17 +1231,19 @@ class Request implements Configurable, Dumpable
         return self::$page->headers;
     }
 
-    private static function getRequestMethod()
+    /**
+     * @return string|null
+     */
+    private static function getRequestMethod() : ?string
     {
         return self::$page->method;
-
     }
     /**
      * @param null|string $key
      * @param null|string $method
      * @return null|array
      */
-    private static function captureBody($key = null, $method = null)
+    private static function captureBody(string $key = null, string $method = null) : ?array
     {
         static $last_update                                                                     = 0;
 
@@ -1117,17 +1279,23 @@ class Request implements Configurable, Dumpable
         );
     }
 
-    private static function isInvalidHTTPS()
+    /**
+     * @return string|null
+     */
+    private static function verifyInvalidHTTPS() : ?string
     {
         return (self::$page->https && !isset($_SERVER["HTTPS"])
             ? "Request Method Must Be In HTTPS"
             : null
         );
     }
-    private static function isInvalidReqMethod($exit = false)
-    {
-        $error                                                                                  = self::isInvalidHTTPS();
 
+    /**
+     *
+     */
+    private static function verifyInvalidRequest()
+    {
+        $error                                                                                  = self::verifyInvalidHTTPS();
         if (!$error && self::method() != self::$page->method) {
             $error                                                                              = "Request Method Must Be " . self::$page->method
                                                                                                     . (
@@ -1137,19 +1305,24 @@ class Request implements Configurable, Dumpable
                                                                                                     );
         }
 
-        if ($exit && $error) {
+        if ($error) {
             self::isError($error, 405);
         }
-
-        return $error;
     }
 
-    private static function isError($error, $status = 400)
+    /**
+     * @param string $error
+     * @param int $status
+     */
+    private static function isError(string $error, int $status = 400)
     {
         Response::sendError($status, $error);
     }
 
-    public static function accept()
+    /**
+     * @return string
+     */
+    public static function accept() : string
     {
         $arrAccept = array('*/*');
         if (isset($_SERVER["HTTP_ACCEPT"])) {

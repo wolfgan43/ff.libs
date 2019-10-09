@@ -103,7 +103,26 @@ class Filemanager implements Dumpable
         return $success;
     }
 
-    public static function makeDir($path, $chmod = 0775, $base_path = null)
+    /**
+     * @param string $source
+     * @param string $destination
+     * @return bool
+     */
+    public static function move(string $source, string $destination) : bool
+    {
+        return (self::makeDir($destination)
+            ? rename($source, $destination)
+            : false
+        );
+    }
+
+    /**
+     * @param string $path
+     * @param int $chmod
+     * @param string|null $base_path
+     * @return bool
+     */
+    public static function makeDir(string $path, int $chmod = 0775, string $base_path = null) : bool
     {
         $res                                                            = false;
         if (!$base_path) {
@@ -112,11 +131,11 @@ class Filemanager implements Dumpable
         $path                                                           = str_replace($base_path, "", $path);
 
         if ($path && $path != DIRECTORY_SEPARATOR) {
-            if (is_file($base_path . $path)) {
+            if (!is_dir($base_path . $path)) {
                 $path = dirname($path);
             }
 
-            if (!is_dir($base_path . $path) && is_writable($base_path . $path) && mkdir($base_path . $path, $chmod, true)) {
+            if (!is_dir($base_path . $path) && mkdir($base_path . $path, $chmod, true)) {
                 while ($path != DIRECTORY_SEPARATOR) {
                     if (is_dir($base_path . $path)) {
                         chmod($base_path . $path, $chmod);
@@ -130,7 +149,12 @@ class Filemanager implements Dumpable
         return $res;
     }
 
-    public static function xcopy($source, $destination)
+    /**
+     * @param string $source
+     * @param string $destination
+     * @return bool
+     */
+    public static function xcopy(string $source, string $destination) : bool
     {
         $res                                                            = false;
         $ftp                                                            = self::ftp_xconnect();
@@ -146,7 +170,11 @@ class Filemanager implements Dumpable
         return $res;
     }
 
-    public static function xpurge_dir($path)
+    /**
+     * @param string $path
+     * @return bool
+     */
+    public static function xpurge_dir(string $path) : bool
     {
         $res                                                            = false;
 
@@ -164,9 +192,9 @@ class Filemanager implements Dumpable
     }
 
     /**
-     * FTP
+     * @return array|null
      */
-    private static function ftp_xconnect()
+    private static function ftp_xconnect() : ?array
     {
         $res                                                            = null;
         if (Kernel::$Environment::FTP_USERNAME && Kernel::$Environment::FTP_PASSWORD) {
@@ -200,8 +228,8 @@ class Filemanager implements Dumpable
 
                 if ($real_ftp_path) {
                     $res = array(
-                        "conn" => $conn_id
-                        , "path" => $real_ftp_path
+                        "conn" => $conn_id,
+                        "path" => $real_ftp_path
                     );
                 } else {
                     @ftp_close($conn_id);
@@ -615,9 +643,5 @@ class Filemanager implements Dumpable
         } else {
             self::$storage[$type][$key]                 = $file;
         }
-
-
-
-
     }
 }

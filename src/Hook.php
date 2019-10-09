@@ -26,6 +26,10 @@
 
 namespace phpformsframework\libs;
 
+/**
+ * Class Hook
+ * @package phpformsframework\libs
+ */
 class Hook implements Configurable, Dumpable
 {
     const HOOK_PRIORITY_HIGH                                                        = 1000;
@@ -49,7 +53,7 @@ class Hook implements Configurable, Dumpable
      * @access private
      * @param array $config
      */
-    public static function loadConfig($config)
+    public static function loadConfig(array $config)
     {
         self::$events = $config["events"];
     }
@@ -59,7 +63,7 @@ class Hook implements Configurable, Dumpable
      * @param array $rawdata
      * @return array
      */
-    public static function loadSchema($rawdata)
+    public static function loadSchema(array $rawdata) : array
     {
         if (isset($rawdata["hook"]) && is_array($rawdata["hook"]) && count($rawdata["hook"])) {
             foreach ($rawdata["hook"] as $hook) {
@@ -76,7 +80,11 @@ class Hook implements Configurable, Dumpable
             "events" => self::$events
         ];
     }
-    public static function dump()
+
+    /**
+     * @return array|null
+     */
+    public static function dump() : ?array
     {
         return self::$events;
     }

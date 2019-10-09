@@ -31,6 +31,10 @@ use phpformsframework\libs\Log;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\Response;
 
+/**
+ * Class Buckler
+ * @package phpformsframework\libs\security
+ */
 class Buckler implements Configurable
 {
     private static $rules                                       = null;
@@ -50,7 +54,7 @@ class Buckler implements Configurable
      * @access private
      * @param array $config
      */
-    public static function loadConfig($config)
+    public static function loadConfig(array $config)
     {
         self::$rules                                            = $config["rules"];
     }
@@ -60,7 +64,7 @@ class Buckler implements Configurable
      * @param array $rawdata
      * @return array
      */
-    public static function loadSchema($rawdata)
+    public static function loadSchema(array  $rawdata) : array
     {
         if (isset($rawdata["rule"]) && is_array($rawdata["rule"]) && count($rawdata["rule"])) {
             $schema                                             = array();
@@ -95,7 +99,10 @@ class Buckler implements Configurable
         }
     }
 
-    private static function path_info()
+    /**
+     * @return string
+     */
+    private static function pathInfo() : string
     {
         $path_info = null;
         if (isset($_SERVER["REQUEST_URI"])) {
@@ -107,9 +114,12 @@ class Buckler implements Configurable
         return $path_info;
     }
 
+    /**
+     *
+     */
     private static function checkAllowedPath()
     {
-        $path_info                                              = self::path_info();
+        $path_info                                              = self::pathInfo();
         if ($path_info) {
             $matches                                            = array();
 
@@ -141,7 +151,11 @@ class Buckler implements Configurable
         }
     }
 
-    private static function regexp($rule)
+    /**
+     * @param string $rule
+     * @return string
+     */
+    private static function regexp(string $rule) : string
     {
         return "#" . (
             strpos($rule, "[") === false && strpos($rule, "(") === false && strpos($rule, '$') === false

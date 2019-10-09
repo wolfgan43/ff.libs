@@ -22,7 +22,7 @@ trait AdapterManager
         $classNameAdapter                                   = __NAMESPACE__ . '\\adapters\\' . $className . ucfirst($adapterName);
         if (class_exists($classNameAdapter)) {
             $this->adapters[$adapterName]                   = new $classNameAdapter();
-            $this->adapters                                 =& $this->adapters[$adapterName];
+            $this->adapter                                  =& $this->adapters[$adapterName];
         } else {
             Error::register($className . " Adapter not supported: " . $adapterName);
         }
@@ -42,9 +42,9 @@ trait AdapterManager
      * @param string|null $adapterName
      * @return object|null
      */
-    private function getAdapter(string $adapterName = null) : ?object
+    public function getAdapter(string $adapterName = null) : ?object
     {
-        if (!isset($this->adapters[$adapterName])) {
+        if ($adapterName && !isset($this->adapters[$adapterName])) {
             return null;
         }
         return ($adapterName

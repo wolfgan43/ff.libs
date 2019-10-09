@@ -29,6 +29,10 @@ use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\storage\Filemanager;
 use DirectoryIterator;
 
+/**
+ * Class Env
+ * @package phpformsframework\libs
+ */
 class Env implements Configurable
 {
     const CACHE_BUCKET                                              = "env";
@@ -38,7 +42,10 @@ class Env implements Configurable
     private static $packages                                        = null;
     private static $permanent                                       = array();
 
-    private static function loadDotEnv()
+    /**
+     * @return array
+     */
+    private static function loadDotEnv() : array
     {
         $file                                                       = file_get_contents(
             Constant::DISK_PATH . '/.env' .
@@ -62,7 +69,7 @@ class Env implements Configurable
      * @param null|string $key
      * @return mixed|null
      */
-    public static function get($key = null)
+    public static function get(string $key = null)
     {
         if ($key && !isset(self::$vars[$key])) {
             self::$vars[$key]                                       = null;
@@ -80,7 +87,7 @@ class Env implements Configurable
      * @param bool $permanent
      * @return mixed
      */
-    public static function set($key, $value, $permanent = false)
+    public static function set(string $key, $value, bool $permanent = false)
     {
         self::$vars[$key]                                            = $value;
 
@@ -97,15 +104,18 @@ class Env implements Configurable
      * @param array $values
      * @return array
      */
-    public static function fill($values)
+    public static function fill(array $values) : array
     {
         self::$vars                                                  = array_replace(self::$vars, $values);
 
         return self::$vars;
     }
 
-
-    public static function getPackage($key = null)
+    /**
+     * @param string|null $key
+     * @return array
+     */
+    public static function getPackage(string $key = null) : array
     {
         $package_disk_path                                          = Dir::findAppPath("packages");
         if (!self::$packages && $key === null) {
@@ -134,7 +144,10 @@ class Env implements Configurable
         );
     }
 
-    private static function loadPermanent()
+    /**
+     * @return array|null
+     */
+    private static function loadPermanent() : array
     {
         $cache                                                      = Mem::getInstance(static::CACHE_BUCKET, true);
         $permanent                                                  = $cache->get("permanent");
@@ -145,7 +158,10 @@ class Env implements Configurable
         return self::$permanent;
     }
 
-    private static function setGlobalVars($vars)
+    /**
+     * @param array $vars
+     */
+    private static function setGlobalVars(array $vars) : void
     {
         self::$vars                                                 = $vars + self::loadPermanent();
     }
@@ -165,7 +181,7 @@ class Env implements Configurable
      * @access private
      * @param array $config
      */
-    public static function loadConfig($config)
+    public static function loadConfig(array $config)
     {
         self::$dotenv                                               = $config["dotenv"];
         self::$packages                                             = $config["packages"];
@@ -179,7 +195,7 @@ class Env implements Configurable
      * @param string $bucket
      * @return array
      */
-    public static function loadSchema($rawdata, $bucket = "default")
+    public static function loadSchema(array $rawdata, string $bucket = "default") : array
     {
         //self::loadDotEnv();
 

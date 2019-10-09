@@ -26,8 +26,16 @@
 
 namespace phpformsframework\libs\dto;
 
+use phpformsframework\libs\tpl\AssetsManager;
+
+/**
+ * Class DataHtml
+ * @package phpformsframework\libs\dto
+ */
 class DataHtml extends DataAdapter
 {
+    use AssetsManager;
+
     const CONTENT_TYPE = "text/html";
 
     /**

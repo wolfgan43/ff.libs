@@ -31,6 +31,10 @@ use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\storage\Orm;
 
+/**
+ * Class Translator
+ * @package phpformsframework\libs\international
+ */
 class Translator
 {
     const ERROR_BUCKET                                  = "translator";
@@ -47,8 +51,12 @@ class Translator
 
     private static $cache                               = null;
 
-
-    public static function getInstance($translatorAdapter = null, $auth = null)
+    /**
+     * @param string|null $translatorAdapter
+     * @param string|null $auth
+     * @return TranslatorAdapter
+     */
+    public static function getInstance(string $translatorAdapter = null, string $auth = null) : TranslatorAdapter
     {
         if (!$translatorAdapter) {
             $translatorAdapter                          = Kernel::$Environment::TRANSLATOR_ADAPTER;
@@ -65,22 +73,34 @@ class Translator
         return self::$singletons[$translatorAdapter];
     }
 
-    public static function dump($language = null)
+    /**
+     * @param string|null $language
+     * @return array|null
+     */
+    public static function dump(string $language = null) : ?array
     {
         $lang_code                                      = self::getLang($language);
 
         return self::$cache[$lang_code];
     }
-    public static function clear($language = null)
+
+    /**
+     * @param string|null $language
+     */
+    public static function clear(string $language = null) : void
     {
         $lang_code                                      = self::getLang($language);
 
         self::$cache[$lang_code]                        = null;
         Mem::getInstance(static::CACHE_BUCKET . $lang_code)->clear();
-
-        return true;
     }
-    public static function process($content, $language = null)
+
+    /**
+     * @param string $content
+     * @param string|null $language
+     * @return string
+     */
+    public static function process(string $content, string $language = null) : string
     {
         $matches                                        = array();
         $rc                                             = preg_match_all(self::REGEXP, $content, $matches);
@@ -101,7 +121,10 @@ class Translator
         return $content;
     }
 
-    public static function checkLang()
+    /**
+     * @return string
+     */
+    public static function checkLang() : string
     {
         return (Locale::isMultiLang()
             ? self::getLang()
@@ -114,7 +137,7 @@ class Translator
      * @param string $language Upper Code (es: ENG, ITA, SPA)
      * @return string
      */
-    public static function get_word_by_code($code, $language = null)
+    public static function get_word_by_code(string $code, string $language = null) : string
     {
         if (!$code || !Locale::isMultiLang()) {
             return $code;
@@ -139,7 +162,11 @@ class Translator
         );
     }
 
-    private static function getCode($code)
+    /**
+     * @param string $code
+     * @return string
+     */
+    private static function getCode(string $code) : string
     {
         return (Kernel::$Environment::DEBUG
             ? "{" . $code . "}"
@@ -147,7 +174,12 @@ class Translator
         );
     }
 
-    private static function getWordByCodeFromDB($code, $language = null)
+    /**
+     * @param string $code
+     * @param string|null $language
+     * @return array
+     */
+    private static function getWordByCodeFromDB(string $code, string $language = null) : array
     {
         $lang                                           = self::getLang($language);
         $i18n                                           = array(
@@ -179,7 +211,12 @@ class Translator
 
         return $i18n;
     }
-    public static function getLang($lang_code = null)
+
+    /**
+     * @param string|null $lang_code
+     * @return string
+     */
+    public static function getLang(string $lang_code = null) : string
     {
         return strtolower(
             $lang_code
@@ -187,7 +224,12 @@ class Translator
             : Locale::getLang("code")
         );
     }
-    public static function getLangDefault($lang_code = null)
+
+    /**
+     * @param string|null $lang_code
+     * @return string
+     */
+    public static function getLangDefault(string $lang_code = null) : string
     {
         return strtolower(
             $lang_code

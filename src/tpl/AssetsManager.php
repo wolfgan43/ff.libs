@@ -60,26 +60,50 @@ trait AssetsManager
      * @param string|null $url
      * @return self
      */
-    private function addAsset(array &$ref, $type, string $key, string $url = null) : self
+    private function addAsset(array &$ref, string $type, string $key, string $url = null) : self
     {
-        if ($this->resolveUrl($key, $type, $url)) {
+        if (!$url) {
+            $url                                = $this->addAssetDeps($ref, $type, $key);
+        }
+
+        if ($this->resolveUrl($key, $url)) {
             $ref[$key]                          = $this->mask($url);
         }
         return $this;
     }
 
     /**
-     * @param string $key
+     * @param array $ref
      * @param string $type
+     * @param string $key
+     * @return string|null
+     */
+    private function addAssetDeps(array &$ref, string $type, string $key) : ?string
+    {
+        $url                                    = Resource::get($key, $type);
+        if ($url) {
+            $asset_name                         = "";
+            $assets                             = explode(".", $key);
+            array_pop($assets);
+            foreach ($assets as $asset) {
+                $asset_name                     .= $asset;
+                $asset_url                      = Resource::get($asset_name, $type);
+                if ($asset_url) {
+                    $this->addAsset($ref, $type, $asset_name, $asset_url);
+                }
+                $asset_name                     .= ".";
+            }
+        }
+        return $url;
+    }
+
+    /**
+     * @param string $key
      * @param string|null $url
      * @return bool
      */
-    private function resolveUrl(string $key, string $type, string &$url = null) : bool
+    private function resolveUrl(string $key, string &$url = null) : bool
     {
-        if (!$url) {
-            $url                                = Resource::get($key, $type);
-        }
-
         if (!$url) {
             if (strpos($key, "..") !== false) {
                 $key                            = realpath($key);
@@ -93,8 +117,7 @@ trait AssetsManager
                 $url                            = $key;
             }
         }
-
-        return $url && (!Dir::checkDiskPath($url) || filesize($url));
+        return !Dir::checkDiskPath($url) || filesize($url);
     }
 
     /**

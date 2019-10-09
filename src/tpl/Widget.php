@@ -46,6 +46,9 @@ abstract class Widget
     private static $tpl                         = null;
 
     protected $skin                             = null;
+    protected $requiredJs                       = array();
+    protected $requiredCss                      = array();
+
 
     private $name                               = null;
     private $config                             = array();
@@ -141,6 +144,8 @@ abstract class Widget
             $widget_name                            = $this->getSkin();
             $view                                   = new View();
 
+            $this->parseRequiredAssets();
+
             $resources                              = $this->getResources();
             $this->addJs($widget_name, $resources->getJs($name));
             $this->addCss($widget_name, $resources->getCss($name));
@@ -154,6 +159,18 @@ abstract class Widget
         }
     }
 
+    /**
+     *
+     */
+    private function parseRequiredAssets()
+    {
+        foreach ($this->requiredJs as $js) {
+            $this->addJs($js);
+        }
+        foreach ($this->requiredCss as $css) {
+            $this->addCss($css);
+        }
+    }
 
     /**
      * @param null|string $return
@@ -165,6 +182,7 @@ abstract class Widget
         if (!$this->html) {
             $this->view("index", $this->getConfig());
         }
+
         self::stopwatch("widget/" . $this->name);
 
         switch ($return) {

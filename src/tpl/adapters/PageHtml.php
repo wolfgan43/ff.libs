@@ -316,7 +316,7 @@ class PageHtml extends Mappable
     {
         $res                                    = "";
         if (is_array($this->fonts) && count($this->fonts)) {
-            foreach ($this->fonts as $font) {
+            foreach (array_unique($this->fonts) as $font) {
                 $res                            .= $this::NEWLINE .'<link rel="preload" as="font" type="font/' . pathinfo($font, PATHINFO_EXTENSION) . '" crossorigin="anonymous" href="' . $font . '" />';
             }
         }
@@ -331,7 +331,7 @@ class PageHtml extends Mappable
     {
         $css_tag                                = $this::NEWLINE . '<link rel="stylesheet" type="text/css" crossorigin="anonymous" href="';
 
-        return $css_tag . implode('" />' . $css_tag, $this->css) . '" />';
+        return $css_tag . implode('" />' . $css_tag, array_unique($this->css)) . '" />';
     }
 
     /**
@@ -355,7 +355,7 @@ class PageHtml extends Mappable
 
         $script_tag                             = $this::NEWLINE . '<script ' . $async_attr . $defer_attr . 'crossorigin="anonymous" src="';
 
-        return $script_tag . implode('"></script>' . $script_tag, $this->js) . '"></script>';
+        return $script_tag . implode('"></script>' . $script_tag, array_unique($this->js)) . '"></script>';
     }
 
     /**

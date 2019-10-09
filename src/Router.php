@@ -189,9 +189,9 @@ class Router implements Configurable, Dumpable
     }
 
     /**
-     * @param string $path
+     * @param string $path|null
      */
-    private static function runWebRoot(string $path) : void
+    private static function runWebRoot(string $path = null) : void
     {
         $webroot = Config::webRoot();
         if ($webroot) {

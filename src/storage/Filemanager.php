@@ -419,7 +419,10 @@ class Filemanager implements Dumpable
         }
     }
 
-    public static function scanExclude($patterns)
+    /**
+     * @param array|null $patterns
+     */
+    public static function scanExclude(array $patterns = null) : void
     {
         if ($patterns) {
             if ($patterns[0]) {

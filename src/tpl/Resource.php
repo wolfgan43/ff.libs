@@ -37,6 +37,10 @@ use phpformsframework\libs\Mappable;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\storage\Filemanager;
 
+/**
+ * Class Resource
+ * @package phpformsframework\libs\tpl
+ */
 class Resource extends Mappable implements Dumpable
 {
     const ERROR_BUCKET                          = "resource";
@@ -48,14 +52,21 @@ class Resource extends Mappable implements Dumpable
     protected $rules                            = null;
     private $resources                          = null;
 
-    public function __construct($map_name = "default")
+    /**
+     * Resource constructor.
+     * @param string $map_name
+     */
+    public function __construct(string $map_name = "default")
     {
         parent::__construct($map_name);
 
         $this->loadResources();
     }
 
-    public static function dump()
+    /**
+     * @return array|null
+     */
+    public static function dump() : ?array
     {
         if (!self::$singleton) {
             self::$singleton = new Resource();
@@ -64,7 +75,10 @@ class Resource extends Mappable implements Dumpable
         return self::$singleton->resources;
     }
 
-    private function loadResources($excludeDirname = null)
+    /**
+     * @param array|null $excludeDirname
+     */
+    private function loadResources(array $excludeDirname = null) : void
     {
         Debug::stopWatch("resource/loadResources");
 
@@ -80,7 +94,12 @@ class Resource extends Mappable implements Dumpable
 
         Debug::stopWatch("resource/loadResources");
     }
-    public static function type($type)
+
+    /**
+     * @param string $type
+     * @return array
+     */
+    public static function type(string $type) : array
     {
         if (!self::$singleton) {
             self::$singleton = new Resource();
@@ -91,7 +110,13 @@ class Resource extends Mappable implements Dumpable
             : array()
         );
     }
-    public static function get($name, $type)
+
+    /**
+     * @param string $name
+     * @param string $type
+     * @return string|null
+     */
+    public static function get(string $name, string $type) : ?string
     {
         if (!self::$singleton) {
             self::$singleton = new Resource();
@@ -126,12 +151,15 @@ class Resource extends Mappable implements Dumpable
             self::$singleton = new Resource();
         }
 
-        return (isset(self::$singleton->resources["widget"][$name])
-            ? (object) self::$singleton->resources["widget"][$name]
-            : null
-        );
+        return new DataHtml(self::$singleton->resources["widget"][$name]);
     }
-    public static function load($name, $type)
+
+    /**
+     * @param string $name
+     * @param string $type
+     * @return string|null
+     */
+    public static function load(string $name, string $type) : ?string
     {
         $path                                   = self::get($name, $type);
         if ($path) {

@@ -24,8 +24,14 @@
  *  @link https://github.com/wolfgan43/vgallery
  */
 namespace phpformsframework\libs;
-
+/**
+ * Interface Dumpable
+ * @package phpformsframework\libs
+ */
 interface Dumpable
 {
-    public static function dump();
+    /**
+     * @return array
+     */
+    public static function dump() : array;
 }

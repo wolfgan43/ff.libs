@@ -44,11 +44,11 @@ class Response
 
     /**
      * @param int $status
-     * @param null $msg
+     * @param string|null $msg
      * @return void
      * @todo da inserire la pagina html per la response DataHtml
      */
-    public static function sendError($status = 404, $msg = null)
+    public static function sendError(int $status = 404, string $msg = null) : void
     {
         switch (Request::accept()) {
             case "application/json":
@@ -59,7 +59,7 @@ class Response
             default:
                 $response = Page::getInstance("html")
                     ->setStatus($status)
-                    ->addContent($msg)
+                    ->addContent($msg ? $msg : "Oops!")
                     ->render();
         }
 
@@ -79,7 +79,6 @@ class Response
             if ($status) {
                 self::httpCode($status);
             }
-
             switch ($content_type) {
                 case "application/json":
                 case "text/json":
@@ -101,8 +100,8 @@ class Response
     {
         if (is_object($data)) {
             $data                                   = get_object_vars($data);
-        } elseif (!is_array($data)) {
-            $data                                   = array($data);
+        } elseif (!$data) {
+            $data                                   = null;
         }
 
         try {
@@ -111,7 +110,7 @@ class Response
             Error::register($e, static::ERROR_BUCKET);
         }
 
-        return $data;
+        return $data->saveHTML();
     }
 
     private static function toPlainText($data)
@@ -127,11 +126,10 @@ class Response
 
     private static function toJson($data)
     {
-        if (!is_array($data) && !is_object($data)) {
-            $data                                   = array($data);
-        }
-
-        return json_encode($data);
+        return (!is_array($data) && !is_object($data)
+            ? '[]'
+            : json_encode($data)
+        );
     }
 
     /**
@@ -145,7 +143,7 @@ class Response
              * @todo da gestire i tipi accepted self::sendHeadersByMimeType(...)
              */
             self::httpCode(501);
-            echo "content type " . $content_type . " is different to http_accept: " . Request::accept();
+            echo "content type " . $content_type . " is different to http_accept: " . Request::rawAccept();
             exit;
         }
 
@@ -257,6 +255,7 @@ class Response
         $etag				        = isset($params["etag"])		? $params["etag"]				: null;
 
         if ($size) {
+            header("Accept-Ranges: bytes");
             header("Content-Length: " . $size);
         }
         if (strlen($etag)) {
@@ -351,10 +350,13 @@ class Response
         }
     }
 
-    private static function invalidAccept($content_type)
+    /**
+     * @param string $content_type
+     * @return bool
+     */
+    private static function invalidAccept(string $content_type) : bool
     {
-        $accept = Request::accept();
-
-        return $accept != '*/*' && strpos($accept, $content_type) === false;
+        $accept = Request::rawAccept();
+        return $accept != "" && strpos($accept, $content_type) === false && strpos($accept, "*/*") === false;
     }
 }

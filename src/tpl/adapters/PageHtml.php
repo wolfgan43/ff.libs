@@ -158,7 +158,7 @@ class PageHtml extends Mappable
      * @param string $where
      * @return PageHtml
      */
-    public function addContent(string $content, string $where = self::MAIN_CONTENT) : PageHtml
+    public function addContent(string $content = null, string $where = self::MAIN_CONTENT) : PageHtml
     {
         $this->setContent($this->getHtml($content), $where);
 

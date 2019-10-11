@@ -25,7 +25,6 @@
  */
 namespace phpformsframework\libs\storage\drivers;
 
-use phpformsframework\libs\international\Data;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Hook;
 use phpformsframework\libs\Error;
@@ -51,13 +50,13 @@ class MySqli extends DatabaseDriver
     public $persistent				= false;
 
     /**
-     * @var \mysqli
+     * @var \mysqli|null
      */
-    protected $link_id              = false;
+    protected $link_id              = null;
     /**
-     * @var mysqli_result
+     * @var mysqli_result|null
      */
-    protected $query_id             = false;
+    protected $query_id             = null;
 
     public $field_primary           = null;
 
@@ -69,16 +68,6 @@ class MySqli extends DatabaseDriver
 
     private $use_found_rows         = false;
 
-    public static function addEvent($event_name, $func_name, $priority = null)
-    {
-        Hook::register("mysqli:" . $event_name, $func_name, $priority);
-    }
-
-    private static function doEvent($event_name, $event_params = array())
-    {
-        Hook::handle("mysqli:" . $event_name, $event_params);
-    }
-
     /**
      * This method istantiate a ffDb_Sql instance. When using this
      * function, the resulting object will deeply use Forms Framework.
@@ -89,12 +78,15 @@ class MySqli extends DatabaseDriver
     {
         $tmp = new static();
 
-        static::doEvent("on_factory_done", array($tmp));
+        Hook::handle("mysqli_on_factory_done", $tmp);
 
         return $tmp;
     }
 
-    public static function free_all()
+    /**
+     * Kill All instance of DB
+     */
+    public static function freeAll()
     {
         foreach (static::$_dbs as $link) {
             @mysqli_kill($link, mysqli_thread_id($link));
@@ -102,148 +94,93 @@ class MySqli extends DatabaseDriver
         }
     }
 
-    // -------------------------------------------------
-    //  FUNZIONI GENERICHE PER LA GESTIONE DELLA CLASSE
-
-    // LIBERA LA CONNESSIONE E LA QUERY
-    private function cleanup($force = false)
+    /**
+     * LIBERA LA CONNESSIONE E LA QUERY
+     */
+    private function cleanup()
     {
         $this->freeResult();
-        if (is_object($this->link_id) && ($force || !$this->persistent)) {
+        if (is_object($this->link_id) && !$this->persistent) {
             @mysqli_kill($this->link_id, mysqli_thread_id($this->link_id));
             @mysqli_close($this->link_id);
-            $dbkey = $this->host . "|" . $this->user . "|" . $this->password;
+            $dbkey = $this->host . "|" . $this->user . "|" . $this->secret;
             if (isset(static::$_dbs[$dbkey])) {
                 unset(static::$_dbs[$dbkey]);
             }
         }
-        $this->link_id      = false;
+        $this->link_id      = null;
         $this->errno        = 0;
         $this->error        = "";
     }
-
-    // LIBERA LA RISORSA DELLA QUERY SENZA CHIUDERE LA CONNESSIONE
+    /**
+     * LIBERA LA RISORSA DELLA QUERY SENZA CHIUDERE LA CONNESSIONE
+     */
     private function freeResult()
     {
         if (is_object($this->query_id)) {
             @mysqli_free_result($this->query_id);
         }
-        $this->query_id		= false;
-        $this->row			= -1;
-        $this->record		= false;
-        $this->num_rows		= null;
-        $this->fields		= null;
-        $this->fields_names	= null;
-        $this->field_primary= null;
-        $this->buffered_affected_rows = null;
-        $this->buffered_insert_id = null;
-        $this->use_found_rows = false;
+        $this->query_id		            = null;
+        $this->row			            = -1;
+        $this->record		            = false;
+        $this->num_rows		            = null;
+        $this->fields		            = array();
+        $this->fields_names	            = array();
+        $this->field_primary            = null;
+        $this->buffered_affected_rows   = null;
+        $this->buffered_insert_id       = null;
+        $this->use_found_rows           = false;
     }
 
-    // -----------------------------------------------
-    //  FUNZIONI PER LA GESTIONE DELLA CONNESSIONE/DB
-
-    // GESTIONE DELLA CONNESSIONE
-
     /**
-     * Gestisce la connessione al DB
-     * @param String $Database nome del DB a cui connettersi
-     * @param String $Host su cui risiede il DB
-     * @param String $User
-     * @param String $Password
-     * @param bool $force
-     * @return bool|\mysqli
+     * @param string|null $Database
+     * @param string|null $Host
+     * @param string|null $User
+     * @param string|null $Secret
+     * @return bool
      */
-    public function connect($Database = null, $Host = null, $User = null, $Password = null, $force = false)
+    public function connect(string $Database = null, string $Host = null, string $User = null, string $Secret = null) : bool
     {
-        // ELABORA I PARAMETRI DI CONNESSIONE
-        if ($Host !== null) {
-            $tmp_host                               = $Host;
-        } elseif ($this->host === null) {
-            $tmp_host                               = MYSQL_DATABASE_HOST;
-        } else {
-            $tmp_host                               = $this->host;
-        }
-        if ($User !== null) {
-            $tmp_user                               = $User;
-        } elseif ($this->user === null) {
-            $tmp_user                               = MYSQL_DATABASE_USER;
-        } else {
-            $tmp_user                               = $this->user;
-        }
-        if ($Password !== null) {
-            $tmp_pwd                                = $Password;
-        } elseif ($this->password === null) {
-            $tmp_pwd                                = MYSQL_DATABASE_PASSWORD;
-        } else {
-            $tmp_pwd                                = $this->password;
-        }
-        if ($Database !== null) {
-            $tmp_database                           = $Database;
-        } elseif ($this->database === null) {
-            $tmp_database                           = MYSQL_DATABASE_NAME;
-        } else {
-            $tmp_database                           = $this->database;
+        if ($Host && $Database && $User && $Secret) {
+            $this->cleanup();
+
+            $this->database                         = $Database;
+            $this->host                             = $Host;
+            $this->user                             = $User;
+            $this->secret                           = $Secret;
         }
 
-        $do_connect                                 = true;
-        $dbkey                                      = null;
-
-
-        // CHIUDE LA CONNESSIONE PRECEDENTE NEL CASO DI RIUTILIZZO DELL'OGGETTO
-        if (is_object($this->link_id)) {
-            if (
-                ($this->host !== $tmp_host || $this->user !== $tmp_user || $this->database !== $tmp_database)
-                || $force
-            ) {
-                $this->cleanup($force);
-            } else {
-                $do_connect = false;
-            }
+        $dbkey = $this->host . "|" . $this->user . "|" . $this->database;
+        if (isset(static::$_dbs[$dbkey])) {
+            $this->link_id =& static::$_dbs[$dbkey];
         }
 
-        // SOVRASCRIVE I VALORI DI DEFAULT
-        $this->host                                 = $tmp_host;
-        $this->user                                 = $tmp_user;
-        $this->password                             = $tmp_pwd;
-        $this->database                             = $tmp_database;
-
-        if (!$force) {
-            $dbkey = $this->host . "|" . $this->user . "|" . $this->database;
-            if (isset(static::$_dbs[$dbkey])) {
-                $this->link_id =& static::$_dbs[$dbkey];
-                $do_connect = false;
-            }
-        }
-
-        if ($do_connect) {
+        if (!$this->link_id) {
             if (!$this->avoid_real_connect) {
-                if (!is_object($this->link_id)) {
-                    $this->link_id = @mysqli_init();
-                }
+                $this->link_id = @mysqli_init();
                 if (!is_object($this->link_id) || $this->checkError()) {
-                    $this->errorHandler("mysqli::init failed");
                     $this->cleanup();
+                    $this->errorHandler("mysqli::init failed");
                     return false;
                 }
 
                 if ($this->persistent) {
-                    $rc = @mysqli_real_connect($this->link_id, "p:" . $this->host, $this->user, $this->password, $this->database, null, null, MYSQLI_CLIENT_FOUND_ROWS);
+                    $rc = @mysqli_real_connect($this->link_id, "p:" . $this->host, $this->user, $this->secret, $this->database, null, null, MYSQLI_CLIENT_FOUND_ROWS);
                 } else {
-                    $rc = @mysqli_real_connect($this->link_id, $this->host, $this->user, $this->password, $this->database, null, null, MYSQLI_CLIENT_FOUND_ROWS);
+                    $rc = @mysqli_real_connect($this->link_id, $this->host, $this->user, $this->secret, $this->database, null, null, MYSQLI_CLIENT_FOUND_ROWS);
                 }
             } else {
                 if ($this->persistent) {
-                    $this->link_id = @mysqli_connect("p:" . $this->host, $this->user, $this->password, $this->database);
+                    $this->link_id = @mysqli_connect("p:" . $this->host, $this->user, $this->secret, $this->database);
                 } else {
-                    $this->link_id = @mysqli_connect($this->host, $this->user, $this->password, $this->database);
+                    $this->link_id = @mysqli_connect($this->host, $this->user, $this->secret, $this->database);
                 }
                 $rc = is_object($this->link_id);
             }
 
             if (!$rc || mysqli_connect_errno()) {
-                $this->errorHandler("Connection failed to host " . $this->host);
                 $this->cleanup();
+                $this->errorHandler("Connection failed to host " . $this->host);
                 return false;
             }
 
@@ -255,13 +192,15 @@ class MySqli extends DatabaseDriver
             $this->link_id              =& static::$_dbs[$dbkey];
         }
 
-        return $this->link_id;
+        return is_object($this->link_id);
     }
 
-    // -------------------------------------------
-    //  FUNZIONI PER LA GESTIONE DELLE OPERAZIONI
-
-    public function insert($query, $table = null)
+    /**
+     * @param $query
+     * @param string|null $table
+     * @return bool
+     */
+    public function insert($query, string $table = null) : bool
     {
         if (is_array($query)) {
             $Query_String               = "INSERT INTO " .  $query["from"] . "
@@ -276,7 +215,13 @@ class MySqli extends DatabaseDriver
 
         return $this->execute($Query_String);
     }
-    public function update($query, $table = null)
+
+    /**
+     * @param $query
+     * @param string|null $table
+     * @return bool
+     */
+    public function update($query, string $table = null) : bool
     {
         if (is_array($query)) {
             $Query_String               = "UPDATE " . $query["from"] . " SET 
@@ -287,7 +232,13 @@ class MySqli extends DatabaseDriver
         }
         return $this->execute($Query_String);
     }
-    public function delete($query, $table = null)
+
+    /**
+     * @param $query
+     * @param string|null $table
+     * @return bool
+     */
+    public function delete($query, string $table = null) : bool
     {
         if (is_array($query)) {
             $Query_String               = "DELETE FROM " .  $query["from"] . "  
@@ -298,15 +249,17 @@ class MySqli extends DatabaseDriver
 
         return $this->execute($Query_String);
     }
+
     /**
      * Esegue una query senza restituire un recordset
-     * @param String La query da eseguire
-     * @return boolean
+     * @param string $Query_String
+     * @return bool
      */
-    public function execute($Query_String)
+    public function execute($Query_String) : bool
     {
         if ($Query_String == "") {
             $this->errorHandler("Execute invoked With blank Query String");
+            return false;
         }
         if (!$this->link_id && !$this->connect()) {
             return false;
@@ -329,15 +282,15 @@ class MySqli extends DatabaseDriver
     }
 
     /**
-     * @param Object|null $obj
-     * @return array|bool|null|object
+     * @param object|null $obj
+     * @return array|object|null
      */
-    public function getRecordset($obj = null)
+    public function getRecordset(object $obj = null)
     {
         $res = null;
         if (!$this->query_id) {
             $this->errorHandler("eachAll called with no query pending");
-            return false;
+            return null;
         }
 
         if ($obj != null) {
@@ -355,17 +308,24 @@ class MySqli extends DatabaseDriver
 
         if ($res === null && $this->checkError()) {
             $this->errorHandler("fetch_assoc_error");
-            return false;
+            return null;
         }
         return $res;
     }
 
-    public function getFieldset()
+    /**
+     * @return array
+     */
+    public function getFieldset() : array
     {
         return $this->fields_names;
     }
 
-    private function querySelect($query)
+    /**
+     * @param array $query
+     * @return string
+     */
+    private function querySelect(array $query) : string
     {
         return "SELECT " . (
             isset($query["limit"]["calc_found_rows"])
@@ -374,22 +334,41 @@ class MySqli extends DatabaseDriver
             ) . $query["select"];
     }
 
-    private function queryFrom($query)
+    /**
+     * @param array $query
+     * @return string
+     */
+    private function queryFrom(array $query) : string
     {
         return " FROM " .  $query["from"];
     }
-    private function queryWhere($query)
+
+    /**
+     * @param array $query
+     * @return string
+     */
+    private function queryWhere(array $query) : string
     {
         return " WHERE " . $query["where"];
     }
-    private function querySort($query)
+
+    /**
+     * @param array $query
+     * @return string|null
+     */
+    private function querySort(array $query) : ?string
     {
         return (isset($query["sort"])
             ? " ORDER BY " . $query["sort"]
-            : ""
+            : null
         );
     }
-    private function queryLimit($query)
+
+    /**
+     * @param array $query
+     * @return string|null
+     */
+    private function queryLimit(array $query) : ?string
     {
         if (!isset($query["limit"])) {
             return null;
@@ -405,9 +384,9 @@ class MySqli extends DatabaseDriver
     /**
      * Esegue una query
      * @param string|array $query
-     * @return bool|mysqli_result
+     * @return bool
      */
-    public function query($query)
+    public function query($query) : bool
     {
         if (is_array($query)) {
             $Query_String                                   = $this->querySelect($query)    .
@@ -422,6 +401,7 @@ class MySqli extends DatabaseDriver
         $this->use_found_rows                               = strpos($Query_String, " SQL_CALC_FOUND_ROWS ") !== false;
         if ($Query_String == "") {
             $this->errorHandler("Query invoked With blank Query String");
+            return false;
         }
         if (!$this->link_id && !$this->connect()) {
             return false;
@@ -436,9 +416,6 @@ class MySqli extends DatabaseDriver
             $this->errorHandler("Invalid SQL: " . $Query_String);
             return false;
         } else {
-            $this->fields = array();
-            $this->fields_names = array();
-
             $finfo = mysqli_fetch_fields($this->query_id);
             foreach ($finfo as $meta) {
                 $this->fields[$meta->name] = $meta;
@@ -449,15 +426,21 @@ class MySqli extends DatabaseDriver
             }
         }
 
-        return $this->query_id;
+        return is_object($this->query_id);
     }
 
-    public function cmd($query, $name = "count")
+    /**
+     * @param $query
+     * @param string $name
+     * @return mixed
+     */
+    public function cmd($query, string $name = "count")
     {
+        if (!$this->link_id && !$this->connect()) {
+            return false;
+        }
+
         $res = null;
-
-        Debug::dumpCaller($query);
-
         switch ($name) {
             case "count":
                 $query["select"] = "COUNT(ID) AS count";
@@ -473,24 +456,25 @@ class MySqli extends DatabaseDriver
                 break;
             default:
                 $this->errorHandler("Command not supported");
-
+                return false;
         }
 
         return $res;
     }
 
-
-    public function multiQuery($Query_String)
+    /**
+     * @param array $Query
+     * @return array|null
+     */
+    public function multiQuery(array $Query) : ?array
     {
-        if ($Query_String == "") {
-            $this->errorHandler("Query invoked With blank Query String");
-        }
         if (!$this->link_id && !$this->connect()) {
-            return false;
+            return null;
         }
+
+        $Query_String = implode("; ", $Query);
 
         Debug::dumpCaller($Query_String);
-
         $this->freeResult();
 
         mysqli_multi_query($this->link_id, $Query_String);
@@ -509,10 +493,20 @@ class MySqli extends DatabaseDriver
         return array("rc" => !$rc, "ord" => $i);
     }
 
-    public function lookup($tabella, $chiave = null, $valorechiave = null, $defaultvalue = null, $nomecampo = null, $tiporestituito = null, $bReturnPlain = false)
+    /**
+     * @param string $tabella
+     * @param string|null $chiave
+     * @param string|null $valorechiave
+     * @param string|null $defaultvalue
+     * @param string|null $nomecampo
+     * @param string|null $tiporestituito
+     * @param bool $bReturnPlain
+     * @return mixed
+     */
+    public function lookup(string $tabella, string $chiave = null, string $valorechiave = null, string $defaultvalue = null, string $nomecampo = null, string $tiporestituito = null, bool $bReturnPlain = false)
     {
         if (!$this->link_id && !$this->connect()) {
-            return false;
+            return null;
         }
 
         if ($tiporestituito === null) {
@@ -525,6 +519,7 @@ class MySqli extends DatabaseDriver
             if (is_array($nomecampo)) {
                 if (!count($nomecampo)) {
                     $this->errorHandler("lookup: Nuessun campo specificato da recuperare");
+                    return null;
                 }
                 foreach ($nomecampo as $key => $value) {
                     if (strlen($listacampi)) {
@@ -545,10 +540,12 @@ class MySqli extends DatabaseDriver
         if (is_array($chiave)) {
             if (!count($chiave)) {
                 $this->errorHandler("lookup: Nuessuna chiave specificata per il lookup");
+                return null;
             }
             foreach ($chiave as $key => $value) {
                 if (is_object($value) && get_class($value) != "Data") {
                     $this->errorHandler("lookup: Il valore delle chiavi dev'essere di tipo Data od un plain value");
+                    return null;
                 }
                 $sSql .= " AND `" . $key . "` = " . $this->toSql($value);
             }
@@ -556,6 +553,7 @@ class MySqli extends DatabaseDriver
         } elseif ($chiave != null) {
             if (is_object($valorechiave) && get_class($valorechiave) != "Data") {
                 $this->errorHandler("lookup: Il valore della chiave dev'essere un oggetto Data od un plain value");
+                return null;
             }
             $sSql .= " AND `" . $chiave . "` = " . $this->toSql($valorechiave);
         }
@@ -566,6 +564,7 @@ class MySqli extends DatabaseDriver
                 $valori = array();
                 if (!count($nomecampo)) {
                     $this->errorHandler("lookup: Nuessun campo specificato da recuperare");
+                    return null;
                 }
                 foreach ($nomecampo as $key => $value) {
                     $valori[$key] = $this->getField($key, $value, $bReturnPlain);
@@ -579,21 +578,16 @@ class MySqli extends DatabaseDriver
                 return $this->getField($this->fields_names[0], $tiporestituito, $bReturnPlain);
             }
         } else {
-            if ($defaultvalue === null) {
-                return false;
-            } else {
-                return $defaultvalue;
-            }
+            return $defaultvalue;
         }
     }
 
-
     /**
      * Sposta il puntatore al DB al record successivo (va chiamato almeno una volta)
-     * @param null|object
-     * @return bool|null|object
+     * @param object|null $obj
+     * @return bool
      */
-    public function nextRecord($obj = null)
+    public function nextRecord(object &$obj = null) : bool
     {
         if (!$this->query_id) {
             $this->errorHandler("nextRecord called with no query pending");
@@ -604,13 +598,11 @@ class MySqli extends DatabaseDriver
         if ($this->row == ($this->numRows() - 1)) {
             return false;
         }
-        if ($obj === null) {
-            $this->record = @mysqli_fetch_assoc($this->query_id);
-        } else {
+        if ($obj) {
             $this->record = @mysqli_fetch_object($this->query_id, $obj);
             $this->row += 1;
-
-            return $this->record;
+        } else {
+            $this->record = @mysqli_fetch_assoc($this->query_id);
         }
 
         if ($this->record) {
@@ -623,13 +615,13 @@ class MySqli extends DatabaseDriver
 
     /**
      * Conta il numero di righe
-     * @return bool|int|null
+     * @return int|null
      */
-    public function numRows()
+    public function numRows() : ?int
     {
-        if (!isset($this->query_id)) {
+        if (!$this->query_id) {
             $this->errorHandler("numRows() called with no query pending");
-            return false;
+            return null;
         }
 
         if ($this->num_rows === null) {
@@ -646,29 +638,33 @@ class MySqli extends DatabaseDriver
         return $this->num_rows;
     }
 
-    public function getInsertID($bReturnPlain = false)
+    /**
+     * @return string|null
+     */
+    public function getInsertID() : ?string
     {
         if (!$this->link_id) {
             $this->errorHandler("insert_id() called with no DB connection");
-            return false;
+            return null;
         }
 
-        if ($bReturnPlain) {
-            return $this->buffered_insert_id;
-        } else {
-            return new Data($this->buffered_insert_id, "Number", $this->locale);
-        }
+        return $this->buffered_insert_id;
     }
 
-    protected function toSql_escape($DataValue)
+    /**
+     * @param string $DataValue
+     * @return string
+     */
+    protected function toSqlEscape(string $DataValue) : string
     {
         return mysqli_real_escape_string($this->link_id, $DataValue);
     }
 
-    // ----------------------------------------
-    //  GESTIONE ERRORI
-
-    private function checkError()
+    /**
+     * GESTIONE ERRORI
+     * @return bool
+     */
+    private function checkError() : bool
     {
         if (is_object($this->link_id)) {
             $this->error = @mysqli_error($this->link_id);
@@ -680,13 +676,20 @@ class MySqli extends DatabaseDriver
         }
     }
 
-    protected function errorHandler($msg)
+    /**
+     * @param string $msg
+     */
+    protected function errorHandler(string $msg) : void
     {
         $this->checkError(); // this is needed due to params order
 
         Error::register("MySQL(" . $this->database . ") - " . $msg . " #" . $this->errno . ": " . $this->error, static::ERROR_BUCKET);
     }
 
+    /**
+     * @param string $keys
+     * @return string
+     */
     protected function id2object($keys)
     {
         return $keys;

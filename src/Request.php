@@ -787,6 +787,17 @@ class Request implements Configurable, Dumpable
     /**
      * @return string|null
      */
+    public static function rawAccept() : ?string
+    {
+        return (isset($_SERVER["HTTP_ACCEPT"])
+            ? $_SERVER["HTTP_ACCEPT"]
+            : null
+        );
+    }
+
+    /**
+     * @return string|null
+     */
     public static function method() : ?string
     {
         return (isset($_SERVER["REQUEST_METHOD"])
@@ -1324,11 +1335,11 @@ class Request implements Configurable, Dumpable
      */
     public static function accept() : string
     {
-        $arrAccept = array('*/*');
-        if (isset($_SERVER["HTTP_ACCEPT"])) {
-            $arrAccept = explode(",", $_SERVER["HTTP_ACCEPT"]);
-        }
+        $accept = self::rawAccept();
+        return ($accept
+            ? explode(",", $accept)[0]
+            : '*/*'
+        );
 
-        return $arrAccept[0];
     }
 }

@@ -154,7 +154,7 @@ class Config implements Dumpable
     /**
      * @return array
      */
-    public static function dump()
+    public static function dump() : array
     {
         return array(
             "config_rules"                                                  => self::$config_rules,

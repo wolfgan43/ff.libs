@@ -33,7 +33,6 @@ use MongoDB\BSON\ObjectID;
 use MongoDB\Driver\Exception\Exception;
 use MongoDB\Driver\Exception\InvalidArgumentException;
 use IteratorIterator;
-use phpformsframework\libs\international\Data;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Hook;
@@ -55,28 +54,16 @@ class MongoDB extends DatabaseDriver
     public $auth                    = null;
 
     /**
-     * @var bool|Manager
+     * @var Manager|null
      */
-    protected $link_id              = false;
+    protected $link_id              = null;
     /**
-     * @var bool|IteratorIterator
+     * @var IteratorIterator|null
      */
-    protected $query_id             = false;
+    protected $query_id             = null;
 
     private $query_params           = array();
     private $keyname				= "_id";
-
-    // STATIC EVENTS MANAGEMENT
-
-    public static function addEvent($event_name, $func_name, $priority = null)
-    {
-        Hook::register("mongodb:" . $event_name, $func_name, $priority);
-    }
-
-    private static function doEvent($event_name, $event_params = array())
-    {
-        Hook::handle("mongodb:" . $event_name, $event_params);
-    }
 
     /**
      * This method istantiate a ffDB_MongoDB instance. When using this
@@ -88,43 +75,44 @@ class MongoDB extends DatabaseDriver
     {
         $tmp = new static();
 
-        static::doEvent("on_factory_done", array($tmp));
+        Hook::handle("mongodb_on_factory_done", $tmp);
 
         return $tmp;
     }
 
-    public static function free_all()
+    public static function freeAll()
     {
         static::$_dbs = array();
     }
 
-    // -------------------------------------------------
-    //  FUNZIONI GENERICHE PER LA GESTIONE DELLA CLASSE
-
-    // LIBERA LA CONNESSIONE E LA QUERY
+    /**
+     * LIBERA LA CONNESSIONE E LA QUERY
+     */
     private function cleanup()
     {
         $this->freeResult();
-        $dbkey = $this->host . "|" . $this->auth;
+        $dbkey = $this->host . "|" . $this->user . "|" . $this->replica;
         if (isset(static::$_dbs[$dbkey])) {
             unset(static::$_dbs[$dbkey]);
         }
 
-        $this->link_id                  = false;
+        $this->link_id                  = null;
         $this->errno                    = 0;
         $this->error                    = "";
     }
 
-    // LIBERA LA RISORSA DELLA QUERY SENZA CHIUDERE LA CONNESSIONE
+    /**
+     * LIBERA LA RISORSA DELLA QUERY SENZA CHIUDERE LA CONNESSIONE
+     */
     private function freeResult()
     {
-        $this->query_id                 = false;
+        $this->query_id                 = null;
         $this->query_params             = array();
         $this->row                      = -1;
         $this->record                   = false;
         $this->num_rows                 = null;
-        $this->fields                   = null;
-        $this->fields_names             = null;
+        $this->fields                   = array();
+        $this->fields_names             = array();
         $this->buffered_insert_id       = null;
     }
 
@@ -135,75 +123,32 @@ class MongoDB extends DatabaseDriver
 
     /**
      * Gestisce la connessione al DB
-     * @param String Nome del DB a cui connettersi
-     * @param String Host su cui risiede il DB
-     * @param String username
-     * @param String password
+     * @param string|null $Database
+     * @param string|null $Host
+     * @param string|null $User
+     * @param string|null $Secret
      * @param bool $replica
-     * @param bool $force
-     * @return bool|Manager
+     * @return bool
      */
-    public function connect($Database = null, $Host = null, $User = null, $Password = null, $replica = false, $force = false)
+    public function connect(string $Database = null, string $Host = null, string $User = null, string $Secret = null, $replica = false) : bool
     {
-        // ELABORA I PARAMETRI DI CONNESSIONE
-        if ($Host !== null) {
-            $tmp_host                           = $Host;
-        } elseif ($this->host === null) {
-            $tmp_host                           = MONGO_DATABASE_HOST;
-        } else {
-            $tmp_host                           = $this->host;
-        }
-        if ($User !== null) {
-            $tmp_user                           = $User;
-        } elseif ($this->user === null) {
-            $tmp_user                           = MONGO_DATABASE_USER;
-        } else {
-            $tmp_user                           = $this->user;
-        }
-        if ($Password !== null) {
-            $tmp_pwd                            = $Password;
-        } elseif ($this->password === null) {
-            $tmp_pwd                            = MONGO_DATABASE_PASSWORD;
-        } else {
-            $tmp_pwd                            = $this->password;
-        }
-        if ($Database !== null) {
-            $this->database                     = $Database;
-        } elseif ($this->database === null) {
-            $this->database                     = MONGO_DATABASE_NAME;
-        }
-        if ($replica !== null) {
-            $this->replica                      = $replica;
+        if ($Host && $Database && $User && $Secret) {
+            $this->cleanup();
+
+            $this->database                         = $Database;
+            $this->host                             = $Host;
+            $this->user                             = $User;
+            $this->secret                           = $Secret;
+            $this->replica                          = $replica;
         }
 
-        $do_connect                             = true;
-        $dbkey                                  = null;
-
-        // SOVRASCRIVE I VALORI DI DEFAULT
-        $this->host                             = (
-            is_array($tmp_host)
-                                                    ? implode(",", $tmp_host)
-                                                    : $tmp_host
-                                                );
-        $this->user                             = $tmp_user;
-        $this->password                         = $tmp_pwd;
-
-        $this->auth                             = (
-            $this->user && $this->password
-                                                    ? $this->user . ":" . $this->password . "@"
-                                                    : ""
-                                                );
-
-        if (!$force) {
-            $dbkey = $this->host . "|" . $this->auth;
-            if (isset(static::$_dbs[$dbkey])) {
-                $this->link_id =& static::$_dbs[$dbkey];
-                $do_connect = false;
-            }
+        $dbkey = $this->host . "|" . $this->user . "|" . $this->replica;
+        if (isset(static::$_dbs[$dbkey])) {
+            $this->link_id =& static::$_dbs[$dbkey];
         }
 
-        if ($do_connect) {
-            $rc = null;
+
+        if (!$this->link_id) {
             if (class_exists("\MongoDB\Driver\Manager")) {
                 $this->link_id = new Manager(
                     "mongodb://"
@@ -215,15 +160,14 @@ class MongoDB extends DatabaseDriver
                         ? "?replicaSet=" . $this->replica
                         : "")
                 );
-                $rc = is_object($this->link_id);
+
+                if (!$this->link_id) {
+                    $this->cleanup();
+                    $this->errorHandler("Connection failed to host " . $this->host);
+                    return false;
+                }
             } else {
                 $this->errorHandler("Class not found: MongoDB\Driver\Manager");
-            }
-
-            if (!$rc) {
-                $this->errorHandler("Connection failed to host " . $this->host);
-
-                $this->cleanup();
                 return false;
             }
 
@@ -231,32 +175,47 @@ class MongoDB extends DatabaseDriver
             $this->link_id =& static::$_dbs[$dbkey];
         }
 
-        return $this->link_id;
+        return is_object($this->link_id);
     }
-
-    // -------------------------------------------
-    //  FUNZIONI PER LA GESTIONE DELLE OPERAZIONI
 
     /**
      * Esegue una query senza restituire un recordset
-     * @param string $query
+     * @param array $query
      * @param null|string $table
      * @return boolean
      */
-    public function insert($query, $table = null)
+    public function insert($query, string $table = null) : bool
     {
         return $this->getQuery($query, $table, "insert");
     }
-    public function update($query, $table = null)
+
+    /**
+     * @param array $query
+     * @param string|null $table
+     * @return bool
+     */
+    public function update($query, string $table = null) : bool
     {
         return $this->getQuery($query, $table, "update");
     }
-    public function delete($query, $table = null)
+
+    /**
+     * @param array $query
+     * @param string|null $table
+     * @return bool
+     */
+    public function delete($query, string $table = null) : bool
     {
         return $this->getQuery($query, $table, "delete");
     }
 
-    private function getQuery($query, $table, $action)
+    /**
+     * @param array $query
+     * @param string $table
+     * @param string $action
+     * @return bool
+     */
+    private function getQuery(array $query, string $table, string $action) : bool
     {
         if ($action == 'update') {
             $mongoDB            = $query;
@@ -270,10 +229,15 @@ class MongoDB extends DatabaseDriver
         return $this->execute($mongoDB);
     }
 
-    public function execute($query)
+    /**
+     * @param array|string $query
+     * @return bool
+     */
+    public function execute($query) : bool
     {
         if (empty($query)) {
             $this->errorHandler("Execute invoked With blank Query String");
+            return false;
         }
         if (!$this->link_id && !$this->connect()) {
             return false;
@@ -316,6 +280,7 @@ class MongoDB extends DatabaseDriver
                     $bulk->insert($mongoDB["insert"]);
                     if (!$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk)) {
                         $this->errorHandler("MognoDB Insert: " . $this->error);
+                        return false;
                     }
                     $this->buffered_insert_id = $mongoDB["insert"][$this->keyname];
                 }
@@ -345,6 +310,7 @@ class MongoDB extends DatabaseDriver
 
                     if (!$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk)) {
                         $this->errorHandler("MognoDB Update: " . $this->error);
+                        return false;
                     }
                 }
                 break;
@@ -364,6 +330,7 @@ class MongoDB extends DatabaseDriver
                     $bulk->delete($mongoDB["where"], $mongoDB["options"]);
                     if (!$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk)) {
                         $this->errorHandler("MognoDB Update: " . $this->error);
+                        return false;
                     }
                 }
                 break;
@@ -377,19 +344,28 @@ class MongoDB extends DatabaseDriver
         return true;
     }
 
-    public function getRecordset()
+    /**
+     * @param object|null $obj
+     * @return array|object|null
+     */
+    public function getRecordset(object $obj = null)
     {
         $res = null;
         if (!$this->query_id) {
             $this->errorHandler("eachAll called with no query pending");
-            return false;
+            return null;
         }
 
         if (class_exists("\MongoDB\Driver\Query")) {
-            $cursor = $this->link_id->executeQuery($this->database . "." . $this->query_params["table"], new Query($this->query_params["where"], $this->query_params["options"]));
+            try {
+                $cursor = $this->link_id->executeQuery($this->database . "." . $this->query_params["table"], new Query($this->query_params["where"], $this->query_params["options"]));
+            } catch (Exception $e) {
+                $this->errorHandler("Query failed: " . $e->getMessage());
+                return null;
+            }
             if (!$cursor) {
                 $this->errorHandler("fetch_assoc_error");
-                return false;
+                return null;
             } else {
                 $cursor->setTypeMap(['root' => 'array', 'document' => 'array', 'array' => 'array']);
 
@@ -400,24 +376,29 @@ class MongoDB extends DatabaseDriver
             }
         } else {
             $this->errorHandler("Class not found: MongoDB\Driver\Query");
+            return null;
         }
         return $res;
     }
 
-    public function getFieldset()
+    /**
+     * @return array
+     */
+    public function getFieldset() : array
     {
         return $this->fields_names;
     }
 
     /**
      * Esegue una query
-     * @param String La query da eseguire
-     * @return bool|Query
+     * @param array|string $query
+     * @return bool
      */
-    public function query($query)
+    public function query($query) : bool
     {
         if (empty($query)) {
             $this->errorHandler("Query invoked With blank Query String");
+            return false;
         }
         if (!$this->link_id && !$this->connect()) {
             return false;
@@ -490,7 +471,12 @@ class MongoDB extends DatabaseDriver
                     }
 
                     if (class_exists("\MongoDB\Driver\Query")) {
-                        $cursor = $this->link_id->executeQuery($this->database . "." . $this->query_params["table"], new Query($this->query_params["where"], $this->query_params["options"]));
+                        try {
+                            $cursor = $this->link_id->executeQuery($this->database . "." . $this->query_params["table"], new Query($this->query_params["where"], $this->query_params["options"]));
+                        } catch (Exception $e) {
+                            $this->errorHandler("Query failed: " . $e->getMessage());
+                            return false;
+                        }
                         if (!$cursor) {
                             $this->errorHandler("Invalid SQL: " . print_r($query, true));
                             return false;
@@ -502,26 +488,27 @@ class MongoDB extends DatabaseDriver
                         }
                     } else {
                         $this->errorHandler("Class not found: MongoDB\Driver\Query");
+                        return false;
                     }
                 }
                 break;
             default:
         }
 
-        return $this->query_id;
+        return is_object($this->query_id);
     }
 
     /**
-     * Esegue una query
-     * @param array $query
+     * @param array|string $query
      * @param string $name
      * @return mixed
      */
-    public function cmd($query, $name = "count")
+    public function cmd($query, string $name = "count")
     {
         $res = null;
         if (empty($query)) {
             $this->errorHandler("Query invoked With blank Query String");
+            return false;
         }
         if (!$this->link_id && !$this->connect()) {
             return false;
@@ -553,14 +540,24 @@ class MongoDB extends DatabaseDriver
                     break;
                 default:
                     $this->errorHandler("Command not supported");
+                    return false;
             }
         }
 
         return $res;
     }
 
-    public function multiQuery($queries)
+    /**
+     * @param array $queries
+     * @return array|null
+     * @throws Exception
+     */
+    public function multiQuery(array $queries) : ?array
     {
+        if (!$this->link_id && !$this->connect()) {
+            return null;
+        }
+
         $queryId = array();
         if (is_array($queries) && count($queries)) {
             Debug::dumpCaller($queries);
@@ -569,11 +566,8 @@ class MongoDB extends DatabaseDriver
             foreach ($queries as $query) {
                 if (empty($query)) {
                     $this->errorHandler("Query invoked With blank Query String");
+                    return null;
                 }
-                if (!$this->link_id && !$this->connect()) {
-                    return false;
-                }
-
 
                 if (is_array($query)) {
                     $mongoDB = $query;
@@ -587,6 +581,7 @@ class MongoDB extends DatabaseDriver
                         $bulk->insert($query);
                         if (!$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk)) {
                             $this->errorHandler("MognoDB Insert: " . $this->error);
+                            return null;
                         }
                         break;
                     case "update":
@@ -594,6 +589,7 @@ class MongoDB extends DatabaseDriver
                         $bulk->update($query["where"], $query["set"]);
                         if (!$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk)) {
                             $this->errorHandler("MongoDB Update: " . $this->error);
+                            return null;
                         }
                         break;
                     case "delete":
@@ -601,6 +597,7 @@ class MongoDB extends DatabaseDriver
                         $bulk->delete($query);
                         if (!$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk)) {
                             $this->errorHandler("MognoDB Delete: " . $this->error);
+                            return null;
                         }
                         break;
                     case "select":
@@ -609,7 +606,7 @@ class MongoDB extends DatabaseDriver
                             $cursor = $this->link_id->executeQuery($this->database . "." . $mongoDB["table"], new Query($mongoDB["sql"]));
                             if (!$cursor) {
                                 $this->errorHandler("Invalid SQL: " . print_r($query, true));
-                                return false;
+                                return null;
                             } else {
                                 $cursor->setTypeMap(['root' => 'array', 'document' => 'array', 'array' => 'array']);
 
@@ -619,6 +616,7 @@ class MongoDB extends DatabaseDriver
                             }
                         } else {
                             $this->errorHandler("Class not found: MongoDB\Driver\Query");
+                            return null;
                         }
                         break;
                     default:
@@ -631,9 +629,20 @@ class MongoDB extends DatabaseDriver
         return $queryId;
     }
 
-    public function lookup($tabella, $chiave = null, $valorechiave = null, $defaultvalue = null, $nomecampo = null, $tiporestituito = null, $bReturnPlain = false)
+    /**
+     * @param string $tabella
+     * @param string|null $chiave
+     * @param string|null $valorechiave
+     * @param string|null $defaultvalue
+     * @param string|null $nomecampo
+     * @param string|null $tiporestituito
+     * @param bool $bReturnPlain
+     * @return mixed
+     */
+    public function lookup(string $tabella, string $chiave = null, string $valorechiave = null, string $defaultvalue = null, string $nomecampo = null, string $tiporestituito = null, bool $bReturnPlain = false)
     {
         //todo: da implementare
+        return null;
     }
 
     /**
@@ -648,13 +657,17 @@ class MongoDB extends DatabaseDriver
             $this->fields_names         = array_keys($this->record);
             $this->fields               = array_fill_keys($this->fields_names, "");
         } else {
-            $this->fields_names         = null;
-            $this->fields               = null;
+            $this->fields_names         = array();
+            $this->fields               = array();
         }
-        return $this->record;
+        return (bool) $this->record;
     }
 
-    public function nextRecord($obj = null)
+    /**
+     * @param object|null $obj
+     * @return bool
+     */
+    public function nextRecord(object &$obj = null) : bool
     {
         if (!$this->query_id) {
             $this->errorHandler("nextRecord called with no query pending");
@@ -676,7 +689,7 @@ class MongoDB extends DatabaseDriver
      * Conta il numero di righe
      * @return int
      */
-    public function numRows()
+    public function numRows() : int
     {
         if ($this->num_rows === null) {
             try {
@@ -688,25 +701,23 @@ class MongoDB extends DatabaseDriver
                 $this->num_rows = $cursor->toArray()[0]->n;
             } catch (Exception $e) {
                 $this->errorHandler("Class not found: MongoDB\Driver\Command");
+                return null;
             }
         }
         return $this->num_rows;
     }
 
-    public function getInsertID($bReturnPlain = false)
+    /**
+     * @return string|null
+     */
+    public function getInsertID() : ?string
     {
         if (!$this->link_id) {
             $this->errorHandler("insert_id() called with no DB connection");
-            return false;
+            return null;
         }
 
-        $id = $this->objectID2string($this->buffered_insert_id);
-
-        if ($bReturnPlain) {
-            return $id;
-        } else {
-            return new Data($id, "Number", $this->locale);
-        }
+        return $this->objectID2string($this->buffered_insert_id);
     }
 
     /**
@@ -720,23 +731,37 @@ class MongoDB extends DatabaseDriver
             : (string) $var
         );
     }
-    protected function toSql_escape($DataValue)
+
+    /**
+     * @param string $DataValue
+     * @return string
+     */
+    protected function toSqlEscape(string $DataValue) : string
     {
         return $DataValue;
     }
 
-    // ----------------------------------------
-    //  GESTIONE ERRORI
-
-    protected function errorHandler($msg)
+    /**
+     * @param string $msg
+     */
+    protected function errorHandler(string $msg) : void
     {
         Error::register("MongoDB(" . $this->database . ") - " . $msg . " #" . $this->errno . ": " . $this->error, static::ERROR_BUCKET);
     }
+
+    /**
+     * @return ObjectID
+     */
     private function createObjectID()
     {
         return new ObjectID();
     }
-    private function getObjectID($value)
+
+    /**
+     * @param ObjectID|string $value
+     * @return ObjectID|null
+     */
+    private function getObjectID($value) : ?ObjectID
     {
         if ($value instanceof ObjectID) {
             $res = $value;
@@ -744,11 +769,16 @@ class MongoDB extends DatabaseDriver
             try {
                 $res = new ObjectID($value);
             } catch (InvalidArgumentException $e) {
-                return false;
+                return null;
             }
         }
         return $res;
     }
+
+    /**
+     * @param array|ObjectID|string $keys
+     * @return array|ObjectID|null
+     */
     protected function id2object($keys)
     {
         $res = null;
@@ -777,13 +807,18 @@ class MongoDB extends DatabaseDriver
 
         return $res;
     }
-    ### Handle where
-    private function equation2mg($exp)
+
+    /**
+     * Handle where
+     * @param string $exp
+     * @return string|null
+     */
+    private function equation2mg(string $exp) : ?string
     {
         # split operator
         $exp = trim($exp);
         if (!$exp) {
-            return('');
+            return null;
         }
 
         $operator = null;
@@ -834,12 +869,17 @@ class MongoDB extends DatabaseDriver
             }
         } else {
             $this->errorHandler("Unknown operator '$operator' :  $exp");
+            return null;
         }
 
-        return ($mg_equation);
+        return $mg_equation;
     }
 
-    private function where2mg($str)
+    /**
+     * @param string $str
+     * @return string|null
+     */
+    private function where2mg(string $str) : ?string
     {
         # Make infix stuff to polishstuff
         $arr = preg_split('/ *?(\() *?| *?(\)) *?| +(and) +| +(or) +| +(not) +|(not)/i', $str, null, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
@@ -974,9 +1014,14 @@ class MongoDB extends DatabaseDriver
             $rs .= $val;
         }
 
-        return ($rs);
+        return $rs;
     }
-    private function sql2mongoDB($sql)
+
+    /**
+     * @param string $sql
+     * @return array|null
+     */
+    private function sql2mongoDB(string $sql) : ?array
     {
         $mg_collection = null;
         $mg_fields = null;
@@ -998,12 +1043,15 @@ class MongoDB extends DatabaseDriver
         if ($query['querytype'] == "insert") {
             $query['action'] = "insert";
             $this->errorHandler("insert not supported yet");
+            return null;
         } elseif ($query['querytype'] == "update") {
             $query['action'] = "update";
             $this->errorHandler("update not supported yet");
+            return null;
         } elseif ($query['querytype'] == "delete") {
             $query['action'] = "delete";
             $this->errorHandler("delete not supported yet");
+            return null;
         } elseif ($query['querytype'] == "select") {
             $query['action'] = "select";
             $findcommand = "find";
@@ -1059,6 +1107,7 @@ class MongoDB extends DatabaseDriver
 
             if (sizeof($query['tables']) > 1) {
                 $this->errorHandler("only one table for now");
+                return null;
             } else {
                 $mg_collection = trim($query['tables'][0]);
             }
@@ -1087,6 +1136,7 @@ class MongoDB extends DatabaseDriver
                     $mg_sort .= "-1";
                 } else {
                     $this->errorHandler("desc or asc missing $mg_sort $orderby");
+                    return null;
                 }
                 $mg_sort .= " } )";
             }
@@ -1122,6 +1172,7 @@ class MongoDB extends DatabaseDriver
         } else {
             $query['action'] = $query['querytype'];
             $this->errorHandler("unsupported querytype for the time being: " . $query['querytype']);
+            return null;
         }
 
         return $query;

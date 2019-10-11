@@ -36,7 +36,7 @@ class Hook implements Configurable, Dumpable
     const HOOK_PRIORITY_NORMAL                                                      = 100;
     const HOOK_PRIORITY_LOW                                                         = 10;
 
-    private static $events                                                          = null;
+    private static $events                                                          = array();
 
     /**
      * @access private
@@ -82,9 +82,9 @@ class Hook implements Configurable, Dumpable
     }
 
     /**
-     * @return array|null
+     * @return array
      */
-    public static function dump() : ?array
+    public static function dump() : array
     {
         return self::$events;
     }

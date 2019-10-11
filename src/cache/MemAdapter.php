@@ -37,7 +37,10 @@ abstract class MemAdapter implements Dumpable
     protected $is_readable          = true;
     protected $is_writeable         = true;
 
-    public static function dump()
+    /**
+     * @return array
+     */
+    public static function dump() : array
     {
         return self::$dump;
     }

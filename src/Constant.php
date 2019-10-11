@@ -74,12 +74,12 @@ class Constant
     const DATABASE_HOST                     = null;
     const DATABASE_NAME                     = null;
     const DATABASE_USER                     = null;
-    const DATABASE_PASSWORD                 = null;
+    const DATABASE_SECRET                   = null;
 
     const SMTP_HOST                         = null;
     const SMTP_AUTH                         = false;
     const SMTP_USER                         = null;
-    const SMTP_PASSWORD                     = null;
+    const SMTP_SECRET                       = null;
     const SMTP_PORT                         = 25;
     const SMTP_SECURE                       = false;
 
@@ -95,10 +95,10 @@ class Constant
      * Access Credential
      */
     const HTTP_AUTH_USERNAME                = null;
-    const HTTP_AUTH_PASSWORD                = null;
+    const HTTP_AUTH_SECRET                  = null;
 
     const FTP_USERNAME                      = null;
-    const FTP_PASSWORD                      = null;
+    const FTP_SECRET                        = null;
 
     const SESSION_NAME                      = self::APPNAME;
     const SESSION_SAVE_PATH                 = DIRECTORY_SEPARATOR . "tmp";

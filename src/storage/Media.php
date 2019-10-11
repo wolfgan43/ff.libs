@@ -76,477 +76,493 @@ class Media implements Configurable
     const STRICT                                                    = false;
     const RENDER_MEDIA_PATH                                         = DIRECTORY_SEPARATOR . "media";
     const RENDER_ASSETS_PATH                                        = DIRECTORY_SEPARATOR . "assets";
+    const RENDER_WIDGET_PATH                                        = DIRECTORY_SEPARATOR . "widgets";
     const RENDER_IMAGE_PATH                                         = DIRECTORY_SEPARATOR . "images";
     const RENDER_SCRIPT_PATH                                        = DIRECTORY_SEPARATOR . "js";
     const RENDER_STYLE_PATH                                         = DIRECTORY_SEPARATOR . "css";
+    const RENDER_FONT_PATH                                          = DIRECTORY_SEPARATOR . "fonts";
 
     const MODIFY_PATH                                               = Constant::SITE_PATH . DIRECTORY_SEPARATOR . "restricted" . DIRECTORY_SEPARATOR . "media" . DIRECTORY_SEPARATOR . "modify";
-
     const MIMETYPE                                                  = array(
-                                                                        "3dm" => "x-world/x-3dmf"
-                                                                        , "3dmf" => "x-world/x-3dmf"
-                                                                        , "a" => "application/octet-stream"
-                                                                        , "aab" => "application/x-authorware-bin"
-                                                                        , "aam" => "application/x-authorware-map"
-                                                                        , "aas" => "application/x-authorware-seg"
-                                                                        , "abc" => "text/vnd.abc"
-                                                                        , "acgi" => "text/html"
-                                                                        , "afl" => "video/animaflex"
-                                                                        , "ai" => "application/postscript"
-                                                                        , "aif" => "audio/aiff"
-                                                                        , "aifc" => "audio/aiff"
-                                                                        , "aiff" => "audio/aiff"
-                                                                        , "aim" => "application/x-aim"
-                                                                        , "aip" => "text/x-audiosoft-intra"
-                                                                        , "ani" => "application/x-navi-animation"
-                                                                        , "aos" => "application/x-nokia-9000-communicator-add-on-software"
-                                                                        , "aps" => "application/mime"
-                                                                        , "arc" => "application/octet-stream"
-                                                                        , "arj" => "application/arj"
-                                                                        , "art" => "image/x-jg"
-                                                                        , "asf" => "video/x-ms-asf"
-                                                                        , "asm" => "text/x-asm"
-                                                                        , "asp" => "text/asp"
-                                                                        , "asx" => "application/x-mplayer2"
-                                                                        , "au" => "audio/basic"
-                                                                        , "avi" => "application/x-troff-msvideo"
-                                                                        , "avs" => "video/avs-video"
-                                                                        , "bcpio" => "application/x-bcpio"
-                                                                        , "bin" => "application/mac-binary"
-                                                                        , "bm" => "image/bmp"
-                                                                        , "bmp" => "image/bmp"
-                                                                        , "boo" => "application/book"
-                                                                        , "book" => "application/book"
-                                                                        , "boz" => "application/x-bzip2"
-                                                                        , "bsh" => "application/x-bsh"
-                                                                        , "bz" => "application/x-bzip"
-                                                                        , "bz2" => "application/x-bzip2"
-                                                                        , "c" => "text/plain"
-                                                                        , "c++" => "text/plain"
-                                                                        , "cat" => "application/vnd.ms-pki.seccat"
-                                                                        , "cc" => "text/plain"
-                                                                        , "ccad" => "application/clariscad"
-                                                                        , "cco" => "application/x-cocoa"
-                                                                        , "cdf" => "application/cdf"
-                                                                        , "cer" => "application/pkix-cert"
-                                                                        , "cha" => "application/x-chat"
-                                                                        , "chat" => "application/x-chat"
-                                                                        , "class" => "application/java"
-                                                                        , "com" => "application/octet-stream"
-                                                                        , "conf" => "text/plain"
-                                                                        , "cpio" => "application/x-cpio"
-                                                                        , "cpp" => "text/x-c"
-                                                                        , "cpt" => "application/mac-compactpro"
-                                                                        , "crl" => "application/pkcs-crl"
-                                                                        , "crt" => "application/pkix-cert"
-                                                                        , "csh" => "application/x-csh"
-                                                                        , "css" => "text/css"
-                                                                        , "cxx" => "text/plain"
-                                                                        , "dcr" => "application/x-director"
-                                                                        , "deepv" => "application/x-deepv"
-                                                                        , "def" => "text/plain"
-                                                                        , "der" => "application/x-x509-ca-cert"
-                                                                        , "dif" => "video/x-dv"
-                                                                        , "dir" => "application/x-director"
-                                                                        , "dl" => "video/dl"
-                                                                        , "doc" => "application/msword"
-                                                                        , "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                                                                        , "dot" => "application/msword"
-                                                                        , "dotx" =>	"application/vnd.openxmlformats-officedocument.wordprocessingml.template"
-                                                                        , "dp" => "application/commonground"
-                                                                        , "drw" => "application/drafting"
-                                                                        , "dump" => "application/octet-stream"
-                                                                        , "dv" => "video/x-dv"
-                                                                        , "dvi" => "application/x-dvi"
-                                                                        , "dwf" => "drawing/x-dwf"
-                                                                        , "dwg" => "application/acad"
-                                                                        , "dxf" => "application/dxf"
-                                                                        , "dxr" => "application/x-director"
-                                                                        , "el" => "text/x-script.elisp"
-                                                                        , "elc" => "application/x-bytecode.elisp"
-                                                                        , "env" => "application/x-envoy"
-                                                                        , "eps" => "application/postscript"
-                                                                        , "es" => "application/x-esrehber"
-                                                                        , "etx" => "text/x-setext"
-                                                                        , "evy" => "application/envoy"
-                                                                        , "exe" => "application/octet-stream"
-                                                                        , "f" => "text/plain"
-                                                                        , "f77" => "text/x-fortran"
-                                                                        , "f90" => "text/plain"
-                                                                        , "fdf" => "application/vnd.fdf"
-                                                                        , "fif" => "application/fractals"
-                                                                        , "fli" => "video/fli"
-                                                                        , "flo" => "image/florian"
-                                                                        , "flx" => "text/vnd.fmi.flexstor"
-                                                                        , "fmf" => "video/x-atomic3d-feature"
-                                                                        , "for" => "text/plain"
-                                                                        , "fpx" => "image/vnd.fpx"
-                                                                        , "frl" => "application/freeloader"
-                                                                        , "funk" => "audio/make"
-                                                                        , "g" => "text/plain"
-                                                                        , "g3" => "image/g3fax"
-                                                                        , "gif" => "image/gif"
-                                                                        , "gl" => "video/gl"
-                                                                        , "gsd" => "audio/x-gsm"
-                                                                        , "gsm" => "audio/x-gsm"
-                                                                        , "gsp" => "application/x-gsp"
-                                                                        , "gss" => "application/x-gss"
-                                                                        , "gtar" => "application/x-gtar"
-                                                                        , "gz" => "application/x-compressed"
-                                                                        , "gzip" => "application/x-gzip"
-                                                                        , "h" => "text/plain"
-                                                                        , "hdf" => "application/x-hdf"
-                                                                        , "help" => "application/x-helpfile"
-                                                                        , "hgl" => "application/vnd.hp-hpgl"
-                                                                        , "hh" => "text/plain"
-                                                                        , "hlb" => "text/x-script"
-                                                                        , "hlp" => "application/hlp"
-                                                                        , "hpg" => "application/vnd.hp-hpgl"
-                                                                        , "hpgl" => "application/vnd.hp-hpgl"
-                                                                        , "hqx" => "application/binhex"
-                                                                        , "hta" => "application/hta"
-                                                                        , "htc" => "text/x-component"
-                                                                        , "htm" => "text/html"
-                                                                        , "html" => "text/html"
-                                                                        , "htmls" => "text/html"
-                                                                        , "htt" => "text/webviewhtml"
-                                                                        , "htx" => "text/html"
-                                                                        , "ice" => "x-conference/x-cooltalk"
-                                                                        , "ico" => "image/x-icon"
-                                                                        , "idc" => "text/plain"
-                                                                        , "ief" => "image/ief"
-                                                                        , "iefs" => "image/ief"
-                                                                        , "iges" => "application/iges"
-                                                                        , "igs" => "application/iges"
-                                                                        , "ima" => "application/x-ima"
-                                                                        , "imap" => "application/x-httpd-imap"
-                                                                        , "inf" => "application/inf"
-                                                                        , "ins" => "application/x-internett-signup"
-                                                                        , "ip" => "application/x-ip2"
-                                                                        , "isu" => "video/x-isvideo"
-                                                                        , "it" => "audio/it"
-                                                                        , "iv" => "application/x-inventor"
-                                                                        , "ivr" => "i-world/i-vrml"
-                                                                        , "ivy" => "application/x-livescreen"
-                                                                        , "jam" => "audio/x-jam"
-                                                                        , "jav" => "text/plain"
-                                                                        , "java" => "text/plain"
-                                                                        , "jcm" => "application/x-java-commerce"
-                                                                        , "jfif" => "image/jpeg"
-                                                                        , "jfif-tbnl" => "image/jpeg"
-                                                                        , "jpe" => "image/jpeg"
-                                                                        , "jpeg" => "image/jpeg"
-                                                                        , "jpg" => "image/jpeg"
-                                                                        , "jps" => "image/x-jps"
-                                                                        , "js" => "application/x-javascript"
-                                                                        , "jut" => "image/jutvision"
-                                                                        , "kar" => "audio/midi"
-                                                                        , "ksh" => "application/x-ksh"
-                                                                        , "la" => "audio/nspaudio"
-                                                                        , "lam" => "audio/x-liveaudio"
-                                                                        , "latex" => "application/x-latex"
-                                                                        , "lha" => "application/lha"
-                                                                        , "lhx" => "application/octet-stream"
-                                                                        , "list" => "text/plain"
-                                                                        , "lma" => "audio/nspaudio"
-                                                                        , "log" => "text/plain"
-                                                                        , "lsp" => "application/x-lisp"
-                                                                        , "lst" => "text/plain"
-                                                                        , "lsx" => "text/x-la-asf"
-                                                                        , "ltx" => "application/x-latex"
-                                                                        , "lzh" => "application/octet-stream"
-                                                                        , "lzx" => "application/lzx"
-                                                                        , "m" => "text/plain"
-                                                                        , "m1v" => "video/mpeg"
-                                                                        , "m2a" => "audio/mpeg"
-                                                                        , "m2v" => "video/mpeg"
-                                                                        , "m3u" => "audio/x-mpequrl"
-                                                                        , "man" => "application/x-troff-man"
-                                                                        , "map" => "application/x-navimap"
-                                                                        , "mar" => "text/plain"
-                                                                        , "mbd" => "application/mbedlet"
-                                                                        , "mc$" => "application/x-magic-cap-package-1.0"
-                                                                        , "mcd" => "application/mcad"
-                                                                        , "mcf" => "image/vasa"
-                                                                        , "mcp" => "application/netmc"
-                                                                        , "me" => "application/x-troff-me"
-                                                                        , "mht" => "message/rfc822"
-                                                                        , "mhtml" => "message/rfc822"
-                                                                        , "mid" => "application/x-midi"
-                                                                        , "midi" => "application/x-midi"
-                                                                        , "mif" => "application/x-frame"
-                                                                        , "mime" => "message/rfc822"
-                                                                        , "mjf" => "audio/x-vnd.audioexplosion.mjuicemediafile"
-                                                                        , "mjpg" => "video/x-motion-jpeg"
-                                                                        , "mm" => "application/base64"
-                                                                        , "mme" => "application/base64"
-                                                                        , "mod" => "audio/mod"
-                                                                        , "moov" => "video/quicktime"
-                                                                        , "mov" => "video/quicktime"
-                                                                        , "movie" => "video/x-sgi-movie"
-                                                                        , "mp2" => "audio/mpeg"
-                                                                        , "mp3" => "audio/mpeg3"
-                                                                        , "mpa" => "audio/mpeg"
-                                                                        , "mpc" => "application/x-project"
-                                                                        , "mpe" => "video/mpeg"
-                                                                        , "mpeg" => "video/mpeg"
-                                                                        , "mpg" => "audio/mpeg"
-                                                                        , "mpga" => "audio/mpeg"
-                                                                        , "mpp" => "application/vnd.ms-project"
-                                                                        , "mpt" => "application/x-project"
-                                                                        , "mpv" => "application/x-project"
-                                                                        , "mpx" => "application/x-project"
-                                                                        , "mrc" => "application/marc"
-                                                                        , "ms" => "application/x-troff-ms"
-                                                                        , "mv" => "video/x-sgi-movie"
-                                                                        , "my" => "audio/make"
-                                                                        , "mzz" => "application/x-vnd.audioexplosion.mzz"
-                                                                        , "nap" => "image/naplps"
-                                                                        , "naplps" => "image/naplps"
-                                                                        , "nc" => "application/x-netcdf"
-                                                                        , "ncm" => "application/vnd.nokia.configuration-message"
-                                                                        , "nif" => "image/x-niff"
-                                                                        , "niff" => "image/x-niff"
-                                                                        , "nix" => "application/x-mix-transfer"
-                                                                        , "nsc" => "application/x-conference"
-                                                                        , "nvd" => "application/x-navidoc"
-                                                                        , "o" => "application/octet-stream"
-                                                                        , "oda" => "application/oda"
-                                                                        , "omc" => "application/x-omc"
-                                                                        , "omcd" => "application/x-omcdatamaker"
-                                                                        , "omcr" => "application/x-omcregerator"
-                                                                        , "p" => "text/x-pascal"
-                                                                        , "p10" => "application/pkcs10"
-                                                                        , "p12" => "application/pkcs-12"
-                                                                        , "p7a" => "application/x-pkcs7-signature"
-                                                                        , "p7c" => "application/pkcs7-mime"
-                                                                        , "p7m" => "application/pkcs7-mime"
-                                                                        , "p7r" => "application/x-pkcs7-certreqresp"
-                                                                        , "p7s" => "application/pkcs7-signature"
-                                                                        , "part" => "application/pro_eng"
-                                                                        , "pas" => "text/pascal"
-                                                                        , "pbm" => "image/x-portable-bitmap"
-                                                                        , "pcl" => "application/vnd.hp-pcl"
-                                                                        , "pct" => "image/x-pict"
-                                                                        , "pcx" => "image/x-pcx"
-                                                                        , "pdb" => "chemical/x-pdb"
-                                                                        , "pdf" => "application/pdf"
-                                                                        , "pfunk" => "audio/make"
-                                                                        , "pgm" => "image/x-portable-graymap"
-                                                                        , "pic" => "image/pict"
-                                                                        , "pict" => "image/pict"
-                                                                        , "pkg" => "application/x-newton-compatible-pkg"
-                                                                        , "pko" => "application/vnd.ms-pki.pko"
-                                                                        , "pl" => "text/plain"
-                                                                        , "plx" => "application/x-pixclscript"
-                                                                        , "pm" => "image/x-xpixmap"
-                                                                        , "pm4" => "application/x-pagemaker"
-                                                                        , "pm5" => "application/x-pagemaker"
-                                                                        , "png" => "image/png"
-                                                                        , "pnm" => "application/x-portable-anymap"
-                                                                        , "pot" => "application/mspowerpoint"
-                                                                        , "potx" => "application/vnd.openxmlformats-officedocument.presentationml.template"
-                                                                        , "pov" => "model/x-pov"
-                                                                        , "ppa" => "application/vnd.ms-powerpoint"
-                                                                        , "ppm" => "image/x-portable-pixmap"
-                                                                        , "pps" => "application/mspowerpoint"
-                                                                        , "ppsx" => "application/vnd.openxmlformats-officedocument.presentationml.slideshow"
-                                                                        , "ppt" => "application/mspowerpoint"
-                                                                        , "pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-                                                                        , "ppz" => "application/mspowerpoint"
-                                                                        , "pre" => "application/x-freelance"
-                                                                        , "prt" => "application/pro_eng"
-                                                                        , "ps" => "application/postscript"
-                                                                        , "psd" => "application/octet-stream"
-                                                                        , "pvu" => "paleovu/x-pv"
-                                                                        , "pwz" => "application/vnd.ms-powerpoint"
-                                                                        , "py" => "text/x-script.phyton"
-                                                                        , "pyc" => "applicaiton/x-bytecode.python"
-                                                                        , "qcp" => "audio/vnd.qcelp"
-                                                                        , "qd3" => "x-world/x-3dmf"
-                                                                        , "qd3d" => "x-world/x-3dmf"
-                                                                        , "qif" => "image/x-quicktime"
-                                                                        , "qt" => "video/quicktime"
-                                                                        , "qtc" => "video/x-qtc"
-                                                                        , "qti" => "image/x-quicktime"
-                                                                        , "qtif" => "image/x-quicktime"
-                                                                        , "ra" => "audio/x-pn-realaudio"
-                                                                        , "ram" => "audio/x-pn-realaudio"
-                                                                        , "rar" => "application/x-rar-compressed"
-                                                                        , "ras" => "application/x-cmu-raster"
-                                                                        , "rast" => "image/cmu-raster"
-                                                                        , "rexx" => "text/x-script.rexx"
-                                                                        , "rf" => "image/vnd.rn-realflash"
-                                                                        , "rgb" => "image/x-rgb"
-                                                                        , "rm" => "application/vnd.rn-realmedia"
-                                                                        , "rmi" => "audio/mid"
-                                                                        , "rmm" => "audio/x-pn-realaudio"
-                                                                        , "rmp" => "audio/x-pn-realaudio"
-                                                                        , "rng" => "application/ringing-tones"
-                                                                        , "rnx" => "application/vnd.rn-realplayer"
-                                                                        , "roff" => "application/x-troff"
-                                                                        , "rp" => "image/vnd.rn-realpix"
-                                                                        , "rpm" => "audio/x-pn-realaudio-plugin"
-                                                                        , "rt" => "text/richtext"
-                                                                        , "rtf" => "application/rtf"
-                                                                        , "rtx" => "application/rtf"
-                                                                        , "rv" => "video/vnd.rn-realvideo"
-                                                                        , "s" => "text/x-asm"
-                                                                        , "s3m" => "audio/s3m"
-                                                                        , "saveme" => "application/octet-stream"
-                                                                        , "sbk" => "application/x-tbook"
-                                                                        , "scm" => "application/x-lotusscreencam"
-                                                                        , "sdml" => "text/plain"
-                                                                        , "sdp" => "application/sdp"
-                                                                        , "sdr" => "application/sounder"
-                                                                        , "sea" => "application/sea"
-                                                                        , "set" => "application/set"
-                                                                        , "sgm" => "text/sgml"
-                                                                        , "sgml" => "text/sgml"
-                                                                        , "sh" => "application/x-bsh"
-                                                                        , "shar" => "application/x-bsh"
-                                                                        , "shtml" => "text/html"
-                                                                        , "sid" => "audio/x-psid"
-                                                                        , "sit" => "application/x-sit"
-                                                                        , "skd" => "application/x-koan"
-                                                                        , "skm" => "application/x-koan"
-                                                                        , "skp" => "application/x-koan"
-                                                                        , "skt" => "application/x-koan"
-                                                                        , "sl" => "application/x-seelogo"
-                                                                        , "smi" => "application/smil"
-                                                                        , "smil" => "application/smil"
-                                                                        , "snd" => "audio/basic"
-                                                                        , "sol" => "application/solids"
-                                                                        , "spc" => "application/x-pkcs7-certificates"
-                                                                        , "spl" => "application/futuresplash"
-                                                                        , "spr" => "application/x-sprite"
-                                                                        , "sprite" => "application/x-sprite"
-                                                                        , "src" => "application/x-wais-source"
-                                                                        , "ssi" => "text/x-server-parsed-html"
-                                                                        , "ssm" => "application/streamingmedia"
-                                                                        , "sst" => "application/vnd.ms-pki.certstore"
-                                                                        , "step" => "application/step"
-                                                                        , "stl" => "application/sla"
-                                                                        , "stp" => "application/step"
-                                                                        , "sv4cpio" => "application/x-sv4cpio"
-                                                                        , "sv4crc" => "application/x-sv4crc"
-                                                                        , "svf" => "image/vnd.dwg"
-                                                                        , "svr" => "application/x-world"
-                                                                        , "swf" => "application/x-shockwave-flash"
-                                                                        , "t" => "application/x-troff"
-                                                                        , "talk" => "text/x-speech"
-                                                                        , "tar" => "application/x-tar"
-                                                                        , "tbk" => "application/toolbook"
-                                                                        , "tcl" => "application/x-tcl"
-                                                                        , "tcsh" => "text/x-script.tcsh"
-                                                                        , "tex" => "application/x-tex"
-                                                                        , "texi" => "application/x-texinfo"
-                                                                        , "texinfo" => "application/x-texinfo"
-                                                                        , "text" => "text/plain"
-                                                                        , "tgz" => "application/gnutar"
-                                                                        , "tif" => "image/tiff"
-                                                                        , "tiff" => "image/tiff"
-                                                                        , "tr" => "application/x-troff"
-                                                                        , "tsi" => "audio/tsp-audio"
-                                                                        , "tsp" => "application/dsptype"
-                                                                        , "tsv" => "text/tab-separated-values"
-                                                                        , "turbot" => "image/florian"
-                                                                        , "txt" => "text/plain"
-                                                                        , "uil" => "text/x-uil"
-                                                                        , "uni" => "text/uri-list"
-                                                                        , "unis" => "text/uri-list"
-                                                                        , "unv" => "application/i-deas"
-                                                                        , "uri" => "text/uri-list"
-                                                                        , "uris" => "text/uri-list"
-                                                                        , "ustar" => "application/x-ustar"
-                                                                        , "uu" => "application/octet-stream"
-                                                                        , "uue" => "text/x-uuencode"
-                                                                        , "vcd" => "application/x-cdlink"
-                                                                        , "vcs" => "text/x-vcalendar"
-                                                                        , "vda" => "application/vda"
-                                                                        , "vdo" => "video/vdo"
-                                                                        , "vew" => "application/groupwise"
-                                                                        , "viv" => "video/vivo"
-                                                                        , "vivo" => "video/vivo"
-                                                                        , "vmd" => "application/vocaltec-media-desc"
-                                                                        , "vmf" => "application/vocaltec-media-file"
-                                                                        , "voc" => "audio/voc"
-                                                                        , "vos" => "video/vosaic"
-                                                                        , "vox" => "audio/voxware"
-                                                                        , "vqe" => "audio/x-twinvq-plugin"
-                                                                        , "vqf" => "audio/x-twinvq"
-                                                                        , "vql" => "audio/x-twinvq-plugin"
-                                                                        , "vrml" => "application/x-vrml"
-                                                                        , "vrt" => "x-world/x-vrt"
-                                                                        , "vsd" => "application/x-visio"
-                                                                        , "vst" => "application/x-visio"
-                                                                        , "vsw" => "application/x-visio"
-                                                                        , "w60" => "application/wordperfect6.0"
-                                                                        , "w61" => "application/wordperfect6.1"
-                                                                        , "w6w" => "application/msword"
-                                                                        , "wav" => "audio/x-wav"
-                                                                        , "wb1" => "application/x-qpro"
-                                                                        , "wbmp" => "image/vnd.wap.wbmp"
-                                                                        , "web" => "application/vnd.xara"
-                                                                        , "wiz" => "application/msword"
-                                                                        , "wk1" => "application/x-123"
-                                                                        , "wmf" => "windows/metafile"
-                                                                        , "wml" => "text/vnd.wap.wml"
-                                                                        , "wmlc" => "application/vnd.wap.wmlc"
-                                                                        , "wmls" => "text/vnd.wap.wmlscript"
-                                                                        , "wmlsc" => "application/vnd.wap.wmlscriptc"
-                                                                        , "word" => "application/msword"
-                                                                        , "wp" => "application/wordperfect"
-                                                                        , "wp5" => "application/wordperfect"
-                                                                        , "wp6" => "application/wordperfect"
-                                                                        , "wpd" => "application/wordperfect"
-                                                                        , "wq1" => "application/x-lotus"
-                                                                        , "wri" => "application/mswrite"
-                                                                        , "wrl" => "application/x-world"
-                                                                        , "wrz" => "model/vrml"
-                                                                        , "wsc" => "text/scriplet"
-                                                                        , "wsrc" => "application/x-wais-source"
-                                                                        , "wtk" => "application/x-wintalk"
-                                                                        , "xbm" => "image/x-xbitmap"
-                                                                        , "xdr" => "video/x-amt-demorun"
-                                                                        , "xgz" => "xgl/drawing"
-                                                                        , "xif" => "image/vnd.xiff"
-                                                                        , "xl" => "application/excel"
-                                                                        , "xla" => "application/excel"
-                                                                        , "xlb" => "application/excel"
-                                                                        , "xlc" => "application/excel"
-                                                                        , "xld" => "application/excel"
-                                                                        , "xlk" => "application/excel"
-                                                                        , "xll" => "application/excel"
-                                                                        , "xlm" => "application/excel"
-                                                                        , "xls" => "application/excel"
-                                                                        , "xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                                                                        , "xlt" => "application/excel"
-                                                                        , "xltx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.template"
-                                                                        , "xlv" => "application/excel"
-                                                                        , "xlw" => "application/excel"
-                                                                        , "xm" => "audio/xm"
-                                                                        , "xml" => "application/xml"
-                                                                        , "xmz" => "xgl/movie"
-                                                                        , "xpix" => "application/x-vnd.ls-xpix"
-                                                                        , "xpm" => "image/x-xpixmap"
-                                                                        , "x-png" => "image/png"
-                                                                        , "xsr" => "video/x-amt-showrun"
-                                                                        , "xwd" => "image/x-xwd"
-                                                                        , "xyz" => "chemical/x-pdb"
-                                                                        , "z" => "application/x-compress"
-                                                                        , "zip" => "application/x-compressed"
-                                                                        , "zoo" => "application/octet-stream"
-                                                                        , "zsh" => "text/x-script.zsh"
-                                                                        , "eot" => "application/vnd.ms-fontobject"
-                                                                        , "ttf" => "application/x-font-ttf"
-                                                                        , "otf" => "application/octet-stream"
-                                                                        , "woff" => "application/x-font-woff"
-                                                                        , "svg" => "image/svg+xml"
-                                                                        , "rss" => "application/rss+xml"
-                                                                        , "json" => "application/json"
-                                                                        , "webp" => "image/webp"
+                                                                        "3dm" => "x-world/x-3dmf",
+                                                                        "3dmf" => "x-world/x-3dmf",
+                                                                        "a" => "application/octet-stream",
+                                                                        "aab" => "application/x-authorware-bin",
+                                                                        "aam" => "application/x-authorware-map",
+                                                                        "aas" => "application/x-authorware-seg",
+                                                                        "abc" => "text/vnd.abc",
+                                                                        "acgi" => "text/html",
+                                                                        "afl" => "video/animaflex",
+                                                                        "ai" => "application/postscript",
+                                                                        "aif" => "audio/aiff",
+                                                                        "aifc" => "audio/aiff",
+                                                                        "aiff" => "audio/aiff",
+                                                                        "aim" => "application/x-aim",
+                                                                        "aip" => "text/x-audiosoft-intra",
+                                                                        "ani" => "application/x-navi-animation",
+                                                                        "aos" => "application/x-nokia-9000-communicator-add-on-software",
+                                                                        "aps" => "application/mime",
+                                                                        "arc" => "application/octet-stream",
+                                                                        "arj" => "application/arj",
+                                                                        "art" => "image/x-jg",
+                                                                        "asf" => "video/x-ms-asf",
+                                                                        "asm" => "text/x-asm",
+                                                                        "asp" => "text/asp",
+                                                                        "asx" => "application/x-mplayer2",
+                                                                        "au" => "audio/basic",
+                                                                        "avi" => "application/x-troff-msvideo",
+                                                                        "avs" => "video/avs-video",
+                                                                        "bcpio" => "application/x-bcpio",
+                                                                        "bin" => "application/mac-binary",
+                                                                        "bm" => "image/bmp",
+                                                                        "bmp" => "image/bmp",
+                                                                        "boo" => "application/book",
+                                                                        "book" => "application/book",
+                                                                        "boz" => "application/x-bzip2",
+                                                                        "bsh" => "application/x-bsh",
+                                                                        "bz" => "application/x-bzip",
+                                                                        "bz2" => "application/x-bzip2",
+                                                                        "c" => "text/plain",
+                                                                        "c++" => "text/plain",
+                                                                        "cat" => "application/vnd.ms-pki.seccat",
+                                                                        "cc" => "text/plain",
+                                                                        "ccad" => "application/clariscad",
+                                                                        "cco" => "application/x-cocoa",
+                                                                        "cdf" => "application/cdf",
+                                                                        "cer" => "application/pkix-cert",
+                                                                        "cha" => "application/x-chat",
+                                                                        "chat" => "application/x-chat",
+                                                                        "class" => "application/java",
+                                                                        "com" => "application/octet-stream",
+                                                                        "conf" => "text/plain",
+                                                                        "cpio" => "application/x-cpio",
+                                                                        "cpp" => "text/x-c",
+                                                                        "cpt" => "application/mac-compactpro",
+                                                                        "crl" => "application/pkcs-crl",
+                                                                        "crt" => "application/pkix-cert",
+                                                                        "csh" => "application/x-csh",
+                                                                        "css" => "text/css",
+                                                                        "cxx" => "text/plain",
+                                                                        "dcr" => "application/x-director",
+                                                                        "deepv" => "application/x-deepv",
+                                                                        "def" => "text/plain",
+                                                                        "der" => "application/x-x509-ca-cert",
+                                                                        "dif" => "video/x-dv",
+                                                                        "dir" => "application/x-director",
+                                                                        "dl" => "video/dl",
+                                                                        "doc" => "application/msword",
+                                                                        "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                                                        "dot" => "application/msword",
+                                                                        "dotx" =>	"application/vnd.openxmlformats-officedocument.wordprocessingml.template",
+                                                                        "dp" => "application/commonground",
+                                                                        "drw" => "application/drafting",
+                                                                        "dump" => "application/octet-stream",
+                                                                        "dv" => "video/x-dv",
+                                                                        "dvi" => "application/x-dvi",
+                                                                        "dwf" => "drawing/x-dwf",
+                                                                        "dwg" => "application/acad",
+                                                                        "dxf" => "application/dxf",
+                                                                        "dxr" => "application/x-director",
+                                                                        "el" => "text/x-script.elisp",
+                                                                        "elc" => "application/x-bytecode.elisp",
+                                                                        "env" => "application/x-envoy",
+                                                                        "eps" => "application/postscript",
+                                                                        "es" => "application/x-esrehber",
+                                                                        "etx" => "text/x-setext",
+                                                                        "evy" => "application/envoy",
+                                                                        "exe" => "application/octet-stream",
+                                                                        "f" => "text/plain",
+                                                                        "f77" => "text/x-fortran",
+                                                                        "f90" => "text/plain",
+                                                                        "fdf" => "application/vnd.fdf",
+                                                                        "fif" => "application/fractals",
+                                                                        "fli" => "video/fli",
+                                                                        "flo" => "image/florian",
+                                                                        "flx" => "text/vnd.fmi.flexstor",
+                                                                        "fmf" => "video/x-atomic3d-feature",
+                                                                        "for" => "text/plain",
+                                                                        "fpx" => "image/vnd.fpx",
+                                                                        "frl" => "application/freeloader",
+                                                                        "funk" => "audio/make",
+                                                                        "g" => "text/plain",
+                                                                        "g3" => "image/g3fax",
+                                                                        "gif" => "image/gif",
+                                                                        "gl" => "video/gl",
+                                                                        "gsd" => "audio/x-gsm",
+                                                                        "gsm" => "audio/x-gsm",
+                                                                        "gsp" => "application/x-gsp",
+                                                                        "gss" => "application/x-gss",
+                                                                        "gtar" => "application/x-gtar",
+                                                                        "gz" => "application/x-compressed",
+                                                                        "gzip" => "application/x-gzip",
+                                                                        "h" => "text/plain",
+                                                                        "hdf" => "application/x-hdf",
+                                                                        "help" => "application/x-helpfile",
+                                                                        "hgl" => "application/vnd.hp-hpgl",
+                                                                        "hh" => "text/plain",
+                                                                        "hlb" => "text/x-script",
+                                                                        "hlp" => "application/hlp",
+                                                                        "hpg" => "application/vnd.hp-hpgl",
+                                                                        "hpgl" => "application/vnd.hp-hpgl",
+                                                                        "hqx" => "application/binhex",
+                                                                        "hta" => "application/hta",
+                                                                        "htc" => "text/x-component",
+                                                                        "htm" => "text/html",
+                                                                        "html" => "text/html",
+                                                                        "htmls" => "text/html",
+                                                                        "htt" => "text/webviewhtml",
+                                                                        "htx" => "text/html",
+                                                                        "ice" => "x-conference/x-cooltalk",
+                                                                        "ico" => "image/x-icon",
+                                                                        "idc" => "text/plain",
+                                                                        "ief" => "image/ief",
+                                                                        "iefs" => "image/ief",
+                                                                        "iges" => "application/iges",
+                                                                        "igs" => "application/iges",
+                                                                        "ima" => "application/x-ima",
+                                                                        "imap" => "application/x-httpd-imap",
+                                                                        "inf" => "application/inf",
+                                                                        "ins" => "application/x-internett-signup",
+                                                                        "ip" => "application/x-ip2",
+                                                                        "isu" => "video/x-isvideo",
+                                                                        "it" => "audio/it",
+                                                                        "iv" => "application/x-inventor",
+                                                                        "ivr" => "i-world/i-vrml",
+                                                                        "ivy" => "application/x-livescreen",
+                                                                        "jam" => "audio/x-jam",
+                                                                        "jav" => "text/plain",
+                                                                        "java" => "text/plain",
+                                                                        "jcm" => "application/x-java-commerce",
+                                                                        "jfif" => "image/jpeg",
+                                                                        "jfif-tbnl" => "image/jpeg",
+                                                                        "jpe" => "image/jpeg",
+                                                                        "jpeg" => "image/jpeg",
+                                                                        "jpg" => "image/jpeg",
+                                                                        "jps" => "image/x-jps",
+                                                                        "js" => "application/x-javascript",
+                                                                        "jut" => "image/jutvision",
+                                                                        "kar" => "audio/midi",
+                                                                        "ksh" => "application/x-ksh",
+                                                                        "la" => "audio/nspaudio",
+                                                                        "lam" => "audio/x-liveaudio",
+                                                                        "latex" => "application/x-latex",
+                                                                        "lha" => "application/lha",
+                                                                        "lhx" => "application/octet-stream",
+                                                                        "list" => "text/plain",
+                                                                        "lma" => "audio/nspaudio",
+                                                                        "log" => "text/plain",
+                                                                        "lsp" => "application/x-lisp",
+                                                                        "lst" => "text/plain",
+                                                                        "lsx" => "text/x-la-asf",
+                                                                        "ltx" => "application/x-latex",
+                                                                        "lzh" => "application/octet-stream",
+                                                                        "lzx" => "application/lzx",
+                                                                        "m" => "text/plain",
+                                                                        "m1v" => "video/mpeg",
+                                                                        "m2a" => "audio/mpeg",
+                                                                        "m2v" => "video/mpeg",
+                                                                        "m3u" => "audio/x-mpequrl",
+                                                                        "man" => "application/x-troff-man",
+                                                                        "map" => "application/x-navimap",
+                                                                        "mar" => "text/plain",
+                                                                        "mbd" => "application/mbedlet",
+                                                                        "mc$" => "application/x-magic-cap-package-1.0",
+                                                                        "mcd" => "application/mcad",
+                                                                        "mcf" => "image/vasa",
+                                                                        "mcp" => "application/netmc",
+                                                                        "me" => "application/x-troff-me",
+                                                                        "mht" => "message/rfc822",
+                                                                        "mhtml" => "message/rfc822",
+                                                                        "mid" => "application/x-midi",
+                                                                        "midi" => "application/x-midi",
+                                                                        "mif" => "application/x-frame",
+                                                                        "mime" => "message/rfc822",
+                                                                        "mjf" => "audio/x-vnd.audioexplosion.mjuicemediafile",
+                                                                        "mjpg" => "video/x-motion-jpeg",
+                                                                        "mm" => "application/base64",
+                                                                        "mme" => "application/base64",
+                                                                        "mod" => "audio/mod",
+                                                                        "moov" => "video/quicktime",
+                                                                        "mov" => "video/quicktime",
+                                                                        "movie" => "video/x-sgi-movie",
+                                                                        "mp2" => "audio/mpeg",
+                                                                        "mp3" => "audio/mpeg3",
+                                                                        "mpa" => "audio/mpeg",
+                                                                        "mpc" => "application/x-project",
+                                                                        "mpe" => "video/mpeg",
+                                                                        "mpeg" => "video/mpeg",
+                                                                        "mpg" => "audio/mpeg",
+                                                                        "mpga" => "audio/mpeg",
+                                                                        "mpp" => "application/vnd.ms-project",
+                                                                        "mpt" => "application/x-project",
+                                                                        "mpv" => "application/x-project",
+                                                                        "mpx" => "application/x-project",
+                                                                        "mrc" => "application/marc",
+                                                                        "ms" => "application/x-troff-ms",
+                                                                        "mv" => "video/x-sgi-movie",
+                                                                        "my" => "audio/make",
+                                                                        "mzz" => "application/x-vnd.audioexplosion.mzz",
+                                                                        "nap" => "image/naplps",
+                                                                        "naplps" => "image/naplps",
+                                                                        "nc" => "application/x-netcdf",
+                                                                        "ncm" => "application/vnd.nokia.configuration-message",
+                                                                        "nif" => "image/x-niff",
+                                                                        "niff" => "image/x-niff",
+                                                                        "nix" => "application/x-mix-transfer",
+                                                                        "nsc" => "application/x-conference",
+                                                                        "nvd" => "application/x-navidoc",
+                                                                        "o" => "application/octet-stream",
+                                                                        "oda" => "application/oda",
+                                                                        "omc" => "application/x-omc",
+                                                                        "omcd" => "application/x-omcdatamaker",
+                                                                        "omcr" => "application/x-omcregerator",
+                                                                        "p" => "text/x-pascal",
+                                                                        "p10" => "application/pkcs10",
+                                                                        "p12" => "application/pkcs-12",
+                                                                        "p7a" => "application/x-pkcs7-signature",
+                                                                        "p7c" => "application/pkcs7-mime",
+                                                                        "p7m" => "application/pkcs7-mime",
+                                                                        "p7r" => "application/x-pkcs7-certreqresp",
+                                                                        "p7s" => "application/pkcs7-signature",
+                                                                        "part" => "application/pro_eng",
+                                                                        "pas" => "text/pascal",
+                                                                        "pbm" => "image/x-portable-bitmap",
+                                                                        "pcl" => "application/vnd.hp-pcl",
+                                                                        "pct" => "image/x-pict",
+                                                                        "pcx" => "image/x-pcx",
+                                                                        "pdb" => "chemical/x-pdb",
+                                                                        "pdf" => "application/pdf",
+                                                                        "pfunk" => "audio/make",
+                                                                        "pgm" => "image/x-portable-graymap",
+                                                                        "pic" => "image/pict",
+                                                                        "pict" => "image/pict",
+                                                                        "pkg" => "application/x-newton-compatible-pkg",
+                                                                        "pko" => "application/vnd.ms-pki.pko",
+                                                                        "pl" => "text/plain",
+                                                                        "plx" => "application/x-pixclscript",
+                                                                        "pm" => "image/x-xpixmap",
+                                                                        "pm4" => "application/x-pagemaker",
+                                                                        "pm5" => "application/x-pagemaker",
+                                                                        "png" => "image/png",
+                                                                        "pnm" => "application/x-portable-anymap",
+                                                                        "pot" => "application/mspowerpoint",
+                                                                        "potx" => "application/vnd.openxmlformats-officedocument.presentationml.template",
+                                                                        "pov" => "model/x-pov",
+                                                                        "ppa" => "application/vnd.ms-powerpoint",
+                                                                        "ppm" => "image/x-portable-pixmap",
+                                                                        "pps" => "application/mspowerpoint",
+                                                                        "ppsx" => "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
+                                                                        "ppt" => "application/mspowerpoint",
+                                                                        "pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                                                                        "ppz" => "application/mspowerpoint",
+                                                                        "pre" => "application/x-freelance",
+                                                                        "prt" => "application/pro_eng",
+                                                                        "ps" => "application/postscript",
+                                                                        "psd" => "application/octet-stream",
+                                                                        "pvu" => "paleovu/x-pv",
+                                                                        "pwz" => "application/vnd.ms-powerpoint",
+                                                                        "py" => "text/x-script.phyton",
+                                                                        "pyc" => "applicaiton/x-bytecode.python",
+                                                                        "qcp" => "audio/vnd.qcelp",
+                                                                        "qd3" => "x-world/x-3dmf",
+                                                                        "qd3d" => "x-world/x-3dmf",
+                                                                        "qif" => "image/x-quicktime",
+                                                                        "qt" => "video/quicktime",
+                                                                        "qtc" => "video/x-qtc",
+                                                                        "qti" => "image/x-quicktime",
+                                                                        "qtif" => "image/x-quicktime",
+                                                                        "ra" => "audio/x-pn-realaudio",
+                                                                        "ram" => "audio/x-pn-realaudio",
+                                                                        "rar" => "application/x-rar-compressed",
+                                                                        "ras" => "application/x-cmu-raster",
+                                                                        "rast" => "image/cmu-raster",
+                                                                        "rexx" => "text/x-script.rexx",
+                                                                        "rf" => "image/vnd.rn-realflash",
+                                                                        "rgb" => "image/x-rgb",
+                                                                        "rm" => "application/vnd.rn-realmedia",
+                                                                        "rmi" => "audio/mid",
+                                                                        "rmm" => "audio/x-pn-realaudio",
+                                                                        "rmp" => "audio/x-pn-realaudio",
+                                                                        "rng" => "application/ringing-tones",
+                                                                        "rnx" => "application/vnd.rn-realplayer",
+                                                                        "roff" => "application/x-troff",
+                                                                        "rp" => "image/vnd.rn-realpix",
+                                                                        "rpm" => "audio/x-pn-realaudio-plugin",
+                                                                        "rt" => "text/richtext",
+                                                                        "rtf" => "application/rtf",
+                                                                        "rtx" => "application/rtf",
+                                                                        "rv" => "video/vnd.rn-realvideo",
+                                                                        "s" => "text/x-asm",
+                                                                        "s3m" => "audio/s3m",
+                                                                        "saveme" => "application/octet-stream",
+                                                                        "sbk" => "application/x-tbook",
+                                                                        "scm" => "application/x-lotusscreencam",
+                                                                        "sdml" => "text/plain",
+                                                                        "sdp" => "application/sdp",
+                                                                        "sdr" => "application/sounder",
+                                                                        "sea" => "application/sea",
+                                                                        "set" => "application/set",
+                                                                        "sgm" => "text/sgml",
+                                                                        "sgml" => "text/sgml",
+                                                                        "sh" => "application/x-bsh",
+                                                                        "shar" => "application/x-bsh",
+                                                                        "shtml" => "text/html",
+                                                                        "sid" => "audio/x-psid",
+                                                                        "sit" => "application/x-sit",
+                                                                        "skd" => "application/x-koan",
+                                                                        "skm" => "application/x-koan",
+                                                                        "skp" => "application/x-koan",
+                                                                        "skt" => "application/x-koan",
+                                                                        "sl" => "application/x-seelogo",
+                                                                        "smi" => "application/smil",
+                                                                        "smil" => "application/smil",
+                                                                        "snd" => "audio/basic",
+                                                                        "sol" => "application/solids",
+                                                                        "spc" => "application/x-pkcs7-certificates",
+                                                                        "spl" => "application/futuresplash",
+                                                                        "spr" => "application/x-sprite",
+                                                                        "sprite" => "application/x-sprite",
+                                                                        "src" => "application/x-wais-source",
+                                                                        "ssi" => "text/x-server-parsed-html",
+                                                                        "ssm" => "application/streamingmedia",
+                                                                        "sst" => "application/vnd.ms-pki.certstore",
+                                                                        "step" => "application/step",
+                                                                        "stl" => "application/sla",
+                                                                        "stp" => "application/step",
+                                                                        "sv4cpio" => "application/x-sv4cpio",
+                                                                        "sv4crc" => "application/x-sv4crc",
+                                                                        "svf" => "image/vnd.dwg",
+                                                                        "svr" => "application/x-world",
+                                                                        "swf" => "application/x-shockwave-flash",
+                                                                        "t" => "application/x-troff",
+                                                                        "talk" => "text/x-speech",
+                                                                        "tar" => "application/x-tar",
+                                                                        "tbk" => "application/toolbook",
+                                                                        "tcl" => "application/x-tcl",
+                                                                        "tcsh" => "text/x-script.tcsh",
+                                                                        "tex" => "application/x-tex",
+                                                                        "texi" => "application/x-texinfo",
+                                                                        "texinfo" => "application/x-texinfo",
+                                                                        "text" => "text/plain",
+                                                                        "tgz" => "application/gnutar",
+                                                                        "tif" => "image/tiff",
+                                                                        "tiff" => "image/tiff",
+                                                                        "tr" => "application/x-troff",
+                                                                        "tsi" => "audio/tsp-audio",
+                                                                        "tsp" => "application/dsptype",
+                                                                        "tsv" => "text/tab-separated-values",
+                                                                        "turbot" => "image/florian",
+                                                                        "txt" => "text/plain",
+                                                                        "uil" => "text/x-uil",
+                                                                        "uni" => "text/uri-list",
+                                                                        "unis" => "text/uri-list",
+                                                                        "unv" => "application/i-deas",
+                                                                        "uri" => "text/uri-list",
+                                                                        "uris" => "text/uri-list",
+                                                                        "ustar" => "application/x-ustar",
+                                                                        "uu" => "application/octet-stream",
+                                                                        "uue" => "text/x-uuencode",
+                                                                        "vcd" => "application/x-cdlink",
+                                                                        "vcs" => "text/x-vcalendar",
+                                                                        "vda" => "application/vda",
+                                                                        "vdo" => "video/vdo",
+                                                                        "vew" => "application/groupwise",
+                                                                        "viv" => "video/vivo",
+                                                                        "vivo" => "video/vivo",
+                                                                        "vmd" => "application/vocaltec-media-desc",
+                                                                        "vmf" => "application/vocaltec-media-file",
+                                                                        "voc" => "audio/voc",
+                                                                        "vos" => "video/vosaic",
+                                                                        "vox" => "audio/voxware",
+                                                                        "vqe" => "audio/x-twinvq-plugin",
+                                                                        "vqf" => "audio/x-twinvq",
+                                                                        "vql" => "audio/x-twinvq-plugin",
+                                                                        "vrml" => "application/x-vrml",
+                                                                        "vrt" => "x-world/x-vrt",
+                                                                        "vsd" => "application/x-visio",
+                                                                        "vst" => "application/x-visio",
+                                                                        "vsw" => "application/x-visio",
+                                                                        "w60" => "application/wordperfect6.0",
+                                                                        "w61" => "application/wordperfect6.1",
+                                                                        "w6w" => "application/msword",
+                                                                        "wav" => "audio/x-wav",
+                                                                        "wb1" => "application/x-qpro",
+                                                                        "wbmp" => "image/vnd.wap.wbmp",
+                                                                        "web" => "application/vnd.xara",
+                                                                        "wiz" => "application/msword",
+                                                                        "wk1" => "application/x-123",
+                                                                        "wmf" => "windows/metafile",
+                                                                        "wml" => "text/vnd.wap.wml",
+                                                                        "wmlc" => "application/vnd.wap.wmlc",
+                                                                        "wmls" => "text/vnd.wap.wmlscript",
+                                                                        "wmlsc" => "application/vnd.wap.wmlscriptc",
+                                                                        "word" => "application/msword",
+                                                                        "wp" => "application/wordperfect",
+                                                                        "wp5" => "application/wordperfect",
+                                                                        "wp6" => "application/wordperfect",
+                                                                        "wpd" => "application/wordperfect",
+                                                                        "wq1" => "application/x-lotus",
+                                                                        "wri" => "application/mswrite",
+                                                                        "wrl" => "application/x-world",
+                                                                        "wrz" => "model/vrml",
+                                                                        "wsc" => "text/scriplet",
+                                                                        "wsrc" => "application/x-wais-source",
+                                                                        "wtk" => "application/x-wintalk",
+                                                                        "xbm" => "image/x-xbitmap",
+                                                                        "xdr" => "video/x-amt-demorun",
+                                                                        "xgz" => "xgl/drawing",
+                                                                        "xif" => "image/vnd.xiff",
+                                                                        "xl" => "application/excel",
+                                                                        "xla" => "application/excel",
+                                                                        "xlb" => "application/excel",
+                                                                        "xlc" => "application/excel",
+                                                                        "xld" => "application/excel",
+                                                                        "xlk" => "application/excel",
+                                                                        "xll" => "application/excel",
+                                                                        "xlm" => "application/excel",
+                                                                        "xls" => "application/excel",
+                                                                        "xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                                                        "xlt" => "application/excel",
+                                                                        "xltx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.template",
+                                                                        "xlv" => "application/excel",
+                                                                        "xlw" => "application/excel",
+                                                                        "xm" => "audio/xm",
+                                                                        "xml" => "application/xml",
+                                                                        "xmz" => "xgl/movie",
+                                                                        "xpix" => "application/x-vnd.ls-xpix",
+                                                                        "xpm" => "image/x-xpixmap",
+                                                                        "x-png" => "image/png",
+                                                                        "xsr" => "video/x-amt-showrun",
+                                                                        "xwd" => "image/x-xwd",
+                                                                        "xyz" => "chemical/x-pdb",
+                                                                        "z" => "application/x-compress",
+                                                                        "zip" => "application/x-compressed",
+                                                                        "zoo" => "application/octet-stream",
+                                                                        "zsh" => "text/x-script.zsh",
+                                                                        "eot" => "application/vnd.ms-fontobject",
+                                                                        "ttf" => "application/x-font-ttf",
+                                                                        "otf" => "application/octet-stream",
+                                                                        "woff" => "application/x-font-woff",
+                                                                        "svg" => "image/svg+xml",
+                                                                        "rss" => "application/rss+xml",
+                                                                        "json" => "application/json",
+                                                                        "webp" => "image/webp",
                                                                     );
+    const MIMETYPE_DEFAULT                                          = "text/plain";
+    const MIMETYPE_IMAGE                                            = array(
+                                                                        "jpg" => self::MIMETYPE["jpg"],
+                                                                        "jpeg" => self::MIMETYPE["jpeg"],
+                                                                        "png" => self::MIMETYPE["png"],
+                                                                        "gif" => self::MIMETYPE["gif"],
+                                                                        "svg" => self::MIMETYPE["svg"]
+                                                                    );
+    const MIMETYPE_FONT                                             = array(
+                                                                        "eot" => self::MIMETYPE["eot"],
+                                                                        "ttf" => self::MIMETYPE["ttf"],
+                                                                        "otf" => self::MIMETYPE["otf"],
+                                                                        "woff" => self::MIMETYPE["woff"]
+                                                                    );
+
     /**
      * @var Media
      */
@@ -588,22 +604,26 @@ class Media implements Configurable
     /**
      * @param string $pathinfo
      */
-    public function get(string $pathinfo) : void
+    public function get(string $pathinfo)
     {
         $this->setPathInfo($pathinfo);
         $status                                                     = null;
-        $res                                                        = $this->process();
-        $content_type                                               = static::MIMETYPE[$this->pathinfo["extension"]];
+        $content_type                                               = $this->getMimeByExtension($this->pathinfo["extension"]);
+
+        $res                                                        = (
+            $content_type == static::MIMETYPE_DEFAULT
+            ? false
+            : $this->process()
+        );
         if (!$res) {
+            //todo: non renderizza bene l'output. forse per colpa degli headers
             $status                                                 = 404;
-        }
-        if (Error::check(static::ERROR_BUCKET)) {
-            $status                                                 = 404;
-            $res                                                    = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII=');
-            $content_type                                           = "image/png";
+            if ($this->isImage()) {
+                $res                                                = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII=');
+                $content_type                                       = "image/png";
+            }
         }
 
-        $_SERVER["HTTP_ACCEPT"]                                     = $content_type;
         Response::sendRawData($res, $content_type, $status);
     }
 
@@ -615,7 +635,7 @@ class Media implements Configurable
     {
         $icon = new Media(false);
         $icon->setNoImg($mode, $name);
-        $icon->renderNoImg($icon->processFinalFile(true));
+        $icon->renderNoImg($icon->processFinalFile());
 
         //deve renderizzare l'icona
         //da fare con la gestione delle iconde di ffImafge
@@ -642,61 +662,23 @@ class Media implements Configurable
         if ($mode === null && $key === null) {
             $key                                                    = "url";
         }
-
         if (strpos($file, "/") === false) {
             $file                                                   = Resource::get($file, "images");
         }
+        $arrFile                                                    = pathinfo($file);
+        if ($arrFile["extension"] == "svg") {
+            return self::image2base64($file, $arrFile["extension"]);
+        }
 
-        $file_relative = str_replace(
-            array(
-                Constant::UPLOAD_DISK_PATH . DIRECTORY_SEPARATOR
-                , Constant::UPLOAD_PATH. DIRECTORY_SEPARATOR
-                , Dir::findCachePath("assets", true) . DIRECTORY_SEPARATOR
-                , Dir::findCachePath("thumbs", true) . DIRECTORY_SEPARATOR
-                , Constant::DISK_PATH . DIRECTORY_SEPARATOR
-            ),
-            DIRECTORY_SEPARATOR,
-            $file
-        );
-        $arrFile                                                    = pathinfo($file_relative);
-        if (substr($arrFile["dirname"], 0, 1) !== DIRECTORY_SEPARATOR) {
-            $arrFile["dirname"]                                     = DIRECTORY_SEPARATOR;
-        }
-        if (!isset($arrFile["extension"])) {
-            Error::register("Image not valid: " . $file, static::ERROR_BUCKET);
-        }
-        $libs_path                                                  = Constant::LIBS_PATH;
-        switch ($arrFile["extension"]) {
-            case "svg":
-                return self::image2base64($file, $arrFile["extension"]);
-                break;
-            case "js":
-                $showfiles                                          = Constant::SITE_PATH . static::RENDER_ASSETS_PATH . static::RENDER_SCRIPT_PATH;
-                if (strpos($arrFile["dirname"], $libs_path) === 0) {
-                    $arrFile["filename"]                            = str_replace(DIRECTORY_SEPARATOR, "_", ltrim(substr($arrFile["dirname"], strlen($libs_path)), DIRECTORY_SEPARATOR)) . "_" . $arrFile["filename"];
-                    $arrFile["dirname"]                             = DIRECTORY_SEPARATOR;
-                    $query                                          = "?" . filemtime($file); //todo:: genera redirect con Kernel::urlVerify
+        $showfiles                                                  = Constant::SITE_PATH . static::RENDER_MEDIA_PATH;
+        if (strpos($arrFile["dirname"], static::RENDER_ASSETS_PATH) !== false) {
+            $showfiles                                              = Constant::SITE_PATH . static::RENDER_ASSETS_PATH;
+            $arrFile["dirname"]                                     = explode(static::RENDER_ASSETS_PATH, $arrFile["dirname"], 2)[1];
+            if (strpos($arrFile["dirname"], static::RENDER_WIDGET_PATH) === 0) {
+                if (DIRECTORY_SEPARATOR . $arrFile["extension"] == static::RENDER_STYLE_PATH || DIRECTORY_SEPARATOR . $arrFile["extension"] == static::RENDER_SCRIPT_PATH) {
+                    $arrFile["dirname"]                             .= DIRECTORY_SEPARATOR . $arrFile["extension"];
                 }
-                break;
-            case "css":
-                $showfiles                                          = Constant::SITE_PATH . static::RENDER_ASSETS_PATH . static::RENDER_STYLE_PATH;
-                if (strpos($arrFile["dirname"], $libs_path) === 0) {
-                    $arrFile["filename"]                            = str_replace(DIRECTORY_SEPARATOR, "_", ltrim(substr($arrFile["dirname"], strlen($libs_path)), DIRECTORY_SEPARATOR)) . "_" . $arrFile["filename"];
-                    $arrFile["dirname"]                             = DIRECTORY_SEPARATOR;
-                    $query                                          = "?" . filemtime($file); //todo:: genera redirect con Kernel::urlVerify
-                }
-                break;
-            case "jpg":
-            case "jpeg":
-            case "png":
-            case "gif":
-            default:
-                if (strpos($arrFile["dirname"], $libs_path) === 0 && strpos($arrFile["dirname"], static::RENDER_ASSETS_PATH) !== false) {
-                    $arrFile["dirname"]                             = substr($arrFile["dirname"], strpos($arrFile["dirname"], static::RENDER_ASSETS_PATH));
-                    $showfiles                                      = Constant::SITE_PATH;
-                } else {
-                    $showfiles                                      = Constant::SITE_PATH . static::RENDER_MEDIA_PATH;
-                }
+            }
         }
 
         $dirfilename                                                = $showfiles . ($arrFile["dirname"] == DIRECTORY_SEPARATOR ? "" : $arrFile["dirname"]) . DIRECTORY_SEPARATOR . $arrFile["filename"];
@@ -743,7 +725,7 @@ class Media implements Configurable
 
         if ($file) {
             if (!isset($params["mimetype"])) {
-                $params["mimetype"]   = self::getMimeTypeByFilename($file);
+                $params["mimetype"]   = self::getMimeByFilename($file);
             }
             if (!isset($params["filename"])) {
                 $params["filename"]   = basename($file);
@@ -811,11 +793,11 @@ class Media implements Configurable
      * @param string $default
      * @return string
      */
-    public static function getMimeTypeByFilename(string $filename, string $default = "text/plain") : string
+    public static function getMimeByFilename(string $filename, string $default = self::MIMETYPE_DEFAULT) : string
     {
         $ext                                                        = pathinfo($filename, PATHINFO_EXTENSION);
 
-        return self::getMimeTypeByExtension($ext, $default);
+        return self::getMimeByExtension($ext, $default);
     }
 
     /**
@@ -823,7 +805,7 @@ class Media implements Configurable
      * @param string $default
      * @return string
      */
-    public static function getMimeTypeByExtension(string $ext, string $default = "text/plain") : string
+    public static function getMimeByExtension(string $ext, string $default = self::MIMETYPE_DEFAULT) : string
     {
         $mime                                                       = $default;
         if ($ext) {
@@ -883,7 +865,7 @@ class Media implements Configurable
             }
             $basename                                               = basename($abs_path);
             if ($abs === false) {
-                $res                                                = Constant::SITE_PATH . static::RENDER_ASSETS_PATH . DIRECTORY_SEPARATOR . $basename;
+                $res                                                = Constant::SITE_PATH . static::RENDER_ASSETS_PATH . static::RENDER_IMAGE_PATH . DIRECTORY_SEPARATOR . $basename;
             } elseif ($abs === true) {
                 $res                                                = $abs_path;
             } else {
@@ -897,7 +879,7 @@ class Media implements Configurable
             $res                                                    = (
                 $abs
                                                                         ? $abs_path
-                                                                        : Constant::SITE_PATH . static::RENDER_ASSETS_PATH . DIRECTORY_SEPARATOR . basename($abs_path)
+                                                                        : Constant::SITE_PATH . static::RENDER_ASSETS_PATH . static::RENDER_IMAGE_PATH . DIRECTORY_SEPARATOR . basename($abs_path)
                                                                     );
         }
 
@@ -1000,7 +982,7 @@ class Media implements Configurable
     /**
      * @param string|null $mode
      */
-    private function resolveSrcIcon(string $mode = null) : void
+    /*private function resolveSrcIcon(string $mode = null) : void
     {
         if ($mode) {
             $icon_name                                              = str_replace("-" . $mode, "", $this->pathinfo["filename"]);
@@ -1018,64 +1000,198 @@ class Media implements Configurable
             $this->filesource                                       = DIRECTORY_SEPARATOR . basename($icon);
             $this->mode                                             = $mode;
         }
-    }
+    }*/
 
     /**
      * @param string $root_dir
      */
-    private function checkPath(string $root_dir) : void
+    /*private function checkPath(string $root_dir) : void
     {
         if (strpos($this->pathinfo["dirname"], $root_dir) !== 0) {
             Response::sendError(404);
         }
+    }*/
+
+    /**
+     * @param string $render_path
+     * @return bool
+     */
+    private function isValidStatic(string $render_path) : bool
+    {
+        switch ($render_path) {
+            case static::RENDER_SCRIPT_PATH:
+            case static::RENDER_STYLE_PATH:
+                if (basename($render_path) == $this->pathinfo["extension"]) {
+                    return true;
+                }
+                break;
+            case static::RENDER_IMAGE_PATH:
+                if ($this->isImage()) {
+                    return true;
+                }
+                break;
+            case static::RENDER_FONT_PATH:
+                if ($this->isFont()) {
+                    return true;
+                }
+                break;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param string $resource_name
+     * @return string|null
+     */
+    private function staticProcessWidget(string $resource_name) : ?string
+    {
+        $arrDirname                                                 = explode(DIRECTORY_SEPARATOR, ltrim($this->pathinfo["dirname"], DIRECTORY_SEPARATOR));
+        return (count($arrDirname) === 3 && $this->isValidStatic(DIRECTORY_SEPARATOR . $arrDirname[2])
+            ? Resource::widget($arrDirname[1])->find($arrDirname[2], $resource_name)
+            : null
+        );
+    }
+
+    /**
+     * @param string $resource_name
+     * @return string|null
+     */
+    private function staticProcessAsset(string $resource_name) : ?string
+    {
+        $arrDirname                                                 = explode(DIRECTORY_SEPARATOR, ltrim($this->pathinfo["dirname"], DIRECTORY_SEPARATOR));
+        return ($this->isValidStatic(DIRECTORY_SEPARATOR . $arrDirname[0])
+            ? Resource::get($resource_name, $arrDirname[0])
+            : null
+        );
     }
 
     /**
      * @param string|null $mode
      * @return string|null
      */
-    public function process(string $mode = null) : ?string
+    private function staticResource(string &$mode = null) : ?string
     {
-        $this->resolveSrcIcon($mode);
-        if (!$this->filesource) {
-            $base_path                                              = Constant::LIBS_DISK_PATH;
-            Response::setContentType($this->pathinfo["extension"]);
-            switch ($this->pathinfo["extension"]) {
-                case "svg":
-                    $this->checkPath(static::RENDER_IMAGE_PATH);
-                    $source_file                                    = $this->pathinfo["render"] . $this->pathinfo["orig"];
-                    $base_path                                      = Constant::DISK_PATH . Kernel::$Environment::PROJECT_DOCUMENT_ROOT;
-                    break;
-                case "js":
-                    $this->checkPath(static::RENDER_SCRIPT_PATH);
-
-                    $source_file                                    = str_replace(static::RENDER_SCRIPT_PATH, "", $this->pathinfo["dirname"]) . DIRECTORY_SEPARATOR . str_replace("_", DIRECTORY_SEPARATOR, $this->pathinfo["filename"]) . ".js";
-                    break;
-                case "css":
-                    $this->checkPath(static::RENDER_STYLE_PATH);
-
-                    $source_file                                    = str_replace(static::RENDER_STYLE_PATH, "", $this->pathinfo["dirname"]) . DIRECTORY_SEPARATOR . str_replace("_", DIRECTORY_SEPARATOR, $this->pathinfo["filename"]) . ".css";
-                    break;
-                default:
-                    $source_file                                    = null;
-            }
-
-            return ($source_file
-                ? $this->staticProcess($source_file, $base_path)
-                : $this->renderProcess($mode)
-            );
-        } else {
-            $this->checkPath(static::RENDER_IMAGE_PATH);
-
-            $final_file                                             = $this->processFinalFile(true);
-
-            if ($final_file && !Error::check(static::ERROR_BUCKET)) {
-                $this->renderNoImg($final_file);
-            }
-
-            return null;
-        }
+        $name                                                       = $this->staticResourceName($mode);
+        return (strpos($this->pathinfo["dirname"], static::RENDER_WIDGET_PATH) === 0
+            ? $this->staticProcessWidget($name)
+            : $this->staticProcessAsset($name)
+        );
     }
+
+    /**
+     * @param string|null $mode
+     * @return string
+     */
+    private function staticResourceName(string &$mode = null) : string
+    {
+        if ($mode) {
+            $name                                                   = str_replace("-" . $mode, "", $this->pathinfo["filename"]);
+        } else {
+            $arrFilename                                            = explode("-", $this->pathinfo["filename"], 2);
+            $name                                                   = $arrFilename[0];
+            if (isset($arrFilename[1])) {
+                $mode                                               = $arrFilename[1];
+            }
+        }
+        return $name;
+    }
+    /**
+     * @param string|null $mode
+     * @return bool
+     */
+    private function staticProcess(string $mode = null) : bool
+    {
+        $resource                                                   = $this->staticResource($mode);
+        if ($resource) {
+            $this->basepath                                         = dirname($resource);
+            $this->filesource                                       = DIRECTORY_SEPARATOR . basename($resource);
+            $this->mode                                             = $mode;
+        }
+        return (bool) $resource;
+    }
+
+    /**
+     * @return string|null
+     */
+    private function isImage() : ?string
+    {
+        return (isset(static::MIMETYPE_IMAGE[$this->pathinfo["extension"]])
+            ? static::MIMETYPE_IMAGE[$this->pathinfo["extension"]]
+            : null
+        );
+    }
+    /**
+     * @return string|null
+     */
+    private function isFont() : ?string
+    {
+        return (isset(static::MIMETYPE_FONT[$this->pathinfo["extension"]])
+            ? static::MIMETYPE_FONT[$this->pathinfo["extension"]]
+            : null
+        );
+    }
+    /**
+     * @param string|null $mode
+     * @return bool
+     */
+    private function process(string $mode = null) : bool
+    {
+        if ($this->pathinfo["render"] == static::RENDER_ASSETS_PATH) {
+            if ($this->staticProcess($mode)) {
+                $final_file = $this->processFinalFile();
+
+                if ($final_file && !Error::check(static::ERROR_BUCKET)) {
+                    $this->renderNoImg($final_file);
+                }
+            } elseif ($this->isImage()) {
+                Response::redirect($this->getIconPath("noimg"), 302);
+            }
+        } else {
+            return $this->renderProcess($mode);
+        }
+
+        return false;
+    }
+    /*
+    if (!$this->filesource) {
+        $base_path                                              = Constant::LIBS_DISK_PATH;
+        Response::setContentType($this->pathinfo["extension"]);
+        switch ($this->pathinfo["extension"]) {
+            case "svg":
+                $this->checkPath(static::RENDER_IMAGE_PATH);
+                $source_file                                    = $this->pathinfo["render"] . $this->pathinfo["orig"];
+                $base_path                                      = Constant::DISK_PATH . Kernel::$Environment::PROJECT_DOCUMENT_ROOT;
+                break;
+            case "js":
+                $this->checkPath(static::RENDER_SCRIPT_PATH);
+
+                $source_file                                    = str_replace(static::RENDER_SCRIPT_PATH, "", $this->pathinfo["dirname"]) . DIRECTORY_SEPARATOR . str_replace("_", DIRECTORY_SEPARATOR, $this->pathinfo["filename"]) . ".js";
+                break;
+            case "css":
+                $this->checkPath(static::RENDER_STYLE_PATH);
+
+                $source_file                                    = str_replace(static::RENDER_STYLE_PATH, "", $this->pathinfo["dirname"]) . DIRECTORY_SEPARATOR . str_replace("_", DIRECTORY_SEPARATOR, $this->pathinfo["filename"]) . ".css";
+                break;
+            default:
+                $source_file                                    = null;
+        }
+
+        return ($source_file
+            ? $this->staticProcessOld($source_file, $base_path)
+            : $this->renderProcess($mode)
+        );
+    } else {
+        //$this->checkPath(static::RENDER_IMAGE_PATH);
+        $final_file                                             = $this->processFinalFile();
+
+        if ($final_file && !Error::check(static::ERROR_BUCKET)) {
+            $this->renderNoImg($final_file);
+        }
+
+        return null;
+    }
+    }*/
 
     /**
      * @param string|null $path
@@ -1105,7 +1221,7 @@ class Media implements Configurable
      * @param string $base_path
      * @return string|null
      */
-    private function staticProcess(string $source_file, string $base_path = Constant::LIBS_DISK_PATH) : ?string
+    /*private function staticProcessOld(string $source_file, string $base_path = Constant::LIBS_DISK_PATH) : ?string
     {
         $res                                                        = null;
 
@@ -1124,13 +1240,13 @@ class Media implements Configurable
         }
 
         return $res;
-    }
+    }*/
 
     /**
      * @param string|null $mode
-     * @return string
+     * @return bool
      */
-    private function renderProcess(string $mode = null) : string
+    private function renderProcess(string $mode = null) : bool
     {
         $this->clear();
         $this->waterMark();
@@ -1145,15 +1261,12 @@ class Media implements Configurable
             } else {
                 $cache_basepath                                     = $this->basepathCache();
                 if ($cache_basepath && !is_file($cache_basepath . $this->pathinfo["orig"])) {
-                    Filemanager::makeDir($this->pathinfo["dirname"], 0775, $cache_basepath);
-                    if (!link($this->basepath . $this->filesource, $cache_basepath . $this->pathinfo["orig"])) {
-                        Error::register("Link Failed. Check write permission on: " . $this->basepath . $this->filesource . " and if directory exist and have write permission on " . $cache_basepath . $this->pathinfo["orig"], static::ERROR_BUCKET);
-                    }
-
+                    $this->saveFromOriginal($this->basepath . $this->filesource, $cache_basepath . $this->pathinfo["orig"]);
                     $final_file                                     = $cache_basepath . $this->pathinfo["orig"];
                 }
             }
         }
+
         if (!$final_file) {
             $filename                                               = $this->pathinfo["filename"];
             if ($this->mode) {
@@ -1162,17 +1275,18 @@ class Media implements Configurable
                     $filename = $this->pathinfo["extension"];
                 }
             }
-
-            $final_file                                             = $this->processFinalFile($this->setNoImg($this->mode));
+            $this->setNoImg($this->mode);
+            $final_file                                             = $this->processFinalFile($filename);
             if ($filename != pathinfo($this->filesource, PATHINFO_FILENAME)) {
                 $status = 404;
             }
         }
+
         if ($final_file && !Error::check(static::ERROR_BUCKET)) {
             $this->renderNoImg($final_file, $status);
         }
 
-        return $final_file;
+        return false;
     }
 
     private function clear()
@@ -1237,10 +1351,10 @@ class Media implements Configurable
     }
 
     /**
-     * @param string|null $ext
+     * @param string|null $filename
      * @return array|null
      */
-    private function makeFinalFile(string $ext = null) : ?array
+    private function makeFinalFile(string $filename = null) : ?array
     {
         if ($this->filesource) {
             $str_wmk_file                                           = "";
@@ -1258,22 +1372,23 @@ class Media implements Configurable
                 $filepath                                           = pathinfo($this->filesource);
                 $format_is_different                                = ($this->source["extension"] && $this->source["extension"] != $this->pathinfo["extension"]);
                 $this->final["dirname"]                             = $this->pathinfo["dirname"];
-                $this->final["filename"]                            = $filepath["filename"]
-                                                                        . (
-                                                                            $format_is_different
-                                                                            ? "-" . $this->source["extension"]
-                                                                            : ""
-                                                                        )
-                                                                        . "-" . $this->mode
-                                                                        . $str_wmk_file;
-                $this->final["extension"]                           = $ext;
-                if (!$this->final["extension"] && isset($this->pathinfo["extension"])) {
-                    $this->final["extension"]                       = $this->pathinfo["extension"];
-                }
+                $this->final["filename"]                            = (
+                    $filename
+                    ? $filename
+                    : $filepath["filename"]
+                )
+                . (
+                    $format_is_different
+                    ? "-" . $this->source["extension"]
+                    : ""
+                )
+                . "-" . $this->mode
+                . $str_wmk_file;
+                $this->final["extension"]                           = $this->pathinfo["extension"];
 
                 $this->final["exist"]                               = is_file($this->getFinalFile());
             } else {
-                $this->final                                        = pathinfo($this->filesource);
+                $this->final                                        = $this->pathinfo;
                 $this->final["exist"]                               = is_file($this->getFinalFile());
             }
         }
@@ -1542,14 +1657,14 @@ class Media implements Configurable
     }
 
     /**
-     * @return array|bool
+     * @return array|null
      */
-    private function getMode()
+    private function getMode() : ?array
     {
         if (!$this->mode) {
-            return false;
+            return null;
         }
-        $setting                                                    = false;
+        $setting                                                    = null;
 
         if (isset(self::$modes[$this->mode])) {
             $setting                                                = self::$modes[$this->mode];
@@ -1577,16 +1692,15 @@ class Media implements Configurable
     }
 
     /**
-     * @param bool $isIcon
+     * @param string|null $filename
      * @return string|null
      */
-    private function processFinalFile(bool $isIcon = false) : ?string
+    private function processFinalFile(string $filename = null) : ?string
     {
         $final_file                                                 = null;
-
         if ($this->filesource) {
             if (!$this->final) {
-                $this->makeFinalFile($isIcon ? "png" : null);
+                $this->makeFinalFile($filename);
             }
 
             if ($this->final) {
@@ -1608,23 +1722,15 @@ class Media implements Configurable
 
                         Hook::handle("media_on_create_image", $final_file);
                     }
-                } elseif ($this->mode === false && is_file($this->basepath . $this->filesource)) {
+                } elseif (!$modeCurrent && is_file($this->basepath . $this->filesource)) {
                     if (!is_file($final_file)) {
-                        Filemanager::makeDir(dirname($final_file), 0775, $this->basepathCache());
-
-                        if (!link($this->basepath . $this->filesource, $final_file)) {
-                            Error::register("Link Failed. Check write permission on: " . $this->basepath . $this->filesource . " and if directory exist and have write permission on " . $this->basepath . $this->filesource, static::ERROR_BUCKET);
-                        }
+                        $this->saveFromOriginal($this->basepath . $this->filesource, $final_file);
                     }
                 } else {
                     $icon                                           = $this->getIconPath(basename($this->filesource), true);
 
                     if (!is_file($final_file) && $icon) {
-                        Filemanager::makeDir(dirname($final_file), 0775, $this->basepathCache());
-
-                        if (!link($icon, $final_file)) {
-                            Error::register("Link Failed. Check write permission on: " . $icon . " and if directory exist and have write permission on " . $final_file, static::ERROR_BUCKET);
-                        }
+                        $this->saveFromOriginal($icon, $final_file);
                     }
                 }
             }
@@ -1632,6 +1738,26 @@ class Media implements Configurable
 
         return $final_file;
     }
+
+    /**
+     * @param string $source
+     * @param string $destination
+     */
+    private function saveFromOriginal(string $source, string $destination) : void
+    {
+        Filemanager::makeDir($destination, 0775, $this->basepathCache());
+
+        if ($this->pathinfo["render"] == static::RENDER_ASSETS_PATH) {
+            if (!@copy($source, $destination)) {
+                Error::register("Copy Failed. Check read permission on: " . $source . " and if directory exist and have write permission on " . $destination, static::ERROR_BUCKET);
+            }
+        } else {
+            if (is_writable($source) && !@link($source, $destination)) {
+                Error::register("Link Failed. Check write permission on: " . $source . " and if directory exist and have write permission on " . $destination, static::ERROR_BUCKET);
+            }
+        }
+    }
+
 
     /**
      * @param string|null $mode
@@ -1671,7 +1797,7 @@ class Media implements Configurable
     {
         $this->headers["cache"]                                     = "must-revalidate";
         $this->headers["filename"]                                  = $this->pathinfo["basename"];
-        $this->headers["mimetype"]                                  = $this::getMimeTypeByFilename($final_file);
+        $this->headers["mimetype"]                                  = $this::getMimeByFilename($final_file);
 
         if ($code) {
             Response::httpCode($code);

@@ -59,7 +59,7 @@ class MailerAdapter
 
             $this->host                                     = constant($prefix . "HOST");
             $this->username                                 = constant($prefix . "USER");
-            $this->password                                 = constant($prefix . "PASSWORD");
+            $this->password                                 = constant($prefix . "SECRET");
             $this->auth                                     = constant($prefix . "AUTH");
             $this->port                                     = constant($prefix . "PORT");
             $this->secure                                   = constant($prefix . "SECURE");

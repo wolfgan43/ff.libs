@@ -69,7 +69,10 @@ class Filemanager implements Dumpable
         return self::$singletons[$filemanagerAdapter];
     }
 
-    public static function dump()
+    /**
+     * @return array
+     */
+    public static function dump() : array
     {
         return array(
             "patterns"  => self::$patterns
@@ -197,7 +200,7 @@ class Filemanager implements Dumpable
     private static function ftp_xconnect() : ?array
     {
         $res                                                            = null;
-        if (Kernel::$Environment::FTP_USERNAME && Kernel::$Environment::FTP_PASSWORD) {
+        if (Kernel::$Environment::FTP_USERNAME && Kernel::$Environment::FTP_SECRET) {
             $conn_id = @ftp_connect("localhost");
             if ($conn_id === false) {
                 $conn_id = @ftp_connect("127.0.0.1");

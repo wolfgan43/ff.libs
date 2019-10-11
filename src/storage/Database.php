@@ -32,6 +32,10 @@ use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Kernel;
 
+/**
+ * Class Database
+ * @package phpformsframework\libs\storage
+ */
 class Database implements Dumpable
 {
     const ERROR_BUCKET                                                      = "database";
@@ -75,7 +79,11 @@ class Database implements Dumpable
         return self::$singletons[$key];
     }
 
-    public static function isAssocArray(array $arr)
+    /**
+     * @param array $arr
+     * @return bool
+     */
+    public static function isAssocArray(array $arr) : bool
     {
         if (array() === $arr) {
             return false;
@@ -91,7 +99,7 @@ class Database implements Dumpable
      * @example arrayAssociative $databaseAdapters: [mysqli : {
             "host"          => null
             , "username"    => null
-            , "password"    => null
+            , "secret"      => null
             , "name"        => null
             , "prefix"		=> null
             , "table"       => null
@@ -280,6 +288,10 @@ class Database implements Dumpable
         return $this->getResult();
     }
 
+    /**
+     * @todo da tipizzare
+     * @return array|bool
+     */
     private function getResult()
     {
         if (Error::check(static::ERROR_BUCKET)) {
@@ -295,12 +307,20 @@ class Database implements Dumpable
         return $res;
     }
 
-    private static function getCacheParam($param)
+    /**
+     * @param mixed $param
+     * @return string
+     */
+    private static function getCacheParam($param) : string
     {
         return json_encode($param);
     }
 
-    private static function getCacheKey($query)
+    /**
+     * @param array $query
+     * @return string
+     */
+    private static function getCacheKey(array $query) : string
     {
         $action                                                             = $query["action"];
         $table                                                              = $query["from"];
@@ -330,12 +350,19 @@ class Database implements Dumpable
         return ucfirst($action) . " => " . $table . " (" . $insert . $set . $select . $where . ")";
     }
 
-    public static function dump()
+    /**
+     * @return array
+     */
+    public static function dump() : array
     {
         return self::$cache_rawdata;
     }
 
-    public static function cache($query)
+    /**
+     * @param array $query
+     * @return array|null
+     */
+    public static function cache(array $query) : ?array
     {
         $res                                                                = null;
         if (Kernel::$Environment::CACHE_DATABASE_ADAPTER) {
@@ -364,7 +391,12 @@ class Database implements Dumpable
         return $res;
     }
 
-    public static function setCache($data, $query)
+    /**
+     * @todo da tipizzare
+     * @param array|bool $data
+     * @param array $query
+     */
+    public static function setCache($data, array $query) : void
     {
         if (Kernel::$Environment::CACHE_DATABASE_ADAPTER) {
             $cache_key                                                      = Database::getCacheKey($query);

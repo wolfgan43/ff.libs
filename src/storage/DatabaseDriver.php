@@ -27,20 +27,22 @@ namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\international\Data;
 
+/**
+ * Class DatabaseDriver
+ * @package phpformsframework\libs\storage
+ */
 abstract class DatabaseDriver
 {
     const ERROR_BUCKET              = "database";
 
     protected static $_dbs 	        = array();
 
-    public $transform_null	        = true;
-
     protected $locale               = "ISO9075";
 
+    protected $host                 = null;
     protected $database             = null;
     protected $user                 = null;
-    protected $password             = null;
-    protected $host                 = null;
+    protected $secret               = null;
 
     protected $row	                = -1;
     protected $errno                = 0;
@@ -48,48 +50,87 @@ abstract class DatabaseDriver
 
     protected $link_id              = null;
     protected $query_id             = null;
-    protected $fields               = null;
-    protected $fields_names	        = null;
+    protected $fields               = array();
+    protected $fields_names	        = array();
 
     protected $num_rows             = null;
     protected $record               = null;
     protected $buffered_insert_id   = null;
 
     abstract public static function factory();
-    abstract public static function free_all();
+    abstract public static function freeAll();
 
     abstract protected function id2object($value);
-    abstract public function connect($Database = null, $Host = null, $User = null, $Password = null, $force = false);
-    abstract public function insert($query, $table = null);
-    abstract public function update($query, $table = null);
-    abstract public function delete($query, $table = null);
-    abstract public function execute($query);
-    abstract public function query($query);
-    abstract public function cmd($query, $name = "count");
-    abstract public function multiQuery($queries);
-    abstract public function lookup($tabella, $chiave = null, $valorechiave = null, $defaultvalue = null, $nomecampo = null, $tiporestituito = null, $bReturnPlain = false);
-    abstract public function nextRecord($obj = null);
-    abstract public function numRows();
-    abstract public function getRecordset();
-    abstract public function getFieldset();
-    abstract public function getInsertID($bReturnPlain = false);
+
+    /**
+     * @param string|null $Database
+     * @param string|null $Host
+     * @param string|null $User
+     * @param string|null $Secret
+     * @return bool
+     */
+    abstract public function connect(string $Database = null, string $Host = null, string $User = null, string $Secret = null) : bool;
+
+    abstract public function insert($query, string $table = null) : bool;
+    abstract public function update($query, string $table = null) : bool;
+    abstract public function delete($query, string $table = null) : bool;
+
+    abstract public function execute($query) : bool;
+
+    abstract public function query($query) : bool;
+
+    abstract public function cmd($query, string $name = "count");
+
+    /**
+     * @param array $queries
+     * @return array|null
+     */
+    abstract public function multiQuery(array $queries) : ?array;
+    abstract public function lookup(string $tabella, string $chiave = null, string $valorechiave = null, string $defaultvalue = null, string $nomecampo = null, string $tiporestituito = null, bool $bReturnPlain = false);
+
+    /**
+     * @param object|null $obj
+     * @return bool
+     */
+    abstract public function nextRecord(object &$obj = null) : bool;
+
+    /**
+     * @return int|null
+     */
+    abstract public function numRows() : ?int;
+
+    abstract public function getRecordset(object $obj = null);
+
+    /**
+     * @return array
+     */
+    abstract public function getFieldset() : array;
+
+    /**
+     * @return string|null
+     */
+    abstract public function getInsertID() : ?string;
 
     /**
      * @param string $DataValue
      * @return string
      */
-    abstract protected function toSql_escape($DataValue);
-    abstract protected function errorHandler($msg);
+    abstract protected function toSqlEscape(string $DataValue) : string;
+
+    /**
+     * @param string $msg
+     */
+    abstract protected function errorHandler(string $msg) : void;
 
     /**
      *
-     * @param String Nome del campo
-     * @param String Tipo di dato inserito
+     * @param string Nome del campo
+     * @param string Tipo di dato inserito
      * @param bool $bReturnPlain
      * @param bool $return_error
      * @return mixed Dato recuperato dal DB
      */
-    public function getField($Name, $data_type = "Text", $bReturnPlain = false, $return_error = true)
+    public function getField(string $Name, string $data_type = "Text", bool $bReturnPlain = false, bool $return_error = true)
     {
         if (!$this->query_id) {
             $this->errorHandler("f() called with no query pending");
@@ -123,12 +164,12 @@ abstract class DatabaseDriver
 
     /**
      * @param string|Data $cDataValue
-     * @param null|string $data_type
+     * @param string $data_type
      * @param bool $enclose_field
-     * @param null|bool $transform_null
+     * @param bool $transform_null
      * @return string
      */
-    public function toSql($cDataValue, $data_type = null, $enclose_field = true, $transform_null = null)
+    public function toSql($cDataValue, string $data_type = "Text", bool $enclose_field = true, $transform_null = true)
     {
         $value = null;
 
@@ -138,30 +179,27 @@ abstract class DatabaseDriver
         if (is_array($cDataValue)) {
             $this->errorHandler("toSql: Wrong parameter, array not managed.");
         } elseif (!is_object($cDataValue)) {
-            $value = $this->toSql_escape($cDataValue);
+            $value = $this->toSqlEscape($cDataValue);
         } elseif (get_class($cDataValue) == "Data") {
             if ($data_type === null) {
                 $data_type = $cDataValue->data_type;
             }
-            $value = $this->toSql_escape($cDataValue->getValue($data_type, $this->locale));
+            $value = $this->toSqlEscape($cDataValue->getValue($data_type, $this->locale));
         } elseif (get_class($cDataValue) == "DateTime") {
             switch ($data_type) {
                 case "Date":
                     $tmp = new Data($cDataValue, "Date");
-                    $value = $this->toSql_escape($tmp->getValue($data_type, $this->locale));
+                    $value = $this->toSqlEscape($tmp->getValue($data_type, $this->locale));
                     break;
 
                 case "DateTime":
                 default:
                     $data_type = "DateTime";
                     $tmp = new Data($cDataValue, "DateTime");
-                    $value = $this->toSql_escape($tmp->getValue($data_type, $this->locale));
+                    $value = $this->toSqlEscape($tmp->getValue($data_type, $this->locale));
             }
         } else {
             $this->errorHandler("toSql: Wrong parameter, unmanaged datatype");
-        }
-        if ($transform_null === null) {
-            $transform_null = $this->transform_null;
         }
 
         switch ($data_type) {

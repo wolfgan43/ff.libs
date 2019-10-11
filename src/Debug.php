@@ -195,17 +195,18 @@ class Debug
     }
 
     /**
-     * @param string|null $note
+     * @todo da tipizzare
+     * @param array|string|null $note
      * @param array|null $backtrace
      */
-    public static function dumpCaller(string $note = null, array $backtrace = null) : void
+    public static function dumpCaller($note = null, array $backtrace = null) : void
     {
         if (Kernel::$Environment::PROFILING) {
             $debug_backtrace                    = (
                 is_array($backtrace)
-                                                    ? $backtrace
-                                                    : debug_backtrace()
-                                                );
+                ? $backtrace
+                : debug_backtrace()
+            );
             foreach ($debug_backtrace as $i => $trace) {
                 if (basename($trace["file"]) == "Debug.php") {
                     continue;

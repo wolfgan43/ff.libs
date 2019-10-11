@@ -57,7 +57,7 @@ abstract class App implements Dumpable
      * @param array|null $userVars
      * @return array
      */
-    public static function dump(array $userVars = null)
+    public static function dump(array $userVars = null) : array
     {
         return array(
             "isRunnedAs"    => self::$script_engine,

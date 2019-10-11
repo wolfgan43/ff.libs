@@ -63,7 +63,7 @@ abstract class DatabaseAdapter
     private $connection                 = array(
                                             "host"          => null
                                             , "username"    => null
-                                            , "password"    => null
+                                            , "secret"      => null
                                             , "name"        => null
                                             , "prefix"		=> null
                                             , "table"       => null
@@ -123,7 +123,7 @@ abstract class DatabaseAdapter
                 $connector["name"],
                 $connector["host"],
                 $connector["username"],
-                $connector["password"]
+                $connector["secret"]
             )) {
                 $this->key_name                         = $connector["key"];
             }
@@ -173,7 +173,7 @@ abstract class DatabaseAdapter
 
             $connector["host"]                          = constant($prefix . "HOST");
             $connector["username"]                      = constant($prefix . "USER");
-            $connector["password"]                      = constant($prefix . "PASSWORD");
+            $connector["secret"]                        = constant($prefix . "SECRET");
             $connector["name"]                          = constant($prefix . "NAME");
             $connector["host"]                          = constant($prefix . "HOST");
 

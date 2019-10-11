@@ -64,15 +64,15 @@ class Resource extends Mappable implements Dumpable
     }
 
     /**
-     * @return array|null
+     * @return array
      */
-    public static function dump() : ?array
+    public static function dump() : array
     {
         if (!self::$singleton) {
             self::$singleton = new Resource();
         }
 
-        return self::$singleton->resources;
+        return (array) self::$singleton->resources;
     }
 
     /**

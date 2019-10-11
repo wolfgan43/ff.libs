@@ -71,7 +71,7 @@ class ImageThumb extends ImageRender
      */
     protected function load_image($src_res_path)
     {
-        $mime = Media::getMimeTypeByFilename($src_res_path);
+        $mime = Media::getMimeByFilename($src_res_path);
         if (is_dir($src_res_path)) {
             $src_res_path_tmp = $this->icons["directory"];
         } elseif (is_file($src_res_path)) {
@@ -108,7 +108,7 @@ class ImageThumb extends ImageRender
 
         $src_res = null;
         if ($src_res_path_tmp) {
-            $mime = Media::getMimeTypeByFilename($src_res_path_tmp);
+            $mime = Media::getMimeByFilename($src_res_path_tmp);
             if (!function_exists(str_replace("/", "", $mime))) {
                 $src_res_path_tmp = $this->get_template_dir($this->icons["unknown"]);
             }
@@ -129,7 +129,7 @@ class ImageThumb extends ImageRender
 
         if (!$src_res) {
             $src_res_path_tmp = $this->get_template_dir($this->icons[$error_icon]);
-            $mime = Media::getMimeTypeByFilename($src_res_path_tmp);
+            $mime = Media::getMimeByFilename($src_res_path_tmp);
 
             switch ($mime) {
                 case "image/jpeg":

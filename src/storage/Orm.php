@@ -35,7 +35,7 @@ class Orm implements Dumpable
 {
     const ERROR_BUCKET                                                                      = "orm";
 
-    private static $singleton                                                               = null;
+    private static $singleton                                                               = array();
     private static $data                                                                    = array();
     private static $services_by_data                                                        = array();
     private static $result                                                                  = array();
@@ -51,7 +51,11 @@ class Orm implements Dumpable
     {
         return self::setSingleton($ormModel, $mainTable);
     }
-    public static function dump()
+
+    /**
+     * @return array
+     */
+    public static function dump() : array
     {
         return self::$singleton;
     }

@@ -27,6 +27,7 @@
 namespace phpformsframework\libs\storage\drivers;
 
 use phpformsframework\libs\Error;
+use phpformsframework\libs\storage\Filemanager;
 
 class ImageCanvas
 {
@@ -235,6 +236,7 @@ class ImageCanvas
             reset($this->tmb_res);
         }
 
+        Filemanager::makeDir($filename, 0775);
         switch ($this->format) {
             case "jpg":
                 if ($filename === null) {

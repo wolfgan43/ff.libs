@@ -26,8 +26,12 @@
 
 namespace phpformsframework\libs\dto;
 
-use phpformsframework\libs\Kernel;
+use phpformsframework\libs\Debug;
 
+/**
+ * Class DataAdapter
+ * @package phpformsframework\libs\dto
+ */
 abstract class DataAdapter
 {
     const CONTENT_TYPE                      = null;
@@ -106,7 +110,7 @@ abstract class DataAdapter
      */
     public $status                          = 0;
     /**
-     * @var null|mixed
+     * @var mixed|null
      */
     private $debug                           = null;
 
@@ -124,11 +128,13 @@ abstract class DataAdapter
     /**
      * @return array
      */
-    protected function get_vars()
+    protected function getVars() : array
     {
         $vars                               = get_object_vars($this);
-        if (!Kernel::$Environment::DEBUG) {
+        if (!Debug::isEnabled()) {
             unset($vars["debug"]);
+        } elseif (empty($vars["debug"])) {
+            $vars["debug"]                  = Debug::exTimeApp();
         }
 
         return $vars;
@@ -137,25 +143,26 @@ abstract class DataAdapter
     /**
      * @return array
      */
-    public function toArray()
+    public function toArray() : array
     {
-        return $this->get_vars();
+        return $this->getVars();
     }
 
     /**
+     * @todo da tipizzare
      * @return false|string
      */
     public function toJson()
     {
-        return json_encode($this->get_vars());
+        return json_encode($this->getVars());
     }
 
     /**
-     * @param $status
-     * @param null|string $msg
+     * @param int $status
+     * @param string|null $msg
      * @return $this
      */
-    public function error($status, $msg = null)
+    public function error(int $status, string $msg = null) : self
     {
         $this->status                       = $status;
         $this->error                        = (
@@ -168,10 +175,10 @@ abstract class DataAdapter
     }
 
     /**
-     * @param null|int $code
+     * @param int|null $code
      * @return bool
      */
-    public function isError($code = null)
+    public function isError(int $code = null) : bool
     {
         return (bool) (
             $code
@@ -181,10 +188,11 @@ abstract class DataAdapter
     }
 
     /**
+     * @todo da tipizzare
      * @param mixed $data
-     * @return DataAdapter
+     * @return $this
      */
-    public function debug($data)
+    public function debug($data) : self
     {
         $this->debug                        = ($this->debug ? $this->debug . " " : "") . $data;
 
@@ -193,9 +201,9 @@ abstract class DataAdapter
 
     /**
      * @param array $values
-     * @return DataAdapter
+     * @return $this
      */
-    public function fill($values)
+    public function fill(array $values) : self
     {
         foreach ($values as $key => $value) {
             $this->$key                     = $value;
@@ -205,10 +213,21 @@ abstract class DataAdapter
     }
 
     /**
-     * @param array $values
-     * @return DataAdapter
+     * @return $this
      */
-    public function filter($values)
+    public function clear() : self
+    {
+        foreach ($this->getVars() as $key => $value) {
+            $this->$key                     = $value;
+        }
+
+        return $this;
+    }
+    /**
+     * @param array $values
+     * @return $this
+     */
+    public function filter(array $values) : self
     {
         $vars                               = get_object_vars($this);
         foreach ($vars as $key => $value) {
@@ -221,11 +240,12 @@ abstract class DataAdapter
     }
 
     /**
+     * @todo da tipizzare
      * @param string $key
      * @param string|array $value
      * @return $this
      */
-    public function set($key, $value)
+    public function set(string $key, $value) : self
     {
         $this->$key                         = $value;
 
@@ -233,10 +253,11 @@ abstract class DataAdapter
     }
 
     /**
+     * @todo da tipizzare
      * @param string $key
-     * @return string|null
+     * @return mixed|null
      */
-    public function get($key)
+    public function get(string $key)
     {
         return (isset($this->$key)
             ? $this->$key
@@ -248,16 +269,16 @@ abstract class DataAdapter
      * @param string $key
      * @return bool
      */
-    public function isset($key)
+    public function isset(string $key) : bool
     {
         return !empty($this->$key);
     }
 
     /**
      * @param string $key
-     * @return DataAdapter
+     * @return $this
      */
-    public function unset($key)
+    public function unset(string $key) : self
     {
         unset($this->$key);
 

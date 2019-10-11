@@ -127,7 +127,7 @@ class Debug
     public static function exTimeApp() : string
     {
         $duration                           = microtime(true) - self::$app_start;
-        return number_format($duration, 3, '.', '');
+        return number_format($duration, 3, '.', '') . "ms";
     }
 
     /**

@@ -278,7 +278,7 @@ class Request implements Configurable, Dumpable
     {
         $page                                                   = array();
         $router                                                 = Router::find(self::$orig_path_info);
-        $page_path                                              = rtrim($router["path"], "/");
+        $page_path                                              = rtrim(self::$orig_path_info, "/");
         if (!$page_path) {
             $page_path = DIRECTORY_SEPARATOR;
         }

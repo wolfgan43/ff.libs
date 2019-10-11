@@ -26,6 +26,10 @@
 
 namespace phpformsframework\libs\dto;
 
+/**
+ * Class DataResponse
+ * @package phpformsframework\libs\dto
+ */
 class DataResponse extends DataAdapter
 {
     const CONTENT_TYPE              = "application/json";
@@ -36,22 +40,22 @@ class DataResponse extends DataAdapter
     public $data                    = array();
 
     /**
-     * @param mixed $values
+     * @param array $values
      * @return $this
      */
-    public function fill($values)
+    public function fill(array $values) : DataAdapter
     {
-        $this->data                 = array_replace($this->data, (array) $values);
+        $this->data                 = array_replace($this->data, $values);
 
         return $this;
     }
 
     /**
      * @param array $values
-     * @param null|string $bucket
-     * @return DataAdapter
+     * @param string|null $bucket
+     * @return $this
      */
-    public function filter($values, $bucket = null)
+    public function filter(array $values, string $bucket = null) : DataAdapter
     {
         if (isset($this->data[$bucket])) {
             $this->data[$bucket]    = array_diff_key($this->data[$bucket], array_fill_keys($values, true));
@@ -63,11 +67,12 @@ class DataResponse extends DataAdapter
     }
 
     /**
+     * @todo da tipizzare
      * @param string $key
      * @param string|array $value
      * @return $this
      */
-    public function set($key, $value)
+    public function set(string $key, $value) : DataAdapter
     {
         $this->data[$key] = (
             is_object($value)
@@ -82,7 +87,7 @@ class DataResponse extends DataAdapter
      * @param string $key
      * @return \stdClass|string|null
      */
-    public function get($key)
+    public function get(string $key)
     {
         $res = (
             isset($this->data[$key])
@@ -100,7 +105,7 @@ class DataResponse extends DataAdapter
      * @param string $key
      * @return bool
      */
-    public function isset($key)
+    public function isset(string $key) : bool
     {
         return !empty($this->data[$key]);
     }
@@ -109,7 +114,7 @@ class DataResponse extends DataAdapter
      * @param string $key
      * @return $this
      */
-    public function unset($key)
+    public function unset(string $key) : DataAdapter
     {
         unset($this->data[$key]);
 
@@ -117,6 +122,7 @@ class DataResponse extends DataAdapter
     }
 
     /**
+     * @todo da tipizzare
      * @return false|string
      */
     public function output()
@@ -127,7 +133,7 @@ class DataResponse extends DataAdapter
     /**
      * @return array
      */
-    public function toArray()
+    public function toArray() : array
     {
         return $this->data;
     }

@@ -25,10 +25,16 @@
  */
 
 namespace phpformsframework\libs\dto;
-
+/**
+ * Class DataError
+ * @package phpformsframework\libs\dto
+ */
 class DataError extends DataAdapter
 {
-    public function output()
+    /**
+     * @return array
+     */
+    public function output() : array
     {
         return $this->toArray();
     }

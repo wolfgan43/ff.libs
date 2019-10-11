@@ -46,7 +46,7 @@ abstract class App implements Dumpable
     public static $Environment                                      = null;
 
     /**
-     * @return array
+     * @return dto\RequestPage
      */
     protected static function &configuration()
     {

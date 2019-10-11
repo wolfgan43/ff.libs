@@ -25,7 +25,7 @@ class Kernel
     public static $Environment      = null;
 
     /**
-     * @var array
+     * @var dto\RequestPage
      */
     public $configuration           = null;
 

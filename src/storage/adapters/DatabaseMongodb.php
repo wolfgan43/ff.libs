@@ -33,9 +33,12 @@ class DatabaseMongodb extends DatabaseAdapter
 {
     const PREFIX                                        = "MONGO_DATABASE_";
     const TYPE                                          = "nosql";
-    const KEY                                           = "_id";
+    const KEY_NAME                                      = "_id";
 
-    protected function getDriver()
+    /**
+     * @return nosql
+     */
+    protected function getDriver() : nosql
     {
         return new nosql();
     }
@@ -45,9 +48,22 @@ class DatabaseMongodb extends DatabaseAdapter
         return $this->driver->toSql($cDataValue, $data_type, $enclose_field, $transform_null);
     }
 
+    /**
+     * @return array
+     */
+    protected function getConnector() : array
+    {
+        $connector                                      = parent::getConnector();
+        $connector["key"]                               = self::KEY_NAME;
 
+        return $connector;
+    }
 
-    protected function processRead($query)
+    /**
+     * @param array $query
+     * @return array|null
+     */
+    protected function processRead(array $query) : ?array
     {
         if (!isset($query['sort'])) {
             $query['sort']                              = null;
@@ -73,19 +89,27 @@ class DatabaseMongodb extends DatabaseAdapter
         return $res;
     }
 
-    protected function processInsert($query)
+    /**
+     * @param array $query
+     * @return array|null
+     */
+    protected function processInsert(array $query) : ?array
     {
         $res                                            = null;
         if ($this->driver->insert($query["insert"], $query["from"])) {
             $res                                        = array(
-                                                            "keys" => array($this->driver->getInsertID(true))
+                                                            "keys" => array($this->driver->getInsertID())
                                                         );
         }
 
         return $res;
     }
 
-    protected function processUpdate($query)
+    /**
+     * @param array $query
+     * @return array|null
+     */
+    protected function processUpdate(array $query) : ?array
     {
         $res                                            = null;
 
@@ -93,23 +117,31 @@ class DatabaseMongodb extends DatabaseAdapter
             "set" 				        => $query["update"],
             "where" 			        => $query["where"]
         ), $query["from"])) {
-            $res                                        = true;
+            $res                                        = array();
         }
 
         return $res;
     }
 
-    protected function processDelete($query)
+    /**
+     * @param array $query
+     * @return array|null
+     */
+    protected function processDelete(array $query) : ?array
     {
         $res                                            = null;
         if ($this->driver->delete($query["where"], $query["from"])) {
-            $res                                        = true;
+            $res                                        = array();
         }
 
         return $res;
     }
 
-    protected function processWrite($query)
+    /**
+     * @param array $query
+     * @return array|null
+     */
+    protected function processWrite(array $query) : ?array
     {
         $res                                            = null;
         $keys                                           = null;
@@ -136,7 +168,7 @@ class DatabaseMongodb extends DatabaseAdapter
         } elseif ($query["insert"]) {
             if ($this->driver->insert($query["insert"], $query["from"])) {
                 $res                                    = array(
-                                                            "keys"          => array($this->driver->getInsertID(true)),
+                                                            "keys"          => array($this->driver->getInsertID()),
                                                             "action"        => "insert"
                                                         );
             }
@@ -145,7 +177,11 @@ class DatabaseMongodb extends DatabaseAdapter
         return $res;
     }
 
-    protected function processCmd($query)
+    /**
+     * @param array $query
+     * @return mixed
+     */
+    protected function processCmd(array $query)
     {
         $res                                            = null;
 
@@ -158,7 +194,7 @@ class DatabaseMongodb extends DatabaseAdapter
     }
 
 
-    private function parser_WhereField($field)
+    private function parserWhereField(array $field)
     {
         $res 						                    = $field["value"];
 
@@ -192,7 +228,6 @@ class DatabaseMongodb extends DatabaseAdapter
             case self::FTYPE_DATE:
             case self::FTYPE_NUMBER:
             case self::FTYPE_TIMESTAMP:
-            case self::FTYPE_PRIMARY:
                 if (is_array($field["value"]) && count($field["value"])) {
                     $res 			                    = array(
                                                             '$in' => (
@@ -206,6 +241,7 @@ class DatabaseMongodb extends DatabaseAdapter
             case self::FTYPE_STRING:
             case self::FTYPE_CHAR:
             case self::FTYPE_TEXT:
+            case self::FTYPE_PRIMARY:
             default:
                 if (is_array($field["value"]) && count($field["value"])) {
                     $res 			                    = array(
@@ -232,8 +268,6 @@ class DatabaseMongodb extends DatabaseAdapter
         $result                                                                     = null;
         $res 																		= array();
         if (is_array($fields) && count($fields)) {
-            $fields                                                                 = $this->convertKey("ID", $fields);
-
             if ($flag == "where" && isset($fields['$or']) && is_array($fields['$or'])) {
                 $or                                                                 = $this->convertFields($fields['$or'], "where_OR");
                 if ($or) {
@@ -253,11 +287,7 @@ class DatabaseMongodb extends DatabaseAdapter
                     }
                 }
 
-                if ($name == "key") {
-                    $name 															= $this->key_name;
-                } elseif (0 && strpos($name, "key") === 1) {
-                    $name 															= substr($name, 0, 1) . $this->key_name;
-                } elseif ($flag == "select" && strpos($value, ".") > 0) {
+                if ($flag == "select" && strpos($value, ".") > 0) {
                     $name 															= substr($value, 0, strpos($value, "."));
                     $value 															= true;
                 }
@@ -310,9 +340,7 @@ class DatabaseMongodb extends DatabaseAdapter
                                     default:
                                         $res["update"]['$set'][$field["name"]]      = $field["value"];
                                 }
-                            } elseif ($field["type"] == self::FTYPE_NUMBER
-                                || $field["type"] == self::FTYPE_PRIMARY
-                            ) {
+                            } elseif ($field["type"] == self::FTYPE_NUMBER) {
                                 switch ($field["op"]) {
                                     case "++":
                                         $res["update"]['$inc'][$field["name"]]      = 1;
@@ -328,6 +356,7 @@ class DatabaseMongodb extends DatabaseAdapter
                             } elseif ($field["type"] == self::FTYPE_STRING
                                 || $field["type"] == self::FTYPE_CHAR
                                 || $field["type"] == self::FTYPE_TEXT
+                                || $field["type"] == self::FTYPE_PRIMARY
                             ) {
                                 switch ($field["op"]) {
                                     case "++":
@@ -351,9 +380,9 @@ class DatabaseMongodb extends DatabaseAdapter
                             }
 
                             if ($parser_action_or) {
-                                $res['$or'][][$field["name"]]                       = $this->parser_WhereField($field);
+                                $res['$or'][][$field["name"]]                       = $this->parserWhereField($field);
                             } else {
-                                $res["where"][$field["name"]]                       = $this->parser_WhereField($field);
+                                $res["where"][$field["name"]]                       = $this->parserWhereField($field);
 
                             }
                             break;
@@ -361,7 +390,7 @@ class DatabaseMongodb extends DatabaseAdapter
                             if (is_array($value)) {
                                 $field["value"]                                     = $value;
                             }
-                            $res[][$field["name"]]                                  = $this->parser_WhereField($field);
+                            $res[][$field["name"]]                                  = $this->parserWhereField($field);
                             break;
                         default:
                     }

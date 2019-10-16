@@ -29,10 +29,17 @@ namespace phpformsframework\libs\dto;
 use phpformsframework\libs\Mappable;
 use phpformsframework\libs\Request;
 
+/**
+ * Class DataRequestHeader
+ * @package phpformsframework\libs\dto
+ */
 class DataRequestHeader extends Mappable
 {
     use Manipulation;
 
+    /**
+     * DataRequestHeader constructor.
+     */
     public function __construct()
     {
         parent::__construct(Request::headers());

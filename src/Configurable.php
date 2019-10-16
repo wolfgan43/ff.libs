@@ -33,8 +33,8 @@ namespace phpformsframework\libs;
  */
 interface Configurable
 {
-    const METHOD_MERGE      = Config::RAWDATA_XML_MERGE_RECOURSIVE;
-    const METHOD_REPLACE    = Config::RAWDATA_XML_REPLACE;
+    const METHOD_REPLACE    = 1;
+    const METHOD_MERGE      = 3;
 
     /**
      * @param dto\ConfigRules $configRules

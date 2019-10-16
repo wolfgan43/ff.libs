@@ -29,10 +29,17 @@ namespace phpformsframework\libs\dto;
 use phpformsframework\libs\Mappable;
 use phpformsframework\libs\Request;
 
+/**
+ * Class DataRequest
+ * @package phpformsframework\libs\dto
+ */
 class DataRequest extends Mappable
 {
     use Manipulation;
 
+    /**
+     * DataRequest constructor.
+     */
     public function __construct()
     {
         parent::__construct(Request::rawdata());

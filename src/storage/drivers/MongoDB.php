@@ -184,7 +184,7 @@ class MongoDB extends DatabaseDriver
      * @param null|string $table
      * @return boolean
      */
-    public function insert($query, string $table = null) : bool
+    public function insert(array $query, string $table = null) : bool
     {
         return $this->getQuery($query, $table, "insert");
     }
@@ -194,7 +194,7 @@ class MongoDB extends DatabaseDriver
      * @param string|null $table
      * @return bool
      */
-    public function update($query, string $table = null) : bool
+    public function update(array $query, string $table = null) : bool
     {
         return $this->getQuery($query, $table, "update");
     }
@@ -204,7 +204,7 @@ class MongoDB extends DatabaseDriver
      * @param string|null $table
      * @return bool
      */
-    public function delete($query, string $table = null) : bool
+    public function delete(array $query, string $table = null) : bool
     {
         return $this->getQuery($query, $table, "delete");
     }
@@ -230,10 +230,10 @@ class MongoDB extends DatabaseDriver
     }
 
     /**
-     * @param array|string $query
+     * @param array $query
      * @return bool
      */
-    public function execute($query) : bool
+    private function execute(array $query) : bool
     {
         if (empty($query)) {
             $this->errorHandler("Execute invoked With blank Query String");
@@ -243,11 +243,7 @@ class MongoDB extends DatabaseDriver
             return false;
         }
 
-        if (is_array($query)) {
-            $mongoDB = $query;
-        } else {
-            $mongoDB = $this->sql2mongoDB($query);
-        }
+        $mongoDB = $query;
         if (!isset($mongoDB["action"])) {
             if (!empty($mongoDB["insert"])) {
                 $mongoDB["action"] = "insert";
@@ -391,10 +387,10 @@ class MongoDB extends DatabaseDriver
 
     /**
      * Esegue una query
-     * @param array|string $query
+     * @param array $query
      * @return bool
      */
-    public function query($query) : bool
+    public function query(array $query) : bool
     {
         if (empty($query)) {
             $this->errorHandler("Query invoked With blank Query String");
@@ -407,11 +403,7 @@ class MongoDB extends DatabaseDriver
 
         $this->freeResult();
 
-        if (is_array($query)) {
-            $mongoDB = $query;
-        } else {
-            $mongoDB = $this->sql2mongoDB($query);
-        }
+        $mongoDB = $query;
         if (!isset($mongoDB["action"])) {
             if (!empty($mongoDB["from"])) {
                 $mongoDB["action"] = "select";
@@ -499,11 +491,11 @@ class MongoDB extends DatabaseDriver
     }
 
     /**
-     * @param array|string $query
+     * @param array $query
      * @param string $name
      * @return mixed
      */
-    public function cmd($query, string $name = "count")
+    public function cmd(array $query, string $name = "count")
     {
         $res = null;
         if (empty($query)) {
@@ -518,11 +510,8 @@ class MongoDB extends DatabaseDriver
 
         $this->freeResult();
 
-        if (is_array($query)) {
-            $mongoDB = $query;
-        } else {
-            $mongoDB = $this->sql2mongoDB($query);
-        }
+        $mongoDB = $query;
+
         if (isset($mongoDB["where"][$this->keyname])) {
             $mongoDB["where"][$this->keyname] = $this->id2object($mongoDB["where"][$this->keyname]);
         }

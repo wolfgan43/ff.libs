@@ -199,7 +199,7 @@ class Database implements Dumpable
      * @param null|string $table_name
      * @return bool|array
      */
-    public function read($where, $fields = null, $sort = null, $limit = null, $table_name = null)
+    public function read(array $where, array $fields = null, array $sort = null, array $limit = null, string $table_name = null)
     {
         Error::clear(static::ERROR_BUCKET);
 
@@ -215,7 +215,7 @@ class Database implements Dumpable
      * @param null|string $table_name
      * @return bool
      */
-    public function insert($insert, $table_name = null)
+    public function insert(array $insert, string $table_name = null)
     {
         Error::clear(static::ERROR_BUCKET);
 
@@ -231,7 +231,7 @@ class Database implements Dumpable
      * @param null|string $table_name
      * @return bool
      */
-    public function update($set, $where, $table_name = null)
+    public function update(array $set, array $where, string $table_name = null)
     {
         Error::clear(static::ERROR_BUCKET);
 
@@ -247,7 +247,7 @@ class Database implements Dumpable
      * @param null|string $table_name
      * @return bool
      */
-    public function write($insert, $update, $table_name = null)
+    public function write(array $insert, array $update, string $table_name = null)
     {
         Error::clear(static::ERROR_BUCKET);
 
@@ -262,7 +262,7 @@ class Database implements Dumpable
      * @param null|string $table_name
      * @return bool
      */
-    public function delete($where, $table_name = null)
+    public function delete(array $where, string $table_name = null)
     {
         Error::clear(static::ERROR_BUCKET);
 
@@ -278,7 +278,7 @@ class Database implements Dumpable
      * @param null|string $table_name
      * @return bool
      */
-    public function cmd($action, $what, $table_name = null)
+    public function cmd(string $action, array $what, string $table_name = null)
     {
         Error::clear(static::ERROR_BUCKET);
 

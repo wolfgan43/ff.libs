@@ -25,6 +25,8 @@
  */
 namespace phpformsframework\libs;
 
+use phpformsframework\libs\dto\DataResponse;
+
 /**
  * Class Dir
  * @package phpformsframework\libs
@@ -140,8 +142,9 @@ class Dir
      * @param null|string $key
      * @return mixed
      */
-    public static function getXmlAttr($item, $key = null)
+    public static function getXmlAttr(array $item, string $key = null)
     {
+        Debug::stopWatch("XMLATTR");
         /*return new DataResponse(isset($item["@attributes"])
             ? $item["@attributes"]
             : $item);*/
@@ -152,9 +155,30 @@ class Dir
             : $item
         );
 
+        Debug::stopWatch("XMLATTR");
+
         return ($key
             ? $res[$key]
             : $res
         );
+    }
+
+    /**
+     * @param array $item
+     * @return \ArrayObject
+     */
+    public static function getXmlAttr2Object(array $item)
+    {
+        Debug::stopWatch("XMLATTR_OBJ");
+
+
+        $obj = new \ArrayObject(isset($item["@attributes"])
+        ? $item["@attributes"]
+        : $item, \ArrayObject::ARRAY_AS_PROPS);
+
+        Debug::stopWatch("XMLATTR_OBJ");
+
+        return $obj;
+
     }
 }

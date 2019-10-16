@@ -196,56 +196,45 @@ class MySqli extends DatabaseDriver
     }
 
     /**
-     * @param $query
+     * @param array $query
      * @param string|null $table
      * @return bool
      */
-    public function insert($query, string $table = null) : bool
+    public function insert(array $query, string $table = null) : bool
     {
-        if (is_array($query)) {
-            $Query_String               = "INSERT INTO " .  $query["from"] . "
-                                        (
-                                            " . $query["insert"]["head"] . "
-                                        ) VALUES (
-                                            " . $query["insert"]["body"] . "
-                                        )";
-        } else {
-            $Query_String               = $query;
-        }
+        $Query_String                   = "INSERT INTO " .  $query["from"] . "
+                                            (
+                                                " . $query["insert"]["head"] . "
+                                            ) VALUES (
+                                                " . $query["insert"]["body"] . "
+                                            )";
 
         return $this->execute($Query_String);
     }
 
     /**
-     * @param $query
+     * @param array $query
      * @param string|null $table
      * @return bool
      */
-    public function update($query, string $table = null) : bool
+    public function update(array $query, string $table = null) : bool
     {
-        if (is_array($query)) {
-            $Query_String               = "UPDATE " . $query["from"] . " SET 
+        $Query_String                   = "UPDATE " . $query["from"] . " SET 
                                                 " . $query["update"] . "
                                             WHERE " . $query["where"];
-        } else {
-            $Query_String               = $query;
-        }
+
         return $this->execute($Query_String);
     }
 
     /**
-     * @param $query
+     * @param array $query
      * @param string|null $table
      * @return bool
      */
-    public function delete($query, string $table = null) : bool
+    public function delete(array $query, string $table = null) : bool
     {
-        if (is_array($query)) {
-            $Query_String               = "DELETE FROM " .  $query["from"] . "  
+        $Query_String                   = "DELETE FROM " .  $query["from"] . "  
                                             WHERE " . $query["where"];
-        } else {
-            $Query_String               = $query;
-        }
 
         return $this->execute($Query_String);
     }
@@ -255,7 +244,7 @@ class MySqli extends DatabaseDriver
      * @param string $Query_String
      * @return bool
      */
-    public function execute($Query_String) : bool
+    private function execute(string $Query_String) : bool
     {
         if ($Query_String == "") {
             $this->errorHandler("Execute invoked With blank Query String");
@@ -383,20 +372,16 @@ class MySqli extends DatabaseDriver
 
     /**
      * Esegue una query
-     * @param string|array $query
+     * @param array $query
      * @return bool
      */
-    public function query($query) : bool
+    public function query(array $query) : bool
     {
-        if (is_array($query)) {
-            $Query_String                                   = $this->querySelect($query)    .
+        $Query_String                                       = $this->querySelect($query)    .
                                                             $this->queryFrom($query)        .
                                                             $this->queryWhere($query)       .
                                                             $this->querySort($query)        .
                                                             $this->queryLimit($query);
-        } else {
-            $Query_String                                   = $query;
-        }
 
         $this->use_found_rows                               = strpos($Query_String, " SQL_CALC_FOUND_ROWS ") !== false;
         if ($Query_String == "") {
@@ -430,11 +415,11 @@ class MySqli extends DatabaseDriver
     }
 
     /**
-     * @param $query
+     * @param array $query
      * @param string $name
      * @return mixed
      */
-    public function cmd($query, string $name = "count")
+    public function cmd(array $query, string $name = "count")
     {
         if (!$this->link_id && !$this->connect()) {
             return false;

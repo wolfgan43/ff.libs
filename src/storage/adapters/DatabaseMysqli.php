@@ -32,9 +32,12 @@ class DatabaseMysqli extends DatabaseAdapter
 {
     const PREFIX                                        = "MYSQL_DATABASE_";
     const TYPE                                          = "sql";
-    const KEY                                           = "ID";
+    const KEY_NAME                                      = "ID";
 
-    protected function getDriver()
+    /**
+     * @return sql
+     */
+    protected function getDriver() : sql
     {
         return new sql();
     }
@@ -45,7 +48,11 @@ class DatabaseMysqli extends DatabaseAdapter
         return $this->driver->toSql($cDataValue, $data_type, $enclose_field, $transform_null);
     }
 
-    protected function processRead($query)
+    /**
+     * @param array $query
+     * @return array|null
+     */
+    protected function processRead(array $query) : ?array
     {
         $res                                            = $this->processRawQuery($query);
         if ($res && isset($query["limit"]) && is_array($query["limit"]) && isset($query["limit"]["calc_found_rows"])) {
@@ -58,39 +65,55 @@ class DatabaseMysqli extends DatabaseAdapter
         return $res;
     }
 
-    protected function processInsert($query)
+    /**
+     * @param array $query
+     * @return array|null
+     */
+    protected function processInsert(array $query) : ?array
     {
         $res                                            = null;
         if ($this->driver->insert($query)) {
             $res                                        = array(
-                                                            "keys" => array($this->driver->getInsertID(true))
+                                                            "keys" => array($this->driver->getInsertID())
                                                         );
         }
 
         return $res;
     }
 
-    protected function processUpdate($query)
+    /**
+     * @param array $query
+     * @return array|null
+     */
+    protected function processUpdate(array $query) : ?array
     {
         $res                                            = null;
         if ($this->driver->update($query)) {
-            $res = true;
+            $res                                        = array();
         }
 
         return $res;
     }
 
-    protected function processDelete($query)
+    /**
+     * @param array $query
+     * @return array|null
+     */
+    protected function processDelete(array $query) : ?array
     {
         $res                                            = null;
         if ($this->driver->delete($query)) {
-            $res = true;
+            $res                                        = array();
         }
 
         return $res;
     }
 
-    protected function processWrite($query)
+    /**
+     * @param array $query
+     * @return array|null
+     */
+    protected function processWrite(array $query) : ?array
     {
         //todo: da valutare se usare REPLACE INTO. Necessario test benckmark
         $res                                            = null;
@@ -118,7 +141,7 @@ class DatabaseMysqli extends DatabaseAdapter
         } elseif ($query["insert"]) {
             if ($this->driver->insert($query)) {
                 $res                                    = array(
-                                                            "keys"      => array($this->driver->getInsertID(true))
+                                                            "keys"      => array($this->driver->getInsertID())
                                                             , "action"  => "insert"
                                                         );
             }
@@ -127,7 +150,11 @@ class DatabaseMysqli extends DatabaseAdapter
         return $res;
     }
 
-    protected function processCmd($query)
+    /**
+     * @param array $query
+     * @return mixed
+     */
+    protected function processCmd(array $query)
     {
         $res                                            = null;
 
@@ -139,8 +166,13 @@ class DatabaseMysqli extends DatabaseAdapter
         return $res;
     }
 
-
-    private function parser_SpecialFields($name, $values, $action = "AND")
+    /**
+     * @param string $name
+     * @param array $values
+     * @param string $action
+     * @return string
+     */
+    private function parserSpecialFields(string $name, array $values, string $action = "AND") : string
     {
         $res                                            = array();
         foreach ($values as $op => $value) {
@@ -190,12 +222,20 @@ class DatabaseMysqli extends DatabaseAdapter
         return "(" . implode(" " . $action . " ", $res) . ")";
     }
 
-    private function parser_SelectField($field)
+    /**
+     * @param array $field
+     * @return string
+     */
+    private function parserSelectField(array $field) : string
     {
         return $field["name"];
     }
 
-    private function parser_InsertField($field)
+    /**
+     * @param array $field
+     * @return string
+     */
+    private function parserInsertField(array $field) : string
     {
         $res                                            = null;
         if (is_array($field["value"])) {
@@ -215,7 +255,11 @@ class DatabaseMysqli extends DatabaseAdapter
         return $res;
     }
 
-    private function parser_UpdateField($field)
+    /**
+     * @param array $field
+     * @return string
+     */
+    private function parserUpdateField(array $field) : string
     {
         $res                                            = null;
         if (is_array($field["value"])) {
@@ -260,13 +304,22 @@ class DatabaseMysqli extends DatabaseAdapter
         }
         return $res;
     }
-    private function parser_DeleteField($field)
+
+    /**
+     * @param array $field
+     * @return string
+     */
+    private function parserDeleteField(array $field) : string
     {
         //todo: to implement
-        return $field;
+        return (string) $field;
     }
 
-    private function parser_WhereField($field)
+    /**
+     * @param array $field
+     * @return string
+     */
+    private function parserWhereField(array $field) : string
     {
         $res                                            = null;
         $value                                          = $field["value"];
@@ -331,7 +384,6 @@ class DatabaseMysqli extends DatabaseAdapter
         $result                                                                     = null;
         $res 																		= array();
         if (is_array($fields) && count($fields)) {
-            $fields                                                                 = $this->convertKey("_id", $fields);
             if ($action == "where" && isset($fields['$or']) && is_array($fields['$or'])) {
                 $or                                                                 = $this->convertFields($fields['$or'], "where_OR");
                 if ($or) {
@@ -393,28 +445,28 @@ class DatabaseMysqli extends DatabaseAdapter
 
 
                 if ($field == "special") {
-                    $res[$name]                                                     = self::parser_SpecialFields($name, $special, $parser_action);
+                    $res[$name]                                                     = self::parserSpecialFields($name, $special, $parser_action);
                 } else {
                     switch ($action) {
                         case "select":
-                            $res[$name]         							        = self::parser_SelectField($field);
+                            $res[$name]         							        = self::parserSelectField($field);
                             break;
                         case "insert":
                             $res["head"][$name]         							= $field["name"];
-                            $res["body"][$name]         							= self::parser_InsertField($field);
+                            $res["body"][$name]         							= self::parserInsertField($field);
                             break;
                         case "update":
-                            $res[$name]         							        = self::parser_UpdateField($field);
+                            $res[$name]         							        = self::parserUpdateField($field);
                             break;
                         case "delete":
-                            $res[$name]         							        = self::parser_DeleteField($field);
+                            $res[$name]         							        = self::parserDeleteField($field);
                             break;
                         case "where":
                         case "where_OR":
                             if (is_array($value)) {
                                 $field["value"]                                     = $value;
                             }
-                            $res[$name]         							        = self::parser_WhereField($field);
+                            $res[$name]         							        = self::parserWhereField($field);
                             break;
                     }
                 }

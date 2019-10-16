@@ -66,12 +66,12 @@ class Kernel
     }
 
     /**
-     * @param string|null $bucket
+     * @param string $bucket
      * @param bool $toArray
      * @return array|object|null
      * @todo far ritornare ?array|object quando sara supportato da php
      */
-    protected function dirStruct(string $bucket = null, bool $toArray = true)
+    protected function dirStruct(string $bucket = Config::APP_BASE_NAME, bool $toArray = true)
     {
         $res                        = Config::getDirBucket($bucket);
 

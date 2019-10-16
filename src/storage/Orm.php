@@ -444,6 +444,13 @@ class Orm implements Dumpable
                                                                                                 : self::$data["main"]
                                                                                             );
         if ($data) {
+            if ($limit && !is_array($limit)) {
+                $limit                                                                      = array(
+                                                                                                "skip"  => 0,
+                                                                                                "limit" => $limit
+                                                                                            );
+            }
+
             $regs                                                                           = self::getModel(
                 isset($data["service"])
                                                                                                     ? $data["service"]
@@ -703,19 +710,9 @@ class Orm implements Dumpable
                 }
             }
 
-            self::$result["update"][$data["def"]["table"]["alias"]]                         = false;
-            if (isset($data["where"])) { //todo: errore logico
-                $regs                                                                       = $storage->update($data["set"], $data["where"], $data["def"]["table"]["name"]);
-                if ($regs === true) {
-                    self::$result["update"][$data["def"]["table"]["alias"]]                 = true;
-                }
-            }
+            self::$result["update"][$data["def"]["table"]["alias"]]                         = isset($data["where"]) && $storage->update($data["set"], $data["where"], $data["def"]["table"]["name"]);
         } elseif (!isset($data["insert"]) && isset($data["set"]) && isset($data["where"])) {
-            self::$result["update"][$data["def"]["table"]["alias"]]                         = false;
-            $regs                                                                           = $storage->update($data["set"], $data["where"], $data["def"]["table"]["name"]);
-            if ($regs === true) {
-                self::$result["update"][$data["def"]["table"]["alias"]]                     = true;
-            }
+            self::$result["update"][$data["def"]["table"]["alias"]]                         = $storage->update($data["set"], $data["where"], $data["def"]["table"]["name"]);
         } elseif (!isset($data["insert"]) && !isset($data["set"]) && isset($data["where"])) {
             $regs                                                                           = $storage->read($data["where"], array($key_name => true), null, null, $data["def"]["table"]["name"]);
             if (is_array($regs)) {

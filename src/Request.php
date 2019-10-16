@@ -130,14 +130,7 @@ class Request implements Configurable, Dumpable
             self::loadPatterns($rawdata["pattern"]);
         }
 
-        return array(
-            "params"                => self::$params,
-            "access_control"        => self::$access_control,
-            "pages"                 => self::$pages,
-            "alias"                 => self::$alias,
-            "gateway"               => self::$gateway,
-            "patterns"              => self::$patterns
-        );
+        return self::dump();
     }
 
     /**
@@ -846,7 +839,7 @@ class Request implements Configurable, Dumpable
         );
     }
 
-    private static function getAccessControl(string $origin, $key = null)
+    private static function getAccessControl(string $origin, string $key = null)
     {
         $access_control                                         = false;
         if (isset(self::$access_control)) {
@@ -863,12 +856,11 @@ class Request implements Configurable, Dumpable
     }
 
     /**
+     * return only the headers and not the content
      * @param string $origin
      */
     private static function corsPreflight(string $origin) : void
     {
-        // return only the headers and not the content
-        // only allow CORS
         if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']) && $origin) {
             $access_control = self::getAccessControl($origin);
 
@@ -962,19 +954,7 @@ class Request implements Configurable, Dumpable
                 header('Access-Control-Allow-Origin: ' . $allow_origin);
             }
         }
-        //@todo: da delegare all'htaccess
-        //header("X-Frame-Options: SAMEORIGIN");
-        //header("X-XSS-Protection: 1; mode=block");
-        //header("X-Content-Type-Options: nosniff");
-        //header("Strict-Transport-Security: max-age=31536000");
-        /**
-         * @todo: da verificare e implementare
-         *
-         * header("Content-Security-Policy: default-src 'self' https://cdnjs.cloudflare.com; script-src 'self' https://cdnjs.cloudflare.com; connect-src 'self'; img-src 'self'; style-src 'self' https://cdnjs.cloudflare.com; ");
-         * header('Public-Key-Pins: pin-sha256="d6qzRu9zOECb90Uez27xWltNsj0e1Md7GkYYkVoZWmM="; pin-sha256="E9CZ9INDbd+2eRQozYqqbQ2yXLVKB9+xcprMF+44U1g="; max-age=604800; includeSubDomains; report-uri="https://example.net/pkp-report"');
-         * header("Referrer-Policy: origin-when-cross-origin");
-         * header("Expect-CT: max-age=7776000, enforce");
-         */
+
         self::verifyInvalidRequest();
     }
 

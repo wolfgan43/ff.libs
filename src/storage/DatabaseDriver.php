@@ -71,15 +71,39 @@ abstract class DatabaseDriver
      */
     abstract public function connect(string $Database = null, string $Host = null, string $User = null, string $Secret = null) : bool;
 
-    abstract public function insert($query, string $table = null) : bool;
-    abstract public function update($query, string $table = null) : bool;
-    abstract public function delete($query, string $table = null) : bool;
+    /**
+     * @param array $query
+     * @param string|null $table
+     * @return bool
+     */
+    abstract public function insert(array $query, string $table = null) : bool;
 
-    abstract public function execute($query) : bool;
+    /**
+     * @param array $query
+     * @param string|null $table
+     * @return bool
+     */
+    abstract public function update(array $query, string $table = null) : bool;
 
-    abstract public function query($query) : bool;
+    /**
+     * @param array $query
+     * @param string|null $table
+     * @return bool
+     */
+    abstract public function delete(array $query, string $table = null) : bool;
 
-    abstract public function cmd($query, string $name = "count");
+    /**
+     * @param array|string $query
+     * @return bool
+     */
+    abstract public function query(array $query) : bool;
+
+    /**
+     * @param array $query
+     * @param string $name
+     * @return mixed
+     */
+    abstract public function cmd(array $query, string $name = "count");
 
     /**
      * @param array $queries

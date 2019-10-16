@@ -1,20 +1,32 @@
 <?php
 namespace phpformsframework\libs\dto;
 
-use phpformsframework\libs\Config;
+use phpformsframework\libs\Configurable;
 
+/**
+ * Class ConfigRules
+ * @package phpformsframework\libs\dto
+ */
 class ConfigRules
 {
     private $context            = null;
     private $data               = array();
 
-
+    /**
+     * ConfigRules constructor.
+     * @param $context
+     */
     public function __construct($context)
     {
         $this->context          = $context;
     }
 
-    public function add($bucket, $method = Config::RAWDATA_XML_MERGE_RECOURSIVE)
+    /**
+     * @param string $bucket
+     * @param int $method
+     * @return ConfigRules
+     */
+    public function add(string $bucket, int $method = Configurable::METHOD_MERGE) : ConfigRules
     {
         $this->data[$bucket]    = [
                                     "method"     => $method,
@@ -23,7 +35,10 @@ class ConfigRules
         return $this;
     }
 
-    public function toArray()
+    /**
+     * @return array
+     */
+    public function toArray() : array
     {
         return $this->data;
     }

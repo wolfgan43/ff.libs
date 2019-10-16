@@ -13,7 +13,8 @@
       "name": null,
       "prefix": "INTERNATIONAL_DATABASE_",
       "table": null,
-      "key": "ID"
+      "key": "ID",
+      "key_rel" : "ID_"
     },
     "mongodb": {
       "host": null,
@@ -22,7 +23,8 @@
       "name": null,
       "prefix": "INTERNATIONAL_MONGO_DATABASE_",
       "table": null,
-      "key": "ID"
+      "key": "ID",
+      "key_rel" : "ID_"
     },
     "fs": {
       "service": "php",

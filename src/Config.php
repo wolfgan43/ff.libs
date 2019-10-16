@@ -38,52 +38,31 @@ use phpformsframework\libs\storage\Media;
  */
 class Config implements Dumpable
 {
-    /**
-     *
-     */
-    const ERROR_BUCKET                                                      = "config";
-    /**
-     *
-     */
-    const APP_BASE_NAME                                                     = "app";
-    /**
-     *
-     */
-    const LIBS_BASE_NAME                                                    = "libs-base";
-    /**
-     *
-     */
-    const LIBS_NAME                                                         = "libs";
+    public const ERROR_BUCKET                                               = "config";
 
-    /**
-     *
-     */
-    const SCHEMA_CONF                                                       = "config";
-    /**
-     *
-     */
-    const SCHEMA_DIRSTRUCT                                                  = "dirs";
-    /**
-     *
-     */
-    const SCHEMA_PAGES                                                      = "pages";
-    /**
-     *
-     */
-    const SCHEMA_ENGINE                                                     = "engine";
+    public const APP_BASE_NAME                                              = "app";
+    private const LIBS_BASE_NAME                                            = "libs-base";
+    private const LIBS_NAME                                                 = "libs";
 
-    /**
-     *
-     */
-    const RAWDATA_XML_REPLACE                                               = 1;
-    /**
-     *
-     */
-    const RAWDATA_XML_MERGE                                                 = 2;
-    /**
-     *
-     */
-    const RAWDATA_XML_MERGE_RECOURSIVE                                      = 3;
+    private const SCHEMA_CONF                                               = self::ERROR_BUCKET;
+    private const SCHEMA_DIRSTRUCT                                          = "dirs";
+    private const SCHEMA_PAGES                                              = "pages";
+    private const SCHEMA_ENGINE                                             = "engine";
+
+    private const SCHEMA_ROUTER                                             = "router";
+    private const SCHEMA_REQUEST                                            = "request";
+
+    private const SCHEMA_ENV                                                = "env";
+    private const SCHEMA_HOOK                                               = "hook";
+    private const SCHEMA_LOCALE                                             = "locale";
+    private const SCHEMA_MODEL                                              = "model";
+    private const SCHEMA_BUCKLER                                            = "buckler";
+    private const SCHEMA_MEDIA                                              = "media";
+
+
+    private const RAWDATA_XML_REPLACE                                       = Configurable::METHOD_REPLACE;
+    private const RAWDATA_XML_MERGE                                         = 2;
+    private const RAWDATA_XML_MERGE_RECOURSIVE                              = Configurable::METHOD_MERGE;
 
     /**
      * @var null
@@ -132,23 +111,23 @@ class Config implements Dumpable
      * @var array
      */
     private static $class_configurable                                      = array(
-                                                                                "router"        => Router::class,
-                                                                                "request"       => Request::class,
-                                                                                "env"           => Env::class,
-                                                                                "hook"          => Hook::class,
-                                                                                "locale"        => Locale::class,
-                                                                                "model"         => Model::class,
-                                                                                "buckler"       => Buckler::class,
-                                                                                "media"         => Media::class
+                                                                                self::SCHEMA_ROUTER     => Router::class,
+                                                                                self::SCHEMA_REQUEST    => Request::class,
+                                                                                self::SCHEMA_ENV        => Env::class,
+                                                                                self::SCHEMA_HOOK       => Hook::class,
+                                                                                self::SCHEMA_LOCALE     => Locale::class,
+                                                                                self::SCHEMA_MODEL      => Model::class,
+                                                                                self::SCHEMA_BUCKLER    => Buckler::class,
+                                                                                self::SCHEMA_MEDIA      => Media::class
                                                                             );
     //@todo: da sistemare togliendo il configurable e il dumpable e farlo fisso con 1 unica variabile
     /**
      * @var array
      */
-    private static $config_rules                                    = array(
-        Config::SCHEMA_DIRSTRUCT    => ["method" => Config::RAWDATA_XML_MERGE_RECOURSIVE,   "context" => Config::SCHEMA_DIRSTRUCT],
-        Config::SCHEMA_PAGES        => ["method" => Config::RAWDATA_XML_MERGE_RECOURSIVE,   "context" => Config::SCHEMA_PAGES],
-        Config::SCHEMA_ENGINE       => ["method" => Config::RAWDATA_XML_REPLACE,            "context" => Config::SCHEMA_ENGINE],
+    private static $config_rules                                            = array(
+        self::SCHEMA_DIRSTRUCT      => ["method" => self::RAWDATA_XML_MERGE_RECOURSIVE,   "context"   => self::SCHEMA_DIRSTRUCT],
+        self::SCHEMA_PAGES          => ["method" => self::RAWDATA_XML_MERGE_RECOURSIVE,   "context"   => self::SCHEMA_PAGES],
+        self::SCHEMA_ENGINE         => ["method" => self::RAWDATA_XML_REPLACE,            "context"   => self::SCHEMA_ENGINE],
     );
 
     /**
@@ -161,7 +140,7 @@ class Config implements Dumpable
             "config_files"                                                  => self::$config_files,
             "config_data"                                                   => self::$config_data,
             "config_unknown"                                                => self::$config_unknown,
-            "engine"                                                        => self::$engine,
+            self::SCHEMA_ENGINE                                             => self::$engine,
             "autoloads"                                                     => self::$autoloads,
             "webroot"                                                       => self::$webroot,
             "dirstruct"                                                     => self::$dirstruct,
@@ -173,36 +152,17 @@ class Config implements Dumpable
     }
 
     /**
-     * @param array $rawdata
-     */
-    private static function loadRawData(array $rawdata) : void
-    {
-        self::$config_rules                                                 = $rawdata["config_rules"];
-        self::$config_files                                                 = $rawdata["config_files"];
-        self::$config_data                                                  = $rawdata["config_data"];
-        self::$config_unknown                                               = $rawdata["config_unknown"];
-        self::$engine                                                       = $rawdata["engine"];
-        self::$autoloads                                                    = $rawdata["autoloads"];
-        self::$webroot                                                      = $rawdata["webroot"];
-        self::$dirstruct                                                    = $rawdata["dirstruct"];
-        self::$mapping_files                                                = $rawdata["mapping_files"];
-        self::$mapping_data                                                 = $rawdata["mapping_data"];
-        self::$dirstruct_scan                                               = $rawdata["dirstruct_scan"];
-        self::$class_configurable                                           = $rawdata["class_configurable"];
-    }
-
-    /**
      * LoadSchema: Directory Structure
      */
     public static function loadDirStruct()
     {
-        Debug::stopWatch(static::SCHEMA_CONF . "/" . static::SCHEMA_DIRSTRUCT);
+        Debug::stopWatch(self::SCHEMA_CONF . "/" . self::SCHEMA_DIRSTRUCT);
 
-        $config                                                             = self::rawData(static::SCHEMA_DIRSTRUCT, true);
+        $config                                                             = self::rawData(self::SCHEMA_DIRSTRUCT, true);
         $scans                                                              = [self::LIBS_BASE_NAME => [], self::LIBS_NAME => [], self::APP_BASE_NAME => []];
-
-        if (is_array($config["dir"]) && count($config["dir"])) {
-            foreach ($config["dir"] as $dir) {
+        $dirs                                                               =& $config["dir"];
+        if (is_array($dirs) && count($dirs)) {
+            foreach ($dirs as $dir) {
                 $dir_attr                                                   = Dir::getXmlAttr($dir);
                 $dir_attr["path"]                                           = str_replace("[PROJECT_DOCUMENT_ROOT]", Kernel::$Environment::PROJECT_DOCUMENT_ROOT, $dir_attr["path"]);
 
@@ -238,7 +198,7 @@ class Config implements Dumpable
             self::$dirstruct_scan                                           = $scans[self::LIBS_BASE_NAME] + $scans[self::LIBS_NAME] + $scans[self::APP_BASE_NAME];
         }
 
-        Debug::stopWatch(static::SCHEMA_CONF . "/" . static::SCHEMA_DIRSTRUCT);
+        Debug::stopWatch(self::SCHEMA_CONF . "/" . self::SCHEMA_DIRSTRUCT);
     }
 
     /**
@@ -266,7 +226,7 @@ class Config implements Dumpable
      * @param string $bucket
      * @return string|null
      */
-    public static function getDir(string $name = null, string $bucket = "app") : ?string
+    public static function getDir(string $name = null, string $bucket = self::APP_BASE_NAME) : ?string
     {
         return (isset(self::$dirstruct[$bucket][$name])
             ? self::$dirstruct[$bucket][$name]["path"]
@@ -278,7 +238,7 @@ class Config implements Dumpable
      * @param string|false $bucket
      * @return array|null
      */
-    public static function getDirBucket(string $bucket = "app") : ?array
+    public static function getDirBucket(string $bucket = self::APP_BASE_NAME) : ?array
     {
         if (!$bucket) {
             return self::$dirstruct;
@@ -333,7 +293,7 @@ class Config implements Dumpable
             $name                                                           = "default";
         }
         $map_name                                                           = $bucket . "_" . $name;
-        Debug::stopWatch(static::SCHEMA_CONF . "/map/" . $map_name);
+        Debug::stopWatch(self::SCHEMA_CONF . "/map/" . $map_name);
 
         $cache                                                              = Mem::getInstance("maps");
         self::$mapping_data[$bucket][$name]                                 = $cache->get($map_name);
@@ -346,7 +306,7 @@ class Config implements Dumpable
 
             $cache->set($map_name, self::$mapping_data[$bucket][$name]);
         }
-        Debug::stopWatch(static::SCHEMA_CONF . "/map/". $map_name);
+        Debug::stopWatch(self::SCHEMA_CONF . "/map/". $map_name);
     }
 
     /**
@@ -396,9 +356,9 @@ class Config implements Dumpable
      */
     public static function load(array $paths = array()) : void
     {
-        Debug::stopWatch(static::SCHEMA_CONF . "/load");
+        Debug::stopWatch(self::SCHEMA_CONF . "/load");
 
-        $cache                                                              = Mem::getInstance("config");
+        $cache                                                              = Mem::getInstance(static::ERROR_BUCKET);
         $rawdata                                                            = $cache->get("rawdata");
         if (!$rawdata) {
             $rawdata                                                        = array();
@@ -441,28 +401,28 @@ class Config implements Dumpable
             /**
              * Load Kernel Config by Xml
              */
-            Config::loadDirStruct();
-            Config::loadEngine();
-            Config::loadPages();
+            static::loadDirStruct();
+            static::loadEngine();
+            static::loadPages();
 
             /**
              * @var Configurable $class_name
              */
 
             foreach (self::$class_configurable as $class_basename => $class_name) {
-                Debug::stopWatch(static::SCHEMA_CONF . "/" . $class_basename);
+                Debug::stopWatch(self::SCHEMA_CONF . "/" . $class_basename);
                 if (isset(self::$config_data[$class_basename])) {
                     $rawdata[$class_basename]                               = $class_name::loadSchema(self::$config_data[$class_basename]);
                     unset(self::$config_data[$class_basename]);
                 } else {
                     Error::registerWarning("no configuration for: " . $class_basename, static::ERROR_BUCKET);
                 }
-                Debug::stopWatch(static::SCHEMA_CONF . "/" . $class_basename);
+                Debug::stopWatch(self::SCHEMA_CONF . "/" . $class_basename);
             }
 
             $cache->set("rawdata", self::dump() + $rawdata);
         } else {
-            self::loadRawData($rawdata);
+            self::loadConfig($rawdata);
 
             if (is_array($rawdata["class_configurable"]) && count($rawdata["class_configurable"])) {
                 foreach ($rawdata["class_configurable"] as $class_basename => $class_name) {
@@ -473,7 +433,7 @@ class Config implements Dumpable
             }
         }
 
-        Debug::stopWatch(static::SCHEMA_CONF . "/load");
+        Debug::stopWatch(self::SCHEMA_CONF . "/load");
     }
 
     /**
@@ -481,36 +441,37 @@ class Config implements Dumpable
      */
     private static function loadXml(string $file) : void
     {
-        Debug::stopWatch(static::SCHEMA_CONF . "/loadXml");
+        Debug::stopWatch(self::SCHEMA_CONF . "/loadXml");
 
         self::$config_files[$file]                                          = filemtime($file);
         $configs                                                            = Filemanager::getInstance("xml")->read($file);
 
-        foreach ($configs as $key => $config) {
-            if (isset(self::$config_rules[$key])) {
-                $context                                                    = self::$config_rules[$key]["context"];
+        if (is_array($configs) && count($configs)) {
+            foreach ($configs as $key => $config) {
+                if (isset(self::$config_rules[$key])) {
+                    $context                                                = self::$config_rules[$key]["context"];
 
-                if (!isset(self::$config_data[$context])) {
-                    self::$config_data[$context]                            = array();
-                }
+                    if (!isset(self::$config_data[$context])) {
+                        self::$config_data[$context]                        = array();
+                    }
 
-                switch (self::$config_rules[$key]["method"]) {
-                    case self::RAWDATA_XML_REPLACE:
-                        self::loadXmlReplace($context, $config);
-                        break;
-                    case self::RAWDATA_XML_MERGE:
-                        self::loadXmlMerge($context, $config);
-                        break;
-                    case self::RAWDATA_XML_MERGE_RECOURSIVE:
-                    default:
-                        self::loadXmlMergeSub($context, $config);
+                    switch (self::$config_rules[$key]["method"]) {
+                        case self::RAWDATA_XML_REPLACE:
+                            self::loadXmlReplace($context, $config);
+                            break;
+                        case self::RAWDATA_XML_MERGE:
+                            self::loadXmlMerge($context, $config);
+                            break;
+                        case self::RAWDATA_XML_MERGE_RECOURSIVE:
+                        default:
+                            self::loadXmlMergeSub($context, $config);
+                    }
+                } else {
+                    self::$config_unknown[$key]                             = $config;
                 }
-            } else {
-                self::$config_unknown[$key]                                 = $config;
             }
         }
-
-        Debug::stopWatch(static::SCHEMA_CONF . "/loadXml");
+        Debug::stopWatch(self::SCHEMA_CONF . "/loadXml");
     }
 
 
@@ -564,9 +525,9 @@ class Config implements Dumpable
     {
         self::$config_rules                                                 = $config["config_rules"];
         self::$config_files                                                 = $config["config_files"];
-        self::$config_data                                                  = $config["config"];
+        self::$config_data                                                  = $config[self::SCHEMA_CONF];
         self::$config_unknown                                               = $config["config_unknown"];
-        self::$engine                                                       = $config["engine"];
+        self::$engine                                                       = $config[self::SCHEMA_ENGINE];
         self::$autoloads                                                    = $config["autoloads"];
         self::$webroot                                                      = $config["webroot"];
         self::$dirstruct                                                    = $config["dirstruct"];
@@ -580,16 +541,16 @@ class Config implements Dumpable
      */
     public static function loadPages()
     {
-        Debug::stopWatch(static::SCHEMA_CONF . "/" . static::SCHEMA_PAGES);
+        Debug::stopWatch(self::SCHEMA_CONF . "/" . self::SCHEMA_PAGES);
 
-        $config                                                             = Config::rawData(static::SCHEMA_PAGES, true);
-        $router                                                             = array();
-        $request                                                            = array();
+        $config                                                                         = static::rawData(self::SCHEMA_PAGES, true);
+        $router                                                                         = array();
+        $request                                                                        = array();
 
         if (isset($config["page"]) && is_array($config["page"]) && count($config["page"])) {
             foreach ($config["page"] as $page) {
-                $attr                                                       = Dir::getXmlAttr($page);
-                $key                                                        = (
+                $attr                                                                   = Dir::getXmlAttr($page);
+                $key                                                                    = (
                     isset($attr["path"])
                     ? $attr["path"]
                     : $attr["source"]
@@ -605,33 +566,33 @@ class Config implements Dumpable
                 }
 
                 if (isset($attr["source"]) && isset($attr["destination"])) {
-                    $router[$key]                                           = $attr;
+                    $router[$key]                                                       = $attr;
                     unset($attr["destination"]);
-                } elseif (isset($attr["engine"]) && isset(self::$engine[$attr["engine"]])) {
-                    $router[$key]                                           = self::$engine[$attr["engine"]]["router"];
+                } elseif (isset($attr[self::SCHEMA_ENGINE]) && isset(self::$engine[$attr[self::SCHEMA_ENGINE]])) {
+                    $router[$key]                                                       = self::$engine[$attr[self::SCHEMA_ENGINE]][self::SCHEMA_ROUTER];
                 } elseif (!isset($router[$key])) {
-                    $router[$key]                                           = null;
+                    $router[$key]                                                       = null;
                 }
 
 
                 if (isset($attr["priority"])) {
-                    $router[$key]["priority"]                               = $attr["priority"];
+                    $router[$key]["priority"]                                           = $attr["priority"];
                     unset($attr["priority"]);
                 }
 
-                if (isset($attr["engine"]) && isset(self::$engine[$attr["engine"]]) && self::$engine[$attr["engine"]]["properties"]) {
-                    $attr = array_replace(self::$engine[$attr["engine"]]["properties"], $attr);
+                if (isset($attr[self::SCHEMA_ENGINE]) && isset(self::$engine[$attr[self::SCHEMA_ENGINE]]) && self::$engine[$attr[self::SCHEMA_ENGINE]]["properties"]) {
+                    $attr = array_replace(self::$engine[$attr[self::SCHEMA_ENGINE]]["properties"], $attr);
                 }
 
-                $request[$key]                                              = $page;
-                $request[$key]["config"]                                    = $attr;
+                $request[$key]                                                          = $page;
+                $request[$key][self::SCHEMA_CONF]                                       = $attr;
             }
 
-            self::$config_data["router"]["pages"]                           = $router;
-            self::$config_data["request"]["pages"]                          = $request;
+            self::$config_data[self::SCHEMA_ROUTER][self::SCHEMA_PAGES]                 = $router;
+            self::$config_data[self::SCHEMA_REQUEST][self::SCHEMA_PAGES]                = $request;
         }
 
-        Debug::stopWatch(static::SCHEMA_CONF . "/" . static::SCHEMA_PAGES);
+        Debug::stopWatch(self::SCHEMA_CONF . "/" . self::SCHEMA_PAGES);
     }
 
     /**
@@ -639,19 +600,23 @@ class Config implements Dumpable
      */
     public static function loadEngine()
     {
-        Debug::stopWatch(static::SCHEMA_CONF . "/" . static::SCHEMA_ENGINE);
+        Debug::stopWatch(self::SCHEMA_CONF . "/" . self::SCHEMA_ENGINE);
 
-        $schema                                                             = array();
-        $config                                                             = Config::rawData(static::SCHEMA_ENGINE, true);
+        $schema                                                                         = array();
+        $config                                                                         = static::rawData(self::SCHEMA_ENGINE, true);
         if (is_array($config) && count($config)) {
             foreach ($config as $key => $engine) {
-                $attr                                                       = Dir::getXmlAttr($engine);
+                $pippo = Dir::getXmlAttr2Object($engine);
+
+
+
+                $attr                                                                   = Dir::getXmlAttr($engine);
                 if (isset($attr["source"])) {
-                    $schema[$key]["router"]["source"]                       = $attr["source"];
+                    $schema[$key][self::SCHEMA_ROUTER]["source"]                        = $attr["source"];
                     unset($attr["source"]);
                 }
                 if (isset($attr["path"])) {
-                    $schema[$key]["router"]["destination"]                  = $attr["path"];
+                    $schema[$key][self::SCHEMA_ROUTER]["destination"]                   = $attr["path"];
                     unset($attr["path"]);
                     unset($attr["obj"]);
                     unset($attr["instance"]);
@@ -659,33 +624,33 @@ class Config implements Dumpable
                     unset($attr["params"]);
                 } else {
                     if (isset($attr["obj"])) {
-                        $schema[$key]["router"]["destination"]["obj"]       = $attr["obj"];
+                        $schema[$key][self::SCHEMA_ROUTER]["destination"]["obj"]        = $attr["obj"];
                         unset($attr["obj"]);
                     }
                     if (isset($attr["instance"])) {
-                        $schema[$key]["router"]["destination"]["instance"]  = $attr["instance"];
+                        $schema[$key][self::SCHEMA_ROUTER]["destination"]["instance"]   = $attr["instance"];
                         unset($attr["instance"]);
                     }
                     if (isset($attr["method"])) {
-                        $schema[$key]["router"]["destination"]["method"]    = $attr["method"];
+                        $schema[$key][self::SCHEMA_ROUTER]["destination"]["method"]     = $attr["method"];
                         unset($attr["method"]);
                     }
                     if (isset($attr["params"])) {
-                        $schema[$key]["router"]["destination"]["params"]    = explode(",", $attr["params"]);
+                        $schema[$key][self::SCHEMA_ROUTER]["destination"]["params"]     = explode(",", $attr["params"]);
                         unset($attr["params"]);
                     }
                 }
                 if (isset($attr["priority"])) {
-                    $schema[$key]["router"]["priority"]                     = $attr["priority"];
+                    $schema[$key][self::SCHEMA_ROUTER]["priority"]                      = $attr["priority"];
                     unset($attr["priority"]);
                 }
 
-                $schema[$key]["properties"]                                 = $attr;
+                $schema[$key]["properties"]                                             = $attr;
             }
 
-            self::$engine                                                   = $schema;
+            self::$engine                                                               = $schema;
         }
 
-        Debug::stopWatch(static::SCHEMA_CONF . "/" . static::SCHEMA_ENGINE);
+        Debug::stopWatch(self::SCHEMA_CONF . "/" . self::SCHEMA_ENGINE);
     }
 }

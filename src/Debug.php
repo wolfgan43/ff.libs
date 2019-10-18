@@ -347,7 +347,7 @@ class Debug
     {
         if (Request::isCli() || Request::accept() != "text/html") {
             echo self::dumpCommandLine($error_message);
-            return null;
+            exit;
         }
 
         $html_backtrace                     = "";

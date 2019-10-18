@@ -50,8 +50,7 @@ use phpformsframework\libs\storage\DatabaseDriver;
  */
 class MongoDB extends DatabaseDriver
 {
-    public $replica                 = null;
-    public $auth                    = null;
+    private $replica                 = null;
 
     /**
      * @var Manager|null
@@ -147,12 +146,17 @@ class MongoDB extends DatabaseDriver
             $this->link_id =& static::$_dbs[$dbkey];
         }
 
+        $auth                                       = (
+            $this->user && $this->secret
+                                                        ? $this->user . ":" . $this->secret . "@"
+                                                        : ""
+                                                    );
 
         if (!$this->link_id) {
             if (class_exists("\MongoDB\Driver\Manager")) {
                 $this->link_id = new Manager(
                     "mongodb://"
-                    . $this->auth
+                    . $auth
                     . $this->host
                     . "/"
                     . $this->database
@@ -274,9 +278,13 @@ class MongoDB extends DatabaseDriver
                     }
                     $bulk = new BulkWrite();
                     $bulk->insert($mongoDB["insert"]);
-                    if (!$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk)) {
-                        $this->errorHandler("MognoDB Insert: " . $this->error);
-                        return false;
+                    try {
+                        if (!$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk)) {
+                            $this->errorHandler("MongoDB Insert: " . $this->error);
+                            return false;
+                        }
+                    } catch (Exception $e) {
+                        $this->errorHandler("MongoDB Insert: " . $e->getMessage());
                     }
                     $this->buffered_insert_id = $mongoDB["insert"][$this->keyname];
                 }
@@ -303,9 +311,13 @@ class MongoDB extends DatabaseDriver
 
                     $bulk = new BulkWrite();
                     $bulk->update($mongoDB["where"], $set, $mongoDB["options"]);
-
-                    if (!$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk)) {
-                        $this->errorHandler("MognoDB Update: " . $this->error);
+                    try {
+                        if (!$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk)) {
+                            $this->errorHandler("MongoDB Update: " . $this->error);
+                            return false;
+                        }
+                    } catch (Exception $e) {
+                        $this->errorHandler("MongoDB Update: " . $e->getMessage());
                         return false;
                     }
                 }
@@ -324,8 +336,13 @@ class MongoDB extends DatabaseDriver
 
                     $bulk = new BulkWrite();
                     $bulk->delete($mongoDB["where"], $mongoDB["options"]);
-                    if (!$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk)) {
-                        $this->errorHandler("MognoDB Update: " . $this->error);
+                    try {
+                        if (!$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk)) {
+                            $this->errorHandler("MongoDB Delete: " . $this->error);
+                            return false;
+                        }
+                    } catch (Exception $e) {
+                        $this->errorHandler("MongoDB Delete: " . $e->getMessage());
                         return false;
                     }
                 }
@@ -569,7 +586,7 @@ class MongoDB extends DatabaseDriver
                         $bulk = new BulkWrite();
                         $bulk->insert($query);
                         if (!$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk)) {
-                            $this->errorHandler("MognoDB Insert: " . $this->error);
+                            $this->errorHandler("MongoDB Insert: " . $this->error);
                             return null;
                         }
                         break;
@@ -585,7 +602,7 @@ class MongoDB extends DatabaseDriver
                         $bulk = new BulkWrite();
                         $bulk->delete($query);
                         if (!$this->link_id->executeBulkWrite($this->database . "." . $mongoDB["table"], $bulk)) {
-                            $this->errorHandler("MognoDB Delete: " . $this->error);
+                            $this->errorHandler("MongoDB Delete: " . $this->error);
                             return null;
                         }
                         break;

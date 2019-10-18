@@ -355,9 +355,20 @@ class Validator
         return $res;
     }
 
+    /**
+     * @param string $type
+     * @return array|null
+     */
+    private static function getSignature(string $type) : ?array
+    {
+        return (isset(self::SIGNATURES[$type])
+            ? self::SIGNATURES[$type]
+            : null
+        );
+    }
     private static function checkMagicBytes($file, $type)
     {
-        $checks                                                             = self::SIGNATURES[$type];
+        $checks                                                             = self::getSignature($type);
         $isValid                                                            = false;
         if (is_array($checks) && count($checks)) {
             foreach ($checks as $check) {

@@ -25,6 +25,10 @@
  */
 namespace phpformsframework\libs;
 
+/**
+ * Class Error
+ * @package phpformsframework\libs
+ */
 class Error
 {
     const STATUS_CODE                                           = array(
@@ -92,7 +96,7 @@ class Error
                                                                     , 510 => "510 Not Extended"
                                                                     , 511 => "511 Network Authentication Required"
                                                                 );
-    private static $errors                                      = null;
+    private static $errors                                      = array();
     private static $rules                                       = array(
                                                                     "path" => array(
                                                                         "/static"   => "media"
@@ -103,7 +107,11 @@ class Error
                                                                         , "media."  => "media"
                                                                     )
                                                                 );
-    public static function addRules($rules)
+
+    /**
+     * @param array $rules
+     */
+    public static function addRules(array $rules) : void
     {
         if (is_array($rules) && count($rules)) {
             if (isset($rules["hosts"])) {
@@ -118,11 +126,17 @@ class Error
             }
         }
     }
-    public static function addRule($source, $engine, $type = "path")
+
+    public static function addRule(string $source, array $engine, string $type = "path") : void
     {
         self::$rules[$type][$source]                            = $engine;
     }
-    public static function getErrorMessage(int $code)
+
+    /**
+     * @param int $code
+     * @return string|null
+     */
+    public static function getErrorMessage(int $code) : ?string
     {
         $status_code                                            = self::STATUS_CODE;
 
@@ -132,7 +146,11 @@ class Error
         );
     }
 
-    private static function find($path_info)
+    /**
+     * @param string $path_info
+     * @return array|null
+     */
+    private static function find(string $path_info) : ?array
     {
         $type                                           = self::findByHost();
         if ($type) {
@@ -147,25 +165,34 @@ class Error
         return $rule;
     }
 
-    private static function findByHost($host_name = null)
+    /**
+     * @param string|null $host_name
+     * @return string|null
+     */
+    private static function findByHost(string $host_name = null) : ?string
     {
-        $res                                            = false;
+        $res                                            = null;
         if (is_array(self::$rules["host"]) && count(self::$rules["host"])) {
             $arrHost                                    = explode(".", (
                 $host_name
                                                             ? $host_name
                                                             : Request::hostname()
                                                         ));
-
-            $res                                        = isset(self::$rules["host"][$arrHost[0]]);
+            if (isset(self::$rules["host"][$arrHost[0]])) {
+                $res                                    = self::$rules["host"][$arrHost[0]];
+            }
         }
         return $res;
     }
 
-    private static function findByPath($path_info)
+    /**
+     * @param string $path_info
+     * @return array|null
+     */
+    private static function findByPath(string $path_info) : ?array
     {
         $rule                                           = null;
-        $res                                            = false;
+        $res                                            = null;
         if (is_array(self::$rules["path"]) && count(self::$rules["path"])) {
             $base_path                                  = $path_info;
             if ($base_path) {
@@ -187,11 +214,13 @@ class Error
             }
         }
 
-
         return $res;
     }
 
-    public static function run($path_info)
+    /**
+     * @param string $path_info
+     */
+    public static function run(string $path_info) : void
     {
         $rule                                           = self::find($path_info);
 
@@ -214,11 +243,20 @@ class Error
         exit;
     }
 
-    public static function check($bucket = null)
+    /**
+     * @param string|null $bucket
+     * @return bool
+     */
+    public static function check(string $bucket = null) : bool
     {
         return (bool) self::raise($bucket);
     }
-    public static function raise($bucket = null)
+
+    /**
+     * @param string|null $bucket
+     * @return string|null
+     */
+    public static function raise(string $bucket = null) : ?string
     {
         if ($bucket && !isset(self::$errors[$bucket])) {
             return null;
@@ -229,7 +267,11 @@ class Error
             : self::$errors
         );
     }
-    public static function clear($bucket = null)
+
+    /**
+     * @param string|null $bucket
+     */
+    public static function clear(string $bucket = null) : void
     {
         if ($bucket === false) {
             self::$errors                               = null;
@@ -237,7 +279,12 @@ class Error
             self::$errors[$bucket]                      = null;
         }
     }
-    public static function register($error, $bucket = null)
+
+    /**
+     * @param string $error
+     * @param string|null $bucket
+     */
+    public static function register(string $error, string $bucket = null) : void
     {
         if ($error) {
             self::$errors[$bucket][]                    = $error;
@@ -248,14 +295,13 @@ class Error
                 Log::critical($error);
             }
         }
-
-        return ($bucket
-            ? self::$errors[$bucket]
-            : self::$errors
-        );
     }
 
-    public static function registerWarning($error, $bucket = null)
+    /**
+     * @param string $error
+     * @param string|null $bucket
+     */
+    public static function registerWarning(string $error, string $bucket = null) : void
     {
         self::$errors[$bucket][]                        = (
             is_array($error)
@@ -263,13 +309,33 @@ class Error
                                                             : $error
                                                         );
     }
-    public static function transfer($from_bucket, $to_bucket)
+
+    /**
+     * @param string $from_bucket
+     * @param string $to_bucket
+     */
+    public static function transfer(string $from_bucket, string $to_bucket) : void
     {
         if (self::check($from_bucket)) {
             self::register(self::raise($from_bucket), $to_bucket);
         }
     }
-    public static function dump($errdes, $errno = E_USER_ERROR, $context = null, $variables = null)
+
+    /**
+     * @return array|null
+     */
+    public static function dump() : array
+    {
+        return self::$errors;
+    }
+
+    /**
+     * @param string $errdes
+     * @param int $errno
+     * @param object|null $context
+     * @param array|null $variables
+     */
+    public static function dumpHandler(string $errdes, int $errno = E_USER_ERROR, object $context = null, array $variables = null) : void
     {
         ErrorHandler::raise($errdes, $errno, $context, $variables);
     }

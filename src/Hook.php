@@ -91,11 +91,11 @@ class Hook implements Configurable, Dumpable
 
     /**
      * AddHook
-     * @param $name
-     * @param $func
+     * @param string $name
+     * @param callable $func
      * @param int $priority
      */
-    public static function register($name, $func, $priority = self::HOOK_PRIORITY_NORMAL)
+    public static function register($name, callable $func, int $priority = self::HOOK_PRIORITY_NORMAL) : void
     {
         if (is_callable($func)) {
             Debug::dumpCaller("addHook::" . $name);
@@ -108,12 +108,13 @@ class Hook implements Configurable, Dumpable
 
     /**
      * DoHook
-     * @param $name
-     * @param null|$ref
-     * @param null $params
+     * @todo da tipizzare
+     * @param string $name
+     * @param mixed|null $ref
+     * @param mixed|null $params
      * @return array|null
      */
-    public static function handle($name, &$ref = null, $params = null)
+    public static function handle(string $name, &$ref = null, $params = null)
     {
         $res                                                                        = null;
         if (isset(self::$events[$name]) && is_array(self::$events[$name])) {

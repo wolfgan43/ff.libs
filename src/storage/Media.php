@@ -610,11 +610,7 @@ class Media implements Configurable
         $status                                                     = null;
         $content_type                                               = $this->getMimeByExtension($this->pathinfo["extension"]);
 
-        $res                                                        = (
-            $content_type == static::MIMETYPE_DEFAULT
-            ? false
-            : $this->process()
-        );
+        $res                                                        = $content_type != static::MIMETYPE_DEFAULT && $this->process();
         if (!$res) {
             //todo: non renderizza bene l'output. forse per colpa degli headers
             $status                                                 = 404;
@@ -674,10 +670,10 @@ class Media implements Configurable
         if (strpos($arrFile["dirname"], static::RENDER_ASSETS_PATH) !== false) {
             $showfiles                                              = Constant::SITE_PATH . static::RENDER_ASSETS_PATH;
             $arrFile["dirname"]                                     = explode(static::RENDER_ASSETS_PATH, $arrFile["dirname"], 2)[1];
-            if (strpos($arrFile["dirname"], static::RENDER_WIDGET_PATH) === 0) {
-                if (DIRECTORY_SEPARATOR . $arrFile["extension"] == static::RENDER_STYLE_PATH || DIRECTORY_SEPARATOR . $arrFile["extension"] == static::RENDER_SCRIPT_PATH) {
-                    $arrFile["dirname"]                             .= DIRECTORY_SEPARATOR . $arrFile["extension"];
-                }
+            if (strpos($arrFile["dirname"], static::RENDER_WIDGET_PATH) === 0
+                && (DIRECTORY_SEPARATOR . $arrFile["extension"] == static::RENDER_STYLE_PATH || DIRECTORY_SEPARATOR . $arrFile["extension"] == static::RENDER_SCRIPT_PATH)
+            ) {
+                $arrFile["dirname"]                                 .= DIRECTORY_SEPARATOR . $arrFile["extension"];
             }
         }
 
@@ -980,64 +976,33 @@ class Media implements Configurable
     }
 
     /**
-     * @param string|null $mode
-     */
-    /*private function resolveSrcIcon(string $mode = null) : void
-    {
-        if ($mode) {
-            $icon_name                                              = str_replace("-" . $mode, "", $this->pathinfo["filename"]);
-        } else {
-            $arrFilename                                            = explode("-", $this->pathinfo["filename"], 2);
-            $icon_name                                              = $arrFilename[0];
-            if (isset($arrFilename[1])) {
-                $mode                                               = $arrFilename[1];
-            }
-        }
-
-        $icon                                                       = Resource::get($icon_name, "images");
-        if ($icon) {
-            $this->basepath                                         = dirname($icon);
-            $this->filesource                                       = DIRECTORY_SEPARATOR . basename($icon);
-            $this->mode                                             = $mode;
-        }
-    }*/
-
-    /**
-     * @param string $root_dir
-     */
-    /*private function checkPath(string $root_dir) : void
-    {
-        if (strpos($this->pathinfo["dirname"], $root_dir) !== 0) {
-            Response::sendError(404);
-        }
-    }*/
-
-    /**
      * @param string $render_path
      * @return bool
      */
     private function isValidStatic(string $render_path) : bool
     {
+        $res                                                        = false;
         switch ($render_path) {
             case static::RENDER_SCRIPT_PATH:
             case static::RENDER_STYLE_PATH:
                 if (basename($render_path) == $this->pathinfo["extension"]) {
-                    return true;
+                    $res                                            = true;
                 }
                 break;
             case static::RENDER_IMAGE_PATH:
                 if ($this->isImage()) {
-                    return true;
+                    $res                                            = true;
                 }
                 break;
             case static::RENDER_FONT_PATH:
                 if ($this->isFont()) {
-                    return true;
+                    $res                                            = true;
                 }
                 break;
+            default:
         }
 
-        return false;
+        return $res;
     }
 
     /**
@@ -1153,45 +1118,6 @@ class Media implements Configurable
 
         return false;
     }
-    /*
-    if (!$this->filesource) {
-        $base_path                                              = Constant::LIBS_DISK_PATH;
-        Response::setContentType($this->pathinfo["extension"]);
-        switch ($this->pathinfo["extension"]) {
-            case "svg":
-                $this->checkPath(static::RENDER_IMAGE_PATH);
-                $source_file                                    = $this->pathinfo["render"] . $this->pathinfo["orig"];
-                $base_path                                      = Constant::DISK_PATH . Kernel::$Environment::PROJECT_DOCUMENT_ROOT;
-                break;
-            case "js":
-                $this->checkPath(static::RENDER_SCRIPT_PATH);
-
-                $source_file                                    = str_replace(static::RENDER_SCRIPT_PATH, "", $this->pathinfo["dirname"]) . DIRECTORY_SEPARATOR . str_replace("_", DIRECTORY_SEPARATOR, $this->pathinfo["filename"]) . ".js";
-                break;
-            case "css":
-                $this->checkPath(static::RENDER_STYLE_PATH);
-
-                $source_file                                    = str_replace(static::RENDER_STYLE_PATH, "", $this->pathinfo["dirname"]) . DIRECTORY_SEPARATOR . str_replace("_", DIRECTORY_SEPARATOR, $this->pathinfo["filename"]) . ".css";
-                break;
-            default:
-                $source_file                                    = null;
-        }
-
-        return ($source_file
-            ? $this->staticProcessOld($source_file, $base_path)
-            : $this->renderProcess($mode)
-        );
-    } else {
-        //$this->checkPath(static::RENDER_IMAGE_PATH);
-        $final_file                                             = $this->processFinalFile();
-
-        if ($final_file && !Error::check(static::ERROR_BUCKET)) {
-            $this->renderNoImg($final_file);
-        }
-
-        return null;
-    }
-    }*/
 
     /**
      * @param string|null $path
@@ -1215,32 +1141,6 @@ class Media implements Configurable
             $this->pathinfo["orig"]                                 = $path;
         }
     }
-
-    /**
-     * @param string $source_file
-     * @param string $base_path
-     * @return string|null
-     */
-    /*private function staticProcessOld(string $source_file, string $base_path = Constant::LIBS_DISK_PATH) : ?string
-    {
-        $res                                                        = null;
-
-        if (is_file($base_path . $source_file)) {
-            if (Kernel::useCache()) {
-                $cache_final_file                                   = $this->basepathCache() . $this->pathinfo["orig"];
-                Filemanager::makeDir(dirname($cache_final_file), 0775, $this->basepathCache());
-                if (is_readable($base_path . $source_file) && is_writable(dirname($cache_final_file)) && copy($base_path . $source_file, $cache_final_file)) {
-                    $res                                            = Dir::loadFile($cache_final_file);
-                } else {
-                    Error::register("Link Failed. Check write permission on: " . $source_file . " and if directory exist and have write permission on " . Constant::CACHE_PATH . Request::pathinfo(), static::ERROR_BUCKET);
-                }
-            } else {
-                $res                                                = Dir::loadFile($base_path . $source_file);
-            }
-        }
-
-        return $res;
-    }*/
 
     /**
      * @param string|null $mode

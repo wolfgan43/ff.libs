@@ -31,13 +31,20 @@ use phpformsframework\libs\storage\drivers\Array2XML;
 use Exception;
 use phpformsframework\libs\tpl\Page;
 
+/**
+ * Class Response
+ * @package phpformsframework\libs
+ */
 class Response
 {
     const ERROR_BUCKET                              = "response";
 
     private static $content_type                    = null;
 
-    public static function setContentType($content_type)
+    /**
+     * @param string $content_type
+     */
+    public static function setContentType(string $content_type) : void
     {
         self::$content_type                         = $content_type;
     }
@@ -46,7 +53,6 @@ class Response
      * @param int $status
      * @param string|null $msg
      * @return void
-     * @todo da inserire la pagina html per la response DataHtml
      */
     public static function sendError(int $status = 404, string $msg = null) : void
     {
@@ -58,21 +64,22 @@ class Response
                 break;
             default:
                 $response = Page::getInstance("html")
-                    ->setStatus($status)
-                    ->addContent($msg ? $msg : "Oops!")
-                    ->render();
+                    ->renderError($status, $msg ? $msg : "Oops!");
         }
 
         self::send($response);
     }
 
+
+
     /**
+     * @todo da tipizzare
      * @param mixed $data
      * @param string $content_type
      * @param null|int $status
      * @return void
      */
-    public static function sendRawData($data, $content_type, $status = null)
+    public static function sendRawData($data, string $content_type, $status = null)
     {
         if (self::isValidContentType($content_type)) {
             self::sendHeadersByMimeType($content_type);
@@ -96,7 +103,12 @@ class Response
         exit;
     }
 
-    private static function toXml($data)
+    /**
+     * @todo da tipizzare
+     * @param mixed $data
+     * @return string
+     */
+    private static function toXml($data) : string
     {
         if (is_object($data)) {
             $data                                   = get_object_vars($data);
@@ -110,10 +122,15 @@ class Response
             Error::register($e, static::ERROR_BUCKET);
         }
 
-        return $data->saveHTML();
+        return $data->saveXML();
     }
 
-    private static function toPlainText($data)
+    /**
+     * @todo da tipizzare
+     * @param mixed $data
+     * @return string
+     */
+    private static function toPlainText($data) : string
     {
         if (is_array($data)) {
             $data                                   = implode(" ", $data);
@@ -124,7 +141,12 @@ class Response
         return $data;
     }
 
-    private static function toJson($data)
+    /**
+     * @todo da tipizzare
+     * @param mixed $data
+     * @return string
+     */
+    private static function toJson($data) : string
     {
         return (!is_array($data) && !is_object($data)
             ? '[]'
@@ -136,7 +158,7 @@ class Response
      * @param string $content_type
      * @return bool
      */
-    private static function isValidContentType($content_type)
+    private static function isValidContentType(string $content_type) : bool
     {
         if (self::invalidAccept($content_type)) {
             /**
@@ -155,7 +177,7 @@ class Response
      * @param null|int $status
      * @return void
      */
-    public static function send($response, $status = null)
+    public static function send(DataAdapter $response, int $status = null) : void
     {
         if (self::isValidContentType($response::CONTENT_TYPE)) {
 
@@ -174,7 +196,7 @@ class Response
      * @param string $response
      * @return void
      */
-    public function sendHtml($response)
+    public function sendHtml(string $response) : void
     {
         self::sendRawData($response, "text/html");
     }
@@ -183,13 +205,17 @@ class Response
      * @param string $response
      * @return void
      */
-    public function sendJson($response)
+    public function sendJson(string $response) : void
     {
         self::sendRawData($response, "application/json");
     }
 
-
-    public static function redirect($destination, $http_response_code = null, $headers = null)
+    /**
+     * @param string $destination
+     * @param int|null $http_response_code
+     * @param array|null $headers
+     */
+    public static function redirect(string $destination, int $http_response_code = null, array $headers = null) : void
     {
         if ($http_response_code === null) {
             $http_response_code = 301;
@@ -221,7 +247,7 @@ class Response
      * @param null|int $code
      * @return int
      */
-    public static function httpCode($code = null)
+    public static function httpCode(int $code = null) : int
     {
         return ($code
              ? http_response_code($code)
@@ -229,7 +255,10 @@ class Response
          );
     }
 
-    private static function sendHeadersByMimeType($mimetype)
+    /**
+     * @param string $mimetype
+     */
+    private static function sendHeadersByMimeType(string $mimetype) : void
     {
         if (!headers_sent()) {
             if (0) {
@@ -240,7 +269,10 @@ class Response
         }
     }
 
-    public static function sendHeaders($params = null)
+    /**
+     * @param array|null $params
+     */
+    public static function sendHeaders(array $params = null) : void
     {
         $keep_alive			        = isset($params["keep_alive"])  ? $params["keep_alive"]			: null;
         $max_age				    = isset($params["max_age"])     ? $params["max_age"]            : null;

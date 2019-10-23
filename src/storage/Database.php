@@ -52,28 +52,30 @@ class Database implements Dumpable
     private $result                                                         = null;
 
     /**
-     * @param array|string $databaseAdapters
-     * @param null|array $params
-     * @return DatabaseAdapter
+     * @param array $databaseAdapters
+     * @param null|array $struct
+     * @param bool $exts
+     * @param bool $rawdata
+     * @return Database
      */
-    public static function getInstance($databaseAdapters, $params = null)
+    public static function getInstance(array $databaseAdapters, array $struct = null, bool $exts = true, bool $rawdata = false) : Database
     {
         $key                                                                = crc32(
             serialize($databaseAdapters)
-                                                                                . "-" . $params["table"]["name"]
+                                                                                . "-" . $struct["table"]["name"]
                                                                                 . (
-                                                                                    isset($params["rawdata"]) && $params["rawdata"]
+                                                                                    $rawdata
                                                                                     ? "-rawdata"
                                                                                     : ""
                                                                                 )
                                                                                 . (
-                                                                                    isset($params["exts"]) && $params["exts"]
+                                                                                    $exts
                                                                                     ? "-exts"
                                                                                     : ""
                                                                                 )
                                                                             );
         if (!isset(self::$singletons[$key])) {
-            self::$singletons[$key] = new Database($databaseAdapters, $params);
+            self::$singletons[$key]                                         = new Database($databaseAdapters, $struct, $exts, $rawdata);
         }
 
         return self::$singletons[$key];
@@ -94,26 +96,28 @@ class Database implements Dumpable
     /**
      * Database constructor.
      *
-     * @example string $databaseAdapters: mysqli OR mongodb OR ecc
+
      * @example array $databaseAdapters: [mysqli, mongodb]
      * @example arrayAssociative $databaseAdapters: [mysqli : {
-            "host"          => null
-            , "username"    => null
-            , "secret"      => null
-            , "name"        => null
-            , "prefix"		=> null
-            , "table"       => null
-            , "key"         => null
-        }
+     * "host"          => null
+     * , "username"    => null
+     * , "secret"      => null
+     * , "name"        => null
+     * , "prefix"        => null
+     * , "table"       => null
+     * , "key"         => null
+     * }
      *
-     *
+     * @example string $databaseAdapters: mysqli OR mongodb OR ecc
      * @param array|string $databaseAdapters
-     * @param null $params
+     * @param array|null $struct
+     * @param bool $exts
+     * @param bool $rawdata
      */
-    public function __construct($databaseAdapters = null, $params = null)
+    public function __construct(array $databaseAdapters = null, array $struct = null, bool $exts = true, bool $rawdata = false)
     {
         if (!$databaseAdapters) {
-            $databaseAdapters                                               = Kernel::$Environment::DATABASE_ADAPTER;
+            $databaseAdapters[Kernel::$Environment::DATABASE_ADAPTER]       = null;
         }
 
         if (is_array($databaseAdapters)) {
@@ -125,17 +129,10 @@ class Database implements Dumpable
 
                 $class_name                                                 = static::NAME_SPACE . "Database" . ucfirst($adapter);
                 if (class_exists($class_name)) {
-                    $this->adapters[$adapter]                               = new $class_name($connection, $params["table"], $params["struct"], $params["relationship"], $params["indexes"], $params["alias"], (bool) $params["exts"], (bool) $params["rawdata"]);
+                    $this->adapters[$adapter]                               = new $class_name($connection, $struct["table"], $struct["struct"], $struct["relationship"], $struct["indexes"], $struct["alias"], $exts, $rawdata);
                 } else {
                     Error::register("Database Adapter not supported: " . $adapter, static::ERROR_BUCKET);
                 }
-            }
-        } elseif ($databaseAdapters) {
-            $class_name                                                     = static::NAME_SPACE . "Database" . ucfirst($databaseAdapters);
-            if (class_exists($class_name)) {
-                $this->adapters[$databaseAdapters]                          = new $class_name($params["connection"], $params["table"], $params["struct"], $params["relationship"], $params["indexes"], $params["alias"], (bool) $params["exts"], (bool) $params["rawdata"]);
-            } else {
-                Error::register("Database Adapter not supported: " . $databaseAdapters, static::ERROR_BUCKET);
             }
         }
     }
@@ -147,8 +144,6 @@ class Database implements Dumpable
      */
     public function rawQuery($query, $key = null)
     {
-        Error::clear(static::ERROR_BUCKET);
-
         foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->rawQuery($query, $key);
         }
@@ -165,8 +160,6 @@ class Database implements Dumpable
      */
     public function lookup($table_name, $where = null, $fields = null, $sort = null, $limit = null)
     {
-        Error::clear(static::ERROR_BUCKET);
-
         foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->lookup($table_name, $where, $fields, $sort, $limit);
         }
@@ -183,8 +176,6 @@ class Database implements Dumpable
      */
     public function find($fields = null, $where = null, $sort = null, $limit = null, $table_name = null)
     {
-        Error::clear(static::ERROR_BUCKET);
-
         foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->find($fields, $where, $sort, $limit, $table_name);
         }
@@ -201,8 +192,6 @@ class Database implements Dumpable
      */
     public function read(array $where, array $fields = null, array $sort = null, array $limit = null, string $table_name = null)
     {
-        Error::clear(static::ERROR_BUCKET);
-
         foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->read($where, $fields, $sort, $limit, $table_name);
         }
@@ -217,8 +206,6 @@ class Database implements Dumpable
      */
     public function insert(array $insert, string $table_name = null)
     {
-        Error::clear(static::ERROR_BUCKET);
-
         foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->insert($insert, $table_name);
         }
@@ -233,8 +220,6 @@ class Database implements Dumpable
      */
     public function update(array $set, array $where, string $table_name = null)
     {
-        Error::clear(static::ERROR_BUCKET);
-
         foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->update($set, $where, $table_name);
         }
@@ -249,8 +234,6 @@ class Database implements Dumpable
      */
     public function write(array $insert, array $update, string $table_name = null)
     {
-        Error::clear(static::ERROR_BUCKET);
-
         foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->write($insert, $update, $table_name);
         }
@@ -264,8 +247,6 @@ class Database implements Dumpable
      */
     public function delete(array $where, string $table_name = null)
     {
-        Error::clear(static::ERROR_BUCKET);
-
         foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->delete($where, $table_name);
         }
@@ -280,8 +261,6 @@ class Database implements Dumpable
      */
     public function cmd(string $action, array $what, string $table_name = null)
     {
-        Error::clear(static::ERROR_BUCKET);
-
         foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->cmd($action, $what, $table_name);
         }
@@ -294,17 +273,11 @@ class Database implements Dumpable
      */
     private function getResult()
     {
-        if (Error::check(static::ERROR_BUCKET)) {
-            $res = Error::raise(static::ERROR_BUCKET);
-        } else {
-            $res = (
-                is_array($this->result) && count($this->result) == 1
-                ? array_shift($this->result)
-                : $this->result
-            );
-        }
-
-        return $res;
+        return (
+            is_array($this->result) && count($this->result) == 1
+            ? array_shift($this->result)
+            : $this->result
+        );
     }
 
     /**

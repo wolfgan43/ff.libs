@@ -29,11 +29,15 @@ namespace phpformsframework\libs\storage\adapters;
 use phpformsframework\libs\storage\DatabaseAdapter;
 use phpformsframework\libs\storage\drivers\MongoDB as nosql;
 
+/**
+ * Class DatabaseMongodb
+ * @package phpformsframework\libs\storage\adapters
+ */
 class DatabaseMongodb extends DatabaseAdapter
 {
-    const PREFIX                                        = "MONGO_DATABASE_";
-    const TYPE                                          = "nosql";
-    const KEY_NAME                                      = "_id";
+    protected const PREFIX                              = "MONGO_DATABASE_";
+    protected const TYPE                                = "nosql";
+    protected const KEY_NAME                            = "_id";
 
     /**
      * @return nosql
@@ -43,9 +47,15 @@ class DatabaseMongodb extends DatabaseAdapter
         return new nosql();
     }
 
-    public function toSql($cDataValue, $data_type = null, $enclose_field = true, $transform_null = null)
+    /**
+     * @param $mixed
+     * @param string|null $type
+     * @param bool $enclose
+     * @return string|null
+     */
+    public function toSql($mixed, string $type = null, bool $enclose = true) : ?string
     {
-        return $this->driver->toSql($cDataValue, $data_type, $enclose_field, $transform_null);
+        return $this->driver->toSql($mixed, $type, $enclose);
     }
 
     /**
@@ -77,7 +87,8 @@ class DatabaseMongodb extends DatabaseAdapter
                                                             "from" 	        => $query["from"],
                                                             "where" 	    => $query["where"],
                                                             "sort" 	        => $query["sort"],
-                                                            "limit"	        => $query["limit"]
+                                                            "limit"	        => $query["limit"],
+                                                            "key_primary"   => $this->key_primary
                                                         ));
         if ($res && $query["limit"]["calc_found_rows"]) {
             $res["count"]                               = $this->driver->cmd(array(
@@ -225,7 +236,6 @@ class DatabaseMongodb extends DatabaseAdapter
             case self::FTYPE_BOOLEAN:
             case self::FTYPE_BOOL:
                 break;
-            case self::FTYPE_DATE:
             case self::FTYPE_NUMBER:
             case self::FTYPE_TIMESTAMP:
                 if (is_array($field["value"]) && count($field["value"])) {
@@ -238,6 +248,7 @@ class DatabaseMongodb extends DatabaseAdapter
                                                         );
                 }
                 break;
+            case self::FTYPE_DATE:
             case self::FTYPE_STRING:
             case self::FTYPE_CHAR:
             case self::FTYPE_TEXT:

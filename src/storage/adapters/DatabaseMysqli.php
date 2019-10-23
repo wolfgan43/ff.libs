@@ -28,11 +28,16 @@ namespace phpformsframework\libs\storage\adapters;
 use phpformsframework\libs\storage\DatabaseAdapter;
 use phpformsframework\libs\storage\drivers\MySqli as sql;
 
+/**
+ * Class DatabaseMysqli
+ * @package phpformsframework\libs\storage\adapters
+ */
 class DatabaseMysqli extends DatabaseAdapter
 {
-    const PREFIX                                        = "MYSQL_DATABASE_";
-    const TYPE                                          = "sql";
-    const KEY_NAME                                      = "ID";
+    protected const PREFIX                              = "MYSQL_DATABASE_";
+    protected const TYPE                                = "sql";
+    protected const KEY_NAME                            = "ID";
+    protected const KEY_IS_INT                          = true;
 
     /**
      * @return sql
@@ -42,10 +47,15 @@ class DatabaseMysqli extends DatabaseAdapter
         return new sql();
     }
 
-
-    public function toSql($cDataValue, $data_type = null, $enclose_field = true, $transform_null = null)
+    /**
+     * @param $mixed
+     * @param string|null $type
+     * @param bool $enclose
+     * @return string|null
+     */
+    public function toSql($mixed, string $type = null, bool $enclose = true) : ?string
     {
-        return $this->driver->toSql($cDataValue, $data_type, $enclose_field, $transform_null);
+        return $this->driver->toSql($mixed, $type, $enclose);
     }
 
     /**
@@ -468,6 +478,7 @@ class DatabaseMysqli extends DatabaseAdapter
                             }
                             $res[$name]         							        = self::parserWhereField($field);
                             break;
+                        default:
                     }
                 }
             }

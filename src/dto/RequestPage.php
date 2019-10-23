@@ -20,6 +20,7 @@ class RequestPage extends Mappable
     public $method          = null;
     public $root_path       = null;
     public $namespace       = null;
+    public $accept          = "*/*";
 
     public $layout          = null;
 

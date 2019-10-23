@@ -88,8 +88,4 @@ abstract class NoticeAdapter
             $this->recipients[$target]                      = ($name ? $name : $target);
         }
     }
-    protected function getResult()
-    {
-        return Error::raise(static::ERROR_BUCKET);
-    }
 }

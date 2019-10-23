@@ -38,12 +38,13 @@ use Exception;
 
 abstract class DatabaseAdapter
 {
-    const ERROR_BUCKET                  = "database";
+    protected const ERROR_BUCKET        = "database";
 
-    const TYPE                          = null;
-    const PREFIX                        = null;
-    const KEY_NAME                      = null;
-    const KEY_REL                       = "ID_";
+    protected const TYPE                = null;
+    protected const PREFIX              = null;
+    protected const KEY_NAME            = null;
+    protected const KEY_REL             = "ID_";
+    protected const KEY_IS_INT          = false;
 
     const MAX_NUMROWS                   = 10000;
     const MAX_RESULTS                   = 1000;
@@ -61,6 +62,20 @@ abstract class DatabaseAdapter
     const FTYPE_CHAR                    = "char";
     const FTYPE_TEXT                    = "text";
 
+    const FTYPE_ARRAY_JSON              = "json";
+    const FTYPE_NUMBER_BIG              = "bigint";
+    const FTYPE_NUMBER_FLOAT            = "float";
+
+    const FTYPE_NUMBER_DECIMAN          = "currency";
+
+    const FTYPE_BLOB                    = "blob";
+
+    const FTYPE_TIME                    = "time";
+    const FTYPE_DATE_TIME               = "datetime";
+
+    const FTYPE_OBJECT                  = "object";
+
+
     private $connection                 = array(
                                             "host"          => null
                                             , "username"    => null
@@ -75,6 +90,7 @@ abstract class DatabaseAdapter
     protected $key_name                 = null;
     protected $key_rel_prefix           = null;
     protected $key_rel_suffix           = null;
+    protected $key_primary              = null;
     protected $struct					= null;
     protected $relationship			    = null;
     protected $indexes					= null;
@@ -135,7 +151,14 @@ abstract class DatabaseAdapter
      * @return mixed
      */
     abstract protected function processCmd(array $query);
-    abstract public function toSql($cDataValue, $data_type = null, $enclose_field = true, $transform_null = null);
+
+    /**
+     * @param $mixed
+     * @param string|null $type
+     * @param bool $enclose
+     * @return string|null
+     */
+    abstract public function toSql($mixed, string $type = null, bool $enclose = true) : ?string;
 
     public function __construct($connection = null, $table = null, $struct= null, $relationship = null, $indexes = null, $alias = null, $exts = false, $rawdata = false)
     {
@@ -147,6 +170,8 @@ abstract class DatabaseAdapter
         $this->exts                     = $exts;
         $this->rawdata                  = $rawdata;
         $this->setTable($table);
+
+        $this->key_primary              = array_search(self::FTYPE_PRIMARY, $this->struct);
     }
 
     /**
@@ -287,29 +312,27 @@ abstract class DatabaseAdapter
                 Error::register("where is empty", static::ERROR_BUCKET);
             }
 
-            if (!Error::check(static::ERROR_BUCKET)) {
-                $query["action"] 								    = $action;
-                $query["key"] 										= $this->key_name;
-                $query["from"]                                      = $this->getTable("name");
+            $query["action"] 								        = $action;
+            $query["key"] 										    = $this->key_name;
+            $query["from"]                                          = $this->getTable("name");
 
-                if ($action == "read") {
-                    $query                                          = $query + $this->convertFields($this->select, "select");
-                }
-                if ($action == "insert" || $action == "write") {
-                    $query                                          = $query + $this->convertFields($this->insert, "insert");
-                }
-                if ($action == "update" || $action == "write") {
-                    $query                                          = $query + $this->convertFields($this->set, "update");
-                }
-                if ($action != "insert") {
-                    $query                                          = $query + $this->convertFields($this->where, "where");
-                }
-                if ($action == "read" && $this->sort) {
-                    $query                                          = $query + $this->convertFields($this->sort, "sort");
-                }
-                if ($action == "read" && $this->limit) {
-                    $query["limit"]                                 = $this->limit;
-                }
+            if ($action == "read") {
+                $query                                              = $query + $this->convertFields($this->select, "select");
+            }
+            if ($action == "insert" || $action == "write") {
+                $query                                              = $query + $this->convertFields($this->insert, "insert");
+            }
+            if ($action == "update" || $action == "write") {
+                $query                                              = $query + $this->convertFields($this->set, "update");
+            }
+            if ($action != "insert") {
+                $query                                              = $query + $this->convertFields($this->where, "where");
+            }
+            if ($action == "read" && $this->sort) {
+                $query                                              = $query + $this->convertFields($this->sort, "sort");
+            }
+            if ($action == "read" && $this->limit) {
+                $query["limit"]                                     = $this->limit;
             }
         } else {
             Error::register("Connection failed to database: " . static::TYPE, static::ERROR_BUCKET);
@@ -362,21 +385,19 @@ abstract class DatabaseAdapter
                             if ($this->rawdata || $count_recordset > $this::MAX_RESULTS) {
                                 $res["rawdata"]                     = $db["recordset"];
                             } else {
-                                $key                                = $this->getFieldAlias($query["key"]);
+                                $key                                = $query["key"];
                                 foreach ($db["recordset"] as $record) {
-                                    $res["keys"][]                  = $record[$key];
+                                    $res["keys"][]                  = $this->recordKey($record, $key);
                                     if (count($extsData)) {
                                         foreach ($extsData as $field_name => $field_alias) {
                                             if ($record[$field_name]) {
                                                 $ids = explode(",", $record[$field_name]);
                                                 foreach ($ids as $id) {
-                                                    $res["exts"][($field_alias ? $field_alias : $field_name)][$id][] = $record[$key];
+                                                    $res["exts"][($field_alias ? $field_alias : $field_name)][$id][] = $this->recordKey($record, $key);
                                                 }
                                             }
                                         }
                                     }
-
-
                                     $res["result"][]                = $this->fields2output($record, $this->select);
                                 }
                                 if (isset($db["count"])) {
@@ -400,12 +421,27 @@ abstract class DatabaseAdapter
                 case "write":
                     $res                                            = $this->processWrite($query);
                     break;
+                default:
+                    Error::register("Method not Managed", static::ERROR_BUCKET);
             }
 
             Database::setCache($res, $query);
         }
 
         return $res;
+    }
+
+    /**
+     * @param array $record
+     * @param string $key
+     * @return string|null
+     */
+    private function recordKey(array $record, string $key) : ?string
+    {
+        return (isset($record[$key])
+            ? $record[$key]
+            : null
+        );
     }
 
     private function setTable($table = null, $key = null)
@@ -721,10 +757,12 @@ abstract class DatabaseAdapter
                             }
                         }
                     }
-                } elseif (isset($record[$name]) && is_array($record[$name])) {
-                    $res[$key]                                          = $record[$name];
-                } else {
-                    $res[$key]                                          = $this->decode($record[$name]);
+                } elseif (isset($record[$name])) {
+                    if ($this->struct[$name] == self::FTYPE_ARRAY_JSON) {
+                        $res[$key]                                      = $this->decode($record[$name]);
+                    } else {
+                        $res[$key]                                      = $record[$name];
+                    }
                 }
 
                 if (!$toField) {
@@ -767,6 +805,11 @@ abstract class DatabaseAdapter
         if (is_array($record) && count($record)) {
             foreach ($record as $key => $value) {
                 switch ($this->getStructField($key)) {
+                    case self::FTYPE_PRIMARY:
+                        if (static::KEY_IS_INT) {
+                            $record[$key]                               = (int)$value;
+                        }
+                        break;
                     case self::FTYPE_ARRAY:
                         $record[$key]                                   = (
                             is_array($value)
@@ -842,15 +885,7 @@ abstract class DatabaseAdapter
      */
     private function decode(string $string = null) : ?array
     {
-        $res                                                            = null;
-        if ($string && substr($string, 0, 1) == "{") {
-            $json                                                       = json_decode($string, true);
-            if (json_last_error() == JSON_ERROR_NONE) {
-                $res                                                    = $json;
-            }
-        }
-
-        return $res;
+        return Validator::json2Array($string);
     }
 
     /**
@@ -1300,7 +1335,6 @@ abstract class DatabaseAdapter
                     break;
                 case self::FTYPE_NUMBER:
                 case self::FTYPE_TIMESTAMP:
-                case self::FTYPE_PRIMARY:
                     if (is_array($value) || is_object($value)) {
                         $fields[$name]                                      = 0;
                     } elseif (strrpos($value, "++") === strlen($value) -2) {
@@ -1330,6 +1364,7 @@ abstract class DatabaseAdapter
                 case self::FTYPE_STRING:
                 case self::FTYPE_CHAR:
                 case self::FTYPE_TEXT:
+                case self::FTYPE_PRIMARY:
                 default:
                     if (is_array($value)) {
                         if ($this->isAssocArray($value)) {

@@ -251,11 +251,14 @@ class Orm implements Dumpable
                                                                                                 ? self::$data["main"]["def"]["mainTable"]
                                                                                                 : $data["def"]["mainTable"]
                                                                                             );
-
+/*if($table == "participants") {
+setKeyRelationship da inserire nella get
+    print_r(json_encode(self::$data["exts"]));
+    print_r(json_encode($data["def"]["relationship"]));
+}*/
         if (isset($data["def"]["relationship"][$table_main]) && isset(self::$data["exts"])) {
             $field_ext                                                                      = $data["def"]["relationship"][$table_main]["external"];
             $field_key                                                                      = $data["def"]["relationship"][$table_main]["primary"];
-
 
             if (isset($data["def"]["struct"][$field_ext])) {
                 $field_ext                                                                  = $data["def"]["relationship"][$table_main]["primary"];
@@ -412,7 +415,7 @@ class Orm implements Dumpable
 
                             if (is_array($ids) && count($ids)) {
                                 foreach ($ids as $id_primary) {
-                                    $id_primary                                             = self::ids_traversing($id_primary, $id);
+                                    $id_primary                                             = self::idsTraversing($id_primary, $id);
 
                                     if ($table_rel) { //discende fino ad anagraph per fondere i risultati annidati esempio anagraph -> users -> tokens
                                         $root_ids = self::$data["exts"][$ormModel->getMainModel()->getMainTable()][$field_key][$id_primary];
@@ -483,7 +486,7 @@ class Orm implements Dumpable
         }
     }
 
-    private static function ids_traversing($id_primary, $id)
+    private static function idsTraversing($id_primary, $id)
     {
         if (isset(self::$data["traversing"][$id_primary])) {
             $res                                                                            = self::$data["traversing"][$id_primary];
@@ -808,6 +811,7 @@ class Orm implements Dumpable
     }
 
     /**
+     * @todo da tipizzare
      * @param string $action
      * @param null|array $where
      * @param null|array $fields
@@ -830,7 +834,7 @@ class Orm implements Dumpable
         return self::getResult(true);
     }
 
-    private static function getCurrentWhere($data)
+    private static function getCurrentWhere(array $data)
     {
         if (!isset($data["where"])) {
             return null;
@@ -1227,13 +1231,10 @@ class Orm implements Dumpable
     }
     /**
      * @param bool $rawdata
-     * @return array|mixed|null
+     * @return array|bool|null
      */
     private static function getResult($rawdata = false)
     {
-        return (Error::check(static::ERROR_BUCKET)
-            ? Error::raise(static::ERROR_BUCKET)
-            : self::resolveResult($rawdata)
-        );
+        return self::resolveResult($rawdata);
     }
 }

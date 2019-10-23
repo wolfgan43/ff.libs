@@ -3,6 +3,7 @@ namespace phpformsframework\libs;
 
 use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\international\Translator;
+use phpformsframework\libs\storage\Database;
 use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\storage\Media;
 use phpformsframework\libs\storage\Orm;
@@ -14,6 +15,7 @@ use phpformsframework\libs\storage\Orm;
 trait EndUserManager
 {
     /**
+     * @todo da tipizzare
      * @return Kernel
      */
     public static function &Server()
@@ -22,6 +24,7 @@ trait EndUserManager
     }
 
     /**
+     * @todo da tipizzare
      * @return Request
      */
     public static function &request()
@@ -30,6 +33,7 @@ trait EndUserManager
     }
 
     /**
+     * @todo da tipizzare
      * @return Response
      */
     public static function &response()
@@ -37,43 +41,46 @@ trait EndUserManager
         return Kernel::load()->Response;
     }
     /**
+     * @todo da tipizzare
      * @param string $name
      * @param null|string $value
      * @param bool $permanent
      * @return mixed|null
      */
-    public static function env($name, $value = null, $permanent = false)
+    public static function env(string $name, string $value = null, bool $permanent = false)
     {
-        if ($value === null) {
-            if (is_array($name)) {
-                Env::fill($name);
-            } else {
-                return Env::get($name);
-            }
-        } else {
-            Env::set($name, $value, $permanent);
-        }
+        return ($value === null
+            ? Env::get($name)
+            : Env::set($name, $value, $permanent)
+        );
+    }
 
-        return null;
+    /**
+     * @param array $value
+     */
+    public static function envFill(array $value) : void
+    {
+        Env::fill($value);
     }
 
     /**
      * @param string $name
-     * @param string $func
-     * @param null|int $priority
+     * @param callable $func
+     * @param int $priority
      */
-    public static function on($name, $func, $priority = null)
+    public static function on(string $name, callable $func, int $priority = Hook::HOOK_PRIORITY_NORMAL) : void
     {
         Hook::register($name, $func, $priority);
     }
 
     /**
+     * @todo da tipizzare
      * @param string $name
      * @param null|mixed $ref
      * @param null|mixed $params
      * @return array|null
      */
-    public static function hook($name, &$ref = null, $params = null)
+    public static function hook(string $name, &$ref = null, $params = null)
     {
         return Hook::handle($name, $ref, $params);
     }
@@ -81,7 +88,7 @@ trait EndUserManager
     /**
      * @param string $message
      */
-    public static function throwException($message)
+    public static function throwException(string $message) : void
     {
         Error::register($message, static::ERROR_BUCKET);
     }
@@ -89,7 +96,7 @@ trait EndUserManager
     /**
      * @param string $message
      */
-    public static function throwWarning($message)
+    public static function throwWarning(string $message) : void
     {
         Error::register($message, static::ERROR_BUCKET);
     }
@@ -97,16 +104,32 @@ trait EndUserManager
     /**
      * @return bool
      */
-    public static function isError()
+    public static function isError() : bool
     {
         return Error::check(static::ERROR_BUCKET);
+    }
+
+    /**
+     * @return string|null
+     */
+    public static function dumpError() : ?string
+    {
+        return Error::raise(static::ERROR_BUCKET);
+    }
+
+    /**
+     * @return array
+     */
+    public static function dumpDatabase() : array
+    {
+        return Database::dump();
     }
     /**
      * @param string $code
      * @param null|string $language
      * @return string
      */
-    public static function translate($code, $language = null)
+    public static function translate(string $code, string $language = null) : string
     {
         return Translator::get_word_by_code($code, $language);
     }
@@ -115,7 +138,7 @@ trait EndUserManager
      * @param string $ormModel
      * @return storage\OrmModel
      */
-    public static function orm($ormModel)
+    public static function orm(string $ormModel) : storage\OrmModel
     {
         return Orm::getInstance($ormModel);
     }
@@ -124,7 +147,7 @@ trait EndUserManager
      * @param null|string $file_disk_path
      * @return storage\FilemanagerAdapter
      */
-    public static function fileGetContent($file_type, $file_disk_path = null)
+    public static function fileGetContent(string $file_type, string $file_disk_path = null) : storage\FilemanagerAdapter
     {
         return Filemanager::getInstance($file_type, $file_disk_path);
     }
@@ -133,18 +156,19 @@ trait EndUserManager
      * @param string $bucket
      * @return float|null
      */
-    public static function stopWatch($bucket)
+    public static function stopWatch(string $bucket) : ?float
     {
         return Debug::stopWatch($bucket);
     }
 
     /**
+     * @todo da tipizzare
      * @param string $file_disk_path
      * @param null|string $mode
      * @param string $key
      * @return array|string
      */
-    public static function mediaUrl($file_disk_path, $mode = null, $key = "url")
+    public static function mediaUrl(string $file_disk_path, string $mode = null, string $key = "url")
     {
         return Media::getUrl($file_disk_path, $mode, $key);
     }
@@ -152,7 +176,7 @@ trait EndUserManager
     /**
      * @return cache\MemAdapter
      */
-    public static function cacheMem()
+    public static function cacheMem() : cache\MemAdapter
     {
         return Mem::getInstance();
     }

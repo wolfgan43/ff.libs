@@ -29,7 +29,7 @@ abstract class Mappable
 {
     const ERROR_BUCKET          = "mappable";
 
-    public function __construct($map, $prefix = null)
+    public function __construct($map, string $prefix = null)
     {
         if (is_array($map)) {
             $this->autoMapping($map);

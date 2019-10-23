@@ -83,9 +83,9 @@ class Env implements Configurable
 
     /**
      * @param string $key
-     * @param mixed $value
+     * @param $value
      * @param bool $permanent
-     * @return mixed
+     * @return bool|null
      */
     public static function set(string $key, $value, bool $permanent = false)
     {
@@ -97,7 +97,7 @@ class Env implements Configurable
             $cache->set("permanent", self::$permanent);
         }
 
-        return self::$vars[$key];
+        return null;
     }
 
     /**

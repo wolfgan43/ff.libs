@@ -135,16 +135,16 @@ class Router implements Configurable, Dumpable
         );
     }
 
-    public static function find(string $path, string $source = null)
+    /**
+     * @param string $path
+     * @return array|null
+     */
+    public static function find(string $path) : ?array
     {
-        $target                                             = $path . ":" . $source;
+        $target                                             = $path;
         if (!isset(self::$cache[$target])) {
             self::$target                                   = $target;
-            self::$cache[$target] = (
-                $source
-                ? preg_match(self::regexp($source), $path)
-                : self::process($path)
-            );
+            self::$cache[$target]                           =  self::process($path);
         }
 
         return self::$cache[$target];
@@ -217,9 +217,9 @@ class Router implements Configurable, Dumpable
      * @param string $path
      * @param string $destination
      */
-    public static function addRoute($path, $destination)
+    public static function addRoute(string $path, string $destination) : void
     {
-        //@todo to implement
+        self::addRule($path, array("destination" => $destination));
     }
 
     /**
@@ -324,6 +324,13 @@ class Router implements Configurable, Dumpable
             : constant("Router::PRIORITY_" . strtoupper($priority))
         );
     }
+
+    /**
+     * @todo da tipizzare
+     * @param array $matches
+     * @param $in
+     * @return array|mixed
+     */
     private static function replaceMatches(array $matches, $in)
     {
         foreach ($matches as $key => $match) {
@@ -400,6 +407,7 @@ class Router implements Configurable, Dumpable
     }
 
     /**
+     * @todo da tipizzare
      * @param string $class_name
      * @param string $method
      * @param array $params

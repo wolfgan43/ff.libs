@@ -81,7 +81,7 @@ class PageHtml extends Mappable
 
     protected $layout                           = "<main>{content}</main>";
     private $contents                           = array();
-    private $statusCode                         = 200;
+    private $error                              = null;
     private $email_support                      = null;
 
     /**
@@ -109,20 +109,6 @@ class PageHtml extends Mappable
     {
         $this->encoding = $encoding;
 
-        return $this;
-    }
-
-    /**
-     * @param int $code
-     * @return PageHtml
-     */
-    public function setStatus(int $code) : PageHtml
-    {
-        $this->statusCode                       = (
-            $code > 0
-                                                    ? $code
-                                                    : 200
-                                                );
         return $this;
     }
 
@@ -395,6 +381,7 @@ class PageHtml extends Mappable
         if (!$description) {
             $description = Error::getErrorMessage($code);
         }
+        $this->error = $title . " (" . $description . ")";
 
         $tpl                                    = new View();
         $tpl->fetch(Constant::DISK_PATH . $this->getAsset("error", "common"));
@@ -467,7 +454,7 @@ class PageHtml extends Mappable
     private function parseDebug() : string
     {
         return (Kernel::$Environment::DEBUG
-            ? Debug::dump("", true) . $this::NEWLINE
+            ? Debug::dump($this->error, true) . $this::NEWLINE
             : ""
         );
     }
@@ -524,20 +511,22 @@ class PageHtml extends Mappable
      */
     public function render() : DataHtml
     {
-        //       \phpformsframework\cms\Cm::widget("SeoCheckUp", array("url" => "http://miodottore.it/ginecologo/milano"));
-//        \phpformsframework\cms\Cm::widget("SeoCheckUp", array("url" => "https://paginemediche.it/medici-online/search/ginecologo/lombardia/mi/milano"));
 
-        if ($this->statusCode != 200) {
-            $this->js = array();
-            $this->setContent($this->getPageError($this->getContent(self::MAIN_CONTENT), $this->statusCode), self::MAIN_CONTENT);
-        }
-
-        $dataHtml = new DataHtml();
-        $dataHtml->html = $this->parseHtml();
-
-        return $dataHtml;
+        return new DataHtml(["html" => $this->parseHtml()]);
     }
 
+    /**
+     * @param int $status
+     * @param string $msg
+     * @param string|null $description
+     * @return DataHtml
+     */
+    public function renderError(int $status, string $msg, string $description = null) : DataHtml
+    {
+        $this->setContent($this->getPageError($msg, $status, $description), self::MAIN_CONTENT);
+
+        return $this->render();
+    }
 
     /**
      * @param string $what

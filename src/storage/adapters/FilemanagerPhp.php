@@ -32,7 +32,13 @@ class FilemanagerPhp extends FilemanagerAdapter
 {
     const EXT                                                   = "php";
 
-    protected function load_file($file_path, $var = null)
+    /**
+     * @todo da tipizzare
+     * @param string $file_path
+     * @param string|null $var
+     * @return bool|mixed|null
+     */
+    protected function loadFile(string $file_path, string $var = null)
     {
         $return                                                 = null;
         $output                                                 = exec("php -l " . addslashes($file_path));

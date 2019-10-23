@@ -345,6 +345,7 @@ class Debug
      */
     public static function dump(string $error_message = null, bool $return = false) : ?string
     {
+
         if (Request::isCli() || Request::accept() != "text/html") {
             echo self::dumpCommandLine($error_message);
             exit;
@@ -435,7 +436,7 @@ class Debug
             $html_dumpable .= '</ul></code>';
         }
 
-        $errors = array_filter((array) Error::raise());
+        $errors = array_filter(Error::dump());
         $errors_count = 0;
         $dirstruct = Config::getDirBucket(false);
         if (is_array($dirstruct) && count($dirstruct)) {

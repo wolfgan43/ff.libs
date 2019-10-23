@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\storage;
 
+use DateTime;
 use phpformsframework\libs\international\Data;
 
 /**
@@ -187,70 +188,124 @@ abstract class DatabaseDriver
     }
 
     /**
-     * @param string|Data $cDataValue
-     * @param string $data_type
-     * @param bool $enclose_field
-     * @param bool $transform_null
+     * @todo da tipizzare
+     * @param mixed $mixed
+     * @param string|null $type
+     * @param bool $enclose
      * @return string
      */
-    public function toSql($cDataValue, string $data_type = "Text", bool $enclose_field = true, $transform_null = true)
+    public function toSql($mixed, string $type = null, bool $enclose = true) : string
     {
-        $value = null;
-
-        if (!$this->link_id) {
-            $this->connect();
-        }
-        if (is_array($cDataValue)) {
-            $this->errorHandler("toSql: Wrong parameter, array not managed.");
-        } elseif (!is_object($cDataValue)) {
-            $value = $this->toSqlEscape($cDataValue);
-        } elseif (get_class($cDataValue) == "Data") {
-            if ($data_type === null) {
-                $data_type = $cDataValue->data_type;
-            }
-            $value = $this->toSqlEscape($cDataValue->getValue($data_type, $this->locale));
-        } elseif (get_class($cDataValue) == "DateTime") {
-            switch ($data_type) {
-                case "Date":
-                    $tmp = new Data($cDataValue, "Date");
-                    $value = $this->toSqlEscape($tmp->getValue($data_type, $this->locale));
+        if (is_array($mixed)) {
+            $res = $this->toSqlArray($mixed, $type, $enclose);
+        } elseif (is_object($mixed)) {
+            switch (get_class($mixed)) {
+                case DateTime::class:
+                    $res = $this->toSqlDateTime($mixed, $enclose);
                     break;
-
-                case "DateTime":
+                case Data::class:
+                    $res = $this->toSqlData($mixed, $enclose);
+                    break;
                 default:
-                    $data_type = "DateTime";
-                    $tmp = new Data($cDataValue, "DateTime");
-                    $value = $this->toSqlEscape($tmp->getValue($data_type, $this->locale));
+                    $res = $this->toSqlObject($mixed, $enclose);
             }
         } else {
-            $this->errorHandler("toSql: Wrong parameter, unmanaged datatype");
+            $res = $this->toSqlString($mixed, $type, $enclose);
         }
 
-        switch ($data_type) {
-            case "Number":
-            case "ExtNumber":
-                if (!strlen($value)) {
-                    if ($transform_null) {
-                        return 0;
-                    } else {
-                        return "null";
-                    }
-                }
-                return $value;
+        return $res;
+    }
 
+    /**
+     * @param Data $Data
+     * @param bool $enclose
+     * @return string|null
+     */
+    public function toSqlData(Data $Data, bool $enclose = true) : ?string
+    {
+        return $this->toSqlString($Data->getValue($Data->data_type, $this->locale), null, $enclose);
+    }
+
+    /**
+     * @param array $Array
+     * @param string|null $type
+     * @param bool $enclose
+     * @return string|null
+     */
+    public function toSqlArray(array $Array, string $type = null, bool $enclose = true) : ?string
+    {
+        switch (strtolower($type)) {
+            case DatabaseAdapter::FTYPE_ARRAY_JSON:
+                $value = json_encode($Array);
+                break;
+            case DatabaseAdapter::FTYPE_OBJECT:
+                $value = serialize($Array);
+                break;
+            case DatabaseAdapter::FTYPE_ARRAY:
+            case DatabaseAdapter::FTYPE_ARRAY_OF_NUMBER:
+            case DatabaseAdapter::FTYPE_ARRAY_INCREMENTAL:
             default:
-                if (!strlen($value) && !$transform_null) {
-                    return "null";
-                }
+                $value = implode(",", $Array);
+        }
 
-                if (!strlen($value) && ($data_type == "Date" || $data_type == "DateTime")) {
-                    $value = Data::getEmpty($data_type, $this->locale);
+        return $this->toSqlString($value, null, $enclose);
+    }
+
+    /**
+     * @param object $Object
+     * @param bool $enclose
+     * @return string|null
+     */
+    public function toSqlObject(object $Object, bool $enclose = true) : ?string
+    {
+        return $this->toSqlString(serialize($Object), null, $enclose);
+    }
+
+    /**
+     * @param DateTime $Object
+     * @param bool $enclose
+     * @return string|null
+     */
+    public function toSqlDateTime(DateTime $Object, bool $enclose = true) : ?string
+    {
+        //@todo to implement
+        return $this->toSqlString($Object, null, $enclose);
+    }
+    /**
+     * @param string $value
+     * @param string|null $type
+     * @param bool $enclose
+     * @return string|null
+     */
+    public function toSqlString(string $value, string $type = null, bool $enclose = true) : ?string
+    {
+        switch (strtolower($type)) {
+            case DatabaseAdapter::FTYPE_BOOLEAN:
+                $value = (bool) $value;
+                break;
+            case DatabaseAdapter::FTYPE_NUMBER:
+            case DatabaseAdapter::FTYPE_NUMBER_BIG:
+            case DatabaseAdapter::FTYPE_NUMBER_FLOAT:
+            case DatabaseAdapter::FTYPE_NUMBER_DECIMAN:
+                if (!strlen($value)) {
+                    $value = 0;
                 }
-                if ($enclose_field) {
-                    return "'" . $value . "'";
-                } else {
-                    return $value;
+                break;
+            case DatabaseAdapter::FTYPE_DATE:
+            case DatabaseAdapter::FTYPE_TIME:
+            case DatabaseAdapter::FTYPE_DATE_TIME:
+                $value = (
+                    strlen($value)
+                    ? $this->toSqlEscape((new Data($value, $type))->getValue($type, $this->locale))
+                    : Data::getEmpty($type, $this->locale)
+                );
+                // no break
+            default:
+                if ($enclose) {
+                    $value = "'" . $value . "'";
                 }
         }
+
+        return $value;
     }
 }

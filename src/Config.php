@@ -525,7 +525,7 @@ class Config implements Dumpable
     {
         self::$config_rules                                                 = $config["config_rules"];
         self::$config_files                                                 = $config["config_files"];
-        self::$config_data                                                  = $config[self::SCHEMA_CONF];
+        self::$config_data                                                  = $config["config_data"];
         self::$config_unknown                                               = $config["config_unknown"];
         self::$engine                                                       = $config[self::SCHEMA_ENGINE];
         self::$autoloads                                                    = $config["autoloads"];

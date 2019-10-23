@@ -47,7 +47,13 @@ abstract class FilemanagerAdapter
         $this->setVar($var);
     }
 
-    abstract protected function load_file($file_path, $var = null);
+    /**
+     * @todo da tipizzare
+     * @param string $file_path
+     * @param string|null $var
+     * @return mixed
+     */
+    abstract protected function loadFile(string $file_path, string $var = null);
     abstract protected function output($data, $var);
 
     /**
@@ -65,7 +71,7 @@ abstract class FilemanagerAdapter
             return false;
         }
 
-        $return                                                         = $this->load_file($params->file_path);
+        $return                                                         = $this->loadFile($params->file_path);
         if ($return) {
             if ($search_keys) {
                 $res                                                    = $this->search($return, $search_keys, $search_flag);
@@ -343,9 +349,6 @@ abstract class FilemanagerAdapter
      */
     protected function getResult($result)
     {
-        return (Error::check(static::ERROR_BUCKET)
-            ? Error::raise(static::ERROR_BUCKET)
-            : $result
-        );
+        return $result;
     }
 }

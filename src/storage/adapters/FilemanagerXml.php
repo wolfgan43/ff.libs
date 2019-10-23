@@ -34,8 +34,13 @@ class FilemanagerXml extends FilemanagerAdapter
 {
     const EXT                                                   = "xml";
 
-
-    protected function load_file($file_path, $var = null)
+    /**
+     * @todo da tipizzare
+     * @param string $file_path
+     * @param string|null $var
+     * @return array|bool|mixed|null
+     */
+    protected function loadFile(string $file_path, string $var = null)
     {
         $xmlstring                                              = Dir::loadFile($file_path);
         return ($xmlstring

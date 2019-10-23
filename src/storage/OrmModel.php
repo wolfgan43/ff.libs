@@ -152,26 +152,18 @@ class OrmModel extends Mappable
     /**
      * @param null|array $struct
      * @param null|array $opt
-     * @return DatabaseAdapter
+     * @return Database
      */
-    public function setStorage($struct = null, $opt = null)
+    public function setStorage(array $struct = null, array $opt = null) : Database
     {
         if (!$struct) {
-            $struct = $this->getStruct($this->getMainTable());
+            $struct                                                                         = $this->getStruct($this->getMainTable());
         }
 
-        $struct["exts"]                                                                     = (
-            isset($opt["exts"])
-                                                                                                ? $opt["exts"]
-                                                                                                : true
-                                                                                            );
+        $exts                                                                               = !isset($opt["exts"]) || $opt["exts"];
+        $rawdata                                                                            = isset($opt["rawdata"]) && $opt["rawdata"];
 
-        $struct["rawdata"]                                                                  = (
-            isset($opt["rawdata"])
-                                                                                                ? $opt["rawdata"]
-                                                                                                : false
-                                                                                            );
-        return Database::getInstance($this->adapters, $struct);
+        return Database::getInstance($this->adapters, $struct, $exts, $rawdata);
     }
 
 

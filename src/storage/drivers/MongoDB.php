@@ -62,7 +62,7 @@ class MongoDB extends DatabaseDriver
     protected $query_id             = null;
 
     private $query_params           = array();
-    private $keyname				= "_id";
+    private $key_name				= "_id";
 
     /**
      * This method istantiate a ffDB_MongoDB instance. When using this
@@ -160,9 +160,11 @@ class MongoDB extends DatabaseDriver
                     . $this->host
                     . "/"
                     . $this->database
-                    . ($this->replica
+                    . (
+                        $this->replica
                         ? "?replicaSet=" . $this->replica
-                        : "")
+                        : ""
+                    )
                 );
 
                 if (!$this->link_id) {
@@ -264,8 +266,8 @@ class MongoDB extends DatabaseDriver
 
         $this->freeResult();
 
-        if (isset($mongoDB["where"][$this->keyname])) {
-            $mongoDB["where"][$this->keyname] = $this->id2object($mongoDB["where"][$this->keyname]);
+        if (isset($mongoDB["where"][$this->key_name])) {
+            $mongoDB["where"][$this->key_name] = $this->id2object($mongoDB["where"][$this->key_name]);
         }
         switch ($mongoDB["action"]) {
             case "insert":
@@ -273,8 +275,8 @@ class MongoDB extends DatabaseDriver
                     $mongoDB["table"] = $mongoDB["into"];
                 }
                 if (isset($mongoDB["table"]) && isset($mongoDB["insert"])) {
-                    if (!isset($mongoDB["insert"][$this->keyname])) {
-                        $mongoDB["insert"][$this->keyname] = $this->createObjectID();
+                    if (!isset($mongoDB["insert"][$this->key_name])) {
+                        $mongoDB["insert"][$this->key_name] = $this->createObjectID();
                     }
                     $bulk = new BulkWrite();
                     $bulk->insert($mongoDB["insert"]);
@@ -286,7 +288,7 @@ class MongoDB extends DatabaseDriver
                     } catch (Exception $e) {
                         $this->errorHandler("MongoDB Insert: " . $e->getMessage());
                     }
-                    $this->buffered_insert_id = $mongoDB["insert"][$this->keyname];
+                    $this->buffered_insert_id = $mongoDB["insert"][$this->key_name];
                 }
                 break;
             case "update":
@@ -383,8 +385,11 @@ class MongoDB extends DatabaseDriver
                 $cursor->setTypeMap(['root' => 'array', 'document' => 'array', 'array' => 'array']);
 
                 $res = $cursor->toArray();
-                foreach ($res as $key => $value) {
-                    $res[$key]["_id"] = $this->objectID2string($res[$key]["_id"]);
+                if ($this->query_params["key_primary"]) {
+                    foreach ($res as $key => $value) {
+                        $res[$key][$this->query_params["key_primary"]] = $this->objectID2string($res[$key][$this->key_name]);
+                        unset($res[$key][$this->key_name]);
+                    }
                 }
             }
         } else {
@@ -435,8 +440,8 @@ class MongoDB extends DatabaseDriver
             }
         }
 
-        if (isset($mongoDB["where"][$this->keyname])) {
-            $mongoDB["where"][$this->keyname] = $this->id2object($mongoDB["where"][$this->keyname]);
+        if (isset($mongoDB["where"][$this->key_name])) {
+            $mongoDB["where"][$this->key_name] = $this->id2object($mongoDB["where"][$this->key_name]);
         }
 
         if (!isset($mongoDB['options'])) {
@@ -467,6 +472,12 @@ class MongoDB extends DatabaseDriver
                             ? $mongoDB["options"]
                             : array()
                         )
+                    );
+
+                    $this->query_params["key_primary"] = (
+                        empty($mongoDB["key_primary"])
+                        ? null
+                        : $mongoDB["key_primary"]
                     );
 
                     if (isset($mongoDB["select"])) {
@@ -529,8 +540,8 @@ class MongoDB extends DatabaseDriver
 
         $mongoDB = $query;
 
-        if (isset($mongoDB["where"][$this->keyname])) {
-            $mongoDB["where"][$this->keyname] = $this->id2object($mongoDB["where"][$this->keyname]);
+        if (isset($mongoDB["where"][$this->key_name])) {
+            $mongoDB["where"][$this->key_name] = $this->id2object($mongoDB["where"][$this->key_name]);
         }
         if (!isset($mongoDB["table"])) {
             $mongoDB["table"] = $mongoDB["from"];
@@ -657,14 +668,14 @@ class MongoDB extends DatabaseDriver
      */
     private function getRecord()
     {
-        $this->record                   = $this->query_id->current();
+        $this->record                       = $this->query_id->current();
         if ($this->record) {
-            $this->record["_id"]        = $this->objectID2string($this->record["_id"]);
-            $this->fields_names         = array_keys($this->record);
-            $this->fields               = array_fill_keys($this->fields_names, "");
+            //$this->record[$this->key_name]   = $this->objectID2string($this->record[$this->key_name]);
+            $this->fields_names             = array_keys($this->record);
+            $this->fields                   = array_fill_keys($this->fields_names, "");
         } else {
-            $this->fields_names         = array();
-            $this->fields               = array();
+            $this->fields_names             = array();
+            $this->fields                   = array();
         }
         return (bool) $this->record;
     }

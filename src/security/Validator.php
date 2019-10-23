@@ -259,24 +259,40 @@ class Validator
         }
     }
 
-    public static function isJson($value)
+    /**
+     * @param string|null $value
+     * @return bool
+     */
+    public static function isJson(string $value = null) : bool
     {
-        $is_json                                        = null;
+        return $value && (bool) self::json2Array($value);
+    }
 
-        if (!is_array($value)) {
-            $value = array($value);
-        }
-        foreach ($value as $item) {
-            $is_json                                    = (bool) json_decode($item, true);
-            if ($is_json === false) {
-                break;
+    /**
+     * @param string $string
+     * @return array|null
+     */
+    public static function json2Array(string $string) : ?array
+    {
+        $res                                                            = null;
+        if (substr($string, 0, 1) == "{") {
+            $json                                                       = json_decode($string, true);
+            if (json_last_error() == JSON_ERROR_NONE) {
+                $res                                                    = $json;
             }
         }
 
-        return $is_json;
+        return $res;
     }
 
-    public static function checkSpecialChars($value, $spellcheck = null)
+
+    /**
+     * @todo da tipizzare
+     * @param mixed $value
+     * @param array|null $spellcheck
+     * @return string|null
+     */
+    public static function checkSpecialChars($value, array $spellcheck = null) : ?string
     {
         $errors                                         = array();
         if (!$spellcheck) {
@@ -299,17 +315,32 @@ class Validator
             : null
         );
     }
-    public static function isValidTimeStamp($timestamp)
+
+    /**
+     * @param int $timestamp
+     * @return bool
+     */
+    public static function isValidTimeStamp(int $timestamp) : bool
     {
         return (is_numeric($timestamp)
             && $timestamp > 0
             && $timestamp < pow(2, 31));
     }
-    public static function isFile($value)
+
+    /**
+     * @param string $value
+     * @return bool
+     */
+    public static function isFile(string $value) : bool
     {
         return !self::invalidFile($value);
     }
-    public static function invalidFile($value)
+
+    /**
+     * @param string $value
+     * @return bool
+     */
+    public static function invalidFile(string $value) : bool
     {
         $res                                                                = false;
         $error                                                              = array();
@@ -366,7 +397,13 @@ class Validator
             : null
         );
     }
-    private static function checkMagicBytes($file, $type)
+
+    /**
+     * @param string $file
+     * @param string $type
+     * @return bool
+     */
+    private static function checkMagicBytes(string $file, string $type) : bool
     {
         $checks                                                             = self::getSignature($type);
         $isValid                                                            = false;
@@ -393,7 +430,11 @@ class Validator
         return $isValid;
     }
 
-    public static function isFilePath($value)
+    /**
+     * @param string $value
+     * @return bool
+     */
+    public static function isFilePath(string $value) : bool
     {
         if (strpos($value, Constant::DISK_PATH) === 0) {
             $res = false;
@@ -402,34 +443,59 @@ class Validator
         }
         return (bool) $res;
     }
-    public static function isEmail($value)
+
+    /**
+     * @param string $value
+     * @return bool
+     */
+    public static function isEmail(string $value) : bool
     {
         $regex                                                              = (
             Kernel::$Environment::DEBUG
                                                                                 ? '/^([\.0-9a-z_\-\+]+)@(([0-9a-z\-]+\.)+[0-9a-z]{2,12})$/i'
                                                                                 : '/^([\.0-9a-z_\-]+)@(([0-9a-z\-]+\.)+[0-9a-z]{2,12})$/i'
                                                                             );
-        return preg_match($regex, $value);
+        return (bool) preg_match($regex, $value);
     }
-    public static function isTel($value)
+
+    /**
+     * @param string $value
+     * @return bool
+     */
+    public static function isTel(string $value) : bool
     {
         return is_numeric(ltrim(str_replace(array(" ", ".", ",", "-"), array(""), $value), "+"));
     }
 
-    public static function isPassword($value, $rule = null)
+    /**
+     * @param string $value
+     * @param string|null $rule
+     * @return bool
+     */
+    public static function isPassword(string $value, string $rule = null) : bool
     {
         return !(bool) self::invalidPassword($value, $rule);
     }
 
-    public static function invalidUsername($value)
+    /**
+     * @param string $value
+     * @return bool
+     */
+    public static function invalidUsername(string $value) : bool
     {
         $dataError = self::is($value, "username");
 
         return $dataError->isError();
     }
-    public static function invalidPassword($value, $rule = null)
+
+    /**
+     * @param string $value
+     * @param string|null $rule
+     * @return array|null
+     */
+    public static function invalidPassword(string $value, string $rule = null) : ?array
     {
-        $res                                                                = false;
+        $res                                                                = null;
         $error                                                              = array();
 
         unset(self::$errors["password"]);
@@ -498,14 +564,15 @@ class Validator
 
         return $res;
     }
+
     /**
-     * @param $testo
+     * @param string $testo
      * @param string $char_sep
-     * @return mixed|string
+     * @return string|null
      */
-    public static function urlRewrite($testo, $char_sep = '-')
+    public static function urlRewrite(string $testo, string $char_sep = '-') : ?string
     {
-        $testo = self::remove_accents($testo);
+        $testo = self::removeAccents($testo);
         $testo = strtolower($testo);
 
         $testo = preg_replace('/[^\p{L}0-9\-]+/u', ' ', $testo);
@@ -513,7 +580,12 @@ class Validator
         $testo = preg_replace('/ +/', $char_sep, $testo);
         return preg_replace('/-+/', $char_sep, $testo);
     }
-    private static function seems_utf8($str)
+
+    /**
+     * @param string $str
+     * @return bool
+     */
+    private static function seemsUtf8(string $str) : bool
     {
         $length = strlen($str);
         for ($i=0; $i < $length; $i++) {
@@ -552,12 +624,12 @@ class Validator
      * @param string $string Text that might have accent characters
      * @return string Filtered string with replaced "nice" characters.
      */
-    private static function remove_accents($string)
+    private static function removeAccents(string $string) : string
     {
         if (!preg_match('/[\x80-\xff]/', $string)) {
             return $string;
         }
-        if (self::seems_utf8($string)) {
+        if (self::seemsUtf8($string)) {
             $chars = array(
                 // Decompositions for Latin-1 Supplement
                 chr(194).chr(170) => 'a', chr(194).chr(186) => 'o',

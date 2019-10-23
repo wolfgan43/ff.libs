@@ -47,7 +47,7 @@ class ErrorHandler
      * @param object $context l'oggetto contesto dell'errore. Se non esiste è null
      * @param array $variables le variabili definite al momento della generazione dell'errore, normalmente recuperate tramite get_defined_vars()
      */
-    public static function raise($errdes, $errno = E_USER_ERROR, $context = null, $variables = null)
+    public static function raise(string $errdes, int $errno = E_USER_ERROR, object $context = null, array $variables = null) : void
     {
         $id = uniqid(rand(), true);
         self::$errors_objects = array();

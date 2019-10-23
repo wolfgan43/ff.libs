@@ -165,17 +165,19 @@ class Dir
 
     /**
      * @param array $item
-     * @return \ArrayObject
+     * @return \stdClass
      */
     public static function getXmlAttr2Object(array $item)
     {
         Debug::stopWatch("XMLATTR_OBJ");
 
+        $obj = (object) $item["@attributes"];
 
+        /*
         $obj = new \ArrayObject(isset($item["@attributes"])
         ? $item["@attributes"]
         : $item, \ArrayObject::ARRAY_AS_PROPS);
-
+*/
         Debug::stopWatch("XMLATTR_OBJ");
 
         return $obj;

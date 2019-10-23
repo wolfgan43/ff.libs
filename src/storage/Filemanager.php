@@ -114,10 +114,7 @@ class Filemanager implements Dumpable
      */
     public static function move(string $source, string $destination) : bool
     {
-        return (self::makeDir($destination)
-            ? rename($source, $destination)
-            : false
-        );
+        return self::makeDir($destination) && rename($source, $destination);
     }
 
     /**

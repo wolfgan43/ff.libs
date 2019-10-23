@@ -138,16 +138,13 @@ class Dir
 
 
     /**
+     * @todo da tipizzare
      * @param array $item
-     * @param null|string $key
      * @return mixed
      */
-    public static function getXmlAttr(array $item, string $key = null)
+    public static function getXmlAttr(array $item)
     {
         Debug::stopWatch("XMLATTR");
-        /*return new DataResponse(isset($item["@attributes"])
-            ? $item["@attributes"]
-            : $item);*/
 
         $res = (
             isset($item["@attributes"])
@@ -157,10 +154,7 @@ class Dir
 
         Debug::stopWatch("XMLATTR");
 
-        return ($key
-            ? $res[$key]
-            : $res
-        );
+        return $res;
     }
 
     /**

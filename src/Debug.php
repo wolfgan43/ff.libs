@@ -332,10 +332,42 @@ class Debug
             }
         }
 
-        $cli .= "---------------------------------------------------------------------\n";
-        $cli .= $error_message . "\n";
+        $cli .= "---------------------------------------------------------------------\n"
+                . $error_message . "\n";
 
         return $cli;
+    }
+
+    /**
+     * @param array $debug_backtrace
+     * @param string $collapse
+     * @return string
+     */
+    private static function dumpBackTrace(array $debug_backtrace, string $collapse) : string
+    {
+        $html                     = "";
+        foreach ($debug_backtrace as $i => $trace) {
+            $operation = '<mark>' . (
+                isset($trace["class"])
+                    ?  basename(str_replace("\\", "/", $trace["class"])) . $trace["type"] . $trace["function"]
+                    : $trace["function"]
+                ) . '</mark>';
+            if (isset($trace["file"])) {
+                $label = 'Line ' . $operation . ' in: ' . '<b>' . str_replace(Constant::DISK_PATH, "", $trace["file"])  . '</b>';
+                $list_start = '<ol start="' . $trace["line"] . '">';
+                $list_end = '</ol>';
+            } else {
+                if (isset($trace["class"]) && isset($debug_backtrace[$i + 1]["args"]) && isset($debug_backtrace[$i + 1]["args"][0][0])) {
+                    $operation = '<mark>' . basename(str_replace(array("Object: ", "\\"), array("", "/"), $debug_backtrace[$i + 1]["args"][0][0])) . $trace["type"] . $trace["function"] . '(' . implode(", ", $trace["args"]) . ')</mark>';
+                }
+
+                $label = 'Call ' . $operation;
+                $list_start = '<ul>';
+                $list_end = '</ul>';
+            }
+            $html .=  $list_start . '<li><a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } ">' . $label . '</a><code style="' . $collapse . '"><pre>' . print_r($trace, true). '</pre></code></li>' . $list_end;
+        }
+        return $html;
     }
 
     /**
@@ -351,7 +383,6 @@ class Debug
             exit;
         }
 
-        $html_backtrace                     = "";
         $html_dumpable                      = "";
         $debug_backtrace                    = self::getBacktrace();
         $collapse = (
@@ -364,27 +395,7 @@ class Debug
             unset($debug_backtrace[0]);
         }
 
-        foreach ($debug_backtrace as $i => $trace) {
-            $operation = '<mark>' . (
-                isset($trace["class"])
-                ?  basename(str_replace("\\", "/", $trace["class"])) . $trace["type"] . $trace["function"]
-                : $trace["function"]
-                ) . '</mark>';
-            if (isset($trace["file"])) {
-                $label = 'Line ' . $operation . ' in: ' . '<b>' . str_replace(Constant::DISK_PATH, "", $trace["file"])  . '</b>';
-                $list_start = '<ol start="' . $trace["line"] . '">';
-                $list_end = '</ol>';
-            } else {
-                if (isset($trace["class"]) && isset($debug_backtrace[$i + 1]["args"]) && isset($debug_backtrace[$i + 1]["args"][0][0])) {
-                    $operation = '<mark>' . basename(str_replace(array("Object: ", "\\"), array("", "/"), $debug_backtrace[$i + 1]["args"][0][0])) . $trace["type"] . $trace["function"] . '(' . implode(", ", $trace["args"]) . ')</mark>';
-                }
 
-                $label = 'Call ' . $operation;
-                $list_start = '<ul>';
-                $list_end = '</ul>';
-            }
-            $html_backtrace .=  $list_start . '<li><a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } ">' . $label . '</a><code style="' . $collapse . '"><pre>' . print_r($trace, true). '</pre></code></li>' . $list_end;
-        }
 
         $dumpable = self::dumpInterface();
         $files_count = 0;
@@ -528,7 +539,7 @@ class Debug
         $html   .= '<tr>'         . '<th>BACKTRACE</th>'      . '<th>VARIABLES</th>'           . '</tr>';
         $html   .= '</thead>';
         $html   .= '<tbody>';
-        $html   .= '<tr>'         . '<td style="vertical-align: text-top">' . $html_backtrace . '</td>'  . '<td style="vertical-align: text-top">' . $html_dumpable . '</td>'  . '</tr>';
+        $html   .= '<tr>'         . '<td style="vertical-align: text-top">' . self::dumpBackTrace($debug_backtrace, $collapse) . '</td>'  . '<td style="vertical-align: text-top">' . $html_dumpable . '</td>'  . '</tr>';
         $html   .= '</tr>';
         $html   .= '</tbody>';
         $html   .= '</table>';

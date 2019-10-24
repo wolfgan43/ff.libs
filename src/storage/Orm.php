@@ -132,6 +132,25 @@ class Orm implements Dumpable
         return $res;
     }
 
+    private static function checkmiowhere($keys, $type, $service, $table, $field)
+    {
+        if (!isset(self::$data[$type][$service][$table]["where"])) {
+            self::$data[$type][$service][$table]["where"] = array();
+        }
+        if (!isset(self::$data[$type][$service][$table]["where"][$field])) {
+            self::$data[$type][$service][$table]["where"][$field]   = (
+                count($keys) == 1
+                ? $keys[0]
+                : $keys
+            );
+        } elseif (is_array(self::$data[$type][$service][$table]["where"][$field])) {
+            self::$data[$type][$service][$table]["where"][$field]    = self::$data[$type][$service][$table]["where"][$field] + $keys;
+        } else {
+            self::$data[$type][$service][$table]["where"][$field]    = array(self::$data[$type][$service][$table]["where"][$field]) + $keys;
+        }
+    }
+
+
     /**
      * @param null|array $where
      * @param null|array $fields
@@ -173,8 +192,7 @@ class Orm implements Dumpable
 
                                 if (count($where_unique)) {
                                     self::$data["sub"][$controller][$table]["runned"]       = true;
-                                    $counter                                                = self::getData($controller, $table);
-                                    if ($counter === false && $params["where"]) {
+                                    if (self::getData($controller, $table) === null && $params["where"]) {
                                         return self::getResult($result_raw_data);
                                     }
 
@@ -187,8 +205,7 @@ class Orm implements Dumpable
             }
             if (isset(self::$data["main"]["where"])) {
                 self::$data["main"]["runned"]                                               = true;
-                $counter                                                                    = self::getData(null, null, $limit);       //try main table
-                if ($counter === false) {
+                if (self::getData(null, null, $limit) === null) {
                     return false;
                 }
             }
@@ -196,10 +213,7 @@ class Orm implements Dumpable
             if (isset(self::$data["sub"]) && is_array(self::$data["sub"]) && count(self::$data["sub"])) {
                 foreach (self::$data["sub"] as $controller => $tables) {
                     foreach ($tables as $table => $params) {
-                        if (!isset($params["runned"])) {
-                            $counter = self::getData($controller, $table, (isset($params["select"]) ? $limit : null));
-                        }
-                        if ($counter === false && isset($params["where"])) {
+                        if (!isset($params["runned"]) && self::getData($controller, $table, (isset($params["select"]) ? $limit : null)) === null && isset($params["where"])) {
                             return self::getResult($result_raw_data);
                         }
                     }
@@ -214,7 +228,12 @@ class Orm implements Dumpable
         return self::getResult($result_raw_data);
     }
 
-    private static function getCurrentData($controller, $table)
+    /**
+     * @param string|null $controller
+     * @param string|null $table
+     * @return array|null
+     */
+    private static function getCurrentData(string $controller = null, string $table = null) : ?array
     {
         $data       = self::$data["main"];
         if ($controller || $table) {
@@ -231,9 +250,9 @@ class Orm implements Dumpable
      * @param null|string $controller
      * @param null|string $table
      * @param null|array $limit
-     * @return bool|int
+     * @return int|null
      */
-    private static function getData($controller = null, $table = null, $limit = null)
+    private static function getDataw(string $controller = null, string $table = null, array $limit = null) : ?int
     {
         $counter                                                                            = false;
         $table_rel                                                                          = false;
@@ -251,11 +270,6 @@ class Orm implements Dumpable
                                                                                                 ? self::$data["main"]["def"]["mainTable"]
                                                                                                 : $data["def"]["mainTable"]
                                                                                             );
-/*if($table == "participants") {
-setKeyRelationship da inserire nella get
-    print_r(json_encode(self::$data["exts"]));
-    print_r(json_encode($data["def"]["relationship"]));
-}*/
         if (isset($data["def"]["relationship"][$table_main]) && isset(self::$data["exts"])) {
             $field_ext                                                                      = $data["def"]["relationship"][$table_main]["external"];
             $field_key                                                                      = $data["def"]["relationship"][$table_main]["primary"];
@@ -306,7 +320,7 @@ setKeyRelationship da inserire nella get
                                                                                                 : $controller
                                                                                             );
             $regs                                                                           = $ormModel
-                                                                                                ->setStorage($data["def"], array("exts" => true, "rawdata" => false))
+                                                                                                ->setStorage($data["def"], true, false)
                                                                                                 ->read(
                                                                                                     (
                                                                                                         $where === true
@@ -433,11 +447,139 @@ setKeyRelationship da inserire nella get
                 }
             }
         } else {
-            $counter = null;
+            $counter = 0;
         }
 
         return $counter;
     }
+
+    /**
+     * @param null|string $controller
+     * @param null|string $table
+     * @param null|array $limit
+     * @return int|null
+     */
+    private static function getData(string $controller = null, string $table = null, array $limit = null) : ?int
+    {
+        $counter                                                                            = false;
+        $data                                                                               = self::getCurrentData($controller, $table);
+        $where                                                                              = self::getCurrentWhere($data);
+
+        $sort = (
+            isset($data["sort"])
+            ? self::getFields($data["sort"], $data["def"]["alias"])
+            : null
+        );
+
+        if ($where) {
+            $sub_ids                                                                        = null;
+            $indexes                                                                        = $data["def"]["indexes"];
+            $service = (
+                isset($data["service"])
+                ? $data["service"]
+                : $controller
+            );
+            $select                                                                         = self::getFields(
+                (
+                    isset($data["select"])
+                    ? $data["select"]
+                    : null
+                ),
+                $data["def"]["alias"],
+                $indexes,
+                (string) array_search(DatabaseAdapter::FTYPE_PRIMARY, $data["def"]["struct"])
+            );
+
+            $ormModel                                                                       = self::getModel($service);
+            $regs                                                                           = $ormModel
+                                                                                                ->setStorage($data["def"], false, false)
+                                                                                                ->read(
+                                                                                                    (
+                                                                                                        $where === true
+                                                                                                        ? null
+                                                                                                        : $where
+                                                                                                    ),
+                                                                                                    $select,
+                                                                                                    $sort,
+                                                                                                    $limit
+                                                                                                );
+            $dataType = "result";
+            if (is_array($regs)) {
+                //print_r(json_encode($regs));
+                $field_key                                                                  = null;
+                if (isset($regs[$dataType])) {
+                    $thisTable  = $data["def"]["table"]["name"];
+
+                    self::$result[$thisTable] = $regs[$dataType];
+                    if (is_array($data["def"]["relationship"]) && count($data["def"]["relationship"])) {
+                        foreach ($data["def"]["relationship"] as $ref => $relation) {
+                            $thisKey    = null;
+
+                            $relType    = null;
+                            $relTable   = null;
+                            $relField   = null;
+                            if (isset($data["def"]["struct"][$ref])) {
+                                $thisKey    = $ref;
+
+                                $relTable   = $relation["tbl"];
+                                $relKey     = $relation["key"];
+
+                                if ($data["def"]["mainTable"] == $relTable) {
+                                    $relType = "main";
+                                } elseif (isset(self::$data["sub"][$service][$relTable])) {
+                                    $relType = "sub";
+                                }
+                            } else {
+                                $thisKey    = $relation["primary"];
+
+                                $relTable   = $ref;
+                                $relKey     = $relation["external"];
+
+                                if ($data["def"]["mainTable"] == $relTable) {
+                                    $relType = "main";
+                                } elseif (isset(self::$data["sub"][$service][$relTable])) {
+                                    $relType = "sub";
+                                }
+                            }
+
+                            if (!$relType && isset(self::$services_by_data["tables"][$service . "." . $relTable])) {
+                                Error::register("Relationship not found: " . $thisTable . "." . $thisKey . " => " . $relTable . "." . $relKey);
+                            }
+
+                            $keyValue = array_column($regs[$dataType], $thisKey);
+                            if (count($keyValue)) {
+                                self::checkmiowhere($keyValue, $relType, $service, $relTable, $relKey);
+                            } else {
+                                Error::register("Relationship found but missing keyValue in result: " . $thisTable . " => " . $thisKey);
+                            }
+
+
+                            echo $thisTable . "." . $thisKey . " => " . $relTable . "." . $relKey;
+                            print_r($keyValue);
+
+                            if (isset(self::$result[$relTable])) {
+                                foreach ($keyValue as $keyCounter => $keyID) {
+                                    if (isset($regs[$dataType][$keyCounter][$thisKey]) && $regs[$dataType][$keyCounter][$thisKey] == $keyID) {
+                                        self::$result[$relTable][$keyCounter][$thisTable][] =& self::$result[$thisTable][$keyCounter];
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+
+
+
+                    $counter                                                                = $regs["count"];
+                }
+            }
+        } else {
+            $counter = 0;
+        }
+
+        return $counter;
+    }
+
 
     private static function getDataSingle($controller, $table, $limit = null)
     {
@@ -459,7 +601,7 @@ setKeyRelationship da inserire nella get
                                                                                                     ? $data["service"]
                                                                                                     : $controller
                                                                                                 )
-                                                                                                ->setStorage($data["def"], array("exts" => false, "rawdata" => true))
+                                                                                                ->setStorage($data["def"], false, true)
                                                                                                 ->read(
                                                                                                     (
                                                                                                         !isset($data["where"]) || $data["where"] === true
@@ -1114,15 +1256,14 @@ setKeyRelationship da inserire nella get
 
     /**
      * @param array $fields
-     * @param null|array $alias
-     * @param null|array $indexes
-     * @param null|string $primary_key
+     * @param array|null $alias
+     * @param array|null $indexes
+     * @param string|null $primary_key
      * @return array
      */
-    private static function getFields($fields = array(), $alias = null, &$indexes = null, $primary_key = null)
+    private static function getFields(array $fields, array $alias = null, array &$indexes = null, string $primary_key = null) : array
     {
         $res                                                                                = null;
-
         if (is_array($fields) && count($fields)) {
             $res                                                                            = $fields;
             if (!isset($res["*"])) {
@@ -1235,6 +1376,7 @@ setKeyRelationship da inserire nella get
      */
     private static function getResult($rawdata = false)
     {
+        return self::$result;
         return self::resolveResult($rawdata);
     }
 }

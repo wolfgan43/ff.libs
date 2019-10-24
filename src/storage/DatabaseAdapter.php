@@ -211,7 +211,7 @@ abstract class DatabaseAdapter
             $res                                        = array(
                                                             "recordset"     => $this->driver->getRecordset(),
                                                             "fields"        => $this->driver->getFieldset(),
-                                                            "num_rows"      => $this->driver->numRows()
+                                                            "count"         => $this->driver->numRows()
                                                         );
         }
 
@@ -384,11 +384,13 @@ abstract class DatabaseAdapter
                         if (!empty($query["limit"]) || $count_recordset < $this::MAX_NUMROWS) {
                             if ($this->rawdata || $count_recordset > $this::MAX_RESULTS) {
                                 $res["rawdata"]                     = $db["recordset"];
+                                $res["count"]                       = $db["count"];
                             } else {
                                 $key                                = $query["key"];
+
                                 foreach ($db["recordset"] as $record) {
-                                    $res["keys"][]                  = $this->recordKey($record, $key);
                                     if (count($extsData)) {
+                                        $res["keys"][]                  = $this->recordKey($record, $key);
                                         foreach ($extsData as $field_name => $field_alias) {
                                             if ($record[$field_name]) {
                                                 $ids = explode(",", $record[$field_name]);
@@ -400,9 +402,7 @@ abstract class DatabaseAdapter
                                     }
                                     $res["result"][]                = $this->fields2output($record, $this->select);
                                 }
-                                if (isset($db["count"])) {
-                                    $res["count"]                   = $db["count"];
-                                }
+                                $res["count"]                       = $db["count"];
                             }
                         }
                     }
@@ -1275,7 +1275,7 @@ abstract class DatabaseAdapter
                 }
             }
             if ($this->struct[$name] == self::FTYPE_PRIMARY && $name != $this->key_name) {
-                $name                                                       = $this->key_name;
+               // $name                                                       = $this->key_name;
             }
             switch ($struct_type) {
                 case self::FTYPE_ARRAY_INCREMENTAL:

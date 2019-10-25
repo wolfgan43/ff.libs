@@ -293,6 +293,7 @@ class Error
                 exit;
             } else {
                 Log::critical($error);
+                Response::sendError(500, $error);
             }
         }
     }

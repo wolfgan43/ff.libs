@@ -445,8 +445,7 @@ class Config implements Dumpable
 
         self::$config_files[$file]                                          = filemtime($file);
         $configs                                                            = Filemanager::getInstance("xml")->read($file);
-
-        if (is_array($configs) && count($configs)) {
+        if (is_array($configs)) {
             foreach ($configs as $key => $config) {
                 if (isset(self::$config_rules[$key])) {
                     $context                                                = self::$config_rules[$key]["context"];
@@ -470,6 +469,8 @@ class Config implements Dumpable
                     self::$config_unknown[$key]                             = $config;
                 }
             }
+        } elseif ($configs === false) {
+            Error::register("Syntax Error in Config.xml: " . $file);
         }
         Debug::stopWatch(self::SCHEMA_CONF . "/loadXml");
     }

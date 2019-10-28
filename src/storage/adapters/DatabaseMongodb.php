@@ -268,6 +268,18 @@ class DatabaseMongodb extends DatabaseAdapter
         return $res;
     }
 
+    /**
+     * @param string $name
+     * @return string
+     */
+    protected function convertKeyName(string $name): string
+    {
+        return ($this->struct[$name] == self::FTYPE_PRIMARY && $name != $this->key_name
+            ? $this->key_name
+            : parent::convertKeyName($name)
+        );
+
+    }
 
     /**
      * @param $fields
@@ -305,10 +317,6 @@ class DatabaseMongodb extends DatabaseAdapter
                 if ($flag == "select" && !is_array($value)) {
                     $arrValue 														= explode(":", $value, 2);
                     $value 															= ($arrValue[0] ? $arrValue[0] : true);
-                }
-
-                if ($this->struct[$name] == self::FTYPE_PRIMARY && $name != $this->key_name) {
-                    $name                                                           = $this->key_name;
                 }
 
                 if ($flag == "sort") {

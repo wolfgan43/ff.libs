@@ -1231,6 +1231,14 @@ abstract class DatabaseAdapter
         return $res;
     }
 
+    /**
+     * @param string $name
+     * @return string
+     */
+    protected function convertKeyName(string $name): string
+    {
+        return $name;
+    }
 
 
     /**
@@ -1274,6 +1282,8 @@ abstract class DatabaseAdapter
                     $toField                                                = $arrType["in"];
                 }
             }
+
+            $name                                                           = $this->convertKeyName($name);
 
             switch ($struct_type) {
                 case self::FTYPE_ARRAY_INCREMENTAL:

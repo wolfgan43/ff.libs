@@ -1274,9 +1274,7 @@ abstract class DatabaseAdapter
                     $toField                                                = $arrType["in"];
                 }
             }
-            if ($this->struct[$name] == self::FTYPE_PRIMARY && $name != $this->key_name) {
-                $name                                                       = $this->key_name;
-            }
+
             switch ($struct_type) {
                 case self::FTYPE_ARRAY_INCREMENTAL:
                 case self::FTYPE_ARRAY_OF_NUMBER:

@@ -307,6 +307,10 @@ class DatabaseMongodb extends DatabaseAdapter
                     $value 															= ($arrValue[0] ? $arrValue[0] : true);
                 }
 
+                if ($this->struct[$name] == self::FTYPE_PRIMARY && $name != $this->key_name) {
+                    $name                                                           = $this->key_name;
+                }
+
                 if ($flag == "sort") {
                     $res["sort"][$name] 												= (
                         $value == "DESC"

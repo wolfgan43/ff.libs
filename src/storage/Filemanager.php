@@ -645,4 +645,17 @@ class Filemanager implements Dumpable
             self::$storage[$type][$key]                 = $file;
         }
     }
+
+    /**
+     * @param string $filepath
+     * @return bool
+     */
+    public static function delete(string $filepath) : bool
+    {
+        $result = false;
+        if (file_exists($filepath)) {
+            $result = unlink($filepath);
+        }
+        return $result;
+    }
 }

@@ -1275,7 +1275,7 @@ abstract class DatabaseAdapter
                 }
             }
             if ($this->struct[$name] == self::FTYPE_PRIMARY && $name != $this->key_name) {
-               // $name                                                       = $this->key_name;
+                $name                                                       = $this->key_name;
             }
             switch ($struct_type) {
                 case self::FTYPE_ARRAY_INCREMENTAL:

@@ -252,7 +252,7 @@ class Orm implements Dumpable
      * @param null|array $limit
      * @return int|null
      */
-    private static function getDataw(string $controller = null, string $table = null, array $limit = null) : ?int
+    private static function getData(string $controller = null, string $table = null, array $limit = null) : ?int
     {
         $counter                                                                            = false;
         $table_rel                                                                          = false;
@@ -312,7 +312,7 @@ class Orm implements Dumpable
                                                                                                 ),
                 $data["def"]["alias"],
                 $indexes,
-                array_search("primary", $data["def"]["struct"])
+                array_search(DatabaseAdapter::FTYPE_PRIMARY, $data["def"]["struct"])
                                                                                             );
             $ormModel                                                                       = self::getModel(
                 isset($data["service"])
@@ -459,7 +459,7 @@ class Orm implements Dumpable
      * @param null|array $limit
      * @return int|null
      */
-    private static function getData(string $controller = null, string $table = null, array $limit = null) : ?int
+    private static function getDataNew(string $controller = null, string $table = null, array $limit = null) : ?int
     {
         $counter                                                                            = false;
         $data                                                                               = self::getCurrentData($controller, $table);
@@ -472,8 +472,8 @@ class Orm implements Dumpable
         );
 
         if ($where) {
-            $sub_ids                                                                        = null;
             $indexes                                                                        = $data["def"]["indexes"];
+            $key_name = (string) array_search(DatabaseAdapter::FTYPE_PRIMARY, $data["def"]["struct"]);
             $service = (
                 isset($data["service"])
                 ? $data["service"]
@@ -487,7 +487,7 @@ class Orm implements Dumpable
                 ),
                 $data["def"]["alias"],
                 $indexes,
-                (string) array_search(DatabaseAdapter::FTYPE_PRIMARY, $data["def"]["struct"])
+                $key_name
             );
 
             $ormModel                                                                       = self::getModel($service);
@@ -510,7 +510,9 @@ class Orm implements Dumpable
                 if (isset($regs[$dataType])) {
                     $thisTable  = $data["def"]["table"]["name"];
 
-                    self::$result[$thisTable] = $regs[$dataType];
+                    self::$result[$thisTable] = array_combine(array_column($regs[$dataType], $key_name), $regs[$dataType]);
+
+                    //self::$result[$thisTable] = $regs[$dataType];
                     if (is_array($data["def"]["relationship"]) && count($data["def"]["relationship"])) {
                         foreach ($data["def"]["relationship"] as $ref => $relation) {
                             $thisKey    = null;
@@ -546,7 +548,7 @@ class Orm implements Dumpable
                                 Error::register("Relationship not found: " . $thisTable . "." . $thisKey . " => " . $relTable . "." . $relKey);
                             }
 
-                            $keyValue = array_column($regs[$dataType], $thisKey);
+                            $keyValue = array_unique(array_column($regs[$dataType], $thisKey));
                             if (count($keyValue)) {
                                 self::checkmiowhere($keyValue, $relType, $service, $relTable, $relKey);
                             } else {
@@ -558,7 +560,8 @@ class Orm implements Dumpable
                             print_r($keyValue);
 
                             if (isset(self::$result[$relTable])) {
-                                foreach ($keyValue as $keyCounter => $keyID) {
+                                //foreach ($keyValue as $keyCounter => $keyID) {
+                                foreach (array_combine(array_keys($keyValue), $keyValue) as $keyCounter => $keyID) {
                                     if (isset($regs[$dataType][$keyCounter][$thisKey]) && $regs[$dataType][$keyCounter][$thisKey] == $keyID) {
                                         self::$result[$relTable][$keyCounter][$thisTable][] =& self::$result[$thisTable][$keyCounter];
                                     }
@@ -1376,7 +1379,7 @@ class Orm implements Dumpable
      */
     private static function getResult($rawdata = false)
     {
-        return self::$result;
+        //return self::$result;
         return self::resolveResult($rawdata);
     }
 }

@@ -141,7 +141,7 @@ class MySqli extends DatabaseDriver
      */
     public function connect(string $Database = null, string $Host = null, string $User = null, string $Secret = null) : bool
     {
-        if ($Host && $Database && $User && $Secret) {
+        if ($Host && $Database) {
             $this->cleanup();
 
             $this->database                         = $Database;

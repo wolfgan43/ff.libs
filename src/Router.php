@@ -271,9 +271,8 @@ class Router implements Configurable, Dumpable
                                             , "redirect"    => $redirect //null or redirect code
                                         );
             }
-
-            if (!self::setRoutes($path, $rule) && $rule) {
-                $key                    = self::getPriority($priority) . "-" . (9 - substr_count($path, DIRECTORY_SEPARATOR)) . "-" . $source;
+            if (!self::setRoutes($path, $rule)) {
+                $key                    = self::getPriority($priority) . "-" . (9 - substr_count($path, DIRECTORY_SEPARATOR)) . "-" . $path;
                 self::$rules[$key]      = $rule;
             }
         }
@@ -422,13 +421,13 @@ class Router implements Configurable, Dumpable
 
                 if ($method && !is_array($method)) {
                     $obj                                            = new $class_name();
-                    $output                                         = call_user_func_array(array(new $obj, $method), $params);
+                    $output                                         = (new $obj)->$method(...$params);
                 }
-            } catch (Exception $exception) {
-                Error::register($exception->getMessage(), static::ERROR_BUCKET);
+            } catch (Exception $e) {
+                Error::register($e->getMessage(), static::ERROR_BUCKET);
             }
         } elseif (is_callable($method)) {
-            $output                                                 = call_user_func_array($method, $params);
+            $output                                                 = $method(...$params);
         }
         return $output;
     }

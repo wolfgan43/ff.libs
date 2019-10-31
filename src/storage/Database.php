@@ -27,17 +27,20 @@
 namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\Env;
-use phpformsframework\libs\Error;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Kernel;
+use phpformsframework\libs\util\AdapterManager;
 
 /**
  * Class Database
  * @package phpformsframework\libs\storage
+ * @property DatabaseAdapter[] $adapters
  */
 class Database implements Dumpable
 {
+    use AdapterManager;
+
     const ERROR_BUCKET                                                      = "database";
     const NAME_SPACE                                                        = __NAMESPACE__ . '\\adapters\\';
 
@@ -45,10 +48,6 @@ class Database implements Dumpable
     private static $cache                                                   = null;
     private static $cache_rawdata                                           = array();
 
-    /**
-     * @var DatabaseAdapter[]
-     */
-    private $adapters                                                       = array();
     private $result                                                         = null;
 
     /**
@@ -120,21 +119,12 @@ class Database implements Dumpable
             $databaseAdapters[Kernel::$Environment::DATABASE_ADAPTER]       = null;
         }
 
-        if (is_array($databaseAdapters)) {
-            foreach ($databaseAdapters as $adapter => $connection) {
-                if (is_numeric($adapter) && strlen($connection)) {
-                    $adapter                                                = $connection;
-                    $connection                                             = null;
-                }
-
-                $class_name                                                 = static::NAME_SPACE . "Database" . ucfirst($adapter);
-                if (class_exists($class_name)) {
-                    $this->adapters[$adapter]                               = new $class_name($connection, $struct["table"], $struct["struct"], $struct["relationship"], $struct["indexes"], $struct["alias"], $exts, $rawdata);
-                } else {
-                    Error::register("Database Adapter not supported: " . $adapter, static::ERROR_BUCKET);
-                }
-            }
+        foreach ($databaseAdapters as $adapter => $connection) {
+            //@todo da sistemare meglio l'array params
+            $this->setAdapter($adapter, array_values($struct + array($exts, $rawdata)));
         }
+
+
     }
 
     /**
@@ -151,6 +141,7 @@ class Database implements Dumpable
     }
 
     /**
+     * @todo da tipizzare
      * @param string $table_name
      * @param null|array $where
      * @param null|array $fields
@@ -158,7 +149,7 @@ class Database implements Dumpable
      * @param null|array $limit
      * @return bool|array
      */
-    public function lookup($table_name, $where = null, $fields = null, $sort = null, $limit = null)
+    public function lookup(string $table_name, array $where = null, array $fields = null, array $sort = null, array $limit = null)
     {
         foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->lookup($table_name, $where, $fields, $sort, $limit);
@@ -167,14 +158,15 @@ class Database implements Dumpable
     }
 
     /**
+     * @todo da tipizzare
      * @param null|array $fields
      * @param null|array $where
      * @param null|array $sort
      * @param null|array $limit
-     * @param null|array $table_name
+     * @param null|string $table_name
      * @return bool|array
      */
-    public function find($fields = null, $where = null, $sort = null, $limit = null, $table_name = null)
+    public function find(array $fields = null, array $where = null, array $sort = null, array $limit = null, string $table_name = null)
     {
         foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->find($fields, $where, $sort, $limit, $table_name);
@@ -183,6 +175,7 @@ class Database implements Dumpable
     }
 
     /**
+     * @todo da tipizzare
      * @param array $where
      * @param null|array $fields
      * @param null|array $sort
@@ -200,6 +193,7 @@ class Database implements Dumpable
     }
 
     /**
+     * @todo da tipizzare
      * @param array $insert
      * @param null|string $table_name
      * @return bool
@@ -213,6 +207,7 @@ class Database implements Dumpable
     }
 
     /**
+     * @todo da tipizzare
      * @param array $set
      * @param array $where
      * @param null|string $table_name
@@ -227,6 +222,7 @@ class Database implements Dumpable
     }
 
     /**
+     * @todo da tipizzare
      * @param array $insert
      * @param array $update
      * @param null|string $table_name
@@ -241,6 +237,7 @@ class Database implements Dumpable
     }
 
     /**
+     * @todo da tipizzare
      * @param array $where
      * @param null|string $table_name
      * @return bool
@@ -254,6 +251,7 @@ class Database implements Dumpable
     }
 
     /**
+     * @todo da tipizzare
      * @param string $action
      * @param array $what
      * @param null|string $table_name

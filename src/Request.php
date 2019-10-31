@@ -53,6 +53,7 @@ class Request implements Configurable, Dumpable
     private static $gateway                                         = null;
     private static $patterns                                        = null;
     private static $server                                          = null;
+    private static $path2params                                     = null;
 
     /**
      * @var RequestPage $page
@@ -75,6 +76,7 @@ class Request implements Configurable, Dumpable
             "alias"             => self::$alias,
             "gateway"           => self::$gateway,
             "patterns"          => self::$patterns,
+            "path2params"       => self::$path2params,
         );
     }
 
@@ -103,6 +105,7 @@ class Request implements Configurable, Dumpable
         self::$alias                                                = $config["alias"];
         self::$gateway                                              = $config["gateway"];
         self::$patterns                                             = $config["patterns"];
+        self::$path2params                                          = $config["path2params"];
     }
 
     /**
@@ -128,6 +131,9 @@ class Request implements Configurable, Dumpable
         }
         if (isset($rawdata["pattern"]) && is_array($rawdata["pattern"])) {
             self::loadPatterns($rawdata["pattern"]);
+        }
+        if (isset($rawdata["path2params"])) {
+            self::$path2params = $rawdata["path2params"];
         }
 
         return self::dump();
@@ -200,14 +206,10 @@ class Request implements Configurable, Dumpable
      */
     private static function loadPages(array $config) : void
     {
-        foreach ($config as $page) {
-            $attr                                           = Dir::getXmlAttr($page);
-            if (isset($attr["path"])) {
-                $key                                        = $attr["path"];
-                self::$pages[$key]                          = null;
-                self::loadParams($page, self::$pages[$key]);
-                self::$pages[$key]["config"]                = $page["config"];
-            }
+        foreach ($config as $key => $page) {
+            self::$pages[$key]                              = null;
+            self::loadParams($page, self::$pages[$key]);
+            self::$pages[$key]["config"]                    = $page["config"];
         }
     }
 
@@ -265,23 +267,49 @@ class Request implements Configurable, Dumpable
     }
 
     /**
-     *
+     * @param string $path_info
+     * @return string
      */
-    private static function findPageByPathInfo()
+    private static function findEnvByPathInfo(string $path_info) : string
     {
-        $page                                                   = array();
-        $router                                                 = Router::find(self::$orig_path_info);
-        $page_path                                              = rtrim(self::$orig_path_info, "/");
-        if (!$page_path) {
-            $page_path = DIRECTORY_SEPARATOR;
+        $path_info                                              = rtrim($path_info, "/");
+        if (!$path_info) {
+            $path_info = DIRECTORY_SEPARATOR;
         }
 
-        do {
-            if (isset(self::$pages[$page_path])) {
-                $page                                           = array_replace(self::$pages[$page_path]["config"], $page);
+
+        if (is_array(self::$path2params) && count(self::$path2params)) {
+            foreach (self::$path2params as $page_path => $params) {
+                if (preg_match_all($params["regexp"], $path_info, $matches)) {
+                    if (self::method() == "GET") {
+                        $_GET = array_merge($_GET, array_combine($params["matches"], $matches[1]));
+                    } else {
+                        $_POST = array_merge($_POST, array_combine($params["matches"], $matches[1]));
+                    }
+
+                    $path_info = $page_path;
+                    break;
+                }
             }
-            $page_path                                          = dirname($page_path);
-        } while ($page_path != DIRECTORY_SEPARATOR);
+        }
+
+        return $path_info;
+    }
+
+    /**
+     * @param string $path_info
+     * @param array $page
+     * @return array|null
+     */
+    private static function findPageByRouter(string $path_info, array &$page) : ?array
+    {
+        $router                                                 = Router::find($path_info);
+        do {
+            if (isset(self::$pages[$path_info])) {
+                $page                                           = array_replace(self::$pages[$path_info]["config"], $page);
+            }
+            $path_info                                          = dirname($path_info);
+        } while ($path_info != DIRECTORY_SEPARATOR);
 
         $page["path_info"] = (
             isset($page["strip_path"]) && strpos(self::$path_info, $page["strip_path"]) === 0
@@ -291,6 +319,19 @@ class Request implements Configurable, Dumpable
         if (!$page["path_info"]) {
             $page["path_info"] = DIRECTORY_SEPARATOR;
         }
+
+        return $router;
+    }
+    /**
+     *
+     */
+    private static function findPageByPathInfo()
+    {
+        $page                                                   = array();
+        $page_path                                              = self::findEnvByPathInfo(self::$orig_path_info);
+        $router                                                 = self::findPageByRouter($page_path, $page);
+
+
 
         if (is_array(self::$patterns) && count(self::$patterns)) {
             $matches = null;
@@ -305,7 +346,7 @@ class Request implements Configurable, Dumpable
             }
         }
 
-        $page["rules"]                                      = self::setRulesByPage($page["path_info"]);
+        $page["rules"]                                      = self::setRulesByPage($page_path);
 
         self::$page                                         = new RequestPage($page);
     }
@@ -1024,6 +1065,18 @@ class Request implements Configurable, Dumpable
     }
 
     /**
+     * @param string $method
+     * @return string
+     */
+    private static function bucketByMethod(string $method) : string
+    {
+        return ($method == "GET" || $method == "PUT"
+            ? "query"
+            : "body"
+        );
+    }
+
+    /**
      * @param array $request
      * @param string $method
      * @return array
@@ -1031,11 +1084,7 @@ class Request implements Configurable, Dumpable
     private static function securityParams(array $request, string $method) : array
     {
         $errors                                                                         = array();
-        $bucket                                                                         = (
-            $method == "GET" || $method == "PUT"
-                                                                                            ? "query"
-                                                                                            : "body"
-                                                                                        );
+        $bucket                                                                         = self::bucketByMethod($method);
         if (self::isAllowedSize($request, $method) && self::isAllowedSize(self::getRequestHeaders(), "HEAD")) {
             self::$page->request["valid"]                                               = array();
 
@@ -1320,6 +1369,5 @@ class Request implements Configurable, Dumpable
             ? explode(",", $accept)[0]
             : self::$page->accept
         );
-
     }
 }

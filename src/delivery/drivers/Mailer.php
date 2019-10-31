@@ -386,8 +386,8 @@ abstract class Mailer
                 if ($attach_value["path"]) {
                     try {
                         $mail->addAttachment($attach_value["path"], $attach_key, $attach_value["encoded"], $attach_value["mime"]);
-                    } catch (Exception $exception) {
-                        Error::register($exception->getMessage(), static::ERROR_BUCKET);
+                    } catch (Exception $e) {
+                        Error::register($e->getMessage(), static::ERROR_BUCKET);
                     }
                 } elseif ($attach_value["content"]) {
                     $mail->addStringAttachment($attach_value["content"], $attach_key, $attach_value["encoded"], $attach_value["mime"]);
@@ -400,8 +400,8 @@ abstract class Mailer
             if (!$rc) {
                 Error::register($mail->ErrorInfo, static::ERROR_BUCKET);
             }
-        } catch (Exception $exception) {
-            Error::register($exception->getMessage(), static::ERROR_BUCKET);
+        } catch (Exception $e) {
+            Error::register($e->getMessage(), static::ERROR_BUCKET);
         }
     }
 

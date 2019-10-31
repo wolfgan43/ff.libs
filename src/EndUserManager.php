@@ -110,18 +110,30 @@ trait EndUserManager
     }
 
     /**
+     * @param bool $return
      * @return string|null
      */
-    public static function dumpError() : ?string
+    public static function dumpError(bool $return = false) : ?string
     {
+        if (!$return) {
+            echo Error::raise(static::ERROR_BUCKET);
+            exit;
+        }
+
         return Error::raise(static::ERROR_BUCKET);
     }
 
     /**
+     * @param bool $return
      * @return array
      */
-    public static function dumpDatabase() : array
+    public static function dumpDatabase(bool $return = false) : array
     {
+        if (!$return) {
+            print_r(Database::dump());
+            exit;
+        }
+
         return Database::dump();
     }
     /**

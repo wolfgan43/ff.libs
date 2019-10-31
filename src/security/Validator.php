@@ -275,7 +275,7 @@ class Validator
     public static function json2Array(string $string) : ?array
     {
         $res                                                            = null;
-        if (substr($string, 0, 1) == "{") {
+        if (substr($string, 0, 1) == "{" || substr($string, 0, 1) == "[") {
             $json                                                       = json_decode($string, true);
             if (json_last_error() == JSON_ERROR_NONE) {
                 $res                                                    = $json;
@@ -493,7 +493,7 @@ class Validator
      * @param string|null $rule
      * @return array|null
      */
-    public static function invalidPassword(string $value, string $rule = null) : ?array
+    public static function invalidPassword(string $value, string $rule = null) : ?string
     {
         $res                                                                = null;
         $error                                                              = array();

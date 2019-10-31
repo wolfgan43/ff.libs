@@ -296,8 +296,8 @@ class Debug
                         $implements[basename(str_replace('\\', '/', $class_name))]    = (array) $classDumpable::dump();
                     }
                 }
-            } catch (Exception $exception) {
-                Error::register($exception->getMessage(), static::ERROR_BUCKET);
+            } catch (Exception $e) {
+                Error::register($e->getMessage(), static::ERROR_BUCKET);
             }
         }
         return $implements;

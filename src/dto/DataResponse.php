@@ -58,11 +58,10 @@ class DataResponse extends DataAdapter
     public function filter(array $values, string $bucket = null) : DataAdapter
     {
         if (isset($this->data[$bucket])) {
-            $this->data[$bucket]    = array_diff_key($this->data[$bucket], array_fill_keys($values, true));
+            $this->data[$bucket]    = array_intersect_key($this->data[$bucket], array_fill_keys($values, true));
         } elseif (!$bucket) {
-            $this->data             = array_diff_key($this->data, $values);
+            $this->data             = array_intersect_key($this->data, array_fill_keys($values, true));
         }
-
         return $this;
     }
 

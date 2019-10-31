@@ -144,37 +144,12 @@ class Dir
      */
     public static function getXmlAttr(array $item)
     {
-        Debug::stopWatch("XMLATTR");
-
         $res = (
             isset($item["@attributes"])
             ? $item["@attributes"]
             : $item
         );
 
-        Debug::stopWatch("XMLATTR");
-
         return $res;
-    }
-
-    /**
-     * @param array $item
-     * @return \stdClass
-     */
-    public static function getXmlAttr2Object(array $item)
-    {
-        Debug::stopWatch("XMLATTR_OBJ");
-
-        $obj = (object) $item["@attributes"];
-
-        /*
-        $obj = new \ArrayObject(isset($item["@attributes"])
-        ? $item["@attributes"]
-        : $item, \ArrayObject::ARRAY_AS_PROPS);
-*/
-        Debug::stopWatch("XMLATTR_OBJ");
-
-        return $obj;
-
     }
 }

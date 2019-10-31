@@ -658,4 +658,14 @@ class Filemanager implements Dumpable
         }
         return $result;
     }
+
+    /**
+     * @param string $file
+     * @param string|null $default
+     * @return string
+     */
+    public static function getMimeType(string $file, string $default = null) : string
+    {
+        return Media::getMimeByFilename($file, $default);
+    }
 }

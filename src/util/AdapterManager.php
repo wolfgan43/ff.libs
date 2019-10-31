@@ -9,32 +9,24 @@ use phpformsframework\libs\Error;
  */
 trait AdapterManager
 {
-    private $adapters   = null;
+    private $adapters   = array();
     private $adapter    = null;
 
     /**
      * @param string $adapterName
+     * @param array|null $args
      */
-    private function setAdapter(string $adapterName) : void
+    private function setAdapter(string $adapterName, array $args = array()) : void
     {
-        $className                                          = str_replace(__NAMESPACE__ . '\\', "", __CLASS__);
-
-        $classNameAdapter                                   = __NAMESPACE__ . '\\adapters\\' . $className . ucfirst($adapterName);
+        $class                                              = str_replace('\\', '/', __CLASS__);
+        $className                                          = basename($class);
+        $nameSpace                                          = str_replace('/', '\\', dirname($class));
+        $classNameAdapter                                   = $nameSpace . '\\adapters\\' . $className . ucfirst($adapterName);
         if (class_exists($classNameAdapter)) {
-            $this->adapters[$adapterName]                   = new $classNameAdapter();
+            $this->adapters[$adapterName]                   = new $classNameAdapter(...$args);
             $this->adapter                                  =& $this->adapters[$adapterName];
         } else {
-            Error::register($className . " Adapter not supported: " . $adapterName);
-        }
-    }
-
-    /**
-     * @param array $adapters
-     */
-    private function setAdapters(array $adapters) : void
-    {
-        foreach ($adapters as $adapter) {
-            $this->setAdapter($adapter);
+            Error::register(__CLASS__ . " Adapter not supported: " . $classNameAdapter);
         }
     }
 

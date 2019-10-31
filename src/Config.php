@@ -547,9 +547,11 @@ class Config implements Dumpable
         $config                                                                         = static::rawData(self::SCHEMA_PAGES, true);
         $router                                                                         = array();
         $request                                                                        = array();
+        $path2params                                                                    = array();
 
         if (isset($config["page"]) && is_array($config["page"]) && count($config["page"])) {
             foreach ($config["page"] as $page) {
+                $params                                                                 = array();
                 $attr                                                                   = Dir::getXmlAttr($page);
                 $key                                                                    = (
                     isset($attr["path"])
@@ -559,11 +561,19 @@ class Config implements Dumpable
                 if (!$key) {
                     continue;
                 }
+                unset($page["@attributes"]);
                 unset($attr["source"]);
                 unset($attr["path"]);
 
                 if ($key == "/") {
                     $key = "*";
+                } elseif (preg_match_all('#/{([^/]*)}#i', $key, $params)) {
+                    $regexp                                                             = '#' . str_replace($params[0], "/([^/]*)", $key) . '#i';
+                    $key                                                                = str_replace($params[0], "", $key);
+                    $path2params[$key]                                                  = array(
+                                                                                            "matches"   => $params[1],
+                                                                                            "regexp"    => $regexp
+                                                                                        );
                 }
 
                 if (isset($attr["source"]) && isset($attr["destination"])) {
@@ -575,22 +585,26 @@ class Config implements Dumpable
                     $router[$key]                                                       = null;
                 }
 
-
                 if (isset($attr["priority"])) {
                     $router[$key]["priority"]                                           = $attr["priority"];
                     unset($attr["priority"]);
                 }
 
                 if (isset($attr[self::SCHEMA_ENGINE]) && isset(self::$engine[$attr[self::SCHEMA_ENGINE]]) && self::$engine[$attr[self::SCHEMA_ENGINE]]["properties"]) {
-                    $attr = array_replace(self::$engine[$attr[self::SCHEMA_ENGINE]]["properties"], $attr);
+                    $attr                                                               = array_replace(self::$engine[$attr[self::SCHEMA_ENGINE]]["properties"], $attr);
                 }
 
                 $request[$key]                                                          = $page;
                 $request[$key][self::SCHEMA_CONF]                                       = $attr;
+
+
             }
 
             self::$config_data[self::SCHEMA_ROUTER][self::SCHEMA_PAGES]                 = $router;
+            self::$config_data[self::SCHEMA_REQUEST]["path2params"]                     = $path2params;
             self::$config_data[self::SCHEMA_REQUEST][self::SCHEMA_PAGES]                = $request;
+
+
         }
 
         Debug::stopWatch(self::SCHEMA_CONF . "/" . self::SCHEMA_PAGES);
@@ -607,10 +621,6 @@ class Config implements Dumpable
         $config                                                                         = static::rawData(self::SCHEMA_ENGINE, true);
         if (is_array($config) && count($config)) {
             foreach ($config as $key => $engine) {
-                $pippo = Dir::getXmlAttr2Object($engine);
-
-
-
                 $attr                                                                   = Dir::getXmlAttr($engine);
                 if (isset($attr["source"])) {
                     $schema[$key][self::SCHEMA_ROUTER]["source"]                        = $attr["source"];

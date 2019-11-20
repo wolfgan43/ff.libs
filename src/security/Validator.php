@@ -505,10 +505,10 @@ class Validator
     }
 
     /**
-     * @param int $totp
+     * @param string $totp
      * @return bool
      */
-    public static function isTotp(int $totp) : bool
+    public static function isTotp(string $totp) : bool
     {
         return ctype_digit($totp);
     }

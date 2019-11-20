@@ -111,9 +111,9 @@ class Debug
 
     /**
      * @param $bucket
-     * @return string|null
+     * @return float|null
      */
-    public static function exTime(string $bucket) : ?string
+    public static function exTime(string $bucket) : ?float
     {
         return (isset(self::$startWatch[$bucket])
             ? number_format(self::$startWatch[$bucket], 3, '.', '')
@@ -122,12 +122,12 @@ class Debug
     }
 
     /**
-     * @return string
+     * @return float
      */
-    public static function exTimeApp() : string
+    public static function exTimeApp() : float
     {
         $duration                           = microtime(true) - self::$app_start;
-        return number_format($duration, 3, '.', '') . "s";
+        return number_format($duration, 3, '.', '');
     }
 
     /**

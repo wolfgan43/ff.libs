@@ -1264,7 +1264,7 @@ class Orm implements Dumpable
      * @param string|null $primary_key
      * @return array
      */
-    private static function getFields(array $fields, array $alias = null, array &$indexes = null, string $primary_key = null) : array
+    private static function getFields(array $fields = null, array $alias = null, array &$indexes = null, string $primary_key = null) : array
     {
         $res                                                                                = null;
         if (is_array($fields) && count($fields)) {

@@ -112,7 +112,7 @@ abstract class DataAdapter
     /**
      * @var mixed|null
      */
-    private $debug                           = null;
+    private $debug                           = array();
 
     abstract public function output();
 
@@ -133,8 +133,8 @@ abstract class DataAdapter
         $vars                               = get_object_vars($this);
         if (!Debug::isEnabled()) {
             unset($vars["debug"]);
-        } elseif (empty($vars["debug"])) {
-            $vars["debug"]                  = Debug::exTimeApp();
+        } else {
+            $vars["debug"]["exTime - App"]        = Debug::exTimeApp();
         }
 
         return $vars;
@@ -192,9 +192,13 @@ abstract class DataAdapter
      * @param mixed $data
      * @return $this
      */
-    public function debug($data) : self
+    public function debug($data, string $bucket = null) : self
     {
-        $this->debug                        = ($this->debug ? $this->debug . " " : "") . $data;
+        if ($bucket) {
+            $this->debug[$bucket] = $data;
+        } elseif (!empty($data)) {
+            array_push($this->debug, $data);
+        }
 
         return $this;
     }

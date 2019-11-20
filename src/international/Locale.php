@@ -184,7 +184,7 @@ class Locale implements Configurable
     public static function loadConfigRules($configRules)
     {
         return $configRules
-            ->add("locale");
+            ->add("locale", self::METHOD_REPLACE);
     }
 
     /**

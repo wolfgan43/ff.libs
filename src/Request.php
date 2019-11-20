@@ -646,9 +646,9 @@ class Request implements Configurable, Dumpable
 
     /**
      * @param string|null $hostname
-     * @return string
+     * @return string|null
      */
-    public static function proxy(string $hostname = null) : string
+    public static function proxy(string $hostname = null) : ?string
     {
         if (!$hostname) {
             $hostname                                           = self::hostname();

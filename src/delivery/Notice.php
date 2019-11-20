@@ -27,6 +27,10 @@ namespace phpformsframework\libs\delivery;
 
 use phpformsframework\libs\dto\DataResponse;
 
+/**
+ * Class Notice
+ * @package phpformsframework\libs\delivery
+ */
 class Notice
 {
     const NAME_SPACE                                        = __NAMESPACE__ . '\\adapters\\';
@@ -47,7 +51,12 @@ class Notice
         return self::$singleton->setAdapters($noticeAdapters);
     }
 
-    public function addRecipient($target, $name = null)
+    /**
+     * @param string $target
+     * @param string|null $name
+     * @return Notice
+     */
+    public function addRecipient(string $target, string $name = null) : self
     {
         foreach ($this->adapters as $adapter) {
             $adapter->addRecipient($target, $name);
@@ -55,7 +64,13 @@ class Notice
 
         return $this;
     }
-    public function addAction($name, $url)
+
+    /**
+     * @param string $name
+     * @param string $url
+     * @return Notice
+     */
+    public function addAction(string $name, string $url) : self
     {
         foreach ($this->adapters as $adapter) {
             $adapter->addAction($name, $url);
@@ -71,7 +86,7 @@ class Notice
      * @param null|string $template
      * @return DataResponse
      */
-    public function sendLongMessage($title, $fields, $template = null)
+    public function sendLongMessage(string $title, array $fields, string $template = null): DataResponse
     {
         $dataResponse                                       = new DataResponse();
         foreach ($this->adapters as $key => $adapter) {
@@ -89,7 +104,7 @@ class Notice
      * @param string $message
      * @return DataResponse
      */
-    public function send($message)
+    public function send(string $message) : DataResponse
     {
         $dataResponse                                       = new DataResponse();
         foreach ($this->adapters as $key => $adapter) {
@@ -104,10 +119,6 @@ class Notice
     }
 
 
-    /**
-     * @param $noticeAdapters
-     * @return $this
-     */
     private function setAdapters($noticeAdapters)
     {
         $name_space                                         = static::NAME_SPACE . "Notice";

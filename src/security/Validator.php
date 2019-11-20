@@ -30,136 +30,154 @@ use phpformsframework\libs\Constant;
 use phpformsframework\libs\dto\DataError;
 use phpformsframework\libs\Kernel;
 
+/**
+ * Class Validator
+ * @package phpformsframework\libs\security
+ */
 class Validator
 {
     const RULES                                             = array(
-                                                                "bool" => array(
-                                                                    "filter"        => FILTER_VALIDATE_BOOLEAN
-                                                                    , "flags"       => FILTER_NULL_ON_FAILURE
-                                                                    , "options"     => array("default" => null)
-                                                                )
-                                                                , "domain" => array(
-                                                                    "filter"        => FILTER_VALIDATE_DOMAIN
-                                                                    , "flags"       => null //FILTER_VALIDATE_DOMAIN
-                                                                    , "options"     => array("default" => null)
-                                                                    , "length"      => 24
-                                                                )
-                                                                , "email" => array(
-                                                                    "filter"        => FILTER_VALIDATE_EMAIL
-                                                                    , "flags"       => null //FILTER_FLAG_EMAIL_UNICODE
-                                                                    , "options"     => array("default" => null)
-                                                                    , "length"      => 64
-                                                                )
-                                                                , "float" => array(
-                                                                    "filter"        => FILTER_VALIDATE_FLOAT
-                                                                    , "flags"       => null //FILTER_FLAG_ALLOW_THOUSAND
-                                                                    , "options"     => array("default" => null)
-                                                                    , "length"      => 32
-                                                                )
-                                                                , "int" => array(
-                                                                    "filter"        => FILTER_VALIDATE_INT
-                                                                    , "flags"       => null //FILTER_FLAG_ALLOW_OCTAL | FILTER_FLAG_ALLOW_HEX
-                                                                    , "options"     => array("default" => null)
-                                                                    , "length"      => 16
-                                                                )
-                                                                , "timestamp"       => array(
-                                                                    "filter"        => FILTER_CALLBACK
-                                                                    , "flags"       => null
-                                                                    , "options"     => '\phpformsframework\libs\security\Validator::isValidTimeStamp'
-                                                                    , "length"      => 10
-                                                                )
-                                                                , "ip" => array(
-                                                                    "filter"        => FILTER_VALIDATE_IP
-                                                                    , "flags"       => null //FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
-                                                                    , "options"     => array("default" => null)
-                                                                    , "length"      => 15
-                                                                )
-                                                                , "mac" => array(
-                                                                    "filter"        => FILTER_VALIDATE_MAC
-                                                                    , "options"     => array("default" => null)
-                                                                    , "length"      => 24
-                                                                )
-                                                                /*, "regexp" => array(
-                                                                    "filter"        => FILTER_VALIDATE_REGEXP
-                                                                    , "options"     => array("default" => null, "regexp" => '0')
-                                                                )*/
-                                                                , "url" => array(
-                                                                    "filter"        => FILTER_VALIDATE_URL
-                                                                    , "flags"       => FILTER_FLAG_PATH_REQUIRED // | FILTER_FLAG_SCHEME_REQUIRED | FILTER_FLAG_HOST_REQUIRED | FILTER_FLAG_QUERY_REQUIRED
-                                                                    , "options"     => array("default" => null)
-                                                                    , "length"      => 256
-                                                                )
-                                                                , "username" => array(
-                                                                    "filter"        => FILTER_SANITIZE_STRING
-                                                                    , "flags"       => FILTER_FLAG_STRIP_LOW
-                                                                    , "options"     => null
-                                                                    , "callback"    => "\phpformsframework\libs\security\Validator::checkSpecialChars"
-                                                                    , "length"      => 48
-                                                                )
-                                                                , "string" => array(
-                                                                    "filter"        => FILTER_SANITIZE_STRING
-                                                                    , "flags"       => FILTER_FLAG_NO_ENCODE_QUOTES | FILTER_FLAG_STRIP_LOW //| FILTER_FLAG_STRIP_HIGH
-                                                                    , "options"     => null
-                                                                    , "callback"    => "\phpformsframework\libs\security\Validator::checkSpecialChars"
-                                                                    , "length"      => 128
-                                                                )
-                                                                , "array" => array(
-                                                                    "filter"        => FILTER_SANITIZE_STRING
-                                                                    , "flags"       => FILTER_REQUIRE_ARRAY | FILTER_FLAG_NO_ENCODE_QUOTES | FILTER_FLAG_STRIP_LOW //| FILTER_FLAG_STRIP_HIGH
-                                                                    , "options"     => null
-                                                                    , "callback"    => "\phpformsframework\libs\security\Validator::checkSpecialChars"
-                                                                    , "length"      => 128
-                                                                )
-                                                                , "arrayint" => array(
-                                                                    "filter"        => FILTER_VALIDATE_INT
-                                                                    , "flags"       => FILTER_REQUIRE_ARRAY
-                                                                    , "options"     => null
-                                                                    , "length"      => 16
-                                                                )
-                                                                , "json" => array(
-                                                                    "filter"        => FILTER_CALLBACK
-                                                                    , "flags"       => null
-                                                                    , "options"     => '\phpformsframework\libs\security\Validator::isJson'
-                                                                    , "length"      => 10240
-                                                                )
-                                                                , "password" => array(
-                                                                    "filter"        => FILTER_CALLBACK
-                                                                    , "flags"       => null
-                                                                    , "options"     => '\phpformsframework\libs\security\Validator::isPassword'
-                                                                    , "length"      => 24
-                                                                )
-                                                                , "tel" => array(
-                                                                    "filter"        => FILTER_CALLBACK
-                                                                    , "flags"       => null
-                                                                    , "options"     => '\phpformsframework\libs\security\Validator::isTel'
-                                                                    , "length"      => 16
-                                                                )
-                                                                , "file" => array(
-                                                                    "filter"        => FILTER_CALLBACK
-                                                                    , "flags"       => null
-                                                                    , "options"     => '\phpformsframework\libs\security\Validator::isFile'
-                                                                    , "length"      => 1024000
-                                                                )
-                                                                , "encode" => array(
-                                                                    "filter"        => FILTER_SANITIZE_ENCODED
-                                                                    , "flags"       => FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH
-                                                                    , "options"     => null
-                                                                    , "normalize"   => true
-                                                                    , "length"      => 192
-                                                                )
-                                                                , "slug" => array(
-                                                                    "filter"        => FILTER_CALLBACK
-                                                                    , "flags"       => null
-                                                                    , "options"     => '\phpformsframework\libs\security\Validator::urlRewrite'
-                                                                    , "normalize"   => true
-                                                                    , "length"      => 128
-                                                                )
-                                                                , "text" => array(
-                                                                    "filter"        => FILTER_CALLBACK
-                                                                    , "flags"       => null
-                                                                    , "options"     => "nl2br"
-                                                                    , "normalize"   => true
-                                                                    , "length"      => 128000
+                                                                "bool"              => array(
+                                                                    "filter"        => FILTER_VALIDATE_BOOLEAN,
+                                                                    "flags"         => FILTER_NULL_ON_FAILURE,
+                                                                    "options"       => array("default" => null),
+                                                                ),
+                                                                "domain"            => array(
+                                                                    "filter"        => FILTER_VALIDATE_DOMAIN,
+                                                                    "flags"         => null, //FILTER_VALIDATE_DOMAIN
+                                                                    "options"       => array("default" => null),
+                                                                    "length"        => 24
+                                                                ),
+                                                                "email"             => array(
+                                                                    "filter"        => FILTER_VALIDATE_EMAIL,
+                                                                    "flags"         => null, //FILTER_FLAG_EMAIL_UNICODE
+                                                                    "options"       => array("default" => null),
+                                                                    "length"        => 64
+                                                                ),
+                                                                "float"             => array(
+                                                                    "filter"        => FILTER_VALIDATE_FLOAT,
+                                                                    "flags"         => null, //FILTER_FLAG_ALLOW_THOUSAND
+                                                                    "options"       => array("default" => null),
+                                                                    "length"        => 32
+                                                                ),
+                                                                "int"               => array(
+                                                                    "filter"        => FILTER_VALIDATE_INT,
+                                                                    "flags"         => null, //FILTER_FLAG_ALLOW_OCTAL | FILTER_FLAG_ALLOW_HEX
+                                                                    "options"       => array("default" => null),
+                                                                    "length"        => 16
+                                                                ),
+                                                                "timestamp"         => array(
+                                                                    "filter"        => FILTER_CALLBACK,
+                                                                    "flags"         => null,
+                                                                    "options"       => '\phpformsframework\libs\security\Validator::isValidTimeStamp',
+                                                                    "length"        => 10
+                                                                ),
+                                                                "ip"                => array(
+                                                                    "filter"        => FILTER_VALIDATE_IP,
+                                                                    "flags"         => null, //FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+                                                                    "options"       => array("default" => null),
+                                                                    "length"        => 15
+                                                                ),
+                                                                "mac"               => array(
+                                                                    "filter"        => FILTER_VALIDATE_MAC,
+                                                                    "options"       => array("default" => null),
+                                                                    "length"        => 24
+                                                                ),
+                                                                /*"regexp"          => array(
+                                                                    "filter"        => FILTER_VALIDATE_REGEXP,
+                                                                    "options"       => array("default" => null, "regexp" => '0')
+                                                                ),*/
+                                                                "url"               => array(
+                                                                    "filter"        => FILTER_VALIDATE_URL,
+                                                                    "flags"         => FILTER_FLAG_PATH_REQUIRED, // | FILTER_FLAG_SCHEME_REQUIRED | FILTER_FLAG_HOST_REQUIRED | FILTER_FLAG_QUERY_REQUIRED
+                                                                    "options"       => array("default" => null),
+                                                                    "length"        => 256
+                                                                ),
+                                                                "username"          => array(
+                                                                    "filter"        => FILTER_SANITIZE_STRING,
+                                                                    "flags"         => FILTER_FLAG_STRIP_LOW,
+                                                                    "options"       => null,
+                                                                    "callback"      => "\phpformsframework\libs\security\Validator::checkSpecialChars",
+                                                                    "length"        => 48
+                                                                ),
+                                                                "string"            => array(
+                                                                    "filter"        => FILTER_SANITIZE_STRING,
+                                                                    "flags"         => FILTER_FLAG_NO_ENCODE_QUOTES | FILTER_FLAG_STRIP_LOW, //| FILTER_FLAG_STRIP_HIGH
+                                                                    "options"       => null,
+                                                                    "callback"      => "\phpformsframework\libs\security\Validator::checkSpecialChars",
+                                                                    "length"        => 128
+                                                                ),
+                                                                "array"             => array(
+                                                                    "filter"        => FILTER_SANITIZE_STRING,
+                                                                    "flags"         => FILTER_REQUIRE_ARRAY | FILTER_FLAG_NO_ENCODE_QUOTES | FILTER_FLAG_STRIP_LOW, //| FILTER_FLAG_STRIP_HIGH
+                                                                    "options"       => null,
+                                                                    "callback"      => "\phpformsframework\libs\security\Validator::checkSpecialChars",
+                                                                    "length"        => 128
+                                                                ),
+                                                                "arrayint"          => array(
+                                                                    "filter"        => FILTER_VALIDATE_INT,
+                                                                    "flags"         => FILTER_REQUIRE_ARRAY,
+                                                                    "options"       => null,
+                                                                    "length"        => 16
+                                                                ),
+                                                                "json"              => array(
+                                                                    "filter"        => FILTER_CALLBACK,
+                                                                    "flags"         => null,
+                                                                    "options"       => '\phpformsframework\libs\security\Validator::isJson',
+                                                                    "length"        => 10240
+                                                                ),
+                                                                "password"          => array(
+                                                                    "filter"        => FILTER_CALLBACK,
+                                                                    "flags"         => null,
+                                                                    "options"       => '\phpformsframework\libs\security\Validator::isPassword',
+                                                                    "length"        => 24
+                                                                ),
+                                                                "tel"               => array(
+                                                                    "filter"        => FILTER_CALLBACK,
+                                                                    "flags"         => null,
+                                                                    "options"       => '\phpformsframework\libs\security\Validator::isTel',
+                                                                    "length"        => 16
+                                                                ),
+                                                                "file"              => array(
+                                                                    "filter"        => FILTER_CALLBACK,
+                                                                    "flags"         => null,
+                                                                    "options"       => '\phpformsframework\libs\security\Validator::isFile',
+                                                                    "length"        => 1024000
+                                                                ),
+                                                                "encode"            => array(
+                                                                    "filter"        => FILTER_SANITIZE_ENCODED,
+                                                                    "flags"         => FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH,
+                                                                    "options"       => null,
+                                                                    "normalize"     => true,
+                                                                    "length"        => 192
+                                                                ),
+                                                                "slug"              => array(
+                                                                    "filter"        => FILTER_CALLBACK,
+                                                                    "flags"         => null,
+                                                                    "options"       => '\phpformsframework\libs\security\Validator::urlRewrite',
+                                                                    "normalize"     => true,
+                                                                    "length"        => 128
+                                                                ),
+                                                                "uuid"              => array(
+                                                                    "filter"        => FILTER_CALLBACK,
+                                                                    "flags"         => null,
+                                                                    "options"       => '\phpformsframework\libs\security\Validator::isUUID',
+                                                                    "normalize"     => true,
+                                                                    "length"        => 128
+                                                                ),
+                                                                "totp"              => array(
+                                                                    "filter"        => FILTER_CALLBACK,
+                                                                    "flags"         => null,
+                                                                    "options"       => '\phpformsframework\libs\security\Validator::isTotp',
+                                                                    "normalize"     => true,
+                                                                    "length"        => 7
+                                                                ),
+                                                                "text"              => array(
+                                                                    "filter"        => FILTER_CALLBACK,
+                                                                    "flags"         => null,
+                                                                    "options"       => "nl2br",
+                                                                    "normalize"     => true,
+                                                                    "length"        => 128000
                                                                 )
 
                                                             );
@@ -206,8 +224,8 @@ class Validator
             $dataError                                  = self::isError(self::getErrorName($what) . " Max Length Exeeded: " . $type, $type, 413);
         } else {
             $validation                                 = filter_var($what, $rule["filter"], array(
-                                                            "flags"         => $rule["flags"]
-                                                            , "options"     => $rule["options"]
+                                                            "flags"         => $rule["flags"],
+                                                            "options"       => $rule["options"]
                                                         ));
 
             if ($validation === null) {
@@ -439,7 +457,7 @@ class Validator
         if (strpos($value, Constant::DISK_PATH) === 0) {
             $res = false;
         } else {
-            $res = !self::checkSpecialChars($value) && !preg_match('/[^A-Za-z0-9.\/\-\\$]/', $value);
+            $res = !self::checkSpecialChars($value) && !preg_match('/[^A-Za-z0-9.\/\-_\\$]/', $value);
         }
         return (bool) $res;
     }
@@ -476,6 +494,25 @@ class Validator
     {
         return !(bool) self::invalidPassword($value, $rule);
     }
+
+    /**
+     * @param string $uuid
+     * @return bool
+     */
+    public static function isUUID(string $uuid) : bool
+    {
+        return is_string($uuid) && (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/', $uuid) === 1);
+    }
+
+    /**
+     * @param int $totp
+     * @return bool
+     */
+    public static function isTotp(int $totp) : bool
+    {
+        return ctype_digit($totp);
+    }
+
 
     /**
      * @param string $value

@@ -341,9 +341,9 @@ class Config implements Dumpable
      */
     private static function rawData(string $key, $remove = false) : ?array
     {
-        $res = null;
+        $res                                                                = null;
         if (isset(self::$config_data[$key])) {
-            $res = self::$config_data[$key];
+            $res                                                            = self::$config_data[$key];
             if ($remove) {
                 unset(self::$config_data[$key]);
             }

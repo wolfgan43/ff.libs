@@ -1226,7 +1226,7 @@ class Request implements Configurable, Dumpable
 
         }
 
-        return $req;
+        return array_filter($req);
     }
 
     /**

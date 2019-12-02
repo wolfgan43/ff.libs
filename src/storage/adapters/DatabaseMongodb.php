@@ -26,6 +26,7 @@
 
 namespace phpformsframework\libs\storage\adapters;
 
+use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\DatabaseAdapter;
 use phpformsframework\libs\storage\drivers\MongoDB as nosql;
 
@@ -282,16 +283,16 @@ class DatabaseMongodb extends DatabaseAdapter
     }
 
     /**
-     * @param $fields
-     * @param bool $flag
+     * @param array|null $fields
+     * @param string|null $action
      * @return array
      */
-    public function convertFields($fields, $flag = false)
+    public function convertFields(array $fields = null, string $action = null) : ?array
     {
         $result                                                                     = null;
         $res 																		= array();
         if (is_array($fields) && count($fields)) {
-            if ($flag == "where" && isset($fields['$or']) && is_array($fields['$or'])) {
+            if ($action == "where" && isset($fields['$or']) && is_array($fields['$or'])) {
                 $or                                                                 = $this->convertFields($fields['$or'], "where_OR");
                 if ($or) {
                     $res['$or'] = $or;
@@ -301,7 +302,7 @@ class DatabaseMongodb extends DatabaseAdapter
             unset($fields['$or']);
             foreach ($fields as $name => $value) {
                 if ($name == "*") {
-                    if ($flag == "select") {
+                    if ($action == "select") {
                         $res                                                        = null;
                         $result["select"]                                           = null;
                         break;
@@ -310,16 +311,16 @@ class DatabaseMongodb extends DatabaseAdapter
                     }
                 }
 
-                if ($flag == "select" && strpos($value, ".") > 0) {
+                if ($action == "select" && strpos($value, ".") > 0) {
                     $name 															= substr($value, 0, strpos($value, "."));
                     $value 															= true;
                 }
-                if ($flag == "select" && !is_array($value)) {
+                if ($action == "select" && !is_array($value)) {
                     $arrValue 														= explode(":", $value, 2);
                     $value 															= ($arrValue[0] ? $arrValue[0] : true);
                 }
 
-                if ($flag == "sort") {
+                if ($action == "sort") {
                     $res["sort"][$name] 												= (
                         $value == "DESC"
                                                                                         ? -1
@@ -338,9 +339,9 @@ class DatabaseMongodb extends DatabaseAdapter
                 }
 
                 if ($field == "special") {
-                    $res[$flag][$name]                                              = $value;
+                    $res[$action][$name]                                            = $value;
                 } else {
-                    switch ($flag) {
+                    switch ($action) {
                         case "select":
                             $res["select"][$field["name"]] 						    = !empty($field["value"]);
                             break;
@@ -416,18 +417,18 @@ class DatabaseMongodb extends DatabaseAdapter
                             $res[][$field["name"]]                                  = $this->parserWhereField($field);
                             break;
                         default:
+                            Error::register("convertField Action not Managed", static::ERROR_BUCKET);
                     }
                 }
             }
 
             if (is_array($res)) {
                 $result                                                             = $res;
-                switch ($flag) {
+                switch ($action) {
                     case "select":
                         if ($result["select"] != "*" && !$this->rawdata) {
-                            $key_name                                               = $this->getFieldAlias($this->key_name);
-                            if ($key_name && !$result["select"][$key_name]) {
-                                $result["select"][$key_name] = true;
+                            if ($this->key_primary && !$result["select"][$this->key_primary]) {
+                                $result["select"][$this->key_primary] = true;
                             }
                         }
                         break;
@@ -441,10 +442,11 @@ class DatabaseMongodb extends DatabaseAdapter
                     case "sort":
                         break;
                     default:
+                        Error::register("convertField Action not Managed", static::ERROR_BUCKET);
                 }
             }
         } else {
-            switch ($flag) {
+            switch ($action) {
                 case "select":
                     $result["select"] = null;
                     break;
@@ -455,6 +457,7 @@ class DatabaseMongodb extends DatabaseAdapter
                     $result = false;
                     break;
                 default:
+                    Error::register("convertField Action not Managed", static::ERROR_BUCKET);
             }
         }
 

@@ -105,7 +105,7 @@ final class MailerTemplate extends Mailer
 
         if ($this->tpl_html_path) {
             if (is_dir(dirname($this->tpl_html_path) . "/images")) {
-                Filemanager::scan(dirname($this->tpl_html_path) . "/images", array("jpg", "png", "svg", "gif"), function ($image) {
+                Filemanager::scan(array(dirname($this->tpl_html_path) . "/images" => array("jpg", "png", "svg", "gif")), function ($image) {
                     $this->addImage($image);
                 });
             }

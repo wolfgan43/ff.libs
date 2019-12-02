@@ -299,7 +299,6 @@ abstract class DatabaseDriver
                     ? $this->toSqlEscape((new Data($value, $type))->getValue($type, $this->locale))
                     : Data::getEmpty($type, $this->locale)
                 );
-                // no break
             default:
                 if ($enclose) {
                     $value = "'" . $value . "'";

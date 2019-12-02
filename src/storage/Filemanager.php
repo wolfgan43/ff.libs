@@ -33,6 +33,10 @@ use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Request;
 
+/**
+ * Class Filemanager
+ * @package phpformsframework\libs\storage
+ */
 class Filemanager implements Dumpable
 {
     const NAME_SPACE                                                    = __NAMESPACE__ . '\\adapters\\';
@@ -81,15 +85,33 @@ class Filemanager implements Dumpable
         );
     }
 
-    public static function fappend($content, $file)
+    /**
+     * @param string $content
+     * @param string $file
+     * @return bool
+     */
+    public static function fappend(string $content, string $file) : bool
     {
         return self::fwrite($content, $file, "a");
     }
-    public static function fsave($content, $file)
+
+    /**
+     * @param string $content
+     * @param string $file
+     * @return bool
+     */
+    public static function fsave(string $content, string $file) : bool
     {
         return self::fwrite($content, $file);
     }
-    private static function fwrite($data, $file, $mode = "w")
+
+    /**
+     * @param string $data
+     * @param string $file
+     * @param string $mode
+     * @return bool
+     */
+    private static function fwrite(string $data, string $file, string $mode = "w") : bool
     {
         $success = false;
         if ($data && $file) {
@@ -152,18 +174,18 @@ class Filemanager implements Dumpable
      * @param string $destination
      * @return bool
      */
-    public static function xcopy(string $source, string $destination) : bool
+    public static function xCopy(string $source, string $destination) : bool
     {
         $res                                                            = false;
-        $ftp                                                            = self::ftp_xconnect();
+        $ftp                                                            = self::ftpConnect();
 
         if ($ftp) {
-            $res                                                        = self::ftp_copy($ftp["conn"], $ftp["path"], $source, $destination, Constant::DISK_PATH);
+            $res                                                        = self::ftpCopy($ftp["conn"], $ftp["path"], $source, $destination, Constant::DISK_PATH);
             @ftp_close($ftp["conn"]);
         }
 
         if (!$res) {
-            self::full_copy(Constant::DISK_PATH . $source, Constant::DISK_PATH . $destination);
+            self::fullCopy(Constant::DISK_PATH . $source, Constant::DISK_PATH . $destination);
         }
         return $res;
     }
@@ -172,18 +194,18 @@ class Filemanager implements Dumpable
      * @param string $path
      * @return bool
      */
-    public static function xpurge_dir(string $path) : bool
+    public static function xPurgeDir(string $path) : bool
     {
         $res                                                            = false;
 
-        $ftp                                                            = self::ftp_xconnect();
+        $ftp                                                            = self::ftpConnect();
         if ($ftp) {
-            $res                                                        = self::ftp_purge_dir($ftp["conn"], $ftp["path"], $path, Constant::DISK_PATH);
+            $res                                                        = self::ftpPurgeDir($ftp["conn"], $ftp["path"], $path, Constant::DISK_PATH);
             @ftp_close($ftp["conn"]);
         }
 
         if (!$res) {
-            $res                                                        = self::purge_dir(Constant::DISK_PATH . $path, $path);
+            $res                                                        = self::purgeDir(Constant::DISK_PATH . $path, $path);
         }
 
         return $res;
@@ -192,7 +214,7 @@ class Filemanager implements Dumpable
     /**
      * @return array|null
      */
-    private static function ftp_xconnect() : ?array
+    private static function ftpConnect() : ?array
     {
         $res                                                            = null;
         if (Kernel::$Environment::FTP_USERNAME && Kernel::$Environment::FTP_SECRET) {
@@ -238,7 +260,15 @@ class Filemanager implements Dumpable
         return $res;
     }
 
-    private static function ftp_copy($conn_id, $ftp_disk_path, $source, $dest, $local_disk_path = null)
+    /**
+     * @param resource $conn_id
+     * @param string $ftp_disk_path
+     * @param string $source
+     * @param string $dest
+     * @param string|null $local_disk_path
+     * @return bool
+     */
+    private static function ftpCopy($conn_id, string $ftp_disk_path, string $source, string $dest, string $local_disk_path = null) : bool
     {
         $absolute_path = dirname($ftp_disk_path . $dest);
 
@@ -285,7 +315,14 @@ class Filemanager implements Dumpable
         return $res;
     }
 
-    private static function ftp_purge_dir($conn_id, $ftp_disk_path, $relative_path, $local_disk_path = null)
+    /**
+     * @param resource $conn_id
+     * @param string $ftp_disk_path
+     * @param string $relative_path
+     * @param string|null $local_disk_path
+     * @return bool
+     */
+    private static function ftpPurgeDir($conn_id, string $ftp_disk_path, string $relative_path, string $local_disk_path = null) : bool
     {
         $absolute_path = $ftp_disk_path . $relative_path;
 
@@ -301,7 +338,7 @@ class Filemanager implements Dumpable
                             $real_file = $file;
                         }
                         if (@ftp_chdir($conn_id, $file)) {
-                            $res = ($res && self::ftp_purge_dir($conn_id, $ftp_disk_path, $real_file, $local_disk_path));
+                            $res = ($res && self::ftpPurgeDir($conn_id, $ftp_disk_path, $real_file, $local_disk_path));
                             @ftp_rmdir($conn_id, $file);
                             if ($local_disk_path !== null) {
                                 @rmdir($local_disk_path . $real_file);
@@ -311,9 +348,7 @@ class Filemanager implements Dumpable
                                 if ($local_disk_path === null) {
                                     $res = false;
                                 } else {
-                                    if (!@unlink($local_disk_path . $real_file)) {
-                                        $res = false;
-                                    }
+                                    $res = @unlink($local_disk_path . $real_file);
                                 }
                             }
                         }
@@ -325,9 +360,7 @@ class Filemanager implements Dumpable
                 if ($local_disk_path === null) {
                     $res = false;
                 } else {
-                    if (!@rmdir($local_disk_path . $relative_path)) {
-                        $res = false;
-                    }
+                    $res = @rmdir($local_disk_path . $relative_path);
                 }
             }
         } else {
@@ -335,21 +368,21 @@ class Filemanager implements Dumpable
                 if ($local_disk_path === null) {
                     $res = false;
                 } else {
-                    if (!@unlink($local_disk_path . $relative_path)) {
-                        $res = false;
-                    }
+                    $res = @unlink($local_disk_path . $relative_path);
                 }
             }
         }
         return $res;
     }
 
-    private static function full_copy($source, $target, $delete_source = false)
+    /**
+     * @param string $source
+     * @param string $target
+     * @param bool $delete_source
+     */
+    private static function fullCopy(string $source, string $target, bool $delete_source = false) : void
     {
-        if (!$source || !$target || $source == Constant::UPLOAD_DISK_PATH || $target == Constant::UPLOAD_DISK_PATH || $source == $target) {
-            return null;
-        }
-        if (file_exists($source) && is_dir($source)) {
+        if ($source && $target && $source != Constant::UPLOAD_DISK_PATH && $target != Constant::UPLOAD_DISK_PATH && $source != $target && file_exists($source) && is_dir($source)) {
             $disable_rmdir = false;
 
             @mkdir($target, 0777, true);
@@ -364,7 +397,7 @@ class Filemanager implements Dumpable
                     continue;
                 }
                 if (is_dir($source . '/' . $entry)) {
-                    self::full_copy($source . '/' . $entry, $target . '/' . $entry, $delete_source);
+                    self::fullCopy($source . '/' . $entry, $target . '/' . $entry, $delete_source);
                     continue;
                 }
 
@@ -390,31 +423,40 @@ class Filemanager implements Dumpable
         }
     }
 
-    private static function purge_dir($absolute_path, $relative_path, $exclude_dir = false)
+    /**
+     * @param string $absolute_path
+     * @param string $relative_path
+     * @param bool $exclude_dir
+     * @return bool
+     */
+    private static function purgeDir(string $absolute_path, string $relative_path, bool $exclude_dir = false) : bool
     {
+        $res = true;
         if (file_exists($absolute_path) && is_dir($absolute_path)) {
             $handle = opendir($absolute_path);
             if ($handle !== false) {
                 while (false !== ($file = readdir($handle))) {
                     if ($file != "." && $file != "..") {
                         if (is_dir($absolute_path . "/" . $file)) {
-                            self::purge_dir($absolute_path . "/" . $file, $relative_path . "/" . $file);
+                            $res = ($res && self::purgeDir($absolute_path . "/" . $file, $relative_path . "/" . $file));
                         } else {
                             if (is_file($absolute_path . "/" . $file)) {
-                                @unlink($absolute_path . "/" . $file);
+                                $res = @unlink($absolute_path . "/" . $file);
                             }
                         }
                     }
                 }
                 if (!$exclude_dir) {
-                    @rmdir($absolute_path);
+                    $res = @rmdir($absolute_path);
                 }
             }
         } else {
             if (file_exists($absolute_path) && is_file($absolute_path)) {
-                @unlink($absolute_path);
+                $res = @unlink($absolute_path);
             }
         }
+
+        return $res;
     }
 
     /**
@@ -430,26 +472,21 @@ class Filemanager implements Dumpable
             self::$scanExclude = array_replace((array)self::$scanExclude, $patterns);
         }
     }
-    public static function scan($patterns, $what = null, $callback = null)
+
+    /**
+     * @param array $patterns
+     * @param callable|null $callback
+     * @return array|null
+     */
+    public static function scan(array $patterns, callable $callback = null) : ?array
     {
         Debug::stopWatch("filemanager/scan");
-        if (is_array($patterns) && !$callback) {
-            $callback               = $what;
-        }
-        self::$callback             = (
-            $callback && is_callable($callback)
-                                        ? $callback
-                                        : null
-                                    );
 
-        self::$patterns[] = $patterns;
+        self::$callback             = $callback;
+        self::$patterns[]           = $patterns;
 
-        if (is_array($patterns) && count($patterns)) {
-            foreach ($patterns as $pattern => $opt) {
-                self::scanRun($pattern, $opt);
-            }
-        } else {
-            self::scanRun($patterns, $what);
+        foreach ($patterns as $pattern => $opt) {
+            self::scanRun($pattern, $opt);
         }
 
         Debug::stopWatch("filemanager/scan");
@@ -457,7 +494,11 @@ class Filemanager implements Dumpable
         return self::$storage;
     }
 
-    private static function scanAddItem($file, $opt = null)
+    /**
+     * @param string $file
+     * @param array|null $opt
+     */
+    private static function scanAddItem(string $file, array $opt = null) : void
     {
         if (self::$callback) {
             $file_info = pathinfo($file);
@@ -489,7 +530,11 @@ class Filemanager implements Dumpable
         }
     }
 
-    private static function scanRun($pattern, $what = null)
+    /**
+     * @param string $pattern
+     * @param array|null $what
+     */
+    private static function scanRun(string $pattern, array $what = null) : void
     {
         if ($pattern) {
             $pattern = (
@@ -521,57 +566,72 @@ class Filemanager implements Dumpable
             switch ($flag) {
                 case Filemanager::SCAN_DIR:
                     if (self::$callback) {
-                        self::glob_dir_callback($pattern);
+                        self::globDirCallback($pattern);
                     } else {
-                        self::glob_dir($pattern);
+                        self::globDir($pattern);
                     }
                     break;
                 case Filemanager::SCAN_DIR_RECURSIVE:
-                    self::rglob_dir($pattern);
+                    self::globDirRecursive($pattern);
                     break;
                 case Filemanager::SCAN_ALL:
-                    self::glob($pattern, false);
+                    self::glob($pattern, ["dir" => true]);
                     break;
                 case Filemanager::SCAN_ALL_RECURSIVE:
-                    self::rglobfilter($pattern, false);
+                    self::globFilterRecursive($pattern, ["dir" => true]);
                     break;
                 case Filemanager::SCAN_FILE:
                     self::glob($pattern, $what);
                     break;
                 case Filemanager::SCAN_FILE_RECURSIVE:
-                    self::rglobfilter($pattern, $what);
+                    self::globFilterRecursive($pattern, $what);
                     break;
                 case null:
-                    self::rglob($pattern);
+                    self::globRecursive($pattern);
                     break;
                 default:
                     if (isset($what["filter"])) {
                         $what["filter"] = array_fill_keys($what["filter"], true);
                     }
-                    self::rglobfilter($pattern, $what);
+                    self::globFilterRecursive($pattern, $what);
             }
         }
     }
 
-    private static function glob_dir($pattern)
+    /**
+     * @param string $pattern
+     */
+    private static function globDir(string $pattern) : void
     {
         self::$storage["rawdata"] = glob($pattern, GLOB_ONLYDIR);
     }
-    private static function glob_dir_callback($pattern)
+
+    /**
+     * @param string $pattern
+     */
+    private static function globDirCallback(string $pattern) : void
     {
         foreach (glob($pattern, GLOB_ONLYDIR) as $file) {
             self::scanAddItem($file);
-        }
-    }
-    private static function rglob_dir($pattern)
-    {
-        foreach (glob($pattern, GLOB_ONLYDIR) as $file) {
-            self::scanAddItem($file);
-            self::rglob_dir($file . '/*');
         }
     }
 
-    private static function glob($pattern, $opt = null)
+    /**
+     * @param string $pattern
+     */
+    private static function globDirRecursive(string $pattern) : void
+    {
+        foreach (glob($pattern, GLOB_ONLYDIR) as $file) {
+            self::scanAddItem($file);
+            self::globDirRecursive($file . '/*');
+        }
+    }
+
+    /**
+     * @param string $pattern
+     * @param array|null $opt
+     */
+    private static function glob(string $pattern, array $opt = null) : void
     {
         $flags = null;
         $limit = null;
@@ -582,23 +642,31 @@ class Filemanager implements Dumpable
         }
 
         foreach (glob($pattern . $limit, $flags) as $file) {
-            if ($opt === false || is_file($file)) {
+            if (!empty($opt["dir"]) || is_file($file)) {
                 self::scanAddItem($file, $opt);
             }
         }
     }
-    private static function rglob($pattern)
+
+    /**
+     * @param string $pattern
+     */
+    private static function globRecursive(string $pattern) : void
     {
         foreach (glob($pattern) as $file) {
             if (is_file($file)) {
                 self::scanAddItem($file);
             } else {
-                self::rglob($file . '/*');
+                self::globRecursive($file . '/*');
             }
         }
     }
 
-    private static function rglobfilter($pattern, $opt = null)
+    /**
+     * @param string $pattern
+     * @param array|null $opt
+     */
+    private static function globFilterRecursive(string $pattern, array $opt = null) : void
     {
         $final_dir = basename(dirname($pattern)); //todo:: da togliere
         if (isset(self::$scanExclude[$final_dir])) {
@@ -608,15 +676,19 @@ class Filemanager implements Dumpable
             if (is_file($file)) {
                 self::scanAddItem($file, $opt);
             } else {
-                if ($opt === false) {
+                if (!empty($opt["dir"])) {
                     self::scanAddItem($file);
                 }
-                self::rglobfilter($file . '/*', $opt);
+                self::globFilterRecursive($file . '/*', $opt);
             }
         }
     }
 
-    private static function setStorage($file_info, $opt)
+    /**
+     * @param array $file_info
+     * @param array $opt
+     */
+    private static function setStorage(array $file_info, array $opt) : void
     {
         $file                                           = $file_info["dirname"] . "/" . $file_info["basename"];
         $type                                           = (
@@ -652,9 +724,9 @@ class Filemanager implements Dumpable
      */
     public static function delete(string $filepath) : bool
     {
-        $result = false;
+        $result                                         = false;
         if (file_exists($filepath)) {
-            $result = unlink($filepath);
+            $result                                     = @unlink($filepath);
         }
         return $result;
     }
@@ -667,5 +739,149 @@ class Filemanager implements Dumpable
     public static function getMimeType(string $file, string $default = null) : string
     {
         return Media::getMimeByFilename($file, $default);
+    }
+
+    /**
+     * @param string $url
+     * @param string $method
+     * @param int $timeout
+     * @param bool $ssl_verify
+     * @param string|null $user_agent
+     * @param array|null $cookie
+     * @param string|null $username
+     * @param string|null $password
+     * @return string
+     */
+    public static function fileGetContent(string $url, string $method = "POST", int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null) : string
+    {
+        $context                            = self::streamContext($url, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password);
+
+        return self::loadFile($url, $context);
+    }
+
+    /**
+     * @param string $url
+     * @param string $method
+     * @param int $timeout
+     * @param bool $ssl_verify
+     * @param string|null $user_agent
+     * @param array|null $cookie
+     * @param string|null $username
+     * @param string|null $password
+     * @return array
+     */
+    public static function fileGetContentWithHeaders(string $url, string $method = "POST", int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null) : array
+    {
+        $context                            = self::streamContext($url, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password);
+        $content                            = self::loadFile($url, $context, $headers);
+
+        return array(
+            "headers" => self::parseResponseHeaders($headers),
+            "content" => $content
+        );
+    }
+
+    /**
+     * @param array $headers
+     * @return array
+     */
+    private static function parseResponseHeaders(array $headers) : array
+    {
+        $head                               = array();
+        foreach ($headers as $k=>$v) {
+            $t                              = explode(':', $v, 2);
+            if (isset($t[1])) {
+                $head[trim($t[0])]          = trim($t[1]);
+            } else {
+                $head[]                     = $v;
+                if (preg_match("#HTTP/[0-9\.]+\s+([0-9]+)#", $v, $out)) {
+                    $head['response_code']  = intval($out[1]);
+                }
+            }
+        }
+
+        return $head;
+    }
+
+    /**
+     * @param string $path
+     * @param resource $context
+     * @param array|null $headers
+     * @return string
+     */
+    private static function loadFile(string $path, $context = null, array &$headers = null) : string
+    {
+        $content                            = file_get_contents($path, false, $context);
+        if ($content === false) {
+            Error::register("File inaccessible: " . ($path ? $path : "empty"));
+        }
+        if (isset($http_response_header) && isset($headers)) {
+            $headers                        = $http_response_header;
+        }
+
+
+        return $content;
+    }
+
+    /**
+     * @param string $url
+     * @param string $method
+     * @param int $timeout
+     * @param bool $ssl_verify
+     * @param string|null $user_agent
+     * @param array|null $cookie
+     * @param string|null $username
+     * @param string|null $password
+     * @return resource
+     */
+    private static function streamContext(string &$url, string $method = "POST", int $timeout = 60, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null)
+    {
+        if (!$username) {
+            $username                       = Kernel::$Environment::HTTP_AUTH_USERNAME;
+        }
+        if (!$password) {
+            $password                       = Kernel::$Environment::HTTP_AUTH_SECRET;
+        }
+        if (!$method) {
+            $method                         = "POST";
+        }
+
+        $headers                            = array();
+        if ($method == "POST") {
+            $headers[]                      = "Content-type: application/x-www-form-urlencoded";
+        }
+        if (strpos($url, Request::hostname()) !== false
+            && $username) {
+            $headers[]                      = "Authorization: Basic " . base64_encode($username . ":" . $password);
+        }
+
+        if ($cookie) {
+            $headers[]                      = "Cookie: " . http_build_query($cookie, '', '; ');
+        }
+
+        $opts = array(
+            'ssl'                           => array(
+                "verify_peer" 		        => $ssl_verify,
+                "verify_peer_name" 	        => $ssl_verify
+            ),
+            'http'                          => array(
+                'method'  			        => $method,
+                'timeout'  			        => $timeout
+            )
+        );
+        if ($user_agent) {
+            $opts['http']['user_agent']     = $user_agent;
+        }
+        if (count($headers)) {
+            $opts['http']['header']         = implode("\r\n", $headers);
+        }
+
+        if (strpos($url, "?") !== false && $method == "POST") {
+            $query                          = explode("?", $url, 2);
+            $url                            = $query[0];
+            $opts["http"]["content"]        = $query[1];
+        }
+
+        return stream_context_create($opts);
     }
 }

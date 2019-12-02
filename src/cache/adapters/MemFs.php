@@ -89,7 +89,7 @@ class MemFs extends MemAdapter
     public function del($name, $bucket = null)
     {
         $this->getKey("del", $bucket, $name);
-        Filemanager::xpurge_dir(
+        Filemanager::xPurgeDir(
             self::getCacheDiskPath()
             . "/" . $bucket
             . "/" . $name
@@ -101,7 +101,7 @@ class MemFs extends MemAdapter
     public function clear($bucket = null)
     {
         $this->getKey("clear", $bucket);
-        Filemanager::xpurge_dir(
+        Filemanager::xPurgeDir(
             self::getCacheDiskPath()
             . "/" . $bucket
         );

@@ -46,7 +46,6 @@ class OrmModel extends Mappable
     protected $relationship                                                                 = null;
     protected $indexes                                                                      = null;
     protected $tables                                                                       = null;
-    protected $alias                                                                        = null;
 
     /**
      * OrmModel constructor.
@@ -57,8 +56,11 @@ class OrmModel extends Mappable
     {
         parent::__construct($map_name);
 
-        if ($mainTable) {
-            $this->main_table = $mainTable;
+        if ($main_table) {
+            if (!isset($this->tables[$main_table])) {
+                Error::register("MainTable '" . $main_table . "' not found in " . $map_name);
+            }
+            $this->main_table = $main_table;
         }
         $this->setAdapters($databaseAdapters);
     }
@@ -69,9 +71,8 @@ class OrmModel extends Mappable
      */
     public function getStruct($table_name)
     {
-        $res                                                                                = array(
-                                                                                                "mainTable"   => $this->main_table
-                                                                                            );
+        $res                                                                                = array();
+        $res["mainTable"]                                                                   = $this->main_table;
 
         $res["table"]                                                                       = (
             isset($this->tables[$table_name])

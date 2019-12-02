@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\storage\adapters;
 
+use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\DatabaseAdapter;
 use phpformsframework\libs\storage\drivers\MySqli as sql;
 
@@ -385,11 +386,11 @@ class DatabaseMysqli extends DatabaseAdapter
     }
 
     /**
-     * @param $fields
-     * @param bool $action
+     * @param array|null $fields
+     * @param string|null $action
      * @return mixed
      */
-    protected function convertFields($fields, $action)
+    protected function convertFields(array $fields = null, string $action = null) : ?array
     {
         $result                                                                     = null;
         $res 																		= array();
@@ -479,6 +480,7 @@ class DatabaseMysqli extends DatabaseAdapter
                             $res[$name]         							        = self::parserWhereField($field);
                             break;
                         default:
+                            Error::register("convertField Action not Managed", static::ERROR_BUCKET);
                     }
                 }
             }
@@ -488,9 +490,8 @@ class DatabaseMysqli extends DatabaseAdapter
                     case "select":
                         $result["select"]                                           = "`" . implode("`, `", $res) . "`";
                         if ($result["select"] != "*" && !$this->rawdata) {
-                            $key_name                                               = $this->getFieldAlias($this->key_name);
-                            if ($key_name && !isset($res[$key_name])) {
-                                $result["select"] .= ", `" . $key_name . "`";
+                            if ($this->key_primary && !isset($res[$this->key_primary])) {
+                                $result["select"] .= ", `" . $this->key_primary . "`";
                             }
                         }
                         break;
@@ -511,6 +512,7 @@ class DatabaseMysqli extends DatabaseAdapter
                         $result["sort"]												= implode(", ", $res);
                         break;
                     default:
+                        Error::register("convertField Action not Managed", static::ERROR_BUCKET);
                 }
             }
         } else {
@@ -525,6 +527,8 @@ class DatabaseMysqli extends DatabaseAdapter
                     $result = false;
                     break;
                 default:
+                    Error::register("convertField Action not Managed", static::ERROR_BUCKET);
+
             }
         }
 

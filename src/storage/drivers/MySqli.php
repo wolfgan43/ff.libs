@@ -679,4 +679,15 @@ class MySqli extends DatabaseDriver
     {
         return $keys;
     }
+
+    /**
+     * @param string $value
+     * @param string|null $type
+     * @param bool $enclose
+     * @return string|null
+     */
+    public function toSqlString(string $value, string $type = null, bool $enclose = true): ?string
+    {
+        return parent::toSqlString($this->toSqlEscape($value), $type, $enclose);
+    }
 }

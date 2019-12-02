@@ -36,6 +36,10 @@ use phpformsframework\libs\tpl\Gridsystem;
 use phpformsframework\libs\security\Validator;
 use Exception;
 
+/**
+ * Class DatabaseAdapter
+ * @package phpformsframework\libs\storage
+ */
 abstract class DatabaseAdapter
 {
     protected const ERROR_BUCKET        = "database";
@@ -91,11 +95,12 @@ abstract class DatabaseAdapter
     protected $key_rel_prefix           = null;
     protected $key_rel_suffix           = null;
     protected $key_primary              = null;
+
+    protected $main_table    			= null;
     protected $struct					= null;
     protected $relationship			    = null;
     protected $indexes					= null;
     protected $table                    = null;
-    protected $alias                    = null;
 
     private $select                     = null;
     private $insert                     = null;
@@ -112,8 +117,15 @@ abstract class DatabaseAdapter
      */
     protected $driver                   = null;
 
+
     abstract protected function getDriver();
-    abstract protected function convertFields($fields, $action);
+
+    /**
+     * @param array|null $fields
+     * @param string|null $action
+     * @return array|null
+     */
+    abstract protected function convertFields(array $fields = null, string $action = null) : ?array;
 
     /**
      * @param array $query
@@ -173,11 +185,10 @@ abstract class DatabaseAdapter
      */
     public function __construct(string $main_table = null, array $table = null, array $struct = null, array $indexes = null, array $relationship = null, string $key_primary = null, bool $exts = false, bool $rawdata = false)
     {
-        $this->connection               = $connection;
+        $this->main_table               = $main_table;
         $this->struct                   = $struct;
         $this->relationship             = $relationship;
         $this->indexes                  = $indexes;
-        $this->alias                    = $alias;
         $this->exts                     = $exts;
         $this->rawdata                  = $rawdata;
         $this->setTable($table);
@@ -374,7 +385,6 @@ abstract class DatabaseAdapter
 
                     if ($db) {
                         $extsData                                   = array();
-
                         if ($this->exts && is_array($db["fields"]) && count($db["fields"])) {
                             foreach ($db["fields"] as $name) {
                                 if ($name == $query["key"]) {
@@ -385,8 +395,6 @@ abstract class DatabaseAdapter
                                     $extsData[$name]                = null;
                                 } elseif (isset($this->relationship[$name])) {
                                     $extsData[$name]                = null;
-                                } elseif (isset($this->alias[$name]) && isset($this->relationship[$this->alias[$name]])) {
-                                    $extsData[$name]                = $this->alias[$name];
                                 }
                             }
                         }
@@ -643,26 +651,6 @@ abstract class DatabaseAdapter
         return $this->processCmd($query);
     }
 
-
-    /**
-     * @param string $field
-     * @return string|null
-     */
-    protected function getFieldAlias(string $field) : ?string
-    {
-        $res                                                        = null;
-        if (is_array($this->alias) && count($this->alias)) {
-            $alias_rev                                              = array_flip($this->alias);
-
-            if (isset($alias_rev[$field])) {
-                $res                                                = $alias_rev[$field];
-            }
-        } elseif ($this->struct === null || isset($this->struct[$field])) {
-            $res                                                    = $field;
-        }
-
-        return $res;
-    }
 
     /**
      * @param string $key

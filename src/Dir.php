@@ -25,8 +25,6 @@
  */
 namespace phpformsframework\libs;
 
-use phpformsframework\libs\dto\DataResponse;
-
 /**
  * Class Dir
  * @package phpformsframework\libs

@@ -170,9 +170,9 @@ class Orm implements Dumpable
         self::clearResult($ormModel);
         $counter                                                                            = null;
         $single_service                                                                     = self::resolveFieldsByScopes(array(
-                                                                                                "select"    => $fields
-                                                                                                , "where"   => $where
-                                                                                                , "sort"    => $sort
+                                                                                                "select"    => $fields,
+                                                                                                "where"     => $where,
+                                                                                                "sort"      => $sort
                                                                                             ));
 
         if ($single_service) {
@@ -200,7 +200,7 @@ class Orm implements Dumpable
 
                                 if (count($where_unique)) {
                                     self::$data["sub"][$controller][$table]["runned"]       = true;
-                                    if (self::getData($controller, $table) === null && $params["where"]) {
+                                    if (self::getData($params, $controller, $table) === null && $params["where"]) {
                                         return self::getResult($result_raw_data);
                                     }
 

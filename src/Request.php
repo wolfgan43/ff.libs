@@ -311,15 +311,6 @@ class Request implements Configurable, Dumpable
             $path_info                                          = dirname($path_info);
         } while ($path_info != DIRECTORY_SEPARATOR);
 
-        $page["path_info"] = (
-            isset($page["strip_path"]) && strpos(self::$path_info, $page["strip_path"]) === 0
-            ? substr(self::$path_info, strlen($page["strip_path"]))
-            : self::$path_info
-        );
-        if (!$page["path_info"]) {
-            $page["path_info"] = DIRECTORY_SEPARATOR;
-        }
-
         return $router;
     }
     /**
@@ -330,8 +321,16 @@ class Request implements Configurable, Dumpable
         $page                                                   = array();
         $page_path                                              = self::findEnvByPathInfo(self::$orig_path_info);
         $router                                                 = self::findPageByRouter($page_path, $page);
-
-
+        //@todo da verificare se e corretto il self::$path_info e la differenza tra self::$path_info
+        //@todo e se ha senso la diff tra self::$orig_path_info e self::$path_info
+        $page["path_info"] = (
+            isset($page["strip_path"]) && strpos(self::$path_info, $page["strip_path"]) === 0
+            ? substr(self::$path_info, strlen($page["strip_path"]))
+            : self::$path_info
+        );
+        if (!$page["path_info"]) {
+            $page["path_info"] = DIRECTORY_SEPARATOR;
+        }
 
         if (is_array(self::$patterns) && count(self::$patterns)) {
             $matches = null;

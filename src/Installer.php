@@ -52,8 +52,8 @@ class Installer
                         self::addRules($class_name::loadConfigRules($configRules));
                     }
                 }
-            } catch (Exception $exception) {
-                Error::register($exception->getMessage(), static::ERROR_BUCKET);
+            } catch (Exception $e) {
+                Error::register($e->getMessage(), static::ERROR_BUCKET);
             }
         }
     }

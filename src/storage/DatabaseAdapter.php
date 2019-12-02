@@ -160,7 +160,18 @@ abstract class DatabaseAdapter
      */
     abstract public function toSql($mixed, string $type = null, bool $enclose = true) : ?string;
 
-    public function __construct($connection = null, $table = null, $struct= null, $relationship = null, $indexes = null, $alias = null, $exts = false, $rawdata = false)
+    /**
+     * DatabaseAdapter constructor.
+     * @param string|null $main_table
+     * @param array|null $table
+     * @param array|null $struct
+     * @param array|null $relationship
+     * @param array|null $indexes
+     * @param string|null $key_primary
+     * @param bool $exts
+     * @param bool $rawdata
+     */
+    public function __construct(string $main_table = null, array $table = null, array $struct = null, array $indexes = null, array $relationship = null, string $key_primary = null, bool $exts = false, bool $rawdata = false)
     {
         $this->connection               = $connection;
         $this->struct                   = $struct;
@@ -171,7 +182,7 @@ abstract class DatabaseAdapter
         $this->rawdata                  = $rawdata;
         $this->setTable($table);
 
-        $this->key_primary              = array_search(self::FTYPE_PRIMARY, $this->struct);
+        $this->key_primary              = $key_primary;
     }
 
     /**

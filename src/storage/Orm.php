@@ -132,21 +132,26 @@ class Orm implements Dumpable
         return $res;
     }
 
-    private static function checkmiowhere($keys, $type, $service, $table, $field)
+    /**
+     * @param array $ref
+     * @param array $keys
+     * @param string $field
+     */
+    private static function whereBuilder(array &$ref, array $keys, string $field) : void
     {
-        if (!isset(self::$data[$type][$service][$table]["where"])) {
-            self::$data[$type][$service][$table]["where"] = array();
+        if (!isset($ref["where"])) {
+            $ref["where"]                                                                   = array();
         }
-        if (!isset(self::$data[$type][$service][$table]["where"][$field])) {
-            self::$data[$type][$service][$table]["where"][$field]   = (
+        if (!isset($ref["where"][$field])) {
+            $ref["where"][$field]                                                           = (
                 count($keys) == 1
                 ? $keys[0]
                 : $keys
             );
-        } elseif (is_array(self::$data[$type][$service][$table]["where"][$field])) {
-            self::$data[$type][$service][$table]["where"][$field]    = self::$data[$type][$service][$table]["where"][$field] + $keys;
+        } elseif (is_array($ref["where"][$field])) {
+            $ref["where"][$field]                                                           = $ref["where"][$field] + $keys;
         } else {
-            self::$data[$type][$service][$table]["where"][$field]    = array(self::$data[$type][$service][$table]["where"][$field]) + $keys;
+            $ref["where"][$field]                                                           = array($ref["where"][$field]) + $keys;
         }
     }
 
@@ -176,6 +181,9 @@ class Orm implements Dumpable
             if (isset(self::$data["sub"]) && is_array(self::$data["sub"]) && count(self::$data["sub"])) {
                 foreach (self::$data["sub"] as $controller => $tables) {
                     foreach ($tables as $table => $params) {
+                        /**
+                         * Run KeyUnique in Sub query
+                         */
                         $keys_unique                                                        = (
                             isset($params["def"]["indexes"]) && is_array($params["def"]["indexes"])
                                                                                                 ? array_keys($params["def"]["indexes"], "unique")
@@ -196,7 +204,7 @@ class Orm implements Dumpable
                                         return self::getResult($result_raw_data);
                                     }
 
-                                    unset(self::$data["exts"]);
+                                    //unset(self::$data["exts"]);
                                 }
                             }
                         }

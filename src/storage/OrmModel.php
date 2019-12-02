@@ -29,6 +29,10 @@ namespace phpformsframework\libs\storage;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Mappable;
 
+/**
+ * Class OrmModel
+ * @package phpformsframework\libs\storage
+ */
 class OrmModel extends Mappable
 {
     protected $bucket                                                                       = null;
@@ -37,14 +41,19 @@ class OrmModel extends Mappable
 
     protected $connectors                                                                   = array();
 
-    protected $adapters                                                                     = null;
+    protected $adapters                                                                     = array();
     protected $struct                                                                       = null;
     protected $relationship                                                                 = null;
     protected $indexes                                                                      = null;
     protected $tables                                                                       = null;
     protected $alias                                                                        = null;
 
-    public function __construct($map_name, $mainTable = null, $databaseAdapters = null)
+    /**
+     * OrmModel constructor.
+     * @param string $map_name
+     * @param string|null $main_table
+     */
+    public function __construct(string $map_name, string $main_table = null)
     {
         parent::__construct($map_name);
 
@@ -52,42 +61,6 @@ class OrmModel extends Mappable
             $this->main_table = $mainTable;
         }
         $this->setAdapters($databaseAdapters);
-    }
-
-    public function setAdapters($databaseAdapters = null)
-    {
-        if (is_array($databaseAdapters)) {
-            foreach ($databaseAdapters as $adapter => $connector) {
-                if (is_numeric($adapter) && strlen($connector)) {
-                    $adapter                                                                = $connector;
-                    $connector                                                              = null;
-                }
-
-                $this->adapters[$adapter]                                                   = (
-                    is_array($connector)
-                                                                                                ? $connector
-                                                                                                : $this->setConnector($adapter)
-                                                                                            );
-            }
-        } elseif ($databaseAdapters) {
-            $this->adapters[$databaseAdapters]                                              = $this->setConnector($databaseAdapters);
-        } else {
-            $this->adapters                                                                 = array_intersect_key($this->connectors, (array) $this->adapters);
-        }
-
-        return $this;
-    }
-
-    private function setConnector($adapter)
-    {
-        $res                                                                                = null;
-        if (isset($this->connectors[$adapter])) {
-            $res                                                                            = $this->connectors[$adapter];
-        } else {
-            Error::register("Adapter not found. The adapters available are: " . implode(", ", array_keys($this->connectors)), static::ERROR_BUCKET);
-        }
-
-        return $res;
     }
 
     /**
@@ -106,7 +79,7 @@ class OrmModel extends Mappable
                                                                                                 : null
                                                                                             );
         if (!isset($table["name"])) {
-            $table["name"]    = $table_name;
+            $table["name"]                                                                  = $table_name;
         }
         $res["struct"]                                                                      = (
             isset($this->struct[$table_name])
@@ -123,9 +96,9 @@ class OrmModel extends Mappable
                                                                                                 ? $this->relationship[$table_name]
                                                                                                 : null
                                                                                             );
-        $res["alias"]                                                                       = (
-            isset($this->alias[$table_name])
-                                                                                                ? $this->alias[$table_name]
+        $res["key_primary"]                                                                 = (
+            $res["struct"]
+                                                                                                ? (string) array_search(DatabaseAdapter::FTYPE_PRIMARY, $res["struct"])
                                                                                                 : null
                                                                                             );
         return $res;
@@ -136,12 +109,18 @@ class OrmModel extends Mappable
         return $this->main_table;
     }
 
-    public function getName()
+    /**
+     * @return string|null
+     */
+    public function getName() : ?string
     {
         return $this->type;
     }
 
-    public function getMainModel()
+    /**
+     * @return OrmModel
+     */
+    public function getMainModel() : self
     {
         return ($this->type == $this->bucket
             ? $this
@@ -174,12 +153,7 @@ class OrmModel extends Mappable
      */
     public function read($fields = null, $where = null, $sort = null, $limit = null)
     {
-        if (0 && !$where && !$sort && !$limit) {
-            $where                                                                          = $fields;
-            $fields                                                                         = null;
-        }
-
-        return Orm::read($where, $fields, $sort, $limit, $this);
+        return Orm::read($where, $fields, $sort, $limit, $offset, $this);
     }
     /**
      * @param null|array $fields
@@ -190,12 +164,7 @@ class OrmModel extends Mappable
      */
     public function readRawData($fields = null, $where = null, $sort = null, $limit = null)
     {
-        if (0 && !$where && !$sort && !$limit) {
-            $where                                                                          = $fields;
-            $fields                                                                         = null;
-        }
-
-        return Orm::readRawData($where, $fields, $sort, $limit, $this);
+        return Orm::readRawData($where, $fields, $sort, $limit, $offset, $this);
     }
 
     /**

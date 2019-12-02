@@ -28,6 +28,7 @@ namespace phpformsframework\libs\storage\drivers;
 use DOMDocument;
 use DOMNode;
 use Exception;
+use phpformsframework\libs\security\Validator;
 use function simplexml_load_string;
 use function libxml_use_internal_errors;
 
@@ -165,32 +166,29 @@ class Array2XML
         return preg_match($pattern, $tag, $matches) && $matches[0] == $tag;
     }
 
-    /*
+    /**
      * Convert xml string into array.
+     * @param string $xmlstring
+     * @return array|null
      */
-    public static function XML_TO_ARR($xmlstring)
+    public static function XML_TO_ARR(string $xmlstring) : ?array
     {
         libxml_use_internal_errors(true);
 
         $xmlstring = preg_replace("/\s+</", "<", $xmlstring);
         $xmlstring = preg_replace("/<!--.*?-->/ms", "", $xmlstring);
         $xml = simplexml_load_string($xmlstring, "SimpleXMLElement", LIBXML_NOCDATA);
-        if (is_array($xml) &&  array_key_exists("0", $xml)) {
+        if (!$xml || (is_array($xml) &&  array_key_exists("0", $xml))) {
             return null;
         }
-        if ($xml) {
-            $json = json_encode($xml);
 
-            $json_normalized = str_replace(
-                array('"true"', '"false"', '"null"', '[{}]'),
-                array('true', 'false', 'null', '[]'),
-                $json
-            );
+        $json = json_encode($xml);
+        $json_normalized = str_replace(
+            array('"true"', '"false"', '"null"', '[{}]'),
+            array('true', 'false', 'null', '[]'),
+            $json
+        );
 
-            $array = json_decode($json_normalized, true);
-        } else {
-            $array = $xml;
-        }
-        return $array;
+        return Validator::json2Array($json_normalized);
     }
 }

@@ -32,6 +32,7 @@ use phpformsframework\libs\Error;
 use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\Hook;
 use phpformsframework\libs\international\Translator;
+use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\tpl\ViewAdapter;
 use stdClass;
 
@@ -115,7 +116,7 @@ class ViewHtml implements ViewAdapter
             if ($root_element !== null) {
                 $this->root_element = $root_element;
             }
-            $this->DBlocks[$this->root_element] = Dir::loadFile($template_path);
+            $this->DBlocks[$this->root_element] = Filemanager::fileGetContent($template_path);
             if ($this->DBlocks[$this->root_element] !== false) {
                 $this->getDVars();
                 $nName = $this->nextDBlockName($this->root_element);
@@ -373,6 +374,7 @@ class ViewHtml implements ViewAdapter
      */
     public function assign($data, $value = null) : ViewAdapter
     {
+
         if (is_array($data)) {
             $this->ParsedBlocks             = array_replace($this->ParsedBlocks, $data);
         } else {

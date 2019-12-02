@@ -494,6 +494,9 @@ class Log
             $rule                                               = self::$rules[$name];
         } else {
             $rule                                               = self::$rules[self::TYPE_DEFAULT];
+            if ($name) {
+                $rule["bucket"]                                 = $name;
+            }
         }
         return $rule;
     }

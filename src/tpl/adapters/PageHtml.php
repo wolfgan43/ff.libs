@@ -37,6 +37,7 @@ use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\Response;
 use phpformsframework\libs\security\Validator;
+use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\storage\Media;
 use phpformsframework\libs\tpl\AssetsManager;
 use phpformsframework\libs\tpl\Gridsystem;
@@ -203,10 +204,10 @@ class PageHtml extends Mappable
                 $html                           = ob_get_contents();
                 ob_end_clean();
             } else {
-                $html                           = Dir::loadFile($string);
+                $html                           = Filemanager::fileGetContent($string);
             }
         } elseif (0 && Validator::is($string, "url")) {
-            $html                               = Dir::loadFile($string);
+            $html                               = Filemanager::fileGetContent($string);
         } else {
             $html                               = $string;
         }

@@ -31,9 +31,17 @@ use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\Error;
 
+/**
+ * Class Orm
+ * @package phpformsframework\libs\storage
+ */
 class Orm implements Dumpable
 {
     const ERROR_BUCKET                                                                      = "orm";
+
+    private const RESULT                                                                    = "result";
+    private const INDEX                                                                     = "index";
+    private const RAWDATA                                                                   = "rawdata";
 
     private static $singleton                                                               = array();
     private static $data                                                                    = array();
@@ -47,7 +55,7 @@ class Orm implements Dumpable
      * @param string $mainTable
      * @return OrmModel
      */
-    public static function getInstance($ormModel, $mainTable = null)
+    public static function getInstance(string $ormModel, string $mainTable = null) : OrmModel
     {
         return self::setSingleton($ormModel, $mainTable);
     }
@@ -60,20 +68,25 @@ class Orm implements Dumpable
         return self::$singleton;
     }
 
-    private static function setSingleton($ormModel, $mainTable = null)
+    /**
+     * @param string $ormModel
+     * @param string|null $mainTable
+     * @return OrmModel
+     */
+    private static function setSingleton(string $ormModel, string $mainTable = null) : OrmModel
     {
-        if (!isset(self::$singleton[$ormModel . $mainTable])) {
-            self::$singleton[$ormModel . $mainTable]                                        = new OrmModel($ormModel, $mainTable);
+        if (!isset(self::$singleton[$ormModel])) {
+            self::$singleton[$ormModel]                                        = new OrmModel($ormModel, $mainTable);
         }
 
-        return self::$singleton[$ormModel . $mainTable];
+        return self::$singleton[$ormModel];
     }
 
     /**
      * @param string $model
      * @return OrmModel
      */
-    private static function getModel($model = null)
+    private static function getModel(string $model = null) : OrmModel
     {
         return ($model
             ? self::setSingleton($model)
@@ -82,18 +95,19 @@ class Orm implements Dumpable
     }
 
     /**
-     * @param OrmModel $ormModel
      * @param null|array $where
      * @param null|array $fields
      * @param null|array $sort
-     * @param null|array $limit
-     * @return array|bool|null
+     * @param int $limit
+     * @param int|null $offset
+     * @param OrmModel|null $ormModel
+     * @return array|null
      */
-    public static function readRawData($where = null, $fields = null, $sort = null, $limit = null, $ormModel = null)
+    public static function readRawData(array $where = null, array $fields = null, array $sort = null, int $limit = null, int $offset = null, OrmModel $ormModel = null) : ?array
     {
         Debug::dumpCaller("Read RawData: " . print_r($fields, true) . " Where: " . print_r($where, true) . " Sort: " . print_r($sort, true) . " Limit: " . print_r($limit, true));
 
-        $res                                                                                = self::get($where, $fields, $sort, $limit, $ormModel, true);
+        $res                                                                                = self::get($where, $fields, $sort, $limit, $offset, $ormModel, true);
 
         if (Kernel::$Environment::DEBUG) {
             Log::debugging(array(
@@ -107,19 +121,20 @@ class Orm implements Dumpable
     }
 
     /**
-     * @param OrmModel $ormModel
      * @param null|array $where
      * @param null|array $fields
      * @param null|array $sort
-     * @param null|array $limit
-     * @return array|bool|null
+     * @param null|int $limit
+     * @param int|null $offset
+     * @param OrmModel|null $ormModel
+     * @return array|null
      */
-    public static function read($where = null, $fields = null, $sort = null, $limit = null, $ormModel = null)
+    public static function read(array $where = null, array $fields = null, array $sort = null, int $limit = null, int $offset = null, OrmModel $ormModel = null) : ?array
     {
         Debug::dumpCaller("Read RawData: " . print_r($fields, true) . " Where: " . print_r($where, true) . " Sort: " . print_r($sort, true) . " Limit: " . print_r($limit, true));
         Debug::stopWatch("orm/read");
 
-        $res                                                                                = self::get($where, $fields, $sort, $limit, $ormModel, false);
+        $res                                                                                = self::get($where, $fields, $sort, $limit, $offset, $ormModel, false);
 
         $exTime = Debug::stopWatch("orm/read");
         if (Kernel::$Environment::DEBUG) {
@@ -155,17 +170,17 @@ class Orm implements Dumpable
         }
     }
 
-
     /**
      * @param null|array $where
      * @param null|array $fields
      * @param null|array $sort
-     * @param null|array $limit
-     * @param OrmModel $ormModel
+     * @param int $limit
+     * @param int|null $offset
+     * @param OrmModel|null $ormModel
      * @param bool $result_raw_data
-     * @return array|bool|null
+     * @return array|null
      */
-    private static function get($where = null, $fields = null, $sort = null, $limit = null, $ormModel = null, $result_raw_data = false)
+    private static function get(array $where = null, array $fields = null, array $sort = null, int $limit = null, int $offset = null, OrmModel $ormModel = null, bool $result_raw_data = false) : ?array
     {
         self::clearResult($ormModel);
         $counter                                                                            = null;
@@ -174,9 +189,8 @@ class Orm implements Dumpable
                                                                                                 "where"     => $where,
                                                                                                 "sort"      => $sort
                                                                                             ));
-
         if ($single_service) {
-            self::getDataSingle(self::$services_by_data["last"], self::$services_by_data["last_table"], $limit);
+            self::getDataSingle(self::$services_by_data["last"], self::$services_by_data["last_table"], $limit, $offset);
         } else {
             if (isset(self::$data["sub"]) && is_array(self::$data["sub"]) && count(self::$data["sub"])) {
                 foreach (self::$data["sub"] as $controller => $tables) {
@@ -211,31 +225,48 @@ class Orm implements Dumpable
                     }
                 }
             }
-            if (isset(self::$data["main"]["where"])) {
-                self::$data["main"]["runned"]                                               = true;
-                if (self::getData(null, null, $limit) === null) {
-                    return false;
-                }
-            }
-
-            if (isset(self::$data["sub"]) && is_array(self::$data["sub"]) && count(self::$data["sub"])) {
-                foreach (self::$data["sub"] as $controller => $tables) {
-                    foreach ($tables as $table => $params) {
-                        if (!isset($params["runned"]) && self::getData($controller, $table, (isset($params["select"]) ? $limit : null)) === null && isset($params["where"])) {
-                            return self::getResult($result_raw_data);
-                        }
-                    }
-                }
-            }
-
-            if (!isset(self::$data["main"]["runned"]) && isset(self::$data["main"]["where"])) {
-                self::getData(null, null, $limit);       //try main table
-            }
+            $countRunner = 0;
+            while (self::throwRunner($limit, $offset) > 0) {
+                $countRunner++;
+            };
         }
 
         return self::getResult($result_raw_data);
     }
 
+    /**
+     * @param int|null $limit
+     * @param int|null $offset
+     * @return int
+     */
+    private static function throwRunner(int $limit = null, int $offset = null) : int
+    {
+        $counter = 0;
+
+        /**
+         * Run Main query if where isset
+         */
+        if (!isset(self::$data["main"]["runned"]) && isset(self::$data["main"]["where"]) && self::getData(self::$data["main"], self::$data["main"]["service"], self::$data["main"]["def"]["mainTable"], $limit, $offset)) {
+            self::$data["main"]["runned"]                                               = true;
+            $counter++;
+        }
+
+        /**
+         * Run Sub query if where isset
+         */
+        if (isset(self::$data["sub"]) && is_array(self::$data["sub"]) && count(self::$data["sub"])) {
+            foreach (self::$data["sub"] as $controller => $tables) {
+                foreach ($tables as $table => $params) {
+                    if (!isset($params["runned"]) && isset($params["where"]) && self::getData($params, $controller, $table)) {
+                        self::$data["sub"][$controller][$table]["runned"] = true;
+                        $counter++;
+                    }
+                }
+            }
+        }
+
+        return $counter;
+    }
     /**
      * @param string|null $controller
      * @param string|null $table
@@ -254,345 +285,196 @@ class Orm implements Dumpable
 
         return $data;
     }
-    /**
-     * @param null|string $controller
-     * @param null|string $table
-     * @param null|array $limit
-     * @return int|null
-     */
-    private static function getData(string $controller = null, string $table = null, array $limit = null) : ?int
-    {
-        $counter                                                                            = false;
-        $table_rel                                                                          = false;
-        $where                                                                              = null;
-        $sort                                                                               = null;
-
-        $data                                                                               = self::getCurrentData($controller, $table);
-        $where                                                                              = self::getCurrentWhere($data);
-
-        if (isset($data["sort"])) {
-            $sort                                                                           = self::getFields($data["sort"], $data["def"]["alias"]);
-        }
-        $table_main                                                                         = (
-            isset($data["def"]["relationship"][self::$data["main"]["def"]["mainTable"]])
-                                                                                                ? self::$data["main"]["def"]["mainTable"]
-                                                                                                : $data["def"]["mainTable"]
-                                                                                            );
-        if (isset($data["def"]["relationship"][$table_main]) && isset(self::$data["exts"])) {
-            $field_ext                                                                      = $data["def"]["relationship"][$table_main]["external"];
-            $field_key                                                                      = $data["def"]["relationship"][$table_main]["primary"];
-
-            if (isset($data["def"]["struct"][$field_ext])) {
-                $field_ext                                                                  = $data["def"]["relationship"][$table_main]["primary"];
-                $field_key                                                                  = $data["def"]["relationship"][$table_main]["external"];
-
-                $table_rel                                                                  = (
-                    isset(self::$data["exts"][$table]) && isset(self::$data["exts"][$table][$field_ext])
-                                                                                                ? $table
-                                                                                                : $table_main
-                                                                                            );
-            }
-
-            $ids                                                                            = (
-                isset(self::$data["exts"][$table_main][$field_ext]) && is_array(self::$data["exts"][$table_main][$field_ext])
-                                                                                                ? array_keys(self::$data["exts"][$table_main][$field_ext])
-                                                                                                : null
-                                                                                            );
-            if ($ids) {
-                $where[self::getFieldAlias($field_key, $data["def"]["alias"])]             = (
-                    count($ids) == 1
-                                                                                                ? $ids[0]
-                                                                                                : $ids
-                                                                                            );
-
-                self::$data["sub"][$controller][$table]["where"]                            = $where;
-            }
-        }
-
-        if ($where) {
-            $sub_ids                                                                        = null;
-            $indexes                                                                        = $data["def"]["indexes"];
-            $select                                                                         = self::getFields(
-                (
-                    isset($data["select"])
-                                                                                                    ? $data["select"]
-                                                                                                    : null
-                                                                                                ),
-                $data["def"]["alias"],
-                $indexes,
-                array_search(DatabaseAdapter::FTYPE_PRIMARY, $data["def"]["struct"])
-                                                                                            );
-            $ormModel                                                                       = self::getModel(
-                isset($data["service"])
-                                                                                                ? $data["service"]
-                                                                                                : $controller
-                                                                                            );
-            $regs                                                                           = $ormModel
-                                                                                                ->setStorage($data["def"], true, false)
-                                                                                                ->read(
-                                                                                                    (
-                                                                                                        $where === true
-                                                                                                    ? null
-                                                                                                    : $where
-                                                                                                ),
-                                                                                                    $select,
-                                                                                                    $sort,
-                                                                                                    $limit
-                                                                                            );
-
-            if (is_array($regs)) {
-                $field_key                                                                  = null;
-                if (isset($regs["rawdata"])) {
-                    self::$result                                                           = $regs["rawdata"];
-                    $regs["keys"]                                                           = array_keys($regs["rawdata"]);
-                }
-
-                if (isset($regs["exts"]) && is_array($regs["exts"])) {
-                    if (isset(self::$data["exts"]) && isset(self::$data["exts"][$data["def"]["mainTable"]])) {
-                        self::$data["exts"][$data["def"]["mainTable"]]                          = self::$data["exts"][$data["def"]["mainTable"]] + $regs["exts"];
-                    } else {
-                        self::$data["exts"][$data["def"]["mainTable"]]                          = $regs["exts"];
-                    }
-
-                    if (isset(self::$data["main"]["select"]) && isset($data["def"]["relationship"][$table_main]) /*&& !self::$data["main"]["where"]*/) {
-                        $field_ext                                                          = $data["def"]["relationship"][$table_main]["external"];
-                        $field_key                                                          = $data["def"]["relationship"][$table_main]["primary"];
-
-                        if ($field_key) {
-                            $ids                                                            = (
-                                isset($regs["exts"][$field_ext])
-                                                                                                ? array_keys($regs["exts"][$field_ext])
-                                                                                                : null
-                                                                                            );
-                            if ($ids) {
-                                self::$data["main"]["where"][$field_key]                    = (
-                                    count($ids) == 1
-                                                                                                ? $ids[0]
-                                                                                                : $ids
-                                                                                            );
-
-                                if (!isset(self::$data["main"]["runned"]) && self::$result) { //fix per il permalink. viene inserito il dato in tutti i nodi duplicand i valori
-                                    $sub_ids                                                = $ids;
-                                }
-                            } elseif ($regs === false) {
-                                self::$data["main"]["where"][$field_key]                    = "0";
-                            }
-                        }
-                    }
-                }
-
-
-                if (isset($regs["keys"]) && is_array($regs["keys"]) && count($regs["keys"])) {
-                    $field_ext                                                              = null;
-                    $counter                                                                = count($regs["keys"]);
-                    $table_name                                                             = $data["def"]["table"]["alias"];
-
-                    if (!$table_rel && isset($data["def"]["relationship"][$table_main])) {         //se è una maintable ma non anagraph reimposta l'external base es: doctors -> anagraph -> external
-                        $field_ext                                                          = $data["def"]["relationship"][$table_main]["external"];
-                    }
-
-                    foreach ($regs["keys"] as $i => $id) {
-                        $result                                                             = null;
-                        $keys                                                               = null;
-                        if (isset($data["select"]["*"])) {
-                            $result                                                         = (
-                                !$controller && !$table
-                                                                                                ? $regs["result"][$i][$table_name]
-                                                                                                : $regs["result"][$i]
-                                                                                            );
-                        } elseif (isset($data["select_is_empty"])) {
-                            $result                                                         = array();
-                        } else {
-                            $result                                                         = (
-                                $indexes
-                                                                                                ? array_intersect_key($regs["result"][$i], array_flip($data["select"]))
-                                                                                                : $regs["result"][$i]
-                                                                                            );
-                        }
-
-                        if ($result) {
-                            //triggera quando avviene la seguente casistica: anagraph --> anagraph_person dove anagraph_person.ID_anagraph = anagraph.ID
-                            if ($table_main && isset($data["def"]["relationship"][$table_main]) && $data["def"]["relationship"][$table_main]["external"]) {
-                                $field_ext                                                  = $data["def"]["relationship"][$table_main]["external"];
-
-                                if (isset($regs["exts"][$field_ext]) && isset($regs["exts"][$field_ext][$regs["result"][$i][$field_ext]])) {
-                                    $keys                                                   = array($regs["result"][$i][$field_ext]);
-                                    $table_rel                                              = null;
-                                }
-                            }
-
-                            if (!$keys && $field_ext) {
-                                $keys                                                       = (
-                                    $table_rel
-                                                                                                ? array_keys(self::$data["exts"][$table_rel][$field_ext])
-                                                                                                : self::$data["exts"][$table_main][$field_ext][$id]
-                                                                                            );
-                            }
-
-                            $ids                                                            = (
-                                $sub_ids
-                                                                                                ? $sub_ids
-                                                                                                : $keys
-                                                                                            );
-
-                            if (is_array($ids) && count($ids)) {
-                                foreach ($ids as $id_primary) {
-                                    $id_primary                                             = self::idsTraversing($id_primary, $id);
-
-                                    if ($table_rel) { //discende fino ad anagraph per fondere i risultati annidati esempio anagraph -> users -> tokens
-                                        $root_ids = self::$data["exts"][$ormModel->getMainModel()->getMainTable()][$field_key][$id_primary];
-                                        if (is_array($root_ids) && count($root_ids) == 1) {
-                                            $id_primary                                     = $root_ids[0];
-                                        }
-                                    }
-                                    self::setResult(self::$result[$id_primary][$table_name], $result, (!$controller && !$table /* is main */));
-                                }
-                            } elseif (isset($data["select"])) {
-                                self::setResult(self::$result[$id], $result, (!$controller && !$table /* is main */));
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            $counter = 0;
-        }
-
-        return $counter;
-    }
 
     /**
-     * @param null|string $controller
-     * @param null|string $table
-     * @param null|array $limit
-     * @return int|null
+     * @param array $data
+     * @param string $controller
+     * @param string $table
+     * @param int $limit
+     * @param int|null $offset
+     * @return bool
      */
-    private static function getDataNew(string $controller = null, string $table = null, array $limit = null) : ?int
+    private static function getData(array $data, string $controller, string $table, int $limit = null, int $offset = null) : bool
     {
-        $counter                                                                            = false;
-        $data                                                                               = self::getCurrentData($controller, $table);
-        $where                                                                              = self::getCurrentWhere($data);
-
-        $sort = (
-            isset($data["sort"])
-            ? self::getFields($data["sort"], $data["def"]["alias"])
-            : null
-        );
-
-        if ($where) {
-            $indexes                                                                        = $data["def"]["indexes"];
-            $key_name = (string) array_search(DatabaseAdapter::FTYPE_PRIMARY, $data["def"]["struct"]);
-            $service = (
-                isset($data["service"])
-                ? $data["service"]
-                : $controller
-            );
-            $select                                                                         = self::getFields(
-                (
-                    isset($data["select"])
-                    ? $data["select"]
-                    : null
-                ),
-                $data["def"]["alias"],
-                $indexes,
-                $key_name
-            );
-
-            $ormModel                                                                       = self::getModel($service);
+        if (isset($data["where"])) {
+            $main_table                                                                     = $data["def"]["mainTable"];
+            $ormModel                                                                       = self::getModel($controller);
             $regs                                                                           = $ormModel
                                                                                                 ->setStorage($data["def"], false, false)
                                                                                                 ->read(
-                                                                                                    (
-                                                                                                        $where === true
-                                                                                                        ? null
-                                                                                                        : $where
-                                                                                                    ),
-                                                                                                    $select,
-                                                                                                    $sort,
-                                                                                                    $limit
+                                                                                                    self::getCurrentScope($data, "where"),
+                                                                                                    self::getCurrentScope($data, "select"),
+                                                                                                    self::getCurrentScope($data, "sort"),
+                                                                                                    $limit,
+                                                                                                    $offset
                                                                                                 );
-            $dataType = "result";
             if (is_array($regs)) {
-                //print_r(json_encode($regs));
-                $field_key                                                                  = null;
-                if (isset($regs[$dataType])) {
-                    $thisTable  = $data["def"]["table"]["name"];
-
-                    self::$result[$thisTable] = array_combine(array_column($regs[$dataType], $key_name), $regs[$dataType]);
-
-                    //self::$result[$thisTable] = $regs[$dataType];
+                if (isset($regs[self::RESULT])) {
+                    $thisTable                                                              = $table;
+                    $aliasTable                                                             = $data["def"]["table"]["alias"];
+                    self::$result[$thisTable]                                               = $regs[self::RESULT];
+                    /**
+                        @todo da fare la gestione del count
+                        if($thisTable == $main_table) {
+                        print_r($regs["count"]);
+                        }
+                     */
                     if (is_array($data["def"]["relationship"]) && count($data["def"]["relationship"])) {
                         foreach ($data["def"]["relationship"] as $ref => $relation) {
-                            $thisKey    = null;
-
-                            $relType    = null;
-                            $relTable   = null;
-                            $relField   = null;
-                            if (isset($data["def"]["struct"][$ref])) {
+                            unset($whereRef);
+                            $manyToMany     = false;
+                            $oneToMany      = isset($relation["tbl"]) && isset($data["def"]["struct"][$ref]);
+                            if ($oneToMany) {
                                 $thisKey    = $ref;
 
                                 $relTable   = $relation["tbl"];
                                 $relKey     = $relation["key"];
 
-                                if ($data["def"]["mainTable"] == $relTable) {
-                                    $relType = "main";
-                                } elseif (isset(self::$data["sub"][$service][$relTable])) {
-                                    $relType = "sub";
+                                if ($relTable != $main_table && isset($data["def"]["relationship"][$main_table])) {
+                                    $manyToMany = true;
                                 }
+                            } elseif (isset($data["def"]["struct"][$relation["external"]])) {
+                                if ($ref != $main_table && isset($data["def"]["relationship"][$main_table])) {
+                                    $manyToMany = true;
+                                }
+                                if (isset($data["def"]["relationship"][$relation["external"]])) {
+                                    $oneToMany  = true;
+                                }
+
+                                $thisKey    = $relation["external"];
+
+                                $relTable   = $ref;
+                                $relKey     = $relation["primary"];
                             } else {
                                 $thisKey    = $relation["primary"];
 
                                 $relTable   = $ref;
                                 $relKey     = $relation["external"];
-
-                                if ($data["def"]["mainTable"] == $relTable) {
-                                    $relType = "main";
-                                } elseif (isset(self::$data["sub"][$service][$relTable])) {
-                                    $relType = "sub";
-                                }
                             }
 
-                            if (!$relType && isset(self::$services_by_data["tables"][$service . "." . $relTable])) {
+                            if (isset(self::$data["exts"]["done"][$thisTable . "." . $thisKey][$relTable . "." . $relKey])) {
+                                continue;
+                            }
+
+                            if ($main_table == $relTable) {
+                                $whereRef =& self::$data["main"];
+                            } elseif (isset(self::$data["sub"][$controller][$relTable])) {
+                                $whereRef =& self::$data["sub"][$controller][$relTable];
+                            } elseif (isset(self::$services_by_data["tables"][$controller . "." . $relTable])) {
                                 Error::register("Relationship not found: " . $thisTable . "." . $thisKey . " => " . $relTable . "." . $relKey);
                             }
 
-                            $keyValue = array_unique(array_column($regs[$dataType], $thisKey));
-                            if (count($keyValue)) {
-                                self::checkmiowhere($keyValue, $relType, $service, $relTable, $relKey);
-                            } else {
-                                Error::register("Relationship found but missing keyValue in result: " . $thisTable . " => " . $thisKey);
+                            $keyValue = array_column($regs[self::INDEX], $thisKey);
+                            if (isset($whereRef) && count($keyValue)) {
+                                self::whereBuilder($whereRef, $keyValue, $relKey);
+                            } elseif (isset(self::$services_by_data["tables"][$controller . "." . $relTable])) {
+                                Error::register("Relationship found but missing keyValue in result: " . $thisTable . " => " . $thisKey . " (" . $relTable . "." . $relKey . ")");
                             }
 
-
-                            echo $thisTable . "." . $thisKey . " => " . $relTable . "." . $relKey;
-                            print_r($keyValue);
+                            //@todo modo A/B
+                            self::$data["exts"]["rel"][$relTable][$thisTable] = $keyValue;
+                            //self::$data["exts"]["rel"][$relTable][$thisTable] = array_flip($keyValue);
+                            self::$data["exts"]["done"][$thisTable . "." . $thisKey][$relTable . "." . $relKey] = true;
 
                             if (isset(self::$result[$relTable])) {
-                                //foreach ($keyValue as $keyCounter => $keyID) {
-                                foreach (array_combine(array_keys($keyValue), $keyValue) as $keyCounter => $keyID) {
-                                    if (isset($regs[$dataType][$keyCounter][$thisKey]) && $regs[$dataType][$keyCounter][$thisKey] == $keyID) {
-                                        self::$result[$relTable][$keyCounter][$thisTable][] =& self::$result[$thisTable][$keyCounter];
+                                foreach ($keyValue as $keyCounter => $keyID) {
+                                    if (isset($regs[self::INDEX][$keyCounter][$thisKey]) && $regs[self::INDEX][$keyCounter][$thisKey] == $keyID) {
+                                        if ($main_table == $thisTable) {
+                                            //@todo modo A/B
+                                            $keyParents = array_keys(self::$data["exts"]["rel"][$thisTable][$relTable], $keyID);
+                                            //$keyParent = self::$data["exts"]["rel"][$thisTable][$relTable][$keyID];
+
+                                            //@todo modo A/B
+                                            foreach ($keyParents as $keyParent) {
+                                                /**
+                                                 * Remove if exist reference of Result in sub table for prevent circular references
+                                                 */
+                                                unset(self::$result[$relTable][$keyParent][$aliasTable]);
+
+                                                /**
+                                                 * Remove External Key in Result
+                                                 */
+                                                /*if ($oneToMany) {
+                                                    unset(self::$result[$thisTable][$keyParent][$thisKey]);
+                                                } else {
+                                                    unset(self::$result[$relTable][$keyParent][$relKey]);
+                                                }*/
+                                                if (!$oneToMany && !$manyToMany) {
+                                                    self::$result[$thisTable][$keyCounter][$ormModel->getTableAlias($relTable)][]   =& self::$result[$relTable][$keyParent];
+                                                } else {
+                                                    self::$result[$thisTable][$keyCounter][$ormModel->getTableAlias($relTable)]     =& self::$result[$relTable][$keyParent];
+                                                }
+                                                //@todo modo A/B
+                                            }
+                                        } elseif ($manyToMany) {
+                                            //@todo modo A/B
+                                            $keyParents = array_keys(self::$data["exts"]["rel"][$thisTable][$relTable], $keyID);
+                                            //$keyParent = self::$data["exts"]["rel"][$thisTable][$relTable][$keyID];
+                                            //@todo modo A/B
+                                            foreach ($keyParents as $keyParent) {
+                                                /**
+                                                 * Remove if exist reference of Result in sub table for prevent circular references
+                                                 */
+                                                unset(self::$result[$relTable][$keyParent][$aliasTable]);
+
+                                                /**
+                                                 * Remove External Key in Result
+                                                 */
+                                                /*if ($oneToMany) {
+                                                    unset(self::$result[$thisTable][$keyCounter][$thisKey]);
+                                                }*/
+
+                                                self::$result[$thisTable][$keyCounter][$ormModel->getTableAlias($relTable)] =& self::$result[$relTable][$keyParent];
+                                            } //@todo modo A/B
+                                        } else {
+                                            //@todo modo A/B
+                                            $keyParents = array_keys(self::$data["exts"]["rel"][$thisTable][$relTable], $keyID);
+                                            //$keyParent = self::$data["exts"]["rel"][$thisTable][$relTable][$keyID];
+
+                                            /**
+                                             * Remove if exist reference of Result in sub table for prevent circular references
+                                             */
+                                            unset(self::$result[$thisTable][$keyCounter][$ormModel->getTableAlias($relTable)]);
+
+                                            //@todo modo A/B
+                                            foreach ($keyParents as $keyParent) {
+                                                /**
+                                                 * Remove External Key in Result
+                                                 */
+                                                /*if ($oneToMany) {
+                                                    unset(self::$result[$thisTable][$keyCounter][$thisKey]);
+                                                } else {
+                                                    unset(self::$result[$relTable][$keyParent][$relKey]);
+                                                }*/
+                                                if ($oneToMany || $manyToMany) {
+                                                    self::$result[$relTable][$keyParent][$aliasTable][] =& self::$result[$thisTable][$keyCounter];
+                                                } else {
+                                                    self::$result[$relTable][$keyParent][$aliasTable] =& self::$result[$thisTable][$keyCounter];
+                                                }
+                                                //@todo modo A/B
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-
-
-
-
-                    $counter                                                                = $regs["count"];
                 }
             }
-        } else {
-            $counter = 0;
+
+            return true;
         }
 
-        return $counter;
+        return false;
     }
 
-
-    private static function getDataSingle($controller, $table, $limit = null)
+    /**
+     * @param string $controller
+     * @param string $table
+     * @param int|null $limit
+     * @param int|null $offset
+     */
+    private static function getDataSingle(string $controller, string $table, int $limit = null, int $offset = null) : void
     {
         $data                                                                               = (
             isset(self::$data["sub"][$controller]) && isset(self::$data["sub"][$controller][$table])
@@ -600,13 +482,6 @@ class Orm implements Dumpable
                                                                                                 : self::$data["main"]
                                                                                             );
         if ($data) {
-            if ($limit && !is_array($limit)) {
-                $limit                                                                      = array(
-                                                                                                "skip"  => 0,
-                                                                                                "limit" => $limit
-                                                                                            );
-            }
-
             $regs                                                                           = self::getModel(
                 isset($data["service"])
                                                                                                     ? $data["service"]
@@ -614,51 +489,28 @@ class Orm implements Dumpable
                                                                                                 )
                                                                                                 ->setStorage($data["def"], false, true)
                                                                                                 ->read(
-                                                                                                    (
-                                                                                                        !isset($data["where"]) || $data["where"] === true
-                                                                                                        ? null
-                                                                                                        : self::getFields($data["where"], $data["def"]["alias"])
-                                                                                                    ),
-                                                                                                    (
-                                                                                                        isset($data["select"])
-                                                                                                        ? self::getFields($data["select"], $data["def"]["alias"])
-                                                                                                        : null
-                                                                                                    ),
-                                                                                                    (
-                                                                                                        isset($data["sort"])
-                                                                                                        ? self::getFields($data["sort"], $data["def"]["alias"])
-                                                                                                        : null
-                                                                                                    ),
-                                                                                                    $limit
+                                                                                                    self::getCurrentScope($data, "where"),
+                                                                                                    self::getCurrentScope($data, "select"),
+                                                                                                    self::getCurrentScope($data, "sort"),
+                                                                                                    $limit,
+                                                                                                    $offset
+
                                                                                                 );
-            if (is_array($regs) && $regs["rawdata"]) {
-                self::$result                                                               = $regs["rawdata"];
+            if (is_array($regs) && $regs[self::RAWDATA]) {
+                self::$result                                                               = $regs[self::RAWDATA];
             }
         } else {
             Error::register("normalize data is empty", static::ERROR_BUCKET);
         }
     }
 
-    private static function idsTraversing($id_primary, $id)
-    {
-        if (isset(self::$data["traversing"][$id_primary])) {
-            $res                                                                            = self::$data["traversing"][$id_primary];
-        } elseif (!isset(self::$data["traversing"][$id])) {
-            self::$data["traversing"][$id]                                                  = $id_primary;
-            $res = self::$data["traversing"][$id];
-        } else {
-            $res                                                                            = $id_primary;
-        }
-
-        return $res;
-    }
-
     /**
+     * @todo da tipizzare
      * @param array $insert
-     * @param null|OrmModel $ormModel
+     * @param OrmModel|null $ormModel
      * @return array|bool|null
      */
-    public static function insertUnique($insert, $ormModel = null)
+    public static function insertUnique(array $insert, OrmModel $ormModel = null)
     {
         Debug::dumpCaller("Insert unique: " . print_r($insert, true));
         Debug::stopWatch("orm/unique");
@@ -677,11 +529,12 @@ class Orm implements Dumpable
     }
 
     /**
+     * @todo da tipizzare
      * @param array $insert
-     * @param null|OrmModel $ormModel
+     * @param OrmModel|null $ormModel
      * @return array|bool|null
      */
-    public static function insert($insert, $ormModel = null)
+    public static function insert(array $insert, OrmModel $ormModel = null)
     {
         Debug::dumpCaller("Insert: " . print_r($insert, true));
         Debug::stopWatch("orm/insert");
@@ -700,12 +553,13 @@ class Orm implements Dumpable
     }
 
     /**
+     * @todo da tipizzare
      * @param array $set
      * @param array $where
-     * @param OrmModel $ormModel
+     * @param OrmModel|null $ormModel
      * @return array|bool|null
      */
-    public static function update($set, $where, $ormModel = null)
+    public static function update(array $set, array $where, OrmModel $ormModel = null)
     {
         Debug::dumpCaller("Update: " . print_r($set, true) . " Where: " . print_r($where, true));
         Debug::stopWatch("orm/update");
@@ -724,13 +578,14 @@ class Orm implements Dumpable
     }
 
     /**
+     * @todo da tipizzare
      * @param array $where
      * @param null|array $set
      * @param null|array $insert
-     * @param OrmModel $ormModel
+     * @param OrmModel|null $ormModel
      * @return array|bool|null
      */
-    public static function write($where, $set = null, $insert = null, $ormModel = null)
+    public static function write(array $where, array $set = null, array $insert = null, OrmModel $ormModel = null)
     {
         Debug::dumpCaller("Write: " . print_r($where, true) . " Set: " . print_r($set, true) . " Insert: " . print_r($insert, true));
         Debug::stopWatch("orm/write");
@@ -748,12 +603,13 @@ class Orm implements Dumpable
         return $res;
     }
     /**
+     * @todo da tipizzare
      * @param $where
      * @param OrmModel $ormModel
      * @return array|bool|null
      * @todo: da fare
      */
-    public static function delete($where, $ormModel = null)
+    public static function delete(array $where, OrmModel $ormModel = null)
     {
         Debug::dumpCaller("Insert: " . print_r($where, true));
         Debug::stopWatch("orm/delete");
@@ -773,13 +629,14 @@ class Orm implements Dumpable
 
 
     /**
+     * @todo da tipizzare
      * @param null|array $where
      * @param null|array $set
      * @param null|array $insert
-     * @param OrmModel $ormModel
+     * @param OrmModel|null $ormModel
      * @return array|bool|null
      */
-    private static function set($where = null, $set = null, $insert = null, $ormModel = null)
+    private static function set(array $where = null, array $set = null, array $insert = null, OrmModel $ormModel = null)
     {
         self::clearResult($ormModel);
 
@@ -791,7 +648,6 @@ class Orm implements Dumpable
 
         self::execSub();
 
-        //main table
         self::setData();
 
         if (isset(self::$data["rev"]) && is_array(self::$data["rev"]) && count(self::$data["rev"])) {
@@ -804,11 +660,10 @@ class Orm implements Dumpable
     }
 
     /**
-     * @param null $controller
-     * @param null $table
-     *
+     * @param string|null $controller
+     * @param string|null $table
      */
-    private static function setData($controller = null, $table = null)
+    private static function setData(string $controller = null, string $table = null) : void
     {
         $key                                                                                = null;
         $data                                                                               = self::getCurrentData($controller, $table);
@@ -819,25 +674,22 @@ class Orm implements Dumpable
                                                                                             );
         $ormModel                                                                           = self::getModel($modelName);
         $storage                                                                            = $ormModel->setStorage($data["def"]);
-        $key_name                                                                           = self::getFieldAlias(array_search("primary", $data["def"]["struct"]), $data["def"]["alias"]);
+        $key_name                                                                           = $data["def"]["key_primary"];
 
         if (isset($data["insert"]) && !isset($data["set"]) && isset($data["where"])) {
-            $data["insert"]                                                                 = self::getFields($data["insert"], $data["def"]["alias"]);
+            $data["insert"]                                                                 = self::getFields($data["insert"]);
             $regs                                                                           = $storage->read($data["insert"], array($key_name => true));
 
             if (is_array($regs)) {
-                $key                                                                        = false;
-
-                self::setKeyRelationship($regs["keys"][0], $key_name, $data, $controller);
-            }
-            if ($key === null) {
+                self::setKeyRelationship($key_name, $regs["keys"][0], $data, $controller);
+            } else {
                 $regs                                                                       = $storage->insert($data["insert"], $data["def"]["table"]["name"]);
                 if (is_array($regs)) {
                     $key                                                                    = $regs["keys"][0];
                 }
             }
         } elseif (isset($data["insert"]) && !isset($data["set"]) && !isset($data["where"])) {
-            $data["insert"]                                                                 = self::getFields($data["insert"], $data["def"]["alias"]);
+            $data["insert"]                                                                 = self::getFields($data["insert"]);
             $regs                                                                           = $storage->insert($data["insert"], $data["def"]["table"]["name"]);
             if (is_array($regs)) {
                 $key                                                                        = $regs["keys"][0];
@@ -848,7 +700,7 @@ class Orm implements Dumpable
                 if (!isset(self::$data["main"]["where"][$key_main_primary])) {
                     $regs                                                                   = self::getModel($modelName)
                                                                                                 ->setStorage(self::$data["main"]["def"])
-                                                                                                ->read(self::$data["main"]["where"], array($key_main_primary => true), null, null, self::$data["main"]["def"]["table"]["name"]);
+                                                                                                ->read(self::$data["main"]["where"], array($key_main_primary => true), null, null, null, self::$data["main"]["def"]["table"]["name"]);
                     if (is_array($regs)) {
                         self::$data["main"]["where"][$key_main_primary]                     = $regs["keys"][0];
                     }
@@ -870,7 +722,7 @@ class Orm implements Dumpable
         } elseif (!isset($data["insert"]) && isset($data["set"]) && isset($data["where"])) {
             self::$result["update"][$data["def"]["table"]["alias"]]                         = $storage->update($data["set"], $data["where"], $data["def"]["table"]["name"]);
         } elseif (!isset($data["insert"]) && !isset($data["set"]) && isset($data["where"])) {
-            $regs                                                                           = $storage->read($data["where"], array($key_name => true), null, null, $data["def"]["table"]["name"]);
+            $regs                                                                           = $storage->read($data["where"], array($key_name => true), null, null, null, $data["def"]["table"]["name"]);
             if (is_array($regs)) {
                 $key                                                                        = $regs["keys"][0];
             }
@@ -878,24 +730,30 @@ class Orm implements Dumpable
             $regs                                                                           = $storage->write(
                 $data["insert"],
                 array(
-                                                                                                    "set"       => $data["set"]
-                                                                                                    , "where"   => $data["where"]
-                                                                                                ),
+                    "set"       => $data["set"],
+                    "where"     => $data["where"]
+                ),
                 $data["def"]["table"]["name"]
-                                                                                            );
+            );
             if (is_array($regs)) {
                 $key                                                                        = $regs["keys"][0];
             }
         }
 
-        self::setKeyRelationship($key, $key_name, $data, $controller);
+        self::setKeyRelationship($key_name, $key, $data, $controller);
 
         if ($key !== null) {
             self::$result["keys"][$data["def"]["table"]["alias"]] = $key;
         }
     }
 
-    private static function setKeyRelationship($key, $key_name, $data, $controller)
+    /**
+     * @param string $key_name
+     * @param string|null $key
+     * @param array|null $data
+     * @param string|null $controller
+     */
+    private static function setKeyRelationship(string $key_name, string $key = null, array $data = null, string $controller = null) : void
     {
         if ($key && is_array($data["def"]["relationship"]) && count($data["def"]["relationship"])) {
             if (!$controller) {
@@ -909,22 +767,20 @@ class Orm implements Dumpable
                     }
                     if ($key && $field_ext && $field_ext != $key_name) {
                         if ($tbl != self::$data["main"]["def"]["mainTable"]) {
-                            $field_alias                                                    = self::getFieldAlias($field_ext, self::$data["sub"][$controller][$tbl]["def"]["alias"]);
                             $rev_controller                                                 = self::$data["rev"][$tbl];
 
                             if (isset(self::$data["sub"][$rev_controller][$tbl]["insert"])) {
-                                self::$data["sub"][$rev_controller][$tbl]["insert"][$field_alias]   = $key;
+                                self::$data["sub"][$rev_controller][$tbl]["insert"][$field_ext]   = $key;
                             }
                             if (isset(self::$data["sub"][$rev_controller][$tbl]["set"])) {
-                                self::$data["sub"][$rev_controller][$tbl]["where"][$field_alias]    = $key;
+                                self::$data["sub"][$rev_controller][$tbl]["where"][$field_ext]    = $key;
                             }
                         } else {
-                            $field_alias                                                    = self::getFieldAlias($field_ext, self::$data["main"]["def"]["alias"]);
                             if (isset(self::$data["main"]["insert"])) {
-                                self::$data["main"]["insert"][$field_alias]                 = $key;
+                                self::$data["main"]["insert"][$field_ext]                   = $key;
                             }
                             if (isset(self::$data["main"]["set"])) {
-                                self::$data["main"]["where"][$field_alias]                  = $key;
+                                self::$data["main"]["where"][$field_ext]                    = $key;
                             }
                         }
                     }
@@ -933,7 +789,10 @@ class Orm implements Dumpable
         }
     }
 
-    private static function execSub($cmd = null)
+    /**
+     * @param string|null $cmd
+     */
+    private static function execSub(string $cmd = null) : void
     {
         if (isset(self::$data["sub"]) && is_array(self::$data["sub"]) && count(self::$data["sub"])) {
             foreach (self::$data["sub"] as $controller => $tables) {
@@ -971,7 +830,7 @@ class Orm implements Dumpable
      * @param null|OrmModel $ormModel
      * @return array|mixed|null
      */
-    public static function cmd($action, $where = null, $fields = null, $ormModel = null)
+    public static function cmd(string $action, array $where = null, array $fields = null, OrmModel $ormModel = null)
     {
         self::clearResult($ormModel);
 
@@ -987,23 +846,29 @@ class Orm implements Dumpable
         return self::getResult(true);
     }
 
-    private static function getCurrentWhere(array $data)
+    /**
+     * @param array $data
+     * @param string $scope
+     * @return array|null
+     */
+    private static function getCurrentScope(array $data, string $scope) : ?array
     {
-        if (!isset($data["where"])) {
-            return null;
-        }
-
-        return ($data["where"] === true
-            ? true
-            : self::getFields($data["where"], $data["def"]["alias"])
+        return (isset($data[$scope])
+            ? $data[$scope]
+            : null
         );
     }
-    private static function cmdData($command, $controller = null, $table = null)
+
+    /**
+     * @param string $command
+     * @param string|null $controller
+     * @param string|null $table
+     */
+    private static function cmdData(string $command, string $controller = null, string $table = null) : void
     {
         $data                                                                               = self::getCurrentData($controller, $table);
-        $where                                                                              = self::getCurrentWhere($data);
-
-        if ($where) {
+        if (isset($data["where"])) {
+            $where                                                                          = self::getCurrentScope($data, "where");
             $ormModel                                                                       = self::getModel(
                 $data["service"]
                                                                                                 ? $data["service"]
@@ -1012,11 +877,7 @@ class Orm implements Dumpable
             $storage                                                                        = $ormModel->setStorage($data["def"]);
             $regs                                                                           = $storage->cmd(
                 $command,
-                (
-                    $where === true
-                                                                                                    ? null
-                                                                                                    : $where
-                                                                                                )
+                $where
                                                                                             );
             self::$result["cmd"][$data["def"]["table"]["alias"]]                            = $regs;
         }
@@ -1026,7 +887,7 @@ class Orm implements Dumpable
     /**
      * @param OrmModel $ormModel
      */
-    private static function setMainIndexes($ormModel)
+    private static function setMainIndexes(OrmModel $ormModel) : void
     {
         $res                                                                                = $ormModel
                                                                                                 ->getMainModel()
@@ -1041,32 +902,10 @@ class Orm implements Dumpable
     }
 
     /**
-     * @param array $result
-     * @param array $entry
-     * @param bool $replace
+     * @param array $data
+     * @return bool
      */
-    private static function setResult(&$result, $entry, $replace = false)
-    {
-        if ($result) {
-            if ($replace) {
-                $result                                                                     = array_replace($result, $entry);
-            } else {
-                if (Database::isAssocArray($result)) {
-                    $result = array("0" => $result);
-                }
-
-                $result[]                                                                   = $entry;
-            }
-        } else {
-            $result                                                                         = $entry;
-        }
-    }
-
-    /**
-     * @param $data
-     * @return null
-     */
-    private static function resolveFieldsByScopes($data)
+    private static function resolveFieldsByScopes(array $data) : bool
     {
         foreach ($data as $scope => $fields) {
             self::resolveFields($fields, $scope);
@@ -1114,25 +953,34 @@ class Orm implements Dumpable
         }
 
         if (!isset(self::$data["main"]["select"]) && isset($data["select"]) && !$is_single_service) {
-            $key_name                                                                       = array_search("primary", self::$data["main"]["def"]["struct"]);
+            $key_name                                                                       = self::$data["main"]["def"]["key_primary"];
             self::$data["main"]["select"][$key_name]                                        = $key_name;
             self::$data["main"]["select_is_empty"]                                          = true;
         }
 
         if (isset(self::$data["main"]["select"]) && isset(self::$data["main"]["select"]["*"])) {
-            self::$data["main"]["select"] = array_combine(array_keys(self::$data["main"]["def"]["struct"]), array_keys(self::$data["main"]["def"]["struct"]));
+            self::$data["main"]["select"] = self::getAllFields(self::$data["main"]["def"]["struct"], self::$data["main"]["def"]["indexes"]); // array_combine(array_keys(self::$data["main"]["def"]["struct"]), array_keys(self::$data["main"]["def"]["struct"]));
         }
-
 
         return (!isset(self::$services_by_data["use_alias"]) && is_array(self::$services_by_data["tables"]) && count(self::$services_by_data["tables"]) === 1);
     }
 
     /**
-     * @param $fields
-     * @param string $scope
-     * @return null
+     * @param array $source
+     * @param array $exclude
+     * @return array
      */
-    private static function resolveFields($fields, $scope = "fields")
+    private static function getAllFields(array $source, array $exclude = null) : array
+    {
+        $diff = array_keys(array_diff_key($source, (array) $exclude));
+        return array_combine($diff, $diff);
+    }
+
+    /**
+     * @param array|null $fields
+     * @param string $scope
+     */
+    private static function resolveFields(array $fields = null, $scope = "fields") : void
     {
         if (is_array($fields) && count($fields)) {
             $ormModel                                                                       = self::getModel();
@@ -1232,7 +1080,7 @@ class Orm implements Dumpable
                 if (!isset(self::$data["sub"][$service][$table]["def"]["struct"][$parts[$fIndex]])) {
                     if ($scope == "select" && $parts[$fIndex] == "*") {
                         if (is_array(self::$data["sub"][$service][$table]["def"]["struct"])) {
-                            self::$data["sub"][$service][$table][$scope] = array_combine(array_keys(self::$data["sub"][$service][$table]["def"]["struct"]), array_keys(self::$data["sub"][$service][$table]["def"]["struct"]));
+                            self::$data["sub"][$service][$table][$scope]                    = self::getAllFields(self::$data["sub"][$service][$table]["def"]["struct"], self::$data["sub"][$service][$table]["def"]["indexes"]); // array_combine(array_keys(self::$data["sub"][$service][$table]["def"]["struct"]), array_keys(self::$data["sub"][$service][$table]["def"]["struct"]));
                         } else {
                             Error::register("Undefined Struct on Table: `" . $table . "` Model: `" . $service . "`", static::ERROR_BUCKET);
                         }
@@ -1261,18 +1109,15 @@ class Orm implements Dumpable
                 }
             }
         }
-
-        return true;
     }
 
     /**
-     * @param array $fields
-     * @param array|null $alias
+     * @param array|null $fields
      * @param array|null $indexes
      * @param string|null $primary_key
      * @return array
      */
-    private static function getFields(array $fields = null, array $alias = null, array &$indexes = null, string $primary_key = null) : array
+    private static function getFields(array $fields = null, array &$indexes = null, string $primary_key = null) : array
     {
         $res                                                                                = null;
         if (is_array($fields) && count($fields)) {
@@ -1281,28 +1126,12 @@ class Orm implements Dumpable
                 if (is_array($indexes) && count($indexes)) {
                     $res                                                                    = $res + array_fill_keys(array_keys($indexes), true);
 
-                    if (is_array($alias) && count($alias)) {
-                        $indexes = array_diff_key($indexes, $alias);
-                    }
                     foreach ($fields as $field_key => $field_ext) {
                         if (isset($indexes[$field_key])) {
                             unset($indexes[$field_key]);
                         }
                         if (isset($indexes[$field_ext])) {
                             unset($indexes[$field_ext]);
-                        }
-                    }
-                }
-
-                if (is_array($alias) && count($alias)) {
-                    foreach ($alias as $old => $new) {
-                        if (array_key_exists($new, $res)) {
-                            $res[$old]                                                      = $res[$new];
-                            unset($res[$new]);
-                        }
-
-                        if (isset($fields[$old]) && isset($indexes[$new])) {
-                            unset($indexes[$new]);
                         }
                     }
                 }
@@ -1313,31 +1142,18 @@ class Orm implements Dumpable
             if (is_array($indexes) && count($indexes)) {
                 $res = array_fill_keys(array_keys($indexes), true);
             }
-            if ($primary_key) {
-                $res[$primary_key] = true;
-            }
         }
 
+        if ($primary_key && !isset($res[$primary_key])) {
+            $res[$primary_key] = true;
+        }
         return $res;
-    }
-
-    private static function getFieldAlias($field, $alias)
-    {
-        if (is_array($alias) && count($alias)) {
-            $alias_rev = array_flip($alias);
-            return($alias_rev[$field]
-                ? $alias_rev[$field]
-                : $field
-            );
-        } else {
-            return $field;
-        }
     }
 
     /**
      * @param OrmModel $ormModel
      */
-    private static function clearResult($ormModel)
+    private static function clearResult(OrmModel $ormModel) : void
     {
         self::$data                                                         = array();
         self::$result                                                       = array();
@@ -1349,45 +1165,44 @@ class Orm implements Dumpable
 
     /**
      * @param bool $rawdata
-     * @return array|bool|null
+     * @return array|null
      */
-    private static function resolveResult($rawdata = false)
+    private static function getResult(bool $rawdata = false) : ?array
     {
-        if (is_array(self::$result)) {
-            if ($rawdata || count(self::$result) > 1) {
-                if (isset(self::$result["keys"])) {
-                    $res                                                    = self::$result["keys"];
-                } elseif (isset(self::$result["update"])) {
-                    $res                                                    = self::$result["update"];
-                } elseif (isset(self::$result["cmd"])) {
-                    $res                                                    = self::$result["cmd"];
-                } else {
-                    $res                                                    = array_values(self::$result);
-                }
+        if ($rawdata || count(self::$result) > 1) {
+            if (isset(self::$result["keys"])) {
+                $res                                                    = self::$result["keys"];
+            } elseif (isset(self::$result["update"])) {
+                $res                                                    = self::$result["update"];
+            } elseif (isset(self::$result["cmd"])) {
+                $res                                                    = self::$result["cmd"];
             } else {
-                $res                                                        = current(self::$result);
-                if (isset(self::$data["main"]["service"]) && isset(self::$data["sub"]) && isset(self::$data["sub"][self::$data["main"]["service"]]) && is_array(self::$data["sub"][self::$data["main"]["service"]]) && count(self::$data["sub"][self::$data["main"]["service"]]) == 1 && is_array($res) && count($res) == 1) {
-                    $res                                                    = current($res);
-                }
-                //todo: da veridicare prima era $this->service
-                $service_name                                               = self::getModel()->getName();
-                if (is_array($res) && count($res) == 1 && isset($res[$service_name])) {
-                    $res                                                    = $res[$service_name];
+                $res                                                    = ( //@todo da togliere gestendo la relazione esternamente al result
+                    count(self::$services_by_data["tables"]) > 1
+                                                                            ? self::$result[self::$data["main"]["def"]["mainTable"]]
+                                                                            : self::$result
+                                                                        );
+                if (isset($res[0]) && count($res) == 1) {
+                    $res                                                = $res[0];
                 }
             }
+        } elseif (isset(self::$result[self::$data["main"]["def"]["mainTable"]])) {
+            $res                                                        = current(self::$result);
+
+            if (isset(self::$data["main"]["service"]) && isset(self::$data["sub"]) && isset(self::$data["sub"][self::$data["main"]["service"]]) && is_array(self::$data["sub"][self::$data["main"]["service"]]) && count(self::$data["sub"][self::$data["main"]["service"]]) == 1 && is_array($res) && count($res) == 1) {
+                $res                                                    = current($res);
+            }
+            //todo: da veridicare prima era $this->service
+            $service_name                                               = self::getModel()->getName();
+            if (is_array($res) && count($res) == 1 && isset($res[$service_name])) {
+                $res                                                    = $res[$service_name];
+            }
+        } elseif (isset(self::$result[0])) {
+            $res = self::$result[0];
         } else {
-            $res                                                            = self::$result; // non deve mai entrare qui
+            $res = null;
         }
 
         return $res;
-    }
-    /**
-     * @param bool $rawdata
-     * @return array|bool|null
-     */
-    private static function getResult($rawdata = false)
-    {
-        //return self::$result;
-        return self::resolveResult($rawdata);
     }
 }

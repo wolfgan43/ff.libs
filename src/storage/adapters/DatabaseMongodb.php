@@ -76,26 +76,20 @@ class DatabaseMongodb extends DatabaseAdapter
      */
     protected function processRead(array $query) : ?array
     {
-        if (!isset($query['sort'])) {
-            $query['sort']                              = null;
-        }
-        if (!isset($query['limit'])) {
-            $query['limit']                             = null;
-        }
-
         $res                                            = $this->processRawQuery(array(
                                                             "select" 	    => $query["select"],
                                                             "from" 	        => $query["from"],
                                                             "where" 	    => $query["where"],
                                                             "sort" 	        => $query["sort"],
                                                             "limit"	        => $query["limit"],
+                                                            "offset"	    => $query["offset"],
                                                             "key_primary"   => $this->key_primary
                                                         ));
-        if ($res && $query["limit"]["calc_found_rows"]) {
-            $res["count"]                               = $this->driver->cmd(array(
+        if ($res && $query["calc_found_rows"]) {
+            $res["count"]                               = $this->driver->cmd("count", array(
                                                             "from" 	        => $query["from"],
                                                             "where" 	    => $query["where"]
-                                                        ), "count");
+                                                        ));
         }
 
         return $res;
@@ -190,6 +184,7 @@ class DatabaseMongodb extends DatabaseAdapter
     }
 
     /**
+     * @todo da tipizzare
      * @param array $query
      * @return mixed
      */
@@ -197,7 +192,7 @@ class DatabaseMongodb extends DatabaseAdapter
     {
         $res                                            = null;
 
-        $success                                        = $this->driver->cmd($query, $query["action"]);
+        $success                                        = $this->driver->cmd($query["action"], $query);
         if ($success) {
             $res                                        = $success;
         }
@@ -205,7 +200,11 @@ class DatabaseMongodb extends DatabaseAdapter
         return $res;
     }
 
-
+    /**
+     * @todo da tipizzare
+     * @param array $field
+     * @return array|mixed|null
+     */
     private function parserWhereField(array $field)
     {
         $res 						                    = $field["value"];

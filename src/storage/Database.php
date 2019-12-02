@@ -141,52 +141,19 @@ class Database implements Dumpable
     }
 
     /**
-     * @todo da tipizzare
-     * @param string $table_name
-     * @param null|array $where
-     * @param null|array $fields
-     * @param null|array $sort
-     * @param null|array $limit
-     * @return bool|array
-     */
-    public function lookup(string $table_name, array $where = null, array $fields = null, array $sort = null, array $limit = null)
-    {
-        foreach ($this->adapters as $adapter_name => $adapter) {
-            $this->result[$adapter_name]                                    = $adapter->lookup($table_name, $where, $fields, $sort, $limit);
-        }
-        return $this->getResult();
-    }
-
-    /**
-     * @todo da tipizzare
-     * @param null|array $fields
-     * @param null|array $where
-     * @param null|array $sort
-     * @param null|array $limit
-     * @param null|string $table_name
-     * @return bool|array
-     */
-    public function find(array $fields = null, array $where = null, array $sort = null, array $limit = null, string $table_name = null)
-    {
-        foreach ($this->adapters as $adapter_name => $adapter) {
-            $this->result[$adapter_name]                                    = $adapter->find($fields, $where, $sort, $limit, $table_name);
-        }
-        return $this->getResult();
-    }
-
-    /**
-     * @todo da tipizzare
      * @param array $where
      * @param null|array $fields
      * @param null|array $sort
-     * @param null|array $limit
+     * @param null|int $limit
+     * @param int|null $offset
      * @param null|string $table_name
      * @return bool|array
+     * @todo da tipizzare
      */
-    public function read(array $where, array $fields = null, array $sort = null, array $limit = null, string $table_name = null)
+    public function read(array $where, array $fields = null, array $sort = null, int $limit = null, int $offset = null, string $table_name = null)
     {
         foreach ($this->adapters as $adapter_name => $adapter) {
-            $this->result[$adapter_name]                                    = $adapter->read($where, $fields, $sort, $limit, $table_name);
+            $this->result[$adapter_name]                                    = $adapter->read($where, $fields, $sort, $limit, $offset, $table_name);
         }
 
         return $this->getResult();
@@ -353,7 +320,7 @@ class Database implements Dumpable
 
             if (isset(self::$cache[$cache_key]["data"])) {
                 if (Kernel::$Environment::DEBUG) {
-                    Debug::dumpLog("query_duplicate", $query);
+                    Debug::dumpLog("query.duplicate", $query);
                 }
                 $res                                                        = self::$cache[$cache_key]["data"];
             }

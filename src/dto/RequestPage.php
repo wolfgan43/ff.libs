@@ -32,6 +32,10 @@ class RequestPage extends Mappable
     public $headers        = array();
     public $request        = array();
 
+    /**
+     * RequestPage constructor.
+     * @param string|array $map
+     */
     public function __construct($map)
     {
         parent::__construct($map);

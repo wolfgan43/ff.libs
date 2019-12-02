@@ -26,19 +26,23 @@
 namespace phpformsframework\libs\storage\adapters;
 
 use phpformsframework\libs\Dir;
+use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\FilemanagerAdapter;
 
+/**
+ * Class FilemanagerPhp
+ * @package phpformsframework\libs\storage\adapters
+ */
 class FilemanagerPhp extends FilemanagerAdapter
 {
     const EXT                                                   = "php";
 
     /**
-     * @todo da tipizzare
      * @param string $file_path
      * @param string|null $var
-     * @return bool|mixed|null
+     * @return array|null
      */
-    protected function loadFile(string $file_path, string $var = null)
+    protected function loadFile(string $file_path, string $var = null) : ?array
     {
         $return                                                 = null;
         $output                                                 = exec("php -l " . addslashes($file_path));
@@ -63,13 +67,18 @@ class FilemanagerPhp extends FilemanagerAdapter
                 }
             }
         } else {
-            $return                                             = false;
+            Error::registerWarning($output, static::ERROR_BUCKET);
         }
 
         return $return;
     }
 
-    protected function output($data, $var)
+    /**
+     * @param array $data
+     * @param string $var
+     * @return string
+     */
+    protected function output(array $data, string $var) : string
     {
         if ($var) {
             $return = '$' . $var . ' = ';

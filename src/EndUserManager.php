@@ -148,11 +148,12 @@ trait EndUserManager
 
     /**
      * @param string $ormModel
+     * @param string|null $mainTable
      * @return storage\OrmModel
      */
-    public static function orm(string $ormModel) : storage\OrmModel
+    public static function orm(string $ormModel, string $mainTable = null) : storage\OrmModel
     {
-        return Orm::getInstance($ormModel);
+        return Orm::getInstance($ormModel, $mainTable);
     }
     /**
      * @param string $file_type

@@ -25,31 +25,35 @@
  */
 namespace phpformsframework\libs\storage\adapters;
 
-use phpformsframework\libs\Dir;
 use phpformsframework\libs\storage\drivers\Array2XML;
+use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\storage\FilemanagerAdapter;
 use Exception;
 
+/**
+ * Class FilemanagerXml
+ * @package phpformsframework\libs\storage\adapters
+ */
 class FilemanagerXml extends FilemanagerAdapter
 {
     const EXT                                                   = "xml";
 
     /**
-     * @todo da tipizzare
      * @param string $file_path
      * @param string|null $var
-     * @return array|bool|mixed|null
+     * @return array|null
      */
-    protected function loadFile(string $file_path, string $var = null)
+    protected function loadFile(string $file_path, string $var = null) : ?array
     {
-        $xmlstring                                              = Dir::loadFile($file_path);
-        return ($xmlstring
-            ? Array2XML::XML_TO_ARR($xmlstring)
-            : false
-        );
+        return Array2XML::XML_TO_ARR(Filemanager::fileGetContent($file_path));
     }
 
-    protected function output($data, $var)
+    /**
+     * @param array $data
+     * @param string $var
+     * @return string
+     */
+    protected function output(array $data, string $var) : string
     {
         $xml                                                    = null;
         $root_node                                              = (
@@ -63,6 +67,6 @@ class FilemanagerXml extends FilemanagerAdapter
         } catch (Exception $e) {
         }
 
-        return $xml;
+        return $xml->saveXML();
     }
 }

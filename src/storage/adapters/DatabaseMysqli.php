@@ -66,11 +66,8 @@ class DatabaseMysqli extends DatabaseAdapter
     protected function processRead(array $query) : ?array
     {
         $res                                            = $this->processRawQuery($query);
-        if ($res && isset($query["limit"]) && is_array($query["limit"]) && isset($query["limit"]["calc_found_rows"])) {
-            $this->driver->query("SELECT FOUNT_ROWS() AS tot_row");
-            if ($this->driver->nextRecord()) {
-                $res["count"]                           = $this->driver->getField("tot_row", "Number", true);
-            }
+        if ($res && $query["calc_found_rows"]) {
+            $res["count"]                               = $this->driver->cmd("calc_found_rows");
         }
 
         return $res;
@@ -169,7 +166,7 @@ class DatabaseMysqli extends DatabaseAdapter
     {
         $res                                            = null;
 
-        $success                                        = $this->driver->cmd($query, $query["action"]);
+        $success                                        = $this->driver->cmd($query["action"], $query);
         if ($success !== null) {
             $res                                        = $success;
         }

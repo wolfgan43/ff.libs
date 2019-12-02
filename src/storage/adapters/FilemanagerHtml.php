@@ -27,23 +27,33 @@ namespace phpformsframework\libs\storage\adapters;
 
 use phpformsframework\libs\storage\FilemanagerAdapter;
 
+/**
+ * Class FilemanagerHtml
+ * @package phpformsframework\libs\storage\adapters
+ */
 class FilemanagerHtml extends FilemanagerAdapter //todo: da finire
 {
     const EXT                                                   = "html";
 
     /**
-     * @todo da tipizzare
      * @param string $file_path
      * @param string|null $var
-     * @return array|bool|null
+     * @return array|null
      */
-    protected function loadFile(string $file_path, string $var = null)
+    protected function loadFile(string $file_path, string $var = null) : ?array
     {
         // TODO: Implement load_file() method.
+        return [];
     }
 
-    protected function output($data, $var)
+    /**
+     * @param array $data
+     * @param string $var
+     * @return string
+     */
+    protected function output(array $data, string $var) : string
     {
         // TODO: Implement output() method.
+        return "";
     }
 }

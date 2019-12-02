@@ -489,6 +489,9 @@ class MongoDB extends DatabaseDriver
                     if (isset($mongoDB["limit"])) {
                         $this->query_params["options"]["limit"] = $mongoDB["limit"];
                     }
+                    if (isset($mongoDB["offset"])) {
+                        $this->query_params["options"]["skip"] = $mongoDB["offset"];
+                    }
 
                     if (class_exists("\MongoDB\Driver\Query")) {
                         try {
@@ -519,11 +522,11 @@ class MongoDB extends DatabaseDriver
     }
 
     /**
-     * @param array $query
      * @param string $name
+     * @param array $query
      * @return mixed
      */
-    public function cmd(array $query, string $name = "count")
+    public function cmd(string $name = "count", array $query = null)
     {
         $res = null;
         if (empty($query)) {

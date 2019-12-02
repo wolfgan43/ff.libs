@@ -317,7 +317,7 @@ class MySqli extends DatabaseDriver
     private function querySelect(array $query) : string
     {
         return "SELECT " . (
-            isset($query["limit"]["calc_found_rows"])
+            !empty($query["calc_found_rows"])
                 ? " SQL_CALC_FOUND_ROWS "
                 : ""
             ) . $query["select"];
@@ -325,20 +325,26 @@ class MySqli extends DatabaseDriver
 
     /**
      * @param array $query
-     * @return string
+     * @return string|null
      */
-    private function queryFrom(array $query) : string
+    private function queryFrom(array $query) : ?string
     {
-        return " FROM " .  $query["from"];
+        return (isset($query["from"])
+            ? " FROM " .  $query["from"]
+            : null
+        );
     }
 
     /**
      * @param array $query
-     * @return string
+     * @return string|null
      */
-    private function queryWhere(array $query) : string
+    private function queryWhere(array $query) : ?string
     {
-        return " WHERE " . $query["where"];
+        return (isset($query["where"])
+            ? " WHERE " . $query["where"]
+            : null
+        );
     }
 
     /**
@@ -359,15 +365,15 @@ class MySqli extends DatabaseDriver
      */
     private function queryLimit(array $query) : ?string
     {
-        if (!isset($query["limit"])) {
-            return null;
-        }
-
-        return " LIMIT " . (
-            is_array($query["limit"])
-            ? $query["limit"]["skip"] . ", " . $query["limit"]["limit"]
-            : $query["limit"]
-        );
+        return (
+                isset($query["limit"])
+                ? " LIMIT " . $query["limit"]
+                : null
+            ) . (
+                isset($query["offset"])
+                ? " OFFSET " . $query["offset"]
+                : null
+            );
     }
 
     /**
@@ -415,11 +421,11 @@ class MySqli extends DatabaseDriver
     }
 
     /**
-     * @param array $query
      * @param string $name
+     * @param array $query
      * @return mixed
      */
-    public function cmd(array $query, string $name = "count")
+    public function cmd(string $name = "count", array $query = null)
     {
         if (!$this->link_id && !$this->connect()) {
             return false;
@@ -429,6 +435,13 @@ class MySqli extends DatabaseDriver
         switch ($name) {
             case "count":
                 $query["select"] = "COUNT(ID) AS count";
+                $this->query($query);
+                if ($this->nextRecord()) {
+                    $res = $this->record["count"];
+                }
+                break;
+            case "calc_found_rows":
+                $query["select"] = "FOUND_ROWS() AS count";
                 $this->query($query);
                 if ($this->nextRecord()) {
                     $res = $this->record["count"];
@@ -612,10 +625,7 @@ class MySqli extends DatabaseDriver
         if ($this->num_rows === null) {
             if ($this->use_found_rows) {
                 $db = new MySqli();
-                $db->query("SELECT FOUND_ROWS() AS found_rows");
-                if ($db->nextRecord()) {
-                    $this->num_rows = $db->record["found_rows"];
-                }
+                $this->num_rows = $db->cmd("calc_found_rows");
             } else {
                 $this->num_rows = @mysqli_num_rows($this->query_id);
             }

@@ -495,15 +495,15 @@ class Request implements Configurable, Dumpable
         self::$path_info                                    = $path_info;
     }
 
-    public static function rawdata(bool $toObj = false)
+    public static function rawdata(bool $toObj = false) : array
     {
         return (array) self::body(null, null, $toObj, "rawdata");
     }
-    public static function valid(bool $toObj = false)
+    public static function valid(bool $toObj = false) : array
     {
         return (array) self::body(null, null, $toObj, "valid");
     }
-    public static function unknown(bool $toObj = false)
+    public static function unknown(bool $toObj = false) : array
     {
         return (array) self::body(null, null, $toObj, "unknown");
     }
@@ -560,6 +560,25 @@ class Request implements Configurable, Dumpable
             ? "?" . http_build_query($res)
             : ""
         );
+    }
+
+    public static function getAuthorizationHeader() : ?string
+    {
+        $headers = null;
+        if (isset($_SERVER['Authorization'])) {
+            $headers = trim($_SERVER["Authorization"]);
+        } elseif (isset($_SERVER['HTTP_AUTHORIZATION'])) { //Nginx or fast CGI
+            $headers = trim($_SERVER["HTTP_AUTHORIZATION"]);
+        } elseif (function_exists('apache_request_headers')) {
+            $requestHeaders = apache_request_headers();
+            // Server-side fix for bug in old Android versions (a nice side-effect of this fix means we don't care about capitalization for Authorization)
+            $requestHeaders = array_combine(array_map('ucwords', array_keys($requestHeaders)), array_values($requestHeaders));
+
+            if (isset($requestHeaders['Authorization'])) {
+                $headers = trim($requestHeaders['Authorization']);
+            }
+        }
+        return $headers;
     }
 
     /**
@@ -1048,7 +1067,7 @@ class Request implements Configurable, Dumpable
                         ? $rule["validator_range"]
                         : null
                     );
-                    $validator                                                          = Validator::is($_SERVER[$header_name], $validator_rule, array("fakename" => $header_key . " (in header)", "range" => $validator_range));
+                    $validator                                                          = Validator::is($_SERVER[$header_name], $header_key . " (in header)", $validator_rule, $validator_range);
                     if ($validator->isError()) {
                         $errors[$validator->status][] = $validator->error;
                     }
@@ -1105,7 +1124,7 @@ class Request implements Configurable, Dumpable
                                                                                             : null
                                                                                         );
 
-                        $errors                                                         = $errors + self::securityValidation($request[$rule["name"]], $validator_rule, $rule["name"], $validator_range);
+                        $errors                                                         = $errors + self::securityValidation($request[$rule["name"]], $rule["name"], $validator_rule, $validator_range);
 
 
                         if (isset($rule["scope"])) {
@@ -1117,11 +1136,7 @@ class Request implements Configurable, Dumpable
                             unset($request[$rule["name"]]);
                         }
                     } else {
-                        $request[$rule["name"]]                                         = (
-                            isset($rule["default"])
-                                                                                            ? $rule["default"]
-                                                                                            : null
-                                                                                        );
+                        $request[$rule["name"]]                                         = self::getDefault($rule);
                         self::$page->request["valid"][$rule["name"]]                    = $request[$rule["name"]];
                         if (isset($rule["scope"])) {
                             self::$page->request[$rule["scope"]][$rule["name"]]         = $request[$rule["name"]];
@@ -1138,7 +1153,7 @@ class Request implements Configurable, Dumpable
                 self::$page->request["unknown"]                                         = array_diff_key($request, self::$page->request["valid"]);
                 if (isset(self::$page->request["unknown"]) && is_array(self::$page->request["unknown"]) && count(self::$page->request["unknown"])) {
                     foreach (self::$page->request["unknown"] as $unknown_key => $unknown) {
-                        $errors                                                         = $errors + self::securityValidation($unknown, null, $unknown_key);
+                        $errors                                                         = $errors + self::securityValidation($unknown, $unknown_key);
                     }
                 }
             }
@@ -1150,26 +1165,36 @@ class Request implements Configurable, Dumpable
     }
 
     /**
+     * @todo da tipizzare
+     * @param array $rule
+     * @return mixed|null
+     */
+    private static function getDefault(array $rule)
+    {
+        $res = null;
+        if (isset($rule["default"])) {
+            $res = $rule["default"];
+        } elseif (isset($rule["validator"])) {
+            $res = Validator::getDefault($rule["validator"]);
+        }
+        return $res;
+    }
+
+    /**
+     * @todo da tipizzare
      * @param $value
-     * @param null $type
-     * @param string|null $fakename
+     * @param string $fakename
+     * @param string|null $type
      * @param string|null $range
      * @return array
      */
-    private static function securityValidation(&$value, $type = null, string $fakename = null, string $range = null) : array
+    private static function securityValidation(&$value, string $fakename, string $type = null, string $range = null) : array
     {
         $errors                                                                         = array();
-        $params                                                                         = array();
-        if ($fakename) {
-            $params["fakename"]   = $fakename;
-        }
-        if ($range) {
-            $params["range"]      = $range;
-        }
 
-        $validator                                                                      = Validator::is($value, $type, $params);
+        $validator                                                                      = Validator::is($value, $fakename, $type, $range);
         if ($validator->isError()) {
-            $errors[$validator->status][] = $validator->error;
+            $errors[$validator->status][]                                               = $validator->error;
         }
 
 
@@ -1187,7 +1212,7 @@ class Request implements Configurable, Dumpable
                 if (isset(self::$page->rules->body[$file_name]) && self::$page->rules->body[$file_name]["validator"] != "file") {
                     $errors[400][]                                                      = $file_name . " must be type " . self::$page->rules->body[$file_name]["validator"];
                 } else {
-                    $validator                                                          = Validator::is($file_name, "file", array("fakename" => $file_name));
+                    $validator                                                          = Validator::is($file_name, $file_name, "file");
                     if ($validator->isError()) {
                         $errors[$validator->status][] = $validator->error;
                     }

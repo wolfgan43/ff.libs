@@ -29,6 +29,10 @@ use phpformsframework\libs\Constant;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 
+/**
+ * Class FilemanagerAdapter
+ * @package phpformsframework\libs\storage
+ */
 abstract class FilemanagerAdapter
 {
     const ERROR_BUCKET                                                  = "storage";
@@ -41,49 +45,53 @@ abstract class FilemanagerAdapter
     private $file_path                                                  = null;
     private $var                                                        = null;
 
-    public function __construct($file_path = null, $var = null)
+    /**
+     * FilemanagerAdapter constructor.
+     * @param string|null $file_path
+     * @param string|null $var
+     */
+    public function __construct(string $file_path = null, string $var = null)
     {
         $this->setFilePath($file_path);
         $this->setVar($var);
     }
 
     /**
-     * @todo da tipizzare
      * @param string $file_path
      * @param string|null $var
-     * @return mixed
+     * @return array|null
      */
-    abstract protected function loadFile(string $file_path, string $var = null);
-    abstract protected function output($data, $var);
+    abstract protected function loadFile(string $file_path, string $var = null) : ?array;
+
+    /**
+     * @param array $data
+     * @param string $var
+     * @return string
+     */
+    abstract protected function output(array $data, string $var) : string;
 
     /**
      * @param null|string $file_path
-     * @param null|string $search_keys
+     * @param null|array $search_keys
      * @param int $search_flag
-     * @return bool|null|array
+     * @return array|null
      */
-    public function read($file_path = null, $search_keys = null, $search_flag = self::SEARCH_DEFAULT)
+    public function read(string $file_path = null, array $search_keys = null, int $search_flag = self::SEARCH_DEFAULT) : ?array
     {
         $res                                                            = null;
 
         $params                                                         = $this->getParams($file_path);
-        if (!$params) {
-            return false;
-        }
-
-        $return                                                         = $this->loadFile($params->file_path);
-        if ($return) {
-            if ($search_keys) {
-                $res                                                    = $this->search($return, $search_keys, $search_flag);
-            } else {
-                $res                                                    = $return;
+        if ($params) {
+            $return                                                         = $this->loadFile($params->file_path);
+            if ($return) {
+                if ($search_keys) {
+                    $res                                                    = $this->search($return, $search_keys, $search_flag);
+                } else {
+                    $res                                                    = $return;
+                }
             }
-        } elseif ($return === false) {
-            Error::registerWarning("syntax errors into file" . (Kernel::$Environment::DEBUG ? ": " . $params->file_path : ""), static::ERROR_BUCKET);
-            return false;
         }
-
-        return $this->getResult($res);
+        return $res;
     }
 
     /**
@@ -92,7 +100,7 @@ abstract class FilemanagerAdapter
      * @param null|string $var
      * @return bool
      */
-    public function write($data, $file_path = null, $var = null)
+    public function write(array $data, string $file_path = null, string $var = null) : bool
     {
         $params                                                 = $this->setParams($file_path, $var);
         $output                                                 = $this->output($data, $params->var);
@@ -106,7 +114,7 @@ abstract class FilemanagerAdapter
      * @param null|string $file_path
      * @return bool
      */
-    public function update($data, $var = null, $file_path = null)
+    public function update(array $data, string $var = null, string $file_path = null) : bool
     {
         $res                                                            = (
             is_array($data)
@@ -118,12 +126,12 @@ abstract class FilemanagerAdapter
     }
 
     /**
-     * @param array|string $search_keys
+     * @param array $search_keys
      * @param int $search_flag
      * @param null|string $file_path
      * @return bool
      */
-    public function delete($search_keys, $search_flag = self::SEARCH_DEFAULT, $file_path = null)
+    public function delete(array $search_keys, int $search_flag = self::SEARCH_DEFAULT, string $file_path = null) : bool
     {
         $res                                                            = $this->read($file_path, $search_keys, $search_flag);
 
@@ -136,7 +144,7 @@ abstract class FilemanagerAdapter
      * @param null|int $expire
      * @return bool
      */
-    public function save($buffer, $file_path = null, $expire = null)
+    public function save(string $buffer, string $file_path = null, int $expire = null) : bool
     {
         $rc                                                             = false;
         if (!Error::check(static::ERROR_BUCKET)) {
@@ -157,7 +165,7 @@ abstract class FilemanagerAdapter
      * @param null|int $expires
      * @return bool
      */
-    public function saveAppend($buffer, $file_path = null, $expires = null)
+    public function saveAppend(string $buffer, string $file_path = null, int $expires = null) : bool
     {
         if (!$file_path) {
             $file_path = $this->getFilePath();
@@ -175,7 +183,7 @@ abstract class FilemanagerAdapter
      * @param null|string $var
      * @return FilemanagerAdapter
      */
-    public function fetch($file_path, $var = null)
+    public function fetch(string $file_path, string $var = null) : FilemanagerAdapter
     {
         $this->setFilePath($file_path);
         $this->setVar($var);
@@ -186,7 +194,7 @@ abstract class FilemanagerAdapter
      * @param null|string $path
      * @return bool
      */
-    public function makeDir($path = null)
+    public function makeDir(string $path = null) : bool
     {
         $rc                                                             = true;
         if (!$path) {
@@ -207,7 +215,7 @@ abstract class FilemanagerAdapter
      * @param null|string $file_path
      * @return bool
      */
-    public function touch($expires, $file_path = null)
+    public function touch(int $expires, string $file_path = null) : bool
     {
         if (!$file_path) {
             $file_path                                                  = $this->getFilePath();
@@ -219,7 +227,7 @@ abstract class FilemanagerAdapter
      * @param null|string $file_path
      * @return bool
      */
-    public function isExpired($file_path = null)
+    public function isExpired(string $file_path = null) : bool
     {
         if (!$file_path) {
             $file_path                                                  = $this->getFilePath();
@@ -231,7 +239,7 @@ abstract class FilemanagerAdapter
      * @param string $file_path
      * @return bool
      */
-    private function isValid($file_path)
+    private function isValid(string $file_path) : bool
     {
         return (Kernel::$Environment::DEBUG || strpos($file_path, Constant::DISK_PATH) === 0);
     }
@@ -240,7 +248,7 @@ abstract class FilemanagerAdapter
      * @param null|string $file_path
      * @return bool
      */
-    public function exist($file_path = null)
+    public function exist(string $file_path = null) : bool
     {
         $file_path                                                      = (
             $file_path
@@ -254,19 +262,17 @@ abstract class FilemanagerAdapter
     /**
      * @return null|string
      */
-    public function getFilePath()
+    public function getFilePath() : ?string
     {
         return $this->file_path;
     }
 
     /**
-     * @param string $file_path
+     * @param string|null $file_path
      */
-    public function setFilePath($file_path)
+    public function setFilePath(string $file_path = null) : void
     {
         if ($file_path) {
-            Error::clear(static::ERROR_BUCKET);
-
             $abs_path                                               = $file_path;
             if (!pathinfo($abs_path, PATHINFO_EXTENSION)) {
                 $abs_path                                           .= "." . $this::EXT;
@@ -281,21 +287,28 @@ abstract class FilemanagerAdapter
     /**
      * @return null|string
      */
-    public function getVar()
+    public function getVar() : ?string
     {
         return $this->var;
     }
 
     /**
-     * @param string $var
+     * @param string|null $var
      */
-    public function setVar($var)
+    public function setVar(string $var = null) : void
     {
         if ($var) {
             $this->var                                              = $var;
         }
     }
-    protected function setParams($file_path, $var)
+
+    /**
+     * @param string $file_path
+     * @param string $var
+     * @return object
+     *
+     */
+    protected function setParams(string $file_path, string $var) : object
     {
         $this->setFilePath($file_path);
         $this->setVar($var);
@@ -305,11 +318,16 @@ abstract class FilemanagerAdapter
             "var"           => $this->getVar()
         );
     }
-    protected function getParams($file_path)
+
+    /**
+     * @param string $file_path
+     * @return object|null
+     */
+    protected function getParams(string $file_path) : ?object
     {
         $this->setFilePath($file_path);
         if (!$this->exist($this->getFilePath())) {
-            return false;
+            return null;
         }
 
         return (object) array(
@@ -320,16 +338,12 @@ abstract class FilemanagerAdapter
 
     /**
      * @param array $data
-     * @param string $search_keys
+     * @param array $search_keys
      * @param int $search_flag
      * @return array
      */
-    protected function search($data, $search_keys, $search_flag = self::SEARCH_DEFAULT)
+    protected function search(array $data, array $search_keys, int $search_flag = self::SEARCH_DEFAULT) : array
     {
-        if (!is_array($search_keys)) {
-            $search_keys = array($search_keys);
-        }
-
         foreach ($search_keys as $key) {
             if ($search_flag == $this::SEARCH_IN_KEY || $search_flag == $this::SEARCH_IN_BOTH) {
                 unset($data[$key]);
@@ -341,14 +355,5 @@ abstract class FilemanagerAdapter
         }
 
         return $data;
-    }
-
-    /**
-     * @param array $result
-     * @return array
-     */
-    protected function getResult($result)
-    {
-        return $result;
     }
 }

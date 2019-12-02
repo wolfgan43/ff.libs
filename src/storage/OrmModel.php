@@ -62,7 +62,9 @@ class OrmModel extends Mappable
             }
             $this->main_table = $main_table;
         }
-        $this->setAdapters($databaseAdapters);
+
+        $this->adapters                                                                     = array_intersect_key($this->connectors, $this->adapters);
+
     }
 
     /**
@@ -105,7 +107,22 @@ class OrmModel extends Mappable
         return $res;
     }
 
-    public function getMainTable()
+    /**
+     * @param string $table_name
+     * @return string|null
+     */
+    public function getTableAlias(string $table_name) : ?string
+    {
+        return (isset($this->tables[$table_name]["alias"])
+            ? $this->tables[$table_name]["alias"]
+            : null
+        );
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getMainTable() : ?string
     {
         return $this->main_table;
     }
@@ -149,80 +166,89 @@ class OrmModel extends Mappable
      * @param null|array $fields
      * @param null|array $where
      * @param null|array $sort
-     * @param null|array $limit
+     * @param int $limit
+     * @param int|null $offset
      * @return array|bool|null
      */
-    public function read($fields = null, $where = null, $sort = null, $limit = null)
+    public function read(array $fields = null, array $where = null, array $sort = null, int $limit = null, int $offset = null)
     {
         return Orm::read($where, $fields, $sort, $limit, $offset, $this);
     }
+
     /**
      * @param null|array $fields
      * @param null|array $where
      * @param null|array $sort
-     * @param null|array $limit
+     * @param null|int $limit
+     * @param int $offset
      * @return array|bool|null
      */
-    public function readRawData($fields = null, $where = null, $sort = null, $limit = null)
+    public function readRawData(array $fields = null, array $where = null, array $sort = null, int $limit = null, int $offset = null)
     {
         return Orm::readRawData($where, $fields, $sort, $limit, $offset, $this);
     }
 
     /**
+     * @todo da tipizzare
      * @param array $data
      * @return array|bool|null
      */
-    public function insertUnique($data)
+    public function insertUnique(array $data)
     {
         return Orm::insertUnique($data, $this);
     }
 
     /**
-         * @param array $data
-         * @return array|bool|null
-         */
-    public function insert($data)
+     * @todo da tipizzare
+     * @param array $data
+     * @return array|bool|null
+     */
+    public function insert(array $data)
     {
         return Orm::insert($data, $this);
     }
 
     /**
+     * @todo da tipizzare
      * @param array $set
      * @param array $where
      * @return array|bool|null
      */
-    public function update($set, $where)
+    public function update(array $set, array $where)
     {
         return Orm::update($set, $where, $this);
     }
 
     /**
+     * @todo da tipizzare
      * @param array $where
      * @param null|array $set
      * @param null|array $insert
      * @return array|bool|null
      */
-    public function write($where, $set = null, $insert = null)
+    public function write(array $where, array $set = null, array $insert = null)
     {
         return Orm::write($where, $set, $insert, $this);
     }
 
     /**
+     * @todo da tipizzare
      * @param string $name
      * @param null|array $where
      * @param null|array $fields
      * @return array|bool|null
      */
-    public function cmd($name, $where = null, $fields = null)
+    public function cmd(string $name, array $where = null, array $fields = null)
     {
         return Orm::cmd($name, $where, $fields, $this);
     }
 
     /**
+     * @todo da tipizzare
      * @param array $where
      * @return array|bool|null
      */
-    public function delete($where)
+    public function delete(array $where)
     {
         return Orm::delete($where, $this);
     }

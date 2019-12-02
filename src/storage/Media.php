@@ -639,32 +639,34 @@ class Media implements Configurable
 
     /**
      * @param string $file
+     * @param string|null $mode
      * @return array|null
      */
-    public static function getInfo(string $file) : ?array
+    public static function getInfo(string $file, string $mode = null) : array
     {
-        return self::getModeByFile($file);
-    }
-
-    /**
-     * @todo da tipizzare
-     * @param string $file
-     * @param string|null $mode
-     * @param string|null $key
-     * @return array|string
-     */
-    public static function getUrl(string $file, string $mode = null, string $key = null)
-    {
-        $query                                                      = null;
-        if ($mode === null && $key === null) {
-            $key                                                    = "url";
+        if (strpos($file, "://") !== false) {
+            return array(
+                "url"                   => $file,
+                "web_url"               => $file,
+                "extension"             => null,
+                "file"                  => null,
+                "mode"                  => null
+            );
         }
+
+        $query                                                      = null;
         if (strpos($file, "/") === false) {
             $file                                                   = Resource::get($file, "images");
         }
         $arrFile                                                    = pathinfo($file);
         if ($arrFile["extension"] == "svg") {
-            return self::image2base64($file, $arrFile["extension"]);
+            return array(
+                                                                        "url"                   => self::image2base64($file, $arrFile["extension"]),
+                                                                        "web_url"               => null,
+                                                                        "extension"             => $arrFile["extension"],
+                                                                        "file"                  => $file,
+                                                                        "mode"                  => $mode
+                                                                    );
         }
 
         $showfiles                                                  = Constant::SITE_PATH . static::RENDER_MEDIA_PATH;
@@ -681,20 +683,24 @@ class Media implements Configurable
         $dirfilename                                                = $showfiles . ($arrFile["dirname"] == DIRECTORY_SEPARATOR ? "" : $arrFile["dirname"]) . DIRECTORY_SEPARATOR . $arrFile["filename"];
         $url                                                        = $dirfilename . ($arrFile["filename"] && $mode ? "-" : "") . $mode . ($arrFile["extension"] ? "." . $arrFile["extension"] : "") . $query;
         $pathinfo                                                   = array(
-                                                                        "url"                   => $url
-                                                                        , "web_url"             => (
-                                                                            strpos($url, "://") === false
-                                                                                                    ? Request::protocol_host() . $url
-                                                                                                    : $url
-                                                                                                )
-                                                                        , "extension"           => $arrFile["extension"]
-                                                                        , "file"                => $dirfilename
-                                                                        , "mode"                => $mode
+                                                                        "url"                   => $url,
+                                                                        "web_url"               => Request::protocol_host() . $url,
+                                                                        "extension"             => $arrFile["extension"],
+                                                                        "file"                  => $dirfilename,
+                                                                        "mode"                  => $mode
                                                                     );
-        return ($key
-            ? $pathinfo[$key]
-            : $pathinfo
-        );
+        return $pathinfo;
+    }
+
+    /**
+     * @param string $file
+     * @param string|null $mode
+     * @param string $key
+     * @return string
+     */
+    public static function getUrl(string $file, string $mode = null, string $key = "url") : ?string
+    {
+        return self::getInfo($file, $mode)[$key];
     }
 
     /**
@@ -704,7 +710,7 @@ class Media implements Configurable
      */
     private static function image2base64(string $path, string $ext = "svg") : string
     {
-        $data = Dir::loadFile($path);
+        $data = Filemanager::fileGetContent($path);
 
         return 'data:' . self::MIMETYPE[$ext] . ';base64,' . base64_encode($data);
     }

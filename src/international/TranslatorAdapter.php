@@ -27,13 +27,34 @@ namespace phpformsframework\libs\international;
 
 use phpformsframework\libs\cache\Mem;
 
+/**
+ * Class TranslatorAdapter
+ * @package phpformsframework\libs\international
+ */
 abstract class TranslatorAdapter
 {
     const CACHE_DICTIONARY_BUCKET                       = "dictionary/translations/";
 
     private static $translation                         = array();
+    protected $code                                     = null;
 
-    protected function save($words, $toLang, $fromLang, $words_translated)
+    /**
+     * TranslatorAdapter constructor.
+     * @param string|null $code
+     */
+    protected function __construct(string $code = null)
+    {
+        $this->code                                     = $code;
+    }
+
+    /**
+     * @param string $words
+     * @param string $toLang
+     * @param string $fromLang
+     * @param string $words_translated
+     * @return string|null
+     */
+    protected function save(string $words, string $toLang, string $fromLang, string $words_translated) : ?string
     {
         $fromto                                         = strtoupper($fromLang . "|" . $toLang);
 
@@ -43,7 +64,13 @@ abstract class TranslatorAdapter
         return self::$translation[$fromto][$words];
     }
 
-    public function translate($words, $toLang = null, $fromLang = null)
+    /**
+     * @param string $words
+     * @param string|null $toLang
+     * @param string|null $fromLang
+     * @return string|null
+     */
+    public function translate(string $words, string $toLang = null, string $fromLang = null) : ?string
     {
         $fromto                                         = strtoupper(Translator::getLangDefault($fromLang)  . "|" . Translator::getLang($toLang));
 

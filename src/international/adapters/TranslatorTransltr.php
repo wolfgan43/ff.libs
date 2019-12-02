@@ -25,20 +25,24 @@
  */
 namespace phpformsframework\libs\international\adapters;
 
-use phpformsframework\libs\Dir;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\international\TranslatorAdapter;
+use phpformsframework\libs\security\Validator;
+use phpformsframework\libs\storage\Filemanager;
 
+/**
+ * Class TranslatorTransltr
+ * @package phpformsframework\libs\international\adapters
+ */
 class TranslatorTransltr extends TranslatorAdapter
 {
-    private $code                                       = null;
-
-    private function __construct($code = null)
-    {
-        $this->code                                     = $code;
-    }
-
-    public function translate($words, $toLang = null, $fromLang = null)
+    /**
+     * @param string $words
+     * @param string|null $toLang
+     * @param string|null $fromLang
+     * @return string|null
+     */
+    public function translate(string $words, string $toLang = null, string $fromLang = null) : ?string
     {
         $fromLang                                       = Translator::getLangDefault($fromLang);
         $toLang                                         = Translator::getLang($toLang);
@@ -47,9 +51,9 @@ class TranslatorTransltr extends TranslatorAdapter
         } else {
             $res                                        = parent::translate($words, $toLang, $fromLang);
             if (!$res) {
-                $transalted = Dir::loadFile("http://www.transltr.org/api/translate?text=" . urlencode($words) . "&to=" . strtolower(substr($toLang, 0, 2)) . "&from=" . strtolower(substr($fromLang, 0, 2)) . ($this->code ? "&key=" . $this->code : ""));
+                $transalted = Filemanager::fileGetContent("http://www.transltr.org/api/translate?text=" . urlencode($words) . "&to=" . strtolower(substr($toLang, 0, 2)) . "&from=" . strtolower(substr($fromLang, 0, 2)) . ($this->code ? "&key=" . $this->code : ""));
                 if ($transalted) {
-                    $buffer                             = json_decode($transalted, true);
+                    $buffer                             = Validator::json2Array($transalted);
                     if ($buffer["translationText"]) {
                         $res                            = $this->save($words, $toLang, $fromLang, $buffer["translationText"]);
                     }

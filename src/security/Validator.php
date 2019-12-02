@@ -40,7 +40,7 @@ class Validator
                                                                 "bool"              => array(
                                                                     "filter"        => FILTER_VALIDATE_BOOLEAN,
                                                                     "flags"         => FILTER_NULL_ON_FAILURE,
-                                                                    "options"       => array("default" => null),
+                                                                    "options"       => array("default" => false),
                                                                 ),
                                                                 "domain"            => array(
                                                                     "filter"        => FILTER_VALIDATE_DOMAIN,
@@ -57,13 +57,13 @@ class Validator
                                                                 "float"             => array(
                                                                     "filter"        => FILTER_VALIDATE_FLOAT,
                                                                     "flags"         => null, //FILTER_FLAG_ALLOW_THOUSAND
-                                                                    "options"       => array("default" => null),
+                                                                    "options"       => array("default" => 0),
                                                                     "length"        => 32
                                                                 ),
                                                                 "int"               => array(
                                                                     "filter"        => FILTER_VALIDATE_INT,
                                                                     "flags"         => null, //FILTER_FLAG_ALLOW_OCTAL | FILTER_FLAG_ALLOW_HEX
-                                                                    "options"       => array("default" => null),
+                                                                    "options"       => array("default" => 0),
                                                                     "length"        => 16
                                                                 ),
                                                                 "timestamp"         => array(
@@ -199,14 +199,14 @@ class Validator
     private static $errorName                               = null;
 
     /**
-     * @param string $what
-     * @param null $type
-     * @param array[range, fakename] $option
+     * @param $what
+     * @param string $fakename
+     * @param string|null $type
+     * @param null $range
      * @return DataError
      */
-    public static function is(&$what, $type = null, $option = null)
+    public static function is(&$what, string $fakename, string $type = null, $range = null) : DataError
     {
-        $dataError                                   = new DataError();
         if (!array_key_exists($type, self::RULES)) {
             $type                                       = (
                 is_array($what)
@@ -216,34 +216,32 @@ class Validator
         }
         $rule                                           = self::RULES[$type];
 
-        self::setErrorName($option["fakename"]);
-        if (isset($option["range"])) {
-            self::setRuleOptions($rule, $option["range"]);
-        }
-        if (!self::isAllowedSize($what, $rule["length"])) {
-            $dataError                                  = self::isError(self::getErrorName($what) . " Max Length Exeeded: " . $type, $type, 413);
-        } else {
+        self::setErrorName($fakename);
+        self::setRuleOptions($rule, $range);
+
+        $dataError                                      = self::isAllowed((array) $what, $type, $rule["length"]);
+        if (!$dataError->isError()) {
             $validation                                 = filter_var($what, $rule["filter"], array(
                                                             "flags"         => $rule["flags"],
                                                             "options"       => $rule["options"]
                                                         ));
 
             if ($validation === null) {
-                $dataError                              = self::isError(self::getErrorName($what) . " is not a valid " . $type . (isset($option["range"]) ? ". The permitted values are [" . $option["range"] . "]" : ""), $type);
+                $dataError                              = self::isError(self::getErrorName() . " is not a valid " . $type . ($range ? ". The permitted values are [" . $range . "]" : ""), $type);
             } elseif (is_array($validation)) {
                 if (is_array($what)) {
                     $diff                               = array_diff_key($what, array_filter($validation));
                     if (count($diff)) {
-                        $dataError                      = self::isError(self::getErrorName($what) . "[" . implode(", ", array_keys($diff)) . "] is not valid " . $type, $type);
+                        $dataError                      = self::isError(self::getErrorName() . "[" . implode(", ", array_keys($diff)) . "] is not valid " . $type, $type);
                     }
                 } else {
-                    $dataError                          = self::isError(self::getErrorName($what) . " is malformed");
+                    $dataError                          = self::isError(self::getErrorName() . " is malformed");
                 }
             } elseif ($validation != $what) {
                 if (isset($rule["normalize"])) {
                     $what                               = $validation;
                 } else {
-                    $dataError                          = self::isError(self::getErrorName($what) . " is not a valid " . $type . ($validation && $validation !== true ? ". (" . $validation . " is valid!)" : ""), $type);
+                    $dataError                          = self::isError(self::getErrorName() . " is not a valid " . $type . ($validation && $validation !== true ? ". (" . $validation . " is valid!)" : ""), $type);
                 }
             }
 
@@ -260,7 +258,25 @@ class Validator
         return $dataError;
     }
 
-    public static function transform(&$what, $in = null)
+    /**
+     * @todo da tipizzare
+     * @param string $type
+     * @return mixed|null
+     */
+    public static function getDefault(string $type)
+    {
+        return (isset(self::RULES[$type]["options"]["default"])
+            ? self::RULES[$type]["options"]["default"]
+            : null
+        );
+    }
+
+    /**
+     * @todo da tipizzare
+     * @param $what
+     * @param string|null $in
+     */
+    public static function transform(&$what, string $in = null) : void
     {
         if ($in) {
             if (is_array($what)) {
@@ -268,15 +284,39 @@ class Validator
                     self::transform($who, $in);
                 }
             } else {
-                if ($in == "json") {
-                    $what = json_decode($what, true);
-                } else {
-                    $what = urldecode($what);
-                }
+                self::cast($what, $in);
             }
         }
     }
 
+    /**
+     * @todo da tipizzare
+     * @param $value
+     * @param string|null $type
+     * @return mixed
+     */
+    private static function cast(&$value, string $type = null)
+    {
+        switch ($type) {
+            case "json":
+                $value = json_decode($value, true);
+                break;
+            case "boolean":
+            case "bool":
+            case "integer":
+            case "int":
+            case "float":
+            case "double":
+            case "string":
+            case "array":
+            case "object":
+                settype($value, $type);
+            default:
+                $value = urldecode($value);
+        }
+
+        return $value;
+    }
     /**
      * @param string|null $value
      * @return bool
@@ -323,7 +363,7 @@ class Validator
         foreach ($value as $item) {
             $check                                      = str_replace($spellcheck, "", $item);
             if ($item != $check) {
-                $errorName                              = self::getErrorName($item);
+                $errorName                              = self::getErrorName();
                 $errors[$errorName]                     = $errorName . " is not a valid. " . "You can't use [" . implode(" ", $spellcheck) . "]";
             }
         }
@@ -482,7 +522,7 @@ class Validator
      */
     public static function isTel(string $value) : bool
     {
-        return is_numeric(ltrim(str_replace(array(" ", ".", ",", "-"), array(""), $value), "+"));
+        return strlen($value) > 9 && is_numeric(ltrim(str_replace(array(" ", ".", ",", "-"), array(""), $value), "+"));
     }
 
     /**
@@ -868,40 +908,58 @@ class Validator
         return $string;
     }
 
-    private static function isAllowedSize($value, $length)
+    /**
+     * @param array $value
+     * @param string $type
+     * @param int $length
+     * @return DataError
+     */
+    private static function isAllowed(array $value, string $type, int $length) : DataError
     {
-        $res = true;
-        foreach ((array) $value as $item) {
-            if (strlen($item) > $length) {
-                $res = false;
+        $dataError                                          = new DataError();
+        foreach ($value as $item) {
+            if (is_array($item)) {
+                $dataError                                  = self::isError(self::getErrorName() . " Multidimensional Array not supported", $type, 501);
+                break;
+            } elseif (strlen($item) > $length) {
+                $dataError                                  = self::isError(self::getErrorName() . " Max Length Exeeded: " . $type, $type, 413);
                 break;
             }
         }
 
-        return $res;
+        return $dataError;
     }
 
-    private static function setRuleOptions(&$rule, $option)
+    /**
+     * @param array $rule
+     * @param string|null $range
+     */
+    private static function setRuleOptions(array &$rule, string $range = null) : void
     {
-        if ($option) {
+        if ($range) {
             if ($rule["filter"] == FILTER_VALIDATE_INT || $rule["filter"] == FILTER_VALIDATE_FLOAT) {
-                if (strpos($option, ":") !== false) {
-                    $arrOpt                                 = explode(":", $option);
+                if (strpos($range, ":") !== false) {
+                    $arrOpt                                 = explode(":", $range);
                     if (is_numeric($arrOpt[0])) {
                         $rule["options"]["min_range"]       = $arrOpt[0];
                     }
                     if (is_numeric($arrOpt[1])) {
                         $rule["options"]["max_range"]       = $arrOpt[1];
                     }
-                } elseif (is_numeric($option)) {
-                    $rule["options"]["decimal"]             = $option;
+                } elseif (is_numeric($range)) {
+                    $rule["options"]["decimal"]             = $range;
                 }
             } else {
-                self::setRuleOptionsString($rule, $option);
+                self::setRuleOptionsString($rule, $range);
             }
         }
     }
-    private static function setRuleOptionsString(&$rule, $option)
+
+    /**
+     * @param array $rule
+     * @param string $option
+     */
+    private static function setRuleOptionsString(array &$rule, string $option) : void
     {
         if (strpos($option, ":") !== false) {
             $arrOpt                                 = explode(":", $option);
@@ -912,16 +970,21 @@ class Validator
             $rule["length"]                         = $option;
         }
     }
-    private static function setErrorName($name)
+
+    /**
+     * @param string $name
+     */
+    private static function setErrorName(string $name) : void
     {
         self::$errorName = $name;
     }
-    private static function getErrorName($name = null)
+
+    /**
+     * @return string
+     */
+    private static function getErrorName() : string
     {
-        return (self::$errorName
-            ? self::$errorName
-            : $name
-        );
+        return self::$errorName;
     }
 
     /**
@@ -930,7 +993,7 @@ class Validator
      * @param int $status
      * @return DataError
      */
-    private static function isError($error, $type = null, $status = 400)
+    private static function isError(string $error, string $type = null, int $status = 400) : DataError
     {
         $dataError = new DataError();
         $dataError->error($status, (

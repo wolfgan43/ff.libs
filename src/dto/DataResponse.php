@@ -26,6 +26,7 @@
 
 namespace phpformsframework\libs\dto;
 
+use stdClass;
 /**
  * Class DataResponse
  * @package phpformsframework\libs\dto
@@ -84,7 +85,7 @@ class DataResponse extends DataAdapter
 
     /**
      * @param string $key
-     * @return \stdClass|string|null
+     * @return \stdClass|array|string|null
      */
     public function get(string $key)
     {
@@ -135,5 +136,15 @@ class DataResponse extends DataAdapter
     public function toArray() : array
     {
         return $this->data;
+    }
+    /**
+     * @return stdClass
+     */
+    public function toObject() : ?stdClass
+    {
+        return (count($this->data)
+            ? (object) $this->data
+            : null
+        );
     }
 }

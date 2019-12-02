@@ -120,22 +120,6 @@ class Dir
     }
 
     /**
-     * @param string $path
-     * @param null|resource $context
-     * @return false|string
-     */
-    public static function loadFile($path, $context = null)
-    {
-        $res = @file_get_contents($path, false, $context);
-        if ($res === false) {
-            Error::register("File inaccessible: " . ($path ? $path : "empty"));
-        }
-
-        return $res;
-    }
-
-
-    /**
      * @todo da tipizzare
      * @param array $item
      * @return mixed

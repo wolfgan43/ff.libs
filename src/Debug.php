@@ -188,10 +188,9 @@ class Debug
      */
     public static function dumpLog(string $filename, array $data = null) : void
     {
-        $trace                                  = self::getBacktrace();
+        $trace                                  = self::dumpCommandLine(print_r($data, true));
 
-        $data["source"]                         = $trace;
-        Log::write($data, $filename);
+        Log::write($trace, $filename);
     }
 
     /**
@@ -229,47 +228,48 @@ class Debug
     }
 
     /**
-     * @param array|null $backtrace
      * @return array|null
      */
-    private static function getBacktrace(array $backtrace = null) : ?array
+    private static function getBacktrace() : ?array
     {
         $res                                = null;
-        $debug_backtrace                    = (
-            is_array($backtrace)
-                                                ? $backtrace
-                                                : debug_backtrace()
-                                            );
-
+        $debug_backtrace                    = debug_backtrace();
         foreach ($debug_backtrace as $i => $trace) {
-            if ($i) {
-                if (isset($trace["file"]) && basename($trace["file"]) == "vgCommon.php") {
-                    continue;
-                }
-                if (isset($trace["file"]) && basename($trace["file"]) == "cm.php") {
-                    break;
-                }
+            if (isset($trace["file"])) {
+                $res[$i]["file"] = $trace["file"];
+            }
+            if (isset($trace["line"])) {
+                $res[$i]["line"] = $trace["line"];
+            }
+            if (isset($trace["type"])) {
+                $res[$i]["type"] = $trace["type"];
+            }
+            if (isset($trace["class"])) {
+                $res[$i]["class"] = $trace["class"];
+            }
+            if (isset($trace["function"])) {
+                $res[$i]["function"] = $trace["function"];
+            }
 
-                unset($trace["object"]);
-                if (is_array($trace["args"]) && count($trace["args"])) {
-                    foreach ($trace["args"] as $key => $value) {
-                        if (is_object($value)) {
-                            $trace["args"][$key] = "Object: " . get_class($value);
-                        } elseif (is_array($value)) {
-                            foreach ($value as $subkey => $subvalue) {
-                                if (is_object($subvalue)) {
-                                    $trace["args"][$key][$subkey] = "Object: " . get_class($subvalue);
-                                } elseif (is_array($subvalue)) {
-                                    $trace["args"][$key][$subkey] = $subvalue;
-                                } else {
-                                    $trace["args"][$key][$subkey] = $subvalue;
-                                }
+            if (is_array($trace["args"]) && count($trace["args"])) {
+                foreach ($trace["args"] as $key => $value) {
+                    if (is_object($value)) {
+                        $res[$i]["args"][$key] = "Object: " . get_class($value);
+                    } elseif (is_array($value)) {
+                        foreach ($value as $subkey => $subvalue) {
+                            if (is_object($subvalue)) {
+                                $res[$i]["args"][$key][$subkey] = "Object: " . get_class($subvalue);
+                            } elseif (is_array($subvalue)) {
+                                $res[$i]["args"][$key][$subkey] = $subvalue;
+                            } else {
+                                $res[$i]["args"][$key][$subkey] = $subvalue;
                             }
                         }
                     }
                 }
-                $res[] = $trace;
             }
+
+
         }
 
         return $res;
@@ -316,18 +316,19 @@ class Debug
         }
 
         foreach ($debug_backtrace as $i => $trace) {
+            if (isset($trace["file"]) && basename($trace["file"]) == "Debug.php") {
+                continue;
+            }
+
             if (isset($trace["file"])) {
                 $cli .= $trace["file"] . ":" . $trace["line"] . "\n";
             } else {
-                if (0 && isset($trace["class"]) && isset($debug_backtrace[$i + 1]["args"]) && isset($debug_backtrace[$i + 1]["args"][0])) {
-                    $operation = str_replace(array("Object: ", "\\"), array("", "/"), $debug_backtrace[$i + 1]["args"][0]) . $trace["type"] . $trace["function"] . '(' . implode(", ", $trace["args"]) . ')';
-                } else {
-                    $operation = (
-                        isset($trace["class"])
-                        ?  basename(str_replace("\\", "/", $trace["class"])) . $trace["type"] . $trace["function"] . '(' . implode(", ", $trace["args"]) . ')'
-                        : $trace["function"]
-                    );
-                }
+                $operation = (
+                    isset($trace["class"])
+                    ?  basename(str_replace("\\", "/", $trace["class"])) . $trace["type"] . $trace["function"] . '(' . implode(", ", $trace["args"]) . ')'
+                    : $trace["function"]
+                );
+
                 $cli .= "Call " . $operation . "\n";
             }
         }

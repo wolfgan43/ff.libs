@@ -158,4 +158,18 @@ trait AssetsManager
     {
         return $this->addAsset($this->images, "images", $key, $url);
     }
+
+    /**
+     * @return array
+     */
+    public function toArray() : array
+    {
+        return [
+            "js"        => $this->js,
+            "css"       => $this->css,
+            "fonts"     => $this->fonts,
+            "images"    => $this->images,
+            "html"      => $this->html
+        ];
+    }
 }

@@ -25,6 +25,10 @@
  */
 namespace phpformsframework\libs;
 
+/**
+ * Class Mappable
+ * @package phpformsframework\libs
+ */
 abstract class Mappable
 {
     const ERROR_BUCKET          = "mappable";
@@ -38,7 +42,11 @@ abstract class Mappable
         }
     }
 
-    private function getPrefix($class_name = null)
+    /**
+     * @param string|null $class_name
+     * @return string
+     */
+    private function getPrefix(string $class_name = null) : string
     {
         if (!$class_name) {
             $class_name         = static::class;
@@ -48,7 +56,11 @@ abstract class Mappable
         return strtolower(end($arrClass));
     }
 
-    protected function loadMap($name, $prefix = null)
+    /**
+     * @param string $name
+     * @param string|null $prefix
+     */
+    protected function loadMap(string $name, string $prefix = null) : void
     {
         Debug::stopWatch("mapping/" . $prefix . "_" . $name);
 
@@ -63,7 +75,10 @@ abstract class Mappable
         Debug::stopWatch("mapping/" . $prefix . "_" . $name);
     }
 
-    protected function autoMapping($map)
+    /**
+     * @param array $map
+     */
+    protected function autoMapping(array $map) : void
     {
         $has                    = get_object_vars($this);
         $properties             = array_intersect_key($map, $has);

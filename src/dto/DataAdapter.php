@@ -27,6 +27,7 @@
 namespace phpformsframework\libs\dto;
 
 use phpformsframework\libs\Debug;
+use stdClass;
 
 /**
  * Class DataAdapter
@@ -134,7 +135,7 @@ abstract class DataAdapter
         if (!Debug::isEnabled()) {
             unset($vars["debug"]);
         } else {
-            $vars["debug"]["exTime - App"]        = Debug::exTimeApp();
+            $vars["debug"]["exTime - App"]  = Debug::exTimeApp();
         }
 
         return $vars;
@@ -147,7 +148,21 @@ abstract class DataAdapter
     {
         return $this->getVars();
     }
+    /**
+     * @return stdClass|null
+     */
+    public function toObject() : ?stdClass
+    {
+        $vars = get_object_vars($this);
+        unset($vars["status"]);
+        unset($vars["error"]);
+        unset($vars["debug"]);
 
+        return (count($vars)
+            ? (object) $vars
+            : null
+        );
+    }
     /**
      * @todo da tipizzare
      * @return false|string

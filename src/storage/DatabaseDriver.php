@@ -100,11 +100,12 @@ abstract class DatabaseDriver
     abstract public function query(array $query) : bool;
 
     /**
-     * @param array $query
+     * @todo da tipizzare
      * @param string $name
+     * @param array $query
      * @return mixed
      */
-    abstract public function cmd(array $query, string $name = "count");
+    abstract public function cmd(string $name = "count", array $query = null);
 
     /**
      * @param array $queries

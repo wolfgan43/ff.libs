@@ -163,7 +163,7 @@ class Resource extends Mappable implements Dumpable
     {
         $path                                   = self::get($name, $type);
         if ($path) {
-            return Dir::loadFile($path);
+            return Filemanager::fileGetContent($path);
         } else {
             Error::register("Layout not Found: " . $name, static::ERROR_BUCKET);
         }

@@ -76,7 +76,8 @@ class DatabaseMongodb extends DatabaseAdapter
      */
     protected function processRead(array $query) : ?array
     {
-        $res                                            = $this->processRawQuery(array(
+        $res                                            = null;
+        $records                                        = $this->processRawQuery(array(
                                                             "select" 	    => $query["select"],
                                                             "from" 	        => $query["from"],
                                                             "where" 	    => $query["where"],
@@ -85,11 +86,16 @@ class DatabaseMongodb extends DatabaseAdapter
                                                             "offset"	    => $query["offset"],
                                                             "key_primary"   => $this->key_primary
                                                         ));
-        if ($res && $query["calc_found_rows"]) {
-            $res["count"]                               = $this->driver->cmd("count", array(
-                                                            "from" 	        => $query["from"],
-                                                            "where" 	    => $query["where"]
-                                                        ));
+        if ($records) {
+            $res[static::RESULT]                        = $records;
+            $res[static::COUNT]                         = (
+                $query[static::CALC_FOUND_ROWS]
+                    ? $this->driver->cmd("count", array(
+                        "from" 	        => $query["from"],
+                        "where" 	    => $query["where"]
+                    ))
+                    : null
+            );
         }
 
         return $res;
@@ -104,7 +110,9 @@ class DatabaseMongodb extends DatabaseAdapter
         $res                                            = null;
         if ($this->driver->insert($query["insert"], $query["from"])) {
             $res                                        = array(
-                                                            "keys" => array($this->driver->getInsertID())
+                                                            static::INDEX_PRIMARY => array(
+                                                                $this->key_primary => $this->driver->getInsertID()
+                                                            )
                                                         );
         }
 
@@ -123,7 +131,11 @@ class DatabaseMongodb extends DatabaseAdapter
             "set" 				        => $query["update"],
             "where" 			        => $query["where"]
         ), $query["from"])) {
-            $res                                        = array();
+            $res                                        = array(
+                                                            static::INDEX_PRIMARY => array(
+                                                                $this->key_primary => null
+                                                            )
+                                                        );
         }
 
         return $res;
@@ -137,7 +149,11 @@ class DatabaseMongodb extends DatabaseAdapter
     {
         $res                                            = null;
         if ($this->driver->delete($query["where"], $query["from"])) {
-            $res                                        = array();
+            $res                                        = array(
+                                                            static::INDEX_PRIMARY => array(
+                                                                $this->key_primary => null
+                                                            )
+                                                        );
         }
 
         return $res;
@@ -167,15 +183,23 @@ class DatabaseMongodb extends DatabaseAdapter
 
             if ($this->driver->update($update, $update["from"])) {
                 $res                                    = array(
-                                                            "keys"          => $keys,
-                                                            "action"        => "update"
+                                                            array(
+                                                                static::INDEX_PRIMARY => array(
+                                                                    $this->key_primary => $keys
+                                                                )
+                                                            ),
+                                                            "action"    => "update"
                                                         );
             }
         } elseif ($query["insert"]) {
             if ($this->driver->insert($query["insert"], $query["from"])) {
                 $res                                    = array(
-                                                            "keys"          => array($this->driver->getInsertID()),
-                                                            "action"        => "insert"
+                                                            array(
+                                                                static::INDEX_PRIMARY => array(
+                                                                    $this->key_primary => $this->driver->getInsertID()
+                                                                )
+                                                            ),
+                                                            "action"    => "insert"
                                                         );
             }
         }
@@ -184,11 +208,10 @@ class DatabaseMongodb extends DatabaseAdapter
     }
 
     /**
-     * @todo da tipizzare
      * @param array $query
-     * @return mixed
+     * @return array|null
      */
-    protected function processCmd(array $query)
+    protected function processCmd(array $query) : ?array
     {
         $res                                            = null;
 
@@ -425,10 +448,8 @@ class DatabaseMongodb extends DatabaseAdapter
                 $result                                                             = $res;
                 switch ($action) {
                     case "select":
-                        if ($result["select"] != "*" && !$this->rawdata) {
-                            if ($this->key_primary && !$result["select"][$this->key_primary]) {
-                                $result["select"][$this->key_primary] = true;
-                            }
+                        if ($result["select"] != "*" && !$this->rawdata && $this->key_primary && !$result["select"][$this->key_primary]) {
+                            $result["select"][$this->key_primary] = true;
                         }
                         break;
                     case "insert":
@@ -447,13 +468,16 @@ class DatabaseMongodb extends DatabaseAdapter
         } else {
             switch ($action) {
                 case "select":
-                    $result["select"] = null;
+                    $result["select"]                                               = null;
                     break;
                 case "where":
-                    $result["where"] = true;
+                    $result["where"]                                                = true;
                     break;
                 case "where_OR":
-                    $result = false;
+                    $result                                                         = false;
+                    break;
+                case "sort":
+                    $result["sort"]                                                 = null;
                     break;
                 default:
                     Error::register("convertField Action not Managed", static::ERROR_BUCKET);

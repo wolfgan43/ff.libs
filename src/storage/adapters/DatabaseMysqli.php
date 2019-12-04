@@ -65,9 +65,15 @@ class DatabaseMysqli extends DatabaseAdapter
      */
     protected function processRead(array $query) : ?array
     {
-        $res                                            = $this->processRawQuery($query);
-        if ($res && $query["calc_found_rows"]) {
-            $res["count"]                               = $this->driver->cmd("calc_found_rows");
+        $res                                            = null;
+        $records                                        = $this->processRawQuery($query);
+        if ($records) {
+            $res[static::RESULT]                        = $records;
+            $res[static::COUNT]                         = (
+                $query[static::CALC_FOUND_ROWS]
+                ? $this->driver->numRows()
+                : null
+            );
         }
 
         return $res;
@@ -82,7 +88,9 @@ class DatabaseMysqli extends DatabaseAdapter
         $res                                            = null;
         if ($this->driver->insert($query)) {
             $res                                        = array(
-                                                            "keys" => array($this->driver->getInsertID())
+                                                            static::INDEX_PRIMARY => array(
+                                                                $this->key_primary => $this->driver->getInsertID()
+                                                            )
                                                         );
         }
 
@@ -97,7 +105,11 @@ class DatabaseMysqli extends DatabaseAdapter
     {
         $res                                            = null;
         if ($this->driver->update($query)) {
-            $res                                        = array();
+            $res                                        = array(
+                                                            static::INDEX_PRIMARY => array(
+                                                                $this->key_primary => null
+                                                            )
+                                                        );
         }
 
         return $res;
@@ -111,7 +123,11 @@ class DatabaseMysqli extends DatabaseAdapter
     {
         $res                                            = null;
         if ($this->driver->delete($query)) {
-            $res                                        = array();
+            $res                                        = array(
+                                                            static::INDEX_PRIMARY => array(
+                                                                $this->key_primary => null
+                                                            )
+                                                        );
         }
 
         return $res;
@@ -142,16 +158,24 @@ class DatabaseMysqli extends DatabaseAdapter
 
             ))) {
                 $res                                = array(
-                                                        "keys"      => $keys,
-                                                        "action"  => "update"
+                                                        array(
+                                                            static::INDEX_PRIMARY => array(
+                                                                $this->key_primary => $keys
+                                                            )
+                                                        ),
+                                                        "action"    => "update"
                                                     );
             }
         } elseif ($query["insert"]) {
             if ($this->driver->insert($query)) {
-                $res                                    = array(
-                                                            "keys"      => array($this->driver->getInsertID())
-                                                            , "action"  => "insert"
-                                                        );
+                $res                                = array(
+                                                        array(
+                                                            static::INDEX_PRIMARY => array(
+                                                                $this->key_primary => $this->driver->getInsertID()
+                                                            )
+                                                        ),
+                                                        "action"    => "insert"
+                                                    );
             }
         }
 
@@ -160,18 +184,11 @@ class DatabaseMysqli extends DatabaseAdapter
 
     /**
      * @param array $query
-     * @return mixed
+     * @return array|null
      */
-    protected function processCmd(array $query)
+    protected function processCmd(array $query) : ?array
     {
-        $res                                            = null;
-
-        $success                                        = $this->driver->cmd($query["action"], $query);
-        if ($success !== null) {
-            $res                                        = $success;
-        }
-
-        return $res;
+        return $this->driver->cmd($query["action"], $query);
     }
 
     /**
@@ -277,8 +294,7 @@ class DatabaseMysqli extends DatabaseAdapter
                 case "--":
                     break;
                 case "+":
-                    if ($this->isAssocArray($field["value"])) {
-                    } else {
+                    if (!$this->isAssocArray($field["value"])) {
                         $res 							= "`" . $field["name"] . "` = " . "CONCAT(`"  . $field["name"] . "`, IF(`"  . $field["name"] . "` = '', '', ','), " . $this->driver->toSql(implode(",", array_unique($field["value"]))) . ")";
                     }
                     break;
@@ -486,10 +502,8 @@ class DatabaseMysqli extends DatabaseAdapter
                 switch ($action) {
                     case "select":
                         $result["select"]                                           = "`" . implode("`, `", $res) . "`";
-                        if ($result["select"] != "*" && !$this->rawdata) {
-                            if ($this->key_primary && !isset($res[$this->key_primary])) {
-                                $result["select"] .= ", `" . $this->key_primary . "`";
-                            }
+                        if ($result["select"] != "*" && !$this->rawdata && $this->key_primary && !isset($res[$this->key_primary])) {
+                            $result["select"] .= ", `" . $this->key_primary . "`";
                         }
                         break;
                     case "insert":
@@ -515,13 +529,16 @@ class DatabaseMysqli extends DatabaseAdapter
         } else {
             switch ($action) {
                 case "select":
-                    $result["select"] = "*";
+                    $result["select"]                                               = "*";
                     break;
                 case "where":
-                    $result["where"] = " 1 ";
+                    $result["where"]                                                = " 1 ";
                     break;
                 case "where_OR":
-                    $result = false;
+                    $result                                                         = false;
+                    break;
+                case "sort":
+                    $result["select"]                                               = null;
                     break;
                 default:
                     Error::register("convertField Action not Managed", static::ERROR_BUCKET);

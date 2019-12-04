@@ -682,14 +682,13 @@ class Media implements Configurable
 
         $dirfilename                                                = $showfiles . ($arrFile["dirname"] == DIRECTORY_SEPARATOR ? "" : $arrFile["dirname"]) . DIRECTORY_SEPARATOR . $arrFile["filename"];
         $url                                                        = $dirfilename . ($arrFile["filename"] && $mode ? "-" : "") . $mode . ($arrFile["extension"] ? "." . $arrFile["extension"] : "") . $query;
-        $pathinfo                                                   = array(
-                                                                        "url"                   => $url,
-                                                                        "web_url"               => Request::protocol_host() . $url,
-                                                                        "extension"             => $arrFile["extension"],
-                                                                        "file"                  => $dirfilename,
-                                                                        "mode"                  => $mode
-                                                                    );
-        return $pathinfo;
+        return array(
+            "url"                   => $url,
+            "web_url"               => Request::protocol_host() . $url,
+            "extension"             => $arrFile["extension"],
+            "file"                  => $dirfilename,
+            "mode"                  => $mode
+        );
     }
 
     /**

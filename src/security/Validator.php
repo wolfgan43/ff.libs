@@ -293,9 +293,8 @@ class Validator
      * @todo da tipizzare
      * @param $value
      * @param string|null $type
-     * @return mixed
      */
-    private static function cast(&$value, string $type = null)
+    private static function cast(&$value, string $type = null) : void
     {
         switch ($type) {
             case "json":
@@ -308,14 +307,14 @@ class Validator
             case "float":
             case "double":
             case "string":
-            case "array":
-            case "object":
                 settype($value, $type);
+                break;
             default:
-                $value = urldecode($value);
         }
 
-        return $value;
+        if (!is_array($value) && !is_object($value)) {
+            $value = urldecode($value);
+        }
     }
     /**
      * @param string|null $value

@@ -58,8 +58,6 @@ class MySqli extends DatabaseDriver
      */
     protected $query_id             = null;
 
-    public $field_primary           = null;
-
     public $avoid_real_connect      = true;
     public $buffered_affected_rows  = null;
 
@@ -115,18 +113,21 @@ class MySqli extends DatabaseDriver
     /**
      * LIBERA LA RISORSA DELLA QUERY SENZA CHIUDERE LA CONNESSIONE
      */
-    private function freeResult()
+    private function freeMemory()
     {
         if (is_object($this->query_id)) {
             @mysqli_free_result($this->query_id);
         }
         $this->query_id		            = null;
+    }
+
+    private function freeResult()
+    {
+        $this->freeMemory();
         $this->row			            = -1;
         $this->record		            = false;
         $this->num_rows		            = null;
         $this->fields		            = array();
-        $this->fields_names	            = array();
-        $this->field_primary            = null;
         $this->buffered_affected_rows   = null;
         $this->buffered_insert_id       = null;
         $this->use_found_rows           = false;
@@ -161,7 +162,6 @@ class MySqli extends DatabaseDriver
                 if (!is_object($this->link_id) || $this->checkError()) {
                     $this->cleanup();
                     $this->errorHandler("mysqli::init failed");
-                    return false;
                 }
 
                 if ($this->persistent) {
@@ -181,7 +181,6 @@ class MySqli extends DatabaseDriver
             if (!$rc || mysqli_connect_errno()) {
                 $this->cleanup();
                 $this->errorHandler("Connection failed to host " . $this->host);
-                return false;
             }
 
             if ($this->charset !== null) {
@@ -246,9 +245,8 @@ class MySqli extends DatabaseDriver
      */
     private function execute(string $Query_String) : bool
     {
-        if ($Query_String == "") {
+        if (!$Query_String) {
             $this->errorHandler("Execute invoked With blank Query String");
-            return false;
         }
         if (!$this->link_id && !$this->connect()) {
             return false;
@@ -261,7 +259,6 @@ class MySqli extends DatabaseDriver
         $this->query_id = @mysqli_query($this->link_id, $Query_String);
         if ($this->checkError()) {
             $this->errorHandler("Invalid SQL: " . $Query_String);
-            return false;
         }
 
         $this->buffered_affected_rows = @mysqli_affected_rows($this->link_id);
@@ -272,14 +269,13 @@ class MySqli extends DatabaseDriver
 
     /**
      * @param object|null $obj
-     * @return array|object|null
+     * @return array|null
      */
-    public function getRecordset(object $obj = null)
+    public function getRecordset(object &$obj = null) : ?array
     {
         $res = null;
         if (!$this->query_id) {
             $this->errorHandler("eachAll called with no query pending");
-            return null;
         }
 
         if ($obj != null) {
@@ -292,12 +288,14 @@ class MySqli extends DatabaseDriver
         } elseif (is_array($res)) {
             $this->num_rows = count($res);
         }
+        if (isset($res[0])) {
+            $this->fields                   = array_keys($res[0]);
+        }
 
-        mysqli_free_result($this->query_id);
+        $this->freeMemory();
 
         if ($res === null && $this->checkError()) {
             $this->errorHandler("fetch_assoc_error");
-            return null;
         }
         return $res;
     }
@@ -307,7 +305,11 @@ class MySqli extends DatabaseDriver
      */
     public function getFieldset() : array
     {
-        return $this->fields_names;
+        if (!count($this->fields) && $this->record) {
+            $this->fields                   = array_keys($this->record);
+        }
+
+        return $this->fields;
     }
 
     /**
@@ -388,11 +390,8 @@ class MySqli extends DatabaseDriver
                                                             $this->queryWhere($query)       .
                                                             $this->querySort($query)        .
                                                             $this->queryLimit($query);
-
-        $this->use_found_rows                               = strpos($Query_String, " SQL_CALC_FOUND_ROWS ") !== false;
-        if ($Query_String == "") {
+        if (!$Query_String) {
             $this->errorHandler("Query invoked With blank Query String");
-            return false;
         }
         if (!$this->link_id && !$this->connect()) {
             return false;
@@ -402,19 +401,10 @@ class MySqli extends DatabaseDriver
 
         $this->freeResult();
 
+        $this->use_found_rows                               = strpos($Query_String, " SQL_CALC_FOUND_ROWS ") !== false;
         $this->query_id = @mysqli_query($this->link_id, $Query_String);
         if (!$this->query_id || $this->checkError()) {
             $this->errorHandler("Invalid SQL: " . $Query_String);
-            return false;
-        } else {
-            $finfo = mysqli_fetch_fields($this->query_id);
-            foreach ($finfo as $meta) {
-                $this->fields[$meta->name] = $meta;
-                $this->fields_names[] = $meta->name;
-                if ($meta->flags & MYSQLI_PRI_KEY_FLAG) {
-                    $this->field_primary = $meta->name;
-                }
-            }
         }
 
         return is_object($this->query_id);
@@ -423,40 +413,34 @@ class MySqli extends DatabaseDriver
     /**
      * @param string $name
      * @param array $query
-     * @return mixed
+     * @return array|null
      */
-    public function cmd(string $name = "count", array $query = null)
+    public function cmd(string $name = "count", array $query = null) : ?array
     {
-        if (!$this->link_id && !$this->connect()) {
-            return false;
-        }
-
         $res = null;
-        switch ($name) {
-            case "count":
-                $query["select"] = "COUNT(ID) AS count";
-                $this->query($query);
-                if ($this->nextRecord()) {
-                    $res = $this->record["count"];
-                }
-                break;
-            case "calc_found_rows":
-                $query["select"] = "FOUND_ROWS() AS count";
-                $this->query($query);
-                if ($this->nextRecord()) {
-                    $res = $this->record["count"];
-                }
-                break;
-            case "processlist":
-                $query["select"] = "SHOW FULL PROCESSLIST";
-                $this->query($query);
-                $res = $this->getRecordset();
-                break;
-            default:
-                $this->errorHandler("Command not supported");
-                return false;
-        }
 
+        if ($this->link_id || $this->connect()) {
+            switch ($name) {
+                case "count":
+                    $query["select"] = (
+                        $this->use_found_rows
+                        ? "FOUND_ROWS() AS count"
+                        : "COUNT(ID) AS count"
+                    );
+                    $this->query($query);
+                    if ($this->nextRecord()) {
+                        $res = $this->record;
+                    }
+                    break;
+                case "processlist":
+                    $query["select"] = "SHOW FULL PROCESSLIST";
+                    $this->query($query);
+                    $res = $this->getRecordset();
+                    break;
+                default:
+                    $this->errorHandler("Command not supported");
+            }
+        }
         return $res;
     }
 
@@ -492,95 +476,6 @@ class MySqli extends DatabaseDriver
     }
 
     /**
-     * @param string $tabella
-     * @param string|null $chiave
-     * @param string|null $valorechiave
-     * @param string|null $defaultvalue
-     * @param string|null $nomecampo
-     * @param string|null $tiporestituito
-     * @param bool $bReturnPlain
-     * @return mixed
-     */
-    public function lookup(string $tabella, string $chiave = null, string $valorechiave = null, string $defaultvalue = null, string $nomecampo = null, string $tiporestituito = null, bool $bReturnPlain = false)
-    {
-        if (!$this->link_id && !$this->connect()) {
-            return null;
-        }
-
-        if ($tiporestituito === null) {
-            $tiporestituito = "Text";
-        }
-
-        if (strpos(strtolower(trim($tabella)), "select") !== 0) {
-            $listacampi = "";
-
-            if (is_array($nomecampo)) {
-                if (!count($nomecampo)) {
-                    $this->errorHandler("lookup: Nuessun campo specificato da recuperare");
-                    return null;
-                }
-                foreach ($nomecampo as $key => $value) {
-                    if (strlen($listacampi)) {
-                        $listacampi .= ", ";
-                    }
-                    $listacampi .= "`" . $key . "`";
-                }
-                reset($nomecampo);
-            } elseif ($nomecampo !== null) {
-                $listacampi = "`" . $nomecampo . "`";
-            } else {
-                $listacampi = "*";
-            }
-            $sSql = "SELECT " . $listacampi . " FROM " . $tabella . " WHERE 1 ";
-        } else {
-            $sSql = $tabella;
-        }
-        if (is_array($chiave)) {
-            if (!count($chiave)) {
-                $this->errorHandler("lookup: Nuessuna chiave specificata per il lookup");
-                return null;
-            }
-            foreach ($chiave as $key => $value) {
-                if (is_object($value) && get_class($value) != "Data") {
-                    $this->errorHandler("lookup: Il valore delle chiavi dev'essere di tipo Data od un plain value");
-                    return null;
-                }
-                $sSql .= " AND `" . $key . "` = " . $this->toSql($value);
-            }
-            reset($chiave);
-        } elseif ($chiave != null) {
-            if (is_object($valorechiave) && get_class($valorechiave) != "Data") {
-                $this->errorHandler("lookup: Il valore della chiave dev'essere un oggetto Data od un plain value");
-                return null;
-            }
-            $sSql .= " AND `" . $chiave . "` = " . $this->toSql($valorechiave);
-        }
-
-        $this->query($sSql);
-        if ($this->nextRecord()) {
-            if (is_array($nomecampo)) {
-                $valori = array();
-                if (!count($nomecampo)) {
-                    $this->errorHandler("lookup: Nuessun campo specificato da recuperare");
-                    return null;
-                }
-                foreach ($nomecampo as $key => $value) {
-                    $valori[$key] = $this->getField($key, $value, $bReturnPlain);
-                }
-                reset($nomecampo);
-
-                return $valori;
-            } elseif ($nomecampo !== null) {
-                return $this->getField($nomecampo, $tiporestituito, $bReturnPlain);
-            } else {
-                return $this->getField($this->fields_names[0], $tiporestituito, $bReturnPlain);
-            }
-        } else {
-            return $defaultvalue;
-        }
-    }
-
-    /**
      * Sposta il puntatore al DB al record successivo (va chiamato almeno una volta)
      * @param object|null $obj
      * @return bool
@@ -589,7 +484,6 @@ class MySqli extends DatabaseDriver
     {
         if (!$this->query_id) {
             $this->errorHandler("nextRecord called with no query pending");
-            return false;
         }
 
         // fetch assoc bug workaround...
@@ -607,6 +501,7 @@ class MySqli extends DatabaseDriver
             $this->row += 1;
             return true;
         } else {
+            $this->freeMemory();
             return false;
         }
     }
@@ -617,16 +512,17 @@ class MySqli extends DatabaseDriver
      */
     public function numRows() : ?int
     {
-        if (!$this->query_id) {
-            $this->errorHandler("numRows() called with no query pending");
-            return null;
-        }
-
         if ($this->num_rows === null) {
             if ($this->use_found_rows) {
-                $db = new MySqli();
-                $this->num_rows = $db->cmd("calc_found_rows");
+                $res = $this->cmd("count");
+                if (isset($res["count"])) {
+                    $this->num_rows = $res["count"];
+                }
             } else {
+                if (!$this->query_id) {
+                    $this->errorHandler("numRows() called with no query pending");
+                }
+
                 $this->num_rows = @mysqli_num_rows($this->query_id);
             }
         }
@@ -640,7 +536,6 @@ class MySqli extends DatabaseDriver
     {
         if (!$this->link_id) {
             $this->errorHandler("insert_id() called with no DB connection");
-            return null;
         }
 
         return $this->buffered_insert_id;

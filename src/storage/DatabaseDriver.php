@@ -100,19 +100,17 @@ abstract class DatabaseDriver
     abstract public function query(array $query) : bool;
 
     /**
-     * @todo da tipizzare
      * @param string $name
      * @param array $query
-     * @return mixed
+     * @return array|null
      */
-    abstract public function cmd(string $name = "count", array $query = null);
+    abstract public function cmd(string $name = "count", array $query = null) : ?array;
 
     /**
      * @param array $queries
      * @return array|null
      */
     abstract public function multiQuery(array $queries) : ?array;
-    abstract public function lookup(string $tabella, string $chiave = null, string $valorechiave = null, string $defaultvalue = null, string $nomecampo = null, string $tiporestituito = null, bool $bReturnPlain = false);
 
     /**
      * @param object|null $obj
@@ -125,7 +123,11 @@ abstract class DatabaseDriver
      */
     abstract public function numRows() : ?int;
 
-    abstract public function getRecordset(object $obj = null);
+    /**
+     * @param object|null $obj
+     * @return array|null
+     */
+    abstract public function getRecordset(object &$obj = null) : ?array;
 
     /**
      * @return array

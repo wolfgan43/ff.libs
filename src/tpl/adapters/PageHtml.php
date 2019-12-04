@@ -422,13 +422,11 @@ class PageHtml extends Mappable
             }
         }
 
-        $res = str_replace(
+        return str_replace(
             array_keys($commons),
             array_values($commons),
             $res
         );
-
-        return $res;
     }
 
     /**

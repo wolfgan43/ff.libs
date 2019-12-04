@@ -126,12 +126,10 @@ class Dir
      */
     public static function getXmlAttr(array $item)
     {
-        $res = (
+        return (
             isset($item["@attributes"])
             ? $item["@attributes"]
             : $item
         );
-
-        return $res;
     }
 }

@@ -145,20 +145,6 @@ final class MailerTemplate extends Mailer
                         }
                         switch ($field_type) {
                             case "Table":
-                                if (is_array($fields_value_value) && count($fields_value_value)) {
-                                    foreach ($fields_value_value as $fields_value_value_key => $fields_value_value_value) {
-                                        if (strtolower($fields_value_value_key) == "settings") {
-                                            continue;
-                                        }
-                                        $this->parse_mail_field($fields_value_value_value, $fields_value_value_key, $field_type, $count_row);
-                                    }
-
-                                    $this->parse_mail_row($field_type, true);
-                                } else {
-                                    $this->parse_mail_field($fields_value_value, $fields_key . "_" . $fields_value_key, $field_type);
-                                    $this->parse_mail_row($field_type);
-                                }
-                                break;
                             case "":
                                 if (is_array($fields_value_value) && count($fields_value_value)) {
                                     foreach ($fields_value_value as $fields_value_value_key => $fields_value_value_value) {

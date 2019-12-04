@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\storage\adapters;
 
+use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\drivers\Array2XML;
 use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\storage\FilemanagerAdapter;
@@ -65,6 +66,7 @@ class FilemanagerXml extends FilemanagerAdapter
         try {
             $xml                                                = Array2XML::createXML($root_node, $data);
         } catch (Exception $e) {
+            Error::register($e->getMessage(), static::ERROR_BUCKET);
         }
 
         return $xml->saveXML();

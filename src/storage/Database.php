@@ -44,6 +44,13 @@ class Database implements Dumpable
     const ERROR_BUCKET                                                      = "database";
     const NAME_SPACE                                                        = __NAMESPACE__ . '\\adapters\\';
 
+    public const RESULT                                                     = "result";
+    public const INDEX                                                      = "index";
+    public const INDEX_PRIMARY                                              = "primary";
+    public const RAWDATA                                                    = "rawdata";
+    public const COUNT                                                      = "count";
+
+
     private static $singletons                                              = null;
     private static $cache                                                   = null;
     private static $cache_rawdata                                           = array();
@@ -53,11 +60,10 @@ class Database implements Dumpable
     /**
      * @param array $databaseAdapters
      * @param null|array $struct
-     * @param bool $exts
      * @param bool $rawdata
      * @return Database
      */
-    public static function getInstance(array $databaseAdapters, array $struct = null, bool $exts = true, bool $rawdata = false) : Database
+    public static function getInstance(array $databaseAdapters, array $struct = null, bool $rawdata = false) : Database
     {
         $key                                                                = crc32(
             serialize($databaseAdapters)
@@ -67,14 +73,9 @@ class Database implements Dumpable
                                                                                     ? "-rawdata"
                                                                                     : ""
                                                                                 )
-                                                                                . (
-                                                                                    $exts
-                                                                                    ? "-exts"
-                                                                                    : ""
-                                                                                )
                                                                             );
         if (!isset(self::$singletons[$key])) {
-            self::$singletons[$key]                                         = new Database($databaseAdapters, $struct, $exts, $rawdata);
+            self::$singletons[$key]                                         = new Database($databaseAdapters, $struct, $rawdata);
         }
 
         return self::$singletons[$key];
@@ -110,10 +111,9 @@ class Database implements Dumpable
      * @example string $databaseAdapters: mysqli OR mongodb OR ecc
      * @param array|string $databaseAdapters
      * @param array|null $struct
-     * @param bool $exts
      * @param bool $rawdata
      */
-    public function __construct(array $databaseAdapters = null, array $struct = null, bool $exts = true, bool $rawdata = false)
+    public function __construct(array $databaseAdapters = null, array $struct = null, bool $rawdata = false)
     {
         if (!$databaseAdapters) {
             $databaseAdapters[Kernel::$Environment::DATABASE_ADAPTER]       = null;
@@ -121,18 +121,18 @@ class Database implements Dumpable
 
         foreach ($databaseAdapters as $adapter => $connection) {
             //@todo da sistemare meglio l'array params
-            $this->setAdapter($adapter, array_values($struct + array($exts, $rawdata)));
+            $this->setAdapter($adapter, array_values($struct + array($rawdata)));
         }
 
 
     }
 
     /**
-     * @param string|array $query
+     * @param array $query
      * @param string[recordset|fields|num_rows] $key
-     * @return null|bool|array
+     * @return array|null
      */
-    public function rawQuery($query, $key = null)
+    public function rawQuery(array $query, string $key = null) : ?array
     {
         foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->rawQuery($query, $key);
@@ -147,10 +147,9 @@ class Database implements Dumpable
      * @param null|int $limit
      * @param int|null $offset
      * @param null|string $table_name
-     * @return bool|array
-     * @todo da tipizzare
+     * @return array|null
      */
-    public function read(array $where, array $fields = null, array $sort = null, int $limit = null, int $offset = null, string $table_name = null)
+    public function read(array $where, array $fields = null, array $sort = null, int $limit = null, int $offset = null, string $table_name = null) : ?array
     {
         foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->read($where, $fields, $sort, $limit, $offset, $table_name);
@@ -160,12 +159,11 @@ class Database implements Dumpable
     }
 
     /**
-     * @todo da tipizzare
      * @param array $insert
      * @param null|string $table_name
-     * @return bool
+     * @return array|null
      */
-    public function insert(array $insert, string $table_name = null)
+    public function insert(array $insert, string $table_name = null) : ?array
     {
         foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->insert($insert, $table_name);
@@ -174,13 +172,12 @@ class Database implements Dumpable
     }
 
     /**
-     * @todo da tipizzare
      * @param array $set
      * @param array $where
      * @param null|string $table_name
-     * @return bool
+     * @return array|null
      */
-    public function update(array $set, array $where, string $table_name = null)
+    public function update(array $set, array $where, string $table_name = null) : ?array
     {
         foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->update($set, $where, $table_name);
@@ -189,13 +186,12 @@ class Database implements Dumpable
     }
 
     /**
-     * @todo da tipizzare
      * @param array $insert
      * @param array $update
      * @param null|string $table_name
-     * @return bool
+     * @return array|null
      */
-    public function write(array $insert, array $update, string $table_name = null)
+    public function write(array $insert, array $update, string $table_name = null) : ?array
     {
         foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->write($insert, $update, $table_name);
@@ -204,12 +200,11 @@ class Database implements Dumpable
     }
 
     /**
-     * @todo da tipizzare
      * @param array $where
      * @param null|string $table_name
-     * @return bool
+     * @return array|null
      */
-    public function delete(array $where, string $table_name = null)
+    public function delete(array $where, string $table_name = null) : ?array
     {
         foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->delete($where, $table_name);
@@ -218,13 +213,12 @@ class Database implements Dumpable
     }
 
     /**
-     * @todo da tipizzare
      * @param string $action
      * @param array $what
      * @param null|string $table_name
-     * @return bool
+     * @return array|null
      */
-    public function cmd(string $action, array $what, string $table_name = null)
+    public function cmd(string $action, array $what, string $table_name = null) : ?array
     {
         foreach ($this->adapters as $adapter_name => $adapter) {
             $this->result[$adapter_name]                                    = $adapter->cmd($action, $what, $table_name);
@@ -233,10 +227,9 @@ class Database implements Dumpable
     }
 
     /**
-     * @todo da tipizzare
-     * @return array|bool
+     * @return array|null
      */
-    private function getResult()
+    private function getResult() : ?array
     {
         return (
             is_array($this->result) && count($this->result) == 1
@@ -330,11 +323,10 @@ class Database implements Dumpable
     }
 
     /**
-     * @todo da tipizzare
-     * @param array|bool $data
      * @param array $query
+     * @param array|null $data
      */
-    public static function setCache($data, array $query) : void
+    public static function setCache(array $query, array $data = null) : void
     {
         if (Kernel::$Environment::CACHE_DATABASE_ADAPTER) {
             $cache_key                                                      = Database::getCacheKey($query);
@@ -343,11 +335,7 @@ class Database implements Dumpable
                 self::$cache_rawdata[(count(self::$cache_rawdata) + 1) . ". " . $cache_key] = ($from_cache ? $from_cache : $query);
             }
             self::$cache[$cache_key]["query"]                               = $query;
-            if (isset($data["exts"]) && $data["exts"] === true) {
-                self::$cache[$cache_key][serialize($data["exts"])]          = $data;
-            } else {
-                self::$cache[$cache_key]["data"]                            = $data;
-            }
+            self::$cache[$cache_key]["data"]                                = $data;
         }
     }
 }

@@ -175,9 +175,9 @@ abstract class ImageRender
         }
 
         if ($check) {
-            if ($this->new_res_resize_when == "smaller" && $bigger) {
-                $res_method = "none";
-            } elseif ($this->new_res_resize_when == "bigger" && !$bigger) {
+            if (($this->new_res_resize_when == "smaller" && $bigger)
+                || ($this->new_res_resize_when == "bigger" && !$bigger)
+            ) {
                 $res_method = "none";
             }
         }

@@ -788,7 +788,7 @@ class Filemanager implements Dumpable
     private static function parseResponseHeaders(array $headers) : array
     {
         $head                               = array();
-        foreach ($headers as $k=>$v) {
+        foreach ($headers as $v) {
             $t                              = explode(':', $v, 2);
             if (isset($t[1])) {
                 $head[trim($t[0])]          = trim($t[1]);

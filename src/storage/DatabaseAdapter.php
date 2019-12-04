@@ -50,6 +50,13 @@ abstract class DatabaseAdapter
     protected const KEY_REL             = "ID_";
     protected const KEY_IS_INT          = false;
 
+    protected const RESULT              = Database::RESULT;
+    protected const INDEX               = Database::INDEX;
+    protected const INDEX_PRIMARY       = Database::INDEX_PRIMARY;
+    protected const RAWDATA             = Database::RAWDATA;
+    protected const COUNT               = Database::COUNT;
+    protected const CALC_FOUND_ROWS     = "calc_found_rows"; //todo presente in mysqli da togliere
+
     const MAX_NUMROWS                   = 10000;
     const MAX_RESULTS                   = 1000;
 
@@ -111,7 +118,6 @@ abstract class DatabaseAdapter
     private $offset                     = null;
 
     private $index2query                = array();
-    private $exts                       = false;
     protected $rawdata                  = false;
 
     /**
@@ -162,9 +168,9 @@ abstract class DatabaseAdapter
     /**
      * @todo da tipizzare
      * @param array $query
-     * @return mixed
+     * @return array|null
      */
-    abstract protected function processCmd(array $query);
+    abstract protected function processCmd(array $query) : ?array;
 
     /**
      * @param $mixed
@@ -182,16 +188,14 @@ abstract class DatabaseAdapter
      * @param array|null $relationship
      * @param array|null $indexes
      * @param string|null $key_primary
-     * @param bool $exts
      * @param bool $rawdata
      */
-    public function __construct(string $main_table = null, array $table = null, array $struct = null, array $indexes = null, array $relationship = null, string $key_primary = null, bool $exts = false, bool $rawdata = false)
+    public function __construct(string $main_table = null, array $table = null, array $struct = null, array $indexes = null, array $relationship = null, string $key_primary = null, bool $rawdata = false)
     {
         $this->main_table               = $main_table;
         $this->struct                   = $struct;
         $this->relationship             = $relationship;
         $this->indexes                  = $indexes;
-        $this->exts                     = $exts;
         $this->rawdata                  = $rawdata;
         $this->table                    = $table;
 
@@ -229,17 +233,10 @@ abstract class DatabaseAdapter
      */
     protected function processRawQuery(array $query) : ?array
     {
-        $res                                            = null;
-        $success                                        = $this->driver->query($query);
-        if ($success) {
-            $res                                        = array(
-                                                            "recordset"     => $this->driver->getRecordset(),
-                                                            "fields"        => $this->driver->getFieldset(),
-                                                            "count"         => $this->driver->numRows()
-                                                        );
-        }
-
-        return $res;
+        return ($this->driver->query($query)
+            ? $this->driver->getRecordset()
+            : null
+        );
     }
 
     /**
@@ -356,8 +353,9 @@ abstract class DatabaseAdapter
             $query["from"]                                          = $this->getTable("name");
 
             if ($action == "read") {
-                $select                                             = $this->setIndex2Query() + $this->select;
-                $query                                              = $query + $this->convertFields($select, "select");
+                $query                                              = $query
+                                                                        + $this->convertFields($this->setIndex2Query() + $this->select, "select")
+                                                                        + $this->convertFields($this->sort, "sort");
             }
             if ($action == "insert" || $action == "write") {
                 $query                                              = $query + $this->convertFields($this->insert, "insert");
@@ -368,9 +366,7 @@ abstract class DatabaseAdapter
             if ($action != "insert") {
                 $query                                              = $query + $this->convertFields($this->where, "where");
             }
-            if ($action == "read" && $this->sort) {
-                $query                                              = $query + $this->convertFields($this->sort, "sort");
-            }
+
             $query["limit"]                                         = (
                 $action == "read" && $this->limit
                 ? $this->limit
@@ -382,9 +378,7 @@ abstract class DatabaseAdapter
                 : null
             );
 
-            $query["calc_found_rows"] = ($query["limit"] && $query["offset"]);
-
-
+            $query[static::CALC_FOUND_ROWS] = ($query["limit"] && $query["offset"]);
         } else {
             Error::register("Connection failed to database: " . static::TYPE, static::ERROR_BUCKET);
         }
@@ -410,47 +404,18 @@ abstract class DatabaseAdapter
                     }
 
                     if ($db) {
-                        $extsData                                   = array();
-                        if ($this->exts && is_array($db["fields"]) && count($db["fields"])) {
-                            foreach ($db["fields"] as $name) {
-                                if ($name == $query["key"]) {
-                                    $extsData[$name]                = null;
-                                } elseif (strpos($name, $this->key_rel_prefix) === 0) {
-                                    $extsData[$name]                = null;
-                                } elseif (strlen($name) - strlen($this->key_rel_suffix) == strrpos($name, $this->key_rel_suffix)) {
-                                    $extsData[$name]                = null;
-                                } elseif (isset($this->relationship[$name])) {
-                                    $extsData[$name]                = null;
-                                }
-                            }
-                        }
-
-                        $count_recordset                            = count($db["recordset"]);
+                        $count_recordset                            = count($db[static::RESULT]);
                         if (!empty($query["limit"]) || $count_recordset < $this::MAX_NUMROWS) {
                             if ($this->rawdata || $count_recordset > $this::MAX_RESULTS) {
-                                $res["rawdata"]                     = $db["recordset"];
-                                $res["count"]                       = $db["count"];
+                                $res["rawdata"]                     = $db[static::RESULT];
                             } else {
-                                $key                                = $query["key"];
                                 $prototype                          = $this->getPrototype($this->select);
-                                foreach ($db["recordset"] as $record) {
-                                    if (count($extsData)) {
-                                        $res["keys"][]              = $this->recordKey($record, $key);
-                                        foreach ($extsData as $field_name => $field_alias) {
-                                            if ($record[$field_name]) {
-                                                $ids = explode(",", $record[$field_name]);
-                                                foreach ($ids as $id) {
-                                                    $res["exts"][($field_alias ? $field_alias : $field_name)][$id][] = $this->recordKey($record, $key);
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    $res["result"][]                = $this->fields2output($record, $prototype);
-                                    $res["index"][]                 = array_intersect_key($record, $this->index2query);
+                                foreach ($db[static::RESULT] as $record) {
+                                    $res[static::RESULT][]          = $this->fields2output($record, $prototype);
+                                    $res[static::INDEX][]           = array_intersect_key($record, $this->index2query);
                                 }
-                                $res["count"]                       = $db["count"];
                             }
+                            $res[static::COUNT]                     = $db[static::COUNT];
                         }
                     }
 
@@ -472,23 +437,10 @@ abstract class DatabaseAdapter
                     Error::register("Method not Managed", static::ERROR_BUCKET);
             }
 
-            Database::setCache($res, $query);
+            Database::setCache($query, $res);
         }
 
         return $res;
-    }
-
-    /**
-     * @param array $record
-     * @param string $key
-     * @return string|null
-     */
-    private function recordKey(array $record, string $key) : ?string
-    {
-        return (isset($record[$key])
-            ? $record[$key]
-            : null
-        );
     }
 
     /**
@@ -543,12 +495,11 @@ abstract class DatabaseAdapter
     }
 
     /**
-     * todo: da tipizzare
      * @param array $query
      * @param string[recordset|fields|num_rows] $key
-     * @return mixed
+     * @return array|null
      */
-    public function rawQuery($query, $key = null)
+    public function rawQuery(array $query, string $key = null) : ?array
     {
         $this->clearResult();
 
@@ -606,9 +557,9 @@ abstract class DatabaseAdapter
      * @param array $set
      * @param array $where
      * @param string|null $table_name
-     * @return bool|null
+     * @return array|null
      */
-    public function update(array $set, array $where, string $table_name = null) : ?bool
+    public function update(array $set, array $where, string $table_name = null) : ?array
     {
         $this->clearResult();
 
@@ -617,7 +568,7 @@ abstract class DatabaseAdapter
 
         $query                                                      = $this->getQuery("update", $table_name);
 
-        return (bool) $this->process($query);
+        return $this->process($query);
     }
 
     /**
@@ -642,9 +593,9 @@ abstract class DatabaseAdapter
     /**
      * @param array $where
      * @param string|null $table_name
-     * @return bool
+     * @return array|null
      */
-    public function delete(array $where, string $table_name = null) : bool
+    public function delete(array $where, string $table_name = null) : ?array
     {
         $this->clearResult();
 
@@ -652,17 +603,16 @@ abstract class DatabaseAdapter
 
         $query                                                      = $this->getQuery("delete", $table_name);
 
-        return (bool) $this->process($query);
+        return $this->process($query);
     }
 
     /**
-     * @todo da tipizzare
      * @param string $action
      * @param array $what
      * @param string|null $table_name
-     * @return mixed
+     * @return array|null
      */
-    public function cmd(string $action, array $what, string $table_name = null)
+    public function cmd(string $action, array $what, string $table_name = null) : ?array
     {
         $this->clearResult();
 
@@ -675,15 +625,13 @@ abstract class DatabaseAdapter
 
 
     /**
-     * @todo da tipizzare
      * @param string $key
-     * @return array|string|null
+     * @return string
      */
-    private function getStructField(string $key)
+    private function getStructField(string $key) : string
     {
         if (!isset($this->struct[$key])) {
             Error::register("Field: '" . $key . "' not found in struct on table: " . $this->table["name"], static::ERROR_BUCKET);
-            return null;
         }
 
         return $this->struct[$key];
@@ -1117,11 +1065,11 @@ abstract class DatabaseAdapter
 
     /**
      * @todo da tipizzare
-     * @param $source
+     * @param mixed $source
      * @param array|null $convert
-     * @return string|null
+     * @return mixed
      */
-    private function in($source, array $convert = null) : ?string
+    private function in($source, array $convert = null)
     {
         $res                                                                = $source;
         if ($convert) {

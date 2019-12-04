@@ -50,17 +50,22 @@ class Response
     }
 
     /**
+     * @todo da tipizzare
      * @param int $status
      * @param string|null $msg
+     * @param mixed|null $debug
      * @return void
      */
-    public static function sendError(int $status = 404, string $msg = null) : void
+    public static function sendError(int $status = 404, string $msg = null, $debug = null) : void
     {
         switch (Request::accept()) {
             case "application/json":
             case "text/json":
                 $response = new DataResponse();
                 $response->error($status, $msg);
+                if ($debug) {
+                    $response->debug($debug);
+                }
                 break;
             default:
                 $response = Page::getInstance("html")

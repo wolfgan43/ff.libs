@@ -148,17 +148,16 @@ class OrmModel extends Mappable
 
     /**
      * @param null|array $struct
-     * @param bool $exts
      * @param bool $rawdata
      * @return Database
      */
-    public function setStorage(array $struct = null, bool $exts = true, bool $rawdata = false) : Database
+    public function setStorage(array $struct = null, bool $rawdata = false) : Database
     {
         if (!$struct) {
             $struct                                                                         = $this->getStruct($this->getMainTable());
         }
 
-        return Database::getInstance($this->adapters, $struct, $exts, $rawdata);
+        return Database::getInstance($this->adapters, $struct, $rawdata);
     }
 
 
@@ -189,66 +188,60 @@ class OrmModel extends Mappable
     }
 
     /**
-     * @todo da tipizzare
      * @param array $data
-     * @return array|bool|null
+     * @return array|null
      */
-    public function insertUnique(array $data)
+    public function insertUnique(array $data) : ?array
     {
         return Orm::insertUnique($data, $this);
     }
 
     /**
-     * @todo da tipizzare
      * @param array $data
-     * @return array|bool|null
+     * @return array|null
      */
-    public function insert(array $data)
+    public function insert(array $data) : ?array
     {
         return Orm::insert($data, $this);
     }
 
     /**
-     * @todo da tipizzare
      * @param array $set
      * @param array $where
-     * @return array|bool|null
+     * @return array|null
      */
-    public function update(array $set, array $where)
+    public function update(array $set, array $where) : ?array
     {
         return Orm::update($set, $where, $this);
     }
 
     /**
-     * @todo da tipizzare
      * @param array $where
      * @param null|array $set
      * @param null|array $insert
-     * @return array|bool|null
+     * @return array|null
      */
-    public function write(array $where, array $set = null, array $insert = null)
+    public function write(array $where, array $set = null, array $insert = null) : ?array
     {
         return Orm::write($where, $set, $insert, $this);
     }
 
     /**
-     * @todo da tipizzare
      * @param string $name
      * @param null|array $where
      * @param null|array $fields
-     * @return array|bool|null
+     * @return array|null
      */
-    public function cmd(string $name, array $where = null, array $fields = null)
+    public function cmd(string $name, array $where = null, array $fields = null) : ?array
     {
         return Orm::cmd($name, $where, $fields, $this);
     }
 
     /**
-     * @todo da tipizzare
      * @param array $where
-     * @return array|bool|null
+     * @return array|null
      */
-    public function delete(array $where)
+    public function delete(array $where) : ?array
     {
         return Orm::delete($where, $this);
     }

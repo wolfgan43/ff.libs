@@ -82,12 +82,12 @@ abstract class FilemanagerAdapter
 
         $params                                                         = $this->getParams($file_path);
         if ($params) {
-            $return                                                         = $this->loadFile($params->file_path);
+            $return                                                     = $this->loadFile($params->file_path);
             if ($return) {
                 if ($search_keys) {
-                    $res                                                    = $this->search($return, $search_keys, $search_flag);
+                    $res                                                = $this->search($return, $search_keys, $search_flag);
                 } else {
-                    $res                                                    = $return;
+                    $res                                                = $return;
                 }
             }
         }
@@ -102,8 +102,8 @@ abstract class FilemanagerAdapter
      */
     public function write(array $data, string $file_path = null, string $var = null) : bool
     {
-        $params                                                 = $this->setParams($file_path, $var);
-        $output                                                 = $this->output($data, $params->var);
+        $params                                                         = $this->setParams($file_path, $var);
+        $output                                                         = $this->output($data, $params->var);
 
         return $this->save($output, $params->file_path);
     }
@@ -304,11 +304,11 @@ abstract class FilemanagerAdapter
 
     /**
      * @param string $file_path
-     * @param string $var
+     * @param string|null $var
      * @return object
      *
      */
-    protected function setParams(string $file_path, string $var) : object
+    protected function setParams(string $file_path, string $var = null) : object
     {
         $this->setFilePath($file_path);
         $this->setVar($var);

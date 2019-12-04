@@ -111,7 +111,6 @@ class MongoDB extends DatabaseDriver
         $this->record                   = false;
         $this->num_rows                 = null;
         $this->fields                   = array();
-        $this->fields_names             = array();
         $this->buffered_insert_id       = null;
     }
 
@@ -361,9 +360,9 @@ class MongoDB extends DatabaseDriver
 
     /**
      * @param object|null $obj
-     * @return array|object|null
+     * @return array|null
      */
-    public function getRecordset(object $obj = null)
+    public function getRecordset(object &$obj = null) : ?array
     {
         $res = null;
         if (!$this->query_id) {
@@ -404,7 +403,11 @@ class MongoDB extends DatabaseDriver
      */
     public function getFieldset() : array
     {
-        return $this->fields_names;
+        if (!count($this->fields) && $this->record) {
+            $this->fields                   = array_keys($this->record);
+        }
+
+        return $this->fields;
     }
 
     /**
@@ -524,43 +527,39 @@ class MongoDB extends DatabaseDriver
     /**
      * @param string $name
      * @param array $query
-     * @return mixed
+     * @return array|null
      */
-    public function cmd(string $name = "count", array $query = null)
+    public function cmd(string $name = "count", array $query = null) : ?array
     {
         $res = null;
         if (empty($query)) {
             $this->errorHandler("Query invoked With blank Query String");
-            return false;
         }
-        if (!$this->link_id && !$this->connect()) {
-            return false;
-        }
+        if ($this->link_id || $this->connect()) {
+            Debug::dumpCaller($query);
 
-        Debug::dumpCaller($query);
+            $this->freeResult();
 
-        $this->freeResult();
+            $mongoDB = $query;
 
-        $mongoDB = $query;
-
-        if (isset($mongoDB["where"][$this->key_name])) {
-            $mongoDB["where"][$this->key_name] = $this->id2object($mongoDB["where"][$this->key_name]);
-        }
-        if (!isset($mongoDB["table"])) {
-            $mongoDB["table"] = $mongoDB["from"];
-        }
-        if (isset($mongoDB["table"])) {
-            switch ($name) {
-                case "count":
-                    $res = $this->numRows();
-                    break;
-                case "processlist":
-                    //@todo: da implementare
-                    $res = null;
-                    break;
-                default:
-                    $this->errorHandler("Command not supported");
-                    return false;
+            if (isset($mongoDB["where"][$this->key_name])) {
+                $mongoDB["where"][$this->key_name] = $this->id2object($mongoDB["where"][$this->key_name]);
+            }
+            if (!isset($mongoDB["table"])) {
+                $mongoDB["table"] = $mongoDB["from"];
+            }
+            if (isset($mongoDB["table"])) {
+                switch ($name) {
+                    case "count":
+                        $res["count"] = $this->numRows();
+                        break;
+                    case "processlist":
+                        //@todo: da implementare
+                        $res = null;
+                        break;
+                    default:
+                        $this->errorHandler("Command not supported");
+                }
             }
         }
 
@@ -650,36 +649,13 @@ class MongoDB extends DatabaseDriver
     }
 
     /**
-     * @param string $tabella
-     * @param string|null $chiave
-     * @param string|null $valorechiave
-     * @param string|null $defaultvalue
-     * @param string|null $nomecampo
-     * @param string|null $tiporestituito
-     * @param bool $bReturnPlain
-     * @return mixed
-     */
-    public function lookup(string $tabella, string $chiave = null, string $valorechiave = null, string $defaultvalue = null, string $nomecampo = null, string $tiporestituito = null, bool $bReturnPlain = false)
-    {
-        //todo: da implementare
-        return null;
-    }
-
-    /**
      * Sposta il puntatore al DB al record successivo (va chiamato almeno una volta)
      * @return boolean
      */
     private function getRecord()
     {
         $this->record                       = $this->query_id->current();
-        if ($this->record) {
-            //$this->record[$this->key_name]   = $this->objectID2string($this->record[$this->key_name]);
-            $this->fields_names             = array_keys($this->record);
-            $this->fields                   = array_fill_keys($this->fields_names, "");
-        } else {
-            $this->fields_names             = array();
-            $this->fields                   = array();
-        }
+
         return (bool) $this->record;
     }
 

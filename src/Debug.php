@@ -206,7 +206,7 @@ class Debug
                 ? $backtrace
                 : debug_backtrace()
             );
-            foreach ($debug_backtrace as $i => $trace) {
+            foreach ($debug_backtrace as $trace) {
                 if (basename($trace["file"]) == "Debug.php") {
                     continue;
                 }
@@ -315,7 +315,7 @@ class Debug
             unset($debug_backtrace[0]);
         }
 
-        foreach ($debug_backtrace as $i => $trace) {
+        foreach ($debug_backtrace as $trace) {
             if (isset($trace["file"]) && basename($trace["file"]) == "Debug.php") {
                 continue;
             }

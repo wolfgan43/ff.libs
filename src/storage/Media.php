@@ -122,6 +122,7 @@ class Media implements Configurable
                                                                         "bsh" => "application/x-bsh",
                                                                         "bz" => "application/x-bzip",
                                                                         "bz2" => "application/x-bzip2",
+                                                                        "txt" => "text/plain",
                                                                         "c" => "text/plain",
                                                                         "c++" => "text/plain",
                                                                         "cat" => "application/vnd.ms-pki.seccat",
@@ -233,11 +234,11 @@ class Media implements Configurable
                                                                         "jav" => "text/plain",
                                                                         "java" => "text/plain",
                                                                         "jcm" => "application/x-java-commerce",
-                                                                        "jfif" => "image/jpeg",
-                                                                        "jfif-tbnl" => "image/jpeg",
+                                                                        "jpg" => "image/jpeg",
                                                                         "jpe" => "image/jpeg",
                                                                         "jpeg" => "image/jpeg",
-                                                                        "jpg" => "image/jpeg",
+                                                                        "jfif" => "image/jpeg",
+                                                                        "jfif-tbnl" => "image/jpeg",
                                                                         "jps" => "image/x-jps",
                                                                         "js" => "application/x-javascript",
                                                                         "jut" => "image/jutvision",
@@ -452,7 +453,6 @@ class Media implements Configurable
                                                                         "tsp" => "application/dsptype",
                                                                         "tsv" => "text/tab-separated-values",
                                                                         "turbot" => "image/florian",
-                                                                        "txt" => "text/plain",
                                                                         "uil" => "text/x-uil",
                                                                         "uni" => "text/uri-list",
                                                                         "unis" => "text/uri-list",
@@ -789,6 +789,16 @@ class Media implements Configurable
             "modes" => self::$modes
         );
     }
+
+    /**
+     * @param string $mime
+     * @return string
+     */
+    public static function getExtensionByMime(string $mime) : string
+    {
+        return (string) array_search($mime, self::MIMETYPE);
+    }
+
 
     /**
      * @param string $filename

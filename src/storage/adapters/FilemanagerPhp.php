@@ -75,10 +75,10 @@ class FilemanagerPhp extends FilemanagerAdapter
 
     /**
      * @param array $data
-     * @param string $var
+     * @param string|null $var
      * @return string
      */
-    protected function output(array $data, string $var) : string
+    protected function output(array $data, string $var = null) : string
     {
         if ($var) {
             $return = '$' . $var . ' = ';

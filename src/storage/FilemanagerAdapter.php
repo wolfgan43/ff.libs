@@ -65,10 +65,10 @@ abstract class FilemanagerAdapter
 
     /**
      * @param array $data
-     * @param string $var
+     * @param string|null $var
      * @return string
      */
-    abstract protected function output(array $data, string $var) : string;
+    abstract protected function output(array $data, string $var = null) : string;
 
     /**
      * @param null|string $file_path

@@ -50,10 +50,10 @@ class FilemanagerJson extends FilemanagerAdapter //todo: da finire
 
     /**
      * @param array $data
-     * @param string $var
+     * @param string|null $var
      * @return string
      */
-    protected function output(array $data, string $var) : string
+    protected function output(array $data, string $var = null) : string
     {
         $root_node                                              = (
             $var

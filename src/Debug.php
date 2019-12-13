@@ -36,7 +36,13 @@ use Exception;
 class Debug
 {
     const ERROR_BUCKET                      = "exception";
-
+    private const RUNNER_EXCLUDE            = array(
+                                                "index"     => true,
+                                                "Kernel"    => true,
+                                                "Debug"     => true,
+                                                "Error"     => true,
+                                                "Log"       => true
+                                            );
     private static $app_start               = null;
 
     private static $startWatch              = array();
@@ -51,26 +57,11 @@ class Debug
     {
         self::$app_start                   = microtime(true);
 
-        Log::extend("profiling", Log::TYPE_DEBUG, array(
-            "bucket"        => "profiling",
-            "write_if"    => Kernel::$Environment::PROFILING,
-            "override"    => true,
-            "format"      => Log::FORMAT_CLE,
-        ));
-
         if (self::isEnabled()) {
             error_reporting(E_ALL);
             ini_set('display_errors', "On");
 
             $_SERVER["HTTPS"]               = "on";
-
-
-            register_shutdown_function(function () {
-                $time                       = self::exTimeApp();
-                if ($time > 10000) {
-                    Log::error("Timeout: " . $time);
-                }
-            });
 
             /**
              * Performance Profiling
@@ -89,6 +80,13 @@ class Debug
         return Kernel::$Environment::DEBUG;
     }
 
+    /**
+     * @return bool
+     */
+    public static function isProfiling() : bool
+    {
+        return Kernel::$Environment::PROFILING;
+    }
     /**
      * @param string $bucket
      * @return float|null
@@ -131,7 +129,7 @@ class Debug
     }
 
     /**
-     *
+     * @todo da valutare e togliere
      */
     public static function registerErrors() : void
     {
@@ -184,13 +182,13 @@ class Debug
 
     /**
      * @param string $filename
-     * @param array|null $data
+     * @param string $data
      */
-    public static function dumpLog(string $filename, array $data = null) : void
+    public static function dumpLog(string $filename, string $data = null) : void
     {
-        $trace                                  = self::dumpCommandLine(print_r($data, true));
+        $trace                                  = self::dumpCommandLine($data);
 
-        Log::write($trace, $filename);
+        Log::warning($trace, $filename);
     }
 
     /**
@@ -563,6 +561,7 @@ class Debug
 
 
     /**
+     * @todo da valutare e togliere
      * @param bool $end
      * @return mixed
      */
@@ -614,7 +613,7 @@ class Debug
                     $res["url"] = sprintf("http" . ($_SERVER["HTTPS"] ? "s" : "") . "://" . $_SERVER["HTTP_HOST"] . '/xhprof_html/index.php?run=%s&source=%s', $run_id, $profiler_namespace);
                 }
 
-                Log::write($res, "benchmark", null, (Request::isAjax() ? "xhr" : "page"));
+                Log::debugging($res, "benchmark");
 
                 return $res;
             } else {
@@ -650,6 +649,19 @@ class Debug
         return $res;
     }
 
+    /**
+     * @return array
+     */
+    public static function getRunners() : array
+    {
+        $res                                = array();
+        $debug_backtrace                    = debug_backtrace();
+        foreach (array_column($debug_backtrace, "class") as $i => $runner) {
+            $res[basename(str_replace('\\', '/', $runner))] = $debug_backtrace[$i]["function"];
+        }
+
+        return array_diff_key(array_reverse($res, true), self::RUNNER_EXCLUDE);
+    }
     /**
      * @return array|null
      */

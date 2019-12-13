@@ -26,32 +26,14 @@
 
 namespace phpformsframework\libs\dto;
 
-use phpformsframework\libs\Debug;
 use stdClass;
 
 /**
- * Class DataAdapter
+ * Trait DataManager
  * @package phpformsframework\libs\dto
  */
-abstract class DataAdapter
+trait DataManager
 {
-    const CONTENT_TYPE                      = null;
-
-    /**
-     * @var string
-     */
-    public $error                           = "";
-    /**
-     * @var int
-     */
-    public $status                          = 0;
-    /**
-     * @var mixed|null
-     */
-    private $debug                           = array();
-
-    abstract public function output();
-
     /**
      * DataAdapter constructor.
      * @param array $data
@@ -99,59 +81,13 @@ abstract class DataAdapter
         );
     }
     /**
-     * @todo da tipizzare
-     * @return false|string
+     * @return string
      */
-    public function toJson()
+    public function toJson() : string
     {
-        return json_encode($this->getVars());
+        return (string) json_encode($this->getVars());
     }
 
-    /**
-     * @param int $status
-     * @param string|null $msg
-     * @return $this
-     */
-    public function error(int $status, string $msg = null) : self
-    {
-        $this->status                       = $status;
-        $this->error                        = (
-            $this->error
-            ? $this->error . " "
-            : ""
-        ) . $msg;
-
-        return $this;
-    }
-
-    /**
-     * @param int|null $code
-     * @return bool
-     */
-    public function isError(int $code = null) : bool
-    {
-        return (bool) (
-            $code
-            ? isset($this->status[$code])
-            : $this->status
-        );
-    }
-
-    /**
-     * @todo da tipizzare
-     * @param mixed $data
-     * @return $this
-     */
-    public function debug($data, string $bucket = null) : self
-    {
-        if ($bucket) {
-            $this->debug[$bucket] = $data;
-        } elseif (!empty($data)) {
-            array_push($this->debug, $data);
-        }
-
-        return $this;
-    }
 
     /**
      * @param array $values
@@ -237,21 +173,5 @@ abstract class DataAdapter
         unset($this->$key);
 
         return $this;
-    }
-
-    /**
-     * @return string
-     */
-    public function toLog() : string
-    {
-        /*$message = $this->error;
-        if (!$message) {
-            $message = (
-                $this::CONTENT_TYPE == "application/json"
-                    ? $this->toJson()
-                    : $this::CONTENT_TYPE
-            );
-        }*/
-        return $this->error;
     }
 }

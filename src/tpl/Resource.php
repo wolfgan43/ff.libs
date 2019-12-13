@@ -29,7 +29,6 @@ namespace phpformsframework\libs\tpl;
 use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\Config;
 use phpformsframework\libs\Debug;
-use phpformsframework\libs\Dir;
 use phpformsframework\libs\dto\DataHtml;
 use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Error;

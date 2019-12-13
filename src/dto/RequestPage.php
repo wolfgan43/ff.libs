@@ -13,7 +13,7 @@ class RequestPage extends Mappable
 {
     public $path_info       = null;
 
-    public $log             = false;
+    public $log             = null;
     public $validation      = true;
     public $nocache         = false;
     public $https           = null;

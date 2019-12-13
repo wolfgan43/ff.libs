@@ -427,22 +427,20 @@ abstract class Mailer
         $dataError                                          = new DataError();
         if (Error::check(static::ERROR_BUCKET) || Kernel::$Environment::DEBUG) {
             $dump = array(
-                "source" => Debug::stackTrace()
-                , "URL" => Request::url()
-                , "REFERER" => Request::referer()
-                , " subject" => $this->subject
-                , " fromEmail" => $this->fromEmail
-                , " fromName" => $this->fromName
-                , " to" => $this->to
-                , " cc" => $this->cc
-                , " bcc" => $this->bcc
-                , " error" => Error::raise(static::ERROR_BUCKET)
-                , " exTime" => Debug::exTime("mailer/send")
+                "source"        => Debug::stackTrace(),
+                "subject"       => $this->subject,
+                "fromEmail"     => $this->fromEmail,
+                "fromName"      => $this->fromName,
+                "to"            => $this->to,
+                "cc"            => $this->cc,
+                "bcc"           => $this->bcc,
+                "error"         => Error::raise(static::ERROR_BUCKET),
+                "exTime"        => Debug::exTime("mailer/send")
             );
             if (Error::check(static::ERROR_BUCKET)) {
-                Log::error($dump);
+                Log::critical($dump, static::ERROR_BUCKET, static::ERROR_BUCKET, "send");
             } else {
-                Log::debugging($dump);
+                Log::debugging($dump, static::ERROR_BUCKET, static::ERROR_BUCKET, "send");
             }
         }
 

@@ -292,7 +292,7 @@ class Error
                 Debug::dump($error);
                 exit;
             } else {
-                Log::critical($error);
+                Log::alert($error);
                 Response::sendError(500, $error);
             }
         }

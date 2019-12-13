@@ -141,18 +141,16 @@ class Messenger
         $dataError                                          = new DataError();
         if (Error::check(static::ERROR_BUCKET) || Kernel::$Environment::DEBUG) {
             $dump = array(
-                "source" => Debug::stackTrace()
-                , "URL" => Request::url()
-                , "REFERER" => Request::referer()
-                , " content" => $this->content
-                , " from" => $this->adapter->from
-                , " error" => Error::raise(static::ERROR_BUCKET)
-                , " exTime" => Debug::exTime("messenger/send")
+                "source"        => Debug::stackTrace(),
+                "content"       => $this->content,
+                "from"          => $this->adapter->from,
+                "error"         => Error::raise(static::ERROR_BUCKET),
+                "exTime"        => Debug::exTime("messenger/send")
             );
             if (Error::check(static::ERROR_BUCKET)) {
-                Log::error($dump);
+                Log::error($dump, static::ERROR_BUCKET);
             } else {
-                Log::debugging($dump);
+                Log::debugging($dump, static::ERROR_BUCKET);
             }
         }
 

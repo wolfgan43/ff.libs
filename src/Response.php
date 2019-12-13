@@ -61,16 +61,21 @@ class Response
         switch (Request::accept()) {
             case "application/json":
             case "text/json":
+                Log::registerProcedure("Request", "validator" . Log::CLASS_SEP . "error");
                 $response = new DataResponse();
-                $response->error($status, $msg);
-                if ($debug) {
-                    $response->debug($debug);
-                }
                 break;
             default:
+                Log::registerProcedure("Router", "page" . Log::CLASS_SEP . "error");
+
                 $response = Page::getInstance("html")
                     ->renderError($status, $msg ? $msg : "Oops!");
         }
+
+        $response->error($status, $msg);
+        if ($debug) {
+            $response->debug($debug);
+        }
+
 
         self::send($response);
     }
@@ -105,7 +110,7 @@ class Response
             }
         }
 
-        exit;
+        self::endScript($data);
     }
 
     /**
@@ -170,8 +175,9 @@ class Response
              * @todo da gestire i tipi accepted self::sendHeadersByMimeType(...)
              */
             self::httpCode(501);
-            echo "content type " . $content_type . " is different to http_accept: " . Request::rawAccept();
-            exit;
+            $message = "content type " . $content_type . " is different to http_accept: " . Request::rawAccept();
+            echo $message;
+            self::endScript($message);
         }
 
         return true;
@@ -185,15 +191,26 @@ class Response
     public static function send(DataAdapter $response, int $status = null) : void
     {
         if (self::isValidContentType($response::CONTENT_TYPE)) {
-
             self::httpCode(
                 $status === null
                 ? $response->status
                 : $status
             );
+
             self::sendHeadersByMimeType($response::CONTENT_TYPE);
             echo $response->output();
         }
+
+        self::endScript($response->toLog());
+    }
+
+    /**
+     * @todo da tipizzare
+     * @param null $message
+     */
+    private static function endScript($message = null) : void
+    {
+        Log::write($message);
         exit;
     }
 
@@ -207,10 +224,10 @@ class Response
     }
 
     /**
-     * @param string $response
+     * @param array $response
      * @return void
      */
-    public function sendJson(string $response) : void
+    public function sendJson(array $response) : void
     {
         self::sendRawData($response, "application/json");
     }
@@ -225,7 +242,6 @@ class Response
         if ($http_response_code === null) {
             $http_response_code = 301;
         }
-        Log::write("REFERER: " . Request::referer(), "redirect", $http_response_code, $destination);
 
         self::sendHeaders(array(
             "cache" => "must-revalidate"
@@ -245,7 +261,7 @@ class Response
             self::httpCode(400);
         }
 
-        exit;
+        self::endScript("Redirect: " . Request::referer() . " => " . $destination);
     }
 
     /**

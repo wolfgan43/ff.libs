@@ -31,7 +31,6 @@ use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Log;
-use phpformsframework\libs\Request;
 use phpformsframework\libs\tpl\Gridsystem;
 use phpformsframework\libs\security\Validator;
 use Exception;
@@ -396,17 +395,11 @@ abstract class DatabaseAdapter
         if (is_array($query)) {
             switch ($query["action"]) {
                 case "read":
-                    $db                                             = null;
-
-                    $res                                            = Database::cache($query);
-                    if (!$res) {
-                        $db                                         = $this->processRead($query);
-                    }
-
+                    $db                                             = $this->processRead($query);
                     if ($db) {
                         $count_recordset                            = count($db[static::RESULT]);
-                        if (!empty($query["limit"]) || $count_recordset < $this::MAX_NUMROWS) {
-                            if ($this->rawdata || $count_recordset > $this::MAX_RESULTS) {
+                        if (!empty($query["limit"]) || $count_recordset < static::MAX_NUMROWS) {
+                            if ($this->rawdata || $count_recordset > static::MAX_RESULTS) {
                                 $res["rawdata"]                     = $db[static::RESULT];
                             } else {
                                 $prototype                          = $this->getPrototype($this->select);
@@ -421,7 +414,6 @@ abstract class DatabaseAdapter
 
                     break;
                 case "insert":
-                    //@todo da alterare la cache in funzione dei dati inseriti
                     $res                                            = $this->processInsert($query);
                     break;
                 case "update":
@@ -436,8 +428,6 @@ abstract class DatabaseAdapter
                 default:
                     Error::register("Method not Managed", static::ERROR_BUCKET);
             }
-
-            Database::setCache($query, $res);
         }
 
         return $res;
@@ -677,11 +667,8 @@ abstract class DatabaseAdapter
                                                                         );
 
             $hits[$hash]["where"]                                       = $this->where;
-            if ($hits["count"] > $this::MAX_RESULTS) {
-                Log::debugging(array(
-                    "URL"               =>  Request::url(),
-                    "Too Many Caller"   => $hits
-                ));
+            if ($hits["count"] > static::MAX_RESULTS) {
+                Log::warning($hits, static::ERROR_BUCKET . "_maxresults");
                 $hits                                                   = array();
             }
         }
@@ -1279,7 +1266,7 @@ abstract class DatabaseAdapter
                     }
                     break;
                 case self::FTYPE_DATE:
-                    $fields[$name] = $value;
+                    $fields[$name]                                          = $value;
                     break;
                 case self::FTYPE_NUMBER:
                 case self::FTYPE_TIMESTAMP:

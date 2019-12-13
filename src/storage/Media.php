@@ -791,6 +791,28 @@ class Media implements Configurable
     }
 
     /**
+     * @param string $file
+     * @return string
+     */
+    public static function getMime(string $file) : string
+    {
+        $ext                                                        = pathinfo($file, PATHINFO_EXTENSION);
+        return ($ext || !function_exists("mime_content_type")
+            ? self::getMimeByExtension($ext, "")
+            : mime_content_type($file)
+        );
+    }
+
+    /**
+     * @param string $file
+     * @return string
+     */
+    public static function getExtensionByFile(string $file) : string
+    {
+        return self::getExtensionByMime(self::getMime($file));
+    }
+
+    /**
      * @param string $mime
      * @return string
      */

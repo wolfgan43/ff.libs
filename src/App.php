@@ -68,7 +68,6 @@ abstract class App implements Dumpable
         );
     }
 
-
     /**
      * @param string $what
      */
@@ -102,7 +101,7 @@ abstract class App implements Dumpable
     {
         $class_name                                                 = get_called_class();
 
-        Log::registerProcedure($class_name, "widget:" . $name);
+        Log::registerProcedure(str_replace(static::NAME_SPACE, "", $class_name), "widget" . Log::CLASS_SEP . $name);
 
         return Widget::getInstance($name, $config, $class_name::NAME_SPACE)
             ->render($return);

@@ -33,6 +33,12 @@ abstract class Mappable
 {
     const ERROR_BUCKET          = "mappable";
 
+    /**
+     * @todo da tipizzare
+     * Mappable constructor.
+     * @param $map
+     * @param string|null $prefix
+     */
     public function __construct($map, string $prefix = null)
     {
         if (is_array($map)) {

@@ -27,8 +27,21 @@ namespace phpformsframework\libs;
 
 use phpformsframework\libs\storage\Filemanager;
 
+/**
+ * Class Log
+ * @package phpformsframework\libs
+ */
 class Log
 {
+    public const CLASS_SEP                                      = "->";
+
+    private const PROTECTED_MESSAGE                             = "*protected*";
+    private const PROTECTED_WORDS                               = array(
+                                                                    "password"  => self::PROTECTED_MESSAGE,
+                                                                    "secret"    => self::PROTECTED_MESSAGE,
+                                                                    "hash"      => self::PROTECTED_MESSAGE,
+                                                                    "SID"       => self::PROTECTED_MESSAGE
+                                                                );
     /**
      * rfc5424 compliant
      */
@@ -49,171 +62,247 @@ class Log
     const FORMAT_LSS                                            = "lss";
 
     const REQUEST                                               = array(
-                                                                    "message"           => "message"
-                                                                    , "routine"         => "routine"
-                                                                    , "action"          => "action"
-                                                                    , "status"          => "status"
-                                                                    , "response"        => "response"
+                                                                    "message"           => "message",
+                                                                    "routine"           => "routine",
+                                                                    "action"            => "action",
+                                                                    "status"            => "status",
+                                                                    "response"          => "response"
                                                                 );
-    const TYPE_DEFAULT                                          = self::TYPE_INFO;
-    private static $user                                        = null;
+    const TYPE_DEFAULT                                          = self::TYPE_NOTICE;
+    private static $current_routine                             = null;
+    private static $current_user                                = null;
+    private static $current_size                                = null;
+    private static $current_tags                                = array();
     private static $formats                                     = array(
                                                                     self::FORMAT_CLF                => array( //common log format
                                                                         "rule"                      => array(
-                                                                            "remote_addr"           => "REMOTE_ADDR"
-                                                                            , "identd"              => "IDENTD:ROUTINE:ACTION"
-                                                                            , "auth_user"           => "AUTH"
-                                                                            , "datetime"            => 'DATE:TIME.MICRO ZONE'
-                                                                            , "from"                => "REQUEST_METHOD REQUEST_URI SERVER_PROTOCOL"
-                                                                            , "status"              => "STATUS_CODE"
-                                                                            , "size"                => "RESPONSE"
-                                                                        )
-                                                                        , "message"                 => ' "-" "MESSAGE"'
-                                                                        , "encode"                  => "json"
-                                                                        , "separator"               => " - "
-                                                                        , "quote_prefix"            => ""
-                                                                        , "quote_suffix"            => ""
-                                                                    )
-                                                                    , self::FORMAT_CLE                => array( //common log extend
+                                                                            "remote_addr"           => "REMOTE_ADDR",
+                                                                            "identd"                => "IDENTD:ROUTINE" . self::CLASS_SEP . "ACTION [pid:PID TAGS]",
+                                                                            "auth_user"             => "AUTH",
+                                                                            "datetime"              => 'DATE:TIME.MICRO ZONE (EXTIMEs)',
+                                                                            "from"                  => "REQUEST_METHOD PATHINFO SERVER_PROTOCOL AJAX",
+                                                                            "status"                => "STATUS_CODE referer: REFERER",
+                                                                            "size"                  => "SIZE"
+                                                                        ),
+                                                                        "message"                   => ' "-" "MESSAGE"',
+                                                                        "encode"                    => "json",
+                                                                        "separator"                 => " - ",
+                                                                        "quote_prefix"              => "",
+                                                                        "quote_suffix"              => ""
+                                                                    ),
+                                                                    self::FORMAT_CLE                => array( //common log extend
                                                                         "rule"                      => array(
-                                                                            "remote_addr"           => "REMOTE_ADDR"
-                                                                            , "identd"              => "IDENTD:ROUTINE:ACTION"
-                                                                            , "auth_user"           => "AUTH"
-                                                                            , "datetime"            => 'DATE:TIME.MICRO ZONE'
-                                                                            , "from"                => "REQUEST_METHOD REQUEST_URI SERVER_PROTOCOL"
-                                                                            , "url_detail"          => "RESPONSE"
-                                                                        )
-                                                                        , "message"                 => ' "-" "MESSAGE"'
-                                                                        , "encode"                  => null
-                                                                        , "separator"               => " - "
-                                                                        , "quote_prefix"            => ""
-                                                                        , "quote_suffix"            => ""
-                                                                    )
-                                                                    , self::FORMAT_LSS              => array( //log server side
+                                                                            "remote_addr"           => "REMOTE_ADDR",
+                                                                            "identd"                => "IDENTD:ROUTINE" . self::CLASS_SEP . "ACTION [pid:PID]",
+                                                                            "auth_user"             => "AUTH",
+                                                                            "datetime"              => 'DATE:TIME.MICRO ZONE',
+                                                                            "from"                  => "REQUEST_METHOD PATHINFO SERVER_PROTOCOL AJAX",
+                                                                            "status"                => "STATUS_CODE",
+                                                                            "size"                  => "SIZE"
+                                                                        ),
+                                                                        "message"                   => ' "-" "MESSAGE"',
+                                                                        "encode"                    => "json",
+                                                                        "separator"                 => " - ",
+                                                                        "quote_prefix"              => "",
+                                                                        "quote_suffix"              => ""
+                                                                    ),
+                                                                    self::FORMAT_LSS                => array( //log server side
                                                                         "rule"                      => array(
-                                                                            "datetime"              => 'DAYN MONTHN DAY TIME.MICRO YEAR'
-                                                                            , "identd"              => "ROUTINE:ACTION"
-
-                                                                            , "process"             => "pid PID:tid TID"
-                                                                            , "remote_addr"         => "client REMOTE_ADDR:REMOTE_PORT"
-                                                                        )
-                                                                        , "message"                 => ' MESSAGE'
-                                                                        , "encode"                  => "json"
-                                                                        , "separator"               => " "
-                                                                        , "quote_prefix"            => "["
-                                                                        , "quote_suffix"            => "]"
-                                                                        , "strip"                   => array(
-                                                                                                        "[:]"
-                                                                                                        , "[]"
+                                                                            "datetime"              => 'EXTIMEs DAYN MONTHN DAY TIME.MICRO YEAR',
+                                                                            "identd"                => "ROUTINE" . self::CLASS_SEP . "ACTION",
+                                                                            "process"               => "pid PID:tid TID:resource TAGS",
+                                                                            "remote_addr"           => "client REMOTE_ADDR:REMOTE_PORT REFERER"
+                                                                        ),
+                                                                        "message"                   => ' MESSAGE',
+                                                                        "encode"                    => "json",
+                                                                        "separator"                 => " ",
+                                                                        "quote_prefix"              => "[",
+                                                                        "quote_suffix"              => "]",
+                                                                        "strip"                     => array(
+                                                                                                        "[:]",
+                                                                                                        "[]"
                                                                                                     )
                                                                     )
-
                                                                 );
     private static $rules                                       = array(
-                                                                    self::TYPE_EMERGENCY             => array(
-                                                                        "service"                   => "fs"
-                                                                        , "unalterable"             => false
-                                                                        , "notify"                  => true
-                                                                        , "bucket"                  => "emergency"
-                                                                        , "write_if"                => true
-                                                                        , "override"                => false
-                                                                        , "format"                  => self::FORMAT_LSS
-                                                                    )
-                                                                    , self::TYPE_ALERT             => array(
-                                                                        "service"                   => "fs"
-                                                                        , "unalterable"             => false
-                                                                        , "notify"                  => true
-                                                                        , "bucket"                  => "critical"
-                                                                        , "write_if"                => true
-                                                                        , "override"                => false
-                                                                        , "format"                  => self::FORMAT_CLF
-                                                                    )
-                                                                    , self::TYPE_CRITICAL           => array(
-                                                                        "service"                   => "fs"
-                                                                        , "unalterable"             => false
-                                                                        , "notify"                  => true
-                                                                        , "bucket"                  => "alert"
-                                                                        , "write_if"                => true
-                                                                        , "override"                => false
-                                                                        , "format"                  => self::FORMAT_LSS
-                                                                    )
-                                                                    , self::TYPE_ERROR              => array(
-                                                                        "service"                   => "fs"
-                                                                        , "unalterable"             => false
-                                                                        , "notify"                  => false
-                                                                        , "bucket"                  => "error"
-                                                                        , "write_if"                => true
-                                                                        , "override"                => false
-                                                                        , "format"                  => self::FORMAT_CLF
-                                                                    )
-                                                                    , self::TYPE_WARNING            => array(
-                                                                        "service"                   => "fs"
-                                                                        , "unalterable"             => false
-                                                                        , "notify"                  => false
-                                                                        , "bucket"                  => "warning"
-                                                                        , "write_if"                => true
-                                                                        , "override"                => false
-                                                                        , "format"                  => self::FORMAT_LSS
-                                                                    )
-                                                                    , self::TYPE_NOTICE             => array(
-                                                                        "service"                   => "fs"
-                                                                        , "unalterable"             => false
-                                                                        , "notify"                  => false
-                                                                        , "bucket"                  => "notice"
-                                                                        , "write_if"                => true
-                                                                        , "override"                => false
-                                                                        , "format"                  => self::FORMAT_CLF
-                                                                    )
-                                                                    , self::TYPE_INFO               => array(
-                                                                        "service"                   => "fs"
-                                                                        , "unalterable"             => false
-                                                                        , "notify"                  => false
-                                                                        , "bucket"                  => "info"
-                                                                        , "write_if"                => true
-                                                                        , "override"                => false
-                                                                        , "format"                  => self::FORMAT_CLF
-                                                                    )
-                                                                    , self::TYPE_DEBUG              => array(
-                                                                        "service"                   => "fs"
-                                                                        , "unalterable"             => false
-                                                                        , "notify"                  => false
-                                                                        , "bucket"                  => "debug"
-                                                                        , "write_if"                => null
-                                                                        , "override"                => false
-                                                                        , "format"                  => self::FORMAT_CLF
+                                                                    self::TYPE_EMERGENCY            => array(
+                                                                        "service"                   => "fs",
+                                                                        "unalterable"               => false,
+                                                                        "notify"                    => true,
+                                                                        "bucket"                    => "emergency",
+                                                                        "write_if"                  => null,
+                                                                        "override"                  => false,
+                                                                        "format"                    => self::FORMAT_LSS
+                                                                    ),
+                                                                    self::TYPE_ALERT                => array(
+                                                                        "service"                   => "fs",
+                                                                        "unalterable"               => false,
+                                                                        "notify"                    => true,
+                                                                        "bucket"                    => "critical",
+                                                                        "write_if"                  => null,
+                                                                        "override"                  => false,
+                                                                        "format"                    => self::FORMAT_CLF
+                                                                    ),
+                                                                    self::TYPE_CRITICAL             => array(
+                                                                        "service"                   => "fs",
+                                                                        "unalterable"               => false,
+                                                                        "notify"                    => true,
+                                                                        "bucket"                    => "alert",
+                                                                        "write_if"                  => null,
+                                                                        "override"                  => false,
+                                                                        "format"                    => self::FORMAT_LSS
+                                                                    ),
+                                                                    self::TYPE_ERROR                => array(
+                                                                        "service"                   => "fs",
+                                                                        "unalterable"               => false,
+                                                                        "notify"                    => false,
+                                                                        "bucket"                    => "error",
+                                                                        "write_if"                  => null,
+                                                                        "override"                  => false,
+                                                                        "format"                    => self::FORMAT_CLF
+                                                                    ),
+                                                                    self::TYPE_WARNING              => array(
+                                                                        "service"                   => "fs",
+                                                                        "unalterable"               => false,
+                                                                        "notify"                    => false,
+                                                                        "bucket"                    => "warning",
+                                                                        "write_if"                  => null,
+                                                                        "override"                  => false,
+                                                                        "format"                    => self::FORMAT_LSS
+                                                                    ),
+                                                                    self::TYPE_NOTICE               => array(
+                                                                        "service"                   => "fs",
+                                                                        "unalterable"               => false,
+                                                                        "notify"                    => false,
+                                                                        "bucket"                    => "notice",
+                                                                        "write_if"                  => null,
+                                                                        "override"                  => false,
+                                                                        "format"                    => self::FORMAT_CLF
+                                                                    ),
+                                                                    self::TYPE_INFO                 => array(
+                                                                        "service"                   => "fs",
+                                                                        "unalterable"               => false,
+                                                                        "notify"                    => false,
+                                                                        "bucket"                    => "info",
+                                                                        "write_if"                  => null,
+                                                                        "override"                  => false,
+                                                                        "format"                    => self::FORMAT_LSS
+                                                                    ),
+                                                                    self::TYPE_DEBUG                => array(
+                                                                        "service"                   => "fs",
+                                                                        "unalterable"               => false,
+                                                                        "notify"                    => false,
+                                                                        "bucket"                    => "debug",
+                                                                        "write_if"                  => __NAMESPACE__ . "\\Debug::isEnabled",
+                                                                        "override"                  => false,
+                                                                        "format"                    => self::FORMAT_CLE
                                                                     )
                                                                 );
     private static $routine                                     = array(
-                                                                    "redirect"                    => array(
-                                                                        "service"                   => "fs"
-                                                                        , "unalterable"             => false
-                                                                        , "notify"                  => false
-                                                                        , "bucket"                  => "info_redirect"
-                                                                        , "write_if"                => null
-                                                                        , "override"                => false
-                                                                        , "format"                  => self::FORMAT_CLF
+                                                                    "redirect"                      => array(
+                                                                        "service"                   => "fs",
+                                                                        "unalterable"               => false,
+                                                                        "notify"                    => false,
+                                                                        "bucket"                    => "info_redirect",
+                                                                        "write_if"                  => null,
+                                                                        "override"                  => false,
+                                                                        "format"                    => self::FORMAT_CLF
                                                                     )
                                                                 );
     private static $procedure                                   = null;
 
-    public static function extend($routine, $type, array $params = null)
+    /**
+     * @param int|null $type
+     * @param string|null $bucket
+     * @param string $format
+     * @param bool|null $unalterable
+     * @param callable|null $write_if
+     * @param bool|null $override
+     * @return array
+     */
+    public static function extend(int $type = null, string $bucket = null, string $format = null, bool $unalterable = null, callable $write_if = null, bool $override = null) : array
     {
-        $rule                                                   = self::getRule($type);
-        self::$routine[$routine]                                = $rule;
-        if ($params) {
-            self::$routine[$routine]                            = array_replace(self::$routine[$routine], $params);
-            if ($rule["bucket"] && $params["bucket"]) {
-                self::$routine[$routine]["bucket"]              = $rule["bucket"] . "_" . $params["bucket"];
-            }
+        $rule                                                   = (
+            isset(self::$rules[$type])
+            ? self::$rules[$type]
+            : self::$rules[self::TYPE_DEFAULT]
+        );
+        $name                                                   = $rule["bucket"];
+
+        if ($bucket) {
+            $rule["bucket"]                                     .= "_" . $bucket;
+            $name                                               .= "." . $bucket;
         }
+        if ($write_if !== null) {
+            $rule["write_if"]                                   = $write_if;
+        }
+        if ($unalterable !== null) {
+            $rule["unalterable"]                                = $unalterable;
+        }
+        if ($format !== null) {
+            $rule["format"]                                     = $format;
+        }
+        if ($override !== null) {
+            $rule["override"]                                   = $override;
+        }
+
+        self::$routine[$name]                                   = $rule;
+
+        return $rule;
     }
-    public static function setUser($name)
+
+    /**
+     * @param string|null $name
+     */
+    public static function setRoutine(string $name = null) : void
     {
-        self::$user                                             = $name;
+        $arrRoutine                                             = explode(".", $name, 2);
+        $bucket                                                 = (
+            isset($arrRoutine[1])
+            ? $arrRoutine[1]
+            : null
+        );
+        $const                                                  = "TYPE_" . strtoupper($arrRoutine[0]);
+        $type                                                   = (
+            defined("self::" . $const)
+            ? constant("self::" . $const)
+            : self::TYPE_DEFAULT
+        );
+
+        self::extend($type, $bucket);
+
+        self::$current_routine                                  = $name;
     }
-    protected static function getUser()
+
+    /**
+     * @param string $name
+     */
+    public static function setUser(string $name) : void
     {
-        $res                                                    = self::$user;
+        self::$current_user                                     = $name;
+    }
+    /**
+     * @param int $size
+     */
+    public static function setSize(int $size) : void
+    {
+        self::$current_size                                     = $size;
+    }
+
+    /**
+     * @param string $tag
+     */
+    public static function addTag(string $tag) : void
+    {
+        self::$current_tags[$tag]                               = $tag;
+    }
+
+    /**
+     * @return string
+     */
+    protected static function getUser() : string
+    {
+        $res                                                    = self::$current_user;
         if (!$res) {
             $res                                                = (
                 isset($_COOKIE[session_name()])
@@ -224,179 +313,177 @@ class Log
 
         return $res;
     }
-    public static function addFormat($key, $format)
+
+    /**
+     * @param string $key
+     * @param array $format
+     */
+    public static function addFormat(string $key, array $format) : void
     {
         self::$formats[$key]                                    = $format;
     }
-    public static function registerProcedure($routine, $action, $bucket = null)
+
+    /**
+     * @param string $routine
+     * @param string $action
+     */
+    public static function registerProcedure(string $routine, string $action) : void
     {
         self::$procedure                                        = array(
-                                                                    "routine"   => $routine
-                                                                    , "action"  => $action
-                                                                    , "bucket"  => $bucket
+                                                                    "routine"   => $routine,
+                                                                    "action"    => $action
                                                                 );
     }
 
     /** system is unusable [SYSTEM]
      * @param $message
-     * @param null $routine
-     * @param null $action
+     * @param string|null $bucket
+     * @param string $routine
+     * @param string $action
      */
-    public static function emergency($message, $routine = null, $action = null)
+    public static function emergency($message, string $bucket = null, string $routine = null, string $action = null)
     {
-        self::run($message, self::TYPE_EMERGENCY, $routine, $action);
+        self::run($message, self::TYPE_EMERGENCY, $bucket, $routine, $action);
     }
 
     /** critical conditions [REQUEST]
      * @param $message
-     * @param null $status
-     * @param null $response
+     * @param string|null $bucket
+     * @param int $status
      */
-    public static function alert($message, $status = null, $response = null)
+    public static function alert($message, string $bucket = null, int $status = null)
     {
-        self::run($message, self::TYPE_ALERT, null, null, $status, $response);
+        self::run($message, self::TYPE_ALERT, $bucket, null, null, $status);
     }
 
     /** action must be taken immediately [SYSTEM]
      * @param $message
-     * @param null $routine
-     * @param null $action
+     * @param string|null $bucket
+     * @param string $routine
+     * @param string $action
      */
-    public static function critical($message, $routine = null, $action = null)
+    public static function critical($message, string $bucket = null, string $routine = null, string $action = null)
     {
-        self::run($message, self::TYPE_CRITICAL, $routine, $action);
+        self::run($message, self::TYPE_CRITICAL, $bucket, $routine, $action);
     }
 
     /** error conditions  [REQUEST]
      * @param $message
-     * @param null $status
-     * @param null $response
+     * @param string|null $bucket
+     * @param int $status
      */
-    public static function error($message, $status = null, $response = null)
+    public static function error($message, string $bucket = null, int $status = null)
     {
-        self::run($message, self::TYPE_ERROR, null, null, $status, $response);
+        self::run($message, self::TYPE_ERROR, $bucket, null, null, $status);
     }
 
     /** warning conditions [SYSTEM]
      * @param $message
-     * @param null $routine
-     * @param null $action
+     * @param string|null $bucket
+     * @param string $routine
+     * @param string $action
      */
-    public static function warning($message, $routine = null, $action = null)
+    public static function warning($message, string $bucket = null, string $routine = null, string $action = null)
     {
-        self::run($message, self::TYPE_WARNING, $routine, $action);
+        self::run($message, self::TYPE_WARNING, $bucket, $routine, $action);
     }
 
     /** normal but significant condition [REQUEST]
      * @param $message
-     * @param null $status
-     * @param null $response
+     * @param string|null $bucket
+     * @param int $status
      */
-    public static function notice($message, $status = null, $response = null)
+    public static function notice($message, string $bucket = null, int $status = null)
     {
-        self::run($message, self::TYPE_NOTICE, null, null, $status, $response);
+        self::run($message, self::TYPE_NOTICE, $bucket, null, null, $status);
     }
 
     /** informational messages [REQUEST]
      * @param $message
-     * @param null $status
-     * @param null $response
+     * @param string|null $bucket
+     * @param int $status
      */
-    public static function info($message, $status = null, $response = null)
+    public static function info($message, string $bucket = null, int $status = null)
     {
-        self::run($message, self::TYPE_INFO, null, null, $status, $response);
+        self::run($message, self::TYPE_INFO, $bucket, null, null, $status);
     }
 
     /** debug-level messages
      * @param $message
-     * @param null $routine
-     * @param null $action
-     * @param null $status
+     * @param string|null $bucket
+     * @param string $routine
+     * @param string $action
+     * @param int $status
      */
-    public static function debugging($message, $routine = null, $action = null, $status = null)
+    public static function debugging($message, string $bucket = null, string $routine = null, string $action = null, int $status = null)
     {
-        self::run($message, self::TYPE_DEBUG, $routine, $action, $status);
+        if ($routine) {
+            self::addTag($routine);
+        }
+        self::run($message, self::TYPE_DEBUG, $bucket, $routine, $action, $status);
     }
-
-    /** Request: informational messages
-     * @param $message
-     * @param null $status
-     * @param null $size
-     */
-    public static function request($message, $status = null, $size = null)
-    {
-        self::run($message, null, null, null, $status, $size);
-    }
-
 
     /**
      * @param $message
-     * @param null $type
-     * @param null $status
-     * @param null $response
      */
-    public static function write($message, $type = null, $status = null, $response = null)
+    public static function write($message)
     {
-        self::run($message, $type, null, null, $status, $response);
+        self::run($message);
     }
 
-    public static function getLogDir()
+    /**
+     * @return string|null
+     */
+    public static function getLogDir() : ?string
     {
         return Dir::findCachePath("logs");
     }
 
-    private static function run($message, $type = null, $routine = null, $action = null, $status = null, $response = null)
+    /**
+     * @param $message
+     * @param int|null $type
+     * @param string|null $bucket
+     * @param string|null $routine
+     * @param string|null $action
+     * @param int|null $status
+     * @todo da tipizzare
+     */
+    private static function run($message, int $type = null, string $bucket = null, string $routine = null, string $action = null, int $status = null) : void
     {
-        if (self::writable($type)) {
-            $procedure                                              = self::findProcedure($routine, $action);
+        $rule                                                   = self::getRoutine($type, $bucket);
+        if ($rule && self::writable($rule)) {
+            $procedure                                          = self::findProcedure($routine, $action);
 
+            $content                                            = self::fetchByFormat(
+                $rule["format"],
+                $message,
+                $procedure["routine"],
+                $procedure["action"],
+                $status
+            );
+            /**
+             * @todo: da finire
+             *
+             * if ($rule["unalterable"]) {
+             *    self::hashing($message, $bucket);
+             * }
+             *
+             * if ($rule["notify"]) {
+             *    self::notify($message, $bucket);
+             * }
+            */
 
-            $rule                                                   = self::getRoutine(
-                $type
-                                                                        ? $type
-                                                                        : $procedure["routine"]
-                                                                    );
-
-            if ($rule["write_if"] === null) {
-                $rule["write_if"]                                   = Kernel::$Environment::DEBUG;
-            }
-
-            if ($rule["write_if"]) {
-                $bucket                                             = (
-                    $rule["bucket"]
-                    ? $rule["bucket"]
-                    : $procedure["bucket"]
-                );
-
-                $content                                            = self::fetchByFormat(
-                    $rule["format"],
-                    $message,
-                    (
-                        $procedure["caller"] && $bucket != $procedure["caller"]
-                        ? $procedure["caller"] . ":"
-                        : ""
-                    ) . $procedure["routine"],
-                    $procedure["action"],
-                    $status,
-                    $response
-                );
-                /**
-                 * @todo: da finire
-                 *
-                 * if ($rule["unalterable"]) {
-                 *    self::hashing($message, $bucket);
-                 * }
-                 *
-                 * if ($rule["notify"]) {
-                 *    self::notify($message, $bucket);
-                 * }
-                */
-                self::set($content, $bucket, $rule["override"]);
-            }
+            self::set($content, $rule["bucket"], $rule["override"]);
         }
     }
 
-    protected static function set($data, $filename = null, $override = false)
+    /**
+     * @todo da tipizzare
+     * @param $data
+     * @param string|null $filename
+     * @param bool $override
+     */
+    protected static function set($data, string $filename = null, bool $override = false) : void
     {
         $log_path                                                   = self::getLogDir();
         if ($log_path) {
@@ -410,105 +497,90 @@ class Log
         }
     }
 
-    private static function writable($type)
+    /**
+     * @param array $rule
+     * @return bool|null
+     */
+    private static function writable(array $rule) : ?bool
     {
-        $routine                                                    = self::getRoutine($type);
-        return $routine["write_if"];
+        return (is_callable($rule["write_if"])
+            ? $rule["write_if"]()
+            : true
+        );
     }
-    private static function findProcedure($routine = null, $action = null)
+
+    /**
+     * @param string|null $routine
+     * @param string|null $action
+     * @return array
+     */
+    private static function findProcedure(string $routine = null, string $action = null) : array
     {
-        $routine_caller                                             = null;
         if (self::$procedure) {
-            $routine                                                = self::$procedure["routine"];
-            $action                                                 = self::$procedure["action"];
-            $bucket                                                 = (
-                self::$procedure["bucket"]
-                ? self::$procedure["bucket"]
-                : $routine
+            $res                                                    = self::$procedure;
+        } else {
+            $runners                                                = Debug::getRunners();
+            $res                                                    = array(
+                "routine"                                           => implode(self::CLASS_SEP, array_keys($runners)),
+                "action"                                            => end($runners)
             );
-        } else {
-            $caller_parent                                          = array();
-            $caller_true                                            = array();
-            $bucket                                                 = $routine;
-            if (!$routine || !$action) {
-                $trace                                              = debug_backtrace();
-                if (is_array($trace) && count($trace)) {
-                    $caller                                         = $trace[3];
-
-                    for ($i = 4; $i < count($trace); $i++) {
-                        if ($trace[$i]["function"] != "require"
-                            && $trace[$i]["function"] != "require_once"
-                            && $trace[$i]["function"] != "include"
-                            && $trace[$i]["function"] != "incluce_once"
-                        ) {
-                            $caller_parent                          = $trace[$i];
-                            break;
-                        }
-                    }
-                    for ($n = ++$i; $n < count($trace); $n++) {
-                        if ($trace[$n]["function"] != "require"
-                            && $trace[$n]["function"] != "require_once"
-                            && $trace[$n]["function"] != "include"
-                            && $trace[$n]["function"] != "incluce_once"
-                        ) {
-                            $caller_true                            = $trace[$n];
-                            break;
-                        }
-                    }
-
-
-                    if (!$routine && isset($caller_parent['class'])) {
-                        $routine  = $caller_parent['class'];
-                    }
-                    if ($caller['class']) {
-                        $bucket   = $routine_caller = $caller['class'];
-                    }
-                    if (!$action) {
-                        if (isset($caller_parent['function']) && isset($caller_parent['class']) && isset($caller_true['class']) && $caller_parent['class'] != $caller_true['class']) {
-                            $action                                 = $caller_parent['function'];
-                        } elseif (isset($caller_true['function'])) {
-                            $action                                 = $caller_true['function'];
-                        }
-                    }
-                }
-            }
         }
-        return array(
-            "bucket"                                            => $bucket
-            , "routine"                                         => $routine
-            , "caller"                                          => $routine_caller
-            , "action"                                          => $action
-        );
+
+        if ($routine) {
+            $res["routine"]                                         = $routine;
+        }
+        if ($action) {
+            $res["action"]                                          = $action;
+        }
+
+        return $res;
     }
 
-    private static function getRoutine($name = null)
+    /**
+     * @param int|null $type
+     * @param string|null $bucket
+     * @return array|null
+     */
+    private static function getRoutine(int $type = null, string $bucket = null) : ?array
     {
-        return (isset(self::$routine[$name])
-            ? self::$routine[$name]
-            : self::getRule($name)
-        );
-    }
-    private static function getRule($name = null)
-    {
-        if (isset(self::$rules[$name])) {
-            $rule                                               = self::$rules[$name];
-        } else {
-            $rule                                               = self::$rules[self::TYPE_DEFAULT];
-            if ($name) {
-                $rule["bucket"]                                 = $name;
-            }
+        if (!$type) {
+            $type                                                   = self::$current_routine;
         }
-        return $rule;
+        $res                                                        = (
+            isset(self::$routine[$type])
+            ? self::$routine[$type]
+            : self::extend($type)
+        );
+
+        if ($bucket) {
+            $res["bucket"]                                          .= "_" . $bucket;
+        }
+
+        return $res;
     }
-    private static function getFormat($name)
+
+    /**
+     * @param string $name
+     * @return array
+     */
+    private static function getFormat(string $name) : array
     {
         return self::$formats[$name];
     }
 
-    private static function fetchByFormat($format_name, $message = null, $routine = null, $action = null, $status = null, $response = null)
+    /**
+     * @todo da tipizzare
+     * @param string $format_name
+     * @param mixed|null $message
+     * @param string|null $routine
+     * @param string|null $action
+     * @param int|null $status
+     * @return string
+     */
+    private static function fetchByFormat(string $format_name, $message = null, string $routine = null, string $action = null, int $status = null) : string
     {
-        $format                                                 = self::getFormat($format_name);
-        $content                                                = self::fetch(
+        $format                                                     = self::getFormat($format_name);
+        $content                                                    = self::fetch(
             $format["quote_prefix"]
             . implode(
                 $format["quote_suffix"]
@@ -518,8 +590,7 @@ class Log
             ) . $format["quote_suffix"],
             $routine,
             $action,
-            $status,
-            $response
+            $status
         );
         if (isset($format["strip"]) && $format["strip"]) {
             $content = str_replace($format["strip"], "", $content);
@@ -529,23 +600,20 @@ class Log
     }
 
     /**
-     * @todo gestire meglio l'array $_SERVER per valori di tipo array
-     *
-     * @param $content
-     * @param null $routine
-     * @param null $action
-     * @param null $status
-     * @param null $response
-     * @return mixed
+     * @param string $content
+     * @param string|null $routine
+     * @param string|null $action
+     * @param int|null $status
+     * @return string
      */
-    private static function fetch($content, $routine = null, $action = null, $status = null, $response = null)
+    private static function fetch(string $content, string $routine = null, string $action = null, int $status = null) : string
     {
         $server = null;
-        foreach ($_SERVER as $key => $value) {
+        /*foreach ($_SERVER as $key => $value) {
             if (!is_array($value)) {
                 $server[$key] = $value;
             }
-        }
+        }*/
 
         if (is_array($server)) {
             $content = str_replace(
@@ -554,6 +622,7 @@ class Log
                 $content
             );
         }
+
         $microtime  = explode(".", microtime(true));
         $micro      = (
             isset($microtime[1])
@@ -566,6 +635,7 @@ class Log
                 "ACTION",
                 "IDENTD",
                 "AUTH",
+                "EXTIME",
                 "DATE",
                 "TIME",
                 "ZONE",
@@ -576,15 +646,21 @@ class Log
                 "YEAR",
                 "PID",
                 "TID",
-                "EXTIME",
                 "STATUS_CODE",
-                "RESPONSE"
+                "SIZE",
+                "TAGS",
+                "REFERER",
+                "AJAX",
+                "PATHINFO",
+                "REQUEST_METHOD",
+                "SERVER_PROTOCOL"
             ],
             [
                 $routine,
                 $action,
                 (function_exists("posix_getpwuid") ? posix_getpwuid(posix_geteuid())['name'] : "NULL"),
                 self::getUser(),
+                Debug::exTimeApp(),
                 strftime('%d/%b/%Y'),
                 strftime('%H:%M:%S'),
                 strftime('%z'),
@@ -595,16 +671,38 @@ class Log
                 strftime('%Y'),
                 getmypid(),
                 (class_exists("Thread") ? \Thread::getCurrentThreadId() : null),
-                Debug::exTimeApp(),
                 Response::httpCode($status),
-                $response
+                self::$current_size,
+                implode(",", self::$current_tags),
+                Request::referer(),
+                (Request::isAjax() ? "ajax" : ""),
+                Request::pathinfo(),
+                Request::method(),
+                Request::serverProtocol()
             ],
             $content
         );
     }
-    private static function encodeMessage($message, $encode = null)
+
+    /**
+     * @param array $message
+     * @return array
+     */
+    private static function hideSensitiveData(array $message) : array
+    {
+        return array_replace($message, array_intersect_key(self::PROTECTED_WORDS, $message));
+    }
+
+    /**
+     * @todo da tipizzare
+     * @param $message
+     * @param string|null $encode
+     * @return string
+     */
+    private static function encodeMessage($message, string $encode = null) : string
     {
         if (is_array($message)) {
+            $message = self::hideSensitiveData($message);
             switch ($encode) {
                 case "json":
                     $message = json_encode($message);
@@ -619,15 +717,20 @@ class Log
 
         return $message;
     }
-    private static function fetchMessage($message, $format, $encode = null)
+
+    /**
+     * @todo da tipizzare
+     * @param $message
+     * @param string $format
+     * @param string|null $encode
+     * @return string
+     */
+    private static function fetchMessage($message, string $format, string $encode = null) : string
     {
-        return ($message
-            ? str_replace(
-                "MESSAGE",
-                self::encodeMessage($message, $encode),
-                $format
-            )
-            : null
+        return str_replace(
+            "MESSAGE",
+            self::encodeMessage($message, $encode),
+            $format
         );
     }
 

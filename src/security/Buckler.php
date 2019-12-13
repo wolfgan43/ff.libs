@@ -37,7 +37,11 @@ use phpformsframework\libs\Response;
  */
 class Buckler implements Configurable
 {
+    //Error messages
+    private const SERVER_BUSY                                   = "server busy";
+    private const ERROR_BUCKET                                  = "firewall";
     private static $rules                                       = null;
+
 
     /**
      * @access private
@@ -93,7 +97,7 @@ class Buckler implements Configurable
             $load = sys_getloadavg();
             if ($load[0] > 80) {
                 Response::sendError(503);
-                Log::emergency("server busy");
+                Log::emergency(self::SERVER_BUSY);
                 exit;
             }
         }
@@ -132,16 +136,14 @@ class Buckler implements Configurable
                         Response::httpCode($rule["destination"]);
 
                         if (isset($rule["log"])) {
-                            Log::write(
+                            Log::warning(
                                 array(
-                                    "RULE"          => $source
-                                    , "ACTION"      => $rule["destination"]
-                                    , "URL"         => Request::url()
-                                    , "REFERER"     => Request::referer()
+                                    "rule"          => $source,
+                                    "action"        => $rule["destination"],
+                                    "url"           => Request::url(),
+                                    "referer"       => Request::referer()
                                 ),
-                                "shield",
-                                $rule["destination"],
-                                "BadPath"
+                                static::ERROR_BUCKET
                             );
                         }
                         exit;

@@ -38,45 +38,45 @@ use phpformsframework\libs\security\Validator;
  */
 class Request implements Configurable, Dumpable
 {
-    const MAX_SIZE                                                  = array(
-                                                                        "GET"       => 256,
-                                                                        "PUT"       => 10240,
-                                                                        "POST"      => 10240,
-                                                                        "HEAD"      => 2048,
-                                                                        "DEFAULT"   => 128,
-                                                                        "FILES"     => 1024000
-                                                                    );
-    private static $params                                          = null;
-    private static $access_control                                  = null;
-    private static $pages                                           = null;
-    private static $alias                                           = null;
-    private static $gateway                                         = null;
-    private static $patterns                                        = null;
-    private static $server                                          = null;
-    private static $path2params                                     = null;
+    const MAX_SIZE = array(
+        "GET" => 256,
+        "PUT" => 10240,
+        "POST" => 10240,
+        "HEAD" => 2048,
+        "DEFAULT" => 128,
+        "FILES" => 1024000
+    );
+    private static $params = null;
+    private static $access_control = null;
+    private static $pages = null;
+    private static $alias = null;
+    private static $gateway = null;
+    private static $patterns = null;
+    private static $server = null;
+    private static $path2params = null;
 
     /**
      * @var RequestPage $page
      */
-    private static $page                                            = null;
+    private static $page = null;
 
-    private static $orig_path_info                                  = null;
-    private static $root_path                                       = null;
-    private static $path_info                                       = null;
+    private static $orig_path_info = null;
+    private static $root_path = null;
+    private static $path_info = null;
 
     /**
      * @return array
      */
-    public static function dump() : array
+    public static function dump(): array
     {
         return array(
-            "params"            => self::$params,
-            "access_control"    => self::$access_control,
-            "pages"             => self::$pages,
-            "alias"             => self::$alias,
-            "gateway"           => self::$gateway,
-            "patterns"          => self::$patterns,
-            "path2params"       => self::$path2params,
+            "params" => self::$params,
+            "access_control" => self::$access_control,
+            "pages" => self::$pages,
+            "alias" => self::$alias,
+            "gateway" => self::$gateway,
+            "patterns" => self::$patterns,
+            "path2params" => self::$path2params,
         );
     }
 
@@ -99,13 +99,13 @@ class Request implements Configurable, Dumpable
      */
     public static function loadConfig(array $config)
     {
-        self::$params                                               = $config["params"];
-        self::$access_control                                       = $config["access_control"];
-        self::$pages                                                = $config["pages"];
-        self::$alias                                                = $config["alias"];
-        self::$gateway                                              = $config["gateway"];
-        self::$patterns                                             = $config["patterns"];
-        self::$path2params                                          = $config["path2params"];
+        self::$params = $config["params"];
+        self::$access_control = $config["access_control"];
+        self::$pages = $config["pages"];
+        self::$alias = $config["alias"];
+        self::$gateway = $config["gateway"];
+        self::$patterns = $config["patterns"];
+        self::$path2params = $config["path2params"];
     }
 
     /**
@@ -113,7 +113,7 @@ class Request implements Configurable, Dumpable
      * @param array $rawdata
      * @return array
      */
-    public static function loadSchema(array $rawdata) : array
+    public static function loadSchema(array $rawdata): array
     {
         self::loadParams($rawdata, self::$params);
 
@@ -143,7 +143,7 @@ class Request implements Configurable, Dumpable
      * @param array $rawdata
      * @param array $obj
      */
-    private static function loadParams(array $rawdata, &$obj) : void
+    private static function loadParams(array $rawdata, &$obj): void
     {
         if (isset($rawdata["header"]) && is_array($rawdata["header"]) && count($rawdata["header"])) {
             foreach ($rawdata["header"] as $header) {
@@ -167,27 +167,27 @@ class Request implements Configurable, Dumpable
      * @param array $attr
      * @param string $bucket
      */
-    private static function loadRequestMapping(&$obj, array $attr, string $bucket = "body") : void
+    private static function loadRequestMapping(&$obj, array $attr, string $bucket = "body"): void
     {
-        $key                                                    = (
+        $key = (
             isset($attr["scope"])
                 ? $attr["scope"] . "."
                 : ""
             ) . $attr["name"];
 
-        $obj[$bucket][$key]                                     = $attr;
+        $obj[$bucket][$key] = $attr;
     }
 
     /**
      * @param array $config
      */
-    private static function loadAccessControl(array $config) : void
+    private static function loadAccessControl(array $config): void
     {
-        $schema                                             = array();
+        $schema = array();
         if (is_array($config) && count($config)) {
             foreach ($config as $access_control) {
-                $attr                                       = Dir::getXmlAttr($access_control);
-                $key                                        = $attr["origin"];
+                $attr = Dir::getXmlAttr($access_control);
+                $key = $attr["origin"];
                 if (!$key) {
                     continue;
                 }
@@ -198,81 +198,81 @@ class Request implements Configurable, Dumpable
             }
         }
 
-        self::$access_control                                = $schema;
+        self::$access_control = $schema;
     }
 
     /**
      * @param array $config
      */
-    private static function loadPages(array $config) : void
+    private static function loadPages(array $config): void
     {
         foreach ($config as $key => $page) {
-            self::$pages[$key]                              = null;
+            self::$pages[$key] = null;
             self::loadParams($page, self::$pages[$key]);
-            self::$pages[$key]["config"]                    = $page["config"];
+            self::$pages[$key]["config"] = $page["config"];
         }
     }
 
     /**
      * @param array $config
      */
-    private static function loadDomain(array $config) : void
+    private static function loadDomain(array $config): void
     {
-        $schema                                             = array();
+        $schema = array();
         foreach ($config as $domain) {
-            $attr                                           = Dir::getXmlAttr($domain);
-            $schema[$attr["name"]]                          = $attr["path"];
+            $attr = Dir::getXmlAttr($domain);
+            $schema[$attr["name"]] = $attr["path"];
         }
-        self::$alias                                        = $schema;
+        self::$alias = $schema;
     }
 
     /**
      * @param array $config
      */
-    private static function loadGateway(array $config) : void
+    private static function loadGateway(array $config): void
     {
-        $schema                                             = array();
+        $schema = array();
         foreach ($config as $gateway) {
-            $attr                                           = Dir::getXmlAttr($gateway);
-            $schema[$attr["name"]]                          = $attr["proxy"];
+            $attr = Dir::getXmlAttr($gateway);
+            $schema[$attr["name"]] = $attr["proxy"];
         }
 
-        self::$gateway                                        = $schema;
+        self::$gateway = $schema;
     }
 
     /**
      * @param array $config
      */
-    private static function loadPatterns(array $config) : void
+    private static function loadPatterns(array $config): void
     {
-        $schema                                             = array();
+        $schema = array();
         foreach ($config as $pattern) {
-            $attr                                           = Dir::getXmlAttr($pattern);
-            $key                                            = (
-                $attr["path"]
-                                                                ? $attr["path"]
-                                                                : $attr["source"]
-                                                            );
+            $attr = Dir::getXmlAttr($pattern);
+            $key = (
+            $attr["path"]
+                ? $attr["path"]
+                : $attr["source"]
+            );
             if (!$key) {
                 continue;
             }
             unset($attr["source"]);
             unset($attr["path"]);
             if (is_array($attr) && count($attr)) {
-                $schema[$key]                               = $attr;
+                $schema[$key] = $attr;
             }
         }
 
-        self::$patterns                                     = $schema;
+        self::$patterns = $schema;
     }
 
     /**
      * @param string $path_info
      * @return string
      */
-    private static function findEnvByPathInfo(string $path_info) : string
+    private static function findEnvByPathInfo(string $path_info): string
     {
-        $path_info                                              = rtrim($path_info, "/");
+        $path_info = rtrim($path_info, "/");
         if (!$path_info) {
             $path_info = DIRECTORY_SEPARATOR;
         }
@@ -301,30 +301,31 @@ class Request implements Configurable, Dumpable
      * @param array $page
      * @return array|null
      */
-    private static function findPageByRouter(string $path_info, array &$page) : ?array
+    private static function findPageByRouter(string $path_info, array &$page): ?array
     {
-        $router                                                 = Router::find($path_info);
+        $router = Router::find($path_info);
         do {
             if (isset(self::$pages[$path_info])) {
-                $page                                           = array_replace(self::$pages[$path_info]["config"], $page);
+                $page = array_replace(self::$pages[$path_info]["config"], $page);
             }
-            $path_info                                          = dirname($path_info);
+            $path_info = dirname($path_info);
         } while ($path_info != DIRECTORY_SEPARATOR);
 
         return $router;
     }
+
     /**
      *
      */
     private static function findPageByPathInfo()
     {
-        $page                                                   = array();
-        $page_path                                              = self::findEnvByPathInfo(self::$orig_path_info);
-        $router                                                 = self::findPageByRouter($page_path, $page);
+        $page = array();
+        $page_path = self::findEnvByPathInfo(self::$orig_path_info);
+        $router = self::findPageByRouter($page_path, $page);
         //@todo da verificare se e corretto il self::$path_info e la differenza tra self::$path_info
         //@todo e se ha senso la diff tra self::$orig_path_info e self::$path_info
         $page["path_info"] = (
-            isset($page["strip_path"]) && strpos(self::$path_info, $page["strip_path"]) === 0
+        isset($page["strip_path"]) && strpos(self::$path_info, $page["strip_path"]) === 0
             ? substr(self::$path_info, strlen($page["strip_path"]))
             : self::$path_info
         );
@@ -337,7 +338,7 @@ class Request implements Configurable, Dumpable
             foreach (self::$patterns as $pattern => $rule) {
                 if (preg_match(Router::regexp($pattern), $page["path_info"], $matches)) {
                     $page = (
-                        $router["path"] == $page["path_info"]
+                    $router["path"] == $page["path_info"]
                         ? array_replace($rule, $page)
                         : array_replace($page, $rule)
                     );
@@ -345,9 +346,9 @@ class Request implements Configurable, Dumpable
             }
         }
 
-        $page["rules"]                                      = self::setRulesByPage($page_path);
+        $page["rules"] = self::setRulesByPage($page_path);
 
-        self::$page                                         = new RequestPage($page);
+        self::$page = new RequestPage($page);
     }
 
     /**
@@ -355,11 +356,11 @@ class Request implements Configurable, Dumpable
      */
     private static function urlVerify()
     {
-        $redirect                                           = null;
+        $redirect = null;
         //necessario XHR perche le request a servizi esterni path del domain alias non triggerano piu
         if (self::method() == "GET" && !self::isAjax() && count(self::unknown())) {
             // Evita pagine duplicate quando i link vengono gestiti dagli alias o altro
-            $redirect                                       = self::url();
+            $redirect = self::url();
         }
 
         if ($redirect) {
@@ -371,18 +372,20 @@ class Request implements Configurable, Dumpable
      * @access private
      * @return RequestPage
      */
-    public static function &pageConfiguration() : RequestPage
+    public static function &pageConfiguration(): RequestPage
     {
         self::rewritePathInfo();
 
         self::findPageByPathInfo();
+
+        Log::setRoutine(self::$page->log);
 
         self::capture();
 
         Kernel::useCache(!self::$page->nocache);
 
         if (isset(self::$page->root_path) && self::$page->root_path == self::$root_path) {
-            $_SERVER["PATH_INFO"]                           = self::$orig_path_info;
+            $_SERVER["PATH_INFO"] = self::$orig_path_info;
         }
 
         //@todo: da sistemare
@@ -393,9 +396,6 @@ class Request implements Configurable, Dumpable
         if (self::$page->validation) {
             self::urlVerify();
         }
-        if (self::$page->log) {
-            Log::write(self::rawdata(), self::$page->log);
-        }
 
         return self::$page;
     }
@@ -405,62 +405,62 @@ class Request implements Configurable, Dumpable
      */
     private static function rewritePathInfo()
     {
-        $hostname                                           = self::hostname();
-        $aliasname                                          = (
-            $hostname && isset(self::$alias[$hostname])
+        $hostname = self::hostname();
+        $aliasname = (
+        $hostname && isset(self::$alias[$hostname])
             ? self::$alias[$hostname]
             : null
         );
-        $requestURI                                         = self::requestURI();
-        $rawQuery                                           = self::rawQuery();
+        $requestURI = self::requestURI();
+        $rawQuery = self::rawQuery();
         if ($requestURI) {
-            self::$orig_path_info                           = rtrim(rtrim($rawQuery
+            self::$orig_path_info = rtrim(rtrim($rawQuery
                 ? rtrim($requestURI, $rawQuery)
                 : $requestURI, "?"), "/");
 
             if (Constant::SITE_PATH) {
-                self::$orig_path_info                       = str_replace(Constant::SITE_PATH, "", self::$orig_path_info);
+                self::$orig_path_info = str_replace(Constant::SITE_PATH, "", self::$orig_path_info);
             }
         }
         if (!self::$orig_path_info) {
             self::$orig_path_info = "/";
         }
 
-        self::$orig_path_info                               = Locale::setByPath(self::$orig_path_info);
+        self::$orig_path_info = Locale::setByPath(self::$orig_path_info);
 
         if ($aliasname) {
             if (strpos(self::$orig_path_info, $aliasname . "/") === 0
                 || self::$orig_path_info == $aliasname
             ) {
-                $query                                      = (
-                    is_array($_GET) && count($_GET)
+                $query = (
+                is_array($_GET) && count($_GET)
                     ? "?" . http_build_query($_GET)
                     : ""
                 );
                 Response::redirect($hostname . substr(self::$orig_path_info, strlen($aliasname)) . $query);
             }
 
-            self::$root_path                                = $aliasname;
+            self::$root_path = $aliasname;
         }
 
 
-        $path_info                                          = rtrim(self::$root_path . self::$orig_path_info, "/");
+        $path_info = rtrim(self::$root_path . self::$orig_path_info, "/");
         if (!$path_info) {
             $path_info = "/";
         }
 
-        $_SERVER["XHR_PATH_INFO"]                           = null;
-        $_SERVER["ORIG_PATH_INFO"]                          = self::$orig_path_info;
-        $_SERVER["PATH_INFO"]                               = $path_info;
+        $_SERVER["XHR_PATH_INFO"] = null;
+        $_SERVER["ORIG_PATH_INFO"] = self::$orig_path_info;
+        $_SERVER["PATH_INFO"] = $path_info;
 
 
         if (self::isAjax()) {
-            $_SERVER["XHR_PATH_INFO"]                       = rtrim(self::$root_path . self::referer(PHP_URL_PATH), "/");
+            $_SERVER["XHR_PATH_INFO"] = rtrim(self::$root_path . self::referer(PHP_URL_PATH), "/");
         }
 
         if (!self::isCli() && self::remoteAddr() == self::serverAddr()) {
             if (isset($_POST["pathinfo"])) {
-                $_SERVER["PATH_INFO"]                       = rtrim($_POST["pathinfo"], "/");
+                $_SERVER["PATH_INFO"] = rtrim($_POST["pathinfo"], "/");
                 if (!$_SERVER["PATH_INFO"]) {
                     $_SERVER["PATH_INFO"] = "/";
                 }
@@ -468,61 +468,57 @@ class Request implements Configurable, Dumpable
                 unset($_POST["pathinfo"]);
             }
             if (isset($_POST["referer"])) {
-                $_SERVER["HTTP_REFERER"]                    = $_POST["referer"];
+                $_SERVER["HTTP_REFERER"] = $_POST["referer"];
                 unset($_POST["referer"]);
             }
             if (isset($_POST["agent"])) {
-                $_SERVER["HTTP_USER_AGENT"]                 = $_POST["agent"];
+                $_SERVER["HTTP_USER_AGENT"] = $_POST["agent"];
                 unset($_POST["agent"]);
             }
             if (isset($_POST["cookie"])) {
-                $_COOKIE                                    = $_POST["cookie"];
+                $_COOKIE = $_POST["cookie"];
                 unset($_POST["cookie"]);
-            }
-
-            if (Kernel::$Environment::DEBUG) {
-                register_shutdown_function(function () {
-                    $data["pathinfo"] = $_SERVER["PATH_INFO"];
-                    $data["error"] = error_get_last();
-                    $data["pid"] = getmypid();
-                    $data["exTime"] = Debug::exTimeApp();
-
-                    Log::debugging($data, "request", "async");
-                });
             }
         }
 
-        self::$path_info                                    = $path_info;
+        self::$path_info = $path_info;
     }
 
-    public static function rawdata(bool $toObj = false) : array
+    public static function rawdata(bool $toObj = false): array
     {
-        return (array) self::body(null, null, $toObj, "rawdata");
+        return (array)self::body(null, null, $toObj, "rawdata");
     }
-    public static function valid(bool $toObj = false) : array
+
+    public static function valid(bool $toObj = false): array
     {
-        return (array) self::body(null, null, $toObj, "valid");
+        return (array)self::body(null, null, $toObj, "valid");
     }
-    public static function unknown(bool $toObj = false) : array
+
+    public static function unknown(bool $toObj = false): array
     {
-        return (array) self::body(null, null, $toObj, "unknown");
+        return (array)self::body(null, null, $toObj, "unknown");
     }
+
     public static function get(string $key, bool $toObj = false)
     {
         return self::body($key, "GET", $toObj, "get");
     }
+
     public static function post(string $key, bool $toObj = false)
     {
         return self::body($key, "POST", $toObj, "post");
     }
+
     public static function patch(string $key, bool $toObj = false)
     {
         return self::body($key, "PATCH", $toObj, "post");
     }
+
     public static function delete(string $key, bool $toObj = false)
     {
         return self::body($key, "DELETE", $toObj, "post");
     }
+
     public static function put(string $key, bool $toObj = false)
     {
         return self::body($key, "PUT", $toObj, "rawdata");
@@ -532,29 +528,32 @@ class Request implements Configurable, Dumpable
     {
         return self::body($key, "COOKIE", $toObj);
     }
+
     public static function session(string $key, bool $toObj = false)
     {
         return self::body($key, "SESSION", $toObj);
     }
+
     public static function getModel(string $scope, bool $toObj = true)
     {
         return self::body(null, null, $toObj, $scope);
     }
+
     /**
      * @param bool $with_unknown
      * @return string
      */
-    public static function getQuery(bool $with_unknown = false) : string
+    public static function getQuery(bool $with_unknown = false): string
     {
         if (!self::$page->request) {
             self::captureBody();
         }
 
-        $res                                                    = array_filter(
+        $res = array_filter(
             $with_unknown
-                                                                    ? self::$page->request["rawdata"]
-                                                                    : self::$page->request["valid"]
-                                                                );
+                ? self::$page->request["rawdata"]
+                : self::$page->request["valid"]
+        );
 
         return (is_array($res) && count($res)
             ? "?" . http_build_query($res)
@@ -562,7 +561,7 @@ class Request implements Configurable, Dumpable
         );
     }
 
-    public static function getAuthorizationHeader() : ?string
+    public static function getAuthorizationHeader(): ?string
     {
         $headers = null;
         if (isset($_SERVER['Authorization'])) {
@@ -596,10 +595,10 @@ class Request implements Configurable, Dumpable
 
     public static function headers(string $key = null)
     {
-        $res                                                    = self::captureHeaders();
+        $res = self::captureHeaders();
         return ($key
             ? $res[$key]
-            :  $res
+            : $res
         );
     }
 
@@ -613,18 +612,18 @@ class Request implements Configurable, Dumpable
      */
     private static function body(string $key = null, string $method = null, bool $toObj = false, string $scope = "rawdata")
     {
-        $rawdata                                                = self::captureBody($scope, $method);
+        $rawdata = self::captureBody($scope, $method);
         if ($key && !isset($rawdata[$key])) {
             $rawdata[$key] = null;
         }
 
-        $res                                                    = (
-            $key
-                                                                    ? $rawdata[$key]
-                                                                    : $rawdata
-                                                                );
+        $res = (
+        $key
+            ? $rawdata[$key]
+            : $rawdata
+        );
         return ($toObj && $res
-            ? (object) $res
+            ? (object)$res
             : $res
         );
     }
@@ -632,26 +631,26 @@ class Request implements Configurable, Dumpable
      * @param
      *
      * $rules = array(
-                        "header"            => ""
-                        , "body"            => ""
-                        , "last_update"     => ""
-                        , "method"          => ""
-                        , "exts"            => ""
-                        , "navigation"      => ""
-                        , "select"          => ""
-                        , "default"         => ""
-                        , "order"           => ""
-                     );
+     * "header"            => ""
+     * , "body"            => ""
+     * , "last_update"     => ""
+     * , "method"          => ""
+     * , "exts"            => ""
+     * , "navigation"      => ""
+     * , "select"          => ""
+     * , "default"         => ""
+     * , "order"           => ""
+     * );
      */
 
     /**
      * @param string $path_info
      * @return RequestPageRules
      */
-    private static function setRulesByPage(string $path_info) : RequestPageRules
+    private static function setRulesByPage(string $path_info): RequestPageRules
     {
-        $rules                                                  = new RequestPageRules();
-        $request_path                                           = $path_info;
+        $rules = new RequestPageRules();
+        $request_path = $path_info;
 
         do {
             if (isset(self::$pages[$request_path])) {
@@ -666,10 +665,10 @@ class Request implements Configurable, Dumpable
      * @param string|null $hostname
      * @return string|null
      */
-    public static function proxy(string $hostname = null) : ?string
+    public static function proxy(string $hostname = null): ?string
     {
         if (!$hostname) {
-            $hostname                                           = self::hostname();
+            $hostname = self::hostname();
         }
         return (isset(self::$gateway[$hostname])
             ? self::$gateway[$hostname]
@@ -681,10 +680,10 @@ class Request implements Configurable, Dumpable
      * @param string|null $hostname
      * @return string|null
      */
-    public static function alias(string $hostname = null) : ?string
+    public static function alias(string $hostname = null): ?string
     {
         if (!$hostname) {
-            $hostname                                           = self::hostname();
+            $hostname = self::hostname();
         }
         return (isset(self::$alias[$hostname])
             ? self::$alias[$hostname]
@@ -695,7 +694,7 @@ class Request implements Configurable, Dumpable
     /**
      * @return bool
      */
-    public static function isHTTPS() : bool
+    public static function isHTTPS(): bool
     {
         return (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || (isset($_SERVER["HTTP_ORIGIN"]) && strpos($_SERVER["HTTP_ORIGIN"], "https://") === 0);
     }
@@ -703,7 +702,7 @@ class Request implements Configurable, Dumpable
     /**
      * @return string
      */
-    public static function protocol() : string
+    public static function protocol(): string
     {
         return (self::isHTTPS() ? "https" : "http") . "://";
     }
@@ -711,7 +710,7 @@ class Request implements Configurable, Dumpable
     /**
      * @return string|null
      */
-    public static function hostname() : ?string
+    public static function hostname(): ?string
     {
         return (isset($_SERVER["HTTP_HOST"])
             ? $_SERVER["HTTP_HOST"]
@@ -722,10 +721,10 @@ class Request implements Configurable, Dumpable
     /**
      * @return string|null
      */
-    public static function protocol_host() : ?string
+    public static function protocol_host(): ?string
     {
         return (self::hostname()
-            ?  self::protocol() . self::hostname()
+            ? self::protocol() . self::hostname()
             : null
         );
     }
@@ -733,7 +732,7 @@ class Request implements Configurable, Dumpable
     /**
      * @return string
      */
-    public static function pathinfo() : string
+    public static function pathinfo(): string
     {
         return (isset($_SERVER["PATH_INFO"])
             ? $_SERVER["PATH_INFO"]
@@ -744,7 +743,7 @@ class Request implements Configurable, Dumpable
     /**
      * @return string|null
      */
-    public static function requestURI() : ?string
+    public static function requestURI(): ?string
     {
         return (isset($_SERVER["REQUEST_URI"])
             ? $_SERVER["REQUEST_URI"]
@@ -755,7 +754,7 @@ class Request implements Configurable, Dumpable
     /**
      * @return string|null
      */
-    public static function rawQuery() : ?string
+    public static function rawQuery(): ?string
     {
         return (empty($_SERVER["QUERY_STRING"])
             ? null
@@ -766,7 +765,7 @@ class Request implements Configurable, Dumpable
     /**
      * @return string
      */
-    public static function protocol_host_pathinfo() : string
+    public static function protocol_host_pathinfo(): string
     {
         return self::protocol_host() . Constant::SITE_PATH . self::pathinfo();
     }
@@ -775,9 +774,9 @@ class Request implements Configurable, Dumpable
      * @param string|null $phpurl_part
      * @return string
      */
-    public static function url(string $phpurl_part = null) : string
+    public static function url(string $phpurl_part = null): string
     {
-        $url                                                    = self::protocol_host_pathinfo() . self::getQuery(false);
+        $url = self::protocol_host_pathinfo() . self::getQuery(false);
 
         return ($phpurl_part && $url
             ? parse_url($url, $phpurl_part)
@@ -789,13 +788,13 @@ class Request implements Configurable, Dumpable
      * @param string|null $phpurl_part
      * @return string|null
      */
-    public static function referer(string $phpurl_part = null) : ?string
+    public static function referer(string $phpurl_part = null): ?string
     {
-        $referer                                                = (
-            isset($_SERVER["HTTP_REFERER"])
-                                                                    ? $_SERVER["HTTP_REFERER"]
-                                                                    : null
-                                                                );
+        $referer = (
+        isset($_SERVER["HTTP_REFERER"])
+            ? $_SERVER["HTTP_REFERER"]
+            : null
+        );
 
         return ($phpurl_part && $referer
             ? parse_url($referer, $phpurl_part)
@@ -806,7 +805,7 @@ class Request implements Configurable, Dumpable
     /**
      * @return string|null
      */
-    public static function userAgent() : ?string
+    public static function userAgent(): ?string
     {
         return (isset($_SERVER["HTTP_USER_AGENT"])
             ? $_SERVER["HTTP_USER_AGENT"]
@@ -817,7 +816,7 @@ class Request implements Configurable, Dumpable
     /**
      * @return string|null
      */
-    public static function remoteAddr() : ?string
+    public static function remoteAddr(): ?string
     {
         return (isset($_SERVER["REMOTE_ADDR"])
             ? $_SERVER["REMOTE_ADDR"]
@@ -828,7 +827,7 @@ class Request implements Configurable, Dumpable
     /**
      * @return string|null
      */
-    public static function serverAddr() : ?string
+    public static function serverAddr(): ?string
     {
         return (isset($_SERVER["SERVER_ADDR"])
             ? $_SERVER["SERVER_ADDR"]
@@ -836,6 +835,16 @@ class Request implements Configurable, Dumpable
         );
     }
 
+    /**
+     * @return string|null
+     */
+    public static function serverProtocol(): ?string
+    {
+        return (isset($_SERVER["SERVER_PROTOCOL"])
+            ? $_SERVER["SERVER_PROTOCOL"]
+            : null
+        );
+    }
     /**
      * @return string|null
      */

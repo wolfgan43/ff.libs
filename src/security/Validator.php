@@ -394,6 +394,18 @@ class Validator
     }
 
     /**
+     * Returns webserver max upload size in KB
+     * @return float
+     */
+    public static function getMaxUploadSize() : int
+    {
+        $max_upload = min(ini_get('post_max_size'), ini_get('upload_max_filesize'));
+        $max_upload = str_replace('M', '', $max_upload);
+        $max_upload = $max_upload * 1024 * 1024;
+        return $max_upload;
+    }
+
+    /**
      * @param string $value
      * @return bool
      */
@@ -416,7 +428,7 @@ class Validator
             $sizes                                                          = (array) $_FILES[$value]["size"];
             if (is_array($sizes) && count($sizes)) {
                 foreach ($sizes as $index => $size) {
-                    if ($size > self::RULES["file"]["length"]) {
+                    if ($size > self::getMaxUploadSize()) {
                         $error[]                                            = $names[$index] . ": Upload Limit Exeeded";
                     }
                 }

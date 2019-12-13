@@ -180,11 +180,6 @@ class Router implements Configurable, Dumpable
             self::runWebRoot($path);
         }
 
-        if (Kernel::$Environment::DEBUG) {
-            Response::httpCode(404);
-            Debug::dump("Page Not Found!");
-        }
-
         Response::sendError(404);
     }
 

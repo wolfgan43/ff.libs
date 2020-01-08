@@ -35,6 +35,7 @@
         <dir type="cache" path="/cache/assets/css" writable="true" />
         <dir type="cache" path="/cache/assets/js" writable="true" />
         <dir type="cache" path="/cache/assets/fonts" writable="true" />
+        <dir type="cache" path="/cache/assets/widgets" writable="true" />
         <dir type="cache" path="/cache/logs" writable="true" />
         <dir type="cache" path="/cache/error" writable="true" />
         <dir type="cache" path="/cache/data" writable="true" />

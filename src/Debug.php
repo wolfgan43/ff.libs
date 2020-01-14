@@ -266,8 +266,6 @@ class Debug
                     }
                 }
             }
-
-
         }
 
         return $res;
@@ -302,34 +300,43 @@ class Debug
     }
 
     /**
+     * @return array
+     */
+    public static function dumpBackTrace() : array
+    {
+        $res = array();
+        $debug_backtrace = array_reverse(self::getBacktrace());
+        foreach ($debug_backtrace as $trace) {
+            if (isset($trace["file"]) && basename($trace["file"]) == "Error.php") {
+                continue;
+            }
+            if (isset($trace["file"]) && basename($trace["file"]) == "Debug.php") {
+                continue;
+            }
+            $class_name = basename(str_replace("\\", "/", $trace["class"]));
+            if (isset($trace["file"])) {
+                $caller = $class_name . "::" . $trace["function"];
+                $res[] =  $caller . str_repeat(" ", 40 - strlen($caller)) .  " ==> " . str_replace(Constant::DOCUMENT_ROOT . DIRECTORY_SEPARATOR, "", $trace["file"]) . ":" . $trace["line"];
+            } else {
+                $operation = (
+                    isset($trace["class"])
+                    ?  $class_name . $trace["type"] . $trace["function"] . '(' . implode(", ", $trace["args"]) . ')'
+                    : $trace["function"]
+                );
+
+                $res[] = "Call " . $operation;
+            }
+        }
+
+        return $res;
+    }
+    /**
      * @param string|null $error_message
      * @return string
      */
     private static function dumpCommandLine(string $error_message = null) : string
     {
-        $cli = null;
-        $debug_backtrace = array_reverse(self::getBacktrace());
-        if (isset($debug_backtrace[0]["file"]) && basename($debug_backtrace[0]["file"]) == "Error.php") {
-            unset($debug_backtrace[0]);
-        }
-
-        foreach ($debug_backtrace as $trace) {
-            if (isset($trace["file"]) && basename($trace["file"]) == "Debug.php") {
-                continue;
-            }
-
-            if (isset($trace["file"])) {
-                $cli .= $trace["file"] . ":" . $trace["line"] . "\n";
-            } else {
-                $operation = (
-                    isset($trace["class"])
-                    ?  basename(str_replace("\\", "/", $trace["class"])) . $trace["type"] . $trace["function"] . '(' . implode(", ", $trace["args"]) . ')'
-                    : $trace["function"]
-                );
-
-                $cli .= "Call " . $operation . "\n";
-            }
-        }
+        $cli = implode("\n", self::dumpBackTrace());
 
         return $cli . "---------------------------------------------------------------------\n"
                 . $error_message . "\n";
@@ -340,7 +347,7 @@ class Debug
      * @param string $collapse
      * @return string
      */
-    private static function dumpBackTrace(array $debug_backtrace, string $collapse) : string
+    private static function dumpBackTraceHtml(array $debug_backtrace, string $collapse) : string
     {
         $html                     = "";
         foreach ($debug_backtrace as $i => $trace) {
@@ -374,7 +381,6 @@ class Debug
      */
     public static function dump(string $error_message = null, bool $return = false) : ?string
     {
-
         if (Request::isCli() || Request::accept() != "text/html") {
             echo self::dumpCommandLine($error_message);
             exit;
@@ -536,7 +542,7 @@ class Debug
         $html   .= '<tr>'         . '<th>BACKTRACE</th>'      . '<th>VARIABLES</th>'           . '</tr>';
         $html   .= '</thead>';
         $html   .= '<tbody>';
-        $html   .= '<tr>'         . '<td style="vertical-align: text-top">' . self::dumpBackTrace($debug_backtrace, $collapse) . '</td>'  . '<td style="vertical-align: text-top">' . $html_dumpable . '</td>'  . '</tr>';
+        $html   .= '<tr>'         . '<td style="vertical-align: text-top">' . self::dumpBackTraceHtml($debug_backtrace, $collapse) . '</td>'  . '<td style="vertical-align: text-top">' . $html_dumpable . '</td>'  . '</tr>';
         $html   .= '</tr>';
         $html   .= '</tbody>';
         $html   .= '</table>';

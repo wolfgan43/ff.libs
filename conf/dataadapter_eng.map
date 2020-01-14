@@ -1,5 +1,6 @@
 {
   "date_time": {
+    "prototype": "MONTH/DAY/YEAR HOUR:MINUTE:SECOND",
     "regexp": "\/((\\d+):(\\d+)(:(\\d+))*\\s+(\\d+)[-\\\/](\\d+)[-\\\/](\\d+))|((\\d+)[-\\\/](\\d+)[-\\\/](\\d+)\\s+(\\d+):(\\d+)(:(\\d+))*)\/",
     "day": "7",
     "month": "6",
@@ -9,15 +10,21 @@
     "second": "5"
   },
   "date": {
+    "prototype": "MONTH/DAY/YEAR",
     "regexp": "\/(\\d+)-(\\d+)-(\\d+)\/",
     "day": "2",
     "month": "1",
     "year": "3"
+  },  "check_date": {
+  "regexp": "\/\\d{1,4}\\-\\d{1,2}\\-\\d{2}\/"
+},
+  "check_date_time": {
+    "regexp": "\/\\d{1,4}\\-\\d{1,2}\\-\\d{2}\\s*\\d{1,2}:\\d{1,2}(:\\d{1,2}){0,1}\/"
   },
-  "get_date_time": {
-    "prototype": "[MONTH\/DAY\/YEAR HOUR:MINUTE:SECOND]"
+  "empty_date": {
+    "default": "0000/00/00"
   },
-  "get_date": {
-    "prototype": "[MONTH\/DAY\/YEAR]"
+  "empty_date_time": {
+    "default": "0000/00/00 00:00:00"
   }
 }

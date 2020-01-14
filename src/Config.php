@@ -190,8 +190,8 @@ class Config implements Dumpable
                 }
 
                 self::$dirstruct[$dir_key][$dir_name]                       = $dir_attr;
-                if (isset(self::$dirstruct[$dir_key]["autoload"])) {
-                    self::$autoloads[]                                      = self::$dirstruct[$dir_key]["path"];
+                if (isset(self::$dirstruct[$dir_key][$dir_name]["autoload"])) {
+                    self::$autoloads[]                                      = self::$dirstruct[$dir_key][$dir_name]["path"];
                 }
             }
 

@@ -31,7 +31,9 @@ namespace phpformsframework\libs;
  */
 abstract class Mappable
 {
-    const ERROR_BUCKET          = "mappable";
+    use Mapping;
+
+    protected const ERROR_BUCKET          = "mappable";
 
     /**
      * @todo da tipizzare
@@ -66,7 +68,7 @@ abstract class Mappable
      * @param string $name
      * @param string|null $prefix
      */
-    protected function loadMap(string $name, string $prefix = null) : void
+    private function loadMap(string $name, string $prefix = null) : void
     {
         Debug::stopWatch("mapping/" . $prefix . "_" . $name);
 
@@ -75,22 +77,9 @@ abstract class Mappable
         if (is_array($map) && count($map)) {
             $this->autoMapping($map);
         } else {
-            Error::register(basename(str_replace("\\", DIRECTORY_SEPARATOR, get_called_class())) . ": " . $prefix . "_" . $name . " not found", static::ERROR_BUCKET);
+            Error::register("Mapping: " . basename(str_replace("\\", DIRECTORY_SEPARATOR, get_called_class())) . ": " . $prefix . "_" . $name . " not found", static::ERROR_BUCKET);
         }
 
         Debug::stopWatch("mapping/" . $prefix . "_" . $name);
-    }
-
-    /**
-     * @param array $map
-     */
-    protected function autoMapping(array $map) : void
-    {
-        $has                    = get_object_vars($this);
-        $properties             = array_intersect_key($map, $has);
-
-        foreach ($properties as $key => $value) {
-            $this->$key         = $value;
-        }
     }
 }

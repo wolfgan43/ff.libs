@@ -1,17 +1,21 @@
 {
   "currency": {
+    "prototype" : "INTEGER,DECIMAL",
     "regexp": "\/^(\\-){0,1}\\s*(\\d+)(,(\\d+)){0,1}$\/",
     "strip_chars": "."
   },
   "currency_ext": {
+    "prototype" : "INTEGER,DECIMAL",
     "regexp": "\/^(\\-){0,1}\\s*(\\d+)(,(\\d+)){0,5}$\/",
     "strip_chars": "."
   },
   "number": {
+    "prototype" : "INTEGER,DECIMAL",
     "regexp": "\/^\\s*(\\-){0,1}\\s*(\\d+)\\s*(\\,\\s*(\\d+)){0,1}\\s*$\/",
     "strip_chars": "."
   },
   "number_ext": {
+    "prototype" : "INTEGER,DECIMAL",
     "regexp": "\/^\\s*(\\-){0,1}\\s*(\\d+)\\s*(\\,\\s*(\\d+)){0,5}\\s*$\/",
     "strip_chars": "."
   },

@@ -26,53 +26,57 @@
 namespace phpformsframework\libs\international;
 
 use phpformsframework\libs\Mappable;
+use stdClass;
 
+/**
+ * Class DataAdapter
+ * @package phpformsframework\libs\international
+ */
 class DataAdapter extends Mappable
 {
-    private $format = array(
-        "Number" 		=> ""
-        , "DateTime" 	=> ""
-        , "Time" 		=> ""
-        , "Date" 		=> ""
-        , "Currency" 	=> ""
-    );
-
     protected $date_time = array(
-        "regexp"        => "/((\d+):(\d+)(:(\d+))*\s+(\d+)[-\/](\d+)[-\/](\d+))|((\d+)[-\/](\d+)[-\/](\d+)\s+(\d+):(\d+)(:(\d+))*)/"
-        , "day"         => 6
-        , "month"       => 7
-        , "year"        => 8
-        , "hour"        => 2
-        , "minute"      => 3
-        , "second"      => 5
+        "prototype"     => "DAY/MONTH/YEAR HOUR:MINUTE:SECOND",
+        "regexp"        => "/((\d+):(\d+)(:(\d+))*\s+(\d+)[-\/](\d+)[-\/](\d+))|((\d+)[-\/](\d+)[-\/](\d+)\s+(\d+):(\d+)(:(\d+))*)/",
+        "day"           => 6,
+        "month"         => 7,
+        "year"          => 8,
+        "hour"          => 2,
+        "minute"        => 3,
+        "second"        => 5
     );
     protected $date = array(
-        "regexp"        => "/(\d+)[-\/\s]*(\d+)[-\/\s]*(\d+)/"
-        , "day"         => 1
-        , "month"       => 2
-        , "year"        => 3
+        "prototype"     => "DAY/MONTH/YEAR",
+        "regexp"        => "/(\d+)[-\/\s]*(\d+)[-\/\s]*(\d+)/",
+        "day"           => 1,
+        "month"         => 2,
+        "year"          => 3
     );
     protected $time = array(
+        "prototype"     => "HOUR:MINUTE:SECOND",
         "regexp"        => "/(\d+)[:\s]*(\d+)/"
         , "hour"        => 1
         , "minute"      => 2
         , "second"      => 3
     );
     protected $currency = array(
-        "regexp"        => "/^(\-){0,1}\s*(\d+)(.(\d+)){0,1}$/"
-        , "strip_chars" => ","
+        "prototype"     => "INTEGER.DECIMAL",
+        "regexp"        => "/^(\-){0,1}\s*(\d+)(.(\d+)){0,1}$/",
+        "strip_chars" => ","
     );
     protected $currency_ext = array(
-        "regexp"        => "/^(\-){0,1}\s*(\d+)(.(\d+)){0,5}$/"
-        , "strip_chars" => ","
+        "prototype"     => "INTEGER.DECIMAL",
+        "regexp"        => "/^(\-){0,1}\s*(\d+)(.(\d+)){0,5}$/",
+        "strip_chars" => ","
     );
     protected $number = array(
-        "regexp"        => "/^\\s*(\\-){0,1}\\s*(\\d+)\\s*(\\.\\s*(\\d+)){0,1}\\s*$/"
-        , "strip_chars" => ","
+        "prototype"     => "INTEGER.DECIMAL",
+        "regexp"        => "/^\\s*(\\-){0,1}\\s*(\\d+)\\s*(\\.\\s*(\\d+)){0,1}\\s*$/",
+        "strip_chars" => ","
     );
     protected $number_ext = array(
-        "regexp"        => "/^\\s*(\\-){0,1}\\s*(\\d+)\\s*(\\.\\s*(\\d+)){0,5}\\s*$/"
-        , "strip_chars" => ","
+        "prototype"     => "INTEGER.DECIMAL",
+        "regexp"        => "/^\\s*(\\-){0,1}\\s*(\\d+)\\s*(\\.\\s*(\\d+)){0,5}\\s*$/",
+        "strip_chars" => ","
     );
     protected $check_time = array(
         "regexp"        => "/\\d{1,2}:\\d{1,2}(:\\d{1,2}){0,1}/"
@@ -105,62 +109,20 @@ class DataAdapter extends Mappable
     protected $empty_date_time = array(
         "default"        => "00-00-0000 00:00:00"
     );
-    protected $get_date = array(
-        "prototype" => "[DAY/MONTH/YEAR]"
-    );
-    protected $get_date_time = array(
-        "prototype" => "[DAY/MONTH/YEAR HOUR:MINUTE:SECOND]"
-    );
 
-    private function getRule($type)
+    /**
+     * @param string $type
+     * @return stdClass
+     */
+    private function getRule(string $type) : stdClass
     {
         return (object) $this->$type;
     }
-    public function format($key = null)
-    {
-        return ($key
-            ? $this->format[$key]
-            : $this->format
-        );
-    }
 
-    public function SetDateTime($oData, $value)
-    {
-        $rule                       = $this->getRule("date_time");
-
-        preg_match_all($rule->regexp, $value, $matches);
-
-        $oData->value_date_day      = $matches[$rule->day][0]     ? $matches[$rule->day][0]     : $matches[$rule->day + 4][0];
-        $oData->value_date_month    = $matches[$rule->month][0]   ? $matches[$rule->month][0]   : $matches[$rule->month + 4][0];
-        $oData->value_date_year     = $matches[$rule->year][0]    ? $matches[$rule->year][0]    : $matches[$rule->year + 4][0];
-        $oData->value_date_hours    = $matches[$rule->hour][0]    ? $matches[$rule->hour][0]    : $matches[$rule->hour + 11][0];
-        $oData->value_date_minutes  = $matches[$rule->minute][0]  ? $matches[$rule->minute][0]  : $matches[$rule->minute + 11][0];
-        $oData->value_date_seconds  = $matches[$rule->second][0]  ? $matches[$rule->second][0]  : $matches[$rule->second + 11][0];
-
-        $this->NormalizeDate($oData);
-    }
-    public function SetDate($oData, $value)
-    {
-        $rule                       = $this->getRule("date");
-
-        preg_match_all($rule->regexp, $value, $matches);
-
-        $oData->value_date_day      = $matches[$rule->day][0];
-        $oData->value_date_month    = $matches[$rule->month][0];
-        $oData->value_date_year     = $matches[$rule->year][0];
-
-        $this->NormalizeDate($oData);
-    }
-    public function SetTime($oData, $value)
-    {
-        $rule                       = $this->getRule("time");
-
-        preg_match_all($rule->rexexp, $value, $matches);
-        $oData->value_date_hours    = $matches[$rule->hour][0];
-        $oData->value_date_minutes  = $matches[$rule->minute][0];
-        $oData->value_date_seconds  = $matches[$rule->second][0];
-    }
-    public function NormalizeDate($oData)
+    /**
+     * @param Data $oData
+     */
+    private function normalizeDate(Data $oData) : void
     {
         if (strlen($oData->value_date_year) == 2) {
             $tmp = substr($oData->value_date_year, 0, 1);
@@ -171,16 +133,17 @@ class DataAdapter extends Mappable
             }
         }
     }
-    public function GetDateTime($oData)
-    {
-        $this->GetDateByRule($oData, "get_date_time");
-    }
 
-    private function GetDateByRule($oData, $rule_name)
+    /**
+     * @param Data $oData
+     * @param string $rule_name
+     * @return string|null
+     */
+    private function getDateByRule(Data $oData, string $rule_name) : ?string
     {
         if ($oData->value_date_year == 0 || $oData->value_date_month == 0 || $oData->value_date_day == 0
             || !strlen($oData->ori_value)) {
-            return "";
+            return null;
         } else {
             $rule                       = $this->getRule($rule_name);
 
@@ -205,34 +168,55 @@ class DataAdapter extends Mappable
             );
         }
     }
-    public function GetDate($oData)
+
+    /**
+     * @param string $type
+     * @return string
+     */
+    public function getFormat(string $type) : string
     {
-        $this->GetDateByRule($oData, "get_date");
-    }
-    public function GetTime($oData)
-    {
-        return $oData->value_date_hours . ":" . $oData->value_date_minutes /*. ":" . $oData->value_date_seconds*/;
-    }
-    public function SetCurrency($oData, $value)
-    {
-        self::SetCurrencyByType($oData, $value, "currency");
-    }
-    public function SetExtCurrency($oData, $value)
-    {
-        self::SetCurrencyByType($oData, $value, "currency_ext");
+        return $this->getRule(strtolower($type))->prototype;
     }
 
-    private function SetCurrencyByType($oData, $value, $type)
+    /**
+     * @param Data $oData
+     */
+    public function getDateTime(Data $oData) : void
     {
-        $this->SetNumberByType($oData, $value, $type);
+        $this->GetDateByRule($oData, "date_time");
     }
 
-    public function GetExtCurrency($oData)
+    /**
+     * @param Data $oData
+     * @return string
+     */
+    public function getDate(Data $oData) : string
+    {
+        return $this->GetDateByRule($oData, "date");
+    }
+
+    /**
+     * @param $oData
+     * @return string
+     */
+    public function getTime(Data $oData) : string
+    {
+        return $oData->value_date_hours . ":" . $oData->value_date_minutes;
+    }
+    /**
+     * @param Data $oData
+     * @return string
+     */
+    public function getExtCurrency(Data $oData) : string
     {
         return self::GetCurrency($oData);
     }
 
-    public function GetCurrency($oData)
+    /**
+     * @param Data $oData
+     * @return string
+     */
+    public function getCurrency(Data $oData) : string
     {
         if (!strlen($oData->value_text)) {
             return self::GetEmptyCurrency();
@@ -242,44 +226,24 @@ class DataAdapter extends Mappable
         if ($oData->value_sign) {
             $sign = "- ";
         }
-        if ($oData->format_currency_showdecimals) {
-            return $sign . number_format($oData->value_numeric_integer + round($oData->value_numeric_decimal / pow(10, strlen($oData->value_numeric_decimal)), 2), 2, ",", ".");
-        } else {
-            return $sign . number_format($oData->value_numeric_integer + round($oData->value_numeric_decimal / pow(10, strlen($oData->value_numeric_decimal)), 2), 0, ",", ".");
-        }
-    }
-    public function SetNumber($oData, $value)
-    {
-        self::SetNumberByType($oData, $value, "number");
-    }
-    public function SetExtNumber($oData, $value)
-    {
-        self::SetNumberByType($oData, $value, "number_ext");
+
+        return $sign . number_format($oData->value_numeric_integer + round($oData->value_numeric_decimal / pow(10, strlen($oData->value_numeric_decimal)), 2), 2, ",", ".");
     }
 
-    private function SetNumberByType($oData, $value, $type)
-    {
-        $rule                       = $this->getRule($type);
-
-        $oData->value_text = $value;
-
-        $value = str_replace($rule->strip_chars, "", $value);
-        preg_match_all($rule->regexp, $value, $matches);
-
-        if (strlen($matches[1][0])) {
-            $oData->value_sign = true;
-        } else {
-            $oData->value_sign = false;
-        }
-        $oData->value_numeric_integer = preg_replace("/[^0-9]+/", "", $matches[2][0]);
-        $oData->value_numeric_decimal = preg_replace("/[^0-9]+/", "", $matches[4][0]);
-    }
-
-    public function GetExtNumber($oData)
+    /**
+     * @param Data $oData
+     * @return string
+     */
+    public function getExtNumber(Data $oData) : string
     {
         return $this->GetNumber($oData);
     }
-    public function GetNumber($oData)
+
+    /**
+     * @param Data $oData
+     * @return string
+     */
+    public function getNumber(Data $oData) : string
     {
         if ($oData->value_sign) {
             $sign = -1;
@@ -292,7 +256,12 @@ class DataAdapter extends Mappable
             return $oData->value_numeric_integer * $sign;
         }
     }
-    public function GetTimestamp($oData)
+
+    /**
+     * @param Data $oData
+     * @return string
+     */
+    public function getTimestamp(Data $oData) : string
     {
         if ($oData->value_date_hours == 0
             && $oData->value_date_minutes == 0
@@ -313,18 +282,12 @@ class DataAdapter extends Mappable
             );
         }
     }
-    public function SetTimestamp($oData, $value)
-    {
-        if (is_numeric($value) && $value > 0) {
-            $oData->value_date_day = date("d", $value);
-            $oData->value_date_month = date("m", $value);
-            $oData->value_date_year = date("Y", $value);
-            $oData->value_date_hours = date("H", $value);
-            $oData->value_date_minutes = date("i", $value);
-            $oData->value_date_seconds = date("s", $value);
-        }
-    }
-    public function GetTimeToSec($oData)
+
+    /**
+     * @param Data $oData
+     * @return string
+     */
+    public function getTimeToSec(Data $oData) : string
     {
         if (intval($oData->value_date_hours) == 0
             && intval($oData->value_date_minutes) == 0
@@ -344,7 +307,147 @@ class DataAdapter extends Mappable
             }
         }
     }
-    public function SetTimeToSec($oData, $value)
+
+    /**
+     * @param Data $oData
+     * @param string $value
+     */
+    public function setDateTime(Data $oData, string $value) : void
+    {
+        $rule                       = $this->getRule("date_time");
+
+        preg_match_all($rule->regexp, $value, $matches);
+
+        $oData->value_date_day      = $matches[$rule->day][0]     ? $matches[$rule->day][0]     : $matches[$rule->day + 4][0];
+        $oData->value_date_month    = $matches[$rule->month][0]   ? $matches[$rule->month][0]   : $matches[$rule->month + 4][0];
+        $oData->value_date_year     = $matches[$rule->year][0]    ? $matches[$rule->year][0]    : $matches[$rule->year + 4][0];
+        $oData->value_date_hours    = $matches[$rule->hour][0]    ? $matches[$rule->hour][0]    : $matches[$rule->hour + 11][0];
+        $oData->value_date_minutes  = $matches[$rule->minute][0]  ? $matches[$rule->minute][0]  : $matches[$rule->minute + 11][0];
+        $oData->value_date_seconds  = $matches[$rule->second][0]  ? $matches[$rule->second][0]  : $matches[$rule->second + 11][0];
+
+        $this->NormalizeDate($oData);
+    }
+
+    /**
+     * @param Data $oData
+     * @param string $value
+     */
+    public function setDate(Data $oData, string $value) : void
+    {
+        $rule                       = $this->getRule("date");
+
+        preg_match_all($rule->regexp, $value, $matches);
+
+        $oData->value_date_day      = $matches[$rule->day][0];
+        $oData->value_date_month    = $matches[$rule->month][0];
+        $oData->value_date_year     = $matches[$rule->year][0];
+
+        $this->NormalizeDate($oData);
+    }
+
+    /**
+     * @param Data $oData
+     * @param string $value
+     */
+    public function setTime(Data $oData, string $value) : void
+    {
+        $rule                       = $this->getRule("time");
+
+        preg_match_all($rule->rexexp, $value, $matches);
+        $oData->value_date_hours    = $matches[$rule->hour][0];
+        $oData->value_date_minutes  = $matches[$rule->minute][0];
+        $oData->value_date_seconds  = $matches[$rule->second][0];
+    }
+    /**
+     * @param Data $oData
+     * @param string $value
+     */
+    public function setCurrency(Data $oData, string $value) : void
+    {
+        self::SetCurrencyByType($oData, $value, "currency");
+    }
+
+    /**
+     * @param Data $oData
+     * @param string $value
+     */
+    public function setExtCurrency(Data $oData, string $value) : void
+    {
+        self::SetCurrencyByType($oData, $value, "currency_ext");
+    }
+
+    /**
+     * @param Data $oData
+     * @param string $value
+     * @param string $type
+     */
+    private function setCurrencyByType(Data $oData, string $value, string $type) : void
+    {
+        $this->SetNumberByType($oData, $value, $type);
+    }
+
+    /**
+     * @param Data $oData
+     * @param string $value
+     */
+    public function setNumber(Data $oData, string $value) : void
+    {
+        self::SetNumberByType($oData, $value, "number");
+    }
+
+    /**
+     * @param Data $oData
+     * @param string $value
+     */
+    public function setExtNumber(Data $oData, string $value) : void
+    {
+        self::SetNumberByType($oData, $value, "number_ext");
+    }
+
+    /**
+     * @param Data $oData
+     * @param string $value
+     * @param string $type
+     */
+    private function setNumberByType(Data $oData, string $value, string $type) : void
+    {
+        $rule                       = $this->getRule($type);
+
+        $oData->value_text = $value;
+
+        $value = str_replace($rule->strip_chars, "", $value);
+        preg_match_all($rule->regexp, $value, $matches);
+
+        if (strlen($matches[1][0])) {
+            $oData->value_sign = true;
+        } else {
+            $oData->value_sign = false;
+        }
+        $oData->value_numeric_integer = preg_replace("/[^0-9]+/", "", $matches[2][0]);
+        $oData->value_numeric_decimal = preg_replace("/[^0-9]+/", "", $matches[4][0]);
+    }
+
+    /**
+     * @param Data $oData
+     * @param string $value
+     */
+    public function setTimestamp(Data $oData, string $value) : void
+    {
+        if (is_numeric($value) && $value > 0) {
+            $oData->value_date_day = date("d", $value);
+            $oData->value_date_month = date("m", $value);
+            $oData->value_date_year = date("Y", $value);
+            $oData->value_date_hours = date("H", $value);
+            $oData->value_date_minutes = date("i", $value);
+            $oData->value_date_seconds = date("s", $value);
+        }
+    }
+
+    /**
+     * @param Data $oData
+     * @param string $value
+     */
+    public function setTimeToSec(Data $oData, string $value) : void
     {
         if (is_numeric($value) && $value > 0) {
             $oData->value_date_day = intval(gmdate("d", $value));
@@ -355,64 +458,109 @@ class DataAdapter extends Mappable
             $oData->value_date_seconds = intval(gmdate("s", $value));
         }
     }
-    public function CheckTime($raw_value)
+
+    /**
+     * @param string $raw_value
+     * @return bool
+     */
+    public function checkTime(string $raw_value) : bool
     {
         $rule                               = $this->getRule("check_time");
 
-        return preg_match($rule->regexp, $raw_value) !== false;
+        return preg_match($rule->regexp, $raw_value) === 1;
     }
-    public function CheckDate($raw_value)
+
+    /**
+     * @param string $raw_value
+     * @return bool
+     */
+    public function checkDate(string $raw_value) : bool
     {
         $rule                               = $this->getRule("check_date");
 
-        return preg_match($rule->regexp, $raw_value) !== false;
+        return preg_match($rule->regexp, $raw_value) === 1;
     }
-    public function CheckDateTime($raw_value)
+
+    /**
+     * @param string $raw_value
+     * @return bool
+     */
+    public function checkDateTime(string $raw_value) : bool
     {
         $rule                               = $this->getRule("check_date_time");
 
-        return preg_match($rule->regexp, $raw_value) !== false;
+        return preg_match($rule->regexp, $raw_value) === 1;
     }
-    public function CheckCurrency($raw_value)
+
+    /**
+     * @param string $raw_value
+     * @return bool
+     */
+    public function checkCurrency(string $raw_value) : bool
     {
         $rule                               = $this->getRule("check_currency");
 
-        return preg_match($rule->regexp, $raw_value) !== false;
+        return preg_match($rule->regexp, $raw_value) === 1;
     }
-    public function CheckExtCurrency($raw_value)
+
+    /**
+     * @param string $raw_value
+     * @return bool
+     */
+    public function checkExtCurrency(string $raw_value) : bool
     {
         $rule                               = $this->getRule("check_currency_ext");
 
-        return preg_match($rule->regexp, $raw_value) !== false;
+        return preg_match($rule->regexp, $raw_value) === 1;
     }
-    public function CheckNumber($raw_value)
+
+    /**
+     * @param string $raw_value
+     * @return bool
+     */
+    public function checkNumber(string $raw_value) : bool
     {
         $rule                               = $this->getRule("check_number");
 
-        return preg_match($rule->regexp, $raw_value) !== false;
+        return preg_match($rule->regexp, $raw_value) === 1;
     }
-    public function CheckExtNumber($raw_value)
+
+    /**
+     * @param string $raw_value
+     * @return bool
+     */
+    public function checkExtNumber(string $raw_value) : bool
     {
         $rule                               = $this->getRule("check_number_ext");
 
 
-        return preg_match($rule->regexp, $raw_value) !== false;
+        return preg_match($rule->regexp, $raw_value) === 1;
     }
-    public function GetEmptyCurrency()
+
+    /**
+     * @return mixed
+     */
+    public function getEmptyCurrency() : string
     {
         $rule                               = $this->getRule("empty_currency");
 
         return $rule->default;
     }
 
-    public function GetEmptyDate()
+    /**
+     * @return string
+     */
+    public function getEmptyDate() : string
     {
         $rule                               = $this->getRule("empty_date");
 
         return $rule->default;
     }
 
-    public function GetEmptyDateTime()
+    /**
+     * @return string
+     */
+    public function getEmptyDateTime() : string
     {
         $rule                               = $this->getRule("empty_date_time");
 

@@ -141,13 +141,13 @@ class PageHtml extends Mappable
     }
 
     /**
-     * @param string $content
+     * @param string|DataHtml|View $content
      * @param string $where
      * @return PageHtml
      */
-    public function addContent(string $content = null, string $where = self::MAIN_CONTENT) : PageHtml
+    public function addContent($content = null, string $where = self::MAIN_CONTENT) : PageHtml
     {
-        $this->setContent($this->getHtml($content), $where);
+        $this->setContent($where, $this->getHtml($content));
 
         return $this;
     }
@@ -156,13 +156,13 @@ class PageHtml extends Mappable
      * @param string|DataHtml|View $content
      * @return false|string|null
      */
-    private function getHtml($content)
+    private function getHtml($content) : ?string
     {
         $html                                   = null;
         if (is_object($content)) {
             $html                               = $this->getHtmlByObject($content);
         } elseif (is_array($content)) {
-            $html                               = false;
+            $html                               = null;
         } elseif (!empty($content)) {
             $html                               = $this->getHtmlByString($content);
         }
@@ -358,11 +358,11 @@ class PageHtml extends Mappable
     }
 
     /**
-     * @param string $content
      * @param string $key
+     * @param string $content
      * @return PageHtml
      */
-    private function setContent(string $content, string $key) : PageHtml
+    private function setContent(string $key, string $content = null) : PageHtml
     {
         $this->contents["{" . $key . "}"]      = $content;
         return $this;
@@ -522,7 +522,7 @@ class PageHtml extends Mappable
      */
     public function renderError(int $status, string $msg, string $description = null) : DataHtml
     {
-        $this->setContent($this->getPageError($msg, $status, $description), self::MAIN_CONTENT);
+        $this->setContent(self::MAIN_CONTENT, $this->getPageError($msg, $status, $description));
 
         return $this->render();
     }

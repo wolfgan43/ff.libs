@@ -127,6 +127,11 @@ class Error
         }
     }
 
+    /**
+     * @param string $source
+     * @param array $engine
+     * @param string $type
+     */
     public static function addRule(string $source, array $engine, string $type = "path") : void
     {
         self::$rules[$type][$source]                            = $engine;
@@ -253,18 +258,14 @@ class Error
     }
 
     /**
-     * @param string|null $bucket
+     * @param string $bucket
      * @return string|null
      */
-    public static function raise(string $bucket = null) : ?string
+    public static function raise(string $bucket) : ?string
     {
-        if ($bucket && !isset(self::$errors[$bucket])) {
-            return null;
-        }
-
-        return ($bucket
+        return (isset(self::$errors[$bucket])
             ? implode(", ", self::$errors[$bucket])
-            : self::$errors
+            : null
         );
     }
 
@@ -288,13 +289,9 @@ class Error
     {
         if ($error) {
             self::$errors[$bucket][]                    = $error;
-            if (Kernel::$Environment::DEBUG) {
-                Debug::dump($error);
-                exit;
-            } else {
-                Log::alert($error);
-                Response::sendError(500, $error);
-            }
+
+            Log::alert($error);
+            Response::sendError(500, $error, Debug::dumpBackTrace());
         }
     }
 

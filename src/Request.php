@@ -38,31 +38,42 @@ use phpformsframework\libs\security\Validator;
  */
 class Request implements Configurable, Dumpable
 {
-    const MAX_SIZE = array(
-        "GET" => 256,
-        "PUT" => 10240,
-        "POST" => 10240,
-        "HEAD" => 2048,
-        "DEFAULT" => 128,
-        "FILES" => 1024000
-    );
-    private static $params = null;
-    private static $access_control = null;
-    private static $pages = null;
-    private static $alias = null;
-    private static $gateway = null;
-    private static $patterns = null;
-    private static $server = null;
-    private static $path2params = null;
+    public const METHOD_GET         = "GET";
+    public const METHOD_POST        = "POST";
+    public const METHOD_PUT         = "PUT";
+    public const METHOD_DELETE      = "DELETE";
+    public const METHOD_PROPFIND    = "PROPFIND";
+    public const METHOD_HEAD        = "HEAD";
+    public const METHOD_CONNECT     = "CONNECT";
+    public const METHOD_TRACE       = "TRACE";
+    public const METHOD_OPTIONS     = "OPTIONS";
+    public const METHOD_PATCH       = "PATCH";
+
+    protected const MAX_SIZE        = array(
+                                        self::METHOD_GET        => 256,
+                                        self::METHOD_PUT        => 10240,
+                                        self::METHOD_POST       => 10240,
+                                        self::METHOD_HEAD       => 2048,
+                                        "DEFAULT"               => 128,
+                                        "FILES"                 => 1024000
+                                    );
+    private static $params          = null;
+    private static $access_control  = null;
+    private static $pages           = null;
+    private static $alias           = null;
+    private static $gateway         = null;
+    private static $patterns        = null;
+    private static $server          = null;
+    private static $path2params     = null;
 
     /**
      * @var RequestPage $page
      */
-    private static $page = null;
+    private static $page            = null;
 
-    private static $orig_path_info = null;
-    private static $root_path = null;
-    private static $path_info = null;
+    private static $orig_path_info  = null;
+    private static $root_path       = null;
+    private static $path_info       = null;
 
     /**
      * @return array
@@ -249,7 +260,7 @@ class Request implements Configurable, Dumpable
         foreach ($config as $pattern) {
             $attr = Dir::getXmlAttr($pattern);
             $key = (
-            $attr["path"]
+                $attr["path"]
                 ? $attr["path"]
                 : $attr["source"]
             );
@@ -281,7 +292,7 @@ class Request implements Configurable, Dumpable
         if (is_array(self::$path2params) && count(self::$path2params)) {
             foreach (self::$path2params as $page_path => $params) {
                 if (preg_match_all($params["regexp"], $path_info, $matches)) {
-                    if (self::method() == "GET") {
+                    if (self::method() == self::METHOD_GET) {
                         $_GET = array_merge($_GET, array_combine($params["matches"], $matches[1]));
                     } else {
                         $_POST = array_merge($_POST, array_combine($params["matches"], $matches[1]));
@@ -325,7 +336,7 @@ class Request implements Configurable, Dumpable
         //@todo da verificare se e corretto il self::$path_info e la differenza tra self::$path_info
         //@todo e se ha senso la diff tra self::$orig_path_info e self::$path_info
         $page["path_info"] = (
-        isset($page["strip_path"]) && strpos(self::$path_info, $page["strip_path"]) === 0
+            isset($page["strip_path"]) && strpos(self::$path_info, $page["strip_path"]) === 0
             ? substr(self::$path_info, strlen($page["strip_path"]))
             : self::$path_info
         );
@@ -338,7 +349,7 @@ class Request implements Configurable, Dumpable
             foreach (self::$patterns as $pattern => $rule) {
                 if (preg_match(Router::regexp($pattern), $page["path_info"], $matches)) {
                     $page = (
-                    $router["path"] == $page["path_info"]
+                        $router["path"] == $page["path_info"]
                         ? array_replace($rule, $page)
                         : array_replace($page, $rule)
                     );
@@ -358,7 +369,7 @@ class Request implements Configurable, Dumpable
     {
         $redirect = null;
         //necessario XHR perche le request a servizi esterni path del domain alias non triggerano piu
-        if (self::method() == "GET" && !self::isAjax() && count(self::unknown())) {
+        if (self::method() == self::METHOD_GET && !self::isAjax() && count(self::unknown())) {
             // Evita pagine duplicate quando i link vengono gestiti dagli alias o altro
             $redirect = self::url();
         }
@@ -407,7 +418,7 @@ class Request implements Configurable, Dumpable
     {
         $hostname = self::hostname();
         $aliasname = (
-        $hostname && isset(self::$alias[$hostname])
+            $hostname && isset(self::$alias[$hostname])
             ? self::$alias[$hostname]
             : null
         );
@@ -433,7 +444,7 @@ class Request implements Configurable, Dumpable
                 || self::$orig_path_info == $aliasname
             ) {
                 $query = (
-                is_array($_GET) && count($_GET)
+                    is_array($_GET) && count($_GET)
                     ? "?" . http_build_query($_GET)
                     : ""
                 );
@@ -501,27 +512,27 @@ class Request implements Configurable, Dumpable
 
     public static function get(string $key, bool $toObj = false)
     {
-        return self::body($key, "GET", $toObj, "get");
+        return self::body($key, self::METHOD_GET, $toObj, "get");
     }
 
     public static function post(string $key, bool $toObj = false)
     {
-        return self::body($key, "POST", $toObj, "post");
+        return self::body($key, self::METHOD_POST, $toObj, "post");
     }
 
     public static function patch(string $key, bool $toObj = false)
     {
-        return self::body($key, "PATCH", $toObj, "post");
+        return self::body($key, self::METHOD_PATCH, $toObj, "post");
     }
 
     public static function delete(string $key, bool $toObj = false)
     {
-        return self::body($key, "DELETE", $toObj, "post");
+        return self::body($key, self::METHOD_DELETE, $toObj, "post");
     }
 
     public static function put(string $key, bool $toObj = false)
     {
-        return self::body($key, "PUT", $toObj, "rawdata");
+        return self::body($key, self::METHOD_PUT, $toObj, "rawdata");
     }
 
     public static function cookie(string $key, bool $toObj = false)
@@ -561,6 +572,9 @@ class Request implements Configurable, Dumpable
         );
     }
 
+    /**
+     * @return string|null
+     */
     public static function getAuthorizationHeader(): ?string
     {
         $headers = null;
@@ -585,12 +599,17 @@ class Request implements Configurable, Dumpable
      */
     private static function capture()
     {
-        self::captureServer();
+        $error = error_get_last();
+        if ($error) {
+            self::isError($error["message"], 500);
+        } else {
+            self::captureServer();
 
-        self::security();
+            self::security();
 
-        self::captureHeaders();
-        self::captureBody();
+            self::captureHeaders();
+            self::captureBody();
+        }
     }
 
     public static function headers(string $key = null)
@@ -696,7 +715,7 @@ class Request implements Configurable, Dumpable
      */
     public static function isHTTPS(): bool
     {
-        return (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || (isset($_SERVER["HTTP_ORIGIN"]) && strpos($_SERVER["HTTP_ORIGIN"], "https://") === 0);
+        return (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || self::referer(PHP_URL_SCHEME, "origin") == "https";
     }
 
     /**
@@ -786,13 +805,14 @@ class Request implements Configurable, Dumpable
 
     /**
      * @param string|null $phpurl_part
+     * @param string $key
      * @return string|null
      */
-    public static function referer(string $phpurl_part = null): ?string
+    public static function referer(string $phpurl_part = null, string $key = "referer"): ?string
     {
         $referer = (
-        isset($_SERVER["HTTP_REFERER"])
-            ? $_SERVER["HTTP_REFERER"]
+            isset($_SERVER["HTTP_" . strtoupper($key)])
+            ? $_SERVER["HTTP_" . strtoupper($key)]
             : null
         );
 
@@ -823,7 +843,16 @@ class Request implements Configurable, Dumpable
             : null
         );
     }
-
+    /**
+     * @return string|null
+     */
+    public static function remotePort(): ?string
+    {
+        return (isset($_SERVER["REMOTE_PORT"])
+            ? $_SERVER["REMOTE_PORT"]
+            : null
+        );
+    }
     /**
      * @return string|null
      */
@@ -925,10 +954,12 @@ class Request implements Configurable, Dumpable
 
     /**
      * return only the headers and not the content
-     * @param string $origin
+     * @param string|null $origin
      */
-    private static function corsPreflight(string $origin) : void
+    private static function corsPreflight(string $origin = null) : void
     {
+        header('Access-Control-Allow-Methods: ' . self::$page->method);
+
         if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']) && $origin) {
             $access_control = self::getAccessControl($origin);
 
@@ -968,9 +999,8 @@ class Request implements Configurable, Dumpable
         if (headers_sent()) {
             return false;
         }
-        if (isset($_SERVER["HTTP_ORIGIN"]) && filter_var($_SERVER["HTTP_ORIGIN"], FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME)) {
-            $origin = str_replace("https://", "http://", "", $_SERVER["HTTP_ORIGIN"]);
-        } else {
+        $origin = self::referer(PHP_URL_HOST, "origin");
+        if (!$origin) {
             $origin = self::referer(PHP_URL_HOST);
         }
 
@@ -980,28 +1010,31 @@ class Request implements Configurable, Dumpable
         header("Vary: Accept-Encoding" . ($origin ? ", Origin" : ""));
 
         switch (self::method()) {
-            case "OPTIONS":
+            case self::METHOD_OPTIONS:
                 self::corsPreflight($origin);
                 break;
-            case "TRACE": //todo: to manage
+            case self::METHOD_TRACE: //todo: to manage
                 Response::sendError(405);
                 break;
-            case "CONNECT": //todo: to manage
+            case self::METHOD_CONNECT: //todo: to manage
                 Response::sendError(405);
                 break;
-            case "HEAD": //todo: to manage
-                self::securityHeaders($origin);
+            case self::METHOD_HEAD: //todo: to manage
+                self::corsPreflight();
                 exit;
                 break;
-            case "PROPFIND": //todo: to manage
+            case self::METHOD_PROPFIND: //todo: to manage
                 Response::sendError(405);
                 break;
-            case "GET":
-            case "POST":
-            case "PUT":
+            case self::METHOD_GET:
+            case self::METHOD_POST:
+            case self::METHOD_PUT:
                 self::securityHeaders($origin);
                 break;
-            case "DELETE": //todo: to manage
+            case self::METHOD_PATCH: //todo: to manage
+                Response::sendError(405);
+                break;
+            case self::METHOD_DELETE: //todo: to manage
                 Response::sendError(405);
                 break;
             default:
@@ -1022,6 +1055,7 @@ class Request implements Configurable, Dumpable
                 header('Access-Control-Allow-Origin: ' . $allow_origin);
             }
         }
+        header('Access-Control-Allow-Methods: ' . self::$page->method . ',' . self::METHOD_OPTIONS . ',' . self::METHOD_HEAD);
 
         self::verifyInvalidRequest();
     }
@@ -1052,7 +1086,7 @@ class Request implements Configurable, Dumpable
     private static function securityHeaderParams() : array
     {
         $errors                                                                         = array();
-        if (self::isAllowedSize(self::getRequestHeaders(), "HEAD")) {
+        if (self::isAllowedSize(self::getRequestHeaders(), self::METHOD_HEAD)) {
             foreach (self::$page->rules->header as $rule) {
                 $header_key                                                             = str_replace("-", "_", $rule["name"]);
                 if ($rule["name"] == "Authorization") {
@@ -1097,7 +1131,7 @@ class Request implements Configurable, Dumpable
      */
     private static function bucketByMethod(string $method) : string
     {
-        return ($method == "GET" || $method == "PUT"
+        return ($method == self::METHOD_GET || $method == self::METHOD_PUT
             ? "query"
             : "body"
         );
@@ -1112,7 +1146,7 @@ class Request implements Configurable, Dumpable
     {
         $errors                                                                         = array();
         $bucket                                                                         = self::bucketByMethod($method);
-        if (self::isAllowedSize($request, $method) && self::isAllowedSize(self::getRequestHeaders(), "HEAD")) {
+        if (self::isAllowedSize($request, $method) && self::isAllowedSize(self::getRequestHeaders(), self::METHOD_HEAD)) {
             self::$page->request["valid"]                                               = array();
 
             if (is_array(self::$page->rules->$bucket) && count(self::$page->rules->$bucket) && is_array($request)) {
@@ -1154,9 +1188,9 @@ class Request implements Configurable, Dumpable
                 }
 
                 self::$page->request["rawdata"]                                         = $request;
-                if ($method == "GET") {
+                if ($method == self::METHOD_GET) {
                     self::$page->request["get"]                                         = $request;
-                } elseif ($method == "POST" || $method == "PATCH" || $method == "DELETE") {
+                } elseif ($method == self::METHOD_POST || $method == self::METHOD_PATCH || $method == self::METHOD_DELETE) {
                     self::$page->request["post"]                                        = $request;
                 }
                 self::$page->request["unknown"]                                         = array_diff_key($request, self::$page->request["valid"]);
@@ -1239,12 +1273,12 @@ class Request implements Configurable, Dumpable
     private static function getReq(string $method = null) : array
     {
         switch ($method) {
-            case "POST":
-            case "PATCH":
-            case "DELETE":
+            case self::METHOD_POST:
+            case self::METHOD_PATCH:
+            case self::METHOD_DELETE:
                 $req                                                                            = $_POST;
                 break;
-            case "GET":
+            case self::METHOD_GET:
                 $req                                                                            = $_GET;
                 break;
             case "COOKIE":
@@ -1253,7 +1287,7 @@ class Request implements Configurable, Dumpable
             case "SESSION":
                 $req                                                                            = $_SESSION;
                 break;
-            case "PUT":
+            case self::METHOD_PUT:
             default:
                 $req                                                                            = $_REQUEST;
 

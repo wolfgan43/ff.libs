@@ -56,7 +56,11 @@ class Kernel
         return self::$singleton;
     }
 
-    public static function useCache($cache = null)
+    /**
+     * @param bool|null $cache
+     * @return bool
+     */
+    public static function useCache(bool $cache = null) : bool
     {
         if (self::$use_cache && !is_null($cache)) {
             self::$use_cache        = $cache;

@@ -1,5 +1,6 @@
 {
   "date_time": {
+    "prototype": "YEAR-MONTH-DAY HOUR:MINUTE:SECOND",
     "regexp": "\/(\\d+)-(\\d+)-(\\d+)\\s(\\d+):(\\d+):(\\d+)\/",
     "day": "3",
     "month": "2",
@@ -9,16 +10,11 @@
     "second": "6"
   },
   "date": {
+    "prototype": "YEAR-MONTH-DAY",
     "regexp": "\/(\\d+)-(\\d+)-(\\d+)\/",
     "day": "3",
     "month": "2",
     "year": "1"
-  },
-  "get_date_time": {
-    "prototype": "[YEAR\/MONTH\/DAY HOUR:MINUTE:SECOND]"
-  },
-  "get_date": {
-    "prototype": "[YEAR\/MONTH\/DAY]"
   },
   "check_date": {
     "regexp": "\/\\d{1,4}\\-\\d{1,2}\\-\\d{2}\/"

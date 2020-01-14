@@ -35,6 +35,8 @@ use stdClass;
  */
 abstract class DataAdapter
 {
+    private const INTERNAL_SERVER_ERROR     = "Internal Server Error";
+
     const CONTENT_TYPE                      = null;
 
     /**
@@ -110,18 +112,34 @@ abstract class DataAdapter
     /**
      * @param int $status
      * @param string|null $msg
+     * @param null $debug
      * @return $this
      */
-    public function error(int $status, string $msg = null) : self
+    public function error(int $status, string $msg = null, $debug = null) : self
     {
         $this->status                       = $status;
-        $this->error                        = (
-            $this->error
-            ? $this->error . " "
-            : ""
-        ) . $msg;
+        $this->setError($msg);
+        if ($debug) {
+            $this->debug($debug);
+        }
 
         return $this;
+    }
+
+    /**
+     * @param string|null $msg
+     */
+    private function setError(string $msg = null) : void
+    {
+        if (Debug::isEnabled() || $this->status < 500) {
+            $this->error                        = (
+                $this->error
+                    ? $this->error . " "
+                    : ""
+                ) . $msg;
+        } else {
+            $this->error = self::INTERNAL_SERVER_ERROR;
+        }
     }
 
     /**
@@ -138,18 +156,22 @@ abstract class DataAdapter
     }
 
     /**
-     * @todo da tipizzare
      * @param mixed $data
+     * @param string|null $bucket
      * @return $this
+     * @todo da tipizzare
      */
     public function debug($data, string $bucket = null) : self
     {
-        if ($bucket) {
-            $this->debug[$bucket] = $data;
-        } elseif (!empty($data)) {
-            array_push($this->debug, $data);
+        if (!empty($data)) {
+            if ($bucket) {
+                $this->debug[$bucket] = $data;
+            } elseif (is_array($data)) {
+                $this->debug = array_replace($this->debug, $data);
+            } else {
+                array_push($this->debug, $data);
+            }
         }
-
         return $this;
     }
 

@@ -155,15 +155,6 @@ trait EndUserManager
     {
         return Orm::getInstance($ormModel, $mainTable);
     }
-    /**
-     * @param string $file_type
-     * @param null|string $file_disk_path
-     * @return storage\FilemanagerAdapter
-     */
-    public static function fileGetContent(string $file_type, string $file_disk_path = null) : storage\FilemanagerAdapter
-    {
-        return Filemanager::getInstance($file_type, $file_disk_path);
-    }
 
     /**
      * @param string $bucket

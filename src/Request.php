@@ -1429,12 +1429,22 @@ class Request implements Configurable, Dumpable
     /**
      * @return string
      */
+    private static function pageAccept() : string
+    {
+        return (self::isAjax() && self::$page->accept == "*/*"
+            ? "application/json"
+            : self::$page->accept
+        );
+    }
+    /**
+     * @return string
+     */
     public static function accept() : string
     {
         $accept = self::rawAccept();
         return ($accept
             ? explode(",", $accept)[0]
-            : self::$page->accept
+            : self::pageAccept()
         );
     }
 }

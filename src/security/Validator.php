@@ -142,7 +142,7 @@ class Validator
                                                                     "filter"        => FILTER_CALLBACK,
                                                                     "flags"         => null,
                                                                     "options"       => '\phpformsframework\libs\security\Validator::isFile',
-                                                                    "length"        => 1024000
+                                                                    "length"        => 0
                                                                 ),
                                                                 "encode"            => array(
                                                                     "filter"        => FILTER_SANITIZE_ENCODED,
@@ -181,6 +181,9 @@ class Validator
                                                                 )
 
                                                             );
+    /**
+     * https://en.wikipedia.org/wiki/List_of_file_signatures
+     */
     const SIGNATURES                                        = array(
                                                                 'image/jpeg'        => array(
                                                                                         'FFD8FFDB',
@@ -394,15 +397,28 @@ class Validator
     }
 
     /**
-     * Returns webserver max upload size in KB
-     * @return float
+     * Returns webserver max upload size in B/KB/MB/GB
+     * @param string $return
+     * @return int
      */
-    public static function getMaxUploadSize() : int
+    public static function getMaxUploadSize(string $return = null) : int
     {
-        $max_upload = min(ini_get('post_max_size'), ini_get('upload_max_filesize'));
-        $max_upload = str_replace('M', '', $max_upload);
-        $max_upload = $max_upload * 1024 * 1024;
-        return $max_upload;
+        $max_upload                                                         = min(ini_get('post_max_size'), ini_get('upload_max_filesize'));
+        $max_upload                                                         = str_replace('M', '', $max_upload);
+        switch ($return) {
+            case "K":
+                $res                                                        = $max_upload * 1024;
+                break;
+            case "M":
+                $res                                                        = $max_upload;
+                break;
+            case "G":
+                $res                                                        = (int) $max_upload / 1024;
+                break;
+            default:
+                $res                                                        = $max_upload *1024 * 1024;
+        }
+        return $res;
     }
 
     /**
@@ -477,21 +493,23 @@ class Validator
         $checks                                                             = self::getSignature($type);
         $isValid                                                            = false;
         if (is_array($checks) && count($checks)) {
-            foreach ($checks as $check) {
-                $byteCount                                                  = strlen($check) / 2;
-                $handle = @fopen($file, 'rb');
-                if ($handle !== false && flock($handle, LOCK_EX)) {
+            $handle                                                         = @fopen($file, 'rb');
+            if ($handle !== false && flock($handle, LOCK_EX)) {
+                foreach ($checks as $check) {
+                    fseek($handle, 0);
+                    $byteCount                                              = strlen($check) / 2;
                     $contents                                               = fread($handle, $byteCount);
                     $byteArray                                              = bin2hex($contents);
                     $regex                                                  = '#' . $check . '#i';
                     $isValid                                                = (bool)preg_match($regex, $byteArray);
-                    flock($handle, LOCK_UN);
                     if ($isValid) {
                         break;
                     }
+
                 }
-                @fclose($handle);
+                flock($handle, LOCK_UN);
             }
+            @fclose($handle);
         } else {
             $isValid                                                        = true;
         }
@@ -508,7 +526,7 @@ class Validator
         if (strpos($value, Constant::DISK_PATH) === 0) {
             $res = false;
         } else {
-            $res = !self::checkSpecialChars($value) && !preg_match('/[^A-Za-z0-9.\/\-_\\$]/', $value);
+            $res = !self::checkSpecialChars($value) && !preg_match('/[^A-Za-z0-9.\/\-_\s\\$]/', $value);
         }
         return (bool) $res;
     }
@@ -928,16 +946,17 @@ class Validator
     private static function isAllowed(array $value, string $type, int $length) : DataError
     {
         $dataError                                          = new DataError();
-        foreach ($value as $item) {
-            if (is_array($item)) {
-                $dataError                                  = self::isError(self::getErrorName() . " Multidimensional Array not supported", $type, 501);
-                break;
-            } elseif (strlen($item) > $length) {
-                $dataError                                  = self::isError(self::getErrorName() . " Max Length Exeeded: " . $type, $type, 413);
-                break;
+        if ($length > 0) {
+            foreach ($value as $item) {
+                if (is_array($item)) {
+                    $dataError                              = self::isError(self::getErrorName() . " Multidimensional Array not supported", $type, 501);
+                    break;
+                } elseif (strlen($item) > $length) {
+                    $dataError                              = self::isError(self::getErrorName() . " Max Length Exeeded: " . $type, $type, 413);
+                    break;
+                }
             }
         }
-
         return $dataError;
     }
 

@@ -27,8 +27,13 @@
 namespace phpformsframework\libs\storage\drivers;
 
 use phpformsframework\libs\Error;
+use phpformsframework\libs\Log;
 use phpformsframework\libs\storage\Filemanager;
 
+/**
+ * Class ImageCanvas
+ * @package phpformsframework\libs\storage\drivers
+ */
 class ImageCanvas
 {
     const ERROR_BUCKET                      = "storage";
@@ -243,7 +248,8 @@ class ImageCanvas
                     header("Content-Type: image/jpg");
                 }
                 if (!is_writable(dirname($filename)) || imagejpeg($this->cvs_res, $filename) === false) {
-                    Error::register("Permission Denied: " . $filename, static::ERROR_BUCKET);
+                    Log::warning($filename, "permission_denied");
+                    Error::register("Permission Denied", static::ERROR_BUCKET);
                 } else {
                     chmod($filename, 0664);
                 }
@@ -256,7 +262,8 @@ class ImageCanvas
                 }
 
                 if (!is_writable(dirname($filename)) || imagepng($this->cvs_res, $filename) === false) {
-                    Error::register("Permission Denied: " . $filename, static::ERROR_BUCKET);
+                    Log::warning($filename, "permission_denied");
+                    Error::register("Permission Denied", static::ERROR_BUCKET);
                 } else {
                     chmod($filename, 0664);
                 }

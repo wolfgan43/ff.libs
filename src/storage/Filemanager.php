@@ -64,7 +64,7 @@ class Filemanager implements Dumpable
      * @param null|integer $expire
      * @return FilemanagerAdapter
      */
-    public static function getInstance($filemanagerAdapter, $file = null, $var = null, $expire = null)
+    public static function getInstance(string $filemanagerAdapter, string $file = null, string $var = null, int $expire = null) : FilemanagerAdapter
     {
         if ($filemanagerAdapter && !isset(self::$singletons[$filemanagerAdapter])) {
             $class_name                                                 = static::NAME_SPACE . "Filemanager" . ucfirst($filemanagerAdapter);
@@ -743,6 +743,7 @@ class Filemanager implements Dumpable
 
     /**
      * @param string $url
+     * @param array|null $params
      * @param string $method
      * @param int $timeout
      * @param bool $ssl_verify
@@ -750,17 +751,19 @@ class Filemanager implements Dumpable
      * @param array|null $cookie
      * @param string|null $username
      * @param string|null $password
+     * @param array|null $headers
      * @return string
      */
-    public static function fileGetContent(string $url, string $method = "POST", int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null) : string
+    public static function fileGetContent(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : string
     {
-        $context                            = self::streamContext($url, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password);
+        $context                            = self::streamContext($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers);
 
         return self::loadFile($url, $context);
     }
 
     /**
      * @param string $url
+     * @param array|null $params
      * @param string $method
      * @param int $timeout
      * @param bool $ssl_verify
@@ -768,15 +771,38 @@ class Filemanager implements Dumpable
      * @param array|null $cookie
      * @param string|null $username
      * @param string|null $password
-     * @return array
+     * @param array|null $headers
+     * @return array|null
      */
-    public static function fileGetContentWithHeaders(string $url, string $method = "POST", int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null) : array
+    public static function fileGetContentJson(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : ?array
     {
-        $context                            = self::streamContext($url, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password);
-        $content                            = self::loadFile($url, $context, $headers);
+        $res                                = self::fileGetContent($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers);
+        return ($res
+            ? json_decode($res, true)
+            : null
+        );
+    }
+    /**
+     * @param string $url
+     * @param array|null $params
+     * @param string $method
+     * @param int $timeout
+     * @param bool $ssl_verify
+     * @param string|null $user_agent
+     * @param array|null $cookie
+     * @param string|null $username
+     * @param string|null $password
+     * @param array|null $headers
+     * @return array|null
+     */
+    public static function fileGetContentWithHeaders(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : ?array
+    {
+        $response_headers                   = array();
+        $context                            = self::streamContext($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers);
+        $content                            = self::loadFile($url, $context, $response_headers);
 
         return array(
-            "headers" => self::parseResponseHeaders($headers),
+            "headers" => self::parseResponseHeaders($response_headers),
             "content" => $content
         );
     }
@@ -815,6 +841,7 @@ class Filemanager implements Dumpable
         if ($content === false) {
             Error::register("File inaccessible: " . ($path ? $path : "empty"));
         }
+
         if (isset($http_response_header) && isset($headers)) {
             $headers                        = $http_response_header;
         }
@@ -825,6 +852,7 @@ class Filemanager implements Dumpable
 
     /**
      * @param string $url
+     * @param array|null $params
      * @param string $method
      * @param int $timeout
      * @param bool $ssl_verify
@@ -832,9 +860,10 @@ class Filemanager implements Dumpable
      * @param array|null $cookie
      * @param string|null $username
      * @param string|null $password
+     * @param array|null $headers
      * @return resource
      */
-    private static function streamContext(string &$url, string $method = "POST", int $timeout = 60, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null)
+    private static function streamContext(string &$url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 60, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null)
     {
         if (!$username) {
             $username                       = Kernel::$Environment::HTTP_AUTH_USERNAME;
@@ -843,20 +872,24 @@ class Filemanager implements Dumpable
             $password                       = Kernel::$Environment::HTTP_AUTH_SECRET;
         }
         if (!$method) {
-            $method                         = "POST";
+            $method                         = Request::METHOD_POST;
         }
 
-        $headers                            = array();
-        if ($method == "POST") {
+        $headers                            = (
+            $headers
+            ? array_combine(array_keys($headers), explode("&", str_replace("=", ": ", http_build_query($headers))))
+            : array()
+        );
+
+        if ($method == Request::METHOD_POST) {
             $headers[]                      = "Content-type: application/x-www-form-urlencoded";
         }
-        if (strpos($url, Request::hostname()) !== false
-            && $username) {
-            $headers[]                      = "Authorization: Basic " . base64_encode($username . ":" . $password);
+        if (strpos($url, Request::hostname()) !== false && $username) {
+            $headers["Authorization"]       = "Authorization: Basic " . base64_encode($username . ":" . $password);
         }
 
         if ($cookie) {
-            $headers[]                      = "Cookie: " . http_build_query($cookie, '', '; ');
+            $headers["Cookie"]              = "Cookie: " . http_build_query($cookie, '', '; ');
         }
 
         $opts = array(
@@ -866,22 +899,45 @@ class Filemanager implements Dumpable
             ),
             'http'                          => array(
                 'method'  			        => $method,
-                'timeout'  			        => $timeout
+                'timeout'  			        => $timeout,
+                'ignore_errors'             => true
             )
         );
         if ($user_agent) {
             $opts['http']['user_agent']     = $user_agent;
         }
-        if (count($headers)) {
+        if ($headers) {
             $opts['http']['header']         = implode("\r\n", $headers);
         }
 
-        if (strpos($url, "?") !== false && $method == "POST") {
-            $query                          = explode("?", $url, 2);
-            $url                            = $query[0];
-            $opts["http"]["content"]        = $query[1];
+        $params                             = self::getQueryByUrl($url, $params);
+        if (count($params)) {
+            $query_string                   = http_build_query($params);
+            if ($method == Request::METHOD_POST) {
+                $opts["http"]["content"]    = $query_string;
+            } else {
+                $url                        .= "?" . $query_string;
+            }
         }
 
         return stream_context_create($opts);
+    }
+
+    /**
+     * @param string $url
+     * @param array|null $params
+     * @return array|null
+     */
+    public static function getQueryByUrl(string &$url, array $params = null) : array
+    {
+        $url_params                         = array();
+        if (strpos($url, "?") !== false) {
+            $query                          = explode("?", $url, 2);
+            $url                            = $query[0];
+            if (!empty($query[1])) {
+                parse_str($query[1], $url_params);
+            }
+        }
+        return array_replace((array) $params, $url_params);
     }
 }

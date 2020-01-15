@@ -68,7 +68,7 @@ abstract class Mappable
      * @param string $name
      * @param string|null $prefix
      */
-    private function loadMap(string $name, string $prefix = null) : void
+    protected function loadMap(string $name, string $prefix = null) : void
     {
         Debug::stopWatch("mapping/" . $prefix . "_" . $name);
 

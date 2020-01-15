@@ -36,6 +36,7 @@ use Exception;
 class Debug
 {
     const ERROR_BUCKET                      = "exception";
+    private const MAX_PAD                   = 40;
     private const RUNNER_EXCLUDE            = array(
                                                 "index"     => true,
                                                 "Kernel"    => true,
@@ -316,7 +317,11 @@ class Debug
             $class_name = basename(str_replace("\\", "/", $trace["class"]));
             if (isset($trace["file"])) {
                 $caller = $class_name . "::" . $trace["function"];
-                $res[] =  $caller . str_repeat(" ", 40 - strlen($caller)) .  " ==> " . str_replace(Constant::DOCUMENT_ROOT . DIRECTORY_SEPARATOR, "", $trace["file"]) . ":" . $trace["line"];
+                $pad = self::MAX_PAD - strlen($caller);
+                if ($pad < 0) {
+                    $pad = 0;
+                }
+                $res[] =  $caller . str_repeat(" ", $pad) .  " ==> " . str_replace(Constant::DOCUMENT_ROOT . DIRECTORY_SEPARATOR, "", $trace["file"]) . ":" . $trace["line"];
             } else {
                 $operation = (
                     isset($trace["class"])

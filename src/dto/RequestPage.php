@@ -35,7 +35,7 @@ class RequestPage extends Mappable
      */
     public $rules           = null;
 
-    public $headers         = array();
+    private $headers        = array();
     private $body           = null;
 
 
@@ -69,12 +69,32 @@ class RequestPage extends Mappable
     }
 
     /**
+     * @param string $name
+     * @param mixed|null $value
+     * @return RequestPage
+     */
+    public function setHeader(string $name, $value = null) : self
+    {
+        $this->headers[$name]         = $value;
+
+        return $this;
+    }
+    /**
+     * @return array
+     */
+    public function getHeaders() : array
+    {
+        return $this->headers;
+    }
+
+    /**
      * @return bool
      */
     public function issetRequest() : bool
     {
         return (!empty($this->body));
     }
+
     /**
      * @param string $scope
      * @return array
@@ -147,7 +167,11 @@ class RequestPage extends Mappable
      */
     public function setUnknown(array $request) : self
     {
-        $this->body[self::REQUEST_UNKNOWN] = array_diff_key($request, $this->body[self::REQUEST_VALID]);
+        $this->body[self::REQUEST_UNKNOWN] = (
+            isset($this->body[self::REQUEST_VALID])
+            ? array_diff_key($request, $this->body[self::REQUEST_VALID])
+            : $request
+        );
 
         return $this;
     }

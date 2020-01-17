@@ -501,6 +501,13 @@ class Request implements Configurable, Dumpable
     /**
      * @return stdClass
      */
+    public static function headers() : stdClass
+    {
+        return (object) self::captureHeaders();
+    }
+    /**
+     * @return stdClass
+     */
     public static function rawdata(): stdClass
     {
         return (object) self::body(RequestPage::REQUEST_RAWDATA);
@@ -603,14 +610,6 @@ class Request implements Configurable, Dumpable
             unset($_GET);
             unset($_POST);
         }
-    }
-
-    /**
-     * @return stdClass
-     */
-    public static function headers() : stdClass
-    {
-        return (object) self::captureHeaders();
     }
 
 
@@ -1079,7 +1078,7 @@ class Request implements Configurable, Dumpable
                     $header_name                                                        = "HTTP_" . strtoupper($header_key);
                 }
 
-                $page->headers[$header_key]                                             = null;
+                $page->setHeader($header_key);
                 if (isset($rule["required"]) && !isset($_SERVER[$header_name])) {
                     $errors[400][]                                                      = $rule["name"] . " is required";
                 } elseif (isset($rule["required_ifnot"]) && !isset($_SERVER["HTTP_" . strtoupper($rule["required_ifnot"])]) && !isset($_SERVER[$header_name])) {
@@ -1100,7 +1099,7 @@ class Request implements Configurable, Dumpable
                         $errors[$validator->status][]                                   = $validator->error;
                     }
 
-                    $page->headers[$header_key]                                         = $_SERVER[$header_name];
+                    $page->setHeader($header_key, $_SERVER[$header_name]);
                 }
             }
         } else {
@@ -1234,8 +1233,8 @@ class Request implements Configurable, Dumpable
         $errors                                                                         = array();
         if (is_array($_FILES) && count($_FILES)) {
             foreach ($_FILES as $file_name => $file) {
-                if (isset($page->rules->body[$file_name]) && $page->rules->body[$file_name]["validator"] != "file") {
-                    $errors[400][]                                                      = $file_name . " must be type " . $page->rules->body[$file_name]["validator"];
+                if (isset($page->rules->body[$file_name]["mime"]) && strpos($page->rules->body[$file_name]["mime"], $file["type"]) === false) {
+                    $errors[400][]                                                      = $file_name . " must be type " . $page->rules->body[$file_name]["mime"];
                 } else {
                     $validator                                                          = Validator::is($file_name, $file_name, "file");
                     if ($validator->isError()) {
@@ -1315,7 +1314,7 @@ class Request implements Configurable, Dumpable
             }
         }
 
-        return self::$page->headers;
+        return self::$page->getHeaders();
     }
 
     /**

@@ -318,7 +318,7 @@ class Response
         if (strpos($destination, DIRECTORY_SEPARATOR) !== 0 && strpos($destination, "http") !== 0) {
             $destination                            = Request::protocol() . $destination;
         }
-        if (Request::protocol_host() . $_SERVER["REQUEST_URI"] != $destination) {
+        if (Request::protocolHost() . $_SERVER["REQUEST_URI"] != $destination) {
             header("Location: " . $destination, true, $http_response_code);
             if (is_array($headers) && count($headers)) {
                 foreach ($headers as $key => $value) {

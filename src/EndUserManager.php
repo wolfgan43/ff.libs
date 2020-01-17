@@ -43,11 +43,11 @@ trait EndUserManager
     /**
      * @todo da tipizzare
      * @param string $name
-     * @param null|string $value
+     * @param mixed|null $value
      * @param bool $permanent
      * @return mixed|null
      */
-    public static function env(string $name, string $value = null, bool $permanent = false)
+    public static function env(string $name, $value = null, bool $permanent = false)
     {
         return ($value === null
             ? Env::get($name)
@@ -136,6 +136,22 @@ trait EndUserManager
 
         return Database::dump();
     }
+
+    /**
+     * @param bool $return
+     * @return array
+     */
+    public static function dumpAjaxContent(bool $return = false) : array
+    {
+        if (!$return) {
+            print_r(Filemanager::dump());
+            exit;
+        }
+
+        return Filemanager::dump();
+    }
+
+
     /**
      * @param string $code
      * @param null|string $language

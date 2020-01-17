@@ -25,11 +25,6 @@ class Kernel
     public static $Environment      = null;
 
     /**
-     * @var dto\RequestPage
-     */
-    public $configuration           = null;
-
-    /**
      * @var Debug
      */
     public $Debug                   = Debug::class;
@@ -121,9 +116,7 @@ class Kernel
          * @var App $app
          */
         $app                        = static::NAMESPACE . "App";
-        $app::$Environment          =& $this::$Environment;
-
-        $this->configuration        =& Request::pageConfiguration();
+        $app::construct($this::$Environment, Request::pageConfiguration());
 
         Config::autoloadRegister();
 

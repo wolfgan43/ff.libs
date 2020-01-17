@@ -684,7 +684,7 @@ class Media implements Configurable
         $url                                                        = $dirfilename . ($arrFile["filename"] && $mode ? "-" : "") . $mode . ($arrFile["extension"] ? "." . $arrFile["extension"] : "") . $query;
         return array(
             "url"                   => $url,
-            "web_url"               => Request::protocol_host() . $url,
+            "web_url"               => Request::protocolHost() . $url,
             "extension"             => $arrFile["extension"],
             "file"                  => $dirfilename,
             "mode"                  => $mode

@@ -35,22 +35,11 @@ use stdClass;
  */
 abstract class DataAdapter
 {
-    private const INTERNAL_SERVER_ERROR     = "Internal Server Error";
+    use Exceptionable;
 
     const CONTENT_TYPE                      = null;
 
-    /**
-     * @var string
-     */
-    public $error                           = "";
-    /**
-     * @var int
-     */
-    public $status                          = 0;
-    /**
-     * @var mixed|null
-     */
-    private $debug                           = array();
+
 
     abstract public function output();
 
@@ -66,14 +55,17 @@ abstract class DataAdapter
     /**
      * @return array
      */
-    protected function getVars() : array
+    protected function getObjectVars() : array
     {
-        $vars                               = get_object_vars($this);
-        if (!Debug::isEnabled()) {
-            unset($vars["debug"]);
-        } else {
-            $vars["debug"]["exTime - App"]  = Debug::exTimeApp();
-        }
+        return get_object_vars($this);
+    }
+    /**
+     * @return array
+     */
+    private function getVars() : array
+    {
+        $vars                               = $this->getObjectVars();
+        $this->setDebugger($vars);
 
         return $vars;
     }
@@ -90,7 +82,7 @@ abstract class DataAdapter
      */
     public function toObject() : ?stdClass
     {
-        $vars = get_object_vars($this);
+        $vars                               = $this->getObjectVars();
         unset($vars["status"]);
         unset($vars["error"]);
         unset($vars["debug"]);
@@ -101,79 +93,16 @@ abstract class DataAdapter
         );
     }
     /**
-     * @todo da tipizzare
-     * @return false|string
+     * @return string
      */
-    public function toJson()
+    public function toJson() : string
     {
-        return json_encode($this->getVars());
+        return (string) json_encode($this->getVars());
     }
 
-    /**
-     * @param int $status
-     * @param string|null $msg
-     * @param null $debug
-     * @return $this
-     */
-    public function error(int $status, string $msg = null, $debug = null) : self
-    {
-        $this->status                       = $status;
-        $this->setError($msg);
-        if ($debug) {
-            $this->debug($debug);
-        }
 
-        return $this;
-    }
 
-    /**
-     * @param string|null $msg
-     */
-    private function setError(string $msg = null) : void
-    {
-        if (Debug::isEnabled() || $this->status < 500) {
-            $this->error                        = (
-                $this->error
-                    ? $this->error . " "
-                    : ""
-                ) . $msg;
-        } else {
-            $this->error = self::INTERNAL_SERVER_ERROR;
-        }
-    }
 
-    /**
-     * @param int|null $code
-     * @return bool
-     */
-    public function isError(int $code = null) : bool
-    {
-        return (bool) (
-            $code
-            ? isset($this->status[$code])
-            : $this->status
-        );
-    }
-
-    /**
-     * @param mixed $data
-     * @param string|null $bucket
-     * @return $this
-     * @todo da tipizzare
-     */
-    public function debug($data, string $bucket = null) : self
-    {
-        if (!empty($data)) {
-            if ($bucket) {
-                $this->debug[$bucket] = $data;
-            } elseif (is_array($data)) {
-                $this->debug = array_replace($this->debug, $data);
-            } else {
-                array_push($this->debug, $data);
-            }
-        }
-        return $this;
-    }
 
     /**
      * @param array $values
@@ -259,21 +188,5 @@ abstract class DataAdapter
         unset($this->$key);
 
         return $this;
-    }
-
-    /**
-     * @return string
-     */
-    public function toLog() : string
-    {
-        /*$message = $this->error;
-        if (!$message) {
-            $message = (
-                $this::CONTENT_TYPE == "application/json"
-                    ? $this->toJson()
-                    : $this::CONTENT_TYPE
-            );
-        }*/
-        return $this->error;
     }
 }

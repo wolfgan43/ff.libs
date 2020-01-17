@@ -26,7 +26,9 @@
 namespace phpformsframework\libs\tpl;
 
 use phpformsframework\libs\dto\DataHtml;
+use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\EndUserManager;
+use stdClass;
 
 /**
  * Class Widget
@@ -54,15 +56,25 @@ abstract class Widget
     private $config                             = array();
 
     /**
+     * @param stdClass $request
      * @return array
      */
-    abstract protected function getConfigDefault() : array;
+    abstract protected function getConfigDefault(stdClass $request) : array;
 
     /**
      * @param array $config
-     * @param string $callToAction
+     * @param stdClass $request
+     * @param bool $isAjax
+     * @return mixed
      */
-    abstract protected function controller(array &$config, string $callToAction);
+    abstract protected function controller(array &$config, stdClass $request, bool $isAjax) : void;
+
+    /**
+     * @param array $config
+     * @param stdClass $request
+     * @return DataResponse|null
+     */
+    abstract protected function callToAction(array &$config, stdClass $request);
 
     /**
      * @param View $view
@@ -77,7 +89,7 @@ abstract class Widget
      */
     public function __construct(string $name, array $config = null)
     {
-        $this->config                           = array_replace_recursive($this->getConfigDefault(), (array) $config);
+        $this->config                           = array_replace_recursive($this->getConfigDefault($this->request()->rawdata()), (array) $config);
         $this->name                             = $name;
     }
 
@@ -178,7 +190,20 @@ abstract class Widget
      */
     public function render(string $return = null) : DataHtml
     {
-        $this->controller($this->getConfig(), $this->request()->method());
+        switch ($this->request()->method()) {
+            case $this->request()::METHOD_POST:
+            case $this->request()::METHOD_PUT:
+            case $this->request()::METHOD_PATCH:
+            case $this->request()::METHOD_DELETE:
+                //@todo da gestire l'oggetto nella request direttamente
+                $response = $this->callToAction($this->getConfig(), $this->request()->rawdata());
+                if ($response) {
+                    $this->response()->send($response);
+                }
+            default:
+                $this->controller($this->getConfig(), $this->request()->rawdata(), $this->request()->isAjax());
+        }
+
         if (!$this->html) {
             $this->view("index", $this->getConfig());
         }
@@ -213,9 +238,9 @@ abstract class Widget
         ]);
     }
     /**
-     * @return FrameworkCss|null
+     * @return FrameworkCss
      */
-    protected function gridSystem() : ?FrameworkCss
+    protected function gridSystem() : FrameworkCss
     {
         if (!self::$grid_system) {
             self::$grid_system = Gridsystem::getInstance();

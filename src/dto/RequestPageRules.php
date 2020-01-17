@@ -17,20 +17,27 @@ class RequestPageRules
         $this->last_update  = microtime(true);
     }
 
-    public function set($pageRules)
+    /**
+     * @param array $pageRules
+     */
+    public function set(array $pageRules) : void
     {
         if (isset($pageRules["header"])) {
-            $this->setVar($pageRules["header"], $this->header);
+            $this->setVar($this->header, $pageRules["header"]);
         }
         if (isset($pageRules["query"])) {
-            $this->setVar($pageRules["query"], $this->query);
+            $this->setVar($this->query, $pageRules["query"]);
         }
         if (isset($pageRules["body"])) {
-            $this->setVar($pageRules["body"], $this->body);
+            $this->setVar($this->body, $pageRules["body"]);
         }
     }
 
-    private function setVar($rules, &$vars)
+    /**
+     * @param array|null $rules
+     * @param array $vars
+     */
+    private function setVar(array &$vars, array $rules = null) : void
     {
         $vars = array_replace((array) $rules, $vars);
     }

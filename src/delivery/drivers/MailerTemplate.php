@@ -341,7 +341,7 @@ final class MailerTemplate extends Mailer
             case "link":
                 $link = $value;
                 if (strpos($value, "http") === 0) {
-                    $link = Request::protocol_host() . substr($link, 4);
+                    $link = Request::protocolHost() . substr($link, 4);
                 }
 
                 $res = $this->link_to_tagA($link, $value);

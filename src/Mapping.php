@@ -8,14 +8,18 @@ trait Mapping
 {
     /**
      * @param array $map
+     * @param object|null $obj
      */
-    private function autoMapping(array $map) : void
+    protected function autoMapping(array $map, object &$obj = null) : void
     {
-        $has                    = get_object_vars($this);
+        if (!$obj) {
+            $obj =& $this;
+        }
+        $has                    = get_object_vars($obj);
         $properties             = array_intersect_key($map, $has);
 
         foreach ($properties as $key => $value) {
-            $this->$key         = $value;
+            $obj->$key         = $value;
         }
     }
 }

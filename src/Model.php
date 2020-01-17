@@ -109,7 +109,7 @@ class Model implements Configurable, Dumpable
      */
     private static function fillByRequest(array $model) : array
     {
-        $request                                                = Request::rawdata();
+        $request                                                = (array) Request::rawdata();
         if (is_array($request) && count($request)) {
             $request_key                                        = array();
             $request_value                                      = array();

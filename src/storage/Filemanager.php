@@ -44,6 +44,7 @@ class Filemanager implements Dumpable
     private static $singletons                                          = null;
     private static $storage                                             = null;
     private static $scanExclude                                         = null;
+    private static $cache                                               = null;
     /**
      * @var null|callable $callback
      */
@@ -80,8 +81,9 @@ class Filemanager implements Dumpable
     public static function dump() : array
     {
         return array(
-            "patterns"  => self::$patterns
-            , "storage" =>  self::$storage
+            "patterns"      => self::$patterns,
+            "storage"       =>  self::$storage,
+            "content"       =>  self::$cache,
         );
     }
 
@@ -756,9 +758,17 @@ class Filemanager implements Dumpable
      */
     public static function fileGetContent(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : string
     {
+        $key                                = self::normalizeUrlAndParams($method, $url, $params);
         $context                            = self::streamContext($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers);
+        $location                           = (
+            strpos($url, "http") === 0
+            ? "remote"
+            : "local"
+        );
 
-        return self::loadFile($url, $context);
+        self::$cache[$location][$key] = self::loadFile($url, $context);
+
+        return self::$cache[$location][$key];
     }
 
     /**
@@ -798,15 +808,42 @@ class Filemanager implements Dumpable
     public static function fileGetContentWithHeaders(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : ?array
     {
         $response_headers                   = array();
+        $key                                = self::normalizeUrlAndParams($method, $url, $params);
         $context                            = self::streamContext($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers);
-        $content                            = self::loadFile($url, $context, $response_headers);
+        $location                           = (
+            strpos($url, "http") === 0
+            ? "remote"
+            : "local"
+        );
+
+        self::$cache[$location][$key]                  = self::loadFile($url, $context, $response_headers);
 
         return array(
             "headers" => self::parseResponseHeaders($response_headers),
-            "content" => $content
+            "content" => self::$cache[$location][$key]
         );
     }
 
+    /**
+     * @param string $method
+     * @param string $url
+     * @param array|null $params
+     * @return string
+     */
+    private static function normalizeUrlAndParams(string $method, string &$url, array &$params = null) : string
+    {
+        $params                             = self::getQueryByUrl($url, $params);
+        $key                                = $url;
+        if (count($params)) {
+            $key                            .= "?" . http_build_query($params);
+            if ($method != Request::METHOD_POST) {
+                $url                        = $key;
+                $params                     = null;
+            }
+        }
+
+        return strtoupper($method) . ":" . $key;
+    }
     /**
      * @param array $headers
      * @return array
@@ -863,7 +900,7 @@ class Filemanager implements Dumpable
      * @param array|null $headers
      * @return resource
      */
-    private static function streamContext(string &$url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 60, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null)
+    private static function streamContext(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 60, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null)
     {
         if (!$username) {
             $username                       = Kernel::$Environment::HTTP_AUTH_USERNAME;
@@ -910,14 +947,8 @@ class Filemanager implements Dumpable
             $opts['http']['header']         = implode("\r\n", $headers);
         }
 
-        $params                             = self::getQueryByUrl($url, $params);
-        if (count($params)) {
-            $query_string                   = http_build_query($params);
-            if ($method == Request::METHOD_POST) {
-                $opts["http"]["content"]    = $query_string;
-            } else {
-                $url                        .= "?" . $query_string;
-            }
+        if ($params && $method == Request::METHOD_POST) {
+            $opts["http"]["content"]    = http_build_query($params);
         }
 
         return stream_context_create($opts);

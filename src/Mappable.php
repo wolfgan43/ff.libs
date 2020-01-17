@@ -38,14 +38,14 @@ abstract class Mappable
     /**
      * @todo da tipizzare
      * Mappable constructor.
-     * @param $map
+     * @param $map|null
      * @param string|null $prefix
      */
-    public function __construct($map, string $prefix = null)
+    public function __construct($map = null, string $prefix = null)
     {
         if (is_array($map)) {
             $this->autoMapping($map);
-        } else {
+        } elseif ($map) {
             $this->loadMap($map, $prefix);
         }
     }

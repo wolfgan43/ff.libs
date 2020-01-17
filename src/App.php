@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs;
 
+use phpformsframework\libs\dto\RequestPage;
 use phpformsframework\libs\tpl\Widget;
 
 /**
@@ -39,18 +40,29 @@ abstract class App implements Dumpable
     const ERROR_BUCKET                                              = 'app';
 
     private static $script_engine                                   = null;
-
     /**
      * @var Constant
      */
-    public static $Environment                                      = null;
+    private static $configuration                                   = null;
 
     /**
-     * @return dto\RequestPage
+     * @param string $environment
+     * @param RequestPage $configuration
      */
-    protected static function &configuration()
+    public static function construct(string $environment, RequestPage $configuration)
     {
-        return self::Server()->configuration;
+        self::$configuration                                        = new $environment();
+
+        self::$configuration->page                                  = $configuration;
+    }
+
+
+    /**
+     * @return Constant
+     */
+    public static function &configuration()
+    {
+        return self::$configuration;
     }
 
     /**
@@ -61,7 +73,7 @@ abstract class App implements Dumpable
     {
         return array(
             "isRunnedAs"    => self::$script_engine,
-            "Configuration" => self::Server()->configuration,
+            "Configuration" => self::$configuration,
             "Vars"          => Env::get(),
             "userVars"      => $userVars,
             "Environment"   => '*protected*'

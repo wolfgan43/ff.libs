@@ -28,6 +28,7 @@ namespace phpformsframework\libs\dto;
 
 use phpformsframework\libs\Mapping;
 use stdClass;
+
 /**
  * Class DataResponse
  * @package phpformsframework\libs\dto
@@ -38,12 +39,12 @@ class DataResponse extends DataAdapter
 
     const CONTENT_TYPE              = "application/json";
 
-
+    private $outputOnlyBody          = false;
 
     /**
      * @var array
      */
-    public $data                    = array();
+    private $data                    = array();
 
     /**
      * DataResponse constructor.
@@ -57,7 +58,6 @@ class DataResponse extends DataAdapter
             parent::__construct($data);
         }
     }
-
 
     /**
      * @param array $values
@@ -141,14 +141,36 @@ class DataResponse extends DataAdapter
     }
 
     /**
-     * @todo da tipizzare
-     * @return false|string
+     * @param bool $onlyBody
+     * @return DataAdapter
      */
-    public function output()
+    public function outputMode(bool $onlyBody = false) : DataAdapter
+    {
+        $this->outputOnlyBody = $onlyBody;
+
+        return $this;
+    }
+    /**
+     * @return string
+     */
+    public function output() : string
     {
         return $this->toJson();
     }
-
+    /**
+     * @return array
+     */
+    protected function getObjectVars() : array
+    {
+        return ($this->outputOnlyBody
+            ? $this->data
+            : [
+                "data"      => $this->data,
+                "error"     => $this->error,
+                "status"    => $this->status
+            ]
+        );
+    }
     /**
      * @return array
      */

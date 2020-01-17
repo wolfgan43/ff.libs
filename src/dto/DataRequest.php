@@ -42,6 +42,6 @@ class DataRequest extends Mappable
      */
     public function __construct()
     {
-        parent::__construct(Request::rawdata());
+        parent::__construct((array) Request::rawdata());
     }
 }

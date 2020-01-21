@@ -21,7 +21,7 @@ trait Exceptionable
     /**
      * @var mixed|null
      */
-    private $debug                           = array();
+    private static $debug                           = array();
 
     /**
      * @param int|null $code
@@ -78,11 +78,11 @@ trait Exceptionable
     {
         if (!empty($data)) {
             if ($bucket) {
-                $this->debug[$bucket] = $data;
+                self::$debug[$bucket] = $data;
             } elseif (is_array($data)) {
-                $this->debug = array_replace($this->debug, $data);
+                self::$debug = array_replace(self::$debug, $data);
             } else {
-                array_push($this->debug, $data);
+                array_push(self::$debug, $data);
             }
         }
         return $this;
@@ -96,7 +96,8 @@ trait Exceptionable
         if (!Debug::isEnabled()) {
             unset($vars["debug"]);
         } else {
-            $vars["debug"]["exTime - App"]  = Debug::exTimeApp();
+            $vars["debug"]                      = self::$debug;
+            $vars["debug"]["exTime - App"]      = Debug::exTimeApp();
         }
     }
 

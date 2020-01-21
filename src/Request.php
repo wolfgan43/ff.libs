@@ -27,7 +27,6 @@
 namespace phpformsframework\libs;
 
 use phpformsframework\libs\dto\RequestPage;
-use phpformsframework\libs\dto\RequestPageRules;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\security\Buckler;
 use phpformsframework\libs\security\Validator;
@@ -312,60 +311,6 @@ class Request implements Configurable, Dumpable
     }
 
     /**
-     * @param string $path_info
-     * @param array $page
-     * @return array|null
-     */
-    private static function findPageByRouter(string $path_info, array &$page): ?array
-    {
-        $router = Router::find($path_info);
-        do {
-            if (isset(self::$pages[$path_info])) {
-                $page = array_replace(self::$pages[$path_info]["config"], $page);
-            }
-            $path_info = dirname($path_info);
-        } while ($path_info != DIRECTORY_SEPARATOR);
-
-        return $router;
-    }
-
-    /**
-     * @param string $path_info
-     * @return RequestPage
-     */
-    private static function findPageByPathInfo(string $path_info) : RequestPage
-    {
-        $page = array();
-        $page_path = self::findEnvByPathInfo($path_info);
-        $router = self::findPageByRouter($page_path, $page);
-        //@todo da verificare se e corretto il self::$path_info e la differenza tra self::$path_info
-        //@todo e se ha senso la diff tra self::$orig_path_info e self::$path_info
-        $page["path_info"] = (
-            isset($page["strip_path"]) && strpos(self::$path_info, $page["strip_path"]) === 0
-            ? substr(self::$path_info, strlen($page["strip_path"]))
-            : self::$path_info
-        );
-        if (!$page["path_info"]) {
-            $page["path_info"] = DIRECTORY_SEPARATOR;
-        }
-
-        if (is_array(self::$patterns) && count(self::$patterns)) {
-            $matches = null;
-            foreach (self::$patterns as $pattern => $rule) {
-                if (preg_match(Router::regexp($pattern), $page["path_info"], $matches)) {
-                    $page = (
-                        $router["path"] == $page["path_info"]
-                        ? array_replace($rule, $page)
-                        : array_replace($page, $rule)
-                    );
-                }
-            }
-        }
-
-        return new RequestPage($page, self::setRulesByPage($page_path));
-    }
-
-    /**
      *
      */
     private static function urlVerify()
@@ -390,7 +335,8 @@ class Request implements Configurable, Dumpable
     {
         self::rewritePathInfo();
 
-        self::$page = self::findPageByPathInfo(self::$orig_path_info);
+        Router::find(self::$orig_path_info);
+        self::$page = self::getPage(self::$orig_path_info);
 
         Log::setRoutine(self::$page->log);
 
@@ -625,39 +571,6 @@ class Request implements Configurable, Dumpable
             ? self::$page->getRequest($scope)
             : self::captureBody($scope, $method)
         );
-    }
-    /**
-     * @param
-     *
-     * $rules = array(
-     * "header"            => ""
-     * , "body"            => ""
-     * , "last_update"     => ""
-     * , "method"          => ""
-     * , "exts"            => ""
-     * , "navigation"      => ""
-     * , "select"          => ""
-     * , "default"         => ""
-     * , "order"           => ""
-     * );
-     */
-
-    /**
-     * @param string $path_info
-     * @return RequestPageRules
-     */
-    private static function setRulesByPage(string $path_info): RequestPageRules
-    {
-        $rules = new RequestPageRules();
-        $request_path = $path_info;
-
-        do {
-            if (isset(self::$pages[$request_path])) {
-                $rules->set(self::$pages[$request_path]);
-            }
-        } while ($request_path != DIRECTORY_SEPARATOR && $request_path = dirname($request_path));
-
-        return $rules;
     }
 
     /**
@@ -1355,24 +1268,18 @@ class Request implements Configurable, Dumpable
 
     /**
      * @param string $path_info
-     * @param array $request
+     * @param array|null $request
      * @return RequestPage
      */
-    public static function getPage(string $path_info, array $request) : RequestPage
+    public static function getPage(string $path_info, array $request = null) : RequestPage
     {
-        $config = [
-            "path_info" => $path_info,
-            "method" => (
-                isset(self::$pages[$path_info]["config"]["method"])
-                ? self::$pages[$path_info]["config"]["method"]
-                : self::METHOD_POST
-            )
-        ];
+        $page_path = self::findEnvByPathInfo($path_info);
 
-        $page = new RequestPage($config, self::setRulesByPage($path_info));
+        $page = new RequestPage($page_path, self::$pages);
 
-        self::securityParams($request, $page->method, $page);
-
+        if ($request) {
+            self::securityParams($request, $page->method, $page);
+        }
         return $page;
     }
 

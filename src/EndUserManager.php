@@ -144,11 +144,11 @@ trait EndUserManager
     public static function dumpAjaxContent(bool $return = false) : array
     {
         if (!$return) {
-            print_r(Filemanager::dump());
+            print_r(Filemanager::dumpContent());
             exit;
         }
 
-        return Filemanager::dump();
+        return Filemanager::dumpContent();
     }
 
 

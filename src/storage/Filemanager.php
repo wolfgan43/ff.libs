@@ -45,6 +45,7 @@ class Filemanager implements Dumpable
     private static $storage                                             = null;
     private static $scanExclude                                         = null;
     private static $cache                                               = null;
+
     /**
      * @var null|callable $callback
      */
@@ -82,11 +83,22 @@ class Filemanager implements Dumpable
     {
         return array(
             "patterns"      => self::$patterns,
-            "storage"       =>  self::$storage,
-            "content"       =>  self::$cache,
+            "storage"       => self::$storage,
+            "contents"      => self::$cache
         );
     }
 
+    /**
+     * @param string $type
+     * @return array
+     */
+    public static function dumpContent(string $type = "remote") : array
+    {
+        return (isset(self::$cache[$type])
+            ? self::$cache[$type]
+            : null
+        );
+    }
     /**
      * @param string $content
      * @param string $file
@@ -760,13 +772,14 @@ class Filemanager implements Dumpable
     {
         $key                                = self::normalizeUrlAndParams($method, $url, $params);
         $context                            = self::streamContext($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers);
+
         $location                           = (
             strpos($url, "http") === 0
             ? "remote"
             : "local"
         );
 
-        self::$cache[$location][$key] = self::loadFile($url, $context);
+        self::$cache[$location][$key]       = self::loadFile($url, $context);
 
         return self::$cache[$location][$key];
     }

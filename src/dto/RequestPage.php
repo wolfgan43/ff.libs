@@ -3,6 +3,7 @@ namespace phpformsframework\libs\dto;
 
 use phpformsframework\libs\Mappable;
 use phpformsframework\libs\Request;
+use phpformsframework\libs\Router;
 
 /**
  * Class ConfigPage
@@ -16,8 +17,8 @@ class RequestPage extends Mappable
     public const REQUEST_VALID     = "valid";
     public const REQUEST_UNKNOWN   = "unknown";
 
-
     public $path_info       = null;
+    public $script_path     = null;
 
     public $log             = null;
     public $validation      = true;
@@ -41,13 +42,14 @@ class RequestPage extends Mappable
 
     /**
      * RequestPage constructor.
-     * @param string|array $map
-     * @param RequestPageRules $rules
+     * @param string $script_path
+     * @param array $pages
+     * @param array|null $patterns
      */
-    public function __construct($map, RequestPageRules $rules)
+    public function __construct(string $script_path, array $pages, array $patterns = null)
     {
-        parent::__construct($map);
-        $this->rules        = $rules;
+        parent::__construct($this->setRules($script_path, $pages, $patterns));
+
         $this->method       = (
             $this->method
             ? strtoupper($this->method)
@@ -55,6 +57,65 @@ class RequestPage extends Mappable
         );
     }
 
+    /**
+     * @param string $path_info
+     * @param array $pages
+     * @param array|null $patterns
+     * @return array
+     */
+    private function setRules(string $path_info, array $pages, array $patterns = null): array
+    {
+        $config                     = array();
+        $script_path                = null;
+        $rules                      = new RequestPageRules();
+        do {
+            if (isset($pages[$path_info])) {
+                $config     = array_replace($pages[$path_info]["config"], $config);
+                if (!$script_path) {
+                    $script_path    = $path_info;
+                }
+                $rules->set($pages[$path_info]);
+            }
+        } while ($path_info != DIRECTORY_SEPARATOR && $path_info = dirname($path_info));
+
+        $this->rules                = $rules;
+        $this->script_path          = $script_path;
+        $this->path_info            = str_replace($script_path, "", Request::pathinfo());
+
+        $this->setPattern($config, $patterns);
+
+        return $config;
+    }
+
+    /**
+     * @param array $config
+     * @param array $patterns
+     */
+    private function setPattern(array &$config, array $patterns = null) : void
+    {
+        if ($patterns) {
+            foreach ($patterns as $pattern => $rule) {
+                if (preg_match(Router::regexp($pattern), $this->script_path, $matches)) {
+                    $config = (
+                        !$this->path_info
+                        ? array_replace($rule, $config)
+                        : array_replace($config, $rule)
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * @param string $path_info
+     * @return RequestPage
+     */
+    public function setPathInfo(string $path_info) : self
+    {
+        $this->path_info = $path_info;
+
+        return $this;
+    }
     /**
      * @param array|null $errors
      */

@@ -92,7 +92,7 @@ class Filemanager implements Dumpable
      * @param string $type
      * @return array
      */
-    public static function dumpContent(string $type = "remote") : array
+    public static function dumpContent(string $type = "remote") : ?array
     {
         return (isset(self::$cache[$type])
             ? self::$cache[$type]

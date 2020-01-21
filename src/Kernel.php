@@ -116,10 +116,21 @@ class Kernel
          * @var App $app
          */
         $app                        = static::NAMESPACE . "App";
-        $app::construct($this::$Environment, Request::pageConfiguration());
+        $page                       =& Request::pageConfiguration();
+        $app::construct($this::$Environment, $page);
+
+        if (Env::get("REQUEST_SECURITY_LEVEL")) {
+            Hook::handle("on_app_run", $this);
+        }
+
+        if ($page->validation && $page->isInvalidURL()) {
+            $this->Response->redirect($page->canonicalUrl());
+        }
+
+        self::useCache(!$page->nocache);
 
         Config::autoloadRegister();
 
-        Router::run();
+        Router::run($app::configuration()->page->script_path);
     }
 }

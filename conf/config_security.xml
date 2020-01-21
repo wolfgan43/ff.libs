@@ -4,6 +4,9 @@
         <REQUEST_SECURITY_LEVEL value="1" />
         <RESPONSE_SECURITY_LEVEL value="1" />
     </env>
+    <hooks>
+        <hook name="on_app_run" obj="\phpformsframework\libs\security\Buckler" method="antiVulnerabilityScanner" />
+    </hooks>
     <badpath>
         <rule source="^/cache*"                         destination="404" />
         <rule source="^/uploads*"                       destination="404" />

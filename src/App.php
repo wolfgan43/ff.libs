@@ -47,13 +47,13 @@ abstract class App implements Dumpable
 
     /**
      * @param string $environment
-     * @param RequestPage $configuration
+     * @param RequestPage $page_configuration
      */
-    public static function construct(string $environment, RequestPage $configuration)
+    public static function construct(string $environment, RequestPage &$page_configuration)
     {
         self::$configuration                                        = new $environment();
 
-        self::$configuration->page                                  = $configuration;
+        self::$configuration->page                                  =& $page_configuration;
     }
 
 

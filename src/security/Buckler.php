@@ -86,11 +86,54 @@ class Buckler implements Configurable
             "rules"     => self::$rules
         );
     }
-    public static function protectMyAss()
+    public static function antiVulnerabilityScanner()
     {
         self::checkLoadAvg();
         self::checkAllowedPath();
     }
+
+    public static function antiDenialOfService()
+    {
+
+    }
+
+    public static function antiManInTheMiddle()
+    {
+
+    }
+    public static function antiPhishing()
+    {
+
+    }
+    public static function antiDriveByAttack()
+    {
+
+    }
+    public static function antiPasswordAttack()
+    {
+
+    }
+    public static function antiSqlInjection()
+    {
+
+    }
+    public static function antiCrossSiteScripting()
+    {
+
+    }
+    public static function antiEavesdroppingAttack()
+    {
+
+    }
+    public static function antiBirthdayAttack()
+    {
+
+    }
+    public static function antiMalwareAttack()
+    {
+
+    }
+
     private static function checkLoadAvg()
     {
         if (function_exists("sys_getloadavg")) {

@@ -141,7 +141,7 @@ trait EndUserManager
      * @param bool $return
      * @return array
      */
-    public static function dumpAjaxContent(bool $return = false) : array
+    public static function dumpAjaxContent(bool $return = false) : ?array
     {
         if (!$return) {
             print_r(Filemanager::dumpContent());

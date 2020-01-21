@@ -4,6 +4,7 @@ namespace phpformsframework\libs\dto;
 use phpformsframework\libs\Mappable;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\Router;
+use phpformsframework\libs\security\Validator;
 
 /**
  * Class ConfigPage
@@ -13,9 +14,18 @@ class RequestPage extends Mappable
 {
     use Exceptionable { error as private setErrorDefault; }
 
-    public const REQUEST_RAWDATA   = "rawdata";
-    public const REQUEST_VALID     = "valid";
-    public const REQUEST_UNKNOWN   = "unknown";
+    private const MAX_SIZE        = array(
+                                        Request::METHOD_GET     => 256,
+                                        Request::METHOD_PUT     => 10240,
+                                        Request::METHOD_POST    => 10240,
+                                        Request::METHOD_HEAD    => 2048,
+                                        "DEFAULT"               => 128,
+                                        "FILES"                 => 1024000
+                                    );
+
+    public const REQUEST_RAWDATA    = "rawdata";
+    public const REQUEST_VALID      = "valid";
+    public const REQUEST_UNKNOWN    = "unknown";
 
     public $path_info       = null;
     public $script_path     = null;
@@ -36,19 +46,23 @@ class RequestPage extends Mappable
      */
     public $rules           = null;
 
+    private $path2params    = array();
+
     private $headers        = array();
     private $body           = null;
 
 
+
     /**
      * RequestPage constructor.
-     * @param string $script_path
+     * @param string $path_info
      * @param array $pages
+     * @param array|null $path2params
      * @param array|null $patterns
      */
-    public function __construct(string $script_path, array $pages, array $patterns = null)
+    public function __construct(string $path_info, array $pages, array $path2params = null, array $patterns = null)
     {
-        parent::__construct($this->setRules($script_path, $pages, $patterns));
+        parent::__construct($this->setRules($this->findEnvByPathInfo($path_info, $path2params), $pages, $patterns));
 
         $this->method       = (
             $this->method
@@ -66,12 +80,13 @@ class RequestPage extends Mappable
     private function setRules(string $path_info, array $pages, array $patterns = null): array
     {
         $config                     = array();
-        $script_path                = null;
+        $script_path                = DIRECTORY_SEPARATOR;
         $rules                      = new RequestPageRules();
+        $orig_path_info             = $path_info;
         do {
             if (isset($pages[$path_info])) {
-                $config     = array_replace($pages[$path_info]["config"], $config);
-                if (!$script_path) {
+                $config             = array_replace($pages[$path_info]["config"], $config);
+                if ($script_path == DIRECTORY_SEPARATOR) {
                     $script_path    = $path_info;
                 }
                 $rules->set($pages[$path_info]);
@@ -80,13 +95,38 @@ class RequestPage extends Mappable
 
         $this->rules                = $rules;
         $this->script_path          = $script_path;
-        $this->path_info            = str_replace($script_path, "", Request::pathinfo());
+        $this->path_info            = str_replace($script_path, "", $orig_path_info);
 
         $this->setPattern($config, $patterns);
 
         return $config;
     }
 
+    /**
+     * @param string $path_info
+     * @param array|null $path2params
+     * @return string
+     */
+    private function findEnvByPathInfo(string $path_info, array $path2params = null): string
+    {
+        $path_info                  = rtrim($path_info, "/");
+        if (!$path_info) {
+            $path_info              = DIRECTORY_SEPARATOR;
+        }
+
+        if ($path2params) {
+            foreach ($path2params as $page_path => $params) {
+                if (preg_match_all($params["regexp"], $path_info, $matches)) {
+                    $this->path2params = array_combine($params["matches"], $matches[1]);
+
+                    $path_info = $page_path;
+                    break;
+                }
+            }
+        }
+
+        return $path_info;
+    }
     /**
      * @param array $config
      * @param array $patterns
@@ -107,15 +147,22 @@ class RequestPage extends Mappable
     }
 
     /**
-     * @param string $path_info
-     * @return RequestPage
+     *
      */
-    public function setPathInfo(string $path_info) : self
+    public function isInvalidURL() : bool
     {
-        $this->path_info = $path_info;
-
-        return $this;
+        return $this->method == Request::METHOD_GET && !Request::isAjax() && count($this->getRequestUnknown());
     }
+
+    /**
+     * @return string
+     */
+    public function canonicalURL() : string
+    {
+        $query = http_build_query($this->getRequestValid());
+        return Request::protocolHostPathinfo() . ($query ? "?" . $query : "");
+    }
+
     /**
      * @param array|null $errors
      */
@@ -235,5 +282,255 @@ class RequestPage extends Mappable
         );
 
         return $this;
+    }
+
+    /**
+     * @param array $server
+     * @return bool
+     */
+    public function loadHeaders(array $server) : bool
+    {
+        return $this->securityHeaderParams($server);
+    }
+
+    /**
+     * @param array $request
+     * @return bool
+     */
+    public function loadRequest(array $request) : bool
+    {
+        return $this->securityParams($this->path2params + $request, $this->method);
+    }
+    /**
+     * @return bool
+     */
+    public function loadRequestFile() : bool
+    {
+        return $this->securityFileParams();
+    }
+
+    /**
+     * @param array $headers
+     * @return bool
+     */
+    private function securityHeaderParams(array $headers) : bool
+    {
+        $errors                                                                         = null;
+        if ($this->isAllowedSize($this->getRequestHeaders(), Request::METHOD_HEAD)) {
+            foreach ($this->rules->header as $rule) {
+                $header_key                                                             = str_replace("-", "_", $rule["name"]);
+                if ($rule["name"] == "Authorization") {
+                    $header_name                                                        = "Authorization";
+                } else {
+                    $header_name                                                        = "HTTP_" . strtoupper($header_key);
+                }
+
+                $this->setHeader($header_key);
+                if (isset($rule["required"]) && !isset($headers[$header_name])) {
+                    $errors[400][]                                                      = $rule["name"] . " is required";
+                } elseif (isset($rule["required_ifnot"]) && !isset($headers["HTTP_" . strtoupper($rule["required_ifnot"])]) && !isset($headers[$header_name])) {
+                    $errors[400][]                                                      = $rule["name"] . " is required";
+                } elseif (isset($headers[$header_name])) {
+                    $validator_rule                                                     = (
+                        isset($rule["validator"])
+                        ? $rule["validator"]
+                        : null
+                    );
+                    $validator_range                                                    = (
+                        isset($rule["validator_range"])
+                        ? $rule["validator_range"]
+                        : null
+                    );
+                    $validator                                                          = Validator::is($headers[$header_name], $header_key . " (in header)", $validator_rule, $validator_range);
+                    if ($validator->isError()) {
+                        $errors[$validator->status][]                                   = $validator->error;
+                    }
+
+                    $this->setHeader($header_key, $headers[$header_name]);
+                }
+            }
+        } else {
+            $errors[413][]                                                              = "Headers Max Size Exeeded";
+        }
+
+        $this->error($errors);
+
+        return $this->isError();
+    }
+
+    /**
+     * @param array $request
+     * @param string $method
+     * @return bool
+     */
+    private function securityParams(array $request, string $method) : bool
+    {
+        $errors                                                                         = array();
+        $bucket                                                                         = $this->bucketByMethod($method);
+        if ($this->isAllowedSize($request, $method) && $this->isAllowedSize($this->getRequestHeaders(), Request::METHOD_HEAD)) {
+            if (is_array($this->rules->$bucket) && count($this->rules->$bucket) && is_array($request)) {
+                foreach ($this->rules->$bucket as $rule) {
+                    if (isset($rule["required"]) && $rule["required"] === true && !isset($request[$rule["name"]])) {
+                        $errors[400][]                                                  = $rule["name"] . " is required";
+                    } elseif (isset($rule["required_ifnot"]) && !isset($_SERVER[$rule["required_ifnot"]]) && !isset($request[$rule["name"]])) {
+                        $errors[400][]                                                  = $rule["name"] . " is required";
+                    } elseif (isset($request[$rule["name"]])) {
+                        $validator_rule                                                 = (
+                            isset($rule["validator"])
+                            ? $rule["validator"]
+                            : null
+                        );
+                        $validator_range                                                = (
+                            isset($rule["validator_range"])
+                            ? $rule["validator_range"]
+                            : null
+                        );
+
+                        $errors                                                         = $errors + $this->securityValidation($request[$rule["name"]], $rule["name"], $validator_rule, $validator_range);
+
+
+                        if (isset($rule["scope"])) {
+                            $this->setRequest($rule["scope"], $request[$rule["name"]], $rule["name"]);
+                        }
+                        if (!isset($rule["hide"]) || $rule["hide"] === false) {
+                            $this->setRequest(self::REQUEST_VALID, $request[$rule["name"]], $rule["name"]);
+                        } else {
+                            unset($request[$rule["name"]]);
+                        }
+                    } else {
+                        $request[$rule["name"]]                                         = $this->getDefault($rule);
+                        $this->setRequest(self::REQUEST_VALID, $request[$rule["name"]], $rule["name"]);
+                        if (isset($rule["scope"])) {
+                            $this->setRequest($rule["scope"], $request[$rule["name"]], $rule["name"]);
+                        }
+                    }
+                }
+
+                $this->setRequest(self::REQUEST_RAWDATA, $request);
+                $this->setUnknown($request);
+                foreach ($this->getRequestUnknown() as $unknown_key => $unknown) {
+                    $errors                                                             = $errors + $this->securityValidation($unknown, $unknown_key);
+                }
+            }
+        } else {
+            $errors[413][]                                                              = "Request Max Size Exeeded";
+        }
+
+        $this->error($errors);
+
+        return $this->isError();
+    }
+
+
+    /**
+     * @return bool
+     */
+    private function securityFileParams() : bool
+    {
+        $errors                                                                         = array();
+        if (is_array($_FILES) && count($_FILES)) {
+            foreach ($_FILES as $file_name => $file) {
+                if (isset($this->rules->body[$file_name]["mime"]) && strpos($this->rules->body[$file_name]["mime"], $file["type"]) === false) {
+                    $errors[400][]                                                      = $file_name . " must be type " . $this->rules->body[$file_name]["mime"];
+                } else {
+                    $validator                                                          = Validator::is($file_name, $file_name, "file");
+                    if ($validator->isError()) {
+                        $errors[$validator->status][] = $validator->error;
+                    }
+                }
+            }
+        }
+
+        $this->error($errors);
+
+        return $this->isError();
+    }
+
+    /**
+     * @todo da tipizzare
+     * @param $value
+     * @param string $fakename
+     * @param string|null $type
+     * @param string|null $range
+     * @return array
+     */
+    private function securityValidation(&$value, string $fakename, string $type = null, string $range = null) : array
+    {
+        $errors                                                                         = array();
+
+        $validator                                                                      = Validator::is($value, $fakename, $type, $range);
+        if ($validator->isError()) {
+            $errors[$validator->status][]                                               = $validator->error;
+        }
+
+
+        return $errors;
+    }
+
+
+    /**
+     * @todo da tipizzare
+     * @param array $rule
+     * @return mixed|null
+     */
+    private function getDefault(array $rule)
+    {
+        $res = null;
+        if (isset($rule["default"])) {
+            $res = $rule["default"];
+        } elseif (isset($rule["validator"])) {
+            $res = Validator::getDefault($rule["validator"]);
+        }
+        return $res;
+    }
+
+    /**
+     * @param array $req
+     * @param string $method
+     * @return bool
+     */
+    private function isAllowedSize(array $req, string $method) : bool
+    {
+        $request_size                                                                           = strlen(http_build_query($req, '', ''));
+
+        $max_size                                                                               = self::MAX_SIZE;
+        $request_max_size                                                                       = (
+            isset($max_size[$method])
+            ? $max_size[$method]
+            : $max_size["DEFAULT"]
+        );
+        return $request_size < $request_max_size;
+    }
+
+    /**
+     * @param string $method
+     * @return string
+     */
+    private function bucketByMethod(string $method) : string
+    {
+        return ($method == Request::METHOD_GET || $method == Request::METHOD_PUT
+            ? "query"
+            : "body"
+        );
+    }
+
+    /**
+     * @return array
+     */
+    private function getRequestHeaders() : array
+    {
+        if (function_exists("getallheaders")) {
+            $headers = getallheaders();
+        } else {
+            $headers = array();
+            foreach ($_SERVER as $key => $value) {
+                if (substr($key, 0, 5) <> 'HTTP_') {
+                    continue;
+                }
+                $header = str_replace(' ', '-', ucwords(str_replace('_', ' ', strtolower(substr($key, 5)))));
+                $headers[$header] = $value;
+            }
+        }
+        return $headers;
     }
 }

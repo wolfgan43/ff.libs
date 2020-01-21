@@ -32,9 +32,11 @@ namespace phpformsframework\libs;
  */
 class Hook implements Configurable, Dumpable
 {
-    const HOOK_PRIORITY_HIGH                                                        = 1000;
-    const HOOK_PRIORITY_NORMAL                                                      = 100;
-    const HOOK_PRIORITY_LOW                                                         = 10;
+    private const ERROR_BUCKET                                                      = "hook";
+
+    public const HOOK_PRIORITY_HIGH                                                 = 1000;
+    public const HOOK_PRIORITY_NORMAL                                               = 100;
+    public const HOOK_PRIORITY_LOW                                                  = 10;
 
     private static $events                                                          = array();
 
@@ -70,9 +72,11 @@ class Hook implements Configurable, Dumpable
                 $attr                                                               = Dir::getXmlAttr($hook);
                 $func                                                               = $attr["obj"] . "::" . $attr["method"];
 
-
-
-                self::register($attr["name"], $func);
+                if (empty($attr["override"])) {
+                    self::register($attr["name"], $func);
+                } else {
+                    self::registerOnce($attr["name"], $func);
+                }
             }
         }
 
@@ -97,12 +101,41 @@ class Hook implements Configurable, Dumpable
      */
     public static function register($name, callable $func, int $priority = self::HOOK_PRIORITY_NORMAL) : void
     {
+        self::addCallback($name, $func, $priority);
+    }
+
+    /**
+     * AddHook
+     * @param string $name
+     * @param callable $func
+     * @param int $priority
+     */
+    public static function registerOnce($name, callable $func, int $priority = self::HOOK_PRIORITY_NORMAL) : void
+    {
+        self::addCallback($name, $func, $priority, true);
+    }
+
+    /**
+     * @param $name
+     * @param callable $func
+     * @param int $priority
+     * @param bool $override
+     */
+    private static function addCallback($name, callable $func, int $priority = self::HOOK_PRIORITY_NORMAL, bool $override = false) : void
+    {
         if (is_callable($func)) {
             Debug::dumpCaller("addHook::" . $name);
             if (!isset(self::$events[$name])) {
-                self::$events[$name]                                                = array();
+                self::$events[$name]                                                    = array();
             }
-            self::$events[$name][$priority + count((array)self::$events[$name])]    = $func;
+
+            if ($override) {
+                self::$events[$name]                                                    = array($priority => $func);
+            } else {
+                self::$events[$name][$priority + count((array)self::$events[$name])]    = $func;
+            }
+        } else {
+            Error::registerWarning($name . " not is a function: " . $func, static::ERROR_BUCKET);
         }
     }
 
@@ -117,6 +150,7 @@ class Hook implements Configurable, Dumpable
     public static function handle(string $name, &$ref = null, $params = null)
     {
         $res                                                                        = null;
+
         if (isset(self::$events[$name]) && is_array(self::$events[$name])) {
             krsort(self::$events[$name], SORT_NUMERIC);
             foreach (self::$events[$name] as $func) {

@@ -52,8 +52,10 @@ class PageHtml extends Mappable
 {
     use AssetsManager;
 
-    const NEWLINE                               = "\n";
-    const MAIN_CONTENT                          = "content";
+    protected const NEWLINE                     = "\n";
+    protected const MAIN_CONTENT                = "content";
+    protected const TITLE_DEFAULT               = "Home";
+
 
     private $encoding                           = Constant::ENCODING;
     private $path                               = null;
@@ -215,6 +217,17 @@ class PageHtml extends Mappable
     }
 
     /**
+     * @return string
+     */
+    private function getTileDefault()
+    {
+        return ($this->path && $this->path != DIRECTORY_SEPARATOR
+            ? ucfirst(basename($this->path))
+            : static::TITLE_DEFAULT
+        );
+    }
+
+    /**
      * @param bool $include_appname
      * @return string
      */
@@ -223,7 +236,7 @@ class PageHtml extends Mappable
         $res                                    = (
             $this->title
                                                     ? $this->title
-                                                    : ucfirst(basename($this->path))
+                                                    : $this->getTileDefault()
                                                 );
         if ($include_appname) {
             $res                                .= " - " . Kernel::$Environment::APPNAME;

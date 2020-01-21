@@ -34,7 +34,15 @@ use phpformsframework\libs\international\Data;
  */
 abstract class DatabaseDriver
 {
-    const ERROR_BUCKET              = "database";
+    protected const ERROR_BUCKET    = Database::ERROR_BUCKET;
+
+    public const ACTION_READ        = "read";
+    public const ACTION_DELETE      = "delete";
+    public const ACTION_INSERT      = "insert";
+    public const ACTION_UPDATE      = "update";
+
+    public const CMD_COUNT          = "count";
+    public const CMD_PROCESS_LIST   = "processlist";
 
     protected static $_dbs 	        = array();
 
@@ -61,8 +69,6 @@ abstract class DatabaseDriver
     abstract public static function factory();
     abstract public static function freeAll();
 
-    abstract protected function id2object($value);
-
     /**
      * @param string|null $Database
      * @param string|null $Host
@@ -73,38 +79,35 @@ abstract class DatabaseDriver
     abstract public function connect(string $Database = null, string $Host = null, string $User = null, string $Secret = null) : bool;
 
     /**
-     * @param array $query
-     * @param string|null $table
+     * @param DatabaseQuery $query
      * @return bool
      */
-    abstract public function insert(array $query, string $table = null) : bool;
+    abstract public function read(DatabaseQuery $query) : bool;
 
     /**
-     * @param array $query
-     * @param string|null $table
+     * @param DatabaseQuery $query
      * @return bool
      */
-    abstract public function update(array $query, string $table = null) : bool;
+    abstract public function insert(DatabaseQuery $query) : bool;
 
     /**
-     * @param array $query
-     * @param string|null $table
+     * @param DatabaseQuery $query
      * @return bool
      */
-    abstract public function delete(array $query, string $table = null) : bool;
+    abstract public function update(DatabaseQuery $query) : bool;
 
     /**
-     * @param array|string $query
+     * @param DatabaseQuery $query
      * @return bool
      */
-    abstract public function query(array $query) : bool;
+    abstract public function delete(DatabaseQuery $query) : bool;
 
     /**
-     * @param string $name
-     * @param array $query
+     * @param DatabaseQuery $query
+     * @param string|null $action
      * @return array|null
      */
-    abstract public function cmd(string $name = "count", array $query = null) : ?array;
+    abstract public function cmd(DatabaseQuery $query, string $action = self::CMD_COUNT) : ?array;
 
     /**
      * @param array $queries
@@ -193,27 +196,26 @@ abstract class DatabaseDriver
     /**
      * @todo da tipizzare
      * @param mixed $mixed
-     * @param string|null $type
-     * @param bool $enclose
+     * @param string $type
      * @return string
      */
-    public function toSql($mixed, string $type = null, bool $enclose = true) : string
+    public function toSql($mixed, string $type) : string
     {
         if (is_array($mixed)) {
-            $res = $this->toSqlArray($mixed, $type, $enclose);
+            $res = $this->toSqlArray($type, $mixed);
         } elseif (is_object($mixed)) {
             switch (get_class($mixed)) {
                 case DateTime::class:
-                    $res = $this->toSqlDateTime($mixed, $enclose);
+                    $res = $this->toSqlDateTime($mixed);
                     break;
                 case Data::class:
-                    $res = $this->toSqlData($mixed, $enclose);
+                    $res = $this->toSqlData($mixed);
                     break;
                 default:
-                    $res = $this->toSqlObject($mixed, $enclose);
+                    $res = $this->toSqlObject($mixed);
             }
         } else {
-            $res = $this->toSqlString($mixed, $type, $enclose);
+            $res = $this->toSqlString($type, $mixed);
         }
 
         return $res;
@@ -221,78 +223,84 @@ abstract class DatabaseDriver
 
     /**
      * @param Data $Data
-     * @param bool $enclose
      * @return string|null
      */
-    public function toSqlData(Data $Data, bool $enclose = true) : ?string
+    private function toSqlData(Data $Data) : ?string
     {
-        return $this->toSqlString($Data->getValue($Data->data_type, $this->locale), null, $enclose);
+        return $this->toSqlString(DatabaseAdapter::FTYPE_STRING, $Data->getValue($Data->data_type, $this->locale));
     }
 
     /**
+     * todo da tipizzare
      * @param array $Array
-     * @param string|null $type
-     * @param bool $enclose
+     * @param string $type
      * @return string|null
      */
-    public function toSqlArray(array $Array, string $type = null, bool $enclose = true) : ?string
+    protected function toSqlArray(string $type, array $Array)
     {
-        switch (strtolower($type)) {
+        switch ($type) {
             case DatabaseAdapter::FTYPE_ARRAY_JSON:
-                $value = json_encode($Array);
+                $value = $this->toSqlEscape(json_encode($Array));
                 break;
             case DatabaseAdapter::FTYPE_OBJECT:
-                $value = serialize($Array);
+                $value = $this->toSqlEscape(serialize($Array));
                 break;
             case DatabaseAdapter::FTYPE_ARRAY:
             case DatabaseAdapter::FTYPE_ARRAY_OF_NUMBER:
             case DatabaseAdapter::FTYPE_ARRAY_INCREMENTAL:
             default:
-                $value = implode(",", $Array);
+                $value = array_map(function ($value) {
+                    return $this->toSqlEscape($value);
+                }, $Array);
         }
 
-        return $this->toSqlString($value, null, $enclose);
+        return $value;
     }
 
     /**
      * @param object $Object
-     * @param bool $enclose
      * @return string|null
      */
-    public function toSqlObject(object $Object, bool $enclose = true) : ?string
+    private function toSqlObject(object $Object) : ?string
     {
-        return $this->toSqlString(serialize($Object), null, $enclose);
+        return $this->toSqlString(DatabaseAdapter::FTYPE_STRING, serialize($Object));
     }
 
     /**
      * @param DateTime $Object
-     * @param bool $enclose
      * @return string|null
      */
-    public function toSqlDateTime(DateTime $Object, bool $enclose = true) : ?string
+    private function toSqlDateTime(DateTime $Object) : ?string
     {
         //@todo to implement
-        return $this->toSqlString($Object, null, $enclose);
+        return $this->toSqlString(DatabaseAdapter::FTYPE_STRING, $Object->format('Y-M-d H:m:s'));
     }
     /**
-     * @param string $value
-     * @param string|null $type
-     * @param bool $enclose
+     * @param string|null $value
+     * @param string $type
      * @return string|null
      */
-    public function toSqlString(string $value, string $type = null, bool $enclose = true) : ?string
+    protected function toSqlString(string $type, string $value = null) : ?string
     {
-        switch (strtolower($type)) {
+        switch ($type) {
             case DatabaseAdapter::FTYPE_BOOLEAN:
                 $value = (bool) $value;
                 break;
             case DatabaseAdapter::FTYPE_NUMBER:
             case DatabaseAdapter::FTYPE_NUMBER_BIG:
-            case DatabaseAdapter::FTYPE_NUMBER_FLOAT:
             case DatabaseAdapter::FTYPE_NUMBER_DECIMAN:
-                if (!strlen($value)) {
-                    $value = 0;
-                }
+                $value = (
+                    strlen($value)
+                    ? (int) $this->toSqlEscape($value)
+                    : 0
+                );
+                break;
+            case DatabaseAdapter::FTYPE_NUMBER_FLOAT:
+                $value = (
+                    strlen($value)
+                    ? (float) $this->toSqlEscape($value)
+                    : 0
+                );
                 break;
             case DatabaseAdapter::FTYPE_DATE:
             case DatabaseAdapter::FTYPE_TIME:
@@ -302,10 +310,9 @@ abstract class DatabaseDriver
                     ? $this->toSqlEscape((new Data($value, $type))->getValue($type, $this->locale))
                     : Data::getEmpty($type, $this->locale)
                 );
+                break;
             default:
-                if ($enclose) {
-                    $value = "'" . $value . "'";
-                }
+                $value = $this->toSqlEscape($value);
         }
 
         return $value;

@@ -41,13 +41,12 @@ class Database implements Dumpable
 {
     use AdapterManager;
 
-    const ERROR_BUCKET                                                      = "database";
-    const NAME_SPACE                                                        = __NAMESPACE__ . '\\adapters\\';
+    public const ERROR_BUCKET                                               = "database";
+    private const NAME_SPACE                                                = __NAMESPACE__ . '\\adapters\\';
 
     public const RESULT                                                     = "result";
     public const INDEX                                                      = "index";
     public const INDEX_PRIMARY                                              = "primary";
-    public const RAWDATA                                                    = "rawdata";
     public const COUNT                                                      = "count";
 
     private static $singletons                                              = null;
@@ -61,22 +60,16 @@ class Database implements Dumpable
     /**
      * @param array $databaseAdapters
      * @param null|array $struct
-     * @param bool $rawdata
      * @return Database
      */
-    public static function getInstance(array $databaseAdapters, array $struct = null, bool $rawdata = false) : Database
+    public static function getInstance(array $databaseAdapters, array $struct = null) : Database
     {
         $key                                                                = crc32(
             serialize($databaseAdapters)
                                                                                 . "-" . $struct["table"]["name"]
-                                                                                . (
-                                                                                    $rawdata
-                                                                                    ? "-rawdata"
-                                                                                    : ""
-                                                                                )
                                                                             );
         if (!isset(self::$singletons[$key])) {
-            self::$singletons[$key]                                         = new Database($databaseAdapters, $struct, $rawdata);
+            self::$singletons[$key]                                         = new Database($databaseAdapters, $struct);
         }
 
         return self::$singletons[$key];
@@ -112,17 +105,15 @@ class Database implements Dumpable
      * @example string $databaseAdapters: mysqli OR mongodb OR ecc
      * @param array|string $databaseAdapters
      * @param array|null $struct
-     * @param bool $rawdata
      */
-    public function __construct(array $databaseAdapters = null, array $struct = null, bool $rawdata = false)
+    public function __construct(array $databaseAdapters = null, array $struct = null)
     {
         if (!$databaseAdapters) {
             $databaseAdapters[Kernel::$Environment::DATABASE_ADAPTER]       = null;
         }
 
         foreach ($databaseAdapters as $adapter => $connection) {
-            //@todo da sistemare meglio l'array params
-            $this->setAdapter($adapter, array_values($struct + array($rawdata)));
+            $this->setAdapter($adapter, array_values($struct));
         }
 
         $this->table                                                        = (
@@ -133,14 +124,14 @@ class Database implements Dumpable
     }
 
     /**
-     * @param array $query
-     * @param string[recordset|fields|num_rows] $key
+     * @todo da tipizzare
+     * @param $query
      * @return array|null
      */
-    public function rawQuery(array $query, string $key = null) : ?array
+    public function rawQuery($query) : ?array
     {
         foreach ($this->adapters as $adapter_name => $adapter) {
-            $this->result[$adapter_name]                                    = $adapter->rawQuery($query, $key);
+            $this->result[$adapter_name]                                    = $adapter->rawQuery($query);
         }
         return $this->getResult();
     }
@@ -224,15 +215,15 @@ class Database implements Dumpable
     }
 
     /**
+     * @param array $where
      * @param string $action
-     * @param array $what
      * @param null|string $table_name
      * @return array|null
      */
-    public function cmd(string $action, array $what, string $table_name = null) : ?array
+    public function cmd(array $where, string $action, string $table_name = null) : ?array
     {
         foreach ($this->adapters as $adapter_name => $adapter) {
-            $this->result[$adapter_name]                                    = $adapter->cmd($action, $what, $table_name);
+            $this->result[$adapter_name]                                    = $adapter->cmd($where, $action, $table_name);
         }
         return $this->getResult();
     }
@@ -323,6 +314,7 @@ class Database implements Dumpable
         $label                                                                      = (count(self::$cache_rawdata) + 1) . ". " . " Read => " . $table . " (" . $this->cache_key . ")";
         $value                                                                      = "From Cache";
         if (!isset(self::$cache[$this->cache_key])) {
+            self::$cache[$this->cache_key]["count"]                                 = 0;
             self::$cache[$this->cache_key]["query"]                                 = array(
                 "select"    => $fields,
                 "from"      => $table,
@@ -337,7 +329,7 @@ class Database implements Dumpable
         }
         self::$cache_rawdata[$label]                                                = $value;
 
-        self::$cache[$this->cache_key]["count"]                                     =+ 1;
+        self::$cache[$this->cache_key]["count"]++;
         if (self::$cache[$this->cache_key]["count"] > Env::get("DATABASE_MAX_RECURSION")) {
             Debug::dump("Max Recursion ("  . Env::get("DATABASE_MAX_RECURSION") . ") : " . self::$cache[$this->cache_key]["query"]);
             exit;
@@ -407,6 +399,16 @@ class Database implements Dumpable
      */
     private function cacheArray2String(array $param) : string
     {
+        /*{
+            "id": [
+            297,
+            298
+        ],
+  "start": {
+            "$gt": "020-07-29 05:49:00"
+  }
+}*/
+
         return str_replace(
             array(
                 ':{"$gt":',

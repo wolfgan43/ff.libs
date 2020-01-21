@@ -30,6 +30,7 @@ use phpformsframework\libs\Hook;
 use phpformsframework\libs\Error;
 use mysqli_result;
 use phpformsframework\libs\storage\DatabaseDriver;
+use phpformsframework\libs\storage\DatabaseQuery;
 
 /**
  * classe preposta alla gestione della connessione con database di tipo SQL
@@ -189,76 +190,110 @@ class MySqli extends DatabaseDriver
 
             static::$_dbs[$dbkey]       = $this->link_id;
             $this->link_id              =& static::$_dbs[$dbkey];
+
+            mysqli_options($this->link_id, MYSQLI_OPT_INT_AND_FLOAT_NATIVE, true);
         }
 
         return is_object($this->link_id);
     }
-
     /**
-     * @param array $query
-     * @param string|null $table
+     * @param DatabaseQuery $query
      * @return bool
      */
-    public function insert(array $query, string $table = null) : bool
+    public function read(DatabaseQuery $query) : bool
     {
-        $Query_String                   = "INSERT INTO " .  $query["from"] . "
+        $count_num_rows                                 = $query->countRecords();
+        $query_string                                   = "SELECT " .
+            (
+                $count_num_rows
+                ? " SQL_CALC_FOUND_ROWS "
+                : ""
+            ) . $query->select .
+            " FROM " .  $query->from .
+            (
+                $query->where
+                ? " WHERE " . $query->where
+                : null
+            ) .
+            (
+                $query->sort
+                ? " ORDER BY " . $query->sort
+                : null
+            ) .
+            (
+                $query->limit
+                ? " LIMIT " . $query->limit
+                : null
+            ) . (
+                $query->offset
+                ? " OFFSET " . $query->offset
+                : null
+            );
+        return $this->query($query_string);
+    }
+
+    /**
+     * @param DatabaseQuery $query
+     * @return bool
+     */
+    public function insert(DatabaseQuery $query) : bool
+    {
+        $query_string                   = "INSERT INTO " .  $query->from . "
                                             (
-                                                " . $query["insert"]["head"] . "
+                                                " . $query->insert["head"] . "
                                             ) VALUES (
-                                                " . $query["insert"]["body"] . "
+                                                " . $query->insert["body"] . "
                                             )";
 
-        return $this->execute($Query_String);
+        return $this->execute($query_string);
     }
 
     /**
-     * @param array $query
-     * @param string|null $table
+     * @param DatabaseQuery $query
      * @return bool
      */
-    public function update(array $query, string $table = null) : bool
+    public function update(DatabaseQuery $query) : bool
     {
-        $Query_String                   = "UPDATE " . $query["from"] . " SET 
-                                                " . $query["update"] . "
-                                            WHERE " . $query["where"];
+        $query_string                   = "UPDATE " . $query->from . " SET 
+                                                " . $query->update . "
+                                            WHERE " . $query->where;
 
-        return $this->execute($Query_String);
+        return $this->execute($query_string);
     }
 
     /**
-     * @param array $query
-     * @param string|null $table
+     * @param DatabaseQuery $query
      * @return bool
      */
-    public function delete(array $query, string $table = null) : bool
+    public function delete(DatabaseQuery $query) : bool
     {
-        $Query_String                   = "DELETE FROM " .  $query["from"] . "  
-                                            WHERE " . $query["where"];
+        $query_string                   = "DELETE FROM " .  $query->from . "  
+                                            WHERE " . $query->where;
 
-        return $this->execute($Query_String);
+        return $this->execute($query_string);
     }
 
     /**
      * Esegue una query senza restituire un recordset
-     * @param string $Query_String
+     * @param string $query_string
      * @return bool
      */
-    private function execute(string $Query_String) : bool
+    private function execute(string $query_string) : bool
     {
-        if (!$Query_String) {
+        if (!$query_string) {
             $this->errorHandler("Execute invoked With blank Query String");
         }
         if (!$this->link_id && !$this->connect()) {
             return false;
         }
 
-        Debug::dumpCaller($Query_String);
+        Debug::dumpCaller($query_string);
 
         $this->freeResult();
 
-        $this->query_id = @mysqli_query($this->link_id, $Query_String);
+        $this->query_id = @mysqli_query($this->link_id, $query_string);
         if ($this->checkError()) {
-            $this->errorHandler("Invalid SQL: " . $Query_String);
+            $this->errorHandler("Invalid SQL: " . $query_string);
         }
 
         $this->buffered_affected_rows = @mysqli_affected_rows($this->link_id);
@@ -277,7 +312,6 @@ class MySqli extends DatabaseDriver
         if (!$this->query_id) {
             $this->errorHandler("eachAll called with no query pending");
         }
-
         if ($obj != null) {
             $res = @mysqli_fetch_object($this->query_id, $obj);
         } else {
@@ -313,134 +347,63 @@ class MySqli extends DatabaseDriver
     }
 
     /**
-     * @param array $query
-     * @return string
-     */
-    private function querySelect(array $query) : string
-    {
-        return "SELECT " . (
-            !empty($query["calc_found_rows"])
-                ? " SQL_CALC_FOUND_ROWS "
-                : ""
-            ) . $query["select"];
-    }
-
-    /**
-     * @param array $query
-     * @return string|null
-     */
-    private function queryFrom(array $query) : ?string
-    {
-        return (isset($query["from"])
-            ? " FROM " .  $query["from"]
-            : null
-        );
-    }
-
-    /**
-     * @param array $query
-     * @return string|null
-     */
-    private function queryWhere(array $query) : ?string
-    {
-        return (isset($query["where"])
-            ? " WHERE " . $query["where"]
-            : null
-        );
-    }
-
-    /**
-     * @param array $query
-     * @return string|null
-     */
-    private function querySort(array $query) : ?string
-    {
-        return (isset($query["sort"])
-            ? " ORDER BY " . $query["sort"]
-            : null
-        );
-    }
-
-    /**
-     * @param array $query
-     * @return string|null
-     */
-    private function queryLimit(array $query) : ?string
-    {
-        return (
-                isset($query["limit"])
-                ? " LIMIT " . $query["limit"]
-                : null
-            ) . (
-                isset($query["offset"])
-                ? " OFFSET " . $query["offset"]
-                : null
-            );
-    }
-
-    /**
      * Esegue una query
-     * @param array $query
+     * @param string $query_string
      * @return bool
      */
-    public function query(array $query) : bool
+    private function query($query_string) : bool
     {
-        $Query_String                                       = $this->querySelect($query)    .
-                                                            $this->queryFrom($query)        .
-                                                            $this->queryWhere($query)       .
-                                                            $this->querySort($query)        .
-                                                            $this->queryLimit($query);
-        if (!$Query_String) {
+        if (!$query_string) {
             $this->errorHandler("Query invoked With blank Query String");
         }
         if (!$this->link_id && !$this->connect()) {
             return false;
         }
 
-        Debug::dumpCaller($Query_String);
+        Debug::dumpCaller($query_string);
 
         $this->freeResult();
 
-        $this->use_found_rows                               = strpos($Query_String, " SQL_CALC_FOUND_ROWS ") !== false;
-        $this->query_id = @mysqli_query($this->link_id, $Query_String);
+        $this->use_found_rows                               = strpos($query_string, " SQL_CALC_FOUND_ROWS ") !== false;
+        $this->query_id = @mysqli_query($this->link_id, $query_string);
         if (!$this->query_id || $this->checkError()) {
-            $this->errorHandler("Invalid SQL: " . $Query_String);
+            $this->errorHandler("Invalid SQL: " . $query_string);
         }
 
         return is_object($this->query_id);
     }
 
     /**
-     * @param string $name
-     * @param array $query
+     * @param DatabaseQuery $query
+     * @param string $action
      * @return array|null
      */
-    public function cmd(string $name = "count", array $query = null) : ?array
+    public function cmd(DatabaseQuery $query, string $action = self::CMD_COUNT) : ?array
     {
         $res = null;
-
-        if ($this->link_id || $this->connect()) {
-            switch ($name) {
-                case "count":
-                    $query["select"] = (
-                        $this->use_found_rows
-                        ? "FOUND_ROWS() AS count"
-                        : "COUNT(ID) AS count"
+        switch ($action) {
+            case self::CMD_COUNT:
+                $query_string = "SELECT COUNT(`" . $query->key_primary . "`) AS `count`" .
+                    " FROM " .  $query->from .
+                    (
+                        $query->where
+                        ? " WHERE " . $query->where
+                        : null
                     );
-                    $this->query($query);
-                    if ($this->nextRecord()) {
-                        $res = $this->record;
-                    }
-                    break;
-                case "processlist":
-                    $query["select"] = "SHOW FULL PROCESSLIST";
-                    $this->query($query);
+                if ($this->query($query_string)) {
+                    $res = $this->getRecordset()[0];
+                }
+                break;
+            case self::CMD_PROCESS_LIST:
+                $query_string = "SHOW FULL PROCESSLIST";
+                if ($this->query($query_string)) {
                     $res = $this->getRecordset();
-                    break;
-                default:
-                    $this->errorHandler("Command not supported");
-            }
+                }
+                break;
+            default:
+                $this->errorHandler("Command not supported");
         }
+
         return $res;
     }
 
@@ -454,12 +417,12 @@ class MySqli extends DatabaseDriver
             return null;
         }
 
-        $Query_String = implode("; ", $Query);
+        $query_string = implode("; ", $Query);
 
-        Debug::dumpCaller($Query_String);
+        Debug::dumpCaller($query_string);
         $this->freeResult();
 
-        mysqli_multi_query($this->link_id, $Query_String);
+        mysqli_multi_query($this->link_id, $query_string);
         $i = 0;
         $rc = null;
         do {
@@ -514,9 +477,10 @@ class MySqli extends DatabaseDriver
     {
         if ($this->num_rows === null) {
             if ($this->use_found_rows) {
-                $res = $this->cmd("count");
-                if (isset($res["count"])) {
-                    $this->num_rows = $res["count"];
+                $query_string = "SELECT FOUND_ROWS() AS count";
+                $this->query($query_string);
+                if ($this->nextRecord()) {
+                    $this->num_rows = $this->record["count"];
                 }
             } else {
                 if (!$this->query_id) {
@@ -542,12 +506,46 @@ class MySqli extends DatabaseDriver
     }
 
     /**
-     * @param string $DataValue
+     * @param string $DataValue|null
      * @return string
      */
-    protected function toSqlEscape(string $DataValue) : string
+    protected function toSqlEscape(string $DataValue = null) : string
     {
-        return mysqli_real_escape_string($this->link_id, $DataValue);
+        return mysqli_real_escape_string($this->link_id, str_replace("`", "", $DataValue));
+    }
+
+    /**
+     * @param string $type
+     * @param string|null $value
+     * @return string|null
+     */
+    protected function toSqlString(string $type, string $value = null): ?string
+    {
+        return $this->tpSqlEscaper(parent::toSqlString($type, $value));
+    }
+
+    /**
+     * @param string $type
+     * @param array $Array
+     * @return string|null
+     */
+    protected function toSqlArray(string $type, array $Array): ?string
+    {
+        $value = parent::toSqlArray($type, $Array);
+        if (is_array($value)) {
+            $value = implode("','", $value);
+        }
+
+        return $this->tpSqlEscaper($value);
+    }
+
+    /**
+     * @param string $value
+     * @return string
+     */
+    private function tpSqlEscaper(string $value) : string
+    {
+        return "'" . $value . "'";
     }
 
     /**
@@ -574,25 +572,5 @@ class MySqli extends DatabaseDriver
         $this->checkError(); // this is needed due to params order
 
         Error::register("MySQL(" . $this->database . ") - " . $msg . " #" . $this->errno . ": " . $this->error, static::ERROR_BUCKET);
-    }
-
-    /**
-     * @param string $keys
-     * @return string
-     */
-    protected function id2object($keys)
-    {
-        return $keys;
-    }
-
-    /**
-     * @param string $value
-     * @param string|null $type
-     * @param bool $enclose
-     * @return string|null
-     */
-    public function toSqlString(string $value, string $type = null, bool $enclose = true): ?string
-    {
-        return parent::toSqlString($this->toSqlEscape($value), $type, $enclose);
     }
 }

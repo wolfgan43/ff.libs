@@ -25,46 +25,39 @@
  */
 namespace phpformsframework\libs\storage;
 
-use phpformsframework\libs\Dumpable;
-
-/**
- * Class Orm
- * @package phpformsframework\libs\storage
- */
-class Orm implements Dumpable
+class DatabaseQuery
 {
-    private static $singleton                                                               = array();
+    public $action          = null;
+    public $key_primary     = null;
+    public $options         = array();
 
-    /**
-     * @param string $ormModel
-     * @param string|null $mainTable
-     * @return OrmModel
-     */
-    public static function getInstance(string $ormModel, string $mainTable = null) : OrmModel
+    public $from            = null;
+    public $select          = null;
+    public $sort            = null;
+    public $where           = null;
+    public $limit           = null;
+    public $offset          = null;
+
+    public $update          = null;
+    public $insert          = null;
+
+
+    public function __construct(string $action, string $table, string $key_primary, array $options = array())
     {
-        return self::setSingleton($ormModel, $mainTable);
+        $this->action       = $action;
+        $this->from         = $table;
+        $this->key_primary  = $key_primary;
+        $this->options      = $options;
     }
 
-    /**
-     * @return array
-     */
-    public static function dump() : array
+    public function countRecords() : bool
     {
-        return self::$singleton;
+        return $this->limit && $this->offset;
     }
 
-    /**
-     * @param string $ormModel
-     * @param string|null $mainTable
-     * @return OrmModel
-     */
-    private static function setSingleton(string $ormModel, string $mainTable = null) : OrmModel
+    public function toArray()
     {
-        if (!isset(self::$singleton[$ormModel])) {
-            self::$singleton[$ormModel]                                        = new OrmModel($ormModel, $mainTable);
-        }
-
-        return self::$singleton[$ormModel];
+        return array_filter(get_object_vars($this));
     }
 
 }

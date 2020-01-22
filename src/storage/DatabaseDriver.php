@@ -144,9 +144,9 @@ abstract class DatabaseDriver
 
     /**
      * @param string $DataValue
-     * @return string
+     * @return string|null
      */
-    abstract protected function toSqlEscape(string $DataValue) : string;
+    abstract protected function toSqlEscape(string $DataValue) : ?string;
 
     /**
      * @param string $msg
@@ -197,9 +197,9 @@ abstract class DatabaseDriver
      * @todo da tipizzare
      * @param mixed $mixed
      * @param string $type
-     * @return string
+     * @return mixed
      */
-    public function toSql($mixed, string $type) : string
+    public function toSql($mixed, string $type)
     {
         if (is_array($mixed)) {
             $res = $this->toSqlArray($type, $mixed);

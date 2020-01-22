@@ -418,7 +418,7 @@ class MongoDB extends DatabaseDriver
                 $this->errorHandler("Action not supported");
         }
 
-        return is_object($this->query_id);
+        return true;
     }
 
     /**
@@ -571,9 +571,9 @@ class MongoDB extends DatabaseDriver
 
     /**
      * @param string $DataValue|null
-     * @return string
+     * @return string|null
      */
-    protected function toSqlEscape(string $DataValue = null) : string
+    protected function toSqlEscape(string $DataValue = null) : ?string
     {
         return $DataValue;
     }

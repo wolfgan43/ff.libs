@@ -8,8 +8,6 @@ use phpformsframework\libs\Debug;
  */
 trait Exceptionable
 {
-    private $label_internal_server_error    = "Internal Server Error";
-
     /**
      * @var string
      */
@@ -48,7 +46,7 @@ trait Exceptionable
                     : ""
                 ) . $msg;
         } else {
-            $this->error = $this->label_internal_server_error;
+            $this->error = "Internal Server Error";
         }
     }
     /**

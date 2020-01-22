@@ -98,7 +98,7 @@ trait EndUserManager
      */
     public static function throwWarning(string $message) : void
     {
-        Error::register($message, static::ERROR_BUCKET);
+        Error::registerWarning($message, static::ERROR_BUCKET);
     }
 
     /**

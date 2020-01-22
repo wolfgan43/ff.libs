@@ -792,6 +792,7 @@ abstract class DatabaseAdapter
                 if ($db) {
                     $count_recordset                            = count($db[static::RESULT]);
                     if (!empty($query->limit) || $count_recordset < static::MAX_NUMROWS) {
+                        $this->index2query = array(); //@todo da correggere con .*
                         if ($count_recordset && (count($this->index2query) || count($this->to)) && $count_recordset <= static::MAX_RESULTS) {
                             foreach ($db[static::RESULT] as $record) {
                                 $res[static::RESULT][]          = $this->fields2output($record);

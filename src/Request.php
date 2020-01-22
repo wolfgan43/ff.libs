@@ -185,14 +185,10 @@ class Request implements Configurable, Dumpable
         if (is_array($config) && count($config)) {
             foreach ($config as $access_control) {
                 $attr = Dir::getXmlAttr($access_control);
-                $key = $attr["origin"];
-                if (!$key) {
+                if (!isset($attr["origin"])) {
                     continue;
                 }
-                unset($attr["origin"]);
-                if (is_array($attr) && count($attr)) {
-                    $schema[$key] = $attr;
-                }
+                $schema[$attr["origin"]] = $attr;
             }
         }
 
@@ -776,37 +772,49 @@ class Request implements Configurable, Dumpable
     {
         header('Access-Control-Allow-Methods: ' . self::$page->method);
 
-        if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']) && $origin) {
+        if ($origin) {
             $access_control = self::getAccessControl($origin);
 
             if ($access_control) {
-                if (!$access_control["allow-methods"]) {
-                    $access_control["allow-methods"] = $_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD'] . ", OPTIONS";
-                }
-                if (!$access_control["allow-headers"]) {
-                    $access_control["allow-headers"] = (
-                        isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'])
-                        ? $_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']
-                        : "*"
-                    );
-                }
-                if (!$access_control["allow-origin"]) {
-                    $access_control["allow-origin"] = "*";
-                }
-                if (isset($access_control["allow-credentials"]) && $access_control["allow-origin"] != "*") {
+                if (isset($access_control["allow-credentials"]) && $access_control["origin"] != "*") {
                     header('Access-Control-Allow-Credentials: true');
                 }
 
-                header('Access-Control-Allow-Methods: ' . $access_control["allow-methods"]); //... GET, HEAD, POST, PUT, DELETE, CONNECT, OPTIONS, TRACE, PATCH
-                header('Access-Control-Allow-Origin: ' . $access_control["allow-origin"]);
-                header('Access-Control-Allow-Headers: ' . $access_control["allow-headers"]);
-                header('Access-Control-Max-Age: 3600');
+                header('Access-Control-Allow-Origin: ' . $access_control["origin"]);
+                if (isset($access_control["allow-header"])) {
+                    header("Access-Control-Allow-Headers: {$access_control["allow-header"]}");
+                } elseif (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'])) {
+                    header("Access-Control-Allow-Headers: {$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']}");
+                }
+                header('Access-Control-Max-Age: ' . (
+                    isset($access_control["max-age"])
+                    ? $access_control["max-age"]
+                    : 3600
+                ));
                 header("Content-Type: text/plain");
+            } elseif (!isset(self::$access_control)) {
+                self::corsFree($origin);
             }
         }
         exit;
     }
 
+    /**
+     * @param string $origin
+     */
+    private static function corsFree(string $origin) : void
+    {
+        // Decide if the origin in $_SERVER['HTTP_ORIGIN'] is one
+        // you want to allow, and if so:
+        header("Access-Control-Allow-Origin: {$origin}");
+        header('Access-Control-Allow-Credentials: true');
+        if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'])) {
+            header("Access-Control-Allow-Headers: {$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']}");
+        }
+        header('Access-Control-Max-Age: 86400');    // cache for 1 day
+        header("Content-Type: text/plain");
+    }
+    
     /**
      * @return bool
      */
@@ -815,7 +823,7 @@ class Request implements Configurable, Dumpable
         if (headers_sent()) {
             return false;
         }
-        $origin = self::referer(PHP_URL_HOST, "origin");
+        $origin = self::referer(null, "origin");
         if (!$origin) {
             $origin = self::referer(PHP_URL_HOST);
         }
@@ -824,6 +832,12 @@ class Request implements Configurable, Dumpable
         //todo: remove serverSignature
         header_remove("X-Powered-By");
         header("Vary: Accept-Encoding" . ($origin ? ", Origin" : ""));
+
+
+        header('X-Content-Type-Options: nosniff');
+        header('X-XSS-Protection: 1; mode=block');
+        header('Access-Control-Allow-Headers: DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,content-type');
+
 
         switch (self::method()) {
             case self::METHOD_OPTIONS:
@@ -871,6 +885,7 @@ class Request implements Configurable, Dumpable
                 header('Access-Control-Allow-Origin: ' . $access_control["allow-origin"]);
             }
         }
+
         header('Access-Control-Allow-Methods: ' . self::$page->method . ',' . self::METHOD_OPTIONS . ',' . self::METHOD_HEAD);
 
         self::verifyInvalidRequest();

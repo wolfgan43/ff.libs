@@ -192,7 +192,7 @@ class MongoDB extends DatabaseDriver
      */
     public function read(DatabaseQuery $query) : bool
     {
-        $query->action = self::ACTION_INSERT;
+        $query->action = self::ACTION_READ;
         return $this->query($query);
     }
 
@@ -240,7 +240,7 @@ class MongoDB extends DatabaseDriver
         if (class_exists("\MongoDB\Driver\Query")) {
             $cursor = null;
             try {
-                $cursor = $this->link_id->executeQuery($this->database . "." . $this->query_params["table"], new Query($this->query_params["where"], $this->query_params["options"]));
+                $cursor = $this->link_id->executeQuery($this->database . "." . $this->query_params->from, new Query($this->query_params->where, $this->query_params->options));
             } catch (Exception $e) {
                 $this->errorHandler("Query failed: " . $e->getMessage());
             }
@@ -253,9 +253,9 @@ class MongoDB extends DatabaseDriver
                 if (!$this->use_found_rows) {
                     $this->num_rows = count($res);
                 }
-                if ($this->query_params["key_primary"]) {
+                if ($this->query_params->key_primary) {
                     foreach ($res as $key => $value) {
-                        $res[$key][$this->query_params["key_primary"]] = $this->objectID2string($res[$key][$this->key_name]);
+                        $res[$key][$this->query_params->key_primary] = $this->objectID2string($res[$key][$this->key_name]);
                         unset($res[$key][$this->key_name]);
                     }
                 }
@@ -301,7 +301,7 @@ class MongoDB extends DatabaseDriver
                         $query->options["limit"]                            = $query->limit;
                         $this->use_found_rows                               = true;
                     }
-                    if (isset($query["offset"])) {
+                    if (isset($query->offset)) {
                         $query->options["skip"]                             = $query->offset;
                         $this->use_found_rows                               = true;
                     }

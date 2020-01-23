@@ -488,7 +488,7 @@ class OrmModel extends Mappable
                         if (isset($whereRef) && count($keyValue)) {
                             $this->whereBuilder($whereRef, $keyValue, $relKey);
                         } elseif (isset($this->services_by_data["tables"][$controller . "." . $relTable])) {
-                            Error::register("Relationship found but missing keyValue in result: " . $thisTable . " => " . $thisKey . " (" . $relTable . "." . $relKey . ")");
+                            Error::register("Relationship found but missing keyValue in result. Check in configuration indexes: " . $thisTable . " => " . $thisKey . " (" . $relTable . "." . $relKey . ")");
                         }
 
                         $this->exts["rel"][$relTable][$thisTable] = $keyValue;
@@ -1093,6 +1093,9 @@ class OrmModel extends Mappable
      */
     private static function getAllFields(array $source, array $exclude = null) : array
     {
+        $diff = array_keys($source);
+        return array_combine($diff, $diff);
+
         $diff                                                                               = array_keys(array_diff_key($source, $exclude));
         return array_combine($diff, $diff);
     }

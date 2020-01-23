@@ -154,6 +154,13 @@ abstract class DatabaseDriver
     abstract protected function errorHandler(string $msg) : void;
 
     /**
+     * @todo da tipizzare
+     * @param string $value
+     * @return mixed
+     */
+    abstract protected function convertID(string $value);
+
+    /**
      *
      * @param string Nome del campo
      * @param string Tipo di dato inserito
@@ -276,43 +283,49 @@ abstract class DatabaseDriver
         return $this->toSqlString(DatabaseAdapter::FTYPE_STRING, $Object->format('Y-M-d H:m:s'));
     }
     /**
+     * @todo da tipizzare
      * @param string|null $value
      * @param string $type
      * @return string|null
      */
-    protected function toSqlString(string $type, string $value = null) : ?string
+    protected function toSqlString(string $type, string $value = null)
     {
-        switch ($type) {
-            case DatabaseAdapter::FTYPE_BOOLEAN:
-                $value = (bool) $value;
-                break;
-            case DatabaseAdapter::FTYPE_NUMBER:
-            case DatabaseAdapter::FTYPE_NUMBER_BIG:
-            case DatabaseAdapter::FTYPE_NUMBER_DECIMAN:
-                $value = (
-                    strlen($value)
-                    ? (int) $this->toSqlEscape($value)
-                    : 0
-                );
-                break;
-            case DatabaseAdapter::FTYPE_NUMBER_FLOAT:
-                $value = (
-                    strlen($value)
-                    ? (float) $this->toSqlEscape($value)
-                    : 0
-                );
-                break;
-            case DatabaseAdapter::FTYPE_DATE:
-            case DatabaseAdapter::FTYPE_TIME:
-            case DatabaseAdapter::FTYPE_DATE_TIME:
-                $value = (
-                    strlen($value)
-                    ? $this->toSqlEscape((new Data($value, $type))->getValue($type, $this->locale))
-                    : Data::getEmpty($type, $this->locale)
-                );
-                break;
-            default:
-                $value = $this->toSqlEscape($value);
+        if ($value !== null) {
+            switch ($type) {
+                case DatabaseAdapter::FTYPE_PRIMARY:
+                    $value = $this->convertID($value);
+                    break;
+                case DatabaseAdapter::FTYPE_BOOLEAN:
+                    $value = (bool) $value;
+                    break;
+                case DatabaseAdapter::FTYPE_NUMBER:
+                case DatabaseAdapter::FTYPE_NUMBER_BIG:
+                case DatabaseAdapter::FTYPE_NUMBER_DECIMAN:
+                    $value = (
+                        strlen($value)
+                        ? (int) $this->toSqlEscape($value)
+                        : 0
+                    );
+                    break;
+                case DatabaseAdapter::FTYPE_NUMBER_FLOAT:
+                    $value = (
+                        strlen($value)
+                        ? (float) $this->toSqlEscape($value)
+                        : 0
+                    );
+                    break;
+                case DatabaseAdapter::FTYPE_DATE:
+                case DatabaseAdapter::FTYPE_TIME:
+                case DatabaseAdapter::FTYPE_DATE_TIME:
+                    $value = (
+                        strlen($value)
+                        ? $this->toSqlEscape((new Data($value, $type))->getValue($type, $this->locale))
+                        : Data::getEmpty($type, $this->locale)
+                    );
+                    break;
+                default:
+                    $value = $this->toSqlEscape($value);
+            }
         }
 
         return $value;

@@ -515,6 +515,15 @@ class MySqli extends DatabaseDriver
     }
 
     /**
+     * @param string $value
+     * @return int
+     */
+    protected function convertID(string $value) : int
+    {
+        return (int) $value;
+    }
+
+    /**
      * @param string $type
      * @param string|null $value
      * @return string|null
@@ -543,7 +552,7 @@ class MySqli extends DatabaseDriver
      * @param string $value
      * @return string
      */
-    private function tpSqlEscaper(string $value) : string
+    private function tpSqlEscaper(string $value = null) : string
     {
         return "'" . $value . "'";
     }

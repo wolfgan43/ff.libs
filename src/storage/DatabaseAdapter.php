@@ -264,26 +264,27 @@ abstract class DatabaseAdapter
      */
     private function fieldWhere(array &$res, $value, string $struct_type, string $name = null, string $or = null) : void
     {
-        if (!empty($value)) {
-            if (is_array($value)) {
-                $res[$name] = $this->fieldOperations($value, $struct_type, $name);
-            } else {
-                $res[$name][self::OP_DEFAULT] = $this->fieldOperation($this->fieldIn($value, $name), $struct_type, $name, self::OP_DEFAULT);
-            }
-
-            $this->convertFieldWhere($res, $name, $or);
+        if ($this->key_primary != $this->key_name && $name == $this->key_primary) {
+            $name = $this->key_name;
         }
+        if (is_array($value)) {
+            $res[$name] = $this->fieldOperations($value, $struct_type, $name);
+        } else {
+            $res[$name][self::OP_DEFAULT] = $this->fieldOperation($this->fieldIn($name, $value), $struct_type, $name, self::OP_DEFAULT);
+        }
+
+        $this->convertFieldWhere($res, $name, $or);
     }
 
     /**
      * @todo da tipizzare
-     * @param $value
      * @param string $name
+     * @param mixed|null $value
      * @return string
      */
-    private function fieldIn($value, string $name)
+    private function fieldIn(string $name, $value = null)
     {
-        if (isset($this->in[$name])) {
+        if ($value && isset($this->in[$name])) {
             foreach ($this->in[$name] as $func => $params) {
                 $value = $this->convertWith($value, strtoupper($func), $params);
             }
@@ -293,13 +294,23 @@ abstract class DatabaseAdapter
     }
 
     /**
+     * @todo da tipizzare
      * @param $value
      * @param string $struct_type
      * @param string|null $name
      * @param string|null $op
-     * @return string
+     * @return mixed
      */
-    abstract protected function fieldOperation($value, string $struct_type, string $name = null, string $op = null) : string;
+    abstract protected function fieldOperation($value, string $struct_type, string $name = null, string $op = null);
+
+    /**
+     * @todo da tipizzare
+     * @param string $struct_type
+     * @param string $name
+     * @param string $op|null
+     * @return mixed
+     */
+    abstract protected function fieldOperationNULL(string $struct_type, string $name, string $op = null);
 
     /**
      * @param array $values
@@ -309,15 +320,15 @@ abstract class DatabaseAdapter
      */
     private function fieldOperations(array $values, string $struct_type, string $name) : ?array
     {
-        $res                                                = null;
+        $res                                = null;
 
         foreach ($values as $op => $value) {
             if (!empty(self::OPERATOR_COMPARISON[$op])) {
-                $res[$op] = $this->fieldOperation($this->fieldIn($value, $name), $struct_type, $name, $op);
+                $res[$op]                   = $this->fieldOperation($this->fieldIn($name, $value), $struct_type, $name, $op);
             }
         }
         if (!$res) {
-            $res[self::OP_ARRAY_DEFAULT] = $this->fieldOperation($this->fieldIn($values, $name), $struct_type, $name, self::OP_ARRAY_DEFAULT);
+            $res[self::OP_ARRAY_DEFAULT]    = $this->fieldOperation($this->fieldIn($name, $values), $struct_type, $name, self::OP_ARRAY_DEFAULT);
         }
         return $res;
     }
@@ -329,23 +340,23 @@ abstract class DatabaseAdapter
      */
     protected function querySelect(array $fields = null)
     {
-        $res                            = $this->setIndex2Query();
-        if (!$fields) {
-            $fields                     = array_fill_keys(array_keys(array_diff_key($this->struct, $this->indexes)), true);
-        }
+        $res                                = $this->setIndex2Query();
+        /*if (!$fields) {
+            $fields                         = array_fill_keys(array_keys(array_diff_key($this->struct, $this->indexes)), true);
+        }*/
+        if ($fields) {
+            foreach ($fields as $name => $value) {
+                if (is_bool($value) || $name == $value) {
+                    $value                  = $name;
+                    $this->converter($name);
+                } else {
+                    $this->converter($value, $name);
+                }
 
-        foreach ($fields as $name => $value) {
-            if (is_bool($value) || $name == $value) {
-                $value                  = $name;
-                $this->converter($name);
-            } else {
-                $this->converter($value, $name);
+                $res[$name]                 = $value;
+                $this->prototype[$name]     = $value;
             }
-
-            $res[$name]                 = $value;
-            $this->prototype[$name]     = $value;
         }
-
         return $res;
     }
 
@@ -416,7 +427,12 @@ abstract class DatabaseAdapter
             foreach ($fields as $name => $value) {
                 $struct_type            = $this->converter($name);
 
-                $res[$name]             = $this->driver->toSql($this->fieldIn($value, $name), $struct_type);
+                $res[$name]             = (
+                    $value === null
+                    ? $this->fieldOperationNULL($struct_type, $name)
+                    : $this->driver->toSql($this->fieldIn($name, $value), $struct_type)
+                );
+
             }
         }
         return $res;
@@ -429,23 +445,18 @@ abstract class DatabaseAdapter
      */
     protected function queryUpdate(array $fields = null)
     {
-        //aggiungere ++ -- ecc
         $res                                                = array();
         if ($fields) {
             foreach ($fields as $name => $value) {
                 $struct_type                                = $this->converter($name);
-                switch ($value) {
-                    case "++":
-                        $res[self::OP_INC_DEC][$name]       = $this->fieldOperation($this->fieldIn($value, $name), $struct_type, $name, self::OP_INC_DEC);
-                        break;
-                    case "--":
-                        $res[self::OP_INC_DEC][$name]       = $this->fieldOperation($this->fieldIn($value, $name), $struct_type, $name, self::OP_INC_DEC . '-');
-                        break;
-                    case "+":
-                        $res[self::OP_ADD_TO_SET][$name]    = $this->fieldOperation($this->fieldIn($value, $name), $struct_type, $name, self::OP_ADD_TO_SET);
-                        break;
-                    default:
-                        $res[self::OP_SET][$name]           = $this->fieldOperation($this->fieldIn($value, $name), $struct_type, $name, self::OP_SET);
+                if ($value === "++") {
+                    $res[self::OP_INC_DEC][$name]           = $this->fieldOperation($this->fieldIn($name, $value), $struct_type, $name, self::OP_INC_DEC);
+                } elseif ($value === "--") {
+                    $res[self::OP_INC_DEC][$name]           = $this->fieldOperation($this->fieldIn($name, $value), $struct_type, $name, self::OP_INC_DEC . '-');
+                } elseif ($value === "--") {
+                    $res[self::OP_ADD_TO_SET][$name]        = $this->fieldOperation($this->fieldIn($name, $value), $struct_type, $name, self::OP_ADD_TO_SET);
+                } else {
+                    $res[self::OP_SET][$name]               = $this->fieldOperation($this->fieldIn($name, $value), $struct_type, $name, self::OP_SET);
                 }
             }
         }
@@ -792,7 +803,6 @@ abstract class DatabaseAdapter
                 if ($db) {
                     $count_recordset                            = count($db[static::RESULT]);
                     if (!empty($query->limit) || $count_recordset < static::MAX_NUMROWS) {
-                        $this->index2query = array(); //@todo da correggere con .*
                         if ($count_recordset && (count($this->index2query) || count($this->to)) && $count_recordset <= static::MAX_RESULTS) {
                             foreach ($db[static::RESULT] as $record) {
                                 $res[static::RESULT][]          = $this->fields2output($record);
@@ -804,7 +814,6 @@ abstract class DatabaseAdapter
                         }
                     }
                 }
-
                 break;
             case self::ACTION_INSERT:
                 $res                                            = $this->processInsert($query);

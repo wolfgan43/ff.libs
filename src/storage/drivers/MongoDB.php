@@ -333,19 +333,6 @@ class MongoDB extends DatabaseDriver
                     $this->errorHandler("Action not supported");
             }
 
-            //@todo da sistemare
-            if (isset($query->where["ID"])) {
-                $query->where["_id"] = $this->id2object($query->where["ID"]);
-                unset($query->where["ID"]);
-                if (is_array($query->where["_id"])) {
-                    $query->where["_id"] = $query->where["_id"][0];
-                }
-            }
-
-            /*if (isset($query->where[$this->key_name])) {
-                $query->where[$this->key_name] = $this->id2object($query->where[$this->key_name]);
-            }*/
-
             $this->query_params                                             = $query;
         }
 
@@ -593,6 +580,15 @@ class MongoDB extends DatabaseDriver
     protected function errorHandler(string $msg) : void
     {
         Error::register("MongoDB(" . $this->database . ") - " . $msg . " #" . $this->errno . ": " . $this->error, static::ERROR_BUCKET);
+    }
+
+    /**
+     * @param string $value
+     * @return ObjectID
+     */
+    protected function convertID(string $value) : ObjectID
+    {
+        return $this->getObjectID($value);
     }
 
     /**

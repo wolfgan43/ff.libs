@@ -89,10 +89,25 @@ class DatabaseMongodb extends DatabaseAdapter
      * @param string $struct_type
      * @param string|null $name
      * @param string|null $op
-     * @return string
+     * @return mixed
      */
-    protected function fieldOperation($value, string $struct_type, string $name = null, string $op = null) : string
+    protected function fieldOperation($value, string $struct_type, string $name = null, string $op = null)
     {
+        if ($name == $this->key_name) {
+            $struct_type = DatabaseAdapter::FTYPE_PRIMARY;
+        }
+
         return $this->driver->toSql($value, $struct_type);
+    }
+
+    /**
+     * @param string $struct_type
+     * @param string $name
+     * @param string|null $op
+     * @return mixed|void
+     */
+    protected function fieldOperationNULL(string $struct_type, string $name, string $op = null)
+    {
+        return null;
     }
 }

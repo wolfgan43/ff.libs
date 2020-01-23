@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\storage\adapters;
 
+use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\DatabaseAdapter;
 use phpformsframework\libs\storage\drivers\MySqli as sql;
 
@@ -35,24 +36,35 @@ use phpformsframework\libs\storage\drivers\MySqli as sql;
 class DatabaseMysqli extends DatabaseAdapter
 {
     private const OPERATOR_COMPARISON   = [
-        '$gt'       => '`NAME` > `VALUE`',
-        '$gte'      => '`NAME` >= `VALUE`',
-        '$lt'       => '`NAME` < `VALUE`',
-        '$lte'      => '`NAME` <= `VALUE`',
-        '$eq'       => '`NAME` = `VALUE`',
-        '$regex'    => '`NAME` LIKE `*VALUE*`',
-        '$in'       => '`NAME` IN(`VALUE`)',
-        '$nin'      => '`NAME` NOT IN(`VALUE`)',
-        '$ne'       => '`NAME` != `VALUE`',
-        '$inset'    => 'FIND_IN_SET(`NAME`, `VALUE`)',
-        '$inc'      => '`NAME` = `NAME` + 1',
-        '$inc-'     => '`NAME` = `NAME` - 1',
-        '$addToSet' => '`NAME` = CONCAT(`NAME`, IF(`NAME` = \'\', \'\', \',\'), `VALUE`)',
-        '$set'      => '`NAME` = `VALUE`'
+        'INSERT NULL'   => 'NULL',
+        'NULL'          => '`NAME` IS NULL',
+        'NOT NULL'      => '`NAME` NOT IS NULL',
+        'SET NULL'      => '`NAME` = NULL',
+        '$gt'           => '`NAME` > `VALUE`',
+        '$gte'          => '`NAME` >= `VALUE`',
+        '$lt'           => '`NAME` < `VALUE`',
+        '$lte'          => '`NAME` <= `VALUE`',
+        '$eq'           => '`NAME` = `VALUE`',
+        '$regex'        => '`NAME` LIKE `*VALUE*`',
+        '$in'           => '`NAME` IN(`VALUE`)',
+        '$nin'          => '`NAME` NOT IN(`VALUE`)',
+        '$ne'           => '`NAME` != `VALUE`',
+        '$inset'        => 'FIND_IN_SET(`NAME`, `VALUE`)',
+        '$inc'          => '`NAME` = `NAME` + 1',
+        '$inc-'         => '`NAME` = `NAME` - 1',
+        '$addToSet'     => '`NAME` = CONCAT(`NAME`, IF(`NAME` = \'\', \'\', \',\'), `VALUE`)',
+        '$set'          => '`NAME` = `VALUE`'
     ];
-    private const CONCAT  = ", ";
-    protected const OR      = " OR ";
-    protected const AND     = " AND ";
+    private const CONCAT                                = ", ";
+    private const NULL                                  = array(
+                                                            null    => "INSERT NULL",
+                                                            '$eq'   => "NULL",
+                                                            '$ne'   => "NOT NULL",
+                                                            '$set'  => "SET NULL"
+                                                        );
+
+    protected const OR                                  = " OR ";
+    protected const AND                                 = " AND ";
 
     protected const PREFIX                              = "MYSQL_DATABASE_";
     protected const TYPE                                = "sql";
@@ -108,6 +120,51 @@ class DatabaseMysqli extends DatabaseAdapter
      */
     protected function fieldOperation($value, string $struct_type, string $name = null, string $op = null) : string
     {
+        if ($value === null) {
+            $res = $this->fieldOperationNULL($struct_type, $name, $op);
+        } else {
+            if ($name == $this->key_name) {
+                $struct_type = DatabaseAdapter::FTYPE_PRIMARY;
+            }
+
+            $res = $this->replacer(
+                $name,
+                $op,
+                $this->driver->toSql(str_replace(array("(.*)", "(.+)", ".*", ".+", "*", "+"), "%", $value), $struct_type),
+                $this->driver->toSql($value, $struct_type)
+            );
+        }
+
+        return $res;
+    }
+
+    /**
+     * @param string $struct_type
+     * @param string $name
+     * @param string $op
+     * @return string
+     */
+    protected function fieldOperationNULL(string $struct_type, string $name, string $op = null) : string
+    {
+        if (!isset(self::NULL[$op])) {
+            Error::register('Mysql: Null Operation not supported: ' . $op, static::ERROR_BUCKET);
+        }
+
+        return $this->replacer(
+            $name,
+            self::NULL[$op],
+            $this->driver->toSql(null, $struct_type)
+        );
+    }
+    /**
+     * @param string $name
+     * @param string $op
+     * @param string $valueLike
+     * @param string|null $value
+     * @return string
+     */
+    private function replacer(string $name, string $op, string $valueLike, string $value = null) : string
+    {
         return str_replace(
             array(
                 "`NAME`",
@@ -116,8 +173,8 @@ class DatabaseMysqli extends DatabaseAdapter
             ),
             array(
                 "`" . str_replace("`", "", $name) . "`",
-                $this->driver->toSql(str_replace(array("(.*)", "(.+)", ".*", ".+", "*", "+"), "%", $value), $struct_type),
-                $this->driver->toSql($value, $struct_type)
+                $valueLike,
+                $value
             ),
             self::OPERATOR_COMPARISON[$op]
         );

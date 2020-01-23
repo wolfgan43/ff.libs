@@ -24,7 +24,10 @@
  *  @link https://github.com/wolfgan43/vgallery
  */
 namespace phpformsframework\libs\storage;
-
+/**
+ * Class DatabaseQuery
+ * @package phpformsframework\libs\storage
+ */
 class DatabaseQuery
 {
     public $action          = null;
@@ -41,7 +44,13 @@ class DatabaseQuery
     public $update          = null;
     public $insert          = null;
 
-
+    /**
+     * DatabaseQuery constructor.
+     * @param string $action
+     * @param string $table
+     * @param string $key_primary
+     * @param array $options
+     */
     public function __construct(string $action, string $table, string $key_primary, array $options = array())
     {
         $this->action       = $action;
@@ -50,12 +59,18 @@ class DatabaseQuery
         $this->options      = $options;
     }
 
+    /**
+     * @return bool
+     */
     public function countRecords() : bool
     {
         return $this->limit && $this->offset;
     }
 
-    public function toArray()
+    /**
+     * @return array
+     */
+    public function toArray() : array
     {
         return array_filter(get_object_vars($this));
     }

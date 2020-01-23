@@ -253,12 +253,6 @@ class MongoDB extends DatabaseDriver
                 if (!$this->use_found_rows) {
                     $this->num_rows = count($res);
                 }
-                if ($this->query_params->key_primary) {
-                    foreach ($res as $key => $value) {
-                        $res[$key][$this->query_params->key_primary] = $this->objectID2string($res[$key][$this->key_name]);
-                        unset($res[$key][$this->key_name]);
-                    }
-                }
             }
         } else {
             $this->errorHandler("Class not found: MongoDB\Driver\Query");

@@ -432,7 +432,6 @@ abstract class DatabaseAdapter
                     ? $this->fieldOperationNULL($struct_type, $name)
                     : $this->driver->toSql($this->fieldIn($name, $value), $struct_type)
                 );
-
             }
         }
         return $res;
@@ -1017,7 +1016,23 @@ abstract class DatabaseAdapter
      */
     private function fields2output(array $record) : array
     {
-        $res = array_combine(array_values($this->prototype), array_intersect_key($record, $this->prototype));
+        //@todo da garantire l'ordinamento dei valori in output.
+        //@todo la insert di mongo sputtana tutto bisogna ordinare i campi sempre all'origine
+        $prototype = $this->prototype;
+        if ($this->key_name != $this->key_primary && isset($record[$this->key_name]) && isset($prototype[$this->key_primary])) {
+            $prototype[$this->key_name] = $prototype[$this->key_primary];
+            unset($prototype[$this->key_primary]);
+        }
+        ksort($prototype);
+        ksort($record);
+        // $res = array_intersect_key($record, $prototype);
+        $res = array_combine(array_values($prototype), array_intersect_key($record, $prototype));
+        if ($this->key_name != $this->key_primary && isset($res[$this->key_name])) {
+            //array_unshift($res, [$this->key_primary => $res[$this->key_name]]);
+            $res[$this->key_primary] =  $res[$this->key_name];
+            unset($res[$this->key_name]);
+        }
+
         if (is_array($this->to) && count($this->to)) {
             foreach ($this->to as $field => $funcs) {
                 foreach ($funcs as $func => $params) {

@@ -35,6 +35,8 @@ class Log
 {
     public const CLASS_SEP                                      = "->";
 
+    private const ENCODE_JSON                                   = "json";
+    private const ENCODE_SERIALIZE                              = "serialize";
     private const PROTECTED_MESSAGE                             = "*protected*";
     private const PROTECTED_WORDS                               = array(
                                                                     "password"  => self::PROTECTED_MESSAGE,
@@ -69,6 +71,8 @@ class Log
                                                                     "response"          => "response"
                                                                 );
     const TYPE_DEFAULT                                          = self::TYPE_NOTICE;
+
+    private static $encoding                                    = self::ENCODE_JSON;
     private static $current_routine                             = null;
     private static $current_user                                = null;
     private static $current_size                                = null;
@@ -85,7 +89,6 @@ class Log
                                                                             "size"                  => "SIZE"
                                                                         ),
                                                                         "message"                   => ' "-" "MESSAGE"',
-                                                                        "encode"                    => "json",
                                                                         "separator"                 => " - ",
                                                                         "quote_prefix"              => "",
                                                                         "quote_suffix"              => ""
@@ -101,7 +104,6 @@ class Log
                                                                             "size"                  => "SIZE"
                                                                         ),
                                                                         "message"                   => ' "-" "MESSAGE"',
-                                                                        "encode"                    => "json",
                                                                         "separator"                 => " - ",
                                                                         "quote_prefix"              => "",
                                                                         "quote_suffix"              => ""
@@ -114,7 +116,6 @@ class Log
                                                                             "remote_addr"           => "client REMOTE_ADDR:REMOTE_PORT REFERER"
                                                                         ),
                                                                         "message"                   => ' MESSAGE',
-                                                                        "encode"                    => "json",
                                                                         "separator"                 => " ",
                                                                         "quote_prefix"              => "[",
                                                                         "quote_suffix"              => "]",
@@ -450,30 +451,32 @@ class Log
      */
     private static function run($message, int $type = null, string $bucket = null, string $routine = null, string $action = null, int $status = null) : void
     {
-        $rule                                                   = self::getRoutine($type, $bucket);
-        if ($rule && self::writable($rule)) {
-            $procedure                                          = self::findProcedure($routine, $action);
+        if ($message) {
+            $rule                                               = self::getRoutine($type, $bucket);
+            if ($rule && self::writable($rule)) {
+                $procedure                                      = self::findProcedure($routine, $action);
 
-            $content                                            = self::fetchByFormat(
-                $rule["format"],
-                $message,
-                $procedure["routine"],
-                $procedure["action"],
-                $status
-            );
-            /**
-             * @todo: da finire
-             *
-             * if ($rule["unalterable"]) {
-             *    self::hashing($message, $bucket);
-             * }
-             *
-             * if ($rule["notify"]) {
-             *    self::notify($message, $bucket);
-             * }
-            */
+                $content                                        = self::fetchByFormat(
+                    $rule["format"],
+                    self::encodeMessage($message),
+                    $procedure["routine"],
+                    $procedure["action"],
+                    $status
+                );
+                /**
+                 * @todo: da finire
+                 *
+                 * if ($rule["unalterable"]) {
+                 *    self::hashing($message, $bucket);
+                 * }
+                 *
+                 * if ($rule["notify"]) {
+                 *    self::notify($message, $bucket);
+                 * }
+                */
 
-            self::set($content, $rule["bucket"], $rule["override"]);
+                self::set($content, $rule["bucket"], $rule["override"]);
+            }
         }
     }
 
@@ -569,15 +572,14 @@ class Log
     }
 
     /**
-     * @todo da tipizzare
      * @param string $format_name
-     * @param mixed|null $message
+     * @param string $message
      * @param string|null $routine
      * @param string|null $action
      * @param int|null $status
      * @return string
      */
-    private static function fetchByFormat(string $format_name, $message = null, string $routine = null, string $action = null, int $status = null) : string
+    private static function fetchByFormat(string $format_name, string $message, string $routine = null, string $action = null, int $status = null) : string
     {
         $format                                                     = self::getFormat($format_name);
         $content                                                    = self::fetch(
@@ -596,7 +598,7 @@ class Log
             $content = str_replace($format["strip"], "", $content);
         }
 
-        return $content . self::fetchMessage($message, $format["message"], $format["encode"]);
+        return $content . self::fetchMessage($message, $format["message"]);
     }
 
     /**
@@ -700,18 +702,17 @@ class Log
     /**
      * @todo da tipizzare
      * @param $message
-     * @param string|null $encode
      * @return string
      */
-    private static function encodeMessage($message, string $encode = null) : string
+    private static function encodeMessage($message) : string
     {
         if (is_array($message)) {
             $message = self::hideSensitiveData($message);
-            switch ($encode) {
-                case "json":
+            switch (self::$encoding) {
+                case self::ENCODE_JSON:
                     $message = json_encode($message);
                     break;
-                case "serialize":
+                case self::ENCODE_SERIALIZE:
                     $message = serialize($message);
                     break;
                 default:
@@ -723,17 +724,22 @@ class Log
     }
 
     /**
-     * @todo da tipizzare
-     * @param $message
+     * @param string $encode
+     */
+    public static function setEncoding(string $encode) : void
+    {
+        self::$encoding = $encode;
+    }
+    /**
+     * @param string $message
      * @param string $format
-     * @param string|null $encode
      * @return string
      */
-    private static function fetchMessage($message, string $format, string $encode = null) : string
+    private static function fetchMessage(string $message, string $format) : string
     {
         return str_replace(
             "MESSAGE",
-            self::encodeMessage($message, $encode),
+            $message,
             $format
         );
     }

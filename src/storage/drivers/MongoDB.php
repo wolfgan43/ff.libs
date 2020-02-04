@@ -385,6 +385,7 @@ class MongoDB extends DatabaseDriver
             case self::ACTION_UPDATE:
                 if (class_exists("MongoDB\Driver\BulkWrite")) {
                     $bulk = new BulkWrite();
+                    //print_r($this->query_params);
                     $bulk->update($this->query_params->where, $this->query_params->update, $this->query_params->options);
                     if (!$this->link_id->executeBulkWrite($this->database . "." . $this->query_params->from, $bulk)) {
                         $this->errorHandler("MongoDB Update: " . $this->error);
@@ -536,6 +537,17 @@ class MongoDB extends DatabaseDriver
     }
 
     /**
+     * @param array $keys
+     * @return array|null
+     */
+    public function getUpdatedIDs(array $keys) : ?array
+    {
+        return array_map(function ($value) {
+            return (string) $value;
+        }, $keys);
+    }
+
+    /**
      * @return string|null
      */
     public function getInsertID() : ?string
@@ -544,7 +556,8 @@ class MongoDB extends DatabaseDriver
             $this->errorHandler("insert_id() called with no DB connection");
         }
 
-        return $this->objectID2string($this->buffered_insert_id);
+        return (string) $this->buffered_insert_id;
+        //return $this->objectID2string($this->buffered_insert_id);
     }
 
     /**
@@ -595,20 +608,14 @@ class MongoDB extends DatabaseDriver
 
     /**
      * @param ObjectID|string $value
-     * @return ObjectID|null
+     * @return ObjectID
      */
-    private function getObjectID($value) : ?ObjectID
+    private function getObjectID($value) : ObjectID
     {
-        if ($value instanceof ObjectID) {
-            $res = $value;
-        } else {
-            try {
-                $res = new ObjectID($value);
-            } catch (InvalidArgumentException $e) {
-                return null;
-            }
-        }
-        return $res;
+        return ($value instanceof ObjectID
+            ? $value
+            : new ObjectID($value)
+        );
     }
 
     /**

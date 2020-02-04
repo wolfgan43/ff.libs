@@ -38,6 +38,7 @@ class DatabaseMongodb extends DatabaseAdapter
     protected const PREFIX                              = "MONGO_DATABASE_";
     protected const TYPE                                = "nosql";
     protected const KEY_NAME                            = "_id";
+    protected const KEY_REL                             = "_id";
 
     /**
      * @return nosql
@@ -109,5 +110,29 @@ class DatabaseMongodb extends DatabaseAdapter
     protected function fieldOperationNULL(string $struct_type, string $name, string $op = null)
     {
         return null;
+    }
+
+    /**
+     * @param array $db
+     * @param array|null $indexes
+     * @param string|null $map_class
+     */
+    protected function convertRecordset(array &$db, array $indexes = null, string $map_class = null) : void
+    {
+        $use_control                                    =  !empty($indexes);
+        foreach ($db[self::RESULT] as &$record) {
+            if (isset($record[$this->key_name]) && is_object($record[$this->key_name])) {
+                $record[$this->key_name]                = $record[$this->key_name]->__toString();
+            }
+            if ($use_control) {
+                $index                                  = array_intersect_key($record, $indexes);
+                if (isset($record[$this->key_name])) {
+                    $index[$this->key_primary]          = $record[$this->key_name];
+                }
+
+                $db[self::INDEX][]                      = $index;
+            }
+            $record                                     = $this->fields2output($record);
+        }
     }
 }

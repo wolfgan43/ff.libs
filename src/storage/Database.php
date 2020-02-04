@@ -65,8 +65,7 @@ class Database implements Dumpable
     public static function getInstance(array $databaseAdapters, array $struct = null) : Database
     {
         $key                                                                = crc32(
-            serialize($databaseAdapters)
-                                                                                . "-" . $struct["table"]["name"]
+            serialize($databaseAdapters + $struct["table"])
                                                                             );
         if (!isset(self::$singletons[$key])) {
             self::$singletons[$key]                                         = new Database($databaseAdapters, $struct);
@@ -122,6 +121,7 @@ class Database implements Dumpable
                                                                                 : null
                                                                             );
     }
+
 
     /**
      * @todo da tipizzare
@@ -187,15 +187,16 @@ class Database implements Dumpable
 
     /**
      * @param array $insert
-     * @param array $update
+     * @param array $set
+     * @param array $where
      * @param null|string $table_name
      * @return array|null
      */
-    public function write(array $insert, array $update, string $table_name = null) : ?array
+    public function write(array $insert, array $set, array $where, string $table_name = null) : ?array
     {
         //@todo da alterare la cache in funzione dei dati inseriti
         foreach ($this->adapters as $adapter_name => $adapter) {
-            $this->result[$adapter_name]                                    = $adapter->write($insert, $update, $table_name);
+            $this->result[$adapter_name]                                    = $adapter->write($insert, $set, $where, $table_name);
         }
         return $this->getResult();
     }

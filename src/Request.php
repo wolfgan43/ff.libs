@@ -754,10 +754,9 @@ class Request implements Configurable, Dumpable
     {
         $access_control                                         = null;
         if (isset(self::$access_control)) {
-            if (isset(self::$access_control[$origin])) {
-                $access_control                                 = self::$access_control[$origin];
-            } elseif (isset(self::$access_control["*"])) {
-                $access_control                                 = self::$access_control["*"];
+            $key                                                = parse_url($origin, PHP_URL_HOST);
+            if (isset(self::$access_control[$key])) {
+                $access_control                                 = self::$access_control[$key];
             }
         }
 
@@ -774,7 +773,6 @@ class Request implements Configurable, Dumpable
 
         if ($origin) {
             $access_control = self::getAccessControl($origin);
-
             if ($access_control) {
                 if (isset($access_control["allow-credentials"]) && $access_control["origin"] != "*") {
                     header('Access-Control-Allow-Credentials: true');
@@ -804,6 +802,10 @@ class Request implements Configurable, Dumpable
      */
     private static function corsFree(string $origin) : void
     {
+        if (strpos($origin, self::protocol()) !== 0) {
+            $origin = "*";
+        }
+
         // Decide if the origin in $_SERVER['HTTP_ORIGIN'] is one
         // you want to allow, and if so:
         header("Access-Control-Allow-Origin: {$origin}");
@@ -825,7 +827,7 @@ class Request implements Configurable, Dumpable
         }
         $origin = self::referer(null, "origin");
         if (!$origin) {
-            $origin = self::referer(PHP_URL_HOST);
+            $origin = self::referer();
         }
 
         //todo: remove TRACE request method

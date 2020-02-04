@@ -138,6 +138,12 @@ abstract class DatabaseDriver
     abstract public function getFieldset() : array;
 
     /**
+     * @param array $keys
+     * @return array|null
+     */
+    abstract public function getUpdatedIDs(array $keys) : ?array;
+
+    /**
      * @return string|null
      */
     abstract public function getInsertID() : ?string;
@@ -224,7 +230,6 @@ abstract class DatabaseDriver
         } else {
             $res = $this->toSqlString($type, $mixed);
         }
-
         return $res;
     }
 
@@ -251,6 +256,11 @@ abstract class DatabaseDriver
                 break;
             case DatabaseAdapter::FTYPE_OBJECT:
                 $value = $this->toSqlEscape(serialize($Array));
+                break;
+            case DatabaseAdapter::FTYPE_PRIMARY:
+                $value = array_map(function ($value) {
+                    return $this->convertID($value);
+                }, $Array);
                 break;
             case DatabaseAdapter::FTYPE_ARRAY:
             case DatabaseAdapter::FTYPE_ARRAY_OF_NUMBER:

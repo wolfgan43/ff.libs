@@ -102,7 +102,7 @@ trait Exceptionable
     /**
      * @return string
      */
-    public function toLog() : string
+    public function toLog() : ?string
     {
         return $this->error;
     }

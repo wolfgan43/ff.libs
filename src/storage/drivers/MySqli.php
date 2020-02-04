@@ -494,6 +494,14 @@ class MySqli extends DatabaseDriver
     }
 
     /**
+     * @param array $keys
+     * @return array|null
+     */
+    public function getUpdatedIDs(array $keys) : ?array
+    {
+        return $keys;
+    }
+    /**
      * @return string|null
      */
     public function getInsertID() : ?string

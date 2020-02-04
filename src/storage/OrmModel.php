@@ -340,6 +340,7 @@ class OrmModel extends Mappable
     private function get(array $where = null, array $fields = null, array $sort = null, int $limit = null, int $offset = null) : ?array
     {
         $this->clearResult();
+
         $single_service                                                                     = $this->resolveFieldsByScopes(array(
                                                                                                 "select"    => $fields,
                                                                                                 "where"     => $where,
@@ -563,6 +564,7 @@ class OrmModel extends Mappable
                                                                                                 : $this->main
                                                                                             );
         if ($data) {
+            $data["def"]["table"]["skip_control"] = true; //@todo da convertire in un oggetto la gestione raw
             $regs                                                                           = $this->getModel(
                 isset($data["service"])
                                                                                                     ? $data["service"]
@@ -575,7 +577,6 @@ class OrmModel extends Mappable
                                                                                                     $this->getCurrentScope($data, "sort"),
                                                                                                     $limit,
                                                                                                     $offset
-
                                                                                                 );
             if (is_array($regs) && $regs[self::RESULT]) {
                 $this->result[$data["def"]["mainTable"]]                                        = $regs[self::RESULT];
@@ -680,14 +681,14 @@ class OrmModel extends Mappable
         } elseif (isset($data["insert"]) && isset($data["set"]) && isset($data["where"])) {
             $regs                                                                           = $storage->write(
                 $data["insert"],
-                array(
-                    "set"       => $data["set"],
-                    "where"     => $data["where"]
-                ),
+                $data["set"],
+                $data["where"],
                 $data["def"]["table"]["name"]
             );
             if (isset($regs["action"]) && $regs["action"] == "insert") {
                 $insert_key                                                                 = $regs[0][self::INDEX_PRIMARY][$key_name];
+            } elseif ($regs["action"] == "update") {
+                $this->result["update"][$data["def"]["table"]["alias"]]                     = $regs[0][self::INDEX_PRIMARY][$key_name];
             }
         }
 
@@ -853,7 +854,6 @@ class OrmModel extends Mappable
             }
         }
 
-
         return $res;
     }
 
@@ -866,7 +866,9 @@ class OrmModel extends Mappable
         foreach ($data as $scope => $fields) {
             $this->resolveFields($fields, $scope);
         }
-
+        if (!isset($this->services_by_data["services"])) {
+            Error::register("Query is empty", static::ERROR_BUCKET);
+        }
         $is_single_service                                                                  = (count($this->services_by_data["services"]) == 1);
 
         if ((!isset($this->main) || !(isset($this->main["where"]) || isset($this->main["select"]) || isset($this->main["insert"]))) && $is_single_service) {
@@ -909,8 +911,8 @@ class OrmModel extends Mappable
             $this->main["select_is_empty"]                                                  = true;
         }
 
-        if (isset($this->main["select"]) && isset($this->main["select"]["*"])) {
-            $this->main["select"] = $this->getAllFields($this->main["def"]["struct"], $this->main["def"]["indexes"]);
+        if (empty($this->main["select"]) || isset($this->main["select"]["*"])) {
+            $this->main["select"] = $this->getAllFields($this->main["def"]["struct"]);
         }
 
         return (!isset($this->services_by_data["use_alias"]) && is_array($this->services_by_data["tables"]) && count($this->services_by_data["tables"]) === 1);
@@ -1019,7 +1021,7 @@ class OrmModel extends Mappable
                 if (!isset($this->subs[$service][$table]["def"]["struct"][$parts[$fIndex]])) {
                     if ($scope == "select" && $parts[$fIndex] == "*") {
                         if (is_array($this->subs[$service][$table]["def"]["struct"])) {
-                            $this->subs[$service][$table][$scope]                           = $this->getAllFields($this->subs[$service][$table]["def"]["struct"], $this->subs[$service][$table]["def"]["indexes"]);
+                            $this->subs[$service][$table][$scope]                           = $this->getAllFields($this->subs[$service][$table]["def"]["struct"]);
                         } else {
                             Error::register("Undefined Struct on Table: `" . $table . "` Model: `" . $service . "`", static::ERROR_BUCKET);
                         }
@@ -1088,15 +1090,11 @@ class OrmModel extends Mappable
 
     /**
      * @param array $source
-     * @param array $exclude
      * @return array
      */
-    private static function getAllFields(array $source, array $exclude = null) : array
+    private static function getAllFields(array $source) : array
     {
         $diff = array_keys($source);
-        return array_combine($diff, $diff);
-
-        $diff                                                                               = array_keys(array_diff_key($source, $exclude));
         return array_combine($diff, $diff);
     }
 

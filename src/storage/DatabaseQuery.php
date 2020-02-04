@@ -24,6 +24,7 @@
  *  @link https://github.com/wolfgan43/vgallery
  */
 namespace phpformsframework\libs\storage;
+
 /**
  * Class DatabaseQuery
  * @package phpformsframework\libs\storage
@@ -74,5 +75,4 @@ class DatabaseQuery
     {
         return array_filter(get_object_vars($this));
     }
-
 }

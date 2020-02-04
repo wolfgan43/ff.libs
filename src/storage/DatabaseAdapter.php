@@ -59,8 +59,8 @@ abstract class DatabaseAdapter
 
     protected const OR                  = '$or';
     protected const AND                 = '$and';
-    private const OP_ARRAY_DEFAULT      = '$in';
-    private const OP_DEFAULT            = '$eq';
+    protected const OP_ARRAY_DEFAULT    = '$in';
+    protected const OP_DEFAULT          = '$eq';
     protected const OP_INC_DEC          = '$inc';
     protected const OP_ADD_TO_SET       = '$addToSet';
     protected const OP_SET              = '$set';
@@ -76,6 +76,12 @@ abstract class DatabaseAdapter
     public const CMD_PROCESS_LIST       = DatabaseDriver::CMD_PROCESS_LIST;
 
     protected const ERROR_BUCKET        = Database::ERROR_BUCKET;
+    private const ERROR_READ_IS_EMPTY   = "where is empty";
+    private const ERROR_INSERT_IS_EMPTY = "insert is empty";
+    private const ERROR_UPDATE_IS_EMPTY = "set and/or where are empty";
+    private const ERROR_WRITE_IS_EMPTY  = "insert and/or set and/or where are empty";
+    private const ERROR_DELETE_IS_EMPTY = "you cant truncate table. where is empty";
+    private const ERROR_CMD_IS_EMPTY    = "where and/or command is empty";
 
     protected const TYPE                = null;
     protected const PREFIX              = null;
@@ -83,40 +89,39 @@ abstract class DatabaseAdapter
     protected const KEY_REL             = "ID_";
     protected const KEY_IS_INT          = false;
 
-    protected const RESULT              = Database::RESULT;
-    protected const INDEX               = Database::INDEX;
-    protected const INDEX_PRIMARY       = Database::INDEX_PRIMARY;
-    protected const COUNT               = Database::COUNT;
-    protected const CALC_FOUND_ROWS     = "calc_found_rows"; //todo presente in mysqli da togliere
+    protected const RESULT                = Database::RESULT;
+    protected const INDEX                 = Database::INDEX;
+    private const COUNT                 = Database::COUNT;
+    private const INDEX_PRIMARY         = Database::INDEX_PRIMARY;
 
-    const MAX_NUMROWS                   = 10000;
-    const MAX_RESULTS                   = 1000;
+    protected const MAX_NUMROWS         = 10000;
+    protected const MAX_RESULTS         = 1000;
 
-    const FTYPE_ARRAY                   = "array";
-    const FTYPE_ARRAY_INCREMENTAL       = "arrayIncremental";
-    const FTYPE_ARRAY_OF_NUMBER         = "arrayOfNumber";
-    const FTYPE_BOOLEAN                 = "boolean";
-    const FTYPE_BOOL                    = "bool";
-    const FTYPE_DATE                    = "date";
-    const FTYPE_NUMBER                  = "number";
-    const FTYPE_TIMESTAMP               = "timestamp";
-    const FTYPE_PRIMARY                 = "primary";
-    const FTYPE_STRING                  = "string";
-    const FTYPE_CHAR                    = "char";
-    const FTYPE_TEXT                    = "text";
+    public const FTYPE_ARRAY            = "array";
+    public const FTYPE_ARRAY_INCREMENTAL= "arrayIncremental";
+    public const FTYPE_ARRAY_OF_NUMBER  = "arrayOfNumber";
+    public const FTYPE_BOOLEAN          = "boolean";
+    public const FTYPE_BOOL             = "bool";
+    public const FTYPE_DATE             = "date";
+    public const FTYPE_NUMBER           = "number";
+    public const FTYPE_TIMESTAMP        = "timestamp";
+    public const FTYPE_PRIMARY          = "primary";
+    public const FTYPE_STRING           = "string";
+    public const FTYPE_CHAR             = "char";
+    public const FTYPE_TEXT             = "text";
 
-    const FTYPE_ARRAY_JSON              = "json";
-    const FTYPE_NUMBER_BIG              = "bigint";
-    const FTYPE_NUMBER_FLOAT            = "float";
+    public const FTYPE_ARRAY_JSON       = "json";
+    public const FTYPE_NUMBER_BIG       = "bigint";
+    public const FTYPE_NUMBER_FLOAT     = "float";
 
-    const FTYPE_NUMBER_DECIMAN          = "currency";
+    public const FTYPE_NUMBER_DECIMAN   = "currency";
 
-    const FTYPE_BLOB                    = "blob";
+    public const FTYPE_BLOB             = "blob";
 
-    const FTYPE_TIME                    = "time";
-    const FTYPE_DATE_TIME               = "datetime";
+    public const FTYPE_TIME             = "time";
+    public const FTYPE_DATE_TIME        = "datetime";
 
-    const FTYPE_OBJECT                  = "object";
+    public const FTYPE_OBJECT           = "object";
 
 
     private $connection                 = array(
@@ -141,21 +146,14 @@ abstract class DatabaseAdapter
     protected $indexes					= null;
     protected $table                    = null;
 
-    private $select                     = null;
-    private $insert                     = null;
-    private $set                     	= null;
-    private $where                      = null;
-    private $sort                      	= null;
-    private $limit                     	= null;
-    private $offset                     = null;
-
     private $index2query                = array();
+    private $table_name                 = null;
 
     /**
      * @var DatabaseDriver
      */
     protected $driver                   = null;
-    protected $query                    = null;
+    //protected $query                    = null;
 
     private $prototype                  = array();
     private $to                         = array();
@@ -334,16 +332,22 @@ abstract class DatabaseAdapter
     }
 
     /**
-     * @todo da tipizzare
      * @param array|null $fields
+     * @param bool $use_control
      * @return array|string
+     * @todo da tipizzare
      */
-    protected function querySelect(array $fields = null)
+    protected function querySelect(array $fields = null, bool $use_control = true)
     {
-        $res                                = $this->setIndex2Query();
-        /*if (!$fields) {
-            $fields                         = array_fill_keys(array_keys(array_diff_key($this->struct, $this->indexes)), true);
-        }*/
+        $res                                = array();
+        if ($use_control) {
+            $this->setIndex2Query();
+        }
+        if (!$fields) {
+            //@todo da sistemare non dovrebbe mai arrivare a null
+            $diff = array_keys($this->struct);
+            $fields = array_combine($diff, $diff);
+        }
         if ($fields) {
             foreach ($fields as $name => $value) {
                 if (is_bool($value) || $name == $value) {
@@ -353,11 +357,23 @@ abstract class DatabaseAdapter
                     $this->converter($value, $name);
                 }
 
+                if ($this->key_name != $this->key_primary && $name == $this->key_primary) {
+                    $name                   = $this->key_name;
+                }
                 $res[$name]                 = $value;
-                $this->prototype[$name]     = $value;
             }
+
+            ksort($res);
+            $this->prototype                = $res;
         }
-        return $res;
+        /*
+echo "==============start";
+        print_r($fields);
+print_r($res + $this->index2query);
+print_r($this->prototype);
+print_r($this->index2query);
+echo "-------";*/
+        return $res + $this->index2query;
     }
 
     /**
@@ -386,11 +402,12 @@ abstract class DatabaseAdapter
     protected function queryWhere(array $fields = null)
     {
         $res                            = array();
-        if (isset($this->where[self::OR])) {
+        if (isset($fields[self::OR])) {
             //@todo da finire
-            $or                         = $this->queryWhere($this->where[self::OR]);
-            unset($this->where[self::OR]);
+            $or                         = $this->queryWhere($fields[self::OR]);
+            unset($fields[self::OR]);
         }
+
         if ($fields) {
             foreach ($fields as $name => $value) {
                 $struct_type            = $this->converter($name);
@@ -434,6 +451,7 @@ abstract class DatabaseAdapter
                 );
             }
         }
+        ksort($res);
         return $res;
     }
 
@@ -452,7 +470,7 @@ abstract class DatabaseAdapter
                     $res[self::OP_INC_DEC][$name]           = $this->fieldOperation($this->fieldIn($name, $value), $struct_type, $name, self::OP_INC_DEC);
                 } elseif ($value === "--") {
                     $res[self::OP_INC_DEC][$name]           = $this->fieldOperation($this->fieldIn($name, $value), $struct_type, $name, self::OP_INC_DEC . '-');
-                } elseif ($value === "--") {
+                } elseif ($value === "+") {
                     $res[self::OP_ADD_TO_SET][$name]        = $this->fieldOperation($this->fieldIn($name, $value), $struct_type, $name, self::OP_ADD_TO_SET);
                 } else {
                     $res[self::OP_SET][$name]               = $this->fieldOperation($this->fieldIn($name, $value), $struct_type, $name, self::OP_SET);
@@ -471,8 +489,8 @@ abstract class DatabaseAdapter
         $res                                            = null;
 
         if ($this->driver->read($query)) {
-            $res[static::RESULT]                        = $this->driver->getRecordset();
-            $res[static::COUNT]                         = $this->driver->numRows();
+            $res[self::RESULT]                        = $this->driver->getRecordset();
+            $res[self::COUNT]                         = $this->driver->numRows();
         }
 
         return $res;
@@ -487,7 +505,7 @@ abstract class DatabaseAdapter
         $res                                            = null;
         if ($this->driver->insert($query)) {
             $res                                        = array(
-                                                            static::INDEX_PRIMARY => array(
+                                                            self::INDEX_PRIMARY => array(
                                                                 $this->key_primary => $this->driver->getInsertID()
                                                             )
                                                         );
@@ -505,7 +523,7 @@ abstract class DatabaseAdapter
         $res                                            = null;
         if ($this->driver->update($query)) {
             $res                                        = array(
-                                                            static::INDEX_PRIMARY => array(
+                                                            self::INDEX_PRIMARY => array(
                                                                 $this->key_primary => null
                                                             )
                                                         );
@@ -523,7 +541,7 @@ abstract class DatabaseAdapter
         $res                                            = null;
         if ($this->driver->delete($query)) {
             $res                                        = array(
-                                                            static::INDEX_PRIMARY => array(
+                                                            self::INDEX_PRIMARY => array(
                                                                 $this->key_primary => null
                                                             )
                                                         );
@@ -540,32 +558,35 @@ abstract class DatabaseAdapter
     {
         //todo: da valutare se usare REPLACE INTO. Necessario test benckmark
         $res                                            = null;
-        $keys                                           = null;
+        $keys                                           = array();
         $query_read                                     = clone $query;
-        $query_read->select                             = $this->querySelect([$this->key_primary => true]);
+        $query_read->select                             = $this->querySelect([$this->key_primary => true], false);
         if ($this->driver->read($query_read)) {
-            $keys                                       = array_column($this->driver->getRecordset(), $query_read->key_primary);
+            $keys                                       = array_column((array) $this->driver->getRecordset(), $this->key_name);
         }
 
-        if (is_array($keys)) {
+        if (count($keys)) {
             $query_update                               = clone $query;
-            $query_update->where                        = $this->queryWhere([$this->key_primary => $keys]);
+            //togliendolo sfrutta il buffer dei db essendo la where gia richiamata prima
+            //$query_update->where                        = $this->queryWhere([$this->key_primary => $keys]);
+
             if ($this->driver->update($query_update)) {
                 $res                                = array(
                                                         array(
-                                                            static::INDEX_PRIMARY => array(
-                                                                $this->key_primary => $keys
+                                                            self::INDEX_PRIMARY => array(
+                                                                $this->key_primary => $this->driver->getUpdatedIDs($keys)
                                                             )
                                                         ),
                                                         "action"    => self::ACTION_UPDATE
                                                     );
             }
         } elseif (!empty($query->insert)) {
-            if ($this->driver->insert($query)) {
+            $query_insert                           = clone $query;
+            if ($this->driver->insert($query_insert)) {
                 $res                                = array(
                                                         array(
-                                                            static::INDEX_PRIMARY => array(
-                                                                $this->key_primary => $this->driver->getInsertID()
+                                                            self::INDEX_PRIMARY => array(
+                                                                $this->key_primary => array($this->driver->getInsertID())
                                                             )
                                                         ),
                                                         "action"    => self::ACTION_INSERT
@@ -707,130 +728,143 @@ abstract class DatabaseAdapter
     }
 
     /**
-     * @return array
      */
-    private function setIndex2Query() : array
+    private function setIndex2Query() : void
     {
         if (is_array($this->indexes) && count($this->indexes)) {
             $indexes = array_keys($this->indexes);
             $this->index2query = array_combine($indexes, $indexes);
         }
         if ($this->key_primary) {
-            $this->index2query[$this->key_primary]  = $this->key_primary;
+            $this->index2query[$this->key_name]  = $this->key_primary;
         }
-
-        return array_diff_key($this->index2query, (array) $this->select);
     }
 
     /**
      * @param string $action
      * @param string|null $table_name
-     * @return array|null
+     * @return DatabaseQuery
      */
-    private function getQuery(string $action, string $table_name = null) : ?DatabaseQuery
+    private function getQuery(string $action, string $table_name = null) : DatabaseQuery
     {
-        $query                              = null;
+        $this->clearResult();
+
         if ($this->loadDriver()) {
-            if (!$table_name) {
-                $table_name                 = $this->getTable("name");
-            }
+            $this->table_name = (
+                $table_name
+                ? $table_name
+                : $this->getTable("name")
+            );
+
             if (!$this->key_name) {
                 Error::register(static::TYPE . " key missing", static::ERROR_BUCKET);
             }
-            if (!$table_name) {
+            if (!$this->table_name) {
                 Error::register(static::TYPE . " table missing", static::ERROR_BUCKET);
-            }
-            if (!is_array($this->insert)
-                && ($action == self::ACTION_INSERT || $action == self::ACTION_WRITE)) {
-                Error::register("insert is empty", static::ERROR_BUCKET);
-            }
-            if (!is_array($this->set) && !is_array($this->where)
-                && ($action == self::ACTION_UPDATE || $action == self::ACTION_WRITE)) {
-                Error::register("set or where is empty", static::ERROR_BUCKET);
-            }
-            if (!is_array($this->where)
-                && ($action == self::ACTION_DELETE)) {
-                Error::register("where is empty", static::ERROR_BUCKET);
-            }
-
-            $query = new DatabaseQuery($action, $table_name, $this->key_primary);
-
-            switch ($action) {
-                case self::ACTION_READ:
-                    $query->select          = $this->querySelect($this->select);
-                    $query->sort            = $this->querySort($this->sort);
-                    $query->where           = $this->queryWhere($this->where);
-                    $query->limit           = $this->limit;
-                    $query->offset          = $this->offset;
-                    break;
-                case self::ACTION_INSERT:
-                    $query->insert          = $this->queryInsert($this->insert);
-                    break;
-                case self::ACTION_UPDATE:
-                    $query->update          = $this->queryUpdate($this->set);
-                    $query->where           = $this->queryWhere($this->where);
-                    break;
-                case self::ACTION_WRITE:
-                    $query->insert          = $this->queryInsert($this->insert);
-                    $query->update          = $this->queryUpdate($this->set);
-                    break;
-                case self::ACTION_DELETE:
-                    $query->where           = $this->queryWhere($this->where);
-                    break;
-                default:
-                    $query->select          = $this->querySelect($this->select);
-                    $query->where           = $this->queryWhere($this->where);
             }
         } else {
             Error::register("Connection failed to database: " . static::TYPE, static::ERROR_BUCKET);
         }
 
+        return new DatabaseQuery($action, $this->table_name, $this->key_primary);
+    }
+
+    /**
+     * @param array $where
+     * @param array|null $select
+     * @param array|null $sort
+     * @param int|null $limit
+     * @param int|null $offset
+     * @param string|null $table_name
+     * @return DatabaseQuery
+     */
+    private function getQueryRead(array $where, array $select = null, array $sort = null, int $limit = null, int $offset = null, string $table_name = null) : DatabaseQuery
+    {
+        $query                  = $this->getQuery(self::ACTION_READ, $table_name);
+
+        $query->select          = $this->querySelect($select, empty($this->table["skip_control"]));
+        $query->sort            = $this->querySort($sort);
+        $query->where           = $this->queryWhere($where);
+        $query->limit           = $limit;
+        $query->offset          = $offset;
+
         return $query;
     }
 
+    /**
+     * @param array $insert
+     * @param string|null $table_name
+     * @return DatabaseQuery
+     */
+    private function getQueryInsert(array $insert, string $table_name = null) : DatabaseQuery
+    {
+        $query = $this->getQuery(self::ACTION_INSERT, $table_name);
+
+        $query->insert          = $this->queryInsert($insert);
+
+        return $query;
+    }
 
     /**
-     * @param DatabaseQuery $query
-     * @return array|null
+     * @param array $set
+     * @param array $where
+     * @param string|null $table_name
+     * @return DatabaseQuery
      */
-    private function process(DatabaseQuery $query) : ?array
+    private function getQueryUpdate(array $set, array $where, string $table_name = null) : DatabaseQuery
     {
-        $res                                                        = null;
-        switch ($query->action) {
-            case self::ACTION_READ:
-                $db                                             = $this->processRead($query);
-                if ($db) {
-                    $count_recordset                            = count($db[static::RESULT]);
-                    if (!empty($query->limit) || $count_recordset < static::MAX_NUMROWS) {
-                        if ($count_recordset && (count($this->index2query) || count($this->to)) && $count_recordset <= static::MAX_RESULTS) {
-                            foreach ($db[static::RESULT] as $record) {
-                                $res[static::RESULT][]          = $this->fields2output($record);
-                                $res[static::INDEX][]           = array_intersect_key($record, $this->index2query);
-                            }
-                            $res[static::COUNT]                 = $db[static::COUNT];
-                        } else {
-                            $res                                =& $db;
-                        }
-                    }
-                }
-                break;
-            case self::ACTION_INSERT:
-                $res                                            = $this->processInsert($query);
-                break;
-            case self::ACTION_UPDATE:
-                $res                                            = $this->processUpdate($query);
-                break;
-            case self::ACTION_DELETE:
-                $res                                            = $this->processDelete($query);
-                break;
-            case self::ACTION_WRITE:
-                $res                                            = $this->processWrite($query);
-                break;
-            default:
-                Error::register("Action not Managed", static::ERROR_BUCKET);
-        }
+        $query = $this->getQuery(self::ACTION_UPDATE, $table_name);
 
-        return $res;
+        $query->update          = $this->queryUpdate($set);
+        $query->where           = $this->queryWhere($where);
+
+        return $query;
+    }
+
+    /**
+     * @param array $insert
+     * @param array $set
+     * @param array $where
+     * @param string|null $table_name
+     * @return DatabaseQuery
+     */
+    private function getQueryWrite(array $insert, array $set, array $where, string $table_name = null) : DatabaseQuery
+    {
+        $query = $this->getQuery(self::ACTION_WRITE, $table_name);
+
+        $query->insert          = $this->queryInsert($insert);
+        $query->update          = $this->queryUpdate($set);
+        $query->where           = $this->queryWhere($where);
+
+        return $query;
+    }
+
+    /**
+     * @param array $where
+     * @param string|null $table_name
+     * @return DatabaseQuery
+     */
+    private function getQueryDelete(array $where, string $table_name = null) : DatabaseQuery
+    {
+        $query = $this->getQuery(self::ACTION_DELETE, $table_name);
+
+        $query->where           = $this->queryWhere($where);
+
+        return $query;
+    }
+
+    /**
+     * @param array $where
+     * @param string|null $table_name
+     * @return DatabaseQuery
+     */
+    private function getQueryCmd(array $where, string $table_name = null) : DatabaseQuery
+    {
+        $query = $this->getQuery(self::ACTION_CMD, $table_name);
+
+        $query->where           = $this->queryWhere($where);
+
+        return $query;
     }
 
     /**
@@ -879,17 +913,64 @@ abstract class DatabaseAdapter
      */
     public function read(array $where, array $fields = null, array $sort = null, int $limit = null, int $offset = null, string $table_name = null) : ?array
     {
-        $this->clearResult();
+        if (empty($where)) {
+            Error::register(static::ERROR_READ_IS_EMPTY);
+        }
 
-        $this->where                                                = $where;
-        $this->sort                	                                = $sort;
-        $this->limit                                                = $limit;
-        $this->offset                                               = $offset;
-        $this->select                                               = (array) $fields;
+        $res                                                    = null;
+        $query                                                  = $this->getQueryRead($where, $fields, $sort, $limit, $offset, $table_name);
 
-        $query                                                      = $this->getQuery(self::ACTION_READ, $table_name);
+        $db                                                     = $this->processRead($query);
+        if ($db) {
+            $count_recordset                                    = count($db[self::RESULT]);
+            if ($count_recordset && (!empty($query->limit) || $count_recordset < static::MAX_NUMROWS)) {
+                $map_class = null; //@todo da implementare
+                $this->convertRecordset($db, array_flip($this->index2query), $map_class);
 
-        return $this->process($query);
+                /* $use_control                                    = (bool) count($this->index2query);
+                 $indexes                                        = array_flip($this->index2query);
+
+                 foreach ($db[self::RESULT] as &$record) {
+                     if (isset($record[$this->key_name]) && is_object($record[$this->key_name])) {
+                         $record[$this->key_name]                = $record[$this->key_name]->__toString();
+                     }
+                     if ($use_control) {
+                         $index                                  = array_intersect_key($record, $indexes);
+                         if (isset($record[$this->key_name])) {
+                             $index[$this->key_primary]          = $record[$this->key_name];
+                         }
+
+                         $db[self::INDEX][]                      = $index;
+                     }
+                     $record                                     = $this->fields2output($record);
+                 }*/
+            }
+        }
+
+        return $db;
+    }
+
+    /**
+     * @param array $db
+     * @param array|null $indexes
+     * @param string|null $map_class
+     */
+    protected function convertRecordset(array &$db, array $indexes = null, string $map_class = null) : void
+    {
+        $use_control                                    = !empty($indexes);
+        if ($use_control || count($this->to)) {
+            foreach ($db[self::RESULT] as &$record) {
+                if ($use_control) {
+                    $index                              = array_intersect_key($record, $indexes);
+                    if (isset($record[$this->key_name])) {
+                        $index[$this->key_primary]      = $record[$this->key_name];
+                    }
+
+                    $db[self::INDEX][]                  = $index;
+                }
+                $record                                 = $this->fields2output($record);
+            }
+        }
     }
 
     /**
@@ -899,13 +980,11 @@ abstract class DatabaseAdapter
      */
     public function insert(array $insert, string $table_name = null) : ?array
     {
-        $this->clearResult();
+        if (empty($insert)) {
+            Error::register(static::ERROR_INSERT_IS_EMPTY);
+        }
 
-        $this->insert                                               = $insert;
-
-        $query                                                      = $this->getQuery(self::ACTION_INSERT, $table_name);
-
-        return $this->process($query);
+        return $this->processInsert($this->getQueryInsert($insert, $table_name));
     }
 
     /**
@@ -916,33 +995,27 @@ abstract class DatabaseAdapter
      */
     public function update(array $set, array $where, string $table_name = null) : ?array
     {
-        $this->clearResult();
+        if (empty($set) || empty($where)) {
+            Error::register(static::ERROR_UPDATE_IS_EMPTY);
+        }
 
-        $this->set                                                  = $set;
-        $this->where                                                = $where;
-
-        $query                                                      = $this->getQuery(self::ACTION_UPDATE, $table_name);
-
-        return $this->process($query);
+        return $this->processUpdate($this->getQueryUpdate($set, $where, $table_name));
     }
 
     /**
      * @param array $insert
-     * @param array $update
+     * @param array $set
+     * @param array $where
      * @param string|null $table_name
      * @return array|null
      */
-    public function write(array $insert, array $update, string $table_name = null) : ?array
+    public function write(array $insert, array $set, array $where, string $table_name = null) : ?array
     {
-        $this->clearResult();
+        if (empty($insert) || empty($set) || empty($where)) {
+            Error::register(static::ERROR_WRITE_IS_EMPTY);
+        }
 
-        $this->insert                                               = $insert;
-        $this->set                                                  = $update["set"];
-        $this->where                                                = $update["where"];
-
-        $query                                                      = $this->getQuery(self::ACTION_WRITE, $table_name);
-
-        return $this->process($query);
+        return $this->processWrite($this->getQueryWrite($insert, $set, $where, $table_name));
     }
 
     /**
@@ -952,13 +1025,11 @@ abstract class DatabaseAdapter
      */
     public function delete(array $where, string $table_name = null) : ?array
     {
-        $this->clearResult();
+        if (empty($where)) {
+            Error::register(static::ERROR_DELETE_IS_EMPTY);
+        }
 
-        $this->where                                                = $where;
-
-        $query                                                      = $this->getQuery(self::ACTION_DELETE, $table_name);
-
-        return $this->process($query);
+        return $this->processDelete($this->getQueryDelete($where, $table_name));
     }
 
     /**
@@ -969,13 +1040,11 @@ abstract class DatabaseAdapter
      */
     public function cmd(array $where, string $action = self::CMD_COUNT, string $table_name = null) : ?array
     {
-        $this->clearResult();
+        if (empty($where)) {
+            Error::register(static::ERROR_CMD_IS_EMPTY);
+        }
 
-        $this->where                                                = $where;
-
-        $query                                                      = $this->getQuery(self::ACTION_CMD, $table_name);
-
-        return $this->processCmd($query, $action);
+        return $this->processCmd($this->getQueryCmd($where, $table_name), $action);
     }
 
 
@@ -997,13 +1066,7 @@ abstract class DatabaseAdapter
      */
     private function clearResult()
     {
-        $this->select                                               = null;
-        $this->insert                                               = null;
-        $this->set                                                  = null;
-        $this->where                                                = null;
-        $this->sort                                                 = null;
-        $this->limit                                                = null;
-
+        $this->table_name                                           = null;
         $this->index2query                                          = array();
         $this->prototype                                            = array();
         $this->to                                                   = array();
@@ -1014,29 +1077,16 @@ abstract class DatabaseAdapter
      * @param array $record
      * @return array
      */
-    private function fields2output(array $record) : array
+    protected function fields2output(array $record) : array
     {
-        //@todo da garantire l'ordinamento dei valori in output.
-        //@todo la insert di mongo sputtana tutto bisogna ordinare i campi sempre all'origine
-        $prototype = $this->prototype;
-        if ($this->key_name != $this->key_primary && isset($record[$this->key_name]) && isset($prototype[$this->key_primary])) {
-            $prototype[$this->key_name] = $prototype[$this->key_primary];
-            unset($prototype[$this->key_primary]);
-        }
-        ksort($prototype);
-        ksort($record);
-        // $res = array_intersect_key($record, $prototype);
-        $res = array_combine(array_values($prototype), array_intersect_key($record, $prototype));
-        if ($this->key_name != $this->key_primary && isset($res[$this->key_name])) {
-            //array_unshift($res, [$this->key_primary => $res[$this->key_name]]);
-            $res[$this->key_primary] =  $res[$this->key_name];
-            unset($res[$this->key_name]);
-        }
+        $keys                                                       = array_intersect_key($this->prototype, $record);
+        $values                                                     = array_intersect_key($record, $this->prototype);
 
+        $res                                                        = array_combine($keys, $values);
         if (is_array($this->to) && count($this->to)) {
             foreach ($this->to as $field => $funcs) {
                 foreach ($funcs as $func => $params) {
-                    $res[$field] = $this->to($res[$field], $func, $params);
+                    $res[$field]                                    = $this->to($res[$field], $func, $params);
                 }
             }
         }

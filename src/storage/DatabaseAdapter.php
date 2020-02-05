@@ -65,15 +65,15 @@ abstract class DatabaseAdapter
     protected const OP_ADD_TO_SET       = '$addToSet';
     protected const OP_SET              = '$set';
 
-    private const ACTION_READ           = DatabaseDriver::ACTION_READ;
-    private const ACTION_DELETE         = DatabaseDriver::ACTION_DELETE;
-    private const ACTION_INSERT         = DatabaseDriver::ACTION_INSERT;
-    private const ACTION_UPDATE         = DatabaseDriver::ACTION_UPDATE;
-    private const ACTION_WRITE          = "write";
-    private const ACTION_CMD            = "cmd";
+    private const ACTION_READ           = Database::ACTION_READ;
+    private const ACTION_DELETE         = Database::ACTION_DELETE;
+    private const ACTION_INSERT         = Database::ACTION_INSERT;
+    private const ACTION_UPDATE         = Database::ACTION_UPDATE;
+    private const ACTION_CMD            = Database::ACTION_CMD;
+    private const ACTION_WRITE          = Database::ACTION_WRITE;
 
-    public const CMD_COUNT              = DatabaseDriver::CMD_COUNT;
-    public const CMD_PROCESS_LIST       = DatabaseDriver::CMD_PROCESS_LIST;
+    private const CMD_COUNT             = Database::CMD_COUNT;
+    private const CMD_PROCESS_LIST      = Database::CMD_PROCESS_LIST;
 
     protected const ERROR_BUCKET        = Database::ERROR_BUCKET;
     private const ERROR_READ_IS_EMPTY   = "where is empty";
@@ -89,8 +89,9 @@ abstract class DatabaseAdapter
     protected const KEY_REL             = "ID_";
     protected const KEY_IS_INT          = false;
 
-    protected const RESULT                = Database::RESULT;
-    protected const INDEX                 = Database::INDEX;
+    protected const RESULT              = Database::RESULT;
+    protected const INDEX               = Database::INDEX;
+
     private const COUNT                 = Database::COUNT;
     private const INDEX_PRIMARY         = Database::INDEX_PRIMARY;
 
@@ -253,6 +254,12 @@ abstract class DatabaseAdapter
     abstract protected function convertFieldWhere(array &$res, string $name, string $or = null) : void;
 
     /**
+     * @param string $key_primary
+     * @return string
+     */
+    abstract protected function convertKeyPrimary(string $key_primary) : string;
+
+    /**
      * @todo da tipizzare
      * @param array $res
      * @param $value
@@ -262,8 +269,10 @@ abstract class DatabaseAdapter
      */
     private function fieldWhere(array &$res, $value, string $struct_type, string $name = null, string $or = null) : void
     {
-        if ($this->key_primary != $this->key_name && $name == $this->key_primary) {
-            $name = $this->key_name;
+        //echo $this->table_name . " : " . $struct_type . "  " . $this->key_name . " => " . $this->key_primary . " => " . static::KEY_NAME . " => " . self::KEY_NAME . "<br>\n\n";
+
+        if ($this->key_name != $this->key_primary && $name == $this->key_primary) {
+            $name = $this->convertKeyPrimary($name);
         }
         if (is_array($value)) {
             $res[$name] = $this->fieldOperations($value, $struct_type, $name);
@@ -332,40 +341,35 @@ abstract class DatabaseAdapter
     }
 
     /**
-     * @param array|null $fields
+     * @param array $fields
      * @param bool $use_control
      * @return array|string
      * @todo da tipizzare
      */
-    protected function querySelect(array $fields = null, bool $use_control = true)
+    protected function querySelect(array $fields, bool $use_control = true)
     {
         $res                                = array();
         if ($use_control) {
             $this->setIndex2Query();
         }
-        if (!$fields) {
-            //@todo da sistemare non dovrebbe mai arrivare a null
-            $diff = array_keys($this->struct);
-            $fields = array_combine($diff, $diff);
-        }
-        if ($fields) {
-            foreach ($fields as $name => $value) {
-                if (is_bool($value) || $name == $value) {
-                    $value                  = $name;
-                    $this->converter($name);
-                } else {
-                    $this->converter($value, $name);
-                }
 
-                if ($this->key_name != $this->key_primary && $name == $this->key_primary) {
-                    $name                   = $this->key_name;
-                }
-                $res[$name]                 = $value;
+        foreach ($fields as $name => $value) {
+            if (is_bool($value) || $name == $value) {
+                $value                  = $name;
+                $this->converter($name);
+            } else {
+                $this->converter($value, $name);
             }
 
-            ksort($res);
-            $this->prototype                = $res;
+            if ($this->key_name != $this->key_primary && $name == $this->key_primary) {
+                $name = $this->convertKeyPrimary($name);
+            }
+            $res[$name]                 = $value;
         }
+
+        ksort($res);
+        $this->prototype                = $res;
+
         /*
 echo "==============start";
         print_r($fields);
@@ -735,8 +739,9 @@ echo "-------";*/
             $indexes = array_keys($this->indexes);
             $this->index2query = array_combine($indexes, $indexes);
         }
+
         if ($this->key_primary) {
-            $this->index2query[$this->key_name]  = $this->key_primary;
+            $this->index2query[$this->key_primary]  = $this->key_primary;
         }
     }
 
@@ -771,14 +776,14 @@ echo "-------";*/
 
     /**
      * @param array $where
-     * @param array|null $select
+     * @param array $select
      * @param array|null $sort
      * @param int|null $limit
      * @param int|null $offset
      * @param string|null $table_name
      * @return DatabaseQuery
      */
-    private function getQueryRead(array $where, array $select = null, array $sort = null, int $limit = null, int $offset = null, string $table_name = null) : DatabaseQuery
+    private function getQueryRead(array $where, array $select, array $sort = null, int $limit = null, int $offset = null, string $table_name = null) : DatabaseQuery
     {
         $query                  = $this->getQuery(self::ACTION_READ, $table_name);
 
@@ -904,14 +909,14 @@ echo "-------";*/
 
     /**
      * @param array $where
-     * @param array|null $fields
+     * @param array $fields
      * @param array|null $sort
      * @param int|null $limit
      * @param int|null $offset
      * @param string|null $table_name
      * @return array|null
      */
-    public function read(array $where, array $fields = null, array $sort = null, int $limit = null, int $offset = null, string $table_name = null) : ?array
+    public function read(array $where, array $fields, array $sort = null, int $limit = null, int $offset = null, string $table_name = null) : ?array
     {
         if (empty($where)) {
             Error::register(static::ERROR_READ_IS_EMPTY);

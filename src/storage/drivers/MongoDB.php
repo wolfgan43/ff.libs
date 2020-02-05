@@ -319,6 +319,7 @@ class MongoDB extends DatabaseDriver
                     $query->options["multi"]                                = true;
                     break;
                 case self::ACTION_DELETE:
+                case self::ACTION_CMD:
                     if (empty($query->where)) {
                         $this->errorHandler("where not set");
                     }

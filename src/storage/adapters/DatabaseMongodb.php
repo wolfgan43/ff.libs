@@ -54,7 +54,7 @@ class DatabaseMongodb extends DatabaseAdapter
     protected function getConnector() : array
     {
         $connector                                      = parent::getConnector();
-        $connector["key"]                               = self::KEY_NAME;
+        $connector["key"]                               = static::KEY_NAME;
 
         return $connector;
     }
@@ -82,6 +82,15 @@ class DatabaseMongodb extends DatabaseAdapter
             $res[$or][][$name] = $res[$name];
             unset($res[$name]);
         }
+    }
+
+    /**
+     * @param string $key_primary
+     * @return string
+     */
+    protected function convertKeyPrimary(string $key_primary): string
+    {
+        return $this->key_name;
     }
 
     /**

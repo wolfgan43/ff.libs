@@ -111,6 +111,15 @@ class DatabaseMysqli extends DatabaseAdapter
     }
 
     /**
+     * @param string $key_primary
+     * @return string
+     */
+    protected function convertKeyPrimary(string $key_primary): string
+    {
+        return $key_primary;
+    }
+
+    /**
      * @todo da tipizzare
      * @param $value
      * @param string $struct_type

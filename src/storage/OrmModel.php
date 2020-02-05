@@ -60,7 +60,9 @@ class OrmModel extends Mappable
     private $data                                                                           = array();
     private $main                                                                           = array();
     private $subs                                                                           = array();
-    private $exts                                                                           = array();
+
+    private $rel                                                                            = array();
+    private $rel_done                                                                       = array();
 
     private $result                                                                         = array();
     private $count                                                                          = null;
@@ -98,9 +100,6 @@ class OrmModel extends Mappable
                                                                                                 ? $this->tables[$table_name]
                                                                                                 : null
                                                                                             );
-        /*if (!isset($table["name"])) {
-            $table["name"]                                                                  = $table_name;
-        }*/
         $res["struct"]                                                                      = (
             isset($this->struct[$table_name])
                                                                                                 ? $this->struct[$table_name]
@@ -164,15 +163,11 @@ class OrmModel extends Mappable
     }
 
     /**
-     * @param null|array $struct
+     * @param array $struct
      * @return Database
      */
-    private function setStorage(array $struct = null) : Database
+    private function setStorage(array $struct) : Database
     {
-        if (!$struct) {
-            $struct                                                                         = $this->getStruct($this->getMainTable());
-        }
-
         return Database::getInstance($this->adapters, $struct);
     }
 
@@ -426,7 +421,7 @@ class OrmModel extends Mappable
                                                                                                 ->setStorage($data["def"])
                                                                                                 ->read(
                                                                                                     $this->getCurrentScope($data, "where"),
-                                                                                                    $this->getCurrentScope($data, "select"),
+                                                                                                    $this->getQuerySelect($data),
                                                                                                     $this->getCurrentScope($data, "sort"),
                                                                                                     $limit,
                                                                                                     $offset
@@ -473,7 +468,7 @@ class OrmModel extends Mappable
                             $relKey             = $relation["external"];
                         }
 
-                        if (isset($this->exts["done"][$thisTable . "." . $thisKey][$relTable . "." . $relKey])) {
+                        if (isset($this->rel_done[$thisTable . "." . $thisKey][$relTable . "." . $relKey])) {
                             continue;
                         }
 
@@ -492,14 +487,14 @@ class OrmModel extends Mappable
                             Error::register("Relationship found but missing keyValue in result. Check in configuration indexes: " . $thisTable . " => " . $thisKey . " (" . $relTable . "." . $relKey . ")");
                         }
 
-                        $this->exts["rel"][$relTable][$thisTable] = $keyValue;
-                        $this->exts["done"][$thisTable . "." . $thisKey][$relTable . "." . $relKey] = true;
+                        $this->rel[$relTable][$thisTable] = $keyValue;
+                        $this->rel_done[$thisTable . "." . $thisKey][$relTable . "." . $relKey] = true;
 
                         if (isset($this->result[$relTable])) {
                             foreach ($keyValue as $keyCounter => $keyID) {
                                 if (isset($regs[self::INDEX][$keyCounter][$thisKey]) && $regs[self::INDEX][$keyCounter][$thisKey] == $keyID) {
                                     if ($main_table == $thisTable) {
-                                        $keyParents = array_keys($this->exts["rel"][$thisTable][$relTable], $keyID);
+                                        $keyParents = array_keys($this->rel[$thisTable][$relTable], $keyID);
 
                                         foreach ($keyParents as $keyParent) {
                                             /**
@@ -514,7 +509,7 @@ class OrmModel extends Mappable
                                             }
                                         }
                                     } elseif ($manyToMany) {
-                                        $keyParents = array_keys($this->exts["rel"][$thisTable][$relTable], $keyID);
+                                        $keyParents = array_keys($this->rel[$thisTable][$relTable], $keyID);
                                         foreach ($keyParents as $keyParent) {
                                             /**
                                              * Remove if exist reference of Result in sub table for prevent circular references
@@ -524,7 +519,7 @@ class OrmModel extends Mappable
                                             $this->result[$thisTable][$keyCounter][$ormModel->getTableAlias($relTable)] =& $this->result[$relTable][$keyParent];
                                         }
                                     } else {
-                                        $keyParents = array_keys($this->exts["rel"][$thisTable][$relTable], $keyID);
+                                        $keyParents = array_keys($this->rel[$thisTable][$relTable], $keyID);
 
                                         /**
                                          * Remove if exist reference of Result in sub table for prevent circular references
@@ -573,7 +568,7 @@ class OrmModel extends Mappable
                                                                                                 ->setStorage($data["def"])
                                                                                                 ->read(
                                                                                                     $this->getCurrentScope($data, "where"),
-                                                                                                    $this->getCurrentScope($data, "select"),
+                                                                                                    $this->getQuerySelect($data),
                                                                                                     $this->getCurrentScope($data, "sort"),
                                                                                                     $limit,
                                                                                                     $offset
@@ -657,7 +652,7 @@ class OrmModel extends Mappable
                                                                                                 ->setStorage($this->main["def"])
                                                                                                 ->read($this->main["where"], array($key_main_primary => true), null, null, null, $this->main["def"]["table"]["name"]);
                     if (is_array($regs)) {
-                        $this->main["where"][$key_main_primary]                     = array_column($regs[self::INDEX], $key_main_primary);
+                        $this->main["where"][$key_main_primary]                             = array_column($regs[self::INDEX], $key_main_primary);
                     }
                 }
                 $external_name                                                              = $data["def"]["relationship"][$this->main["def"]["mainTable"]]["external"];
@@ -866,6 +861,7 @@ class OrmModel extends Mappable
         foreach ($data as $scope => $fields) {
             $this->resolveFields($fields, $scope);
         }
+
         if (!isset($this->services_by_data["services"])) {
             Error::register("Query is empty", static::ERROR_BUCKET);
         }
@@ -905,11 +901,11 @@ class OrmModel extends Mappable
             }
         }
 
-        if (!isset($this->main["select"]) && isset($data["select"]) && !$is_single_service) {
+        /*if (!isset($this->main["select"]) && isset($data["select"]) && !$is_single_service) {
             $key_name                                                                       = $this->main["def"]["key_primary"];
             $this->main["select"][$key_name]                                                = $key_name;
             $this->main["select_is_empty"]                                                  = true;
-        }
+        }*/
 
         if (empty($this->main["select"]) || isset($this->main["select"]["*"])) {
             $this->main["select"] = $this->getAllFields($this->main["def"]["struct"]);
@@ -989,7 +985,9 @@ class OrmModel extends Mappable
                         // no break
                     default:
                 }
-
+                /*if ($parts[abs($fIndex)] == "*") {
+                    continue;
+                }*/
                 $this->services_by_data["services"][$service]                               = true;
                 $this->services_by_data["tables"][$service . "." . $table]                  = true;
                 $this->services_by_data[$scope][$service]                                   = true;
@@ -1112,6 +1110,17 @@ class OrmModel extends Mappable
     }
 
     /**
+     * @param array $data
+     * @return array
+     */
+    private static function getQuerySelect(array $data) : array
+    {
+        return (isset($data["select"])
+            ? $data["select"]
+            : self::getAllFields($data["def"]["struct"])
+        );
+    }
+    /**
      * @param int|null $count
      */
     private function setCount(int $count = null)
@@ -1150,7 +1159,8 @@ class OrmModel extends Mappable
     private function clearResult() : void
     {
         $this->data                                                         = array();
-        $this->exts                                                         = array();
+        $this->rel                                                          = array();
+        $this->rel_done                                                     = array();
         $this->main                                                         = array();
         $this->subs                                                         = array();
         $this->result                                                       = array();

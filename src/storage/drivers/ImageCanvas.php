@@ -147,7 +147,8 @@ class ImageCanvas
         $this->cvs_res = @imagecreatetruecolor($this->cvs_res_dim_x, $this->cvs_res_dim_y);
         imagealphablending($this->cvs_res, true);
         imagesavealpha($this->cvs_res, true);
-        
+        imageinterlace($this->cvs_res, true);
+
         if (is_resource($this->cvs_res) == 1) {
             $color_transparent = null;
             if (strlen($this->cvs_res_transparent_color_hex) == 6) {

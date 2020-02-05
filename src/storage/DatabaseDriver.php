@@ -34,37 +34,38 @@ use phpformsframework\libs\international\Data;
  */
 abstract class DatabaseDriver
 {
-    protected const ERROR_BUCKET    = Database::ERROR_BUCKET;
+    protected const ERROR_BUCKET        = Database::ERROR_BUCKET;
 
-    public const ACTION_READ        = "read";
-    public const ACTION_DELETE      = "delete";
-    public const ACTION_INSERT      = "insert";
-    public const ACTION_UPDATE      = "update";
+    protected const ACTION_READ         = Database::ACTION_READ;
+    protected const ACTION_DELETE       = Database::ACTION_DELETE;
+    protected const ACTION_INSERT       = Database::ACTION_INSERT;
+    protected const ACTION_UPDATE       = Database::ACTION_UPDATE;
+    protected const ACTION_CMD          = Database::ACTION_CMD;
 
-    public const CMD_COUNT          = "count";
-    public const CMD_PROCESS_LIST   = "processlist";
+    protected const CMD_COUNT           = Database::CMD_COUNT;
+    protected const CMD_PROCESS_LIST    = Database::CMD_PROCESS_LIST;
 
-    protected static $_dbs 	        = array();
+    protected static $_dbs 	            = array();
 
-    protected $locale               = "ISO9075";
+    protected $locale                   = "ISO9075";
 
-    protected $host                 = null;
-    protected $database             = null;
-    protected $user                 = null;
-    protected $secret               = null;
+    protected $host                     = null;
+    protected $database                 = null;
+    protected $user                     = null;
+    protected $secret                   = null;
 
-    protected $row	                = -1;
-    protected $errno                = 0;
-    protected $error                = "";
+    protected $row	                    = -1;
+    protected $errno                    = 0;
+    protected $error                    = "";
 
-    protected $link_id              = null;
-    protected $query_id             = null;
-    protected $fields               = array();
-    protected $fields_names	        = array();
+    protected $link_id                  = null;
+    protected $query_id                 = null;
+    protected $fields                   = array();
+    protected $fields_names	            = array();
 
-    protected $num_rows             = null;
-    protected $record               = null;
-    protected $buffered_insert_id   = null;
+    protected $num_rows                 = null;
+    protected $record                   = null;
+    protected $buffered_insert_id       = null;
 
     abstract public static function factory();
     abstract public static function freeAll();

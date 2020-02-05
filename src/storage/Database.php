@@ -44,6 +44,16 @@ class Database implements Dumpable
     public const ERROR_BUCKET                                               = "database";
     private const NAME_SPACE                                                = __NAMESPACE__ . '\\adapters\\';
 
+    public const ACTION_READ                                                = "read";
+    public const ACTION_DELETE                                              = "delete";
+    public const ACTION_INSERT                                              = "insert";
+    public const ACTION_UPDATE                                              = "update";
+    public const ACTION_CMD                                                 = "cmd";
+    public const ACTION_WRITE                                               = "write";
+
+    public const CMD_COUNT                                                  = "count";
+    public const CMD_PROCESS_LIST                                           = "processlist";
+
     public const RESULT                                                     = "result";
     public const INDEX                                                      = "index";
     public const INDEX_PRIMARY                                              = "primary";

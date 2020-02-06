@@ -1041,6 +1041,10 @@ class Request implements Configurable, Dumpable
      */
     private static function pageAccept() : string
     {
+        if (self::isCli()) {
+            return "php/cli";
+        }
+
         return (self::isAjax() && self::$page->accept == "*/*"
             ? "application/json"
             : self::$page->accept

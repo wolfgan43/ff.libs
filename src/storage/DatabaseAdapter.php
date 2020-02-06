@@ -370,13 +370,6 @@ abstract class DatabaseAdapter
         ksort($res);
         $this->prototype                = $res;
 
-        /*
-echo "==============start";
-        print_r($fields);
-print_r($res + $this->index2query);
-print_r($this->prototype);
-print_r($this->index2query);
-echo "-------";*/
         return $res + $this->index2query;
     }
 
@@ -490,14 +483,10 @@ echo "-------";*/
      */
     private function processRead(DatabaseQuery $query) : ?array
     {
-        $res                                            = null;
-
-        if ($this->driver->read($query)) {
-            $res[self::RESULT]                        = $this->driver->getRecordset();
-            $res[self::COUNT]                         = $this->driver->numRows();
-        }
-
-        return $res;
+        return ($this->driver->read($query)
+            ? $this->driver->getRecordset()
+            : null
+        );
     }
 
     /**
@@ -576,10 +565,8 @@ echo "-------";*/
 
             if ($this->driver->update($query_update)) {
                 $res                                = array(
-                                                        array(
-                                                            self::INDEX_PRIMARY => array(
-                                                                $this->key_primary => $this->driver->getUpdatedIDs($keys)
-                                                            )
+                                                        self::INDEX_PRIMARY => array(
+                                                            $this->key_primary => $this->driver->getUpdatedIDs($keys)
                                                         ),
                                                         "action"    => self::ACTION_UPDATE
                                                     );
@@ -588,10 +575,8 @@ echo "-------";*/
             $query_insert                           = clone $query;
             if ($this->driver->insert($query_insert)) {
                 $res                                = array(
-                                                        array(
-                                                            self::INDEX_PRIMARY => array(
-                                                                $this->key_primary => array($this->driver->getInsertID())
-                                                            )
+                                                        self::INDEX_PRIMARY => array(
+                                                            $this->key_primary => array($this->driver->getInsertID())
                                                         ),
                                                         "action"    => self::ACTION_INSERT
                                                     );
@@ -927,32 +912,17 @@ echo "-------";*/
 
         $db                                                     = $this->processRead($query);
         if ($db) {
-            $count_recordset                                    = count($db[self::RESULT]);
+            $res[self::RESULT]                                  = $db;
+            $res[self::COUNT]                                   = $this->driver->numRows();
+
+            $count_recordset                                    = count($res[self::RESULT]);
             if ($count_recordset && (!empty($query->limit) || $count_recordset < static::MAX_NUMROWS)) {
                 $map_class = null; //@todo da implementare
-                $this->convertRecordset($db, array_flip($this->index2query), $map_class);
-
-                /* $use_control                                    = (bool) count($this->index2query);
-                 $indexes                                        = array_flip($this->index2query);
-
-                 foreach ($db[self::RESULT] as &$record) {
-                     if (isset($record[$this->key_name]) && is_object($record[$this->key_name])) {
-                         $record[$this->key_name]                = $record[$this->key_name]->__toString();
-                     }
-                     if ($use_control) {
-                         $index                                  = array_intersect_key($record, $indexes);
-                         if (isset($record[$this->key_name])) {
-                             $index[$this->key_primary]          = $record[$this->key_name];
-                         }
-
-                         $db[self::INDEX][]                      = $index;
-                     }
-                     $record                                     = $this->fields2output($record);
-                 }*/
+                $this->convertRecordset($res, array_flip($this->index2query), $map_class);
             }
         }
 
-        return $db;
+        return $res;
     }
 
     /**

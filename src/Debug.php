@@ -341,10 +341,10 @@ class Debug
      */
     private static function dumpCommandLine(string $error_message = null) : string
     {
-        $cli = implode("\n", self::dumpBackTrace());
-
-        return $cli . "---------------------------------------------------------------------\n"
-                . $error_message . "\n";
+        $cli = "\n----------------------------------------------------------------------------------------------------\n"
+            . implode("\n", self::dumpBackTrace());
+        return $cli . "\n----------------------------------------------------------------------------------------------------\n"
+            . $error_message . "\n\n";
     }
 
     /**

@@ -24,19 +24,18 @@
  *  @link https://github.com/wolfgan43/vgallery
  */
 
-namespace phpformsframework\libs\dto;
+namespace phpformsframework\libs\storage\dto;
 
-class OrmResult
+/**
+ * Class OrmDef
+ * @package phpformsframework\libs\storage\dto
+ */
+class OrmControllers
 {
-    private $result = array();
-    private $count = null;
-
-
-    /**
-     * @return int|null
-     */
-    public function count() : ?int
-    {
-        return $this->count;
-    }
+    public $use_alias = 0;
+    public $last = null;
+    public $last_table = null;
+    public $services = array();
+    public $tables = array();
+    public $scopes = array();
 }

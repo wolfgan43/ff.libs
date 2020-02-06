@@ -134,6 +134,9 @@ class Response
                 $response = Page::getInstance("html")
                     ->renderError($status, $msg ? $msg : "Oops!");
                 break;
+            case "php/cli":
+                Debug::dump($msg);
+                break;
             default:
                 $response = new DataResponse();
                 //todo: da implementare il content_type media

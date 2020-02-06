@@ -31,6 +31,9 @@ use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\Mappable;
+use phpformsframework\libs\storage\dto\OrmControllers;
+use phpformsframework\libs\storage\dto\OrmDef;
+use phpformsframework\libs\storage\dto\OrmQuery;
 
 /**
  * Class OrmModel
@@ -38,7 +41,31 @@ use phpformsframework\libs\Mappable;
  */
 class OrmModel extends Mappable
 {
-    public const ERROR_BUCKET                                                               = "orm";
+    protected const ERROR_BUCKET                                                               = "orm";
+
+    private const SCOPE_SELECT                                                              = "select";
+    private const SCOPE_WHERE                                                               = "where";
+    private const SCOPE_SORT                                                                = "sort";
+    private const SCOPE_INSERT                                                              = "insert";
+    private const SCOPE_SET                                                                 = "set";
+    private const SCOPE_LIMIT                                                               = "limit";
+    private const SCOPE_OFFSET                                                              = "offset";
+    private const SCOPE_ACTION                                                              = "action";
+    private const SCOPE_EXTIME                                                              = "exTime";
+
+    private const ACTION_READ                                                               = Database::ACTION_READ;
+    private const ACTION_INSERT                                                             = Database::ACTION_INSERT;
+    private const ACTION_UPDATE                                                             = Database::ACTION_UPDATE;
+    private const ACTION_DELETE                                                             = Database::ACTION_DELETE;
+    private const ACTION_WRITE                                                              = Database::ACTION_WRITE;
+    private const ACTION_CMD                                                                = Database::ACTION_CMD;
+    private const ACTION_INSERT_UNIQUE                                                      = Database::ACTION_INSERT . "Unique";
+
+    private const FREL_TABLE_NAME                                                           = "tbl";
+    private const FREL_TABLE_KEY                                                            = "key";
+    private const FREL_PRIMARY                                                              = "primary";
+    private const FREL_EXTERNAL                                                             = "external";
+
     private const RESULT                                                                    = Database::RESULT;
     private const INDEX                                                                     = Database::INDEX;
     private const INDEX_PRIMARY                                                             = Database::INDEX_PRIMARY;
@@ -55,12 +82,20 @@ class OrmModel extends Mappable
     protected $relationship                                                                 = null;
     protected $indexes                                                                      = null;
     protected $tables                                                                       = null;
+    /**
+     * @var OrmControllers
+     */
+    private $services_by_data                                                               = null;
+    /**
+     * @var OrmQuery
+     */
+    private $main                                                                           = null;
 
-    private $services_by_data                                                               = array();
-    private $data                                                                           = array();
-    private $main                                                                           = array();
-    private $subs                                                                           = array();
-
+    /**
+     * @var OrmQuery[][]
+     */
+    private $subs                                                                           = null;
+    private $rev                                                                            = array();
     private $rel                                                                            = array();
     private $rel_done                                                                       = array();
 
@@ -88,40 +123,33 @@ class OrmModel extends Mappable
 
     /**
      * @param string $table_name
-     * @return array
+     * @return OrmDef
      */
-    private function getStruct(string $table_name) : array
+    private function getStruct(string $table_name) : OrmDef
     {
-        $res                                                                                = array();
-        $res["mainTable"]                                                                   = $this->main_table;
+        $def                                                                                = new OrmDef($this->main_table);
+        $def->table                                                                         = $this->extractData($this->tables, $table_name);
+        $def->struct                                                                        = $this->extractData($this->struct, $table_name);
+        $def->indexes                                                                       = $this->extractData($this->indexes, $table_name);
+        $def->relationship                                                                  = $this->extractData($this->relationship, $table_name);
+        $def->setKeyPrimary();
 
-        $res["table"]                                                                       = (
-            isset($this->tables[$table_name])
-                                                                                                ? $this->tables[$table_name]
-                                                                                                : null
-                                                                                            );
-        $res["struct"]                                                                      = (
-            isset($this->struct[$table_name])
-                                                                                                ? $this->struct[$table_name]
-                                                                                                : null
-                                                                                            );
-        $res["indexes"]                                                                     = (
-            isset($this->indexes[$table_name])
-                                                                                                ? $this->indexes[$table_name]
-                                                                                                : array()
-                                                                                            );
-        $res["relationship"]                                                                = (
-            isset($this->relationship[$table_name])
-                                                                                                ? $this->relationship[$table_name]
-                                                                                                : null
-                                                                                            );
-        $res["key_primary"]                                                                 = (
-            $res["struct"]
-                                                                                                ? (string) array_search(DatabaseAdapter::FTYPE_PRIMARY, $res["struct"])
-                                                                                                : null
-                                                                                            );
-        return $res;
+        return $def;
     }
+
+    /**
+     * @param array $def
+     * @param string $key
+     * @return array|null
+     */
+    private function extractData(array $def, string $key) : ?array
+    {
+        return (isset($def[$key])
+            ? $def[$key]
+            : null
+        );
+    }
+
 
     /**
      * @param string $table_name
@@ -163,14 +191,22 @@ class OrmModel extends Mappable
     }
 
     /**
-     * @param array $struct
+     * @param OrmDef $struct
      * @return Database
      */
-    private function setStorage(array $struct) : Database
+    private function setStorage(OrmDef $struct) : Database
     {
-        return Database::getInstance($this->adapters, $struct);
+        return Database::getInstance($this->adapters, $struct->toArray());
     }
 
+    /**
+     * @param string $action
+     * @return float|null
+     */
+    private function stopWatch(string $action) : ?float
+    {
+        return Debug::stopWatch(self::ERROR_BUCKET . "/" . $action);
+    }
     /**
      * @param $query
      * @return array|null
@@ -181,27 +217,27 @@ class OrmModel extends Mappable
     }
 
     /**
-     * @param null|array $fields
+     * @param null|array $select
      * @param null|array $where
      * @param null|array $sort
      * @param int $limit
      * @param int|null $offset
      * @return array|null
      */
-    public function read(array $fields = null, array $where = null, array $sort = null, int $limit = null, int $offset = null) : ?array
+    public function read(array $select = null, array $where = null, array $sort = null, int $limit = null, int $offset = null) : ?array
     {
-        Debug::stopWatch("orm/read");
+        self::stopWatch(self::ACTION_READ);
 
-        $res                                                                                = $this->get($where, $fields, $sort, $limit, $offset);
+        $res                        = $this->get($where, $select, $sort, $limit, $offset);
         Log::debugging(array(
-            "action"    => "read",
-            "fields"    => $fields,
-            "where"     => $where,
-            "sort"      => $sort,
-            "limit"     => $limit,
-            "offset"    => $offset,
-            "exTime"    => Debug::stopWatch("orm/read")
-        ), static::ERROR_BUCKET, static::ERROR_BUCKET, "read");
+            self::SCOPE_ACTION      => self::ACTION_READ,
+            self::SCOPE_SELECT      => $select,
+            self::SCOPE_WHERE       => $where,
+            self::SCOPE_SORT        => $sort,
+            self::SCOPE_LIMIT       => $limit,
+            self::SCOPE_OFFSET      => $offset,
+            self::SCOPE_EXTIME      => self::stopWatch(self::ACTION_READ)
+        ), static::ERROR_BUCKET, static::ERROR_BUCKET, self::ACTION_READ);
 
         return $res;
     }
@@ -212,14 +248,14 @@ class OrmModel extends Mappable
      */
     public function insertUnique(array $insert) : ?array
     {
-        Debug::stopWatch("orm/unique");
+        self::stopWatch(self::ACTION_INSERT_UNIQUE);
 
-        $res                                                                                = $this->set($insert, null, $insert);
+        $res                        = $this->set($insert, null, $insert);
         Log::debugging(array(
-            "action"    => "insertUnique",
-            "insert"    => $insert,
-            "exTime"    => Debug::stopWatch("orm/unique")
-        ), static::ERROR_BUCKET, static::ERROR_BUCKET, "insertUnique");
+            self::SCOPE_ACTION      => self::ACTION_INSERT_UNIQUE,
+            self::SCOPE_INSERT      => $insert,
+            self::SCOPE_EXTIME      => self::stopWatch(self::ACTION_INSERT_UNIQUE)
+        ), static::ERROR_BUCKET, static::ERROR_BUCKET, self::ACTION_INSERT_UNIQUE);
 
         return $res;
     }
@@ -230,14 +266,14 @@ class OrmModel extends Mappable
      */
     public function insert(array $insert) : ?array
     {
-        Debug::stopWatch("orm/insert");
+        self::stopWatch(self::ACTION_INSERT);
 
-        $res                                                                                = $this->set(null, null, $insert);
+        $res                        = $this->set(null, null, $insert);
         Log::debugging(array(
-            "action"    => "insert",
-            "insert"    => $insert,
-            "exTime"    => Debug::stopWatch("orm/insert")
-        ), static::ERROR_BUCKET, static::ERROR_BUCKET, "insert");
+            self::SCOPE_ACTION      => self::ACTION_INSERT,
+            self::SCOPE_INSERT      => $insert,
+            self::SCOPE_EXTIME      => self::stopWatch(self::ACTION_INSERT)
+        ), static::ERROR_BUCKET, static::ERROR_BUCKET, self::ACTION_INSERT);
         return $res;
     }
 
@@ -248,15 +284,15 @@ class OrmModel extends Mappable
      */
     public function update(array $set, array $where) : ?array
     {
-        Debug::stopWatch("orm/update");
+        self::stopWatch(self::ACTION_UPDATE);
 
-        $res                                                                                = $this->set($where, $set);
+        $res                        = $this->set($where, $set);
         Log::debugging(array(
-            "action"    => "update"
-            , "set"     => $set
-            , "where"   => $where
-            , "exTime"  => Debug::stopWatch("orm/update")
-        ), static::ERROR_BUCKET, static::ERROR_BUCKET, "update");
+            self::SCOPE_ACTION      => self::ACTION_UPDATE
+            , self::SCOPE_SET       => $set
+            , self::SCOPE_WHERE     => $where
+            , self::SCOPE_EXTIME    => self::stopWatch(self::ACTION_UPDATE)
+        ), static::ERROR_BUCKET, static::ERROR_BUCKET, self::ACTION_UPDATE);
 
         return $res;
     }
@@ -269,16 +305,16 @@ class OrmModel extends Mappable
      */
     public function write(array $where, array $set = null, array $insert = null) : ?array
     {
-        Debug::stopWatch("orm/write");
+        self::stopWatch(self::ACTION_WRITE);
 
-        $res                                                                                = $this->set($where, $set, $insert);
+        $res                        = $this->set($where, $set, $insert);
         Log::debugging(array(
-            "action"  => "write",
-            "where"   => $where,
-            "set"     => $set,
-            "insert"  => $insert,
-            "exTime"  => Debug::stopWatch("orm/write")
-        ), static::ERROR_BUCKET, static::ERROR_BUCKET, "write");
+            self::SCOPE_ACTION      => self::ACTION_WRITE,
+            self::SCOPE_WHERE       => $where,
+            self::SCOPE_SET         => $set,
+            self::SCOPE_INSERT      => $insert,
+            self::SCOPE_EXTIME      => self::stopWatch(self::ACTION_WRITE)
+        ), static::ERROR_BUCKET, static::ERROR_BUCKET, self::ACTION_WRITE);
 
         return $res;
     }
@@ -287,21 +323,26 @@ class OrmModel extends Mappable
      * @todo da verificare perchè e diverso dagli altri medoti
      * @param string $action
      * @param null|array $where
-     * @param null|array $fields
      * @return array|null
      */
-    public function cmd(string $action, array $where = null, array $fields = null) : ?array
+    public function cmd(string $action, array $where = null) : ?array
     {
+        self::stopWatch(self::ACTION_CMD);
+
         $this->clearResult();
 
         $this->resolveFieldsByScopes(array(
-            "select"                                                                        => $fields
-            , "where"                                                                       => $where
+            self::SCOPE_WHERE       => $where
         ));
 
         $this->execSub($action);
-
         $this->cmdData($action);
+
+        Log::debugging(array(
+            self::SCOPE_ACTION      => self::ACTION_CMD . "/" . $action,
+            self::SCOPE_WHERE       => $where,
+            self::SCOPE_EXTIME      => self::stopWatch(self::ACTION_CMD)
+        ), static::ERROR_BUCKET, static::ERROR_BUCKET, self::ACTION_CMD);
 
         return $this->getResult();
     }
@@ -312,37 +353,37 @@ class OrmModel extends Mappable
      */
     public function delete(array $where) : ?array
     {
-        Debug::stopWatch("orm/delete");
+        self::stopWatch(self::ACTION_DELETE);
 
-        $res                                                                                = null;
+        $res                        = null;
         Log::debugging(array(
-            "action"    => "delete",
-            "where"     => $where,
-            "exTime"    => Debug::stopWatch("orm/delete")
-        ), static::ERROR_BUCKET, static::ERROR_BUCKET, "delete");
+            self::SCOPE_ACTION      => self::ACTION_DELETE,
+            self::SCOPE_WHERE       => $where,
+            self::SCOPE_EXTIME      => self::stopWatch(self::ACTION_DELETE)
+        ), static::ERROR_BUCKET, static::ERROR_BUCKET, self::ACTION_DELETE);
 
         return $res;
     }
 
     /**
      * @param null|array $where
-     * @param null|array $fields
+     * @param null|array $select
      * @param null|array $sort
      * @param int $limit
      * @param int|null $offset
      * @return array|null
      */
-    private function get(array $where = null, array $fields = null, array $sort = null, int $limit = null, int $offset = null) : ?array
+    private function get(array $where = null, array $select = null, array $sort = null, int $limit = null, int $offset = null) : ?array
     {
         $this->clearResult();
 
         $single_service                                                                     = $this->resolveFieldsByScopes(array(
-                                                                                                "select"    => $fields,
-                                                                                                "where"     => $where,
-                                                                                                "sort"      => $sort
+                                                                                                self::SCOPE_SELECT    => $select,
+                                                                                                self::SCOPE_WHERE     => $where,
+                                                                                                self::SCOPE_SORT      => $sort
                                                                                             ));
         if ($single_service) {
-            $this->getDataSingle($this->services_by_data["last"], $this->services_by_data["last_table"], $limit, $offset);
+            $this->getDataSingle($this->services_by_data->last, $this->services_by_data->last_table, $limit, $offset);
         } else {
             $countRunner                                                                    = $this->throwRunnerSubs(true);
             while ($this->throwRunner($limit, $offset) > 0) {
@@ -365,9 +406,9 @@ class OrmModel extends Mappable
         /**
          * Run Main query if where isset
          */
-        if (!isset($this->main["runned"]) && isset($this->main["where"])) {
-            $this->setCount($this->getData($this->main, $this->main["service"], $this->main["def"]["mainTable"], $limit, $offset));
-            $this->main["runned"]                                               = true;
+        if (!$this->main->runned && !empty($this->main->where)) {
+            $this->setCount($this->getData($this->main, $this->main->service, $this->main->def->mainTable, $limit, $offset));
+            $this->main->runned                                                 = true;
             $counter++;
         }
 
@@ -386,14 +427,14 @@ class OrmModel extends Mappable
         /**
          * Run Sub query if where isset
          */
-        if (isset($this->subs) && is_array($this->subs) && count($this->subs)) {
+        if (is_array($this->subs) && count($this->subs)) {
             foreach ($this->subs as $controller => $tables) {
-                foreach ($tables as $table => $params) {
-                    if (!isset($params["runned"]) && isset($params["where"])
-                        && (!$unique || array_search("unique", $params["def"]["indexes"]) !== false)
+                foreach ($tables as $table => &$sub) {
+                    if (!$sub->runned && !empty($sub->where)
+                        && (!$unique || $sub->uniqueIndex())
                     ) {
-                        $this->getData($params, $controller, $table);
-                        $this->subs[$controller][$table]["runned"] = true;
+                        $this->getData($sub, $controller, $table);
+                        $sub->runned = true;
                         $counter++;
                     }
                 }
@@ -404,68 +445,68 @@ class OrmModel extends Mappable
     }
 
     /**
-     * @param array $data
+     * @param OrmQuery $data
      * @param string $controller
      * @param string $table
      * @param int $limit
      * @param int|null $offset
      * @return int|null
      */
-    private function getData(array $data, string $controller, string $table, int $limit = null, int $offset = null) : ?int
+    private function getData(OrmQuery $data, string $controller, string $table, int $limit = null, int $offset = null) : ?int
     {
         $count                                                                              = null;
-        if (isset($data["where"])) {
-            $main_table                                                                     = $data["def"]["mainTable"];
+        if (!empty($data->where)) {
+            $main_table                                                                     = $data->def->mainTable;
             $ormModel                                                                       = $this->getModel($controller);
             $regs                                                                           = $ormModel
-                                                                                                ->setStorage($data["def"])
+                                                                                                ->setStorage($data->def)
                                                                                                 ->read(
-                                                                                                    $this->getCurrentScope($data, "where"),
-                                                                                                    $this->getQuerySelect($data),
-                                                                                                    $this->getCurrentScope($data, "sort"),
+                                                                                                    $data->where,
+                                                                                                    $data->select(true),
+                                                                                                    $data->sort,
                                                                                                     $limit,
                                                                                                     $offset
                                                                                                 );
             if (!empty($regs[self::RESULT])) {
                 $thisTable                                                              = $table;
-                $aliasTable                                                             = $data["def"]["table"]["alias"];
+                $aliasTable                                                             = $data->def->table["alias"];
                 $this->result[$thisTable]                                               = $regs[self::RESULT];
                 $count                                                                  = $regs[self::COUNT];
 
-                if (is_array($data["def"]["relationship"]) && count($data["def"]["relationship"])) {
-                    foreach ($data["def"]["relationship"] as $ref => $relation) {
+                if (is_array($data->def->relationship) && count($data->def->relationship)) {
+                    foreach ($data->def->relationship as $ref => $relation) {
                         unset($whereRef);
                         $manyToMany             = false;
-                        $oneToMany              = isset($relation["tbl"]) && isset($data["def"]["struct"][$ref]);
-                        if (!$oneToMany && !isset($relation["external"])) {
+                        $oneToMany              = isset($relation[self::FREL_TABLE_NAME]) && isset($data->def->struct[$ref]);
+                        if (!$oneToMany && !isset($relation[self::FREL_EXTERNAL])) {
                             Error::register("Relation malformed: " . $thisTable . " => " . $ref  . " => " . print_r($relation, true));
                         }
                         if ($oneToMany) {
                             $thisKey            = $ref;
 
-                            $relTable           = $relation["tbl"];
-                            $relKey             = $relation["key"];
+                            $relTable           = $relation[self::FREL_TABLE_NAME];
+                            $relKey             = $relation[self::FREL_TABLE_KEY];
 
-                            if ($relTable != $main_table && isset($data["def"]["relationship"][$main_table])) {
+                            if ($relTable != $main_table && isset($data->def->relationship[$main_table])) {
                                 $manyToMany     = true;
                             }
-                        } elseif (isset($data["def"]["struct"][$relation["external"]])) {
-                            if ($ref != $main_table && isset($data["def"]["relationship"][$main_table])) {
+                        } elseif (isset($data->def->struct[$relation[self::FREL_EXTERNAL]])) {
+                            if ($ref != $main_table && isset($data->def->relationship[$main_table])) {
                                 $manyToMany     = true;
                             }
-                            if (isset($data["def"]["relationship"][$relation["external"]])) {
+                            if (isset($data->def->relationship[$relation[self::FREL_EXTERNAL]])) {
                                 $oneToMany      = true;
                             }
 
-                            $thisKey            = $relation["external"];
+                            $thisKey            = $relation[self::FREL_EXTERNAL];
 
                             $relTable           = $ref;
-                            $relKey             = $relation["primary"];
+                            $relKey             = $relation[self::FREL_PRIMARY];
                         } else {
-                            $thisKey            = $relation["primary"];
+                            $thisKey            = $relation[self::FREL_PRIMARY];
 
                             $relTable           = $ref;
-                            $relKey             = $relation["external"];
+                            $relKey             = $relation[self::FREL_EXTERNAL];
                         }
 
                         if (isset($this->rel_done[$thisTable . "." . $thisKey][$relTable . "." . $relKey])) {
@@ -476,14 +517,14 @@ class OrmModel extends Mappable
                             $whereRef           =& $this->main;
                         } elseif (isset($this->subs[$controller][$relTable])) {
                             $whereRef           =& $this->subs[$controller][$relTable];
-                        } elseif (isset($this->services_by_data["tables"][$controller . "." . $relTable])) {
+                        } elseif (isset($this->services_by_data->tables[$controller . "." . $relTable])) {
                             Error::register("Relationship not found: " . $thisTable . "." . $thisKey . " => " . $relTable . "." . $relKey);
                         }
 
                         $keyValue = array_column($regs[self::INDEX], $thisKey);
                         if (isset($whereRef) && count($keyValue)) {
                             $this->whereBuilder($whereRef, $keyValue, $relKey);
-                        } elseif (isset($this->services_by_data["tables"][$controller . "." . $relTable])) {
+                        } elseif (isset($this->services_by_data->tables[$controller . "." . $relTable])) {
                             Error::register("Relationship found but missing keyValue in result. Check in configuration indexes: " . $thisTable . " => " . $thisKey . " (" . $relTable . "." . $relKey . ")");
                         }
 
@@ -554,27 +595,23 @@ class OrmModel extends Mappable
     private function getDataSingle(string $controller, string $table, int $limit = null, int $offset = null) : void
     {
         $data                                                                               = (
-            isset($this->subs[$controller]) && isset($this->subs[$controller][$table])
+            isset($this->subs[$controller][$table])
                                                                                                 ? $this->subs[$controller][$table]
                                                                                                 : $this->main
                                                                                             );
         if ($data) {
-            $data["def"]["table"]["skip_control"] = true; //@todo da convertire in un oggetto la gestione raw
-            $regs                                                                           = $this->getModel(
-                isset($data["service"])
-                                                                                                    ? $data["service"]
-                                                                                                    : $controller
-                                                                                                )
-                                                                                                ->setStorage($data["def"])
+            $data->setControl(true);
+            $regs                                                                           = $this->getModel($data->getController($controller))
+                                                                                                ->setStorage($data->def)
                                                                                                 ->read(
-                                                                                                    $this->getCurrentScope($data, "where"),
-                                                                                                    $this->getQuerySelect($data),
-                                                                                                    $this->getCurrentScope($data, "sort"),
+                                                                                                    $data->where,
+                                                                                                    $data->select(true),
+                                                                                                    $data->sort,
                                                                                                     $limit,
                                                                                                     $offset
                                                                                                 );
             if (is_array($regs) && $regs[self::RESULT]) {
-                $this->result[$data["def"]["mainTable"]]                                        = $regs[self::RESULT];
+                $this->result[$data->def->mainTable]                                        = $regs[self::RESULT];
             }
         } else {
             Error::register("normalize data is empty", static::ERROR_BUCKET);
@@ -593,17 +630,17 @@ class OrmModel extends Mappable
         $this->clearResult();
 
         $this->resolveFieldsByScopes(array(
-            "insert"                                                                        => $insert
-            , "set"                                                                         => $set
-            , "where"                                                                       => $where
+            self::SCOPE_INSERT                                                              => $insert,
+            self::SCOPE_SET                                                                 => $set,
+            self::SCOPE_WHERE                                                               => $where
         ));
 
         $this->execSub();
 
         $this->setData();
 
-        if (isset($this->data["rev"]) && is_array($this->data["rev"]) && count($this->data["rev"])) {
-            foreach ($this->data["rev"] as $table => $controller) {
+        if (is_array($this->rev) && count($this->rev)) {
+            foreach ($this->rev as $table => $controller) {
                 $this->setData($controller, $table);
             }
         }
@@ -619,78 +656,74 @@ class OrmModel extends Mappable
     {
         $insert_key                                                                         = null;
         $data                                                                               = $this->getCurrentData($controller, $table);
-        $modelName                                                                          = (
-            isset($data["service"])
-                                                                                                ? $data["service"]
-                                                                                                : $controller
-                                                                                            );
+        $modelName                                                                          = $data->getController($controller);
         $ormModel                                                                           = $this->getModel($modelName);
-        $storage                                                                            = $ormModel->setStorage($data["def"]);
-        $key_name                                                                           = $data["def"]["key_primary"];
+        $storage                                                                            = $ormModel->setStorage($data->def);
+        $key_name                                                                           = $data->def->key_primary;
 
-        if (isset($data["insert"]) && !isset($data["set"]) && isset($data["where"])) {
-            $regs                                                                           = $storage->read($data["insert"], array($key_name => true));
+        if (!empty($data->insert) && empty($data->set) && !empty($data->where)) {
+            $regs                                                                           = $storage->read($data->insert, array($key_name => true));
             if (is_array($regs)) {
-                $this->setKeyRelationship($key_name, array_column($regs[self::INDEX], $key_name), $data, $controller);
+                $this->setKeyRelationship($data, $key_name, array_column($regs[self::INDEX], $key_name), $controller);
             } else {
-                $regs                                                                       = $storage->insert($data["insert"], $data["def"]["table"]["name"]);
+                $regs                                                                       = $storage->insert($data->insert, $data->def->table["name"]);
                 if (is_array($regs)) {
                     $insert_key                                                             = $regs[self::INDEX_PRIMARY][$key_name];
                 }
             }
-        } elseif (isset($data["insert"]) && !isset($data["set"]) && !isset($data["where"])) {
-            $regs                                                                           = $storage->insert($data["insert"], $data["def"]["table"]["name"]);
+        } elseif (!empty($data->insert) && empty($data->set) && empty($data->where)) {
+            $regs                                                                           = $storage->insert($data->insert, $data->def->table["name"]);
 
             if (is_array($regs)) {
                 $insert_key                                                                 = $regs[self::INDEX_PRIMARY][$key_name];
             }
-        } elseif (!isset($data["insert"]) && isset($data["set"]) && !isset($data["where"])) {
-            if (isset($data["def"]["relationship"][$this->main["def"]["mainTable"]]) && isset($this->main["where"])) {
-                $key_main_primary                                                           = $data["def"]["relationship"][$this->main["def"]["mainTable"]]["primary"];
-                if (!isset($this->main["where"][$key_main_primary])) {
+        } elseif (empty($data->insert) && !empty($data->set) && empty($data->where)) {
+            if (isset($data->def->relationship[$this->main->def->mainTable]) && !empty($this->main->where)) {
+                $key_main_primary                                                           = $data->def->relationship[$this->main->def->mainTable][self::FREL_PRIMARY];
+                if (!isset($this->main->where[$key_main_primary])) {
                     $regs                                                                   = $this->getModel($modelName)
-                                                                                                ->setStorage($this->main["def"])
-                                                                                                ->read($this->main["where"], array($key_main_primary => true), null, null, null, $this->main["def"]["table"]["name"]);
+                                                                                                ->setStorage($this->main->def)
+                                                                                                ->read($this->main->where, array($key_main_primary => true), null, null, null, $this->main->def->table["name"]);
                     if (is_array($regs)) {
-                        $this->main["where"][$key_main_primary]                             = array_column($regs[self::INDEX], $key_main_primary);
+                        $this->main->where[$key_main_primary]                               = array_column($regs[self::INDEX], $key_main_primary);
                     }
                 }
-                $external_name                                                              = $data["def"]["relationship"][$this->main["def"]["mainTable"]]["external"];
-                $primary_name                                                               = $data["def"]["relationship"][$this->main["def"]["mainTable"]]["primary"];
-                if (!isset($data["def"]["struct"][$external_name])) {
-                    if (!isset($this->main["where"][$external_name])) {
+                $external_name                                                              = $data->def->relationship[$this->main->def->mainTable][self::FREL_EXTERNAL];
+                $primary_name                                                               = $data->def->relationship[$this->main->def->mainTable][self::FREL_PRIMARY];
+                if (!isset($data->def->struct[$external_name])) {
+                    if (!isset($this->main->where[$external_name])) {
                         $this->setMainIndexes($ormModel);
                     }
 
-                    $data["where"][$primary_name]                                           = $this->main["where"][$external_name];
-                } elseif (isset($this->main["where"][$primary_name])) {
-                    $data["where"][$external_name]                                          = $this->main["where"][$primary_name];
+                    $data->where[$primary_name]                                             = $this->main->where[$external_name];
+                } elseif (isset($this->main->where[$primary_name])) {
+                    $data->where[$external_name]                                            = $this->main->where[$primary_name];
                 }
             }
 
-            $this->result["update"][$data["def"]["table"]["alias"]]                         = isset($data["where"]) && (bool) $storage->update($data["set"], $data["where"], $data["def"]["table"]["name"]);
-        } elseif (!isset($data["insert"]) && isset($data["set"]) && isset($data["where"])) {
-            $this->result["update"][$data["def"]["table"]["alias"]]                         = (bool) $storage->update($data["set"], $data["where"], $data["def"]["table"]["name"]);
-        } elseif (!isset($data["insert"]) && !isset($data["set"]) && isset($data["where"])) {
+            $this->result[self::ACTION_UPDATE][$data->def->table["alias"]]                  = !empty($data->where) && (bool) $storage->update($data->set, $data->where, $data->def->table["name"]);
+        } elseif (empty($data->insert) && !empty($data->set) && !empty($data->where)) {
+            $this->result[self::ACTION_UPDATE][$data->def->table["alias"]]                  = (bool) $storage->update($data->set, $data->where, $data->def->table["name"]);
+        } elseif (empty($data->insert) && empty($data->set) && !empty($data->where)) {
             Error::register("Catrina: data not managed", static::ERROR_BUCKET);
-        } elseif (isset($data["insert"]) && isset($data["set"]) && isset($data["where"])) {
+        } elseif (!empty($data->insert) && !empty($data->set) && !empty($data->where)) {
             $regs                                                                           = $storage->write(
-                $data["insert"],
-                $data["set"],
-                $data["where"],
-                $data["def"]["table"]["name"]
+                $data->insert,
+                $data->set,
+                $data->where,
+                $data->def->table["name"]
             );
-            if (isset($regs["action"]) && $regs["action"] == "insert") {
-                $insert_key                                                                 = $regs[0][self::INDEX_PRIMARY][$key_name];
-            } elseif ($regs["action"] == "update") {
-                $this->result["update"][$data["def"]["table"]["alias"]]                     = $regs[0][self::INDEX_PRIMARY][$key_name];
+            if (isset($regs[self::SCOPE_ACTION]) && $regs[self::SCOPE_ACTION] == self::ACTION_INSERT) {
+                $insert_key                                                                 = $regs[self::INDEX_PRIMARY][$key_name];
+            } elseif ($regs[self::SCOPE_ACTION] == self::ACTION_UPDATE) {
+                $this->result[self::ACTION_UPDATE][$data->def->table["alias"]]            = $regs[self::INDEX_PRIMARY][$key_name];
             }
         }
 
-        $this->setKeyRelationship($key_name, $insert_key, $data, $controller);
+        $this->setKeyRelationship($data, $key_name, $insert_key, $controller);
 
         if ($insert_key !== null) {
-            $this->result["insert"][$data["def"]["table"]["alias"]]                         = $insert_key;
+            $this->result[self::ACTION_INSERT][$data->def->table["alias"]]                = $insert_key;
         }
     }
 
@@ -701,51 +734,51 @@ class OrmModel extends Mappable
     {
         $res                                                                                = $ormModel
                                                                                                 ->getMainModel()
-                                                                                                ->setStorage($this->main["def"])
+                                                                                                ->setStorage($this->main->def)
                                                                                                 ->read(
-                                                                                                    $this->main["where"],
-                                                                                                    array_keys($this->main["def"]["indexes"])
+                                                                                                    $this->main->where,
+                                                                                                    array_keys($this->main->def->indexes)
                                                                                                 );
         if (is_array($res)) {
-            $this->main["where"]                                                            = array_replace($this->main["where"], $res);
+            $this->main->where                                                              = array_replace($this->main->where, $res);
         }
     }
 
     /**
      * @todo da tipizzare
+     * @param OrmQuery $data
      * @param string $key_name
      * @param string|array|null $key
-     * @param array|null $data
      * @param string|null $controller
      */
-    private function setKeyRelationship(string $key_name, $key = null, array $data = null, string $controller = null) : void
+    private function setKeyRelationship(OrmQuery $data, string $key_name, $key = null, string $controller = null) : void
     {
-        if ($key && is_array($data["def"]["relationship"]) && count($data["def"]["relationship"])) {
+        if ($key && is_array($data->def->relationship) && count($data->def->relationship)) {
             if (!$controller) {
-                $controller                                                                 = $this->main["service"];
+                $controller                                                                 = $this->main->service;
             }
-            foreach ($data["def"]["relationship"] as $tbl => $rel) {
-                if (isset($rel["external"]) && isset($this->subs[$controller][$tbl])) {
-                    $field_ext                                                              = $rel["external"];
-                    if (isset($data["def"]["struct"][$field_ext])) {
-                        $field_ext                                                          = $rel["primary"];
+            foreach ($data->def->relationship as $tbl => $rel) {
+                if (isset($rel[self::FREL_EXTERNAL]) && isset($this->subs[$controller][$tbl])) {
+                    $field_ext                                                              = $rel[self::FREL_EXTERNAL];
+                    if (isset($data->def->struct[$field_ext])) {
+                        $field_ext                                                          = $rel[self::FREL_PRIMARY];
                     }
                     if ($key && $field_ext && $field_ext != $key_name) {
-                        if ($tbl != $this->main["def"]["mainTable"]) {
-                            $rev_controller                                                 = $this->data["rev"][$tbl];
-
-                            if (isset($this->subs[$rev_controller][$tbl]["insert"])) {
-                                $this->subs[$rev_controller][$tbl]["insert"][$field_ext]   = $key;
+                        if ($tbl != $this->main->def->mainTable) {
+                            $rev_controller                                                 = $this->rev[$tbl];
+                            $sub = $this->getSubs($rev_controller, $tbl);
+                            if (!empty($sub->insert)) {
+                                $sub->insert[$field_ext]                                    = $key;
                             }
-                            if (isset($this->subs[$rev_controller][$tbl]["set"])) {
-                                $this->subs[$rev_controller][$tbl]["where"][$field_ext]    = $key;
+                            if (!empty($sub->set)) {
+                                $sub->where[$field_ext]                                     = $key;
                             }
                         } else {
-                            if (isset($this->main["insert"])) {
-                                $this->main["insert"][$field_ext]                           = $key;
+                            if (!empty($this->main->insert)) {
+                                $this->main->insert[$field_ext]                             = $key;
                             }
-                            if (isset($this->main["set"])) {
-                                $this->main["where"][$field_ext]                            = $key;
+                            if (!empty($this->main->set)) {
+                                $this->main->where[$field_ext]                              = $key;
                             }
                         }
                     }
@@ -761,20 +794,20 @@ class OrmModel extends Mappable
     {
         if (isset($this->subs) && is_array($this->subs) && count($this->subs)) {
             foreach ($this->subs as $controller => $tables) {
-                foreach ($tables as $table => $params) {
+                foreach ($tables as $table => $sub) {
                     $field_ext                                                              = (
-                        isset($params["def"]["relationship"][$params["def"]["mainTable"]]["external"])
-                                                                                                ? $params["def"]["relationship"][$params["def"]["mainTable"]]["external"]
+                        isset($sub->def->relationship[$sub->def->mainTable][self::FREL_EXTERNAL])
+                                                                                                ? $sub->def->relationship[$sub->def->mainTable][self::FREL_EXTERNAL]
                                                                                                 : null
                                                                                             );
                     $field_main_ext                                                         = (
-                        isset($params["def"]["relationship"][$this->main["def"]["mainTable"]]["external"])
-                                                                                                ? $params["def"]["relationship"][$this->main["def"]["mainTable"]]["external"]
+                        isset($sub->def->relationship[$this->main->def->mainTable][self::FREL_EXTERNAL])
+                                                                                                ? $sub->def->relationship[$this->main->def->mainTable][self::FREL_EXTERNAL]
                                                                                                 : null
                                                                                             );
 
-                    if (isset($params["def"]["struct"][$field_ext]) || isset($params["def"]["struct"][$field_main_ext])) {
-                        $this->data["rev"][$table]                                          = $controller;
+                    if (isset($sub->def->struct[$field_ext]) || isset($sub->def->struct[$field_main_ext])) {
+                        $this->rev[$table]                                                  = $controller;
                     } else {
                         if ($cmd) {
                             $this->cmdData($cmd, $controller, $table);
@@ -795,24 +828,24 @@ class OrmModel extends Mappable
     private function cmdData(string $command, string $controller = null, string $table = null) : void
     {
         $data                                                                               = $this->getCurrentData($controller, $table);
-        if (isset($data["where"])) {
+        if (isset($data->where)) {
             $ormModel                                                                       = $this->getModel($controller);
             $regs                                                                           = $ormModel
-                                                                                                ->setStorage($data["def"])
+                                                                                                ->setStorage($data->def)
                                                                                                 ->cmd(
-                                                                                                    $this->getCurrentScope($data, "where"),
+                                                                                                    $data->where,
                                                                                                     $command
                                                                                             );
-            $this->result["cmd"]                                                            = $regs;
+            $this->result[self::ACTION_CMD]                                                 = $regs;
         }
     }
 
     /**
      * @param string|null $controller
      * @param string|null $table
-     * @return array|null
+     * @return OrmQuery
      */
-    private function getCurrentData(string $controller = null, string $table = null) : ?array
+    private function getCurrentData(string $controller = null, string $table = null) : OrmQuery
     {
         $data       = $this->main;
         if ($controller || $table) {
@@ -831,16 +864,16 @@ class OrmModel extends Mappable
      */
     private function getResult() : ?array
     {
-        if (isset($this->result["insert"])) {
-            $res                                                                        = $this->result["insert"];
-        } elseif (isset($this->result["update"])) {
-            $res                                                                        = $this->result["update"];
-        } elseif (isset($this->result["cmd"])) {
-            $res                                                                        = $this->result["cmd"];
+        if (isset($this->result[self::ACTION_INSERT])) {
+            $res                                                                        = $this->result[self::ACTION_INSERT];
+        } elseif (isset($this->result[self::ACTION_UPDATE])) {
+            $res                                                                        = $this->result[self::ACTION_UPDATE];
+        } elseif (isset($this->result[self::ACTION_CMD])) {
+            $res                                                                        = $this->result[self::ACTION_CMD];
         } else {
             $res                                                                        = (
-                isset($this->result[$this->main["def"]["mainTable"]])
-                ? $this->result[$this->main["def"]["mainTable"]]
+                isset($this->result[$this->main->def->mainTable])
+                ? $this->result[$this->main->def->mainTable]
                 : null
             );
 
@@ -853,31 +886,32 @@ class OrmModel extends Mappable
     }
 
     /**
-     * @param array $data
+     * @param array $scopes
      * @return bool
      */
-    private function resolveFieldsByScopes(array $data) : bool
+    private function resolveFieldsByScopes(array $scopes) : bool
     {
-        foreach ($data as $scope => $fields) {
-            $this->resolveFields($fields, $scope);
+        $this->services_by_data                                                             = new OrmControllers();
+        $this->main                                                                         = new OrmQuery();
+        foreach ($scopes as $scope => $fields) {
+            $this->resolveFields($scope, $fields);
         }
 
-        if (!isset($this->services_by_data["services"])) {
+        if (!isset($this->services_by_data->services)) {
             Error::register("Query is empty", static::ERROR_BUCKET);
         }
-        $is_single_service                                                                  = (count($this->services_by_data["services"]) == 1);
-
-        if ((!isset($this->main) || !(isset($this->main["where"]) || isset($this->main["select"]) || isset($this->main["insert"]))) && $is_single_service) {
-            $subService                                                                     = key($this->services_by_data["services"]);
+        $is_single_service                                                                  = (count($this->services_by_data->services) == 1);
+        if (empty($this->main->where) && empty($this->main->select) && empty($this->main->insert) && $is_single_service) {
+            $subService                                                                     = key($this->services_by_data->services);
             $ormModel                                                                       = $this->getModel($subService);
             $subTable                                                                       = $ormModel->getMainTable();
 
             if (isset($this->subs[$subService]) && isset($this->subs[$subService][$subTable])) {
                 $this->main                                                                 = $this->subs[$subService][$subTable];
             } else {
-                $this->main["def"]                                                          = $ormModel->getStruct($subTable);
+                $this->main->def                                                            = $ormModel->getStruct($subTable);
             }
-            $this->main["service"]                                                          = $subService;
+            $this->main->service                                                            = $subService;
 
             unset($this->subs[$subService][$subTable]);
             if (!count($this->subs[$subService])) {
@@ -887,45 +921,53 @@ class OrmModel extends Mappable
                 unset($this->subs);
             }
 
-            if ($data["where"] === true) {
+            /*if ($scopes[self::SCOPE_WHERE] === true) {
                 $this->subs[$subService]["state"]["where"] = true;
-            }
+            }*/
         } else {
             $mainTable                                                                      = $this->getMainTable();
 
-            $this->main["def"]                                                              = $this->getStruct($mainTable);
-            $this->main["service"]                                                          = $this->getName();
+            $this->main->def                                                                = $this->getStruct($mainTable);
+            $this->main->service                                                            = $this->getName();
 
-            if ($data["where"] === true) {
-                $this->main["where"] = true;
+            if ($scopes[self::SCOPE_WHERE] === true) {
+                $this->main->where = true;
             }
         }
 
-        /*if (!isset($this->main["select"]) && isset($data["select"]) && !$is_single_service) {
-            $key_name                                                                       = $this->main["def"]["key_primary"];
-            $this->main["select"][$key_name]                                                = $key_name;
-            $this->main["select_is_empty"]                                                  = true;
-        }*/
-
-        if (empty($this->main["select"]) || isset($this->main["select"]["*"])) {
-            $this->main["select"] = $this->getAllFields($this->main["def"]["struct"]);
+        if (empty($this->main->select) || isset($this->main->select["*"])) {
+            $this->main->getAllFields(true);
         }
-
-        return (!isset($this->services_by_data["use_alias"]) && is_array($this->services_by_data["tables"]) && count($this->services_by_data["tables"]) === 1);
+        return (!$this->services_by_data->use_alias && is_array($this->services_by_data->tables) && count($this->services_by_data->tables) === 1);
     }
 
     /**
-     * @param array|null $fields
-     * @param string $scope
+     * @param null $service
+     * @param null $table
+     * @return OrmQuery
      */
-    private function resolveFields(array $fields = null, $scope = "fields") : void
+    private function &getSubs($service = null, $table = null) : OrmQuery
+    {
+        if (!isset($this->subs[$service][$table])) {
+            $this->subs[$service][$table]                                                   = new OrmQuery();
+            $this->subs[$service][$table]->def                                              = $this->getModel($service)->getStruct($table);
+        }
+
+        return $this->subs[$service][$table];
+    }
+
+    /**
+     * @param string $scope
+     * @param array|null $fields
+     */
+    private function resolveFields($scope, array $fields = null) : void
     {
         if (is_array($fields) && count($fields)) {
             $mainService                                                                    = $this->getName();
             $mainTable                                                                      = $this->getMainTable();
-            if ($scope == "select" || $scope == "where" || $scope == "sort") {
-                $this->services_by_data["last"]                                             = $mainService;
-                $this->services_by_data["last_table"]                                       = $mainTable;
+            if ($scope == self::SCOPE_SELECT || $scope == self::SCOPE_WHERE || $scope == self::SCOPE_SORT) {
+                $this->services_by_data->last                                               = $mainService;
+                $this->services_by_data->last_table                                         = $mainTable;
             }
             $is_or                                                                          = false;
             if (isset($fields['$or'])) {
@@ -939,19 +981,15 @@ class OrmModel extends Mappable
                 $service                                                                    = $mainService;
                 if (is_numeric($key)) {
                     $key                                                                    = $alias;
-                    if ($scope != "insert" && $scope != "set") {
+                    if ($scope != self::SCOPE_INSERT && $scope != self::SCOPE_SET) {
                         $alias = true;
                     }
                 } elseif (is_null($alias)) {
                     $alias                                                                  = null;
                 }
 
-                if ($scope == "select" && $alias && is_string($alias)) {
-                    if (isset($this->services_by_data["use_alias"])) {
-                        $this->services_by_data["use_alias"]++;
-                    } else {
-                        $this->services_by_data["use_alias"] = 1;
-                    }
+                if ($scope == self::SCOPE_SELECT && $alias && is_string($alias)) {
+                    $this->services_by_data->use_alias++;
                 }
 
                 $parts                                                                      = explode(".", $key);
@@ -988,38 +1026,33 @@ class OrmModel extends Mappable
                 /*if ($parts[abs($fIndex)] == "*") {
                     continue;
                 }*/
-                $this->services_by_data["services"][$service]                               = true;
-                $this->services_by_data["tables"][$service . "." . $table]                  = true;
-                $this->services_by_data[$scope][$service]                                   = true;
-                if ($scope == "select" || $scope == "where" || $scope == "sort") {
-                    $this->services_by_data["last"]                                         = $service;
-                    $this->services_by_data["last_table"]                                   = $table;
+                $this->services_by_data->services[$service]                                 = true;
+                $this->services_by_data->tables[$service . "." . $table]                    = true;
+                $this->services_by_data->scopes[$scope][$service]                           = true;
+                if ($scope == self::SCOPE_SELECT || $scope == self::SCOPE_WHERE || $scope == self::SCOPE_SORT) {
+                    $this->services_by_data->last                                           = $service;
+                    $this->services_by_data->last_table                                     = $table;
                 }
                 if ($fIndex === null || $fIndex < 0) {
-                    if ($is_or) {
-                        $this->main[$scope]['$or'][$parts[abs($fIndex)]]                    = (
-                            $alias === true && $scope == "select"
-                                                                                                ? $parts[abs($fIndex)]
-                                                                                                : $alias
-                                                                                            );
-                    } else {
-                        $this->main[$scope][$parts[abs($fIndex)]]                           = (
-                            $alias === true && $scope == "select"
-                                                                                                ? $parts[abs($fIndex)]
-                                                                                                : $alias
-                                                                                            );
-                    }
+                    $this->main->set(
+                        $scope,
+                        $parts[abs($fIndex)],
+                        (
+                            $alias === true && $scope == self::SCOPE_SELECT
+                            ? $parts[abs($fIndex)]
+                            : $alias
+                        ),
+                        $is_or
+                    );
                     continue;
                 }
 
-                if (!isset($this->subs) || !isset($this->subs[$service][$table]["def"])) {
-                    $this->subs[$service][$table]["def"]                                    = $this->getModel($service)->getStruct($table);
-                }
+                $subs = $this->getSubs($service, $table);
 
-                if (!isset($this->subs[$service][$table]["def"]["struct"][$parts[$fIndex]])) {
-                    if ($scope == "select" && $parts[$fIndex] == "*") {
-                        if (is_array($this->subs[$service][$table]["def"]["struct"])) {
-                            $this->subs[$service][$table][$scope]                           = $this->getAllFields($this->subs[$service][$table]["def"]["struct"]);
+                if (!isset($subs->def->struct[$parts[$fIndex]])) {
+                    if ($scope == self::SCOPE_SELECT && $parts[$fIndex] == "*") {
+                        if (is_array($subs->def->struct)) {
+                            $subs->getAllFields(true);
                         } else {
                             Error::register("Undefined Struct on Table: `" . $table . "` Model: `" . $service . "`", static::ERROR_BUCKET);
                         }
@@ -1029,22 +1062,19 @@ class OrmModel extends Mappable
                     continue;
                 }
 
-                if ($scope == "insert") {
-                    $this->subs[$service][$table]["insert"][$parts[$fIndex]]                = $alias;
+                if ($scope == self::SCOPE_INSERT) {
+                    $subs->insert[$parts[$fIndex]]                                          = $alias;
                 } else {
-                    if ($is_or) {
-                        $this->subs[$service][$table][$scope]['$or'][$parts[$fIndex]]       = (
-                            $alias === true && $scope == "select"
+                    $subs->set(
+                        $scope,
+                        $parts[$fIndex],
+                        (
+                            $alias === true && $scope == self::SCOPE_SELECT
                             ? $parts[$fIndex]
                             : $alias
-                        );
-                    } else {
-                        $this->subs[$service][$table][$scope][$parts[$fIndex]]              = (
-                            $alias === true && $scope == "select"
-                            ? $parts[$fIndex]
-                            : $alias
-                        );
-                    }
+                        ),
+                        $is_or
+                    );
                 }
             }
         }
@@ -1064,62 +1094,28 @@ class OrmModel extends Mappable
     }
 
     /**
-     * @param array $ref
+     * @param OrmQuery $ref
      * @param array $keys
      * @param string $field
      */
-    private static function whereBuilder(array &$ref, array $keys, string $field) : void
+    private static function whereBuilder(OrmQuery &$ref, array $keys, string $field) : void
     {
-        if (!isset($ref["where"])) {
-            $ref["where"]                                                                   = array();
+        if (empty($ref->where)) {
+            $ref->where                                                                     = array();
         }
-        if (!isset($ref["where"][$field])) {
-            $ref["where"][$field]                                                           = (
+        if (!isset($ref->where[$field])) {
+            $ref->where[$field]                                                             = (
                 count($keys) == 1
                 ? $keys[0]
                 : $keys
             );
-        } elseif (is_array($ref["where"][$field])) {
-            $ref["where"][$field]                                                           = $ref["where"][$field] + $keys;
+        } elseif (is_array($ref->where[$field])) {
+            $ref->where[$field]                                                             = $ref->where[$field] + $keys;
         } else {
-            $ref["where"][$field]                                                           = array($ref["where"][$field]) + $keys;
+            $ref->where[$field]                                                             = array($ref->where[$field]) + $keys;
         }
     }
 
-    /**
-     * @param array $source
-     * @return array
-     */
-    private static function getAllFields(array $source) : array
-    {
-        $diff = array_keys($source);
-        return array_combine($diff, $diff);
-    }
-
-    /**
-     * @param array $data
-     * @param string $scope
-     * @return array|null
-     */
-    private static function getCurrentScope(array $data, string $scope) : ?array
-    {
-        return (isset($data[$scope])
-            ? $data[$scope]
-            : null
-        );
-    }
-
-    /**
-     * @param array $data
-     * @return array
-     */
-    private static function getQuerySelect(array $data) : array
-    {
-        return (isset($data["select"])
-            ? $data["select"]
-            : self::getAllFields($data["def"]["struct"])
-        );
-    }
     /**
      * @param int|null $count
      */
@@ -1158,14 +1154,14 @@ class OrmModel extends Mappable
 
     private function clearResult() : void
     {
-        $this->data                                                         = array();
+        $this->rev                                                          = array();
         $this->rel                                                          = array();
         $this->rel_done                                                     = array();
-        $this->main                                                         = array();
+        $this->main                                                         = null;
         $this->subs                                                         = array();
         $this->result                                                       = array();
         $this->count                                                        = null;
-        $this->services_by_data                                             = array();
+        $this->services_by_data                                             = null;
 
         Error::clear(static::ERROR_BUCKET);
     }

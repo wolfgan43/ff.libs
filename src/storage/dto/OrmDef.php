@@ -24,21 +24,49 @@
  *  @link https://github.com/wolfgan43/vgallery
  */
 
-namespace phpformsframework\libs\dto;
+namespace phpformsframework\libs\storage\dto;
 
+use phpformsframework\libs\storage\DatabaseAdapter;
+
+/**
+ * Class OrmDef
+ * @package phpformsframework\libs\storage\dto
+ */
 class OrmDef
 {
-    private $struct = array();
-    private $indexes = null;
-    private $table = null;
-    private $main_table = null;
+    public $mainTable       = null;
+    public $table           = array();
+    public $struct          = array();
+    public $indexes         = array();
+    public $relationship    = array();
+    public $key_primary     = null;
 
+    /**
+     * OrmDef constructor.
+     * @param string $main_table
+     */
+    public function __construct(string $main_table)
+    {
+        $this->mainTable   = $main_table;
+    }
 
+    public function setKeyPrimary()
+    {
+        $this->key_primary  = (string) array_search(DatabaseAdapter::FTYPE_PRIMARY, $this->struct);
+    }
     /**
      * @return int|null
      */
     public function count() : ?int
     {
         return $this->count;
+    }
+
+    /**
+     * @return array
+     */
+    public function toArray() : array
+    {
+        return get_object_vars($this);
     }
 }

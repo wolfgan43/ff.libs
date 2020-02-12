@@ -228,7 +228,7 @@ class OrmModel extends Mappable
     {
         self::stopWatch(self::ACTION_READ);
 
-        $res                        = $this->get($where, $select, $sort, $limit, $offset);
+        $this->get($where, $select, $sort, $limit, $offset);
         Log::debugging(array(
             self::SCOPE_ACTION      => self::ACTION_READ,
             self::SCOPE_SELECT      => $select,
@@ -239,7 +239,32 @@ class OrmModel extends Mappable
             self::SCOPE_EXTIME      => self::stopWatch(self::ACTION_READ)
         ), static::ERROR_BUCKET, static::ERROR_BUCKET, self::ACTION_READ);
 
-        return $res;
+        return $this->getResult();
+    }
+
+    /**
+     * @param null|array $select
+     * @param null|array $where
+     * @param null|array $sort
+     * @param int|null $offset
+     * @return array|null
+     */
+    public function readOne(array $select = null, array $where = null, array $sort = null, int $offset = null) : ?array
+    {
+        self::stopWatch(self::ACTION_READ);
+
+        $this->get($where, $select, $sort, 1, $offset);
+        Log::debugging(array(
+            self::SCOPE_ACTION      => self::ACTION_READ,
+            self::SCOPE_SELECT      => $select,
+            self::SCOPE_WHERE       => $where,
+            self::SCOPE_SORT        => $sort,
+            self::SCOPE_LIMIT       => 1,
+            self::SCOPE_OFFSET      => $offset,
+            self::SCOPE_EXTIME      => self::stopWatch(self::ACTION_READ)
+        ), static::ERROR_BUCKET, static::ERROR_BUCKET, self::ACTION_READ);
+
+        return $this->getResult(true);
     }
 
     /**
@@ -371,9 +396,8 @@ class OrmModel extends Mappable
      * @param null|array $sort
      * @param int $limit
      * @param int|null $offset
-     * @return array|null
      */
-    private function get(array $where = null, array $select = null, array $sort = null, int $limit = null, int $offset = null) : ?array
+    private function get(array $where = null, array $select = null, array $sort = null, int $limit = null, int $offset = null) : void
     {
         $this->clearResult();
 
@@ -390,8 +414,6 @@ class OrmModel extends Mappable
                 $countRunner++;
             }
         }
-
-        return $this->getResult();
     }
 
     /**
@@ -427,7 +449,7 @@ class OrmModel extends Mappable
         /**
          * Run Sub query if where isset
          */
-        if (is_array($this->subs) && count($this->subs)) {
+        if (!empty($this->subs)) {
             foreach ($this->subs as $controller => $tables) {
                 foreach ($tables as $table => &$sub) {
                     if (!$sub->runned && !empty($sub->where)
@@ -473,7 +495,7 @@ class OrmModel extends Mappable
                 $this->result[$thisTable]                                               = $regs[self::RESULT];
                 $count                                                                  = $regs[self::COUNT];
 
-                if (is_array($data->def->relationship) && count($data->def->relationship)) {
+                if (!empty($data->def->relationship)) {
                     foreach ($data->def->relationship as $ref => $relation) {
                         unset($whereRef);
                         $manyToMany             = false;
@@ -522,7 +544,7 @@ class OrmModel extends Mappable
                         }
 
                         $keyValue = array_column($regs[self::INDEX], $thisKey);
-                        if (isset($whereRef) && count($keyValue)) {
+                        if (!empty($keyValue)) {
                             $this->whereBuilder($whereRef, $keyValue, $relKey);
                         } elseif (isset($this->services_by_data->tables[$controller . "." . $relTable])) {
                             Error::register("Relationship found but missing keyValue in result. Check in configuration indexes: " . $thisTable . " => " . $thisKey . " (" . $relTable . "." . $relKey . ")");
@@ -639,7 +661,7 @@ class OrmModel extends Mappable
 
         $this->setData();
 
-        if (is_array($this->rev) && count($this->rev)) {
+        if (!empty($this->rev)) {
             foreach ($this->rev as $table => $controller) {
                 $this->setData($controller, $table);
             }
@@ -753,7 +775,7 @@ class OrmModel extends Mappable
      */
     private function setKeyRelationship(OrmQuery $data, string $key_name, $key = null, string $controller = null) : void
     {
-        if ($key && is_array($data->def->relationship) && count($data->def->relationship)) {
+        if ($key && !empty($data->def->relationship)) {
             if (!$controller) {
                 $controller                                                                 = $this->main->service;
             }
@@ -792,7 +814,7 @@ class OrmModel extends Mappable
      */
     private function execSub(string $cmd = null) : void
     {
-        if (isset($this->subs) && is_array($this->subs) && count($this->subs)) {
+        if (isset($this->subs) && !empty($this->subs)) {
             foreach ($this->subs as $controller => $tables) {
                 foreach ($tables as $table => $sub) {
                     $field_ext                                                              = (
@@ -860,9 +882,10 @@ class OrmModel extends Mappable
     }
 
     /**
+     * @param bool $isOne
      * @return array|null
      */
-    private function getResult() : ?array
+    private function getResult(bool $isOne = false) : ?array
     {
         if (isset($this->result[self::ACTION_INSERT])) {
             $res                                                                        = $this->result[self::ACTION_INSERT];
@@ -877,8 +900,8 @@ class OrmModel extends Mappable
                 : null
             );
 
-            if (isset($res[0]) && count($res) == 1) {
-                $res                                                                    = $res[0];
+            if ($isOne && $res) {
+                $res                                                                    = array_shift($res);
             }
         }
 
@@ -962,7 +985,7 @@ class OrmModel extends Mappable
      */
     private function resolveFields($scope, array $fields = null) : void
     {
-        if (is_array($fields) && count($fields)) {
+        if (!empty($fields)) {
             $mainService                                                                    = $this->getName();
             $mainTable                                                                      = $this->getMainTable();
             if ($scope == self::SCOPE_SELECT || $scope == self::SCOPE_WHERE || $scope == self::SCOPE_SORT) {

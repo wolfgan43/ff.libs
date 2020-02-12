@@ -299,9 +299,9 @@ class FrameworkCss extends Mappable
             }
         }
 
-        return (is_array($res) && count($res)
-            ? " " . implode(" ", array_keys($res))
-            : ""
+        return (empty($res)
+            ? ""
+            : " " . implode(" ", array_keys($res))
         );
     }
     public function button($value, $additional_class = null)
@@ -390,8 +390,8 @@ class FrameworkCss extends Mappable
     private function getClassByResolution($resolution = array(), $type = "col")
     {
         $arrRes                                         = array();
-        if (is_array($resolution) && count($resolution)) {
-            if (is_array($this->resolution) && count($this->resolution)) {
+        if (!empty($resolution)) {
+            if (!empty($this->resolution)) {
                 $diff_resolution = count($resolution) - count($this->resolution);
                 if ($diff_resolution > 0) {
                     $resolution                         = array_slice($resolution, $diff_resolution, count($this->resolution));
@@ -411,7 +411,7 @@ class FrameworkCss extends Mappable
                 }
             }
 
-            if (is_array($resolution) && count($resolution)) {
+            if (!empty($resolution)) {
                 if ($this->skip_resolution) {
                     $resolution                         = array_reverse($resolution);
                 }
@@ -436,7 +436,7 @@ class FrameworkCss extends Mappable
 
                         if ($res_num || isset($arrType[$real_prefix])) {
                             if (!$this->skip_resolution
-                                && is_array($this->resolution) && count($this->resolution)
+                                && !empty($this->resolution)
                                 && isset($this->resolution[$i])
                             ) {
                                 $arrRes[$i]         .= $this->resolution[$i] . ($this->resolution[$i] && $res_num ? "-" : "");
@@ -458,7 +458,7 @@ class FrameworkCss extends Mappable
                     }
                     $i++;
                 }
-                if (is_array($arrRes) && count($arrRes)) {
+                if (!empty($arrRes)) {
                     if (array_key_exists(count($resolution) - 1, $arrRes) && isset($arrType[$real_prefix . "-largest"])) {
                         $arrRes[count($resolution) - 1]     .= $arrType[$real_prefix . "-largest"];
                     }

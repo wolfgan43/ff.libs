@@ -27,28 +27,46 @@ namespace phpformsframework\libs\delivery\drivers;
 
 use phpformsframework\libs\international\Translator;
 
+/**
+ * Class MailerSimple
+ * @package phpformsframework\libs\delivery\drivers
+ */
 final class MailerSimple extends Mailer
 {
     private $content                                        = null;
 
-    public function setMessage($content)
+    /**
+     * @todo da tipizzare
+     * @param array|string $content
+     * @return MailerSimple
+     */
+    public function setMessage($content) : self
     {
         $this->content                                      = $content;
 
         return $this;
     }
 
-    protected function processSubject()
+    /**
+     * @return string
+     */
+    protected function processSubject() : string
     {
         return Translator::get_word_by_code($this->subject);
     }
 
-    protected function processBody()
+    /**
+     * @return string|null
+     */
+    protected function processBody() : ?string
     {
         return $this->content;
     }
 
-    protected function processBodyAlt()
+    /**
+     * @return string
+     */
+    protected function processBodyAlt() : string
     {
         return '';
     }

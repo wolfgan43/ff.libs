@@ -208,7 +208,7 @@ EOD
             self::out('<tr><td style="vertical-align: top;"><b>Func:</b></td><td>' . $errfunc . '</td></tr>');
         }
         // DISPLAY FUNCTION ARGUMENTS
-        if (isset($errargs) && is_array($errargs) && count($errargs)) {
+        if (!empty($errargs)) {
             self::out('<tr><td style="vertical-align: top;"><b>Func Args:</b></td><td>');
             self::structPrint($errargs, 0, true);
             self::out('</td></tr>');
@@ -255,7 +255,7 @@ EOD
                     self::out('<tr><td style="width: 100px; vertical-align: top;"><b>File:</b></td><td>' . $value["file"] . '</td></tr>');
                     self::out('<tr><td style="vertical-align: top;"><b>Line:</b></td><td>' . $value["line"] . '</td></tr>');
                     self::out('<tr><td style="vertical-align: top;"><b>Func:</b></td><td>' . $backtrace[$key + 1]["function"] . '</td></tr>');
-                    if (isset($backtrace[$key + 1]["args"]) && is_array($backtrace[$key + 1]["args"]) && count($backtrace[$key + 1]["args"])) {
+                    if (!empty($backtrace[$key + 1]["args"])) {
                         self::out('<tr><td style="vertical-align: top;"><b>Used Args:</b></td><td>');
                         self::structPrint($backtrace[$key + 1]["args"], 0, true);
                         self::out('</td></tr>');
@@ -304,7 +304,7 @@ EOD
     private static function removeGlobals($params)
     {
         $res = null;
-        if (is_array($params) && count($params)) {
+        if (!empty($params)) {
             $res = array();
             foreach ($params as $key => $value) {
                 if (!(

@@ -132,6 +132,10 @@ class Constant
      */
     const CACHE_DATABASE_ADAPTER            = "Native";
     /**
+     * @var string[Native|ElasticSearch]
+     */
+    const CACHE_MEDIA_ADAPTER               = "Fs";
+    /**
      * @var string[Html|Amp|Smarty|Blade]
      */
     const TEMPLATE_ADAPTER                  = "Html";

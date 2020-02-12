@@ -26,31 +26,55 @@
 namespace phpformsframework\libs\delivery\adapters;
 
 use phpformsframework\libs\delivery\NoticeAdapter;
+use phpformsframework\libs\dto\DataError;
 use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\delivery\drivers\Messenger;
 
+/**
+ * Class NoticeSms
+ * @package phpformsframework\libs\delivery\adapters
+ */
 class NoticeSms extends NoticeAdapter
 {
     private $content                        = null;
 
-    public function checkRecipient($target)
+    /**
+     * @param string $target
+     * @return bool
+     */
+    public function checkRecipient(string $target) : bool
     {
         return Validator::isTel($target);
     }
-    public function send($message)
+
+    /**
+     * @param string $message
+     * @return DataError
+     */
+    public function send(string $message) : DataError
     {
         $this->content                      = $message;
 
         return $this->process();
     }
-    public function sendLongMessage($title, $fields = null, $template = null)
+
+    /**
+     * @param string $title
+     * @param array|null $fields
+     * @param string|null $template
+     * @return DataError
+     */
+    public function sendLongMessage(string $title, array $fields = null, string $template = null) : DataError
     {
         $this->content                      = $title;
 
         return $this->process();
     }
 
-    protected function process()
+    /**
+     * @return DataError
+     */
+    protected function process() : DataError
     {
         return Messenger::getInstance($this->connection_service)
             ->setConnection($this->connection)

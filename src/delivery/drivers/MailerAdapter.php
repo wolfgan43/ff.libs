@@ -29,6 +29,10 @@ use Exception;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 
+/**
+ * Class MailerAdapter
+ * @package phpformsframework\libs\delivery\drivers
+ */
 class MailerAdapter
 {
     const PREFIX                                            = null;

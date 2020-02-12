@@ -773,7 +773,7 @@ class Media implements Configurable
      */
     public static function loadSchema(array $rawdata) : array
     {
-        if (is_array($rawdata) && count($rawdata)) {
+        if (!empty($rawdata)) {
             $schema                                                 = array();
             foreach ($rawdata as $thumb) {
                 $attr                                               = Dir::getXmlAttr($thumb);
@@ -936,7 +936,7 @@ class Media implements Configurable
         $arrFilename   			                                    = explode("-", $filename);
 
         $offset                                                     = count($arrFilename) - 1;
-        if (is_array(self::$modes) && count(self::$modes)) {
+        if (!empty(self::$modes)) {
             foreach (self::$modes as $key => $value) {
                 if (strpos($basename, ($offset ? "-" : "") . $key . ".")) {
                     $mode                                           = $key;
@@ -1143,8 +1143,7 @@ class Media implements Configurable
         if ($this->pathinfo["render"] == static::RENDER_ASSETS_PATH) {
             if ($this->staticProcess($mode)) {
                 $final_file = $this->processFinalFile();
-
-                if ($final_file && !Error::check(static::ERROR_BUCKET)) {
+                if ($final_file) {
                     $this->renderNoImg($final_file);
                 }
             } elseif ($this->isImage()) {
@@ -1220,7 +1219,7 @@ class Media implements Configurable
             }
         }
 
-        if ($final_file && !Error::check(static::ERROR_BUCKET)) {
+        if ($final_file) {
             $this->renderNoImg($final_file, $status);
         }
 
@@ -1244,7 +1243,7 @@ class Media implements Configurable
         $orig                                                       = $this->pathinfo["orig"];
         if (strpos($orig, "/wmk") !== false) {
             $arrWmk                                                 = explode("/wmk", substr($orig, strpos($orig, "/wmk") + strlen("/wmk")));
-            if (is_array($arrWmk) && count($arrWmk)) {
+            if (!empty($arrWmk)) {
                 foreach ($arrWmk as $arrWmk_file) {
                     $wmk_abs_file                                   = Constant::UPLOAD_DISK_PATH . $arrWmk_file;
                     if (strlen($arrWmk_file) && is_file($wmk_abs_file)) {
@@ -1296,7 +1295,7 @@ class Media implements Configurable
     {
         if ($this->filesource) {
             $str_wmk_file                                           = "";
-            if (is_array($this->wmk) && count($this->wmk)) {
+            if (!empty($this->wmk)) {
                 $str_wmk_file_time                                  = "";
                 $str_wmk_file_path                                  = "";
                 foreach ($this->wmk as $wmk_file) {
@@ -1489,7 +1488,7 @@ class Media implements Configurable
         }
 
         //Multi Watermark Image
-        if (is_array($this->wmk) && count($this->wmk)) {
+        if (!empty($this->wmk)) {
             foreach ($this->wmk as $wmk_file) {
                 $cThumb_wmk                                         = new ImageThumb($params["dim_x"], $params["dim_y"]);
                 $cThumb_wmk->new_res_max_x 						    = $params["max_x"];

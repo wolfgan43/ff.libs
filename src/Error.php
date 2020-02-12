@@ -113,7 +113,7 @@ class Error
      */
     public static function addRules(array $rules) : void
     {
-        if (is_array($rules) && count($rules)) {
+        if (!empty($rules)) {
             if (isset($rules["hosts"])) {
                 foreach ($rules["hosts"] as $source => $engine) {
                     self::addRule($source, $engine, "host");
@@ -177,7 +177,7 @@ class Error
     private static function findByHost(string $host_name = null) : ?string
     {
         $res                                            = null;
-        if (is_array(self::$rules["host"]) && count(self::$rules["host"])) {
+        if (!empty(self::$rules["host"])) {
             $arrHost                                    = explode(".", (
                 $host_name
                                                             ? $host_name
@@ -198,7 +198,7 @@ class Error
     {
         $rule                                           = null;
         $res                                            = null;
-        if (is_array(self::$rules["path"]) && count(self::$rules["path"])) {
+        if (!empty(self::$rules["path"])) {
             $base_path                                  = $path_info;
             if ($base_path) {
                 do {

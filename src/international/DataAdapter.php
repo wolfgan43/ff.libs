@@ -34,7 +34,7 @@ use stdClass;
  */
 class DataAdapter extends Mappable
 {
-    protected $date_time = array(
+    protected $datetime = array(
         "prototype"     => "DAY/MONTH/YEAR HOUR:MINUTE:SECOND",
         "regexp"        => "/((\d+):(\d+)(:(\d+))*\s+(\d+)[-\/](\d+)[-\/](\d+))|((\d+)[-\/](\d+)[-\/](\d+)\s+(\d+):(\d+)(:(\d+))*)/",
         "day"           => 6,
@@ -84,7 +84,7 @@ class DataAdapter extends Mappable
     protected $check_date = array(
         "regexp"        => "/\\d{1,2}\\/\\d{1,2}\\/\\d{4}/"
     );
-    protected $check_date_time = array(
+    protected $check_datetime = array(
         "regexp"        => "/\\d{1,2}\\/\\d{1,2}\\/\\d{4}\\s*\\d{1,2}:\\d{1,2}(:\\d{1,2}){0,1}/"
     );
 
@@ -106,7 +106,7 @@ class DataAdapter extends Mappable
     protected $empty_date = array(
         "default"        => "00-00-0000"
     );
-    protected $empty_date_time = array(
+    protected $empty_datetime = array(
         "default"        => "00-00-0000 00:00:00"
     );
 
@@ -180,10 +180,11 @@ class DataAdapter extends Mappable
 
     /**
      * @param Data $oData
+     * @return string
      */
-    public function getDateTime(Data $oData) : void
+    public function getDateTime(Data $oData) : string
     {
-        $this->GetDateByRule($oData, "date_time");
+        return $this->GetDateByRule($oData, "datetime");
     }
 
     /**
@@ -314,16 +315,16 @@ class DataAdapter extends Mappable
      */
     public function setDateTime(Data $oData, string $value) : void
     {
-        $rule                       = $this->getRule("date_time");
+        $rule                       = $this->getRule("datetime");
 
         preg_match_all($rule->regexp, $value, $matches);
 
-        $oData->value_date_day      = $matches[$rule->day][0]     ? $matches[$rule->day][0]     : $matches[$rule->day + 4][0];
-        $oData->value_date_month    = $matches[$rule->month][0]   ? $matches[$rule->month][0]   : $matches[$rule->month + 4][0];
-        $oData->value_date_year     = $matches[$rule->year][0]    ? $matches[$rule->year][0]    : $matches[$rule->year + 4][0];
-        $oData->value_date_hours    = $matches[$rule->hour][0]    ? $matches[$rule->hour][0]    : $matches[$rule->hour + 11][0];
-        $oData->value_date_minutes  = $matches[$rule->minute][0]  ? $matches[$rule->minute][0]  : $matches[$rule->minute + 11][0];
-        $oData->value_date_seconds  = $matches[$rule->second][0]  ? $matches[$rule->second][0]  : $matches[$rule->second + 11][0];
+        $oData->value_date_day      = isset($matches[$rule->day][0])     ? $matches[$rule->day][0]     : $matches[$rule->day + 4][0];
+        $oData->value_date_month    = isset($matches[$rule->month][0])   ? $matches[$rule->month][0]   : $matches[$rule->month + 4][0];
+        $oData->value_date_year     = isset($matches[$rule->year][0])    ? $matches[$rule->year][0]    : $matches[$rule->year + 4][0];
+        $oData->value_date_hours    = isset($matches[$rule->hour][0])    ? $matches[$rule->hour][0]    : $matches[$rule->hour + 11][0];
+        $oData->value_date_minutes  = isset($matches[$rule->minute][0])  ? $matches[$rule->minute][0]  : $matches[$rule->minute + 11][0];
+        $oData->value_date_seconds  = isset($matches[$rule->second][0])  ? $matches[$rule->second][0]  : $matches[$rule->second + 11][0];
 
         $this->NormalizeDate($oData);
     }
@@ -487,7 +488,7 @@ class DataAdapter extends Mappable
      */
     public function checkDateTime(string $raw_value) : bool
     {
-        $rule                               = $this->getRule("check_date_time");
+        $rule                               = $this->getRule("check_datetime");
 
         return preg_match($rule->regexp, $raw_value) === 1;
     }
@@ -562,7 +563,7 @@ class DataAdapter extends Mappable
      */
     public function getEmptyDateTime() : string
     {
-        $rule                               = $this->getRule("empty_date_time");
+        $rule                               = $this->getRule("empty_datetime");
 
         return $rule->default;
     }

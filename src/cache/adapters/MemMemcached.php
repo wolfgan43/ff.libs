@@ -91,7 +91,7 @@ class MemMemcached extends MemAdapter
                 }
             } else {
                 $keys = $this->conn->getAllKeys();
-                if (is_array($keys) && count($keys)) {
+                if (!empty($keys)) {
                     foreach ($keys as $value) {
                         if (strpos($value, $bucket) === 0) {
                             $real_key = substr($value, strlen($bucket));

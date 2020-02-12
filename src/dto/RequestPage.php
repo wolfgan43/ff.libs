@@ -83,11 +83,16 @@ class RequestPage extends Mappable
         $script_path                = DIRECTORY_SEPARATOR;
         $rules                      = new RequestPageRules();
         $orig_path_info             = $path_info;
+
         do {
             if (isset($pages[$path_info])) {
                 $config             = array_replace($pages[$path_info]["config"], $config);
                 if ($script_path == DIRECTORY_SEPARATOR) {
-                    $script_path    = $path_info;
+                    $script_path    = (
+                        isset($config["accept_path_info"])
+                        ? $orig_path_info
+                        : $path_info
+                    );
                 }
                 $rules->set($pages[$path_info]);
             }
@@ -168,7 +173,7 @@ class RequestPage extends Mappable
      */
     public function error(array $errors = null) : void
     {
-        if (is_array($errors) && count($errors)) {
+        if (!empty($errors)) {
             asort($errors);
             $status = key($errors);
 
@@ -368,7 +373,7 @@ class RequestPage extends Mappable
         $errors                                                                         = array();
         $bucket                                                                         = $this->bucketByMethod($method);
         if ($this->isAllowedSize($request, $method) && $this->isAllowedSize($this->getRequestHeaders(), Request::METHOD_HEAD)) {
-            if (is_array($this->rules->$bucket) && count($this->rules->$bucket) && is_array($request)) {
+            if (!empty($this->rules->$bucket) && is_array($request)) {
                 foreach ($this->rules->$bucket as $rule) {
                     if (isset($rule["required"]) && $rule["required"] === true && !isset($request[$rule["name"]])) {
                         $errors[400][]                                                  = $rule["name"] . " is required";
@@ -428,7 +433,7 @@ class RequestPage extends Mappable
     private function securityFileParams() : bool
     {
         $errors                                                                         = array();
-        if (is_array($_FILES) && count($_FILES)) {
+        if (!empty($_FILES)) {
             foreach ($_FILES as $file_name => $file) {
                 if (isset($this->rules->body[$file_name]["mime"]) && strpos($this->rules->body[$file_name]["mime"], $file["type"]) === false) {
                     $errors[400][]                                                      = $file_name . " must be type " . $this->rules->body[$file_name]["mime"];

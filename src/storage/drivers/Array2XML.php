@@ -27,23 +27,27 @@ namespace phpformsframework\libs\storage\drivers;
 
 use DOMDocument;
 use DOMNode;
-use Exception;
+use UnexpectedValueException;
 use phpformsframework\libs\security\Validator;
 use function simplexml_load_string;
 use function libxml_use_internal_errors;
 
+/**
+ * Class Array2XML
+ * @package phpformsframework\libs\storage\drivers
+ */
 class Array2XML
 {
-    private static $xml = null;
-    private static $encoding = 'UTF-8';
+    private static $xml         = null;
+    private static $encoding    = 'UTF-8';
 
     /**
      * Initialize the root XML node [optional]
-     * @param $version
-     * @param $encoding
-     * @param $format_output
+     * @param string $version
+     * @param string $encoding
+     * @param bool $format_output
      */
-    public static function init($version = '1.0', $encoding = 'UTF-8', $format_output = true)
+    public static function init(string $version = '1.0', string $encoding = 'UTF-8', bool $format_output = true) : void
     {
         self::$xml = new DomDocument($version, $encoding);
         self::$xml->formatOutput = $format_output;
@@ -55,9 +59,9 @@ class Array2XML
      * @param string $node_name - name of the root node to be converted
      * @param array $arr - aray to be converterd
      * @return DomDocument
-     * @throws Exception
+     * @throws UnexpectedValueException
      */
-    public static function &createXML($node_name, $arr=array())
+    public static function &createXML(string $node_name, array $arr = array()) : DomDocument
     {
         $xml = self::getXMLRoot();
         $xml->appendChild(self::convert($node_name, $arr));
@@ -71,9 +75,9 @@ class Array2XML
      * @param string $node_name - name of the root node to be converted
      * @param array $arr - aray to be converterd
      * @return DOMNode
-     * @throws Exception
+     * @throws UnexpectedValueException
      */
-    private static function &convert($node_name, $arr=array())
+    private static function &convert(string $node_name, array $arr = array()) : DOMNode
     {
         $xml = self::getXMLRoot();
         $node = $xml->createElement($node_name);
@@ -82,7 +86,7 @@ class Array2XML
             if (isset($arr['@attributes'])) {
                 foreach ($arr['@attributes'] as $key => $value) {
                     if (!self::isValidTagName($key)) {
-                        throw new Exception('[Array2XML] Illegal character in attribute name. attribute: '.$key.' in node: '.$node_name);
+                        throw new UnexpectedValueException('[Array2XML] Illegal character in attribute name. attribute: '.$key.' in node: '.$node_name);
                     }
                     $node->setAttribute($key, self::bool2str($value));
                 }
@@ -109,7 +113,7 @@ class Array2XML
             // recurse to get the node for that key
             foreach ($arr as $key=>$value) {
                 if (!self::isValidTagName($key)) {
-                    throw new Exception('[Array2XML] Illegal character in tag name. tag: '.$key.' in node: '.$node_name);
+                    throw new UnexpectedValueException('[Array2XML] Illegal character in tag name. tag: '.$key.' in node: '.$node_name);
                 }
                 if (is_array($value) && is_numeric(key($value))) {
                     // if the new array is numeric index, means it is array of nodes of the same kind
@@ -138,7 +142,7 @@ class Array2XML
      * Get the root XML node, if there isn't one, create it.
      * @return DomDocument
      */
-    private static function getXMLRoot()
+    private static function getXMLRoot() : DOMDocument
     {
         if (empty(self::$xml)) {
             self::init();
@@ -146,21 +150,26 @@ class Array2XML
         return self::$xml;
     }
 
-    /*
+    /**
      * Get string representation of boolean value
+     * @todo da tipizzare
+     * @param mixed $v
+     * @return string
      */
-    private static function bool2str($v)
+    private static function bool2str($v) : string
     {
         //convert boolean to text value.
         $v = $v === true ? 'true' : $v;
         return $v === false ? 'false' : $v;
     }
 
-    /*
+    /**
      * Check if the tag name or attribute name contains illegal characters
      * Ref: http://www.w3.org/TR/xml/#sec-common-syn
+     * @param string $tag
+     * @return bool
      */
-    private static function isValidTagName($tag)
+    private static function isValidTagName(string $tag) : bool
     {
         $pattern = '/^[a-z_]+[a-z0-9\:\-\.\_]*[^:]*$/i';
         return preg_match($pattern, $tag, $matches) && $matches[0] == $tag;
@@ -171,7 +180,7 @@ class Array2XML
      * @param string $xmlstring
      * @return array|null
      */
-    public static function XML_TO_ARR(string $xmlstring) : ?array
+    public static function xml2Array(string $xmlstring) : ?array
     {
         libxml_use_internal_errors(true);
 

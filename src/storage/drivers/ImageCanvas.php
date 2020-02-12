@@ -124,7 +124,7 @@ class ImageCanvas
                         $this->cvs_res_dim_y = $render_dim->y;
                     }
                     $watermark = $render->getWatermark();
-                    if (is_array($watermark) && count($watermark)) {
+                    if (!empty($watermark)) {
                         foreach ($watermark as $watermark_key => $watermark_value) {
                             $watermark[$watermark_key]->new_res_max_x = $render_dim->x;
                             $watermark[$watermark_key]->new_res_max_y = $render_dim->y;
@@ -205,7 +205,7 @@ class ImageCanvas
                         @imagedestroy($src_res);
 
                         $watermark = $render->getWatermark();
-                        if (is_array($watermark) && count($watermark)) {
+                        if (!empty($watermark)) {
                             foreach ($watermark as $watermark_key => $watermark_value) {
                                 $watermark_dim = $watermark[$watermark_key]->getFinalDim();
                                 if (($this->cvs_res_dim_x - $watermark_dim->x) > 0) {

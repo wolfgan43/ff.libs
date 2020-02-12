@@ -74,7 +74,7 @@ abstract class Mappable
 
         $prefix                 = self::getPrefix($prefix);
         $map                    = Config::mapping($prefix, $name);
-        if (is_array($map) && count($map)) {
+        if (!empty($map)) {
             $this->autoMapping($map);
         } else {
             Error::register("Mapping: " . basename(str_replace("\\", DIRECTORY_SEPARATOR, get_called_class())) . ": " . $prefix . "_" . $name . " not found", static::ERROR_BUCKET);

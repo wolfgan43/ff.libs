@@ -343,7 +343,7 @@ class Filemanager implements Dumpable
         $res = true;
         if (@ftp_chdir($conn_id, $absolute_path)) {
             $handle = @ftp_nlist($conn_id, "-la " . $absolute_path);
-            if (is_array($handle) && count($handle)) {
+            if (!empty($handle)) {
                 foreach ($handle as $file) {
                     if (basename($file) != "." && basename($file) != "..") {
                         if (strlen($ftp_disk_path)) {

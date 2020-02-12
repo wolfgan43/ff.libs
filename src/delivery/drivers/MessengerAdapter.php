@@ -30,6 +30,10 @@ use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Request;
 use Exception;
 
+/**
+ * Class MessengerAdapter
+ * @package phpformsframework\libs\delivery\drivers
+ */
 abstract class MessengerAdapter
 {
     const ERROR_BUCKET                                      = "messenger";
@@ -41,8 +45,15 @@ abstract class MessengerAdapter
     public $from                                            = null;
     public $debug                                           = null;
 
-    abstract public function send($message, $to);
+    /**
+     * @param string $message
+     * @param array $to
+     */
+    abstract public function send(string $message, array $to) : void;
 
+    /**
+     * MessengerAdapter constructor.
+     */
     public function __construct()
     {
 
@@ -65,7 +76,10 @@ abstract class MessengerAdapter
 
     }
 
-    protected function getAppName()
+    /**
+     * @return string
+     */
+    protected function getAppName() : string
     {
         return substr((
             $this->appname

@@ -46,7 +46,7 @@ class FilemanagerXml extends FilemanagerAdapter
      */
     protected function loadFile(string $file_path, string $var = null) : ?array
     {
-        return Array2XML::XML_TO_ARR(Filemanager::fileGetContent($file_path));
+        return Array2XML::xml2Array(Filemanager::fileGetContent($file_path));
     }
 
     /**

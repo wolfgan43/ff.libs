@@ -106,7 +106,7 @@ class Database implements Dumpable
      * , "username"    => null
      * , "secret"      => null
      * , "name"        => null
-     * , "prefix"        => null
+     * , "prefix"      => null
      * , "table"       => null
      * , "key"         => null
      * }
@@ -163,7 +163,7 @@ class Database implements Dumpable
             }
         }
 
-        return self::$cache[$this->cache_key]["data"]; //$this->getResult();
+        return $this->getResult();
     }
 
     /**
@@ -244,11 +244,7 @@ class Database implements Dumpable
      */
     private function getResult() : ?array
     {
-        return (
-            is_array($this->result) && count($this->result) == 1
-            ? array_shift($this->result)
-            : $this->result
-        );
+        return array_shift($this->result);
     }
 
 
@@ -290,7 +286,7 @@ class Database implements Dumpable
     {
         $this->cacheReadKey($this->cacheTable($table_name), $where, $fields, $sort, $limit, $offset);
 
-        return isset(self::$cache[$this->cache_key]["data"]);
+        return 0 && isset(self::$cache[$this->cache_key]["data"]);
     }
 
 

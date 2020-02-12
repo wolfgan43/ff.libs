@@ -110,11 +110,11 @@ class Discover
 
             if (count($result['platform']) > 1) {
                 $keys = array_intersect($priority, $result['platform']);
-                if (is_array($keys) && count($keys)) {
-                    $platform = reset($keys);
-                } else {
-                    $platform = $result['platform'][0];
-                }
+                $platform = (
+                    empty($keys)
+                    ? $result['platform'][0]
+                    : reset($keys)
+                );
             } elseif (isset($result['platform'][0])) {
                 $platform = $result['platform'][0];
             }

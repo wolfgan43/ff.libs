@@ -70,7 +70,7 @@ class Buckler implements Configurable
      */
     public static function loadSchema(array  $rawdata) : array
     {
-        if (isset($rawdata["rule"]) && is_array($rawdata["rule"]) && count($rawdata["rule"])) {
+        if (!empty($rawdata["rule"])) {
             $schema                                             = array();
             foreach ($rawdata["rule"] as $badpath) {
                 $attr                                           = Dir::getXmlAttr($badpath);
@@ -170,7 +170,7 @@ class Buckler implements Configurable
         if ($path_info) {
             $matches                                            = array();
 
-            if (is_array(self::$rules) && count(self::$rules)) {
+            if (!empty(self::$rules)) {
                 foreach (self::$rules as $source => $rule) {
                     $src                                        = self::regexp($source);
                     if (preg_match($src, $path_info, $matches)

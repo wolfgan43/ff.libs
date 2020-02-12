@@ -26,29 +26,49 @@
 namespace phpformsframework\libs\delivery\adapters;
 
 use phpformsframework\libs\delivery\NoticeAdapter;
+use phpformsframework\libs\dto\DataError;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\delivery\drivers\Mailer;
 use phpformsframework\libs\tpl\Resource;
 
+/**
+ * Class NoticeEmail
+ * @package phpformsframework\libs\delivery\adapters
+ */
 class NoticeEmail extends NoticeAdapter
 {
     private $title                          = null;
     private $fields                         = null;
     private $template                       = null;
 
-    public function checkRecipient($target)
+    /**
+     * @param string $target
+     * @return bool
+     */
+    public function checkRecipient(string $target) : bool
     {
         return Validator::isEmail($target);
     }
 
-    public function send($message)
+    /**
+     * @param string $message
+     * @return DataError
+     */
+    public function send(string $message) : DataError
     {
         $this->title                        = $message;
 
         return $this->process();
     }
-    public function sendLongMessage($title, $fields = null, $template = null)
+
+    /**
+     * @param string $title
+     * @param array|null $fields
+     * @param string|null $template
+     * @return DataError
+     */
+    public function sendLongMessage(string $title, array $fields = null, string $template = null) : DataError
     {
         $this->title                        = $title;
         $this->fields                       = $fields;
@@ -57,7 +77,11 @@ class NoticeEmail extends NoticeAdapter
 
         return $this->process();
     }
-    private function setTemplate($template)
+
+    /**
+     * @param string $template
+     */
+    private function setTemplate(string $template) : void
     {
         $this->template = (
             strpos($template, "/") === false
@@ -69,9 +93,12 @@ class NoticeEmail extends NoticeAdapter
         }
     }
 
-    protected function process()
+    /**
+     * @return DataError
+     */
+    protected function process() : DataError
     {
-        return Mailer::getInstance($this->template, $this->connection_service)
+        return Mailer::getInstance($this->template)
             ->setSmtp($this->connection)
             ->setFrom($this->fromKey, $this->fromLabel)
             ->addAddresses($this->recipients, "to")

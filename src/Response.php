@@ -323,7 +323,7 @@ class Response
         }
         if (Request::protocolHost() . $_SERVER["REQUEST_URI"] != $destination) {
             header("Location: " . $destination, true, $http_response_code);
-            if (is_array($headers) && count($headers)) {
+            if (!empty($headers)) {
                 foreach ($headers as $key => $value) {
                     header(ucfirst(str_replace(array(" ", "_"), "-", $key)) . ": " . $value);
                 }

@@ -123,9 +123,9 @@ class Locale implements Configurable
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public static function get() : string
+    public static function get() : ?string
     {
         return (self::$lang["tiny_code"] == self::$country["code"]
             ? self::$lang["tiny_code"]
@@ -204,14 +204,14 @@ class Locale implements Configurable
      */
     public static function loadSchema(array $rawdata) : array
     {
-        if (is_array($rawdata) && count($rawdata)) {
+        if (!empty($rawdata)) {
             $lang_tiny_code                                         = Env::get("LANG_TINY_CODE");
             $country_tiny_code                                      = Env::get("COUNTRY_TINY_CODE");
 
             /**
              * Lang
              */
-            if (is_array($rawdata["lang"]) && count($rawdata["lang"])) {
+            if (!empty($rawdata["lang"])) {
                 foreach ($rawdata["lang"] as $code => $lang) {
                     $attr                                           = Dir::getXmlAttr($lang);
                     self::$locale["lang"][$code]                    = $attr;
@@ -226,7 +226,7 @@ class Locale implements Configurable
             /**
              * Country
              */
-            if (is_array($rawdata["country"]) && count($rawdata["country"])) {
+            if (!empty($rawdata["country"])) {
                 foreach ($rawdata["country"] as $code => $country) {
                     $attr                                           = Dir::getXmlAttr($country);
                     self::$locale["country"][$code]                 = $attr;

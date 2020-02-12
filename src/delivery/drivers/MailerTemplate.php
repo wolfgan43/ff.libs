@@ -33,6 +33,10 @@ use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\tpl\View;
 
+/**
+ * Class MailerTemplate
+ * @package phpformsframework\libs\delivery\drivers
+ */
 final class MailerTemplate extends Mailer
 {
     //body
@@ -53,15 +57,23 @@ final class MailerTemplate extends Mailer
     private $body                                           = null;
     private $bodyAlt                                        = null;
 
-
-    public function __construct($template)
+    /**
+     * MailerTemplate constructor.
+     * @param string $template
+     */
+    public function __construct(string $template)
     {
         $this->loadTemplate($template);
 
         parent::__construct();
     }
 
-    public function setMessage($fields)
+    /**
+     * @todo da tipizzare
+     * @param array|string $fields
+     * @return MailerTemplate
+     */
+    public function setMessage($fields) : self
     {
         $this->fields                                       = (
             is_array($fields)
@@ -71,7 +83,10 @@ final class MailerTemplate extends Mailer
         return $this;
     }
 
-    protected function processSubject()
+    /**
+     * @return string
+     */
+    protected function processSubject() : string
     {
         return str_replace(
             array_keys($this->fields),
@@ -80,7 +95,10 @@ final class MailerTemplate extends Mailer
         );
     }
 
-    protected function processBody()
+    /**
+     * @return string|null
+     */
+    protected function processBody() : ?string
     {
         if ($this->body === null) {
             $this->processTemplate();
@@ -88,7 +106,10 @@ final class MailerTemplate extends Mailer
         return $this->body;
     }
 
-    protected function processBodyAlt()
+    /**
+     * @return string|null
+     */
+    protected function processBodyAlt() : ?string
     {
         if ($this->body === null) {
             $this->processTemplate();
@@ -96,7 +117,10 @@ final class MailerTemplate extends Mailer
         return $this->bodyAlt;
     }
 
-    private function loadTemplate($template)
+    /**
+     * @param string $template
+     */
+    private function loadTemplate(string $template) : void
     {
         if ($template && is_file($template)) {
             $this->tpl_html_path                = $template;
@@ -123,6 +147,10 @@ final class MailerTemplate extends Mailer
             Error::register("Template not found" . (Kernel::$Environment::DEBUG ? ": " . $this->tpl_html_path : ""), static::ERROR_BUCKET);
         }
     }
+
+    /**
+     *
+     */
     private function processTemplate()
     {
         /**
@@ -137,7 +165,7 @@ final class MailerTemplate extends Mailer
                                 ? $fields_value["settings"]["type"]
                                 : ""
                             );
-                if (is_array($fields_value) && count($fields_value)) {
+                if (!empty($fields_value)) {
                     $count_row = 0;
                     foreach ($fields_value as $fields_value_key => $fields_value_value) {
                         if (strtolower($fields_value_key) == "settings") {
@@ -146,18 +174,18 @@ final class MailerTemplate extends Mailer
                         switch ($field_type) {
                             case "Table":
                             case "":
-                                if (is_array($fields_value_value) && count($fields_value_value)) {
+                                if (!empty($fields_value_value)) {
                                     foreach ($fields_value_value as $fields_value_value_key => $fields_value_value_value) {
                                         if (strtolower($fields_value_value_key) == "settings") {
                                             continue;
                                         }
-                                        $this->parse_mail_field($fields_value_value_value, $fields_value_value_key, $field_type, $count_row);
+                                        $this->parseMailField($fields_value_value_value, $fields_value_value_key, $field_type, $count_row);
                                     }
 
-                                    $this->parse_mail_row($field_type, true);
+                                    $this->parseMailRow($field_type, true);
                                 } else {
-                                    $this->parse_mail_field($fields_value_value, $fields_key . "_" . $fields_value_key, $field_type);
-                                    $this->parse_mail_row($field_type);
+                                    $this->parseMailField($fields_value_value, $fields_key . "_" . $fields_value_key, $field_type);
+                                    $this->parseMailRow($field_type);
                                 }
                                 break;
                             default:
@@ -172,7 +200,7 @@ final class MailerTemplate extends Mailer
                     }
                 }
 
-                $this->parse_mail_group($fields_key, $group_type, $field_type);
+                $this->parseMailGroup($fields_key, $group_type, $field_type);
 
                 $count_group++;
             }
@@ -197,11 +225,11 @@ final class MailerTemplate extends Mailer
     }
 
     /**
-     * @param $value
-     * @param $groups
-     * @param null $type
+     * @param string $value
+     * @param array $groups
+     * @param string|null $type
      */
-    private function parse_mail_group($value, $groups, $type = null)
+    private function parseMailGroup(string $value, array $groups, string $type = null) : void
     {
         /*
          * Parse field html(label, value, real_name)
@@ -215,8 +243,8 @@ final class MailerTemplate extends Mailer
         if ($type) {
             $this->tpl_html->assign("SezStyle", "");
         }
-        $this->tpl_html->assign("real_name", $this->process_mail_field($value, "smart_url"));
-        $this->tpl_html->assign("group_name", $this->process_mail_field($value));
+        $this->tpl_html->assign("real_name", $this->processMailField($value, "smart_url"));
+        $this->tpl_html->assign("group_name", $this->processMailField($value));
         $this->tpl_html->parse("SezGroups", true);
 
         $this->tpl_html->assign("SezFieldLabel", "");
@@ -241,8 +269,8 @@ final class MailerTemplate extends Mailer
             if ($type) {
                 $this->tpl_text->assign("SezStyle", "");
             }
-            $this->tpl_text->assign("real_name", $this->process_mail_field($value, "smart_url"));
-            $this->tpl_text->assign("group_name", $this->process_mail_field($value));
+            $this->tpl_text->assign("real_name", $this->processMailField($value, "smart_url"));
+            $this->tpl_text->assign("group_name", $this->processMailField($value));
             $this->tpl_text->parse("SezGroups", true);
 
             $this->tpl_text->assign("SezFieldLabel", "");
@@ -256,13 +284,14 @@ final class MailerTemplate extends Mailer
         }
     }
 
+
     /**
-     * @param $value
-     * @param $name
-     * @param null $type
+     * @param string $value
+     * @param string $name
+     * @param string|null $type
      * @param bool $skip_label
      */
-    private function parse_mail_field($value, $name, $type = null, $skip_label = false)
+    private function parseMailField(string $value, string $name, string $type = null, bool $skip_label = false) : void
     {
         $this->tpl_html->assign($name, $value); //custom vars
         if ($this->tpl_text) {
@@ -273,17 +302,17 @@ final class MailerTemplate extends Mailer
          * Parse field html(label, value, real_name)
          */
         if (!$skip_label) {
-            $this->tpl_html->assign("fields_label", $this->process_mail_field($name));
+            $this->tpl_html->assign("fields_label", $this->processMailField($name));
             $this->tpl_html->parse("Sez" . $type . "FieldLabel", true);
         }
 
-        $this->tpl_html->assign("real_name", $this->process_mail_field($name, "smart_url"));
-        $this->tpl_html->assign("fields_value", $this->process_mail_field($value, $name));
+        $this->tpl_html->assign("real_name", $this->processMailField($name, "smart_url"));
+        $this->tpl_html->assign("fields_value", $this->processMailField($value, $name));
         $this->tpl_html->parse("Sez" . $type . "Field", true);
 
         $this->tpl_html->assign(                      //custom vars
-            $this->process_mail_field($name),
-            $this->process_mail_field($value)
+            $this->processMailField($name),
+            $this->processMailField($value)
         );
 
         /*
@@ -291,25 +320,25 @@ final class MailerTemplate extends Mailer
          */
         if ($this->tpl_text) {
             if (!$skip_label) {
-                $this->tpl_text->assign("fields_label", $this->process_mail_field($name));
+                $this->tpl_text->assign("fields_label", $this->processMailField($name));
                 $this->tpl_text->parse("Sez" . $type . "FieldLabel", true);
             }
 
-            $this->tpl_text->assign("fields_value", $this->process_mail_field($value, $name));
+            $this->tpl_text->assign("fields_value", $this->processMailField($value, $name));
             $this->tpl_text->parse("SezField", true);
 
             $this->tpl_text->assign(                  //custom vars
-                $this->process_mail_field($name),
-                $this->process_mail_field($value)
+                $this->processMailField($name),
+                $this->processMailField($value)
             );
         }
     }
 
     /**
-     * @param null $type
+     * @param string $type
      * @param bool $reset_field
      */
-    private function parse_mail_row($type = null, $reset_field = false)
+    private function parseMailRow(string $type = null, bool $reset_field = false) : void
     {
         $this->tpl_html->parse("Sez" . $type . "Row", false);
         $this->tpl_html->parse("SezRow" . $type, false); //custom vars
@@ -331,11 +360,11 @@ final class MailerTemplate extends Mailer
 
 
     /**
-     * @param $value
-     * @param null $type
+     * @param string $value
+     * @param string $type
      * @return string
      */
-    protected function process_mail_field($value, $type = null)
+    private function processMailField(string $value, string $type = null) : string
     {
         switch ($type) {
             case "link":
@@ -344,7 +373,7 @@ final class MailerTemplate extends Mailer
                     $link = Request::protocolHost() . substr($link, 4);
                 }
 
-                $res = $this->link_to_tagA($link, $value);
+                $res = $this->link2TagA($link, $value);
                 break;
             case "smart_url":
                 $res = Validator::urlRewrite($value);
@@ -356,8 +385,13 @@ final class MailerTemplate extends Mailer
         return $res;
     }
 
-
-    private function link_to_tagA($description, $alias = null, $email_alias = null)
+    /**
+     * @param string $description
+     * @param string|null $alias
+     * @param string|null $email_alias
+     * @return string
+     */
+    private function link2TagA(string $description, string $alias = null, string $email_alias = null) : string
     {
         if ($alias) {
             $old_description = $description;

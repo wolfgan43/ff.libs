@@ -281,7 +281,7 @@ class PageHtml extends Mappable
     private function parseMeta() : string
     {
         $res                                    = "";
-        if (is_array($this->meta) && count($this->meta)) {
+        if (!empty($this->meta)) {
             foreach ($this->meta as $meta) {
                 if (isset($meta["name"])) {
                     $res                        .= $this::NEWLINE . '<meta name="' . $meta["name"] . '" content="' . $meta["content"] . '">';
@@ -315,7 +315,7 @@ class PageHtml extends Mappable
     private function parseFonts() : string
     {
         $res                                    = "";
-        if (is_array($this->fonts) && count($this->fonts)) {
+        if (!empty($this->fonts)) {
             foreach (array_unique($this->fonts) as $font) {
                 $res                            .= $this::NEWLINE .'<link rel="preload" as="font" type="font/' . pathinfo($font, PATHINFO_EXTENSION) . '" crossorigin="anonymous" href="' . $font . '" />';
             }

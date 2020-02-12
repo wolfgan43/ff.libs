@@ -31,11 +31,14 @@ use phpformsframework\libs\Error;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Log;
-use phpformsframework\libs\Request;
 use phpformsframework\libs\security\Validator;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
 
+/**
+ * Class Mailer
+ * @package phpformsframework\libs\delivery\drivers
+ */
 abstract class Mailer
 {
     const ERROR_BUCKET                                      = "mailer";
@@ -63,6 +66,7 @@ abstract class Mailer
     private $actions                                        = null;
 
     /**
+     * @todo da tipizzare
      * @param string|array $content
      * @return Mailer
      */
@@ -92,32 +96,55 @@ abstract class Mailer
         return self::$singletons[$template];
     }
 
-
+    /**
+     * Mailer constructor.
+     */
     public function __construct()
     {
         $this->setAdapter();
     }
 
-    public function setSubject($subject)
+    /**
+     * @param string $subject
+     * @return Mailer
+     */
+    public function setSubject(string $subject) : self
     {
         $this->subject                  = $subject;
 
         return $this;
     }
 
-    public function addTo($email, $name = null)
+    /**
+     * @param string $email
+     * @param string|null $name
+     * @return Mailer
+     */
+    public function addTo(string $email, string $name = null) : self
     {
         $this->addAddress($email, "to", $name);
 
         return $this;
     }
-    public function addCC($email, $name = null)
+
+    /**
+     * @param string $email
+     * @param string|null $name
+     * @return Mailer
+     */
+    public function addCC(string $email, string $name = null) : self
     {
         $this->addAddress($email, "cc", $name);
 
         return $this;
     }
-    public function addBCC($email, $name = null)
+
+    /**
+     * @param string $email
+     * @param string|null $name
+     * @return Mailer
+     */
+    public function addBCC(string $email, string $name = null) : self
     {
         $this->addAddress($email, "bcc", $name);
 
@@ -128,7 +155,7 @@ abstract class Mailer
      * @param string[to|cc|bcc] $type
      * @return Mailer
      */
-    public function addAddresses($emails, $type)
+    public function addAddresses(array $emails, string $type) : self
     {
         if (is_array($emails)) {
             foreach ($emails as $email => $name) {
@@ -145,7 +172,7 @@ abstract class Mailer
      * @param null|string $name
      * @return Mailer
      */
-    public function addAddress($email, $type, $name = null)
+    public function addAddress(string $email, string $type, string $name = null) : self
     {
         if ($email && Validator::isEmail($email)) {
             $name                                           = (
@@ -178,7 +205,7 @@ abstract class Mailer
      * @param null|string $encoded
      * @return Mailer
      */
-    public function addAttach($attach, $name = null, $mime = "application/octet-stream", $encoded = "base64")
+    public function addAttach(string $attach, string $name = null, string $mime = "application/octet-stream", string $encoded = "base64") : self
     {
         if (strpos($attach, DIRECTORY_SEPARATOR) === 0) {
             if (is_file($attach)) {
@@ -204,8 +231,12 @@ abstract class Mailer
         return $this;
     }
 
-
-    public function addImage($image, $name = null)
+    /**
+     * @param string $image
+     * @param string|null $name
+     * @return Mailer
+     */
+    public function addImage(string $image, string $name = null) : self
     {
         if (is_file($image)) {
             if (!$name) {
@@ -218,39 +249,68 @@ abstract class Mailer
 
         return $this;
     }
-    public function addActions($actions)
+
+    /**
+     * @param array $actions
+     * @return Mailer
+     */
+    public function addActions(array $actions) : self
     {
         $this->actions                                      = array_replace((array) $this->actions, $actions);
 
         return $this;
     }
-    public function addAction($name, $url)
+
+    /**
+     * @param string $name
+     * @param string $url
+     * @return Mailer
+     */
+    public function addAction(string $name, string $url) : self
     {
         $this->actions[$url]                                = $name;
 
         return $this;
     }
 
-    public function setLang($lang)
+    /**
+     * @param string $lang
+     * @return Mailer
+     */
+    public function setLang(string $lang) : self
     {
         $this->lang                                         = $lang;
 
         return $this;
     }
-    public function setCharset($charset)
+
+    /**
+     * @param string $charset
+     * @return Mailer
+     */
+    public function setCharset(string $charset) : self
     {
         $this->charset                                      = $charset;
 
         return $this;
     }
-    public function setEncoding($encoding)
+
+    /**
+     * @param string $encoding
+     * @return Mailer
+     */
+    public function setEncoding(string $encoding) : self
     {
         $this->encoding                                     = $encoding;
 
         return $this;
     }
 
-    public function setSmtp($smtp = null)
+    /**
+     * @param array|null $smtp
+     * @return Mailer
+     */
+    public function setSmtp(array $smtp = null) : self
     {
         if (is_array($smtp)) {
             foreach ($smtp as $key => $value) {
@@ -261,7 +321,13 @@ abstract class Mailer
         }
         return $this;
     }
-    public function setFrom($email, $name = null)
+
+    /**
+     * @param string $email
+     * @param string|null $name
+     * @return Mailer
+     */
+    public function setFrom(string $email, string $name = null) : self
     {
         $this->fromEmail = $email;
         $this->fromName = (
@@ -273,7 +339,13 @@ abstract class Mailer
         return $this;
     }
 
-    public function send($subject = null, $to = null, $message = null)
+    /**
+     * @param string|null $subject
+     * @param string|null $to
+     * @param string|null $message
+     * @return DataError
+     */
+    public function send(string $subject = null, string $to = null, string $message = null) : DataError
     {
         Debug::stopWatch("mailer/send");
 
@@ -311,6 +383,9 @@ abstract class Mailer
         return $this->getResult();
     }
 
+    /**
+     *
+     */
     private function phpmailer()
     {
         $mail                                               = new PHPMailer();
@@ -348,17 +423,17 @@ abstract class Mailer
             $mail->AddReplyTo($this->fromEmail, $this->fromName);
         }
 
-        if (is_array($this->to) && count($this->to)) {
+        if (!empty($this->to)) {
             foreach ($this->to as $email => $name) {
                 $mail->addAddress($email, $name);
             }
         }
-        if (is_array($this->cc) && count($this->cc)) {
+        if (!empty($this->cc)) {
             foreach ($this->cc as $email => $name) {
                 $mail->addCC($email, $name);
             }
         }
-        if (is_array($this->bcc) && count($this->bcc)) {
+        if (!empty($this->bcc)) {
             foreach ($this->bcc as $email => $name) {
                 $mail->addBCC($email, $name);
             }
@@ -371,7 +446,7 @@ abstract class Mailer
         /*
          * Images
          */
-        if (is_array($this->images) && count($this->images)) {
+        if (!empty($this->images)) {
             foreach ($this->images as $path => $name) {
                 if (strpos($mail->Body, "cid:" . basename($name)) !== false) {
                     $mail->AddEmbeddedImage($path, basename($path), $name);
@@ -381,7 +456,7 @@ abstract class Mailer
         /*
          * Attachment
          */
-        if (is_array($this->attach) && count($this->attach)) {
+        if (!empty($this->attach)) {
             foreach ($this->attach as $attach_key => $attach_value) {
                 if ($attach_value["path"]) {
                     try {
@@ -405,11 +480,17 @@ abstract class Mailer
         }
     }
 
+    /**
+     *
+     */
     private function setAdapter()
     {
         $this->adapter                                      = new MailerAdapter();
     }
 
+    /**
+     *
+     */
     private function clearResult()
     {
         $this->to       = null;
@@ -451,6 +532,11 @@ abstract class Mailer
         return $dataError;
     }
 
+    /**
+     * @param null $subject
+     * @param null $message
+     * @return mixed
+     */
     public function preview($subject = null, $message = null)
     {
         $this->clearResult();
@@ -475,7 +561,10 @@ abstract class Mailer
         return $res;
     }
 
-    public function getHeaders()
+    /**
+     * @return array
+     */
+    public function getHeaders() : array
     {
         if (!$this->fromEmail) {
             $this->fromEmail  = $this->adapter->from_email;

@@ -80,7 +80,13 @@ class Debug
     {
         return Kernel::$Environment::DEBUG;
     }
-
+    /**
+     * @return bool
+     */
+    public static function cacheDisabled() : bool
+    {
+        return Kernel::$Environment::DISABLE_CACHE;
+    }
     /**
      * @return bool
      */
@@ -250,7 +256,7 @@ class Debug
                 $res[$i]["function"] = $trace["function"];
             }
 
-            if (is_array($trace["args"]) && count($trace["args"])) {
+            if (!empty($trace["args"])) {
                 foreach ($trace["args"] as $key => $value) {
                     if (is_object($value)) {
                         $res[$i]["args"][$key] = "Object: " . get_class($value);
@@ -409,10 +415,10 @@ class Debug
         $files_count = 0;
         $db_query_count = 0;
         $db_query_cache_count = 0;
-        if (is_array($dumpable) && count($dumpable)) {
+        if (!empty($dumpable)) {
             foreach ($dumpable as $interface => $dump) {
                 $dump = array_filter($dump);
-                if (is_array($dump) && count($dump)) {
+                if (!empty($dump)) {
                     $html_dumpable .= '<hr />' . '<h5>&nbsp;' . $interface . '</h5>';
                     $html_dumpable .= '<ul>';
                     foreach ($dump as $key => $value) {
@@ -439,7 +445,7 @@ class Debug
             }
         }
 
-        if (is_array(self::$exTime) && count(self::$exTime)) {
+        if (!empty(self::$exTime)) {
             $html_dumpable .= '<hr />' . '<h5>&nbsp;' . "StopWatch" . '</h5>';
             $html_dumpable .= '<code><ul>';
             foreach (self::$exTime as $bucket => $exTime) {
@@ -458,7 +464,7 @@ class Debug
         $errors = array_filter(Error::dump());
         $errors_count = 0;
         $dirstruct = Config::getDirBucket(false);
-        if (is_array($dirstruct) && count($dirstruct)) {
+        if (!empty($dirstruct)) {
             foreach ($dirstruct as $dirBucket) {
                 foreach ($dirBucket as $dir) {
                     if (isset($dir["path"]) && !is_dir(Constant::DISK_PATH . $dir["path"]) && !Filemanager::makeDir($dir["path"])) {
@@ -472,11 +478,11 @@ class Debug
             }
         }
 
-        if (is_array($errors) && count($errors)) {
+        if (!empty($errors)) {
             $html_dumpable .= '<hr />' . '<h5>&nbsp;' . "Errors" . '</h5>';
             $html_dumpable .= '<code><ul>';
             foreach ($errors as $bucket => $error) {
-                if (is_array($error) && count($error)) {
+                if (!empty($error)) {
                     foreach ($error as $msg) {
                         $html_dumpable .= '<li><b>' . $bucket. '</b> => ' . $msg . '</li>';
                         $errors_count++;
@@ -489,7 +495,7 @@ class Debug
         $included_files = get_included_files();
         $included_files_count = 0;
         $included_files_autoload_count = 0;
-        if (is_array($included_files) && count($included_files)) {
+        if (!empty($included_files)) {
             $html_dumpable .= '<hr />' . '<a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } "><h5>' . "Includes" . " (" . count($included_files) . ")" . '</h5></a>';
             $html_dumpable .= '<pre style="' . $collapse . '"><ul>';
             foreach ($included_files as $included_file) {
@@ -505,7 +511,7 @@ class Debug
         $constants = get_defined_constants(true);
 
         $constants_user = $constants["user"];
-        if (is_array($constants_user) && count($constants_user)) {
+        if (!empty($constants_user)) {
             $html_dumpable .= '<hr />' . '<a style="text-decoration: none; white-space: nowrap;" href="javascript:void(0);" onclick=" if(this.nextSibling.style.display) { this.nextSibling.style.display = \'\'; } else { this.nextSibling.style.display = \'none\'; } "><h5>' . "Constants" . " (" . count($constants_user) . ")" . '</h5></a>';
             $html_dumpable .= '<pre style="' . $collapse . '"><ul>';
             foreach ($constants_user as $name => $value) {
@@ -536,6 +542,17 @@ class Debug
             . '<span style="padding:15px;">Constants: ' . count($constants_user) . '</span>'
             . '<span style="padding:15px;">Files: ' . $files_count . '</span>'
             . '<span style="padding:15px;">DB Query: ' . $db_query_count . ' (' . $db_query_cache_count . ' cached)'. '</span>'
+            . '<span style="padding:15px;">Adapters ('
+                    . 'Template: '  . '<em>' . Kernel::$Environment::TEMPLATE_ADAPTER   . '</em>, '
+                    . 'DB: '        . '<em>' . Kernel::$Environment::DATABASE_ADAPTER   . '</em>, '
+                    . 'Sms: '       . '<em>' . Kernel::$Environment::MESSENGER_ADAPTER  . '</em>, '
+                    . 'Translate: ' . '<em>' . Kernel::$Environment::TRANSLATOR_ADAPTER . '</em>'
+                . ')</span>'
+                        . '<span style="padding:15px;">Cache ('
+                    . 'Mem: '       . (Kernel::$Environment::DISABLE_CACHE ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_MEM_ADAPTER      . '</span>, '
+                    . 'DB: '        . (Kernel::$Environment::DISABLE_CACHE ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_DATABASE_ADAPTER      . '</span>, '
+                    . 'Media: '     . (Kernel::$Environment::DISABLE_CACHE ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_MEDIA_ADAPTER     . '</span>'
+                . ')</span>'
             . '<span style="padding:15px;">ExTime: ' . self::exTimeApp() . '</span>'
             . $html_benchmark
             . '</div>';

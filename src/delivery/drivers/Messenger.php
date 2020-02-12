@@ -31,9 +31,12 @@ use phpformsframework\libs\dto\DataError;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Log;
-use phpformsframework\libs\Request;
 use phpformsframework\libs\security\Validator;
 
+/**
+ * Class Messenger
+ * @package phpformsframework\libs\delivery\drivers
+ */
 class Messenger
 {
     const ERROR_BUCKET                                      = "messenger";
@@ -54,7 +57,7 @@ class Messenger
      * @param null|string $messengerAdapter
      * @return Messenger
      */
-    public static function getInstance($messengerAdapter = null)
+    public static function getInstance(string $messengerAdapter = null) : self
     {
         if (!self::$singleton) {
             self::$singleton = new Messenger($messengerAdapter);
@@ -63,7 +66,11 @@ class Messenger
         return self::$singleton;
     }
 
-    public function __construct($smsAdapter = null)
+    /**
+     * Messenger constructor.
+     * @param string|null $smsAdapter
+     */
+    public function __construct(string $smsAdapter = null)
     {
         $this->setAdapter($smsAdapter);
     }
@@ -73,7 +80,7 @@ class Messenger
      * @param string[to|cc|bcc] $type
      * @return Messenger
      */
-    public function addAddresses($tels)
+    public function addAddresses(array $tels) : self
     {
         if (is_array($tels)) {
             foreach ($tels as $tel) {
@@ -83,7 +90,12 @@ class Messenger
 
         return $this;
     }
-    public function setConnection($connection)
+
+    /**
+     * @param array $connection
+     * @return Messenger
+     */
+    public function setConnection(array $connection) : self
     {
         if (is_array($connection)) {
             foreach ($connection as $key => $value) {
@@ -94,7 +106,13 @@ class Messenger
         }
         return $this;
     }
-    public function setFrom($from, $label = null)
+
+    /**
+     * @param string $from
+     * @param string|null $label
+     * @return Messenger
+     */
+    public function setFrom(string $from, string $label = null) : self
     {
         $this->adapter->from = (
             $label
@@ -104,7 +122,13 @@ class Messenger
 
         return $this;
     }
-    public function send($message = null, $to = null)
+
+    /**
+     * @param string|null $message
+     * @param string|null $to
+     * @return DataError
+     */
+    public function send(string $message = null, string $to = null) : DataError
     {
         Debug::stopWatch("messenger/send");
 
@@ -126,7 +150,11 @@ class Messenger
         return $this->getResult();
     }
 
-    public function setMessage($content)
+    /**
+     * @param string $content
+     * @return Messenger
+     */
+    public function setMessage(string $content) : self
     {
         $this->content                                      = $content;
 
@@ -136,7 +164,7 @@ class Messenger
     /**
      * @return DataError
      */
-    private function getResult()
+    private function getResult() : DataError
     {
         $dataError                                          = new DataError();
         if (Error::check(static::ERROR_BUCKET) || Kernel::$Environment::DEBUG) {
@@ -167,7 +195,7 @@ class Messenger
      * @param null|string $name
      * @return Messenger
      */
-    public function addAddress($tel, $name = null)
+    public function addAddress(string $tel, string $name = null) : self
     {
         if ($tel && Validator::isTel($tel)) {
             $name                                           = (
@@ -185,7 +213,7 @@ class Messenger
     /**
      * @param null|string $messengerAdapter
      */
-    private function setAdapter($messengerAdapter = null)
+    private function setAdapter(string $messengerAdapter = null) : void
     {
         if (!$this->adapter && !$messengerAdapter) {
             $messengerAdapter                               = Kernel::$Environment::MESSENGER_ADAPTER;

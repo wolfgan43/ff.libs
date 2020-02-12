@@ -433,7 +433,7 @@ class Validator
         unset(self::$errors["file"]);
         if (isset($_FILES[$value])) {
             $names                                                          = (array) $_FILES[$value]["name"];
-            if (is_array($names) && count($names)) {
+            if (!empty($names)) {
                 foreach ($names as $index => $name) {
                     if (!self::isFilePath($name)) {
                         $error[]                                            = $name . " is not valid path";
@@ -442,7 +442,7 @@ class Validator
             }
 
             $sizes                                                          = (array) $_FILES[$value]["size"];
-            if (is_array($sizes) && count($sizes)) {
+            if (!empty($sizes)) {
                 foreach ($sizes as $index => $size) {
                     if ($size > self::getMaxUploadSize()) {
                         $error[]                                            = $names[$index] . ": Upload Limit Exeeded";
@@ -451,7 +451,7 @@ class Validator
             }
 
             $types                                                          = (array) $_FILES[$value]["type"];
-            if (is_array($types) && count($types)) {
+            if (!empty($types)) {
                 $files                                                      = (array) $_FILES[$value]["tmp_name"];
                 foreach ($types as $index => $type) {
                     if (!self::checkMagicBytes($files[$index], $type)) {
@@ -492,7 +492,7 @@ class Validator
     {
         $checks                                                             = self::getSignature($type);
         $isValid                                                            = false;
-        if (is_array($checks) && count($checks)) {
+        if (!empty($checks)) {
             $handle                                                         = @fopen($file, 'rb');
             if ($handle !== false && flock($handle, LOCK_EX)) {
                 foreach ($checks as $check) {

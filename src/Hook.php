@@ -67,7 +67,7 @@ class Hook implements Configurable, Dumpable
      */
     public static function loadSchema(array $rawdata) : array
     {
-        if (isset($rawdata["hook"]) && is_array($rawdata["hook"]) && count($rawdata["hook"])) {
+        if (!empty($rawdata["hook"])) {
             foreach ($rawdata["hook"] as $hook) {
                 $attr                                                               = Dir::getXmlAttr($hook);
                 $func                                                               = $attr["obj"] . "::" . $attr["method"];

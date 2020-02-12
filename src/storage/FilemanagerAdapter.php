@@ -147,14 +147,12 @@ abstract class FilemanagerAdapter
     public function save(string $buffer, string $file_path = null, int $expire = null) : bool
     {
         $rc                                                             = false;
-        if (!Error::check(static::ERROR_BUCKET)) {
-            if (!$file_path) {
-                $file_path = $this->getFilePath();
-            }
-            $rc                                                         = $this->isValid($file_path) && $this->makeDir(dirname($file_path));
-            if ($rc && Filemanager::fsave($buffer, $file_path) && $expire !== null) {
-                $this->touch($expire, $file_path);
-            }
+        if (!$file_path) {
+            $file_path = $this->getFilePath();
+        }
+        $rc                                                         = $this->isValid($file_path) && $this->makeDir(dirname($file_path));
+        if ($rc && Filemanager::fsave($buffer, $file_path) && $expire !== null) {
+            $this->touch($expire, $file_path);
         }
         return $rc;
     }

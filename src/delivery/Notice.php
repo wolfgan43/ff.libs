@@ -42,7 +42,11 @@ class Notice
      */
     protected $adapters                                     = null;
 
-    public static function getInstance($noticeAdapters)
+    /**
+     * @param string $noticeAdapters
+     * @return Notice
+     */
+    public static function getInstance(string $noticeAdapters) : self
     {
         if (self::$singleton === null) {
             self::$singleton                                = new Notice();

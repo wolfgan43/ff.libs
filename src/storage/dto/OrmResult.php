@@ -26,17 +26,12 @@
 
 namespace phpformsframework\libs\storage\dto;
 
-class OrmResult
+use phpformsframework\libs\Mappable;
+
+/**
+ * Class OrmResult
+ * @package phpformsframework\libs\storage\dto
+ */
+class OrmResult extends Mappable
 {
-    private $result = array();
-    private $count = null;
-
-
-    /**
-     * @return int|null
-     */
-    public function count() : ?int
-    {
-        return $this->count;
-    }
 }

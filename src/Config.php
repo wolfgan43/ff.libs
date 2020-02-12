@@ -161,7 +161,7 @@ class Config implements Dumpable
         $config                                                             = self::rawData(self::SCHEMA_DIRSTRUCT, true);
         $scans                                                              = [self::LIBS_BASE_NAME => [], self::LIBS_NAME => [], self::APP_BASE_NAME => []];
         $dirs                                                               =& $config["dir"];
-        if (is_array($dirs) && count($dirs)) {
+        if (!empty($dirs)) {
             foreach ($dirs as $dir) {
                 $dir_attr                                                   = Dir::getXmlAttr($dir);
                 $dir_attr["path"]                                           = str_replace("[PROJECT_DOCUMENT_ROOT]", Kernel::$Environment::PROJECT_DOCUMENT_ROOT, $dir_attr["path"]);
@@ -255,7 +255,7 @@ class Config implements Dumpable
      */
     public static function getScans(array $rules) : ?array
     {
-        if (is_array($rules) && count($rules)) {
+        if (!empty($rules)) {
             $pattens                                                        = null;
             foreach (self::$dirstruct_scan as $path => $key) {
                 if (isset($rules[$key])) {
@@ -274,7 +274,7 @@ class Config implements Dumpable
      */
     public static function autoloadRegister() : void
     {
-        if (is_array(self::$autoloads) && count(self::$autoloads)) {
+        if (!empty(self::$autoloads)) {
             spl_autoload_register(function ($class_name) {
                 foreach (self::$autoloads as $autoload) {
                     Dir::autoload(Constant::DISK_PATH . $autoload . DIRECTORY_SEPARATOR . str_replace('\\', '/', $class_name) . "." . Constant::PHP_EXT);
@@ -424,9 +424,12 @@ class Config implements Dumpable
         } else {
             self::loadConfig($rawdata);
 
-            if (is_array($rawdata["class_configurable"]) && count($rawdata["class_configurable"])) {
+            if (!empty($rawdata["class_configurable"])) {
                 foreach ($rawdata["class_configurable"] as $class_basename => $class_name) {
                     if (!empty($rawdata[$class_basename])) {
+                        /**
+                         * @var Configurable $class_name
+                         */
                         $class_name::loadConfig($rawdata[$class_basename]);
                     }
                 }
@@ -491,7 +494,7 @@ class Config implements Dumpable
      */
     private static function loadXmlMerge(string $key, array $config) : void
     {
-        if (is_array($config) && count($config)) {
+        if (!empty($config)) {
             if (!isset($config[0])) {
                 $config                                                     = array($config);
             }
@@ -505,7 +508,7 @@ class Config implements Dumpable
      */
     private static function loadXmlMergeSub(string $key, array $config) : void
     {
-        if (is_array($config) && count($config)) {
+        if (!empty($config)) {
             foreach ($config as $sub_key => $sub_config) {
                 if (!isset($sub_config[0])) {
                     $sub_config                                             = array($sub_config);
@@ -549,7 +552,7 @@ class Config implements Dumpable
         $request                                                                        = array();
         $path2params                                                                    = array();
 
-        if (isset($config["page"]) && is_array($config["page"]) && count($config["page"])) {
+        if (!empty($config["page"])) {
             foreach ($config["page"] as $page) {
                 $params                                                                 = array();
                 $attr                                                                   = Dir::getXmlAttr($page);
@@ -619,7 +622,7 @@ class Config implements Dumpable
 
         $schema                                                                         = array();
         $config                                                                         = static::rawData(self::SCHEMA_ENGINE, true);
-        if (is_array($config) && count($config)) {
+        if (!empty($config)) {
             foreach ($config as $key => $engine) {
                 $attr                                                                   = Dir::getXmlAttr($engine);
                 if (isset($attr["source"])) {

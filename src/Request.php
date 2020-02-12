@@ -73,13 +73,13 @@ class Request implements Configurable, Dumpable
     public static function dump(): array
     {
         return array(
-            "params" => self::$params,
-            "access_control" => self::$access_control,
-            "pages" => self::$pages,
-            "alias" => self::$alias,
-            "gateway" => self::$gateway,
-            "patterns" => self::$patterns,
-            "path2params" => self::$path2params,
+            "params"            => self::$params,
+            "access_control"    => self::$access_control,
+            "pages"             => self::$pages,
+            "alias"             => self::$alias,
+            "gateway"           => self::$gateway,
+            "patterns"          => self::$patterns,
+            "path2params"       => self::$path2params,
         );
     }
 
@@ -102,13 +102,13 @@ class Request implements Configurable, Dumpable
      */
     public static function loadConfig(array $config)
     {
-        self::$params = $config["params"];
-        self::$access_control = $config["access_control"];
-        self::$pages = $config["pages"];
-        self::$alias = $config["alias"];
-        self::$gateway = $config["gateway"];
-        self::$patterns = $config["patterns"];
-        self::$path2params = $config["path2params"];
+        self::$params           = $config["params"];
+        self::$access_control   = $config["access_control"];
+        self::$pages            = $config["pages"];
+        self::$alias            = $config["alias"];
+        self::$gateway          = $config["gateway"];
+        self::$patterns         = $config["patterns"];
+        self::$path2params      = $config["path2params"];
     }
 
     /**
@@ -148,17 +148,17 @@ class Request implements Configurable, Dumpable
      */
     private static function loadParams(array $rawdata, &$obj): void
     {
-        if (isset($rawdata["header"]) && is_array($rawdata["header"]) && count($rawdata["header"])) {
+        if (!empty($rawdata["header"])) {
             foreach ($rawdata["header"] as $header) {
                 self::loadRequestMapping($obj, Dir::getXmlAttr($header), "header");
             }
         }
-        if (isset($rawdata["get"]) && is_array($rawdata["get"]) && count($rawdata["get"])) {
+        if (!empty($rawdata["get"])) {
             foreach ($rawdata["get"] as $get) {
                 self::loadRequestMapping($obj, Dir::getXmlAttr($get), "query");
             }
         }
-        if (isset($rawdata["post"]) && is_array($rawdata["post"]) && count($rawdata["post"])) {
+        if (!empty($rawdata["post"])) {
             foreach ($rawdata["post"] as $post) {
                 self::loadRequestMapping($obj, Dir::getXmlAttr($post), "body");
             }
@@ -182,7 +182,7 @@ class Request implements Configurable, Dumpable
     private static function loadAccessControl(array $config): void
     {
         $schema = array();
-        if (is_array($config) && count($config)) {
+        if (!empty($config)) {
             foreach ($config as $access_control) {
                 $attr = Dir::getXmlAttr($access_control);
                 if (!isset($attr["origin"])) {
@@ -252,7 +252,7 @@ class Request implements Configurable, Dumpable
             }
             unset($attr["source"]);
             unset($attr["path"]);
-            if (is_array($attr) && count($attr)) {
+            if (!empty($attr)) {
                 $schema[$key] = $attr;
             }
         }
@@ -310,7 +310,7 @@ class Request implements Configurable, Dumpable
                 || self::$orig_path_info == $aliasname
             ) {
                 $query = (
-                    is_array($_GET) && count($_GET)
+                    !empty($_GET)
                     ? "?" . http_build_query($_GET)
                     : ""
                 );
@@ -425,9 +425,9 @@ class Request implements Configurable, Dumpable
                 : self::$page->getRequestValid()
         );
 
-        return (is_array($res) && count($res)
-            ? "?" . http_build_query($res)
-            : ""
+        return (empty($res)
+            ? ""
+            : "?" . http_build_query($res)
         );
     }
 
@@ -931,7 +931,7 @@ class Request implements Configurable, Dumpable
         static $last_update                                                                     = 0;
 
         if ($last_update < self::$page->rules->last_update
-            && is_array(self::$page->rules->header) && count(self::$page->rules->header)
+            && !empty(self::$page->rules->header)
         ) {
             $last_update                                                                        = self::$page->rules->last_update;
 

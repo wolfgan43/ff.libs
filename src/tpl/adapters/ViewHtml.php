@@ -27,7 +27,6 @@ namespace phpformsframework\libs\tpl\adapters;
 
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
-use phpformsframework\libs\Dir;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\Hook;
@@ -195,7 +194,7 @@ class ViewHtml implements ViewAdapter
             $rc = preg_match_all(static::APPLET, $this->DBlocks[$this->root_element], $matches);
             if ($rc && $matches) {
                 $applets = $matches[1];
-                if (is_array($applets) && count($applets)) {
+                if (!empty($applets)) {
                     foreach ($applets as $applet) {
                         if (strpos($applet, "{") !== false) {
                             $matches = null;
@@ -214,7 +213,7 @@ class ViewHtml implements ViewAdapter
             $rc = preg_match_all(static::APPLET, implode(" ", $this->ParsedBlocks), $matches);
             if ($rc && $matches) {
                 $applets = $matches[1];
-                if (is_array($applets) && count($applets)) {
+                if (!empty($applets)) {
                     foreach ($applets as $applet) {
                         $this->setApplet($applet);
                     }

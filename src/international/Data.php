@@ -41,7 +41,7 @@ class Data
     private const FUNC_EMPTY                = self::FUNC_GET . "Empty";
 
     public const TYPE_TEXT                  = "Text";
-    public const TYPE_DATE_TIME             = "DateTime";
+    public const TYPE_DATETIME              = "DateTime";
     public const TYPE_DATE                  = "Date";
     public const TYPE_TIME                  = "Time";
     public const TYPE_CURRENCY              = "Currency";
@@ -51,7 +51,7 @@ class Data
     public const TYPE_TIMESTAMP             = "Timestamp";
     public const TYPE_TIME_TO_SECOND        = "TimeToSec";
 
-    public const LOCALE_SYSTEM              = "ISO9075";
+    private const LOCALE_SYSTEM             = "ISO9075";
 
     private static $singleton               = null;
     /**
@@ -165,10 +165,11 @@ class Data
      * @param null|string $locale
      * @return DataAdapter
      */
-    private static function getAdapter(string $locale) : DataAdapter
+    private static function getAdapter(string $locale = null) : DataAdapter
     {
         if (!$locale) {
-            Error::register("You must specify a locale settings", static::ERROR_BUCKET);
+            $locale = self::LOCALE_SYSTEM;
+            Error::registerWarning("Locale Settings not found", static::ERROR_BUCKET);
         }
 
         if (!isset(self::$singleton[$locale])) {
@@ -180,9 +181,9 @@ class Data
 
     /**
      * @param string|null $locale
-     * @return string
+     * @return string|null
      */
-    private static function getLocale(string $locale = null) : string
+    private static function getLocale(string $locale = null) : ?string
     {
         return (
             $locale

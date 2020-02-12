@@ -96,7 +96,7 @@ class Router implements Configurable, Dumpable
     public static function loadSchema(array $rawdata) : array
     {
         $schema                                             = null;
-        if (is_array($rawdata) && count($rawdata)) {
+        if (!empty($rawdata)) {
             $schema                                         = array();
             if (isset($rawdata["rule"])) {
                 $rules                                      = $rawdata["rule"];

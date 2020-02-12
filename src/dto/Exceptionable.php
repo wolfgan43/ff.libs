@@ -96,6 +96,7 @@ trait Exceptionable
         } else {
             $vars["debug"]                      = self::$debug;
             $vars["debug"]["exTime - App"]      = Debug::exTimeApp();
+            $vars["debug"]["App - Cache"]       = (Debug::cacheDisabled() ? "off" : "on");
         }
     }
 

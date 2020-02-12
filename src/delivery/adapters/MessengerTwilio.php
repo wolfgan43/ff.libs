@@ -31,15 +31,22 @@ use Twilio\Exceptions\ConfigurationException;
 use Twilio\Exceptions\TwilioException;
 use Twilio\Rest\Client;
 
+/**
+ * Class MessengerTwilio
+ * @package phpformsframework\libs\delivery\adapters
+ */
 class MessengerTwilio extends MessengerAdapter
 {
     const PREFIX                                            = "TWILIO";
 
-    public function send($message, $to)
+    /**
+     * @param string $message
+     * @param array $to
+     */
+    public function send(string $message, array $to) : void
     {
-        $res                                                = null;
         if ($message) {
-            if (is_array($to) && count($to)) {
+            if (!empty($to)) {
                 try {
                     $client                                 = new Client($this->sid, $this->token);
                     $from                                   = $this->from;
@@ -73,6 +80,5 @@ class MessengerTwilio extends MessengerAdapter
         } else {
             Error::register(static::PREFIX . "  message is required.", static::ERROR_BUCKET);
         }
-        return $res;
     }
 }

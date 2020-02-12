@@ -26,8 +26,11 @@
 namespace phpformsframework\libs\delivery;
 
 use phpformsframework\libs\dto\DataError;
-use phpformsframework\libs\Error;
 
+/**
+ * Class NoticeAdapter
+ * @package phpformsframework\libs\delivery
+ */
 abstract class NoticeAdapter
 {
     const ERROR_BUCKET                                      = "delivery";
@@ -40,18 +43,26 @@ abstract class NoticeAdapter
     protected $fromKey                                      = null;
     protected $fromLabel                                    = null;
 
-    public function __construct($connection_service = null)
+    /**
+     * NoticeAdapter constructor.
+     * @param string|null $connection_service
+     */
+    public function __construct(string $connection_service = null)
     {
         $this->connection_service                           = $connection_service;
     }
 
-    abstract public function checkRecipient($target);
+    /**
+     * @param string $target
+     * @return bool
+     */
+    abstract public function checkRecipient(string $target) : bool;
 
     /**
      * @param string $message
      * @return DataError
      */
-    abstract public function send($message);
+    abstract public function send(string $message) : DataError;
 
     /**
      * @param string $title
@@ -59,11 +70,19 @@ abstract class NoticeAdapter
      * @param null|string $template
      * @return DataError
      */
-    abstract public function sendLongMessage($title, $fields = null, $template = null);
+    abstract public function sendLongMessage(string $title, array $fields = null, string $template = null) : DataError;
 
-    abstract protected function process();
+    /**
+     * @return DataError
+     */
+    abstract protected function process() : DataError;
 
-    public function setFrom($key, $label = null)
+    /**
+     * @param string $key
+     * @param string|null $label
+     * @return NoticeAdapter
+     */
+    public function setFrom(string $key, string $label = null) : self
     {
         $this->fromKey                                      = $key;
         $this->fromLabel                                    = $label;
@@ -71,18 +90,31 @@ abstract class NoticeAdapter
         return $this;
     }
 
-    public function setConnection($connection)
+    /**
+     * @param string $connection
+     * @return NoticeAdapter
+     */
+    public function setConnection(string $connection) : self
     {
         $this->connection                                   = $connection;
 
         return $this;
     }
 
-    public function addAction($name, $url)
+    /**
+     * @param string $name
+     * @param string $url
+     */
+    public function addAction(string $name, string $url) : void
     {
         $this->actions[$url]                                = $name;
     }
-    public function addRecipient($target, $name = null)
+
+    /**
+     * @param string $target
+     * @param string|null $name
+     */
+    public function addRecipient(string $target, string $name = null) : void
     {
         if ($this->checkRecipient($target)) {
             $this->recipients[$target]                      = ($name ? $name : $target);

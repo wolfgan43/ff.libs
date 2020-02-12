@@ -449,6 +449,7 @@ abstract class DatabaseAdapter
             }
         }
         ksort($res);
+
         return $res;
     }
 
@@ -720,7 +721,7 @@ abstract class DatabaseAdapter
      */
     private function setIndex2Query() : void
     {
-        if (is_array($this->indexes) && count($this->indexes)) {
+        if (!empty($this->indexes)) {
             $indexes = array_keys($this->indexes);
             $this->index2query = array_combine($indexes, $indexes);
         }
@@ -1058,7 +1059,7 @@ abstract class DatabaseAdapter
         $values                                                     = array_intersect_key($record, $this->prototype);
 
         $res                                                        = array_combine($keys, $values);
-        if (is_array($this->to) && count($this->to)) {
+        if (!empty($this->to)) {
             foreach ($this->to as $field => $funcs) {
                 foreach ($funcs as $func => $params) {
                     $res[$field]                                    = $this->to($res[$field], $func, $params);

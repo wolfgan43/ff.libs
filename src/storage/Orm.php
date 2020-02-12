@@ -26,7 +26,7 @@
 namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\Dumpable;
-
+use phpformsframework\libs\storage\dto\OrmResults;
 /**
  * Class Orm
  * @package phpformsframework\libs\storage
@@ -67,4 +67,41 @@ class Orm implements Dumpable
         return self::$singleton[$ormModel];
     }
 
+    /**
+     * @param string $name
+     * @param string|null $map_class
+     * @return Orm
+     */
+    public static function table(string $name, string $map_class = null) : self
+    {
+        return new Orm($name, $map_class);
+    }
+
+    private $table          = null;
+    private $map_class      = null;
+
+    /**
+     * Orm constructor.
+     * @param string $table
+     * @param string $map_class
+     */
+    public function __construct(string $table, string $map_class = null)
+    {
+        $this->table        = $table;
+        $this->map_class    = $map_class;
+    }
+
+    /**
+     * @param array|null $select
+     * @param array|null $where
+     * @param array|null $sort
+     * @param int|null $limit
+     * @param int|null $offset
+     * @return OrmResults
+     */
+    public function read(array $select = null, array $where = null, array $sort = null, int $limit = null, int $offset = null) : OrmResults
+    {
+        return (new OrmResults(Orm::getInstance($this->table)->read($select, $where, $sort, $limit, $offset)))
+            ->setMap($this->map_class);
+    }
 }

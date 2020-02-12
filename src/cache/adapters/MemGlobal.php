@@ -64,7 +64,7 @@ class MemGlobal extends MemAdapter
             $res = Globals::get($name, $bucket);
         } else {
             $keys = Globals::getInstance();
-            if (is_array($keys) && count($keys)) {
+            if (!empty($keys)) {
                 foreach ($keys as $key => $value) {
                     if (strpos($key, $bucket) === 0) {
                         $real_key = substr($key, strlen($bucket));

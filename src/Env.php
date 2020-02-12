@@ -199,7 +199,7 @@ class Env implements Configurable
     {
         //self::loadDotEnv();
 
-        if (is_array($rawdata) && count($rawdata)) {
+        if (!empty($rawdata)) {
             foreach ($rawdata as $key => $value) {
                 self::$packages[$bucket][$key]                      = Dir::getXmlAttr($value);
 

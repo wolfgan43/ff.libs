@@ -449,7 +449,7 @@ class MongoDB extends DatabaseDriver
         }
 
         $queryId = array();
-        if (is_array($queries) && count($queries)) {
+        if (!empty($queries)) {
             foreach ($queries as $query) {
                 if ($this->query($query)) {
                     $queryId[] = $this->getResult();

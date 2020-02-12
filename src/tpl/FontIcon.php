@@ -94,7 +94,7 @@ class FontIcon extends Mappable
         $container                                      = $this->action($params, true);
         $container[$this->actions["stack"]]             = $this->actions["stack"];
 
-        if (is_array($values) && count($values)) {
+        if (!empty($values)) {
             foreach ($values as $i => $value) {
                 $stack_size                             = (
                     isset($this->actions["stack-" . ($i + 1) . "x"])
@@ -106,7 +106,7 @@ class FontIcon extends Mappable
             }
         }
 
-        return (is_array($items) && count($items)
+        return (!empty($items)
             ? '<span class="' . implode(" ", $container) . '">' . implode("", $items) . '</span>'
             : null
         );
@@ -134,7 +134,7 @@ class FontIcon extends Mappable
                 $res[]                                  = $this->append . $value . $this->prepend;
             }
 
-            if (is_array($res) && count($res)) {
+            if (!empty($res)) {
                 if (strlen($this->prefix)) {
                     $res[$this->prefix]                 = $this->prefix;
                 }
@@ -212,7 +212,7 @@ class FontIcon extends Mappable
                 $res["icon"]                            = $this->icon($icon, $icon_params);
             }
 
-            if (is_array($button) && count($button)) {
+            if (!empty($button)) {
                 foreach ($button as $btn_key => $btn_value) {
                     if (isset($this->buttons_style[$btn_key][$btn_value])) {
                         $res[$btn_key . $btn_value]     = $this->buttons_style[$btn_key][$btn_value];
@@ -221,7 +221,7 @@ class FontIcon extends Mappable
             }
 
 
-            if (is_array($res) && count($res)) {
+            if (!empty($res)) {
                 if (strlen($this->buttons_style["prepend"])) {
                     $res["prepend"]                     = $this->buttons_style["prepend"];
                 }

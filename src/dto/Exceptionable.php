@@ -2,6 +2,7 @@
 namespace phpformsframework\libs\dto;
 
 use phpformsframework\libs\Debug;
+use phpformsframework\libs\storage\Orm;
 
 /**
  * Trait Exceptionable
@@ -95,6 +96,7 @@ trait Exceptionable
             unset($vars["debug"]);
         } else {
             $vars["debug"]                      = self::$debug;
+            $vars["debug"]["exTime - Orm"]      = array_sum(Orm::exTime());
             $vars["debug"]["exTime - App"]      = Debug::exTimeApp();
             $vars["debug"]["App - Cache"]       = (Debug::cacheDisabled() ? "off" : "on");
         }

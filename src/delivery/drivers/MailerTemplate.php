@@ -159,13 +159,14 @@ final class MailerTemplate extends Mailer
         if (is_array($this->fields)) {
             $count_group = 0;
             $group_type = array("Table" => true);
+
             foreach ($this->fields as $fields_key => $fields_value) {
                 $field_type = (
                     isset($fields_value["settings"]["type"])
                                 ? $fields_value["settings"]["type"]
                                 : ""
                             );
-                if (!empty($fields_value)) {
+                if (is_array($fields_value) && !empty($fields_value)) {
                     $count_row = 0;
                     foreach ($fields_value as $fields_value_key => $fields_value_value) {
                         if (strtolower($fields_value_key) == "settings") {

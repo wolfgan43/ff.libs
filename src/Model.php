@@ -63,7 +63,7 @@ class Model implements Configurable, Dumpable
      */
     public static function read(string $name, array $where = null, array $sort = null, array $limit = null)
     {
-        return self::orm("read", $name, $where, $sort, $limit);
+        return self::orm("readOne", $name, $where, $sort, $limit);
     }
 
     /**

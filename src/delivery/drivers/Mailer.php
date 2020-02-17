@@ -105,10 +105,10 @@ abstract class Mailer
     }
 
     /**
-     * @param string $subject
+     * @param string|null $subject
      * @return Mailer
      */
-    public function setSubject(string $subject) : self
+    public function setSubject(string $subject = null) : self
     {
         $this->subject                  = $subject;
 
@@ -116,37 +116,37 @@ abstract class Mailer
     }
 
     /**
-     * @param string $email
+     * @param string|null $email
      * @param string|null $name
      * @return Mailer
      */
-    public function addTo(string $email, string $name = null) : self
+    public function addTo(string $email = null, string $name = null) : self
     {
-        $this->addAddress($email, "to", $name);
+        $this->addAddress("to", $email, $name);
 
         return $this;
     }
 
     /**
-     * @param string $email
+     * @param string|null $email
      * @param string|null $name
      * @return Mailer
      */
-    public function addCC(string $email, string $name = null) : self
+    public function addCC(string $email = null, string $name = null) : self
     {
-        $this->addAddress($email, "cc", $name);
+        $this->addAddress("cc", $email, $name);
 
         return $this;
     }
 
     /**
-     * @param string $email
+     * @param string|null $email
      * @param string|null $name
      * @return Mailer
      */
-    public function addBCC(string $email, string $name = null) : self
+    public function addBCC(string $email = null, string $name = null) : self
     {
-        $this->addAddress($email, "bcc", $name);
+        $this->addAddress("bcc", $email, $name);
 
         return $this;
     }
@@ -159,7 +159,7 @@ abstract class Mailer
     {
         if (is_array($emails)) {
             foreach ($emails as $email => $name) {
-                $this->addAddress($email, $type, $name);
+                $this->addAddress($type, $email, $name);
             }
         }
 
@@ -167,12 +167,12 @@ abstract class Mailer
     }
 
     /**
-     * @param string $email
      * @param string[to|cc|bcc] $type
+     * @param string|null $email
      * @param null|string $name
      * @return Mailer
      */
-    public function addAddress(string $email, string $type, string $name = null) : self
+    public function addAddress(string $type, string $email = null, string $name = null) : self
     {
         if ($email && Validator::isEmail($email)) {
             $name                                           = (
@@ -323,11 +323,11 @@ abstract class Mailer
     }
 
     /**
-     * @param string $email
+     * @param string|null $email
      * @param string|null $name
      * @return Mailer
      */
-    public function setFrom(string $email, string $name = null) : self
+    public function setFrom(string $email = null, string $name = null) : self
     {
         $this->fromEmail = $email;
         $this->fromName = (

@@ -54,6 +54,7 @@ class OrmModel extends Mappable
     private const SCOPE_EXTIME                                                              = "exTime";
 
     private const ACTION_READ                                                               = Database::ACTION_READ;
+    private const ACTION_READONE                                                            = Database::ACTION_READ . "One";
     private const ACTION_INSERT                                                             = Database::ACTION_INSERT;
     private const ACTION_UPDATE                                                             = Database::ACTION_UPDATE;
     private const ACTION_DELETE                                                             = Database::ACTION_DELETE;
@@ -70,6 +71,8 @@ class OrmModel extends Mappable
     private const INDEX                                                                     = Database::INDEX;
     private const INDEX_PRIMARY                                                             = Database::INDEX_PRIMARY;
     private const COUNT                                                                     = Database::COUNT;
+
+    public static $exTime                                                                   = array();
 
     protected $bucket                                                                       = null;
     protected $type                                                                         = null;
@@ -201,11 +204,25 @@ class OrmModel extends Mappable
 
     /**
      * @param string $action
+     */
+    private function startWatch(string $action) : void
+    {
+        Debug::stopWatch(self::ERROR_BUCKET . "/" . $action);
+    }
+
+    /**
+     * @param string $action
      * @return float|null
      */
     private function stopWatch(string $action) : ?float
     {
-        return Debug::stopWatch(self::ERROR_BUCKET . "/" . $action);
+        static $pid = null;
+
+        if (!$pid && function_exists("getmypid")) {
+            $pid = getmypid();
+        }
+
+        return self::$exTime[$action . "-" . $pid . "-" . count(self::$exTime)] = Debug::stopWatch(self::ERROR_BUCKET . "/" . $action);
     }
     /**
      * @param $query
@@ -226,7 +243,7 @@ class OrmModel extends Mappable
      */
     public function read(array $select = null, array $where = null, array $sort = null, int $limit = null, int $offset = null) : ?array
     {
-        self::stopWatch(self::ACTION_READ);
+        self::startWatch(self::ACTION_READ);
 
         $this->get($where, $select, $sort, $limit, $offset);
         Log::debugging(array(
@@ -251,18 +268,18 @@ class OrmModel extends Mappable
      */
     public function readOne(array $select = null, array $where = null, array $sort = null, int $offset = null) : ?array
     {
-        self::stopWatch(self::ACTION_READ);
+        self::startWatch(self::ACTION_READONE);
 
         $this->get($where, $select, $sort, 1, $offset);
         Log::debugging(array(
-            self::SCOPE_ACTION      => self::ACTION_READ,
+            self::SCOPE_ACTION      => self::ACTION_READONE,
             self::SCOPE_SELECT      => $select,
             self::SCOPE_WHERE       => $where,
             self::SCOPE_SORT        => $sort,
             self::SCOPE_LIMIT       => 1,
             self::SCOPE_OFFSET      => $offset,
-            self::SCOPE_EXTIME      => self::stopWatch(self::ACTION_READ)
-        ), static::ERROR_BUCKET, static::ERROR_BUCKET, self::ACTION_READ);
+            self::SCOPE_EXTIME      => self::stopWatch(self::ACTION_READONE)
+        ), static::ERROR_BUCKET, static::ERROR_BUCKET, self::ACTION_READONE);
 
         return $this->getResult(true);
     }
@@ -273,7 +290,7 @@ class OrmModel extends Mappable
      */
     public function insertUnique(array $insert) : ?array
     {
-        self::stopWatch(self::ACTION_INSERT_UNIQUE);
+        self::startWatch(self::ACTION_INSERT_UNIQUE);
 
         $res                        = $this->set($insert, null, $insert);
         Log::debugging(array(
@@ -291,7 +308,7 @@ class OrmModel extends Mappable
      */
     public function insert(array $insert) : ?array
     {
-        self::stopWatch(self::ACTION_INSERT);
+        self::startWatch(self::ACTION_INSERT);
 
         $res                        = $this->set(null, null, $insert);
         Log::debugging(array(
@@ -309,7 +326,7 @@ class OrmModel extends Mappable
      */
     public function update(array $set, array $where) : ?array
     {
-        self::stopWatch(self::ACTION_UPDATE);
+        self::startWatch(self::ACTION_UPDATE);
 
         $res                        = $this->set($where, $set);
         Log::debugging(array(
@@ -330,7 +347,7 @@ class OrmModel extends Mappable
      */
     public function write(array $where, array $set = null, array $insert = null) : ?array
     {
-        self::stopWatch(self::ACTION_WRITE);
+        self::startWatch(self::ACTION_WRITE);
 
         $res                        = $this->set($where, $set, $insert);
         Log::debugging(array(
@@ -352,7 +369,7 @@ class OrmModel extends Mappable
      */
     public function cmd(string $action, array $where = null) : ?array
     {
-        self::stopWatch(self::ACTION_CMD);
+        self::startWatch(self::ACTION_CMD);
 
         $this->clearResult();
 
@@ -378,7 +395,7 @@ class OrmModel extends Mappable
      */
     public function delete(array $where) : ?array
     {
-        self::stopWatch(self::ACTION_DELETE);
+        self::startWatch(self::ACTION_DELETE);
 
         $res                        = null;
         Log::debugging(array(
@@ -544,7 +561,7 @@ class OrmModel extends Mappable
                         }
 
                         $keyValue = array_column($regs[self::INDEX], $thisKey);
-                        if (!empty($keyValue)) {
+                        if (isset($whereRef) && count($keyValue)) {
                             $this->whereBuilder($whereRef, $keyValue, $relKey);
                         } elseif (isset($this->services_by_data->tables[$controller . "." . $relTable])) {
                             Error::register("Relationship found but missing keyValue in result. Check in configuration indexes: " . $thisTable . " => " . $thisKey . " (" . $relTable . "." . $relKey . ")");

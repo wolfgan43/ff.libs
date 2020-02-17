@@ -73,6 +73,18 @@ class Log
     const TYPE_DEFAULT                                          = self::TYPE_NOTICE;
 
     private static $encoding                                    = self::ENCODE_JSON;
+    private static $count                                       = array(
+                                                                    self::TYPE_EMERGENCY    => 0,
+                                                                    self::TYPE_CRITICAL     => 0,
+                                                                    self::TYPE_ALERT        => 0,
+                                                                    self::TYPE_ERROR        => 0,
+                                                                    self::TYPE_WARNING      => 0,
+                                                                    self::TYPE_NOTICE       => 0,
+                                                                    self::TYPE_INFO         => 0,
+                                                                    self::TYPE_DEBUG        => 0,
+                                                                    null                    => 0
+                                                                );
+    private static $current_count                               = null;
     private static $current_routine                             = null;
     private static $current_user                                = null;
     private static $current_size                                = null;
@@ -81,7 +93,7 @@ class Log
                                                                     self::FORMAT_CLF                => array( //common log format
                                                                         "rule"                      => array(
                                                                             "remote_addr"           => "REMOTE_ADDR",
-                                                                            "identd"                => "IDENTD:ROUTINE" . self::CLASS_SEP . "ACTION [pid:PID TAGS]",
+                                                                            "identd"                => "IDENTD:ROUTINE" . self::CLASS_SEP . "ACTION [pid:PID-COUNT TAGS]",
                                                                             "auth_user"             => "AUTH",
                                                                             "datetime"              => 'DATE:TIME.MICRO ZONE (EXTIMEs)',
                                                                             "from"                  => "REQUEST_METHOD PATHINFO SERVER_PROTOCOL AJAX",
@@ -96,7 +108,7 @@ class Log
                                                                     self::FORMAT_CLE                => array( //common log extend
                                                                         "rule"                      => array(
                                                                             "remote_addr"           => "REMOTE_ADDR",
-                                                                            "identd"                => "IDENTD:ROUTINE" . self::CLASS_SEP . "ACTION [pid:PID]",
+                                                                            "identd"                => "IDENTD:ROUTINE" . self::CLASS_SEP . "ACTION [pid:PID-COUNT]",
                                                                             "auth_user"             => "AUTH",
                                                                             "datetime"              => 'DATE:TIME.MICRO ZONE',
                                                                             "from"                  => "REQUEST_METHOD PATHINFO SERVER_PROTOCOL AJAX",
@@ -112,7 +124,7 @@ class Log
                                                                         "rule"                      => array(
                                                                             "datetime"              => 'EXTIMEs DAYN MONTHN DAY TIME.MICRO YEAR',
                                                                             "identd"                => "ROUTINE" . self::CLASS_SEP . "ACTION",
-                                                                            "process"               => "pid PID:tid TID:resource TAGS",
+                                                                            "process"               => "pid PID-COUNT:tid TID:resource TAGS",
                                                                             "remote_addr"           => "client REMOTE_ADDR:REMOTE_PORT REFERER"
                                                                         ),
                                                                         "message"                   => ' MESSAGE',
@@ -221,33 +233,33 @@ class Log
      * @param bool|null $override
      * @return array
      */
-    public static function extend(int $type = null, string $bucket = null, string $format = null, bool $unalterable = null, callable $write_if = null, bool $override = null) : array
+    public static function extend(int $type = null, string $bucket = null, string $format = null, bool $unalterable = null, callable $write_if = null, bool $override = null): array
     {
-        $rule                                                   = (
+        $rule = (
             isset(self::$rules[$type])
             ? self::$rules[$type]
             : self::$rules[self::TYPE_DEFAULT]
         );
-        $name                                                   = $rule["bucket"];
+        $name = $rule["bucket"];
 
         if ($bucket) {
-            $rule["bucket"]                                     .= "_" . $bucket;
-            $name                                               .= "." . $bucket;
+            $rule["bucket"] .= "_" . $bucket;
+            $name .= "." . $bucket;
         }
         if ($write_if !== null) {
-            $rule["write_if"]                                   = $write_if;
+            $rule["write_if"] = $write_if;
         }
         if ($unalterable !== null) {
-            $rule["unalterable"]                                = $unalterable;
+            $rule["unalterable"] = $unalterable;
         }
         if ($format !== null) {
-            $rule["format"]                                     = $format;
+            $rule["format"] = $format;
         }
         if ($override !== null) {
-            $rule["override"]                                   = $override;
+            $rule["override"] = $override;
         }
 
-        self::$routine[$name]                                   = $rule;
+        self::$routine[$name] = $rule;
 
         return $rule;
     }
@@ -255,16 +267,16 @@ class Log
     /**
      * @param string|null $name
      */
-    public static function setRoutine(string $name = null) : void
+    public static function setRoutine(string $name = null): void
     {
-        $arrRoutine                                             = explode(".", $name, 2);
-        $bucket                                                 = (
+        $arrRoutine = explode(".", $name, 2);
+        $bucket = (
             isset($arrRoutine[1])
             ? $arrRoutine[1]
             : null
         );
-        $const                                                  = "TYPE_" . strtoupper($arrRoutine[0]);
-        $type                                                   = (
+        $const = "TYPE_" . strtoupper($arrRoutine[0]);
+        $type = (
             defined("self::" . $const)
             ? constant("self::" . $const)
             : self::TYPE_DEFAULT
@@ -272,44 +284,45 @@ class Log
 
         self::extend($type, $bucket);
 
-        self::$current_routine                                  = $name;
+        self::$current_routine = $name;
     }
 
     /**
      * @param string $name
      */
-    public static function setUser(string $name) : void
+    public static function setUser(string $name): void
     {
-        self::$current_user                                     = $name;
+        self::$current_user = $name;
     }
+
     /**
      * @param int $size
      */
-    public static function setSize(int $size) : void
+    public static function setSize(int $size): void
     {
-        self::$current_size                                     = $size;
+        self::$current_size = $size;
     }
 
     /**
      * @param string $tag
      */
-    public static function addTag(string $tag) : void
+    public static function addTag(string $tag): void
     {
-        self::$current_tags[$tag]                               = $tag;
+        self::$current_tags[$tag] = $tag;
     }
 
     /**
      * @return string
      */
-    protected static function getUser() : string
+    protected static function getUser(): string
     {
-        $res                                                    = self::$current_user;
+        $res = self::$current_user;
         if (!$res) {
-            $res                                                = (
+            $res = (
                 isset($_COOKIE[session_name()])
-                                                                    ? "user"
-                                                                    : "guest"
-                                                                );
+                ? "user"
+                : "guest"
+            );
         }
 
         return $res;
@@ -319,21 +332,21 @@ class Log
      * @param string $key
      * @param array $format
      */
-    public static function addFormat(string $key, array $format) : void
+    public static function addFormat(string $key, array $format): void
     {
-        self::$formats[$key]                                    = $format;
+        self::$formats[$key] = $format;
     }
 
     /**
      * @param string $routine
      * @param string $action
      */
-    public static function registerProcedure(string $routine, string $action) : void
+    public static function registerProcedure(string $routine, string $action): void
     {
-        self::$procedure                                        = array(
-                                                                    "routine"   => $routine,
-                                                                    "action"    => $action
-                                                                );
+        self::$procedure = array(
+            "routine" => $routine,
+            "action" => $action
+        );
     }
 
     /** system is unusable [SYSTEM]
@@ -435,7 +448,7 @@ class Log
     /**
      * @return string|null
      */
-    public static function getLogDir() : ?string
+    public static function getLogDir(): ?string
     {
         return Dir::findCachePath("logs");
     }
@@ -449,14 +462,15 @@ class Log
      * @param int|null $status
      * @todo da tipizzare
      */
-    private static function run($message, int $type = null, string $bucket = null, string $routine = null, string $action = null, int $status = null) : void
+    private static function run($message, int $type = null, string $bucket = null, string $routine = null, string $action = null, int $status = null): void
     {
         if ($message) {
-            $rule                                               = self::getRoutine($type, $bucket);
+            $rule = self::getRoutine($type, $bucket);
             if ($rule && self::writable($rule)) {
-                $procedure                                      = self::findProcedure($routine, $action);
+                self::$current_count = self::$count[$type];
 
-                $content                                        = self::fetchByFormat(
+                $procedure = self::findProcedure($routine, $action);
+                $content = self::fetchByFormat(
                     $rule["format"],
                     self::encodeMessage($message),
                     $procedure["routine"],
@@ -473,24 +487,25 @@ class Log
                  * if ($rule["notify"]) {
                  *    self::notify($message, $bucket);
                  * }
-                */
+                 */
 
                 self::set($content, $rule["bucket"], $rule["override"]);
+                self::$count[$type]++;
             }
         }
     }
 
     /**
-     * @todo da tipizzare
      * @param $data
      * @param string|null $filename
      * @param bool $override
+     * @todo da tipizzare
      */
-    protected static function set($data, string $filename = null, bool $override = false) : void
+    protected static function set($data, string $filename = null, bool $override = false): void
     {
-        $log_path                                                   = self::getLogDir();
+        $log_path = self::getLogDir();
         if ($log_path) {
-            $file                                                   = $log_path . '/' . Kernel::$Environment::APPNAME . "_" . date("Y-m-d") . "_" . $filename . '.txt';
+            $file = $log_path . '/' . Kernel::$Environment::APPNAME . "_" . date("Y-m-d") . "_" . $filename . '.txt';
 
             if ($override) {
                 Filemanager::fsave($data, $file);
@@ -504,7 +519,7 @@ class Log
      * @param array $rule
      * @return bool|null
      */
-    private static function writable(array $rule) : ?bool
+    private static function writable(array $rule): ?bool
     {
         return (is_callable($rule["write_if"])
             ? $rule["write_if"]()
@@ -517,23 +532,23 @@ class Log
      * @param string|null $action
      * @return array
      */
-    private static function findProcedure(string $routine = null, string $action = null) : array
+    private static function findProcedure(string $routine = null, string $action = null): array
     {
         if (self::$procedure) {
-            $res                                                    = self::$procedure;
+            $res = self::$procedure;
         } else {
-            $runners                                                = Debug::getRunners();
-            $res                                                    = array(
-                "routine"                                           => implode(self::CLASS_SEP, array_keys($runners)),
-                "action"                                            => end($runners)
+            $runners = Debug::getRunners();
+            $res = array(
+                "routine" => implode(self::CLASS_SEP, array_keys($runners)),
+                "action" => end($runners)
             );
         }
 
         if ($routine) {
-            $res["routine"]                                         = $routine;
+            $res["routine"] = $routine;
         }
         if ($action) {
-            $res["action"]                                          = $action;
+            $res["action"] = $action;
         }
 
         return $res;
@@ -544,19 +559,19 @@ class Log
      * @param string|null $bucket
      * @return array|null
      */
-    private static function getRoutine(int $type = null, string $bucket = null) : ?array
+    private static function getRoutine(int $type = null, string $bucket = null): ?array
     {
         if (!$type) {
-            $type                                                   = self::$current_routine;
+            $type = self::$current_routine;
         }
-        $res                                                        = (
+        $res = (
             isset(self::$routine[$type])
             ? self::$routine[$type]
             : self::extend($type)
         );
 
         if ($bucket) {
-            $res["bucket"]                                          .= "_" . $bucket;
+            $res["bucket"] .= "_" . $bucket;
         }
 
         return $res;
@@ -566,7 +581,7 @@ class Log
      * @param string $name
      * @return array
      */
-    private static function getFormat(string $name) : array
+    private static function getFormat(string $name): array
     {
         return self::$formats[$name];
     }
@@ -579,10 +594,10 @@ class Log
      * @param int|null $status
      * @return string
      */
-    private static function fetchByFormat(string $format_name, string $message, string $routine = null, string $action = null, int $status = null) : string
+    private static function fetchByFormat(string $format_name, string $message, string $routine = null, string $action = null, int $status = null): string
     {
-        $format                                                     = self::getFormat($format_name);
-        $content                                                    = self::fetch(
+        $format = self::getFormat($format_name);
+        $content = self::fetch(
             $format["quote_prefix"]
             . implode(
                 $format["quote_suffix"]
@@ -600,6 +615,58 @@ class Log
 
         return $content . self::fetchMessage($message, $format["message"]);
     }
+
+    /**
+     * @return string
+     */
+    private static function getIdentity() : string
+    {
+        static $identity = null;
+
+        if (!$identity) {
+            $identity = (
+                function_exists("posix_getpwuid")
+                ? posix_getpwuid(posix_geteuid())['name']
+                : "NULL"
+            );
+        }
+        return $identity;
+    }
+
+    /**
+     * @return string
+     */
+    private static function getThread() : string
+    {
+        static $thread = null;
+
+        if (!$thread) {
+            $thread = (
+                class_exists("Thread")
+                ? \Thread::getCurrentThreadId()
+                : "NULL"
+            );
+        }
+        return $thread;
+    }
+
+    /**
+     * @return string
+     */
+    private static function getPid() : string
+    {
+        static $pid = null;
+
+        if (!$pid) {
+            $pid = (
+                function_exists("getmypid")
+                ? getmypid()
+                : "NULL"
+            );
+        }
+        return $pid;
+    }
+
 
     /**
      * @param string $content
@@ -647,6 +714,7 @@ class Log
                 "MICRO",
                 "YEAR",
                 "PID",
+                "COUNT",
                 "TID",
                 "STATUS_CODE",
                 "SIZE",
@@ -662,7 +730,7 @@ class Log
             [
                 $routine,
                 $action,
-                (function_exists("posix_getpwuid") ? posix_getpwuid(posix_geteuid())['name'] : "NULL"),
+                self::getIdentity(),
                 self::getUser(),
                 Debug::exTimeApp(),
                 strftime('%d/%b/%Y'),
@@ -673,8 +741,9 @@ class Log
                 strftime('%d'),
                 $micro,
                 strftime('%Y'),
-                getmypid(),
-                (class_exists("Thread") ? \Thread::getCurrentThreadId() : null),
+                self::getPid(),
+                self::$current_count,
+                self::getThread(),
                 Response::httpCode($status),
                 self::$current_size,
                 implode(",", self::$current_tags),

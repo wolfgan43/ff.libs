@@ -163,6 +163,7 @@ class Router implements Configurable, Dumpable
 
         if (is_array($rule)) {
             $destination                                    = $rule["destination"];
+
             if ($destination) {
                 if (is_array($destination)) {
                     Response::send(self::caller($destination["obj"], $destination["method"], self::replaceMatches($rule["matches"], $destination["params"])));

@@ -122,11 +122,11 @@ class Response
      */
     public static function sendError(int $status = 404, string $msg = null, $debug = null) : void
     {
+        $response = new DataResponse();
         switch (Request::accept()) {
             case "application/json":
             case "text/json":
                 Log::registerProcedure("Request", "validator" . Log::CLASS_SEP . "error");
-                $response = new DataResponse();
                 break;
             case "text/html":
                 Log::registerProcedure("Router", "page" . Log::CLASS_SEP . "error");
@@ -138,7 +138,6 @@ class Response
                 Debug::dump($msg);
                 break;
             default:
-                $response = new DataResponse();
                 //todo: da implementare il content_type media
         }
 

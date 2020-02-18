@@ -191,7 +191,11 @@ class Config implements Dumpable
 
                 self::$dirstruct[$dir_key][$dir_name]                       = $dir_attr;
                 if (isset(self::$dirstruct[$dir_key][$dir_name]["autoload"])) {
-                    self::$autoloads[]                                      = self::$dirstruct[$dir_key][$dir_name]["path"];
+                    self::$autoloads[self::$dirstruct[$dir_key][$dir_name]["path"]] = (
+                        isset(self::$dirstruct[$dir_key][$dir_name]["namespace"])
+                        ? rtrim(self::$dirstruct[$dir_key][$dir_name]["namespace"], '\\') . '\\'
+                        : null
+                    );
                 }
             }
 
@@ -276,8 +280,8 @@ class Config implements Dumpable
     {
         if (!empty(self::$autoloads)) {
             spl_autoload_register(function ($class_name) {
-                foreach (self::$autoloads as $autoload) {
-                    Dir::autoload(Constant::DISK_PATH . $autoload . DIRECTORY_SEPARATOR . str_replace('\\', '/', $class_name) . "." . Constant::PHP_EXT);
+                foreach (self::$autoloads as $autoload => $namespace) {
+                    Dir::autoload(Constant::DISK_PATH . $autoload . DIRECTORY_SEPARATOR . str_replace(array($namespace, '\\'), array('', '/'), $class_name) . "." . Constant::PHP_EXT);
                 }
             });
         }

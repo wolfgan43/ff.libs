@@ -86,7 +86,6 @@ class Log
                                                                 );
     private static $current_count                               = null;
     private static $current_routine                             = null;
-    private static $current_user                                = null;
     private static $current_size                                = null;
     private static $current_tags                                = array();
     private static $formats                                     = array(
@@ -288,14 +287,6 @@ class Log
     }
 
     /**
-     * @param string $name
-     */
-    public static function setUser(string $name): void
-    {
-        self::$current_user = $name;
-    }
-
-    /**
      * @param int $size
      */
     public static function setSize(int $size): void
@@ -316,7 +307,7 @@ class Log
      */
     protected static function getUser(): string
     {
-        $res = self::$current_user;
+        $res = App::getCurrentUser()->uuid ?? null;
         if (!$res) {
             $res = (
                 isset($_COOKIE[session_name()])

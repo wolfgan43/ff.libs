@@ -27,6 +27,7 @@ namespace phpformsframework\libs;
 
 use phpformsframework\libs\dto\RequestPage;
 use phpformsframework\libs\tpl\Widget;
+use stdClass;
 
 /**
  * Class App
@@ -40,6 +41,15 @@ abstract class App implements Dumpable
     const ERROR_BUCKET                                              = 'app';
 
     private static $script_engine                                   = null;
+    /**
+     * @var stdClass
+     */
+    protected static $user                                          = null;
+    /**
+     * @var stdClass
+     */
+    protected static $user_acl                                      = null;
+
     /**
      * @var Constant
      */
@@ -127,5 +137,13 @@ abstract class App implements Dumpable
     public static function page(string $name, array $config = null) : dto\DataHtml
     {
         return self::widget($name, $config, "page");
+    }
+
+    /**
+     * @return stdClass|null
+     */
+    public static function getCurrentUser() : ?stdClass
+    {
+        return self::$user;
     }
 }

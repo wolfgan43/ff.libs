@@ -32,6 +32,7 @@ use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Request;
+use stdClass;
 
 /**
  * Class Filemanager
@@ -797,11 +798,11 @@ class Filemanager implements Dumpable
      * @param array|null $headers
      * @return array|null
      */
-    public static function fileGetContentJson(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : ?array
+    public static function fileGetContentJson(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : ?stdClass
     {
         $res                                = self::fileGetContent($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers);
         return ($res
-            ? json_decode($res, true)
+            ? json_decode($res)
             : null
         );
     }

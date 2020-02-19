@@ -64,7 +64,11 @@ class RequestPage extends Mappable
     {
         parent::__construct($this->setRules($this->findEnvByPathInfo($path_info, $path2params), $pages, $patterns));
 
-        $this->method       = strtoupper($this->method);
+        $this->method       = (
+            $this->method
+            ? strtoupper($this->method)
+            : Request::method()
+        );
     }
 
     /**

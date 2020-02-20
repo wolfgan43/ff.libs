@@ -60,6 +60,17 @@ class DataResponse extends DataAdapter
     }
 
     /**
+     * @param $object
+     * @return $this
+     */
+    public function fillObject($object) : DataAdapter
+    {
+        $values = json_decode(json_encode($object), true);
+
+        return  $this->fill($values);
+    }
+
+    /**
      * @param array $values
      * @return $this
      */

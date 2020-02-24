@@ -18,18 +18,4 @@ trait TypesConverter
             : null
         );
     }
-
-    /**
-     * @param object $d
-     * @return array|null
-     */
-    private function object2array(object $d) : ?array
-    {
-        $d = get_object_vars($d);
-
-        return (is_array($d)
-            ? array_map(__FUNCTION__, $d)
-            : null
-        );
-    }
 }

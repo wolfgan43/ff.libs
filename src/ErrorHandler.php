@@ -315,7 +315,7 @@ EOD
                     || (isset($params["_GET"][$key]) && $params["_GET"][$key] == $value)
                     || (isset($params["_FILES"][$key]) && $params["_FILES"][$key] == $value)
                     || (isset($params["_SESSION"][$key]) && $params["_SESSION"][$key] == $value)
-                    || (substr($key, 0, strlen(APPID)) == APPID)
+                    || (substr($key, 0, strlen(Kernel::$Environment::APPID)) == Kernel::$Environment::APPID)
                     || $key == "HTTP_ENV_VARS"
                     || $key == "HTTP_SERVER_VARS"
                     || $key == "HTTP_COOKIE_VARS"

@@ -355,7 +355,7 @@ class RequestPage extends Mappable
                 }
             }
         } else {
-            $errors[413][]                                                              = "Headers Max Size Exeeded";
+            $errors[413][]                                                              = "Headers Max Size Exceeded";
         }
 
         $this->error($errors);
@@ -418,7 +418,7 @@ class RequestPage extends Mappable
                 }
             }
         } else {
-            $errors[413][]                                                              = "Request Max Size Exeeded";
+            $errors[413][]                                                              = "Request Max Size Exceeded";
         }
 
         $this->error($errors);

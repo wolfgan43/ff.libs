@@ -445,7 +445,7 @@ class Validator
             if (!empty($sizes)) {
                 foreach ($sizes as $index => $size) {
                     if ($size > self::getMaxUploadSize()) {
-                        $error[]                                            = $names[$index] . ": Upload Limit Exeeded";
+                        $error[]                                            = $names[$index] . ": Upload Limit Exceeded";
                     }
                 }
             }
@@ -952,7 +952,7 @@ class Validator
                     $dataError                              = self::isError(self::getErrorName() . " Multidimensional Array not supported", $type, 501);
                     break;
                 } elseif (strlen($item) > $length) {
-                    $dataError                              = self::isError(self::getErrorName() . " Max Length Exeeded: " . $type, $type, 413);
+                    $dataError                              = self::isError(self::getErrorName() . " Max Length Exceeded: " . $type, $type, 413);
                     break;
                 }
             }

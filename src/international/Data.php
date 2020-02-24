@@ -27,6 +27,7 @@
 namespace phpformsframework\libs\international;
 
 use phpformsframework\libs\Error;
+use Exception;
 
 /**
  * Class Data
@@ -237,11 +238,11 @@ class Data
             $dataLang = $this->getAdapter($locale);
             $funcname = $this->getFunc(self::FUNC_SET, $data_type);
 
-            if (!$this->checkValue($value, $data_type, $locale)) {
-                Error::register($value . " is not valid " .  $data_type . " for locale " . $locale . ": " . $dataLang->getFormat($data_type), static::ERROR_BUCKET);
+            try {
+                $dataLang->$funcname($this, $value);
+            } catch (Exception $e) {
+                Error::register($e->getMessage(), static::ERROR_BUCKET);
             }
-
-            $dataLang->$funcname($this, $value);
         }
 
         return $this;

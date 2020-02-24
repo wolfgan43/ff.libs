@@ -1,6 +1,7 @@
 <?php
 namespace phpformsframework\libs;
 
+use phpformsframework\libs\cache\adapters\MemAdapter;
 use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\storage\Database;
@@ -194,9 +195,9 @@ trait EndUserManager
     }
 
     /**
-     * @return cache\MemAdapter
+     * @return MemAdapter
      */
-    public static function cacheMem() : cache\MemAdapter
+    public static function cacheMem() : MemAdapter
     {
         return Mem::getInstance();
     }

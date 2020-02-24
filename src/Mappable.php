@@ -32,6 +32,7 @@ namespace phpformsframework\libs;
 abstract class Mappable
 {
     use Mapping;
+    use ClassDetector;
 
     protected const ERROR_BUCKET          = "mappable";
 
@@ -51,20 +52,6 @@ abstract class Mappable
     }
 
     /**
-     * @param string|null $class_name
-     * @return string
-     */
-    private function getPrefix(string $class_name = null) : string
-    {
-        if (!$class_name) {
-            $class_name         = static::class;
-        }
-        $arrClass               = explode("\\", $class_name);
-
-        return strtolower(end($arrClass));
-    }
-
-    /**
      * @param string $name
      * @param string|null $prefix
      */
@@ -72,7 +59,7 @@ abstract class Mappable
     {
         Debug::stopWatch("mapping/" . $prefix . "_" . $name);
 
-        $prefix                 = self::getPrefix($prefix);
+        $prefix                 = self::getClassName($prefix);
         $map                    = Config::mapping($prefix, $name);
         if (!empty($map)) {
             $this->autoMapping($map);

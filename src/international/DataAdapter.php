@@ -27,6 +27,8 @@ namespace phpformsframework\libs\international;
 
 use phpformsframework\libs\Mappable;
 use stdClass;
+use DateTime;
+use Exception;
 
 /**
  * Class DataAdapter
@@ -35,57 +37,33 @@ use stdClass;
 class DataAdapter extends Mappable
 {
     protected $datetime = array(
-        "prototype"     => "DAY/MONTH/YEAR HOUR:MINUTE:SECOND",
-        "regexp"        => "/((\d+):(\d+)(:(\d+))*\s+(\d+)[-\/](\d+)[-\/](\d+))|((\d+)[-\/](\d+)[-\/](\d+)\s+(\d+):(\d+)(:(\d+))*)/",
-        "day"           => 6,
-        "month"         => 7,
-        "year"          => 8,
-        "hour"          => 2,
-        "minute"        => 3,
-        "second"        => 5
+        "prototype"     => "DAY/MONTH/YEAR HOUR:MINUTE:SECOND"
     );
     protected $date = array(
-        "prototype"     => "DAY/MONTH/YEAR",
-        "regexp"        => "/(\d+)[-\/\s]*(\d+)[-\/\s]*(\d+)/",
-        "day"           => 1,
-        "month"         => 2,
-        "year"          => 3
+        "prototype"     => "DAY/MONTH/YEAR"
     );
     protected $time = array(
-        "prototype"     => "HOUR:MINUTE:SECOND",
-        "regexp"        => "/(\d+)[:\s]*(\d+)/"
-        , "hour"        => 1
-        , "minute"      => 2
-        , "second"      => 3
+        "prototype"     => "HOUR:MINUTE:SECOND"
     );
     protected $currency = array(
         "prototype"     => "INTEGER.DECIMAL",
         "regexp"        => "/^(\-){0,1}\s*(\d+)(.(\d+)){0,1}$/",
-        "strip_chars" => ","
+        "strip_chars"   => ","
     );
     protected $currency_ext = array(
         "prototype"     => "INTEGER.DECIMAL",
         "regexp"        => "/^(\-){0,1}\s*(\d+)(.(\d+)){0,5}$/",
-        "strip_chars" => ","
+        "strip_chars"   => ","
     );
     protected $number = array(
         "prototype"     => "INTEGER.DECIMAL",
         "regexp"        => "/^\\s*(\\-){0,1}\\s*(\\d+)\\s*(\\.\\s*(\\d+)){0,1}\\s*$/",
-        "strip_chars" => ","
+        "strip_chars"   => ","
     );
     protected $number_ext = array(
         "prototype"     => "INTEGER.DECIMAL",
         "regexp"        => "/^\\s*(\\-){0,1}\\s*(\\d+)\\s*(\\.\\s*(\\d+)){0,5}\\s*$/",
-        "strip_chars" => ","
-    );
-    protected $check_time = array(
-        "regexp"        => "/\\d{1,2}:\\d{1,2}(:\\d{1,2}){0,1}/"
-    );
-    protected $check_date = array(
-        "regexp"        => "/\\d{1,2}\\/\\d{1,2}\\/\\d{4}/"
-    );
-    protected $check_datetime = array(
-        "regexp"        => "/\\d{1,2}\\/\\d{1,2}\\/\\d{4}\\s*\\d{1,2}:\\d{1,2}(:\\d{1,2}){0,1}/"
+        "strip_chars"   => ","
     );
 
     protected $check_currency = array(
@@ -110,6 +88,18 @@ class DataAdapter extends Mappable
         "default"        => "00-00-0000 00:00:00"
     );
 
+
+    /**
+     * DataAdapter constructor.
+     * @param string $map
+     * @param string|null $prefix
+     */
+    public function __construct(string $map, string $prefix = null)
+    {
+        $this->locale = $map;
+        parent::__construct($map, $prefix);
+    }
+
     /**
      * @param string $type
      * @return stdClass
@@ -117,21 +107,6 @@ class DataAdapter extends Mappable
     private function getRule(string $type) : stdClass
     {
         return (object) $this->$type;
-    }
-
-    /**
-     * @param Data $oData
-     */
-    private function normalizeDate(Data $oData) : void
-    {
-        if (strlen($oData->value_date_year) == 2) {
-            $tmp = substr($oData->value_date_year, 0, 1);
-            if (intval($tmp) >= 5) {
-                $oData->value_date_year = "19" . $oData->value_date_year;
-            } else {
-                $oData->value_date_year = "20" . $oData->value_date_year;
-            }
-        }
     }
 
     /**
@@ -312,69 +287,102 @@ class DataAdapter extends Mappable
     /**
      * @param Data $oData
      * @param string $value
+     * @throws Exception
      */
     public function setDateTime(Data $oData, string $value) : void
     {
-        $rule                       = $this->getRule("datetime");
+        $date                       = new DateTime($value);
+        $oData->value_date_day      = $date->format("d");
+        $oData->value_date_month    = $date->format("m");
+        $oData->value_date_year     = $date->format("Y");
 
-        preg_match_all($rule->regexp, $value, $matches);
-
-        $oData->value_date_day      = isset($matches[$rule->day][0])     ? $matches[$rule->day][0]     : $matches[$rule->day + 4][0];
-        $oData->value_date_month    = isset($matches[$rule->month][0])   ? $matches[$rule->month][0]   : $matches[$rule->month + 4][0];
-        $oData->value_date_year     = isset($matches[$rule->year][0])    ? $matches[$rule->year][0]    : $matches[$rule->year + 4][0];
-        $oData->value_date_hours    = isset($matches[$rule->hour][0])    ? $matches[$rule->hour][0]    : $matches[$rule->hour + 11][0];
-        $oData->value_date_minutes  = isset($matches[$rule->minute][0])  ? $matches[$rule->minute][0]  : $matches[$rule->minute + 11][0];
-        $oData->value_date_seconds  = isset($matches[$rule->second][0])  ? $matches[$rule->second][0]  : $matches[$rule->second + 11][0];
-
-        $this->NormalizeDate($oData);
+        $oData->value_date_hours    = $date->format("H");
+        $oData->value_date_minutes  = $date->format("i");
+        $oData->value_date_seconds  = $date->format("s");
     }
 
     /**
      * @param Data $oData
      * @param string $value
+     * @throws Exception
      */
     public function setDate(Data $oData, string $value) : void
     {
-        $rule                       = $this->getRule("date");
-
-        preg_match_all($rule->regexp, $value, $matches);
-
-        $oData->value_date_day      = $matches[$rule->day][0];
-        $oData->value_date_month    = $matches[$rule->month][0];
-        $oData->value_date_year     = $matches[$rule->year][0];
-
-        $this->NormalizeDate($oData);
+        $date                       = new DateTime($value);
+        $oData->value_date_day      = $date->format("d");
+        $oData->value_date_month    = $date->format("m");
+        $oData->value_date_year     = $date->format("Y");
     }
 
     /**
      * @param Data $oData
      * @param string $value
+     * @throws Exception
      */
     public function setTime(Data $oData, string $value) : void
     {
-        $rule                       = $this->getRule("time");
-
-        preg_match_all($rule->rexexp, $value, $matches);
-        $oData->value_date_hours    = $matches[$rule->hour][0];
-        $oData->value_date_minutes  = $matches[$rule->minute][0];
-        $oData->value_date_seconds  = $matches[$rule->second][0];
+        $date                       = new DateTime($value);
+        $oData->value_date_hours    = $date->format("H");
+        $oData->value_date_minutes  = $date->format("i");
+        $oData->value_date_seconds  = $date->format("s");
     }
+
     /**
      * @param Data $oData
      * @param string $value
+     * @throws Exception
      */
     public function setCurrency(Data $oData, string $value) : void
     {
-        self::SetCurrencyByType($oData, $value, "currency");
+        if (self::checkCurrency($value)) {
+            self::SetCurrencyByType($oData, $value, "currency");
+        } else {
+            $this->sendError($value, "currency");
+        }
+    }
+
+
+
+    /**
+     * @param Data $oData
+     * @param string $value
+     * @throws Exception
+     */
+    public function setExtCurrency(Data $oData, string $value) : void
+    {
+        if (self::checkExtCurrency($value)) {
+            self::SetCurrencyByType($oData, $value, "currency_ext");
+        } else {
+            $this->sendError($value, "currency_ext");
+        }
     }
 
     /**
      * @param Data $oData
      * @param string $value
+     * @throws Exception
      */
-    public function setExtCurrency(Data $oData, string $value) : void
+    public function setNumber(Data $oData, string $value) : void
     {
-        self::SetCurrencyByType($oData, $value, "currency_ext");
+        if (self::checkNumber($value)) {
+            self::SetNumberByType($oData, $value, "number");
+        } else {
+            $this->sendError($value, "number");
+        }
+    }
+
+    /**
+     * @param Data $oData
+     * @param string $value
+     * @throws Exception
+     */
+    public function setExtNumber(Data $oData, string $value) : void
+    {
+        if (self::checkExtNumber($value)) {
+            self::SetNumberByType($oData, $value, "number_ext");
+        } else {
+            $this->sendError($value, "number_ext");
+        }
     }
 
     /**
@@ -385,24 +393,6 @@ class DataAdapter extends Mappable
     private function setCurrencyByType(Data $oData, string $value, string $type) : void
     {
         $this->SetNumberByType($oData, $value, $type);
-    }
-
-    /**
-     * @param Data $oData
-     * @param string $value
-     */
-    public function setNumber(Data $oData, string $value) : void
-    {
-        self::SetNumberByType($oData, $value, "number");
-    }
-
-    /**
-     * @param Data $oData
-     * @param string $value
-     */
-    public function setExtNumber(Data $oData, string $value) : void
-    {
-        self::SetNumberByType($oData, $value, "number_ext");
     }
 
     /**
@@ -431,6 +421,7 @@ class DataAdapter extends Mappable
     /**
      * @param Data $oData
      * @param string $value
+     * @throws Exception
      */
     public function setTimestamp(Data $oData, string $value) : void
     {
@@ -441,12 +432,15 @@ class DataAdapter extends Mappable
             $oData->value_date_hours = date("H", $value);
             $oData->value_date_minutes = date("i", $value);
             $oData->value_date_seconds = date("s", $value);
+        } else {
+            $this->sendError($value, "timestamp");
         }
     }
 
     /**
      * @param Data $oData
      * @param string $value
+     * @throws Exception
      */
     public function setTimeToSec(Data $oData, string $value) : void
     {
@@ -457,47 +451,26 @@ class DataAdapter extends Mappable
             $oData->value_date_hours = intval(gmdate("H", $value));
             $oData->value_date_minutes = intval(gmdate("i", $value));
             $oData->value_date_seconds = intval(gmdate("s", $value));
+        } else {
+            $this->sendError($value, "timetosec");
         }
     }
 
     /**
-     * @param string $raw_value
-     * @return bool
+     * @param string $value
+     * @param string $type
+     * @throws Exception
      */
-    public function checkTime(string $raw_value) : bool
+    private function sendError(string $value, string $type) : void
     {
-        $rule                               = $this->getRule("check_time");
-
-        return preg_match($rule->regexp, $raw_value) === 1;
+        throw new Exception($value . " is not valid " .  "currency" . " for locale " . $this->locale . ": " . $this->getFormat($type));
     }
 
     /**
      * @param string $raw_value
      * @return bool
      */
-    public function checkDate(string $raw_value) : bool
-    {
-        $rule                               = $this->getRule("check_date");
-
-        return preg_match($rule->regexp, $raw_value) === 1;
-    }
-
-    /**
-     * @param string $raw_value
-     * @return bool
-     */
-    public function checkDateTime(string $raw_value) : bool
-    {
-        $rule                               = $this->getRule("check_datetime");
-
-        return preg_match($rule->regexp, $raw_value) === 1;
-    }
-
-    /**
-     * @param string $raw_value
-     * @return bool
-     */
-    public function checkCurrency(string $raw_value) : bool
+    private function checkCurrency(string $raw_value) : bool
     {
         $rule                               = $this->getRule("check_currency");
 
@@ -508,7 +481,7 @@ class DataAdapter extends Mappable
      * @param string $raw_value
      * @return bool
      */
-    public function checkExtCurrency(string $raw_value) : bool
+    private function checkExtCurrency(string $raw_value) : bool
     {
         $rule                               = $this->getRule("check_currency_ext");
 
@@ -519,7 +492,7 @@ class DataAdapter extends Mappable
      * @param string $raw_value
      * @return bool
      */
-    public function checkNumber(string $raw_value) : bool
+    private function checkNumber(string $raw_value) : bool
     {
         $rule                               = $this->getRule("check_number");
 
@@ -530,7 +503,7 @@ class DataAdapter extends Mappable
      * @param string $raw_value
      * @return bool
      */
-    public function checkExtNumber(string $raw_value) : bool
+    private function checkExtNumber(string $raw_value) : bool
     {
         $rule                               = $this->getRule("check_number_ext");
 

@@ -67,6 +67,11 @@ class Config implements Dumpable
     /**
      * @var null
      */
+    private static $exTime                                                  = null;
+
+    /**
+     * @var null
+     */
     private static $config_files                                            = null;
     /**
      * @var null
@@ -149,6 +154,14 @@ class Config implements Dumpable
             "mapping_data"                                                  => self::$mapping_data,
             "class_configurable"                                            => self::$class_configurable,
         );
+    }
+
+    /**
+     * @return float
+     */
+    public static function exTime() : float
+    {
+        return self::$exTime;
     }
 
     /**
@@ -440,7 +453,7 @@ class Config implements Dumpable
             }
         }
 
-        Debug::stopWatch(self::SCHEMA_CONF . "/load");
+        self::$exTime = Debug::stopWatch(self::SCHEMA_CONF . "/load");
     }
 
     /**

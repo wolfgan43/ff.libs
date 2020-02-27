@@ -770,8 +770,6 @@ class Request implements Configurable, Dumpable
      */
     private static function corsPreflight(string $origin = null) : void
     {
-        header('Access-Control-Allow-Methods: ' . self::$page->method);
-
         if ($origin) {
             $access_control = self::getAccessControl($origin);
             if ($access_control) {
@@ -795,7 +793,6 @@ class Request implements Configurable, Dumpable
                 self::corsFree($origin);
             }
         }
-        exit;
     }
 
     /**
@@ -844,17 +841,17 @@ class Request implements Configurable, Dumpable
 
         switch (self::method()) {
             case self::METHOD_OPTIONS:
+            case self::METHOD_HEAD: //todo: to manage
+                header('Access-Control-Allow-Methods: ' . self::$page->method);
+
                 self::corsPreflight($origin);
+                exit;
                 break;
             case self::METHOD_TRACE: //todo: to manage
                 self::sendError(405);
                 break;
             case self::METHOD_CONNECT: //todo: to manage
                 self::sendError(405);
-                break;
-            case self::METHOD_HEAD: //todo: to manage
-                self::corsPreflight();
-                exit;
                 break;
             case self::METHOD_PROPFIND: //todo: to manage
                 self::sendError(405);
@@ -882,14 +879,10 @@ class Request implements Configurable, Dumpable
      */
     private static function securityHeaders(string $origin = null) : void
     {
-        if ($origin) {
-            $access_control = self::getAccessControl($origin);
-            if (isset($access_control["allow-origin"])) {
-                header('Access-Control-Allow-Origin: ' . $access_control["allow-origin"]);
-            }
-        }
-
         header('Access-Control-Allow-Methods: ' . self::$page->method . ',' . self::METHOD_OPTIONS . ',' . self::METHOD_HEAD);
+
+        self::corsPreflight($origin);
+
 
         self::verifyInvalidRequest();
     }

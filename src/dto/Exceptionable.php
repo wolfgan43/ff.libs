@@ -1,6 +1,7 @@
 <?php
 namespace phpformsframework\libs\dto;
 
+use phpformsframework\libs\Config;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\storage\Orm;
@@ -76,15 +77,22 @@ trait Exceptionable
      */
     public function debug($data, string $bucket = null) : self
     {
-       // if (!empty($data)) {
+        static $count = null;
+        if (!empty($data)) {
             if ($bucket) {
-                self::$debug[count(self::$debug) + 1 . ". " . $bucket] = $data;
+                if (isset(self::$debug[$bucket])) {
+                    $count[$bucket] = ($count[$bucket] ?? 1) + 1;
+
+                    $bucket .= " - " . $count[$bucket];
+                }
+                self::$debug[$bucket] = $data;
+
             } elseif (is_array($data)) {
                 self::$debug = array_replace(self::$debug, $data);
             } else {
                 array_push(self::$debug, $data);
             }
-       // }
+        }
         return $this;
     }
 
@@ -98,6 +106,7 @@ trait Exceptionable
         } else {
             $vars["debug"]                      = self::$debug;
             $vars["debug"]["exTime - Orm"]      = array_sum(Orm::exTime());
+            $vars["debug"]["exTime - Conf"]     = Config::exTime();
             $vars["debug"]["exTime - App"]      = Debug::exTimeApp();
             $vars["debug"]["App - Cache"]       = (Debug::cacheDisabled() ? "off" : "on (" . Kernel::$Environment::CACHE_MEM_ADAPTER . ", " . Kernel::$Environment::CACHE_DATABASE_ADAPTER . ", " . Kernel::$Environment::CACHE_MEDIA_ADAPTER . ")");
         }

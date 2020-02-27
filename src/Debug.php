@@ -56,7 +56,7 @@ class Debug
      */
     public function __construct()
     {
-        self::$app_start                   = microtime(true);
+        self::$app_start                    = microtime(true);
 
         if (self::isEnabled()) {
             error_reporting(E_ALL);
@@ -100,14 +100,16 @@ class Debug
      */
     public static function stopWatch(string $bucket) : ?float
     {
-        if (isset(self::$exTime[$bucket])) {
-            $bucket                         = $bucket . "-" . (count(self::$exTime) + 1);
-        }
-
         if (isset(self::$startWatch[$bucket])) {
-            self::$exTime[$bucket]          = number_format(microtime(true) - self::$startWatch[$bucket], 4, '.', '');
+            $key = $bucket . (
+                isset(self::$exTime[$bucket])
+                ? "-" . (count(self::$exTime) + 1)
+                : null
+            );
+            self::$exTime[$key]             = number_format(microtime(true) - self::$startWatch[$bucket], 4, '.', '');
 
-            return (float) self::$exTime[$bucket];
+            unset(self::$startWatch[$bucket]);
+            return (float) self::$exTime[$key];
         } else {
             self::$startWatch[$bucket]      = microtime(true);
             return null;

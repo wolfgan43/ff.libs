@@ -95,7 +95,7 @@ abstract class App implements Dumpable
      */
     public static function setRunner(string $what) : void
     {
-        self::$script_engine                                        = basename(str_replace('\\', '/', $what));
+        self::$script_engine                                        = ucfirst(basename(str_replace('\\', '/', $what)));
     }
 
     /**

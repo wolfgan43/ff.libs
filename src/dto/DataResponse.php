@@ -199,4 +199,13 @@ class DataResponse extends DataAdapter
             : null
         );
     }
+
+    /**
+     * @return bool
+     */
+    public function isEmpty() : bool
+    {
+        return empty($this->data);
+    }
+
 }

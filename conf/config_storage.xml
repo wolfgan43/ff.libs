@@ -25,6 +25,8 @@
         <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/widgets/*/*" scan="widgets" />
         <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/widgets/*/images/*" scan="widgets/images" />
         <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/widgets/*/fonts/*/*" scan="widgets/fonts" />
+        <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/widgets/*/audio/*" scan="widgets/audio" />
+        <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/widgets/*/video/*" scan="widgets/video" />
 
     </dirs>
 </configdata>

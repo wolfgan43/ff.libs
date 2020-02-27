@@ -93,6 +93,26 @@
         "woff2"
       ]
     },
+    "widgets/audio": {
+      "flag": 4,
+      "type": "widget",
+      "prototype" : "basename",
+      "rootpath": "../",
+      "groupby": "rootname/audio",
+      "filter": [
+        "mp3"
+      ]
+    },
+    "widgets/video": {
+      "flag": 4,
+      "type": "widget",
+      "prototype" : "basename",
+      "rootpath": "../",
+      "groupby": "rootname/video",
+      "filter": [
+        "avi"
+      ]
+    },
     "xml": {
       "flag": 4,
       "type": "xml",

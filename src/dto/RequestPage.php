@@ -251,10 +251,7 @@ class RequestPage extends Mappable
      */
     public function getRequestUnknown() : array
     {
-        return (isset($this->body[self::REQUEST_UNKNOWN])
-            ? $this->body[self::REQUEST_UNKNOWN]
-            : array()
-        );
+        return $this->body[self::REQUEST_UNKNOWN] ?? [];
     }
 
     /**
@@ -285,7 +282,6 @@ class RequestPage extends Mappable
             ? array_diff_key($request, $this->body[self::REQUEST_VALID])
             : $request
         );
-
         return $this;
     }
 
@@ -373,7 +369,7 @@ class RequestPage extends Mappable
         $errors                                                                         = array();
         $bucket                                                                         = $this->bucketByMethod($method);
         if ($this->isAllowedSize($request, $method) && $this->isAllowedSize($this->getRequestHeaders(), Request::METHOD_HEAD)) {
-            if (!empty($this->rules->$bucket) && is_array($request)) {
+            if (!empty($this->rules->$bucket)) {
                 foreach ($this->rules->$bucket as $rule) {
                     if (isset($rule["required"]) && $rule["required"] === true && !isset($request[$rule["name"]])) {
                         $errors[400][]                                                  = $rule["name"] . " is required";
@@ -410,13 +406,12 @@ class RequestPage extends Mappable
                         }
                     }
                 }
-
-                $this->setRequest(self::REQUEST_RAWDATA, $request);
                 $this->setUnknown($request);
                 foreach ($this->getRequestUnknown() as $unknown_key => $unknown) {
                     $errors                                                             = $errors + $this->securityValidation($unknown, $unknown_key);
                 }
             }
+            $this->setRequest(self::REQUEST_RAWDATA, $request);
         } else {
             $errors[413][]                                                              = "Request Max Size Exceeded";
         }

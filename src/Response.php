@@ -307,7 +307,7 @@ class Response
      * @param int|null $http_response_code
      * @param array|null $headers
      */
-    public static function redirect(string $destination, int $http_response_code = null, array $headers = null) : void
+    public static function redirect(string $destination = null, int $http_response_code = null, array $headers = null) : void
     {
         if ($http_response_code === null) {
             $http_response_code = 301;

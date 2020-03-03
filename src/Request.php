@@ -459,6 +459,7 @@ class Request implements Configurable, Dumpable
      */
     private static function capture()
     {
+
         $error = error_get_last();
         if ($error) {
             self::sendError($error["message"], 500);
@@ -897,7 +898,11 @@ class Request implements Configurable, Dumpable
             case self::METHOD_POST:
             case self::METHOD_PATCH:
             case self::METHOD_DELETE:
-                $req                                                                            = $_POST;
+                $req                                                                            = (
+                    empty($_POST)
+                    ? json_decode(file_get_contents('php://input'), true)
+                    : $_POST
+                );
                 break;
             case self::METHOD_GET:
                 $req                                                                            = $_GET;

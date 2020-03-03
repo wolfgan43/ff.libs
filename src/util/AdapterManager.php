@@ -18,7 +18,7 @@ trait AdapterManager
      */
     private function setAdapter(string $adapterName, array $args = array()) : void
     {
-        $class                                              = str_replace('\\', '/', __CLASS__);
+        $class                                              = str_replace(array('\\drivers\\','\\'), array('\\', '/'), __CLASS__);
         $className                                          = basename($class);
         $nameSpace                                          = str_replace('/', '\\', dirname($class));
         $classNameAdapter                                   = $nameSpace . '\\adapters\\' . $className . ucfirst($adapterName);

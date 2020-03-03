@@ -32,22 +32,23 @@ use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\security\Validator;
+use phpformsframework\libs\util\AdapterManager;
 
 /**
  * Class Messenger
  * @package phpformsframework\libs\delivery\drivers
+ * @property MessengerAdapter $adapter
  */
 class Messenger
 {
+    use AdapterManager;
+
     const ERROR_BUCKET                                      = "messenger";
     const NAME_SPACE                                        = Notice::NAME_SPACE;
 
     private $to                                             = null;
     private $content                                        = null;
-    /**
-     * @var MessengerAdapter
-     */
-    private $adapter                                        = null;
+
     /**
      * @var Messenger
      */
@@ -68,11 +69,15 @@ class Messenger
 
     /**
      * Messenger constructor.
-     * @param string|null $smsAdapter
+     * @param string|null $messengerAdapter
      */
-    public function __construct(string $smsAdapter = null)
+    public function __construct(string $messengerAdapter = null)
     {
-        $this->setAdapter($smsAdapter);
+        if (!$this->adapter && !$messengerAdapter) {
+            $messengerAdapter                               = Kernel::$Environment::MESSENGER_ADAPTER;
+        }
+
+        $this->setAdapter($messengerAdapter);
     }
 
     /**
@@ -95,7 +100,7 @@ class Messenger
      * @param array $connection
      * @return Messenger
      */
-    public function setConnection(array $connection) : self
+    public function setConnection(array $connection = null) : self
     {
         if (is_array($connection)) {
             foreach ($connection as $key => $value) {
@@ -112,13 +117,15 @@ class Messenger
      * @param string|null $label
      * @return Messenger
      */
-    public function setFrom(string $from, string $label = null) : self
+    public function setFrom(string $from = null, string $label = null) : self
     {
-        $this->adapter->from = (
-            $label
-            ? $label . " (" . $from . ")"
-            : $from
-        );
+        if ($from) {
+            $this->adapter->from = (
+                $label
+                ? $label . " (" . $from . ")"
+                : $from
+            );
+        }
 
         return $this;
     }
@@ -139,7 +146,7 @@ class Messenger
             $this->setMessage($message);
         }
 
-        if (Kernel::$Environment::DEBUG) {
+        if (Kernel::$Environment::DEBUG && $this->adapter->debug) {
             $this->addAddress($this->adapter->debug);
         }
 
@@ -183,7 +190,7 @@ class Messenger
         }
 
         if (Error::check(static::ERROR_BUCKET)) {
-            $dataError->error(500, Error::raise(static::ERROR_BUCKET));
+            $dataError->error(502, Error::raise(static::ERROR_BUCKET));
         }
 
 
@@ -210,20 +217,5 @@ class Messenger
         return $this;
     }
 
-    /**
-     * @param null|string $messengerAdapter
-     */
-    private function setAdapter(string $messengerAdapter = null) : void
-    {
-        if (!$this->adapter && !$messengerAdapter) {
-            $messengerAdapter                               = Kernel::$Environment::MESSENGER_ADAPTER;
-        }
 
-        $className                                          = self::NAME_SPACE . "Messenger" . ucfirst($messengerAdapter);
-        if (class_exists($className)) {
-            $this->adapter                                  = new $className();
-        } else {
-            Error::register("Messenger Adapter not supported: " . $messengerAdapter, static::ERROR_BUCKET);
-        }
-    }
 }

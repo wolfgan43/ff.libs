@@ -91,10 +91,10 @@ abstract class NoticeAdapter
     }
 
     /**
-     * @param string $connection
+     * @param array $connection|null
      * @return NoticeAdapter
      */
-    public function setConnection(string $connection) : self
+    public function setConnection(array $connection = null) : self
     {
         $this->connection                                   = $connection;
 

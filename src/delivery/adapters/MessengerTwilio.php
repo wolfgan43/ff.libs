@@ -27,6 +27,7 @@ namespace phpformsframework\libs\delivery\adapters;
 
 use phpformsframework\libs\delivery\drivers\MessengerAdapter;
 use phpformsframework\libs\Error;
+use phpformsframework\libs\international\Locale;
 use Twilio\Exceptions\ConfigurationException;
 use Twilio\Exceptions\TwilioException;
 use Twilio\Rest\Client;
@@ -55,17 +56,24 @@ class MessengerTwilio extends MessengerAdapter
                     }
 
                     if ($from) {
+                        $locale = Locale::getLang("tiny_code");
                         foreach ($to as $tel => $name) {
                             try {
+                                $number = (
+                                    $locale
+                                    ? $client->lookups->v1->phoneNumbers($tel)->fetch(array("countryCode" => $locale))->phoneNumber
+                                    : $tel
+                                );
+
                                 $client->messages->create(
-                                    $tel, // Text this number
+                                    $number, // Text this number
                                     array(
                                         'from' => $from, // From a valid Twilio number
                                         'body' => $message
                                     )
                                 );
                             } catch (TwilioException $e) {
-                                Error::register($e->getMessage(), static::ERROR_BUCKET);
+                                Error::registerWarning($e->getMessage(), static::ERROR_BUCKET);
                             }
                         }
                     } else {

@@ -27,7 +27,6 @@ namespace phpformsframework\libs\international;
 
 use phpformsframework\libs\Configurable;
 use phpformsframework\libs\Dir;
-use phpformsframework\libs\Env;
 use phpformsframework\libs\Kernel;
 
 /**
@@ -205,8 +204,8 @@ class Locale implements Configurable
     public static function loadSchema(array $rawdata) : array
     {
         if (!empty($rawdata)) {
-            $lang_tiny_code                                         = Env::get("LANG_TINY_CODE");
-            $country_tiny_code                                      = Env::get("COUNTRY_TINY_CODE");
+            $lang_tiny_code                                         = strtolower(Kernel::$Environment::LOCALE_LANG_CODE);
+            $country_tiny_code                                      = strtoupper(Kernel::$Environment::LOCALE_COUNTRY_CODE);
 
             /**
              * Lang
@@ -233,7 +232,7 @@ class Locale implements Configurable
                     self::$locale["country"][$code]["tiny_code"]    = strtolower($code);
                 }
 
-                if (isset(self::$locale["lang"][$lang_tiny_code])) {
+                if (isset(self::$locale["country"][$country_tiny_code])) {
                     self::$countryDefault                           = self::$locale["country"][$country_tiny_code];
                 }
             }

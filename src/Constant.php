@@ -46,6 +46,9 @@ class Constant
     const APPNAME                           = null;
     const PROJECT_DOCUMENT_ROOT             = null;
 
+    const LOCALE_LANG_CODE                  = null; //IT, EN
+    const LOCALE_COUNTRY_CODE               = null; //IT, US
+
     /**
      * Disk Settings
      */

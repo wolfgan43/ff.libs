@@ -61,7 +61,7 @@ abstract class MessengerAdapter
             $env                                            = Kernel::$Environment;
             $prefix                                         = $env . '::' . (
                 defined($env . '::' . static::PREFIX . "_SMS_SID")
-                    ? static::PREFIX . "_SMS_SID"
+                    ? static::PREFIX . "_SMS_"
                     : "SMS_"
                 );
 

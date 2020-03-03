@@ -26,21 +26,20 @@
 namespace phpformsframework\libs\delivery;
 
 use phpformsframework\libs\dto\DataResponse;
+use phpformsframework\libs\util\AdapterManager;
 
 /**
  * Class Notice
  * @package phpformsframework\libs\delivery
+ * @property NoticeAdapter[] $adapters
  */
 class Notice
 {
+    use AdapterManager;
+
     const NAME_SPACE                                        = __NAMESPACE__ . '\\adapters\\';
 
     private static $singleton                               = null;
-
-    /**
-     * @var NoticeAdapter[]
-     */
-    protected $adapters                                     = null;
 
     /**
      * @param string $noticeAdapters
@@ -50,9 +49,10 @@ class Notice
     {
         if (self::$singleton === null) {
             self::$singleton                                = new Notice();
-        }
+            self::$singleton->setAdapter($noticeAdapters);
 
-        return self::$singleton->setAdapters($noticeAdapters);
+        }
+        return self::$singleton;
     }
 
     /**
@@ -97,7 +97,7 @@ class Notice
             $result                                         = $adapter->sendLongMessage($title, $fields, $template);
             $dataResponse->set($key, $result->isError());
             if ($result->isError()) {
-                $dataResponse->error(502, $result->error);
+                $dataResponse->error($result->status, $result->error);
             }
         }
 
@@ -115,7 +115,7 @@ class Notice
             $result                                         = $adapter->send($message);
             $dataResponse->set($key, $result->isError());
             if ($result->isError()) {
-                $dataResponse->error(502, $result->error);
+                $dataResponse->error($result->status, $result->error);
             }
         }
 
@@ -123,24 +123,5 @@ class Notice
     }
 
 
-    private function setAdapters($noticeAdapters)
-    {
-        $name_space                                         = static::NAME_SPACE . "Notice";
-        if (is_array($noticeAdapters)) {
-            foreach ($noticeAdapters as $adapter => $connection) {
-                if (is_numeric($adapter) && strlen($connection)) {
-                    $adapter                                = $connection;
-                    $connection                             = null;
-                }
 
-                $class_name                                 = $name_space . ucfirst($adapter);
-                $this->adapters[$adapter]                   = new $class_name($connection);
-            }
-        } elseif ($noticeAdapters) {
-            $class_name                                     = $name_space . ucfirst($noticeAdapters);
-            $this->adapters[$noticeAdapters]                = new $class_name();
-        }
-
-        return $this;
-    }
 }

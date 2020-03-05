@@ -85,7 +85,7 @@ class Filemanager implements Dumpable
         return array(
             "patterns"      => self::$patterns,
             "storage"       => self::$storage,
-            "contents"      => self::$cache
+            "contents"      => self::$cache["request"]
         );
     }
 
@@ -95,8 +95,8 @@ class Filemanager implements Dumpable
      */
     public static function dumpContent(string $type = "remote") : ?array
     {
-        return (isset(self::$cache[$type])
-            ? self::$cache[$type]
+        return (isset(self::$cache["response"][$type])
+            ? self::$cache["response"][$type]
             : null
         );
     }
@@ -771,18 +771,14 @@ class Filemanager implements Dumpable
      */
     public static function fileGetContent(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : string
     {
-        $key                                = self::normalizeUrlAndParams($method, $url, $params);
-        $context                            = self::streamContext($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers);
+        $key                                        = self::normalizeUrlAndParams($method, $url, $params);
+        $context                                    = self::streamContext($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers);
+        $location                                   = self::getUrlLocation($url);
 
-        $location                           = (
-            strpos($url, "http") === 0
-            ? "remote"
-            : "local"
-        );
+        self::$cache["request"][$key]               = $location;
+        self::$cache["response"][$location][$key]   = self::loadFile($url, $context);
 
-        self::$cache[$location][$key]       = self::loadFile($url, $context);
-
-        return self::$cache[$location][$key];
+        return self::$cache["response"][$location][$key];
     }
 
     /**
@@ -821,20 +817,17 @@ class Filemanager implements Dumpable
      */
     public static function fileGetContentWithHeaders(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : ?array
     {
-        $response_headers                   = array();
-        $key                                = self::normalizeUrlAndParams($method, $url, $params);
-        $context                            = self::streamContext($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers);
-        $location                           = (
-            strpos($url, "http") === 0
-            ? "remote"
-            : "local"
-        );
+        $response_headers                           = array();
+        $key                                        = self::normalizeUrlAndParams($method, $url, $params);
+        $context                                    = self::streamContext($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers);
+        $location                                   = self::getUrlLocation($url);
 
-        self::$cache[$location][$key]                  = self::loadFile($url, $context, $response_headers);
+        self::$cache["request"][$key]               = $location;
+        self::$cache["response"][$location][$key]   = self::loadFile($url, $context, $response_headers);
 
         return array(
             "headers" => self::parseResponseHeaders($response_headers),
-            "content" => self::$cache[$location][$key]
+            "content" => self::$cache["response"][$location][$key]
         );
     }
 
@@ -855,9 +848,27 @@ class Filemanager implements Dumpable
                 $params                     = null;
             }
         }
-
-        return strtoupper($method) . ":" . $key;
+        $location                           = (
+            strpos($url, "http") === 0
+            ? strtoupper($method) . ":"
+            : ""
+        );
+        return $location . $key;
     }
+
+    /**
+     * @param string $url
+     * @return string
+     */
+    private static function getUrlLocation(string $url) : string
+    {
+        return (
+            strpos($url, "http") === 0
+            ? "remote"
+            : "local"
+        );
+    }
+
     /**
      * @param array $headers
      * @return array

@@ -25,8 +25,6 @@
  */
 namespace phpformsframework\libs\storage;
 
-use phpformsframework\libs\Constant;
-use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 
 /**
@@ -146,7 +144,6 @@ abstract class FilemanagerAdapter
      */
     public function save(string $buffer, string $file_path = null, int $expire = null) : bool
     {
-        $rc                                                             = false;
         if (!$file_path) {
             $file_path = $this->getFilePath();
         }
@@ -239,7 +236,7 @@ abstract class FilemanagerAdapter
      */
     private function isValid(string $file_path) : bool
     {
-        return (Kernel::$Environment::DEBUG || strpos($file_path, Constant::DISK_PATH) === 0);
+        return (Kernel::$Environment::DEBUG || strpos($file_path, Kernel::$Environment::DISK_PATH) === 0);
     }
 
     /**
@@ -275,8 +272,8 @@ abstract class FilemanagerAdapter
             if (!pathinfo($abs_path, PATHINFO_EXTENSION)) {
                 $abs_path                                           .= "." . $this::EXT;
             }
-            if (strpos($file_path, Constant::DISK_PATH) !== 0) {
-                $abs_path                                           = Constant::DISK_PATH . $abs_path;
+            if (strpos($file_path, Kernel::$Environment::DISK_PATH) !== 0) {
+                $abs_path                                           = Kernel::$Environment::DISK_PATH . $abs_path;
             }
             $this->file_path                                        = $abs_path;
         }

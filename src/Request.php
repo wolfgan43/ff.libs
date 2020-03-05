@@ -459,7 +459,6 @@ class Request implements Configurable, Dumpable
      */
     private static function capture()
     {
-
         $error = error_get_last();
         if ($error) {
             self::sendError($error["message"], 500);
@@ -899,9 +898,9 @@ class Request implements Configurable, Dumpable
             case self::METHOD_PATCH:
             case self::METHOD_DELETE:
                 $req                                                                            = (
-                    empty($_POST)
-                    ? json_decode(file_get_contents('php://input'), true)
-                    : $_POST
+                    self::isFormData()
+                    ? $_POST
+                    : json_decode(file_get_contents('php://input'), true)
                 );
                 break;
             case self::METHOD_GET:
@@ -916,12 +915,22 @@ class Request implements Configurable, Dumpable
             case self::METHOD_PUT:
             default:
                 $req                                                                            = $_REQUEST;
-
         }
 
         return array_filter($req);
     }
 
+    /**
+     * @return bool
+     */
+    private static function isFormData() : bool
+    {
+        return (isset($_SERVER["CONTENT_TYPE"])
+            && (
+                stripos($_SERVER["CONTENT_TYPE"], "/x-www-form-urlencoded") !== false
+                || stripos($_SERVER["CONTENT_TYPE"], "/form-data") !== false
+            ));
+    }
     /**
      * @return array
      */

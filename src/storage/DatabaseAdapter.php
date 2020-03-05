@@ -49,7 +49,7 @@ abstract class DatabaseAdapter
                                             '$regex'    => self::FTYPE_STRING,
                                             '$in'       => self::FTYPE_ARRAY,
                                             '$nin'      => self::FTYPE_ARRAY,
-                                            '$ne'       => false,
+                                            '$ne'       => self::FTYPE_STRING,
                                             '$inset'    => self::FTYPE_ARRAY,
                                             '$inc'      => false,
                                             '$inc-'     => false,
@@ -270,7 +270,6 @@ abstract class DatabaseAdapter
     private function fieldWhere(array &$res, $value, string $struct_type, string $name = null, string $or = null) : void
     {
         //echo $this->table_name . " : " . $struct_type . "  " . $this->key_name . " => " . $this->key_primary . " => " . static::KEY_NAME . " => " . self::KEY_NAME . "<br>\n\n";
-
         if ($this->key_name != $this->key_primary && $name == $this->key_primary) {
             $name = $this->convertKeyPrimary($name);
         }

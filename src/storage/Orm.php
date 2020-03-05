@@ -33,6 +33,9 @@ use phpformsframework\libs\storage\dto\OrmResults;
  */
 class Orm implements Dumpable
 {
+    /**
+     * @var OrmModel[]
+     */
     private static $singleton                                                               = array();
 
     /**
@@ -69,10 +72,10 @@ class Orm implements Dumpable
     private static function setSingleton(string $ormModel, string $mainTable = null) : OrmModel
     {
         if (!isset(self::$singleton[$ormModel])) {
-            self::$singleton[$ormModel]                                        = new OrmModel($ormModel, $mainTable);
+            self::$singleton[$ormModel]                                         = new OrmModel($ormModel);
         }
 
-        return self::$singleton[$ormModel];
+        return self::$singleton[$ormModel]->setMainTable($mainTable);
     }
 
     /**

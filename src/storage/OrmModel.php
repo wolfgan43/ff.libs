@@ -108,20 +108,28 @@ class OrmModel extends Mappable
     /**
      * OrmModel constructor.
      * @param string $map_name
-     * @param string|null $main_table
      */
-    public function __construct(string $map_name, string $main_table = null)
+    public function __construct(string $map_name)
     {
         parent::__construct($map_name);
 
+        $this->adapters                                                                     = array_intersect_key($this->connectors, $this->adapters);
+    }
+
+    /**
+     * @param string|null $main_table
+     * @return OrmModel
+     */
+    public function setMainTable(string $main_table = null) : self
+    {
         if ($main_table) {
             if (!isset($this->tables[$main_table])) {
-                Error::register("MainTable '" . $main_table . "' not found in " . $map_name);
+                Error::register("MainTable '" . $main_table . "' not found in " . $this->type);
             }
             $this->main_table                                                               = $main_table;
         }
 
-        $this->adapters                                                                     = array_intersect_key($this->connectors, $this->adapters);
+        return $this;
     }
 
     /**
@@ -131,8 +139,8 @@ class OrmModel extends Mappable
     private function getStruct(string $table_name) : OrmDef
     {
         $def                                                                                = new OrmDef($this->main_table);
-        $def->table                                                                         = $this->extractData($this->tables, $table_name);
-        $def->struct                                                                        = $this->extractData($this->struct, $table_name);
+        $def->table                                                                         = $this->extractData($this->tables, $table_name, "tables");
+        $def->struct                                                                        = $this->extractData($this->struct, $table_name, "struct");
         $def->indexes                                                                       = $this->extractData($this->indexes, $table_name);
         $def->relationship                                                                  = $this->extractData($this->relationship, $table_name);
         $def->setKeyPrimary();
@@ -143,10 +151,16 @@ class OrmModel extends Mappable
     /**
      * @param array $def
      * @param string $key
+     * @param null $error
      * @return array|null
      */
-    private function extractData(array $def, string $key) : ?array
+    private function extractData(array $def, string $key, $error = null) : ?array
     {
+        if ($error && !isset($def[$key])) {
+            Error::register("missing Table: `" . $key . "` on Map: " . $error . " Model: " . $this->type, static::ERROR_BUCKET);
+        }
+
+
         return (isset($def[$key])
             ? $def[$key]
             : null

@@ -75,4 +75,12 @@ class DatabaseQuery
     {
         return array_filter(get_object_vars($this));
     }
+
+    /**
+     * @return string
+     */
+    public function toJson() : string
+    {
+        return json_encode($this->toArray());
+    }
 }

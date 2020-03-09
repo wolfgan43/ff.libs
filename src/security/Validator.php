@@ -28,6 +28,7 @@ namespace phpformsframework\libs\security;
 
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\dto\DataError;
+use phpformsframework\libs\Env;
 use phpformsframework\libs\Kernel;
 
 /**
@@ -41,6 +42,7 @@ class Validator
                                                                     "filter"        => FILTER_VALIDATE_BOOLEAN,
                                                                     "flags"         => FILTER_NULL_ON_FAILURE,
                                                                     "options"       => array("default" => false),
+                                                                    "length"        => 1
                                                                 ),
                                                                 "domain"            => array(
                                                                     "filter"        => FILTER_VALIDATE_DOMAIN,
@@ -222,7 +224,8 @@ class Validator
         self::setErrorName($fakename);
         self::setRuleOptions($rule, $range);
 
-        $dataError                                      = self::isAllowed((array) $what, $type, $rule["length"]);
+        $length                                         = (Env::get("VALIDATOR_" . strtoupper($type) . "_LENGTH") ?? $rule["length"]);
+        $dataError                                      = self::isAllowed((array) $what, $type, $length);
         if (!$dataError->isError()) {
             $validation                                 = filter_var($what, $rule["filter"], array(
                                                             "flags"         => $rule["flags"],
@@ -232,12 +235,7 @@ class Validator
             if ($validation === null) {
                 $dataError                              = self::isError(self::getErrorName() . " is not a valid " . $type . ($range ? ". The permitted values are [" . $range . "]" : ""), $type);
             } elseif (is_array($validation)) {
-                if (is_array($what)) {
-                    $diff                               = array_diff_key($what, array_filter($validation));
-                    if (count($diff)) {
-                        $dataError                      = self::isError(self::getErrorName() . "[" . implode(", ", array_keys($diff)) . "] is not valid " . $type, $type);
-                    }
-                } else {
+                if (is_array($what) && ($type != "array" && $type != "arrayint")) {
                     $dataError                          = self::isError(self::getErrorName() . " is malformed");
                 }
             } elseif ($validation != $what) {
@@ -948,10 +946,9 @@ class Validator
         $dataError                                          = new DataError();
         if ($length > 0) {
             foreach ($value as $item) {
-                if (is_array($item)) {
-                    $dataError                              = self::isError(self::getErrorName() . " Multidimensional Array not supported", $type, 501);
-                    break;
-                } elseif (strlen($item) > $length) {
+                if ((is_array($item) && strlen(serialize($item)) > $length)
+                    || (strlen($item) > $length)
+                ) {
                     $dataError                              = self::isError(self::getErrorName() . " Max Length Exceeded: " . $type, $type, 413);
                     break;
                 }

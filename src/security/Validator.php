@@ -947,7 +947,7 @@ class Validator
         if ($length > 0) {
             foreach ($value as $item) {
                 if ((is_array($item) && strlen(serialize($item)) > $length)
-                    || (strlen($item) > $length)
+                    || (is_string($item) && strlen($item) > $length)
                 ) {
                     $dataError                              = self::isError(self::getErrorName() . " Max Length Exceeded: " . $type, $type, 413);
                     break;

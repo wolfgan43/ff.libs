@@ -37,6 +37,7 @@ class RequestPage extends Mappable
     public $method          = null;
     public $root_path       = null;
     public $namespace       = null;
+    public $map             = null;
     public $accept          = "*/*";
 
     public $layout          = null;
@@ -221,16 +222,19 @@ class RequestPage extends Mappable
     }
 
     /**
-     * @param object $obj|null
-     * @param string $scope
+     * @param string $namespace
+     * @param string $method
      * @return object
      */
-    public function mapRequest(object $obj = null, string $scope = self::REQUEST_RAWDATA) : object
+    public function mapRequest(string $namespace, string $method) : object
     {
-        if ($obj) {
-            $this->autoMapping($this->getRequest($scope), $obj);
+        $mapRequest = $this->map ?? $namespace . '\\dto\\' . "Request" . ucfirst($method);
+        if (class_exists($mapRequest)) {
+            $obj = new $mapRequest();
+
+            $this->autoMapping($this->getRequest(self::REQUEST_RAWDATA) + $this->getHeaders(), $obj);
         } else {
-            $obj = (object) $this->getRequest($scope);
+            $obj = (object) $this->getRequest(self::REQUEST_RAWDATA);
         }
         return $obj;
     }

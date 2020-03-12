@@ -54,18 +54,20 @@ abstract class DataAdapter
     /**
      * @return array
      */
-    protected function getObjectVars() : array
+    protected function getVars() : array
     {
-        return get_object_vars($this);
+        return $this->getObjectVars();
     }
     /**
+     * @param bool $remove_exception
      * @return array
      */
-    private function getVars() : array
+    private function getObjectVars(bool $remove_exception = false) : array
     {
-        $vars                               = $this->getObjectVars();
-        $this->setDebugger($vars);
-
+        $vars                               = get_object_vars($this);
+        if ($remove_exception) {
+            $this->removeExceptionVars($vars);
+        }
         return $vars;
     }
 
@@ -74,19 +76,15 @@ abstract class DataAdapter
      */
     public function toArray() : array
     {
-        return $this->getVars();
+        return $this->getObjectVars(true);
     }
     /**
      * @return stdClass|null
      */
     public function toObject() : ?stdClass
     {
-        $vars                               = $this->getObjectVars();
-        unset($vars["status"]);
-        unset($vars["error"]);
-        unset($vars["debug"]);
-
-        return (count($vars)
+        $vars                               = $this->toArray();
+        return (!empty($vars)
             ? (object) $vars
             : null
         );
@@ -96,11 +94,11 @@ abstract class DataAdapter
      */
     public function toJson() : string
     {
-        return (string) json_encode($this->getVars());
+        $vars                               = $this->getVars();
+        $this->setDebugger($vars);
+
+        return (string) json_encode($vars);
     }
-
-
-
 
 
     /**
@@ -121,8 +119,8 @@ abstract class DataAdapter
      */
     public function clear() : self
     {
-        foreach ($this->getVars() as $key => $value) {
-            $this->$key                     = $value;
+        foreach ($this->getObjectVars(true) as $key => $value) {
+            unset($this->$key);
         }
 
         return $this;
@@ -133,8 +131,7 @@ abstract class DataAdapter
      */
     public function filter(array $values) : self
     {
-        $vars                               = get_object_vars($this);
-        foreach ($vars as $key => $value) {
+        foreach ($this->getObjectVars(true) as $key => $value) {
             if (isset($values[$key])) {
                 unset($this->$key);
             }

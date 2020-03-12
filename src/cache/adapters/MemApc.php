@@ -26,24 +26,27 @@
 
 namespace phpformsframework\libs\cache\adapters;
 
-use phpformsframework\libs\cache\MemAdapter;
 use APCIterator as MC;
 use function apc_store;
 use function apc_fetch;
 use function apc_delete;
 use function apc_clear_cache;
 
+/**
+ * Class MemApc
+ * @package phpformsframework\libs\cache\adapters
+ */
 class MemApc extends MemAdapter
 {
     /**
      * Inserisce un elemento nella cache
      * Oltre ai parametri indicati, accetta un numero indefinito di chiavi per relazione i valori memorizzati
      * @param String $name il nome dell'elemento
-     * @param Mixed $value l'elemento
-     * @param String $bucket il name space
+     * @param Mixed|null $value l'elemento
+     * @param String|null $bucket il name space
      * @return bool if storing both value and rel table will success
      */
-    public function set($name, $value = null, $bucket = null)
+    public function set(string $name, $value = null, string $bucket = null) : bool
     {
         $res = false;
         if ($value === null) {
@@ -59,10 +62,10 @@ class MemApc extends MemAdapter
     /**
      * Recupera un elemento dalla cache
      * @param String $name il nome dell'elemento
-     * @param String $bucket il name space
+     * @param String|null $bucket il name space
      * @return Mixed l'elemento
      */
-    public function get($name, $bucket = null)
+    public function get(string $name, string $bucket = null)
     {
         $res = false;
         if ($this->is_readable) {
@@ -86,10 +89,10 @@ class MemApc extends MemAdapter
     /**
      * Cancella una variabile
      * @param String $name il nome dell'elemento
-     * @param String $bucket il name space
+     * @param String|null $bucket il name space
      * @return bool
      */
-    public function del($name, $bucket = null)
+    public function del(string $name, string $bucket = null) : bool
     {
         $key = $this->getKey("del", $bucket, $name);
 
@@ -99,9 +102,9 @@ class MemApc extends MemAdapter
      * Pulisce la cache
      * Accetta un numero indefinito di parametri che possono essere utilizzati per cancellare i dati basandosi sulle relazioni
      * Se non si specificano le relazioni, verrà cancellata l'intera cache
-     * @param string $bucket
+     * @param string|null $bucket
      */
-    public function clear($bucket = null)
+    public function clear(string $bucket = null) : void
     {
         $this->getKey("clear", $bucket);
 

@@ -25,10 +25,12 @@
  */
 namespace phpformsframework\libs\cache\adapters;
 
-use phpformsframework\libs\cache\MemAdapter;
-use phpformsframework\libs\Kernel;
 use Redis as MC;
 
+/**
+ * Class MemRedis
+ * @package phpformsframework\libs\cache\adapters
+ */
 class MemRedis extends MemAdapter
 {
     public static $server       = "127.0.0.1";
@@ -37,12 +39,16 @@ class MemRedis extends MemAdapter
 
     private $conn	= null;
 
-    public function __construct($bucket = null)
+    /**
+     * MemRedis constructor.
+     * @param string|null $bucket
+     */
+    public function __construct(string $bucket = null)
     {
         parent::__construct($bucket);
 
         $this->conn = new MC();
-        $this->conn->pconnect(static::$server, static::$port, $this->getTTL(), Kernel::$Environment::APPID); // x is sent as persistent_id and would be another connection than the three before.
+        $this->conn->pconnect(static::$server, static::$port, $this->getTTL(), $this->appid); // x is sent as persistent_id and would be another connection than the three before.
         if (static::$auth) {
             $this->conn->auth(static::$auth);
         }
@@ -63,14 +69,15 @@ class MemRedis extends MemAdapter
     }
 
     /**
+     * @todo da tipizzare
      * Inserisce un elemento nella cache
      * Oltre ai parametri indicati, accetta un numero indefinito di chiavi per relazione i valori memorizzati
      * @param String $name il nome dell'elemento
-     * @param Mixed $value l'elemento
-     * @param String $bucket il name space
+     * @param Mixed|null $value l'elemento
+     * @param String|null $bucket il name space
      * @return bool if storing both value and rel table will success
      */
-    public function set($name, $value = null, $bucket = null)
+    public function set(string $name, $value = null, string $bucket = null) : bool
     {
         $res = false;
         if ($value === null) {
@@ -89,14 +96,15 @@ class MemRedis extends MemAdapter
     }
 
     /**
+     * @todo da tipizzare
      * Recupera un elemento dalla cache
      * @param String $name il nome dell'elemento
-     * @param String $bucket il name space
+     * @param String|null $bucket il name space
      * @return Mixed l'elemento
      */
-    public function get($name, $bucket = null)
+    public function get(string $name, string $bucket = null)
     {
-        $res = false;
+        $res = null;
         if ($this->is_readable) {
             $this->getKey("get", $bucket, $name);
 
@@ -117,10 +125,10 @@ class MemRedis extends MemAdapter
     /**
      * Cancella una variabile
      * @param String $name il nome dell'elemento
-     * @param String $bucket il name space
+     * @param String|null $bucket il name space
      * @return bool
      */
-    public function del($name, $bucket = null)
+    public function del(string $name, string $bucket = null) : bool
     {
         $this->getKey("del", $bucket, $name);
 
@@ -133,9 +141,9 @@ class MemRedis extends MemAdapter
      * Pulisce la cache
      * Accetta un numero indefinito di parametri che possono essere utilizzati per cancellare i dati basandosi sulle relazioni
      * Se non si specificano le relazioni, verrà cancellata l'intera cache
-     * @param string $bucket
+     * @param string|null $bucket
      */
-    public function clear($bucket = null)
+    public function clear(string $bucket = null) : void
     {
         $this->getKey("del", $bucket);
 

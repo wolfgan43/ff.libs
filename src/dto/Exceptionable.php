@@ -119,4 +119,12 @@ trait Exceptionable
     {
         return $this->error;
     }
+
+    /**
+     * @param array $vars
+     */
+    private function removeExceptionVars(array &$vars)
+    {
+        unset($vars["status"], $vars["error"], $vars["debug"]);
+    }
 }

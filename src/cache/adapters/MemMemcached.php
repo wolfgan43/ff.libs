@@ -25,10 +25,12 @@
  */
 namespace phpformsframework\libs\cache\adapters;
 
-use phpformsframework\libs\cache\MemAdapter;
 use Memcached as MC;
-use phpformsframework\libs\Kernel;
 
+/**
+ * Class MemMemcached
+ * @package phpformsframework\libs\cache\adapters
+ */
 class MemMemcached extends MemAdapter
 {
     public static $server   = "127.0.0.1";
@@ -37,30 +39,35 @@ class MemMemcached extends MemAdapter
 
     private $conn	= null;
 
-    public function __construct($bucket = null)
+    /**
+     * MemMemcached constructor.
+     * @param string|null $bucket
+     */
+    public function __construct(string $bucket = null)
     {
         parent::__construct($bucket);
 
-        $this->conn = new MC(Kernel::$Environment::APPID);
+        $this->conn = new MC($this->appid);
 
         if (static::$auth) {
             $this->conn->setOption(MC::OPT_BINARY_PROTOCOL, true);
             $this->conn->addServer(static::$server, static::$port);
-            $this->conn->setSaslAuthData(Kernel::$Environment::APPID, static::$auth);
+            $this->conn->setSaslAuthData($this->appid, static::$auth);
         } else {
             $this->conn->addServer(static::$server, static::$port);
         }
     }
 
     /**
+     * @todo da tipizzare
      * Inserisce un elemento nella cache
      * Oltre ai parametri indicati, accetta un numero indefinito di chiavi per relazione i valori memorizzati
      * @param String $name il nome dell'elemento
-     * @param Mixed $value l'elemento
-     * @param String $bucket il name space
+     * @param Mixed|null $value l'elemento
+     * @param String|null $bucket il name space
      * @return bool if storing both value and rel table will success
      */
-    public function set($name, $value = null, $bucket = null)
+    public function set(string $name, $value = null, string $bucket = null) : bool
     {
         $res = false;
         if ($value === null) {
@@ -74,12 +81,13 @@ class MemMemcached extends MemAdapter
     }
 
     /**
+     * @todo da tipizzare
      * Recupera un elemento dalla cache
      * @param String $name il nome dell'elemento
-     * @param String $bucket il name space
+     * @param String|null $bucket il name space
      * @return Mixed l'elemento
      */
-    public function get($name, $bucket = null)
+    public function get(string $name, string $bucket = null)
     {
         $res = false;
         if ($this->is_readable) {
@@ -107,10 +115,10 @@ class MemMemcached extends MemAdapter
     /**
      * Cancella una variabile
      * @param String $name il nome dell'elemento
-     * @param String $bucket il name space
+     * @param String|null $bucket il name space
      * @return bool
      */
-    public function del($name, $bucket = null)
+    public function del(string $name, string $bucket = null) : bool
     {
         $key = $this->getKey("del", $bucket, $name);
 
@@ -120,9 +128,9 @@ class MemMemcached extends MemAdapter
      * Pulisce la cache
      * Accetta un numero indefinito di parametri che possono essere utilizzati per cancellare i dati basandosi sulle relazioni
      * Se non si specificano le relazioni, verrà cancellata l'intera cache
-     * @param string $bucket
+     * @param string|null $bucket
      */
-    public function clear($bucket = null)
+    public function clear(string $bucket = null) : void
     {
         $this->getKey("clear", $bucket);
 

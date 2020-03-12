@@ -82,6 +82,15 @@ class DataResponse extends DataAdapter
     }
 
     /**
+     * @return $this
+     */
+    public function clear() : DataAdapter
+    {
+        $this->data                 = array();
+
+        return $this;
+    }
+    /**
      * @param array $values
      * @param string|null $bucket
      * @return $this
@@ -171,7 +180,7 @@ class DataResponse extends DataAdapter
     /**
      * @return array
      */
-    protected function getObjectVars() : array
+    protected function getVars() : array
     {
         return ($this->outputOnlyBody
             ? $this->data
@@ -194,7 +203,7 @@ class DataResponse extends DataAdapter
      */
     public function toObject() : ?stdClass
     {
-        return (count($this->data)
+        return (!empty($this->data)
             ? (object) $this->data
             : null
         );

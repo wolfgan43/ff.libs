@@ -996,7 +996,7 @@ class Request implements Configurable, Dumpable
     public static function getPage(string $path_info, array $request = null) : RequestPage
     {
         $page           = new RequestPage($path_info, self::$pages, self::$path2params, self::$patterns);
-        if ($request) {
+        if (is_array($request)) {
             $page->loadRequest($request);
         }
 

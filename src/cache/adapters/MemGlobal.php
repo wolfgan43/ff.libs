@@ -26,20 +26,38 @@
 
 namespace phpformsframework\libs\cache\adapters;
 
-use phpformsframework\libs\cache\Globals;
-use phpformsframework\libs\cache\MemAdapter;
+use stdClass;
 
+/**
+ * Class MemGlobal
+ * @package phpformsframework\libs\cache\adapters
+ */
 class MemGlobal extends MemAdapter
 {
+    private static $instances = [];
     /**
+     * @param string $method
+     * @param array|null $args
+     * @return mixed|null
+     */
+    public function __call(string $method, array $args = null)
+    {
+        if (isset($this->$method)) {
+            return $this->$method(...$args);
+        }
+
+        return null;
+    }
+    /**
+     * @todo da tipizzare
      * Inserisce un elemento nella cache
      * Oltre ai parametri indicati, accetta un numero indefinito di chiavi per relazione i valori memorizzati
      * @param String $name il nome dell'elemento
-     * @param Mixed $value l'elemento
-     * @param String $bucket il name space
+     * @param Mixed|null $value l'elemento
+     * @param String|null $bucket il name space
      * @return bool if storing both value and rel table will success
      */
-    public function set($name, $value = null, $bucket = null)
+    public function set(string $name, $value = null, string $bucket = null) : bool
     {
         if ($value === null) {
             return $this->del($name, $bucket);
@@ -47,23 +65,30 @@ class MemGlobal extends MemAdapter
 
         $this->getKey("set", $bucket, $name);
 
-        return Globals::set($name, $value, $bucket);
+        if (!isset(self::$instances[$bucket])) {
+            self::$instances[$bucket] = new stdClass();
+        }
+
+        self::$instances[$bucket]->$name = $value;
+
+        return true;
     }
 
     /**
+     * @todo da tipizzare
      * Recupera un elemento dalla cache
      * @param String $name il nome dell'elemento
-     * @param String $bucket il name space
+     * @param String|null $bucket il name space
      * @return Mixed l'elemento
      */
-    public function get($name, $bucket = null)
+    public function get(string $name, string $bucket = null)
     {
         $this->getKey("get", $bucket, $name);
         $res = null;
         if ($name) {
-            $res = Globals::get($name, $bucket);
+            $res = self::$instances[$bucket]->$name ?? null;
         } else {
-            $keys = Globals::getInstance();
+            $keys = self::$instances[$bucket];
             if (!empty($keys)) {
                 foreach ($keys as $key => $value) {
                     if (strpos($key, $bucket) === 0) {
@@ -80,27 +105,31 @@ class MemGlobal extends MemAdapter
     /**
      * Cancella una variabile
      * @param String $name il nome dell'elemento
-     * @param String $bucket il name space
+     * @param String|null $bucket il name space
      * @return bool
      */
-    public function del($name, $bucket = null)
+    public function del(string $name, string $bucket = null) : bool
     {
         $this->getKey("del", $bucket, $name);
 
-        return Globals::del($name, $bucket);
+        if (isset(self::$instances[$bucket]->$name)) {
+            unset(self::$instances[$bucket]->$name);
+        }
+        return true;
     }
 
     /**
      * Pulisce la cache
      * Accetta un numero indefinito di parametri che possono essere utilizzati per cancellare i dati basandosi sulle relazioni
      * Se non si specificano le relazioni, verrà cancellata l'intera cache
-     * @param string $bucket
-     * @return bool
+     * @param string|null $bucket
      */
-    public function clear($bucket = null)
+    public function clear(string $bucket = null) : void
     {
         $this->getKey("clear", $bucket);
 
-        return Globals::clear($bucket);
+        if (self::$instances[$bucket]) {
+            unset(self::$instances[$bucket]);
+        }
     }
 }

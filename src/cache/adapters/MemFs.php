@@ -25,22 +25,25 @@
  */
 namespace phpformsframework\libs\cache\adapters;
 
-use phpformsframework\libs\cache\MemAdapter;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Dir;
 use phpformsframework\libs\storage\Filemanager;
 
+/**
+ * Class MemFs
+ * @package phpformsframework\libs\cache\adapters
+ */
 class MemFs extends MemAdapter
 {
     /**
      * Inserisce un elemento nella cache
      * Oltre ai parametri indicati, accetta un numero indefinito di chiavi per relazione i valori memorizzati
      * @param String $name il nome dell'elemento
-     * @param Mixed $value l'elemento
-     * @param String $bucket il name space
+     * @param Mixed|null $value l'elemento
+     * @param String|null $bucket il name space
      * @return bool if storing both value and rel table will success
      */
-    public function set($name, $value = null, $bucket = null)
+    public function set(string $name, $value = null, string $bucket = null) : bool
     {
         $res = false;
         if ($value === null) {
@@ -61,10 +64,10 @@ class MemFs extends MemAdapter
     /**
      * Recupera un elemento dalla cache
      * @param String $name il nome dell'elemento
-     * @param String $bucket il name space
+     * @param String|null $bucket il name space
      * @return Mixed l'elemento
      */
-    public function get($name, $bucket = null)
+    public function get(string $name, string $bucket = null)
     {
         $res = false;
         if ($this->is_readable) {
@@ -83,22 +86,23 @@ class MemFs extends MemAdapter
     /**
      * Cancella una variabile
      * @param String $name il nome dell'elemento
-     * @param String $bucket il name space
+     * @param String|null $bucket il name space
      * @return bool
      */
-    public function del($name, $bucket = null)
+    public function del(string $name, string $bucket = null) : bool
     {
         $this->getKey("del", $bucket, $name);
-        Filemanager::xPurgeDir(
+        return Filemanager::xPurgeDir(
             self::getCacheDiskPath()
             . "/" . $bucket
             . "/" . $name
         );
-        return null;
     }
 
-
-    public function clear($bucket = null)
+    /**
+     * @param string|null $bucket
+     */
+    public function clear(string $bucket = null) : void
     {
         $this->getKey("clear", $bucket);
         Filemanager::xPurgeDir(
@@ -107,8 +111,10 @@ class MemFs extends MemAdapter
         );
     }
 
-
-    private function getCacheDiskPath()
+    /**
+     * @return string
+     */
+    private function getCacheDiskPath() : string
     {
         return Constant::DISK_PATH . Dir::findCachePath("data", true);
     }

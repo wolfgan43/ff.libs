@@ -23,12 +23,19 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-namespace phpformsframework\libs\cache;
+namespace phpformsframework\libs\cache\adapters;
 
 use phpformsframework\libs\Dumpable;
+use phpformsframework\libs\Kernel;
 
+/**
+ * Class MemAdapter
+ * @package phpformsframework\libs\cache\adapters
+ */
 abstract class MemAdapter implements Dumpable
 {
+    protected $appid                = null;
+
     public static $serializer       = "PHP";
     public static $dump             = array();
 
@@ -45,19 +52,55 @@ abstract class MemAdapter implements Dumpable
         return self::$dump;
     }
 
-    abstract public function set($name, $value = null, $bucket = null);
-    abstract public function get($name, $bucket = null);
-    abstract public function del($name, $bucket = null);
-    abstract public function clear($bucket = null);
+    /**
+     * @todo da tipizzare
+     * @param string $name
+     * @param null $value
+     * @param string|null $bucket
+     * @return bool
+     */
+    abstract public function set(string $name, $value = null, string $bucket = null) : bool;
 
-    public function __construct($bucket = null, $readable = true, $writeable = true)
+    /**
+     * @todo da tipizzare
+     * @param string $name
+     * @param string|null $bucket
+     * @return mixed
+     */
+    abstract public function get(string $name, string $bucket = null);
+
+    /**
+     * @param string $name
+     * @param string|null $bucket
+     * @return bool
+     */
+    abstract public function del(string $name, string $bucket = null) : bool;
+
+    /**
+     * @param string|null $bucket
+     */
+    abstract public function clear(string $bucket = null) : void;
+
+    /**
+     * MemAdapter constructor.
+     * @param string|null $bucket
+     * @param bool $readable
+     * @param bool $writeable
+     */
+    public function __construct(string $bucket = null, bool $readable = true, bool $writeable = true)
     {
+        $this->appid        = Kernel::$Environment::APPID;
         $this->bucket       = $bucket;
         $this->is_readable  = $readable;
         $this->is_writeable = $writeable;
     }
 
-    private function cache($bucket, $action, $name = "*")
+    /**
+     * @param string $bucket
+     * @param string $action
+     * @param string $name
+     */
+    private function cache(string $bucket, string $action, string $name = "*") : void
     {
         self::$dump[$action . " => " . $bucket . " => " . $name] = (
             isset(self::$dump[$action . " => " . $bucket . " => " . $name])
@@ -66,23 +109,41 @@ abstract class MemAdapter implements Dumpable
         );
     }
 
-    protected function setTTL($val)
+    /**
+     * @param int $val
+     */
+    protected function setTTL(int $val) : void
     {
         $this->ttl = $val;
     }
-    protected function getTTL()
+
+    /**
+     * @return int
+     */
+    protected function getTTL() : int
     {
         return $this->ttl;
     }
 
-    protected function getBucket($name = null)
+    /**
+     * @param string|null $name
+     * @return string
+     */
+    protected function getBucket(string $name = null) : string
     {
         return ($name
             ? $name
             : $this->bucket
         );
     }
-    protected function getKey($action, &$bucket, &$name = null)
+
+    /**
+     * @param string $action
+     * @param string|null $bucket
+     * @param string|null $name
+     * @return string
+     */
+    protected function getKey(string $action, string &$bucket = null, string &$name = null) : string
     {
         $bucket = $this->getBucket($bucket);
         $name = ltrim($name, "/");
@@ -95,7 +156,12 @@ abstract class MemAdapter implements Dumpable
         );
     }
 
-    protected function setValue($value)
+    /**
+     * @todo da tipizzare
+     * @param $value
+     * @return string
+     */
+    protected function setValue($value) : string
     {
         if (is_array($value)) {
             switch (static::$serializer) {
@@ -110,9 +176,15 @@ abstract class MemAdapter implements Dumpable
                 default:
             }
         }
-        return $value;
+        return (string) $value;
     }
-    protected function getValue($value)
+
+    /**
+     * @todo da tipizzare
+     * @param string $value
+     * @return mixed|null
+     */
+    protected function getValue(string $value)
     {
         switch (static::$serializer) {
             case "PHP":
@@ -127,9 +199,6 @@ abstract class MemAdapter implements Dumpable
             default:
                 $data = null;
         }
-        return ($data === false
-            ? $value
-            : $data
-        );
+        return $data;
     }
 }

@@ -38,6 +38,7 @@ class RequestPage extends Mappable
     public $root_path       = null;
     public $namespace       = null;
     public $map             = null;
+    public $acl             = null;
     public $accept          = "*/*";
 
     public $layout          = null;
@@ -65,7 +66,7 @@ class RequestPage extends Mappable
     {
         parent::__construct($this->setRules($this->findEnvByPathInfo($path_info, $path2params), $pages, $patterns));
 
-        $this->method       = (
+        $this->method               = (
             $this->method
             ? strtoupper($this->method)
             : Request::method()
@@ -372,6 +373,7 @@ class RequestPage extends Mappable
     {
         $errors                                                                         = array();
         $bucket                                                                         = $this->bucketByMethod($method);
+
         if ($this->isAllowedSize($request, $method) && $this->isAllowedSize($this->getRequestHeaders(), Request::METHOD_HEAD)) {
             if (!empty($this->rules->$bucket)) {
                 foreach ($this->rules->$bucket as $rule) {
@@ -415,6 +417,7 @@ class RequestPage extends Mappable
                     $errors                                                             = $errors + $this->securityValidation($unknown, $unknown_key);
                 }
             }
+
             $this->setRequest(self::REQUEST_RAWDATA, $request);
         } else {
             $errors[413][]                                                              = "Request Max Size Exceeded";

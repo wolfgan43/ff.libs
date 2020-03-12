@@ -26,9 +26,14 @@
 
 namespace phpformsframework\libs\cache;
 
+use phpformsframework\libs\cache\adapters\MemAdapter;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 
+/**
+ * Class Mem
+ * @package phpformsframework\libs\cache
+ */
 class Mem // apc | memcached | redis | globals
 {
     const NAME_SPACE                                    = __NAMESPACE__ . '\\adapters\\';
@@ -36,12 +41,12 @@ class Mem // apc | memcached | redis | globals
     private static $singletons                          = null;
 
     /**
-     * @param bool|string $memAdapter
+     * @param string|null $bucket
      * @param bool $force
-     * @param null|string $bucket
+     * @param string|null $memAdapter
      * @return MemAdapter
      */
-    public static function getInstance($bucket = null, $force = false, $memAdapter = null)
+    public static function getInstance(string $bucket = null, bool $force = false, string $memAdapter = null) : MemAdapter
     {
         if (!$memAdapter) {
             $memAdapter                                 = Kernel::$Environment::CACHE_MEM_ADAPTER;

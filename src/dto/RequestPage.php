@@ -3,8 +3,8 @@ namespace phpformsframework\libs\dto;
 
 use phpformsframework\libs\Mappable;
 use phpformsframework\libs\Request;
-use phpformsframework\libs\Router;
 use phpformsframework\libs\security\Validator;
+use phpformsframework\libs\util\TypesConverter;
 
 /**
  * Class ConfigPage
@@ -12,6 +12,7 @@ use phpformsframework\libs\security\Validator;
  */
 class RequestPage extends Mappable
 {
+    use TypesConverter;
     use Exceptionable { error as private setErrorDefault; }
 
     private const MAX_SIZE        = array(
@@ -142,7 +143,7 @@ class RequestPage extends Mappable
     {
         if ($patterns) {
             foreach ($patterns as $pattern => $rule) {
-                if (preg_match(Router::regexp($pattern), $this->script_path, $matches)) {
+                if (preg_match($this->regexp($pattern), $this->script_path, $matches)) {
                     $config = (
                         !$this->path_info
                         ? array_replace($rule, $config)

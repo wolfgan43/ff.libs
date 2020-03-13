@@ -26,6 +26,7 @@
 
 namespace phpformsframework\libs;
 
+use phpformsframework\libs\util\TypesConverter;
 use Exception;
 
 /**
@@ -34,6 +35,8 @@ use Exception;
  */
 class Router implements Configurable, Dumpable
 {
+    use TypesConverter;
+
     const ERROR_BUCKET                                      = "routing";
 
     const PRIORITY_TOP 			                            = 0;
@@ -52,20 +55,6 @@ class Router implements Configurable, Dumpable
 
     private static $sorted                                  = false;
     private static $target                                  = null;
-
-    /**
-     * @param string $rule
-     * @return string
-     */
-    public static function regexp(string $rule) : string
-    {
-        return "#" . (
-            strpos($rule, "[") === false && strpos($rule, "^") === false && strpos($rule, "$") === false && strpos($rule, "(") === false
-                ? str_replace("*", "(.*)", $rule)
-                : $rule
-            ) . "#i";
-    }
-
 
     /**
      * @access private

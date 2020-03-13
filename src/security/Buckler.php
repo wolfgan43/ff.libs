@@ -28,8 +28,8 @@ namespace phpformsframework\libs\security;
 use phpformsframework\libs\Configurable;
 use phpformsframework\libs\Dir;
 use phpformsframework\libs\Log;
-use phpformsframework\libs\Request;
 use phpformsframework\libs\Response;
+use phpformsframework\libs\util\TypesConverter;
 
 /**
  * Class Buckler
@@ -37,6 +37,8 @@ use phpformsframework\libs\Response;
  */
 class Buckler implements Configurable
 {
+    use TypesConverter;
+
     //Error messages
     private const SERVER_BUSY                                   = "server busy";
     private const ERROR_BUCKET                                  = "firewall";
@@ -182,9 +184,7 @@ class Buckler implements Configurable
                             Log::warning(
                                 array(
                                     "rule"          => $source,
-                                    "action"        => $rule["destination"],
-                                    "url"           => Request::url(),
-                                    "referer"       => Request::referer()
+                                    "action"        => $rule["destination"]
                                 ),
                                 static::ERROR_BUCKET
                             );
@@ -196,18 +196,7 @@ class Buckler implements Configurable
         }
     }
 
-    /**
-     * @param string $rule
-     * @return string
-     */
-    private static function regexp(string $rule) : string
-    {
-        return "#" . (
-            strpos($rule, "[") === false && strpos($rule, "(") === false && strpos($rule, '$') === false
-                ? str_replace("\*", "(.*)", preg_quote($rule, "#"))
-                : $rule
-            ) . "#i";
-    }
+
 
     /**
      * @todo da fare

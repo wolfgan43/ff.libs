@@ -61,13 +61,12 @@ class Dir
     }
 
     /**
-     * @param string $what
      * @param bool $relative
      * @return string|null
      */
-    public static function findViewPath(string $what, $relative = false) : ?string
+    public static function findViewPath($relative = false) : ?string
     {
-        return self::getDiskPath($what, "views", $relative);
+        return self::getDiskPath("views", Config::APP_BASE_NAME, $relative);
     }
 
     /**

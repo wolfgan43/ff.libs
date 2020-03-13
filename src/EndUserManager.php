@@ -201,4 +201,18 @@ trait EndUserManager
     {
         return Mem::getInstance();
     }
+
+    /**
+     * @return bool
+     */
+    public static function aclVerify()
+    {
+        if (($acl = App::configuration()->page->acl)  && ($user = App::getCurrentUser())) {
+            $user_acl   = explode(",", $user->acl_profile);
+            $acls       = explode(",", $acl);
+
+            return !empty(array_intersect($acls, $user_acl));
+        }
+        return true;
+    }
 }

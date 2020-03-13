@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\tpl;
 
+use phpformsframework\libs\App;
 use phpformsframework\libs\dto\DataHtml;
 use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\EndUserManager;
@@ -46,6 +47,12 @@ abstract class Widget
     private static $singleton                   = null;
     private static $grid_system                 = null;
     private static $tpl                         = null;
+
+    protected $script_path                      = null;
+    protected $path_info                        = null;
+    protected $is_ajax                          = null;
+    protected $request                          = null;
+    protected $method                           = null;
 
     protected $skin                             = null;
     protected $requiredJs                       = array();
@@ -89,7 +96,16 @@ abstract class Widget
      */
     public function __construct(string $name, array $config = null)
     {
-        $this->config                           = array_replace_recursive($this->getConfigDefault($this->request()->rawdata()), (array) $config);
+        $configuration                          = App::configuration();
+        $request                                = App::request();
+
+        $this->script_path                      = $configuration->page->script_path;
+        $this->path_info                        = $configuration->page->path_info;
+        $this->is_ajax                          = $request->isAjax();
+        $this->request                          = $request->rawdata();
+        $this->method                           = $request->methodValid($request->method(), ["GET"]);
+
+        $this->config                           = array_replace_recursive($this->getConfigDefault($this->request), (array) $config);
         $this->name                             = $name;
     }
 
@@ -171,18 +187,7 @@ abstract class Widget
         }
     }
 
-    /**
-     *
-     */
-    private function parseRequiredAssets()
-    {
-        foreach ($this->requiredJs as $js) {
-            $this->addJs($js);
-        }
-        foreach ($this->requiredCss as $css) {
-            $this->addCss($css);
-        }
-    }
+
 
     /**
      * @param null|string $return
@@ -190,19 +195,14 @@ abstract class Widget
      */
     public function render(string $return = null) : DataHtml
     {
-        switch ($this->request()->method()) {
-            case $this->request()::METHOD_POST:
-            case $this->request()::METHOD_PUT:
-            case $this->request()::METHOD_PATCH:
-            case $this->request()::METHOD_DELETE:
-                //@todo da gestire l'oggetto nella request direttamente
-                $response = $this->callToAction($this->getConfig(), $this->request()->rawdata());
-                if ($response) {
-                    $this->response()->send($response);
-                }
-            default:
-                $this->controller($this->getConfig(), $this->request()->rawdata(), $this->request()->isAjax());
+        if ($this->method) {
+            $response = $this->callToAction($this->getConfig(), $this->request);
+            if ($response) {
+                $this->response()->send($response);
+            }
         }
+
+        $this->controller($this->getConfig(), $this->request, $this->is_ajax);
 
         if (!$this->html) {
             $this->view("index", $this->getConfig());
@@ -222,6 +222,36 @@ abstract class Widget
         }
 
         return $output;
+    }
+
+    /**
+     * @param string $relative_path
+     * @return string
+     */
+    protected function getUrl(string $relative_path) : string
+    {
+        return App::configuration()::SITE_PATH . $relative_path;
+    }
+
+    /**
+     * @param string $url
+     */
+    protected function redirect(string $url) : void
+    {
+        $this->response()->redirect($url);
+    }
+
+    /**
+     *
+     */
+    private function parseRequiredAssets()
+    {
+        foreach ($this->requiredJs as $js) {
+            $this->addJs($js);
+        }
+        foreach ($this->requiredCss as $css) {
+            $this->addCss($css);
+        }
     }
 
     /**

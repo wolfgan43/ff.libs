@@ -708,6 +708,25 @@ class Request implements Configurable, Dumpable
     }
 
     /**
+     * @param string|null $method
+     * @param array $exclude
+     * @return string|null
+     */
+    public static function methodValid(string $method, array $exclude = array()) : ?string
+    {
+        return (in_array($method, array_diff([
+                self::METHOD_GET,
+                self::METHOD_POST,
+                self::METHOD_PUT,
+                self::METHOD_PATCH,
+                self::METHOD_DELETE
+            ], $exclude))
+            ? $method
+            : null
+        );
+    }
+
+    /**
      * @return bool
      */
     public static function isAjax() : bool

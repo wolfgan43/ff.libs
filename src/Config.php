@@ -461,8 +461,6 @@ class Config implements Dumpable
      */
     private static function loadXml(string $file) : void
     {
-        Debug::stopWatch(self::SCHEMA_CONF . "/loadXml");
-
         self::$config_files[$file]                                          = filemtime($file);
         $configs                                                            = Filemanager::getInstance("xml")->read($file);
         if (is_array($configs)) {
@@ -492,7 +490,6 @@ class Config implements Dumpable
         } elseif ($configs === false) {
             Error::register("Syntax Error in Config.xml: " . $file);
         }
-        Debug::stopWatch(self::SCHEMA_CONF . "/loadXml");
     }
 
 

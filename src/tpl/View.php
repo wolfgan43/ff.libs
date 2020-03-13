@@ -1,6 +1,7 @@
 <?php
 namespace phpformsframework\libs\tpl;
 
+use phpformsframework\libs\Dir;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 
@@ -35,14 +36,26 @@ class View
             Error::register("Template Adapter not supported: " . $templateAdapter, static::ERROR_BUCKET);
         }
     }
+    /**
+     * @return string
+     */
+    private function getViewDiskPath() : string
+    {
+        return Dir::findViewPath();
+    }
 
     /**
-     * @param string $file_disk_path
+     * @param string $file_path
+     * @param bool $is_relative
      * @return $this
      */
-    public function fetch(string $file_disk_path) : View
+    public function fetch(string $file_path, bool $is_relative = false) : View
     {
-        $this->adapter->fetch($file_disk_path);
+        $this->adapter->fetch(
+            $is_relative
+            ? $this->getViewDiskPath() . $file_path
+            : $file_path
+        );
 
         return $this;
     }

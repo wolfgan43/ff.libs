@@ -57,7 +57,7 @@ class Constant
     const UPLOAD_PATH                       = DIRECTORY_SEPARATOR . "uploads";
     const VENDOR_LIBS_DIR                   = self::LIBS_PATH . DIRECTORY_SEPARATOR . "phpformsframework" . DIRECTORY_SEPARATOR . "libs";
 
-    const DISK_PATH                         = self::DOCUMENT_ROOT . self::SITE_PATH;
+    const DISK_PATH                         = self::DOCUMENT_ROOT;
     const LIBS_DISK_PATH                    = self::DOCUMENT_ROOT . self::LIBS_PATH;
     const LIBS_FF_PATH                      = DIRECTORY_SEPARATOR . "phpformsframework" . DIRECTORY_SEPARATOR . "libs";
     const LIBS_FF_DISK_PATH                 = self::LIBS_DISK_PATH . self::LIBS_FF_PATH;

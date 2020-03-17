@@ -52,7 +52,7 @@ class Request implements Configurable, Dumpable
 
     private static $params          = null;
     private static $access_control  = null;
-    private static $pages           = null;
+    private static $pages           = array();
     private static $alias           = null;
     private static $gateway         = null;
     private static $patterns        = null;
@@ -283,28 +283,30 @@ class Request implements Configurable, Dumpable
      */
     private static function rewritePathInfo()
     {
-        $hostname = self::hostname();
-        $aliasname = (
+        $hostname                       = self::hostname();
+        $aliasname                      = (
             $hostname && isset(self::$alias[$hostname])
             ? self::$alias[$hostname]
             : null
         );
-        $requestURI = self::requestURI();
-        $queryString = self::queryString();
+        $requestURI                     = self::requestURI();
+        $queryString                    = self::queryString();
         if ($requestURI) {
-            self::$orig_path_info = rtrim(rtrim($queryString
+            self::$orig_path_info       = rtrim(rtrim($queryString
                 ? rtrim($requestURI, $queryString)
                 : $requestURI, "?"), "/");
 
             if (Constant::SITE_PATH) {
-                self::$orig_path_info = str_replace(Constant::SITE_PATH, "", self::$orig_path_info);
+                self::$orig_path_info    = str_replace(Constant::SITE_PATH, "", self::$orig_path_info);
             }
         }
         if (!self::$orig_path_info) {
-            self::$orig_path_info = "/";
+            self::$orig_path_info       = "/";
+        } else {
+            self::$orig_path_info       = str_replace("/index." . Constant::PHP_EXT, "", self::$orig_path_info);
         }
 
-        self::$orig_path_info = Locale::setByPath(self::$orig_path_info);
+        self::$orig_path_info           = Locale::setByPath(self::$orig_path_info);
 
         if ($aliasname) {
             if (strpos(self::$orig_path_info, $aliasname . "/") === 0

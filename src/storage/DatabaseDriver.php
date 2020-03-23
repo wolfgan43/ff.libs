@@ -307,6 +307,7 @@ abstract class DatabaseDriver
                     $value = $this->convertID($value);
                     break;
                 case DatabaseAdapter::FTYPE_BOOLEAN:
+                case DatabaseAdapter::FTYPE_BOOL:
                     $value = (bool) $value;
                     break;
                 case DatabaseAdapter::FTYPE_NUMBER:

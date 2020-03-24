@@ -15,14 +15,7 @@ class RequestPage extends Mappable
     use TypesConverter;
     use Exceptionable { error as private setErrorDefault; }
 
-    private const MAX_SIZE        = array(
-                                        Request::METHOD_GET     => 256,
-                                        Request::METHOD_PUT     => 10240,
-                                        Request::METHOD_POST    => 10240,
-                                        Request::METHOD_HEAD    => 2048,
-                                        "DEFAULT"               => 128,
-                                        "FILES"                 => 1024000
-                                    );
+
 
     public const REQUEST_RAWDATA    = "rawdata";
     public const REQUEST_VALID      = "valid";
@@ -500,14 +493,7 @@ class RequestPage extends Mappable
     private function isAllowedSize(array $req, string $method) : bool
     {
         $request_size                                                                           = strlen(http_build_query($req, '', ''));
-
-        $max_size                                                                               = self::MAX_SIZE;
-        $request_max_size                                                                       = (
-            isset($max_size[$method])
-            ? $max_size[$method]
-            : $max_size["DEFAULT"]
-        );
-        return $request_size < $request_max_size;
+        return $request_size < Validator::getRequestMaxSize($method);
     }
 
     /**

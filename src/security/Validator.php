@@ -30,6 +30,7 @@ use phpformsframework\libs\Constant;
 use phpformsframework\libs\dto\DataError;
 use phpformsframework\libs\Env;
 use phpformsframework\libs\Kernel;
+use phpformsframework\libs\Request;
 
 /**
  * Class Validator
@@ -200,8 +201,27 @@ class Validator
                                                                                         '255044462D'
                                                                                     )
                                                             );
+
+    private const REQUEST_MAX_SIZE                          = array(
+                                                                Request::METHOD_GET     => 256,
+                                                                Request::METHOD_PUT     => 10240,
+                                                                Request::METHOD_POST    => 10240,
+                                                                Request::METHOD_HEAD    => 2048,
+                                                                "DEFAULT"               => 128,
+                                                                "FILES"                 => 1024000
+                                                            );
     private static $errors                                  = array();
     private static $errorName                               = null;
+
+    /**
+ * @param string $method
+ * @return int
+ */
+    public static function getRequestMaxSize(string $method) : int
+    {
+        $method = strtoupper($method);
+        return Env::get("VALIDATOR_REQUEST_MAX_SIZE_" . $method) ?? self::REQUEST_MAX_SIZE[$method] ?? self::REQUEST_MAX_SIZE["DEFAULT"];
+    }
 
     /**
      * @param $what

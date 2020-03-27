@@ -91,6 +91,14 @@ abstract class App implements Dumpable
     }
 
     /**
+     * @return string
+     */
+    public static function getRunner() : string
+    {
+        return self::$script_engine;
+    }
+
+    /**
      * @param string $what
      */
     public static function setRunner(string $what) : void

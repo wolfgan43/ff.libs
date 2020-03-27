@@ -205,7 +205,7 @@ class Log
                                                                         "unalterable"               => false,
                                                                         "notify"                    => false,
                                                                         "bucket"                    => "debug",
-                                                                        "write_if"                  => __NAMESPACE__ . "\\Debug::isEnabled",
+                                                                        "write_if"                  => __NAMESPACE__ . "\\App::debugEnabled",
                                                                         "override"                  => false,
                                                                         "format"                    => self::FORMAT_CLE
                                                                     )
@@ -422,10 +422,13 @@ class Log
      */
     public static function debugging($message, string $bucket = null, string $routine = null, string $action = null, int $status = null)
     {
-        if ($routine) {
-            self::addTag($routine);
+        if (App::debugEnabled()) {
+            if ($routine) {
+                self::addTag($routine);
+            }
+
+            self::run($message, self::TYPE_DEBUG, $bucket, $routine, $action, $status);
         }
-        self::run($message, self::TYPE_DEBUG, $bucket, $routine, $action, $status);
     }
 
     /**

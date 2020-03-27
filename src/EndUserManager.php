@@ -174,6 +174,22 @@ trait EndUserManager
     }
 
     /**
+     * @return bool
+     */
+    public static function debugEnabled() : bool
+    {
+        return Kernel::$Environment::DEBUG;
+    }
+
+    /**
+     * @return bool
+     */
+    public static function cacheEnabled() : bool
+    {
+        return !Kernel::$Environment::DISABLE_CACHE;
+    }
+
+    /**
      * @param string $bucket
      * @return float|null
      */

@@ -42,6 +42,7 @@ class Database implements Dumpable
     use AdapterManager;
 
     public const ERROR_BUCKET                                               = "database";
+
     private const NAME_SPACE                                                = __NAMESPACE__ . '\\adapters\\';
 
     public const ACTION_READ                                                = "read";

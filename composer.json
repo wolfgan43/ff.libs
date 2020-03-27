@@ -3,7 +3,6 @@
     "description": "php FormsFramework libs",
     "license": "LGPL-3.0",
     "type": "library",
-    "version": "0.3",
     "authors": [
         {
             "name": "Alessandro Stucchi",

@@ -57,16 +57,16 @@ abstract class Mappable
      */
     protected function loadMap(string $name, string $prefix = null) : void
     {
+        $prefix                 = self::getClassName($prefix);
+
         Debug::stopWatch("mapping/" . $prefix . "_" . $name);
 
-        $prefix                 = self::getClassName($prefix);
         $map                    = Config::mapping($prefix, $name);
         if (!empty($map)) {
             $this->autoMapping($map);
         } else {
             Error::register("Mapping: " . basename(str_replace("\\", DIRECTORY_SEPARATOR, get_called_class())) . ": " . $prefix . "_" . $name . " not found", static::ERROR_BUCKET);
         }
-
         Debug::stopWatch("mapping/" . $prefix . "_" . $name);
     }
 }

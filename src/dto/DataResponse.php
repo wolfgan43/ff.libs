@@ -204,7 +204,7 @@ class DataResponse extends DataAdapter
     public function toObject() : ?stdClass
     {
         return (!empty($this->data)
-            ? (object) $this->data
+            ? json_decode(json_encode($this->data))
             : null
         );
     }

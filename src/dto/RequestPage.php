@@ -15,37 +15,37 @@ class RequestPage extends Mappable
     use TypesConverter;
     use Exceptionable { error as private setErrorDefault; }
 
+    private const NAMESPACE_MAP_REQUEST     = '\\dto\\Request';
 
+    public const REQUEST_RAWDATA            = "rawdata";
+    public const REQUEST_VALID              = "valid";
+    public const REQUEST_UNKNOWN            = "unknown";
 
-    public const REQUEST_RAWDATA    = "rawdata";
-    public const REQUEST_VALID      = "valid";
-    public const REQUEST_UNKNOWN    = "unknown";
+    public $path_info                       = null;
+    public $script_path                     = null;
 
-    public $path_info       = null;
-    public $script_path     = null;
+    public $log                             = null;
+    public $validation                      = true;
+    public $nocache                         = false;
+    public $https                           = null;
+    public $method                          = null;
+    public $root_path                       = null;
+    public $namespace                       = null;
+    public $map                             = null;
+    public $acl                             = null;
+    public $accept                          = "*/*";
 
-    public $log             = null;
-    public $validation      = true;
-    public $nocache         = false;
-    public $https           = null;
-    public $method          = null;
-    public $root_path       = null;
-    public $namespace       = null;
-    public $map             = null;
-    public $acl             = null;
-    public $accept          = "*/*";
-
-    public $layout          = null;
+    public $layout                          = null;
 
     /**
      * @var RequestPageRules $rules
      */
-    public $rules           = null;
+    public $rules                           = null;
 
-    private $path2params    = array();
+    private $path2params                    = array();
 
-    private $headers        = array();
-    private $body           = null;
+    private $headers                        = array();
+    private $body                           = null;
 
 
 
@@ -223,7 +223,7 @@ class RequestPage extends Mappable
      */
     public function mapRequest(string $namespace, string $method) : object
     {
-        $mapRequest = $this->map ?? $namespace . '\\dto\\' . "Request" . ucfirst($method);
+        $mapRequest = $this->map ?? $namespace . self::NAMESPACE_MAP_REQUEST . ucfirst($method);
         if (class_exists($mapRequest)) {
             $obj = new $mapRequest();
 

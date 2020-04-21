@@ -25,12 +25,11 @@
  */
 namespace phpformsframework\libs\storage\drivers;
 
-use phpformsframework\libs\Debug;
-use phpformsframework\libs\Hook;
+use phpformsframework\libs\cache\Cashable;
 use phpformsframework\libs\Error;
-use mysqli_result;
 use phpformsframework\libs\storage\DatabaseDriver;
 use phpformsframework\libs\storage\DatabaseQuery;
+use mysqli_result;
 
 /**
  * classe preposta alla gestione della connessione con database di tipo SQL
@@ -44,6 +43,8 @@ use phpformsframework\libs\storage\DatabaseQuery;
  */
 class MySqli extends DatabaseDriver
 {
+    use Cashable;
+
     public $charset			        = "utf8";
     public $charset_names		    = "utf8";
     public $charset_collation	    = "utf8_unicode_ci";
@@ -66,21 +67,6 @@ class MySqli extends DatabaseDriver
     public $reconnect_tryed         = false;
 
     private $use_found_rows         = false;
-
-    /**
-     * This method istantiate a ffDb_Sql instance. When using this
-     * function, the resulting object will deeply use Forms Framework.
-     *
-     * @return MySqli
-     */
-    public static function factory()
-    {
-        $tmp = new static();
-
-        Hook::handle("mysqli_on_factory_done", $tmp);
-
-        return $tmp;
-    }
 
     /**
      * Kill All instance of DB
@@ -287,7 +273,7 @@ class MySqli extends DatabaseDriver
             return false;
         }
 
-        Debug::dumpCaller($query_string);
+        $this->cacheSetProcess($query_string);
 
         $this->freeResult();
 
@@ -360,7 +346,7 @@ class MySqli extends DatabaseDriver
             return false;
         }
 
-        Debug::dumpCaller($query_string);
+        $this->cacheSetProcess($query_string);
 
         $this->freeResult();
 
@@ -419,7 +405,8 @@ class MySqli extends DatabaseDriver
 
         $query_string = implode("; ", $Query);
 
-        Debug::dumpCaller($query_string);
+        $this->cacheSetProcess($query_string);
+
         $this->freeResult();
 
         mysqli_multi_query($this->link_id, $query_string);

@@ -1,35 +1,28 @@
 <?php
 namespace phpformsframework\libs\cache;
 
-use phpformsframework\libs\ClassDetector;
-use phpformsframework\libs\Debug;
-
 /**
  * Class Buffer
  * @package phpformsframework\libs\cache
  */
 trait Cashable
 {
-    use ClassDetector;
-
-    public static function exTime()
-    {
-        return self::$exTime2;
-    }
-
     /**
      * @param string $action
      * @param array|null $params
+     * @param null $res
+     * @return bool
+     * @todo da tipizzare
      */
-    public static function cacheRequest(string $action, array $params = null) : void
+    public static function cacheRequest(string $action, array $params = null, &$res = null) : bool
     {
-        Buffer::request(self::getClassName() . "/" . $action, $params);
+        return Buffer::request(static::ERROR_BUCKET, $action, $params, $res);
     }
 
     /**
      * @param string $value
      */
-    public static function cacheSet(string $value)
+    public static function cacheSetProcess(string $value) : void
     {
         Buffer::set($value);
     }
@@ -42,8 +35,9 @@ trait Cashable
         Buffer::store($response);
     }
 
-    public static function cacheUpdate(string $bucket)
+
+    public static function cacheUpdate() : void
     {
-        Buffer::update($bucket);
+        Buffer::update();
     }
 }

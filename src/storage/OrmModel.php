@@ -26,6 +26,7 @@
 
 namespace phpformsframework\libs\storage;
 
+use phpformsframework\libs\cache\Cashable;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
@@ -41,7 +42,9 @@ use phpformsframework\libs\storage\dto\OrmQuery;
  */
 class OrmModel extends Mappable
 {
-    protected const ERROR_BUCKET                                                               = "orm";
+    use Cashable;
+
+    protected const ERROR_BUCKET                                                            = "orm";
 
     private const SCOPE_SELECT                                                              = "select";
     private const SCOPE_WHERE                                                               = "where";
@@ -257,19 +260,11 @@ class OrmModel extends Mappable
      */
     public function read(array $select = null, array $where = null, array $sort = null, int $limit = null, int $offset = null) : ?array
     {
-        self::startWatch(self::ACTION_READ);
+        if ($this->cacheRequest(self::ACTION_READ, [$select, $where, $sort, $limit, $offset], $this->result)) {
+            $this->get($where, $select, $sort, $limit, $offset);
 
-        $this->get($where, $select, $sort, $limit, $offset);
-        Log::debugging(array(
-            self::SCOPE_ACTION      => self::ACTION_READ,
-            self::SCOPE_SELECT      => $select,
-            self::SCOPE_WHERE       => $where,
-            self::SCOPE_SORT        => $sort,
-            self::SCOPE_LIMIT       => $limit,
-            self::SCOPE_OFFSET      => $offset,
-            self::SCOPE_EXTIME      => self::stopWatch(self::ACTION_READ)
-        ), static::ERROR_BUCKET, static::ERROR_BUCKET, self::ACTION_READ);
-
+            $this->cacheStore($this->result);
+        }
         return $this->getResult();
     }
 
@@ -282,18 +277,11 @@ class OrmModel extends Mappable
      */
     public function readOne(array $select = null, array $where = null, array $sort = null, int $offset = null) : ?array
     {
-        self::startWatch(self::ACTION_READONE);
+        if ($this->cacheRequest(self::ACTION_READONE, [$select, $where, $sort, $offset], $this->result)) {
+            $this->get($where, $select, $sort, 1, $offset);
 
-        $this->get($where, $select, $sort, 1, $offset);
-        Log::debugging(array(
-            self::SCOPE_ACTION      => self::ACTION_READONE,
-            self::SCOPE_SELECT      => $select,
-            self::SCOPE_WHERE       => $where,
-            self::SCOPE_SORT        => $sort,
-            self::SCOPE_LIMIT       => 1,
-            self::SCOPE_OFFSET      => $offset,
-            self::SCOPE_EXTIME      => self::stopWatch(self::ACTION_READONE)
-        ), static::ERROR_BUCKET, static::ERROR_BUCKET, self::ACTION_READONE);
+            $this->cacheStore($this->result);
+        }
 
         return $this->getResult(true);
     }
@@ -304,14 +292,10 @@ class OrmModel extends Mappable
      */
     public function insertUnique(array $insert) : ?array
     {
-        self::startWatch(self::ACTION_INSERT_UNIQUE);
-
+        $this->cacheRequest(self::ACTION_INSERT_UNIQUE, [$insert]);
         $res                        = $this->set($insert, null, $insert);
-        Log::debugging(array(
-            self::SCOPE_ACTION      => self::ACTION_INSERT_UNIQUE,
-            self::SCOPE_INSERT      => $insert,
-            self::SCOPE_EXTIME      => self::stopWatch(self::ACTION_INSERT_UNIQUE)
-        ), static::ERROR_BUCKET, static::ERROR_BUCKET, self::ACTION_INSERT_UNIQUE);
+
+        $this->cacheUpdate();
 
         return $res;
     }
@@ -322,14 +306,12 @@ class OrmModel extends Mappable
      */
     public function insert(array $insert) : ?array
     {
-        self::startWatch(self::ACTION_INSERT);
+        $this->cacheRequest(self::ACTION_INSERT, [$insert]);
 
         $res                        = $this->set(null, null, $insert);
-        Log::debugging(array(
-            self::SCOPE_ACTION      => self::ACTION_INSERT,
-            self::SCOPE_INSERT      => $insert,
-            self::SCOPE_EXTIME      => self::stopWatch(self::ACTION_INSERT)
-        ), static::ERROR_BUCKET, static::ERROR_BUCKET, self::ACTION_INSERT);
+
+        $this->cacheUpdate();
+
         return $res;
     }
 
@@ -340,15 +322,11 @@ class OrmModel extends Mappable
      */
     public function update(array $set, array $where) : ?array
     {
-        self::startWatch(self::ACTION_UPDATE);
+        $this->cacheRequest(self::ACTION_UPDATE, [$set, $where]);
 
         $res                        = $this->set($where, $set);
-        Log::debugging(array(
-            self::SCOPE_ACTION      => self::ACTION_UPDATE
-            , self::SCOPE_SET       => $set
-            , self::SCOPE_WHERE     => $where
-            , self::SCOPE_EXTIME    => self::stopWatch(self::ACTION_UPDATE)
-        ), static::ERROR_BUCKET, static::ERROR_BUCKET, self::ACTION_UPDATE);
+
+        $this->cacheUpdate();
 
         return $res;
     }
@@ -361,16 +339,11 @@ class OrmModel extends Mappable
      */
     public function write(array $where, array $set = null, array $insert = null) : ?array
     {
-        self::startWatch(self::ACTION_WRITE);
+        $this->cacheRequest(self::ACTION_WRITE, [$where, $set, $insert]);
 
         $res                        = $this->set($where, $set, $insert);
-        Log::debugging(array(
-            self::SCOPE_ACTION      => self::ACTION_WRITE,
-            self::SCOPE_WHERE       => $where,
-            self::SCOPE_SET         => $set,
-            self::SCOPE_INSERT      => $insert,
-            self::SCOPE_EXTIME      => self::stopWatch(self::ACTION_WRITE)
-        ), static::ERROR_BUCKET, static::ERROR_BUCKET, self::ACTION_WRITE);
+
+        $this->cacheUpdate();
 
         return $res;
     }
@@ -383,22 +356,16 @@ class OrmModel extends Mappable
      */
     public function cmd(string $action, array $where = null) : ?array
     {
-        self::startWatch(self::ACTION_CMD);
+        if ($this->cacheRequest(self::ACTION_CMD, [$action, $where], $this->result[self::ACTION_CMD])) {
+            $this->clearResult();
 
-        $this->clearResult();
+            $this->resolveFieldsByScopes(array(
+                self::SCOPE_WHERE       => $where
+            ));
 
-        $this->resolveFieldsByScopes(array(
-            self::SCOPE_WHERE       => $where
-        ));
-
-        $this->execSub($action);
-        $this->cmdData($action);
-
-        Log::debugging(array(
-            self::SCOPE_ACTION      => self::ACTION_CMD . "/" . $action,
-            self::SCOPE_WHERE       => $where,
-            self::SCOPE_EXTIME      => self::stopWatch(self::ACTION_CMD)
-        ), static::ERROR_BUCKET, static::ERROR_BUCKET, self::ACTION_CMD);
+            $this->execSub($action);
+            $this->cmdData($action);
+        }
 
         return $this->getResult();
     }
@@ -409,14 +376,11 @@ class OrmModel extends Mappable
      */
     public function delete(array $where) : ?array
     {
-        self::startWatch(self::ACTION_DELETE);
+        $this->cacheRequest(self::ACTION_DELETE, [$where]);
 
         $res                        = null;
-        Log::debugging(array(
-            self::SCOPE_ACTION      => self::ACTION_DELETE,
-            self::SCOPE_WHERE       => $where,
-            self::SCOPE_EXTIME      => self::stopWatch(self::ACTION_DELETE)
-        ), static::ERROR_BUCKET, static::ERROR_BUCKET, self::ACTION_DELETE);
+
+        $this->cacheUpdate();
 
         return $res;
     }

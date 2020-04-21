@@ -67,7 +67,6 @@ abstract class DatabaseDriver
     protected $record                   = null;
     protected $buffered_insert_id       = null;
 
-    abstract public static function factory();
     abstract public static function freeAll();
 
     /**
@@ -313,6 +312,7 @@ abstract class DatabaseDriver
                 case DatabaseAdapter::FTYPE_NUMBER:
                 case DatabaseAdapter::FTYPE_NUMBER_BIG:
                 case DatabaseAdapter::FTYPE_NUMBER_DECIMAN:
+                case DatabaseAdapter::FTYPE_TIMESTAMP:
                     $value = (
                         strlen($value)
                         ? (int) $this->toSqlEscape($value)

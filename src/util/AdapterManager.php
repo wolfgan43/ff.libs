@@ -15,10 +15,11 @@ trait AdapterManager
     /**
      * @param string $adapterName
      * @param array|null $args
+     * @param string $class_name
      */
-    private function setAdapter(string $adapterName, array $args = array()) : void
+    private function setAdapter(string $adapterName, array $args = array(), $class_name = __CLASS__) : void
     {
-        $class                                              = str_replace(array('\\drivers\\','\\'), array('\\', '/'), __CLASS__);
+        $class                                              = str_replace(array('\\drivers\\','\\'), array('\\', '/'), $class_name);
         $className                                          = basename($class);
         $nameSpace                                          = str_replace('/', '\\', dirname($class));
         $classNameAdapter                                   = $nameSpace . '\\adapters\\' . $className . ucfirst($adapterName);
@@ -26,7 +27,7 @@ trait AdapterManager
             $this->adapters[$adapterName]                   = new $classNameAdapter(...$args);
             $this->adapter                                  =& $this->adapters[$adapterName];
         } else {
-            Error::register(__CLASS__ . " Adapter not supported: " . $classNameAdapter);
+            Error::register($class_name . " Adapter not supported: " . $classNameAdapter);
         }
     }
 

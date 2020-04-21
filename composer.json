@@ -43,6 +43,7 @@
         "ext-memcached": "to manage cache in memory",
         "ext-redis": "to manage cache in memory",
         "ext-xhprof": "to profiling code",
+        "ext-soap": "to use soap client",
         "twilio/sdk" : "to use SMS notifications [composer require twilio/sdk:^5.31.3]"
     },
     "autoload": {

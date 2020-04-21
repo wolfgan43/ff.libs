@@ -792,15 +792,11 @@ class Filemanager implements Dumpable
      * @param string|null $username
      * @param string|null $password
      * @param array|null $headers
-     * @return array|null
+     * @return stdClass
      */
     public static function fileGetContentJson(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : ?stdClass
     {
-        $res                                = self::fileGetContent($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers);
-        return ($res
-            ? json_decode($res)
-            : null
-        );
+        return json_decode(self::fileGetContent($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers));
     }
     /**
      * @param string $url
@@ -975,6 +971,43 @@ class Filemanager implements Dumpable
         if ($params && $method == Request::METHOD_POST) {
             $opts["http"]["content"]    = http_build_query($params);
         }
+
+
+        /** @todo da implementare per gestire il trasgerimento dei file
+
+               define('MULTIPART_BOUNDARY', '--------------------------'.microtime(true));
+
+               $header = 'Content-Type: multipart/form-data; boundary='.MULTIPART_BOUNDARY;
+               // equivalent to <input type="file" name="uploaded_file"/>
+               define('FORM_FIELD', 'uploaded_file');
+
+               $filename = "/path/to/uploaded/file.zip";
+               $file_contents = file_get_contents($filename);
+
+               $content =  "--".MULTIPART_BOUNDARY."\r\n".
+                   "Content-Disposition: form-data; name=\"".FORM_FIELD."\"; filename=\"".basename($filename)."\"\r\n".
+                   "Content-Type: application/zip\r\n\r\n".
+                   $file_contents."\r\n";
+
+               // add some POST fields to the request too: $_POST['foo'] = 'bar'
+               $content .= "--".MULTIPART_BOUNDARY."\r\n".
+                   "Content-Disposition: form-data; name=\"foo\"\r\n\r\n".
+                   "bar\r\n";
+
+               // signal end of request (note the trailing "--")
+               $content .= "--".MULTIPART_BOUNDARY."--\r\n";
+
+               $context = stream_context_create(array(
+                   'http' => array(
+                       'method' => 'POST',
+                       'header' => $header,
+                       'content' => $content,
+                   )
+               ));
+
+
+               file_get_contents('http://url/to/upload/handler', false, $context);
+        */
 
         return stream_context_create($opts);
     }

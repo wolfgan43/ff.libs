@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs;
 
+use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\storage\Filemanager;
 use ReflectionClass;
 use Exception;
@@ -49,7 +50,8 @@ class Debug
     private static $startWatch              = array();
     private static $exTime                  = array();
 
-    private static $debug                   = array();
+    private static $debug                   = [];
+    private static $exTimeLog               = [];
 
     /**
      * Debug constructor.
@@ -76,7 +78,7 @@ class Debug
     /**
      * @return bool
      */
-    public static function isEnabled() : bool
+    private static function isEnabled() : bool
     {
         return Kernel::$Environment::DEBUG;
     }
@@ -94,26 +96,72 @@ class Debug
     {
         return Kernel::$Environment::PROFILING;
     }
+
+    /**
+     * @param $data
+     * @param string $bucket
+     */
+    public static function set($data, string $bucket) : void
+    {
+        static $count                       = null;
+
+        if (!empty($data)) {
+            if ($bucket) {
+                if (isset(self::$debug[$bucket])) {
+                    $count[$bucket]         = ($count[$bucket] ?? 1) + 1;
+
+                    $bucket                 .= "#" . $count[$bucket];
+                }
+                self::$debug[$bucket]       = $data;
+
+            } elseif (is_array($data)) {
+                self::$debug                = array_replace(self::$debug, $data);
+            } else {
+                array_push(self::$debug, $data);
+            }
+        }
+    }
+
+    /**
+     * @return array|null
+     */
+    public static function get() : ?array
+    {
+        $res                                = null;
+        if (self::isEnabled()) {
+            $res                            = self::$debug + Buffer::exTime();
+            $res["exTime - Conf"]           = Config::exTime();
+            $res["exTime - App"]            = self::exTimeApp();
+            $res["App - Cache"]             = (self::cacheDisabled() ? "off" : "on (" . Kernel::$Environment::CACHE_MEM_ADAPTER . ", " . Kernel::$Environment::CACHE_DATABASE_ADAPTER . ", " . Kernel::$Environment::CACHE_MEDIA_ADAPTER . ")");
+        }
+        return $res;
+    }
     /**
      * @param string $bucket
      * @return float|null
      */
     public static function stopWatch(string $bucket) : ?float
     {
-        if (isset(self::$startWatch[$bucket])) {
-            $key = $bucket . (
-                isset(self::$exTime[$bucket])
-                ? "-" . (count(self::$exTime) + 1)
-                : null
-            );
-            self::$exTime[$key]             = number_format(microtime(true) - self::$startWatch[$bucket], 4, '.', '');
+        static $count                       = null;
 
+        if (isset(self::$startWatch[$bucket])) {
+            $key                            = $bucket;
+            if (isset(self::$exTime[$bucket])) {
+                $count[$bucket]             = ($count[$bucket] ?? 1) + 1;
+
+                $key                        .= "#" . $count[$bucket];
+            }
+            self::$exTime[$key]             = number_format(microtime(true) - self::$startWatch[$bucket], 4, '.', '');
+            self::$exTimeLog[$bucket . " #" . microtime(true)] = self::$exTime[$key];
             unset(self::$startWatch[$bucket]);
             return (float) self::$exTime[$key];
         } else {
             self::$startWatch[$bucket]      = microtime(true);
+            self::$exTimeLog[$bucket . " #" . microtime(true)] = self::$startWatch[$bucket];
             return null;
         }
+
+
     }
 
     /**
@@ -135,58 +183,6 @@ class Debug
     {
         $duration                           = microtime(true) - self::$app_start;
         return number_format($duration, 3, '.', '');
-    }
-
-    /**
-     * @todo da valutare e togliere
-     */
-    public static function registerErrors() : void
-    {
-        declare(ticks=1);
-
-        register_tick_function(function () {
-            $GLOBALS["backtrace"]           = debug_backtrace();
-        });
-
-        register_shutdown_function(function () {
-            $error = error_get_last();
-
-            switch ($error['type']) {
-                case E_NOTICE:
-                case E_USER_NOTICE:
-                    Log::warning($error);
-                    break;
-                case E_WARNING:
-                case E_DEPRECATED:
-                    header("Content-Type: text/html");
-
-                    echo "<br /><br /><b>Warning</b>: " . $error["message"] . " in <b>" . $error["file"] . "</b> on line <b>" . $error["line"] . "</b>";
-
-                    // no break
-                case E_ERROR:
-                case E_RECOVERABLE_ERROR:
-
-                case E_PARSE:
-                case E_STRICT:
-
-
-                case E_CORE_ERROR:
-                case E_CORE_WARNING:
-                case E_COMPILE_ERROR:
-
-                case E_COMPILE_WARNING:
-                case E_USER_ERROR:
-                case E_USER_WARNING:
-
-                case E_USER_DEPRECATED:
-                    self::dump($GLOBALS["backtrace"]);
-                    if (function_exists("cache_sem_remove")) {
-                        cache_sem_remove($_SERVER["PATH_INFO"]);
-                    }
-                    break;
-                default:
-            }
-        });
     }
 
     /**

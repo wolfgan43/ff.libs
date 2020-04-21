@@ -26,6 +26,7 @@
 
 namespace phpformsframework\libs\dto;
 
+use phpformsframework\libs\Debug;
 use stdClass;
 
 /**
@@ -49,26 +50,6 @@ abstract class DataAdapter
     public function __construct(array $data = array())
     {
         $this->fill($data);
-    }
-
-    /**
-     * @return array
-     */
-    protected function getVars() : array
-    {
-        return $this->getObjectVars();
-    }
-    /**
-     * @param bool $remove_exception
-     * @return array
-     */
-    private function getObjectVars(bool $remove_exception = false) : array
-    {
-        $vars                               = get_object_vars($this);
-        if ($remove_exception) {
-            $this->removeExceptionVars($vars);
-        }
-        return $vars;
     }
 
     /**
@@ -184,5 +165,35 @@ abstract class DataAdapter
         unset($this->$key);
 
         return $this;
+    }
+
+    /**
+     * @return array
+     */
+    protected function getVars() : array
+    {
+        return $this->getObjectVars();
+    }
+    /**
+     * @param bool $remove_exception
+     * @return array
+     */
+    private function getObjectVars(bool $remove_exception = false) : array
+    {
+        $vars                               = get_object_vars($this);
+        if ($remove_exception) {
+            $this->removeExceptionVars($vars);
+        }
+        return $vars;
+    }
+
+    /**
+     * @param array $vars
+     */
+    private function setDebugger(array &$vars) : void
+    {
+        if ($debug = Debug::get()) {
+            $vars["debug"] = $debug;
+        }
     }
 }

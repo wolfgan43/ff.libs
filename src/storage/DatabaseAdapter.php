@@ -555,7 +555,7 @@ abstract class DatabaseAdapter
         $query_read                                     = clone $query;
         $query_read->select                             = $this->querySelect([$this->key_primary => true], false);
         if ($this->driver->read($query_read)) {
-            $keys                                       = array_column((array) $this->driver->getRecordset(), $this->key_name);
+            $keys                                       = array_column((array) $this->driver->getRecordset(), $this->key_primary);
         }
 
         if (count($keys)) {

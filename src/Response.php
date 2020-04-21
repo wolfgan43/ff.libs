@@ -117,10 +117,9 @@ class Response
      * @todo da tipizzare
      * @param int $status
      * @param string|null $msg
-     * @param mixed|null $debug
      * @return void
      */
-    public static function sendError(int $status = 404, string $msg = null, $debug = null) : void
+    public static function sendError(int $status = 404, string $msg = null) : void
     {
         $response = new DataResponse();
         switch (Request::accept()) {
@@ -142,10 +141,6 @@ class Response
         }
 
         $response->error($status, $msg);
-        if ($debug) {
-            $response->debug($debug);
-        }
-
 
         self::send($response);
     }

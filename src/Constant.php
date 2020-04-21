@@ -142,6 +142,10 @@ class Constant
      * @var string[Html|Amp|Smarty|Blade]
      */
     const TEMPLATE_ADAPTER                  = "Html";
+    /**
+     * @var string[Soap|JsonWsp]
+     */
+    const MICROSERVICE_ADAPTER              = "JsonWsp";
 
     /**
      * System settings

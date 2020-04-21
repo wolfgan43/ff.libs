@@ -155,7 +155,7 @@ class Router implements Configurable, Dumpable
 
             if ($destination) {
                 if (is_array($destination)) {
-                    Response::send(self::caller($destination["obj"], $destination["method"], self::replaceMatches($rule["matches"], $destination["params"])));
+                    Response::send(self::caller($destination["obj"], $destination["method"], self::replaceMatches($rule["matches"], $destination["params"] ?? [])));
                 } elseif ($rule["redirect"]) {
                     Response::redirect(self::replaceMatches($rule["matches"], $destination), $rule["redirect"]);
                 } elseif (is_numeric($destination) || ctype_digit($destination)) {
@@ -229,16 +229,8 @@ class Router implements Configurable, Dumpable
         $source                         = null;
         $destination                    = null;
         if (is_array($params)) {
-            $source                     = (
-                isset($params["source"])
-                                            ? $params["source"]
-                                            : $path
-                                        );
-            $destination                = (
-                isset($params["destination"])
-                                            ? $params["destination"]
-                                            : null
-                                        );
+            $source                     = $params["source"]         ?? $path;
+            $destination                = $params["destination"]    ?? null;
 
             if (!$priority && isset($params["priority"])) {
                 $priority               = $params["priority"];
@@ -405,8 +397,7 @@ class Router implements Configurable, Dumpable
                 App::setRunner($class_name);
 
                 if ($method && !is_array($method)) {
-                    $obj                                            = new $class_name();
-                    $output                                         = (new $obj)->$method(...$params);
+                    $output                                         = (new $class_name)->$method(...$params);
                 }
             } catch (Exception $e) {
                 Error::register($e->getMessage(), static::ERROR_BUCKET);

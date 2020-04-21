@@ -658,6 +658,15 @@ class Media implements Configurable
         if (strpos($file, "/") === false) {
             $file                                                   = Resource::get($file, "images");
         }
+        if (empty($file)) {
+            return array(
+                "url"                   => null,
+                "web_url"               => null,
+                "extension"             => null,
+                "file"                  => null,
+                "mode"                  => null
+            );
+        }
         $arrFile                                                    = pathinfo($file);
         if ($arrFile["extension"] == "svg") {
             return array(

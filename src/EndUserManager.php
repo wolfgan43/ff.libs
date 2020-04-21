@@ -1,13 +1,12 @@
 <?php
 namespace phpformsframework\libs;
 
-use phpformsframework\libs\cache\adapters\MemAdapter;
-use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\storage\Database;
 use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\storage\Media;
 use phpformsframework\libs\storage\Orm;
+use Exception;
 
 /**
  * Trait EndUserManager
@@ -87,6 +86,16 @@ trait EndUserManager
     }
 
     /**
+     * @param int $status
+     * @param string $message
+     * @throws Exception
+     */
+    public static function throwError(int $status, string $message) : void
+    {
+        throw new Exception($message, $status);
+    }
+
+    /**
      * @param string $message
      */
     public static function throwException(string $message) : void
@@ -95,19 +104,12 @@ trait EndUserManager
     }
 
     /**
-     * @param string $message
+     * @param $data
+     * @param string|null $bucket
      */
-    public static function throwWarning(string $message) : void
+    public static function debug($data, string $bucket = null) : void
     {
-        Error::registerWarning($message, static::ERROR_BUCKET);
-    }
-
-    /**
-     * @return bool
-     */
-    public static function isError() : bool
-    {
-        return Error::check(static::ERROR_BUCKET);
+        Debug::set($data, $bucket ?? static::ERROR_BUCKET);
     }
 
     /**
@@ -208,14 +210,6 @@ trait EndUserManager
     public static function mediaUrl(string $file_disk_path, string $mode = null, string $key = "url")
     {
         return Media::getUrl($file_disk_path, $mode, $key);
-    }
-
-    /**
-     * @return MemAdapter
-     */
-    public static function cacheMem() : MemAdapter
-    {
-        return Mem::getInstance();
     }
 
     /**

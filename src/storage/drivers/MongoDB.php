@@ -31,11 +31,9 @@ use MongoDB\Driver\Query;
 use MongoDB\Driver\Command;
 use MongoDB\BSON\ObjectID;
 use MongoDB\Driver\Exception\Exception;
-use MongoDB\Driver\Exception\InvalidArgumentException;
 use IteratorIterator;
-use phpformsframework\libs\Debug;
+use phpformsframework\libs\cache\Cashable;
 use phpformsframework\libs\Error;
-use phpformsframework\libs\Hook;
 use phpformsframework\libs\storage\DatabaseDriver;
 use phpformsframework\libs\storage\DatabaseQuery;
 
@@ -51,6 +49,8 @@ use phpformsframework\libs\storage\DatabaseQuery;
  */
 class MongoDB extends DatabaseDriver
 {
+    use Cashable;
+
     private $replica                 = null;
 
     /**
@@ -69,20 +69,6 @@ class MongoDB extends DatabaseDriver
     private $key_name				= "_id";
 
     private $use_found_rows         = false;
-    /**
-     * This method istantiate a ffDB_MongoDB instance. When using this
-     * function, the resulting object will deeply use Forms Framework.
-     *
-     * @return MongoDB
-     */
-    public static function factory()
-    {
-        $tmp = new static();
-
-        Hook::handle("mongodb_on_factory_done", $tmp);
-
-        return $tmp;
-    }
 
     public static function freeAll()
     {
@@ -345,7 +331,7 @@ class MongoDB extends DatabaseDriver
             return false;
         }
 
-        Debug::dumpCaller($query->toArray());
+        $this->cacheSetProcess($query->toJson());
 
         $this->freeResult();
 
@@ -562,18 +548,6 @@ class MongoDB extends DatabaseDriver
     }
 
     /**
-     * @param ObjectID|string $var
-     * @return string
-     */
-    private function objectID2string($var)
-    {
-        return ($var instanceof ObjectID
-            ? $var->__toString()
-            : (string) $var
-        );
-    }
-
-    /**
      * @param string $DataValue|null
      * @return string|null
      */
@@ -617,39 +591,5 @@ class MongoDB extends DatabaseDriver
             ? $value
             : new ObjectID($value)
         );
-    }
-
-    /**
-     * @todo da tipizzare
-     * @param array|ObjectID|string $keys
-     * @return array|ObjectID|null
-     */
-    private function id2object($keys)
-    {
-        $res = null;
-        if (is_array($keys)) {
-            foreach ($keys as $subkey => $subvalue) {
-                if (is_array($subvalue)) {
-                    foreach ($subvalue as $key) {
-                        $ID = $this->getObjectID($key);
-                        if ($ID) {
-                            $res[$subkey][] = $ID;
-                        }
-                    }
-                } else {
-                    $ID = $this->getObjectID($subvalue);
-                    if ($ID) {
-                        $res[] = $ID;
-                    }
-                }
-            }
-        } else {
-            $ID = $this->getObjectID($keys);
-            if ($ID) {
-                $res = $ID;
-            }
-        }
-
-        return $res;
     }
 }

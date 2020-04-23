@@ -110,6 +110,8 @@ class Constant
     const SESSION_PERMANENT                 = true;
     const SESSION_SHARE                     = true;
 
+    const API_SERVER                        = [];
+
     /**
      * Adapters
      */

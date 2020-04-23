@@ -123,7 +123,6 @@ class ApiSoap extends ApiAdapter
 
         $request                        = $this->getRequest($method, $params);
         $requestHeaders                 = $this->getSoapHeader($headers);
-
         try {
             if (isset($this->sFunctions[$method])) {
                 if ($requestHeaders) {

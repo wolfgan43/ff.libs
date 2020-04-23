@@ -39,15 +39,10 @@ class Kernel
 
 
     /**
-     * @param null|false|string $environment
      * @return Kernel
      */
-    public static function &load($environment = null)
+    public static function &load()
     {
-        if (!self::$singleton) {
-            self::$singleton        = new static($environment);
-        }
-
         return self::$singleton;
     }
 
@@ -81,18 +76,12 @@ class Kernel
     }
     /**
      * Kernel constructor.
-     * @param bool|string $environment
+     * @param string $environment
      */
-    protected function __construct($environment = false)
+    public function __construct(string $environment)
     {
-        if ($environment) {
-            Dir::autoload(Constant::DISK_PATH . DIRECTORY_SEPARATOR . str_replace('\\', '/', $environment) . "." . Constant::PHP_EXT);
-            $Constant               = static::NAMESPACE . $environment;
-        } else {
-            $Constant               = static::NAMESPACE . "Constant";
-        }
-
-        self::$Environment          = $Constant;
+        self::$singleton            = $this;
+        self::$Environment          = $environment;
 
         $this->Debug                = new $this->Debug();
         $this->Request              = new $this->Request();
@@ -116,8 +105,7 @@ class Kernel
          * @var App $app
          */
         $app                        = static::NAMESPACE . "App";
-        $page                       =& Request::pageConfiguration();
-        $app::construct($this::$Environment, $page);
+        $page                       = $app::construct(self::$Environment);
 
         if (Env::get("REQUEST_SECURITY_LEVEL")) {
             Hook::handle("on_app_run", $this);
@@ -131,6 +119,6 @@ class Kernel
 
         Config::autoloadRegister();
 
-        Router::run($app::configuration()->page->script_path);
+        Router::run($page->script_path);
     }
 }

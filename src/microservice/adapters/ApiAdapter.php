@@ -15,12 +15,16 @@ abstract class ApiAdapter
 {
     use Mockable;
 
-    protected static $preflight                                           = null;
-
-    protected const ERROR_BUCKET                                        = "webservice";
-    protected const ERROR_LABEL                                         = "Api: ";
     protected const NAMESPACE_DATARESPONSE                              = App::NAME_SPACE . "dto\\";
     protected const REQUEST_TIMEOUT                                     = 10;
+
+    protected const ERROR_RESPONSE_INVALID_FORMAT                       = "Response Invalid Format";
+
+    private const ERROR_RESPONSE_EMPTY                                  = "Response Empty";
+    private const ERROR_REQUEST_LABEL                                   = "::request";
+    private const ERROR_RESPONSE_LABEL                                  = "::response";
+
+    protected static $preflight                                         = null;
 
     protected $endpoint                                                 = null;
     protected $http_auth_username                                       = null;
@@ -38,7 +42,7 @@ abstract class ApiAdapter
      */
     public function __call(string $method, array $arguments) : object
     {
-        $this->request                  = $method;
+        $this->request                                                  = $method;
 
         return $this->send($method, $arguments[0], $arguments[1] ?? null);
     }
@@ -47,10 +51,10 @@ abstract class ApiAdapter
      * @param string $method
      * @param array|null $params
      * @param array|null $headers
-     * @return stdClass
+     * @return stdClass|array|null
      * @throws Exception
      */
-    abstract protected function get(string $method, array $params = null, array $headers = null) : stdClass;
+    abstract protected function get(string $method, array $params = null, array $headers = null);
 
     /**
      * @return array
@@ -73,9 +77,9 @@ abstract class ApiAdapter
      */
     public function __construct(string $url = null, string $username = null, string $secret = null)
     {
-        $this->endpoint                 = $url      ?? $this->endpoint;
-        $this->http_auth_username       = $username ?? $username;
-        $this->http_auth_secret         = $secret   ?? $secret;
+        $this->endpoint                                                 = $url      ?? $this->endpoint;
+        $this->http_auth_username                                       = $username ?? $username;
+        $this->http_auth_secret                                         = $secret   ?? $secret;
     }
 
     /**
@@ -86,9 +90,9 @@ abstract class ApiAdapter
     {
         App::stopWatch("api/remote/preflight");
 
-        $discover                       = $this->preflight();
+        $discover                                                       = $this->preflight();
 
-        $this->exTimePreflight          = App::stopWatch("api/remote/preflight");
+        $this->exTimePreflight                                          = App::stopWatch("api/remote/preflight");
 
         return $discover["headers"] ?? null;
     }
@@ -104,33 +108,62 @@ abstract class ApiAdapter
     {
         App::stopWatch("api/remote");
         /** @var \phpformsframework\libs\dto\DataResponse $DataResponse */
-        $class_name                     = static::NAMESPACE_DATARESPONSE . "DataResponse";
-        $DataResponse                   = new $class_name();
+        $exception                                                      = null;
+        $response                                                       = null;
+        $class_name                                                     = static::NAMESPACE_DATARESPONSE . "DataResponse";
+        $DataResponse                                                   = new $class_name();
 
-        $headers                        = $this->getHeader($headers);
-        $response                       = (
-            $this->mockEnabled
-            ? $this->getMock()
-            : null
-        );
-
-        if (!$response) {
-            $response                   = $this->get($method, $params, $headers);
+        $headers                                                        = $this->getHeader($headers);
+        try {
+            $response                                                   = $this->getMock() ?? $this->get($method, $params, $headers);
+        } catch (Exception $e) {
+            $exception                                                  = $e;
         }
 
-        $DataResponse->fillObject($response);
-
-        App::debug([
-            "method"                    => $method,
-            "header"                    => $headers,
-            "body"                      => $params,
-            "isRemote"                  => true,
-            "isMock"                    => $this->mockEnabled,
-            "exTimePreflight"           => $this->exTimePreflight,
-            "exTimeRequest"             => App::stopWatch("api/remote")
-        ], $this->endpoint);
+        self::debug($method, $params, $headers);
+        if ($exception) {
+            /** Response Invalid Format (nojson or no object) */
+            App::debug($exception->getMessage(), $this->endpoint . self::ERROR_RESPONSE_LABEL);
+            throw new Exception($exception->getMessage(), $exception->getCode());
+        } elseif (isset($response->data, $response->status, $response->error)) {
+            if ($response->status >= 400) {
+                /** Request Wrong Params */
+                App::debug($response->error, $this->endpoint . self::ERROR_REQUEST_LABEL);
+                throw new Exception($response->error, $response->status);
+            }
+            $DataResponse->fillObject($response->data);
+            unset($response->data, $response->error, $response->status, $response->debug);
+            foreach (get_object_vars($response) as $property => $value) {
+                $DataResponse->$property                                = $value;
+            }
+        } elseif (empty($response)) {
+            /** Response is empty */
+            App::debug(self::ERROR_RESPONSE_EMPTY, $this->endpoint . self::ERROR_RESPONSE_LABEL);
+            throw new Exception(self::ERROR_RESPONSE_EMPTY, 404);
+        } else {
+            $DataResponse->fillObject($response);
+            $DataResponse->outputMode(true);
+        }
 
         return $DataResponse;
+    }
+
+    /**
+     * @param string $method
+     * @param array|null $params
+     * @param array|null $headers
+     */
+    private function debug(string $method, array $params = null, array $headers = null) : void
+    {
+        App::debug([
+            "method"                                                    => $method,
+            "header"                                                    => $headers,
+            "body"                                                      => $params,
+            "isRemote"                                                  => true,
+            "isMock"                                                    => $this->mockEnabled,
+            "exTimePreflight"                                           => $this->exTimePreflight,
+            "exTimeRequest"                                             => App::stopWatch("api/remote")
+        ], $this->endpoint);
     }
 
     /**
@@ -139,14 +172,17 @@ abstract class ApiAdapter
      */
     private function getMock() : ?stdClass
     {
-        $request                        = $this->request ?? parse_url($this->endpoint, PHP_URL_PATH);
+        $schema                                                         = null;
+        if ($this->mockEnabled) {
+            $request                                                    = $this->request ?? parse_url($this->endpoint, PHP_URL_PATH);
 
-        $schema                         = $this->getResponseSchema($request);
+            $schema                                                     = $this->getResponseSchema($request);
+            if ($schema) {
+                $schema                                                 = json_decode(json_encode(array_replace_recursive($schema, $this->mock($request))));
+            }
+        }
 
-        return ($schema
-            ? json_decode(json_encode(array_replace_recursive($schema, $this->mock($request))))
-            : null
-        );
+        return $schema;
     }
 
     /**
@@ -163,28 +199,28 @@ abstract class ApiAdapter
         switch (strtolower($type)) {
             case "int":
             case "unsignedshort":
-                $res = "0";
+                $res                                                    = "0";
                 break;
             case "boolean":
-                $res = false;
+                $res                                                    = false;
                 break;
             case "array":
-                $res = array();
+                $res                                                    = array();
                 break;
             case "datetime":
-                $res = Data::getEmpty("datetime");
+                $res                                                    = Data::getEmpty("datetime");
                 break;
             case "date":
-                $res = Data::getEmpty("date");
+                $res                                                    = Data::getEmpty("date");
                 break;
             case "time":
-                $res = Data::getEmpty("time");
+                $res                                                    = Data::getEmpty("time");
                 break;
             case "string":
             case "unsignedbyte":
             case "anytype":
             default:
-                $res = "";
+                $res                                                    = "";
         }
         return $res;
     }

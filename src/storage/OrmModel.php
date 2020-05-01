@@ -30,7 +30,6 @@ use phpformsframework\libs\cache\Cashable;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
-use phpformsframework\libs\Log;
 use phpformsframework\libs\Mappable;
 use phpformsframework\libs\storage\dto\OrmControllers;
 use phpformsframework\libs\storage\dto\OrmDef;
@@ -75,7 +74,7 @@ class OrmModel extends Mappable
     private const INDEX_PRIMARY                                                             = Database::INDEX_PRIMARY;
     private const COUNT                                                                     = Database::COUNT;
 
-    public static $exTime                                                                   = array();
+    private $default_table                                                                  = null;
 
     protected $bucket                                                                       = null;
     protected $type                                                                         = null;
@@ -106,7 +105,7 @@ class OrmModel extends Mappable
     private $rel_done                                                                       = array();
 
     private $result                                                                         = array();
-    private $count                                                                          = null;
+    public $count                                                                           = null;
 
     /**
      * OrmModel constructor.
@@ -117,6 +116,7 @@ class OrmModel extends Mappable
         parent::__construct($map_name);
 
         $this->adapters                                                                     = array_intersect_key($this->connectors, $this->adapters);
+        $this->default_table                                                                = $this->main_table;
     }
 
     /**
@@ -130,6 +130,8 @@ class OrmModel extends Mappable
                 Error::register("MainTable '" . $main_table . "' not found in " . $this->type);
             }
             $this->main_table                                                               = $main_table;
+        } else {
+            $this->main_table                                                               = $this->default_table;
         }
 
         return $this;
@@ -206,7 +208,7 @@ class OrmModel extends Mappable
     {
         return ($this->type == $this->bucket
             ? $this
-            : Orm::getInstance($this->bucket)
+            : Orm::getInstance($this->bucket, $this->main_table)
         );
     }
 
@@ -219,28 +221,6 @@ class OrmModel extends Mappable
         return Database::getInstance($this->adapters, $struct->toArray());
     }
 
-    /**
-     * @param string $action
-     */
-    private function startWatch(string $action) : void
-    {
-        Debug::stopWatch(self::ERROR_BUCKET . "/" . $action);
-    }
-
-    /**
-     * @param string $action
-     * @return float|null
-     */
-    private function stopWatch(string $action) : ?float
-    {
-        static $pid = null;
-
-        if (!$pid && function_exists("getmypid")) {
-            $pid = getmypid();
-        }
-
-        return self::$exTime[$action . "-" . $pid . "-" . count(self::$exTime)] = Debug::stopWatch(self::ERROR_BUCKET . "/" . $action);
-    }
     /**
      * @param $query
      * @return array|null
@@ -402,7 +382,7 @@ class OrmModel extends Mappable
                                                                                                 self::SCOPE_SORT      => $sort
                                                                                             ));
         if ($single_service) {
-            $this->getDataSingle($this->services_by_data->last, $this->services_by_data->last_table, $limit, $offset);
+            $this->setCount($this->getDataSingle($this->services_by_data->last, $this->services_by_data->last_table, $limit, $offset));
         } else {
             $countRunner                                                                    = $this->throwRunnerSubs(true);
             while ($this->throwRunner($limit, $offset) > 0) {
@@ -489,7 +469,6 @@ class OrmModel extends Mappable
                 $aliasTable                                                             = $data->def->table["alias"];
                 $this->result[$thisTable]                                               = $regs[self::RESULT];
                 $count                                                                  = $regs[self::COUNT];
-
                 if (!empty($data->def->relationship)) {
                     foreach ($data->def->relationship as $ref => $relation) {
                         unset($whereRef);
@@ -608,9 +587,11 @@ class OrmModel extends Mappable
      * @param string $table
      * @param int|null $limit
      * @param int|null $offset
+     * @return int|null
      */
-    private function getDataSingle(string $controller, string $table, int $limit = null, int $offset = null) : void
+    private function getDataSingle(string $controller, string $table, int $limit = null, int $offset = null) : ?int
     {
+        $count                                                                              = null;
         $data                                                                               = (
             isset($this->subs[$controller][$table])
                                                                                                 ? $this->subs[$controller][$table]
@@ -628,11 +609,14 @@ class OrmModel extends Mappable
                                                                                                     $offset
                                                                                                 );
             if (is_array($regs) && $regs[self::RESULT]) {
-                $this->result[$data->def->mainTable]                                        = $regs[self::RESULT];
+                $this->result[$this->getMainTable()]                                        = $regs[self::RESULT];
+                $count                                                                      = $regs[self::COUNT];
             }
         } else {
             Error::register("normalize data is empty", static::ERROR_BUCKET);
         }
+
+        return $count;
     }
 
 
@@ -889,12 +873,7 @@ class OrmModel extends Mappable
         } elseif (isset($this->result[self::ACTION_CMD])) {
             $res                                                                        = $this->result[self::ACTION_CMD];
         } else {
-            $res                                                                        = (
-                isset($this->result[$this->main->def->mainTable])
-                ? $this->result[$this->main->def->mainTable]
-                : null
-            );
-
+            $res                                                                        = $this->result[$this->getMainTable()] ?? null;
             if ($isOne && $res) {
                 $res                                                                    = array_shift($res);
             }
@@ -1100,13 +1079,12 @@ class OrmModel extends Mappable
 
     /**
      * @param string $model
-     * @param string|null $mainTable
      * @return OrmModel
      */
-    private function getModel(string $model = null, string $mainTable = null) : OrmModel
+    private function getModel(string $model = null) : OrmModel
     {
         return ($model
-            ? Orm::getInstance($model, $mainTable)
+            ? Orm::getInstance($model, $this->main_table)
             : $this
         );
     }

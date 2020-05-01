@@ -12,8 +12,7 @@ use Exception;
  */
 class ApiJsonWsp extends ApiAdapter
 {
-    protected const ERROR_LABEL                 = "Api Rest: ";
-    private const ERROR_RESPONSE_MALFORMED      = "response is not a valid json";
+    protected const ERROR_RESPONSE_INVALID_FORMAT = "Response is not a valid Json";
 
     private $timeout                            = self::REQUEST_TIMEOUT;
     private $user_agent                         = null;
@@ -56,12 +55,13 @@ class ApiJsonWsp extends ApiAdapter
      * @param string $method
      * @param array|null $params
      * @param array|null $headers
-     * @return stdClass
+     * @return stdClass|array|null
      * @throws Exception
+     * @todo da tipizzare
      */
-    protected function get(string $method, array $params = null, array $headers = null): stdClass
+    protected function get(string $method, array $params = null, array $headers = null)
     {
-        $response                               = Filemanager::fileGetContentJson(
+        return Filemanager::fileGetContentJson(
             $this->endpoint,
             $params,
             $method,
@@ -73,18 +73,6 @@ class ApiJsonWsp extends ApiAdapter
             $this->http_auth_secret,
             $this->getHeader($headers)
         );
-
-        if (isset($response->data, $response->status, $response->error)) {
-            if ($response->status >= 400) {
-                throw new Exception(static::ERROR_LABEL . $this->endpoint . " (". $response->error . ")", $response->status);
-            }
-
-            $response                           = $response->data;
-        } else {
-            throw new Exception(static::ERROR_LABEL . $this->endpoint . " (". self::ERROR_RESPONSE_MALFORMED . ")", 50);
-        }
-
-        return $response;
     }
 
     /**

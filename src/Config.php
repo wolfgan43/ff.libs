@@ -199,7 +199,6 @@ class Config implements Dumpable
 
                 if (isset($dir_attr["webroot"])) {
                     self::$webroot                                          = Constant::DISK_PATH . $dir_attr["path"];
-                    continue;
                 }
 
                 self::$dirstruct[$dir_key][$dir_name]                       = $dir_attr;

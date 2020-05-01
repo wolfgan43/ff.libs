@@ -57,14 +57,6 @@ class Orm implements Dumpable
     }
 
     /**
-     * @return array
-     */
-    public static function exTime() : array
-    {
-        return OrmModel::$exTime;
-    }
-
-    /**
      * @param string $ormModel
      * @param string|null $mainTable
      * @return OrmModel

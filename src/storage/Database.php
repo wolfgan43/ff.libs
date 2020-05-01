@@ -26,8 +26,6 @@
 
 namespace phpformsframework\libs\storage;
 
-use phpformsframework\libs\Env;
-use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\util\AdapterManager;
@@ -158,10 +156,8 @@ class Database implements Dumpable
      */
     public function read(array $where, array $fields = null, array $sort = null, int $limit = null, int $offset = null, string $table_name = null) : ?array
     {
-        if (!$this::cacheRead($where, $fields, $sort, $limit, $offset, $table_name)) {
-            foreach ($this->adapters as $adapter_name => $adapter) {
-                $this->result[$adapter_name]                                    = $this->cacheSave($adapter->read($where, $fields, $sort, $limit, $offset, $table_name));
-            }
+        foreach ($this->adapters as $adapter_name => $adapter) {
+            $this->result[$adapter_name]                                    = $adapter->read($where, $fields, $sort, $limit, $offset, $table_name);
         }
 
         return $this->getResult();
@@ -255,198 +251,8 @@ class Database implements Dumpable
      */
     public static function dump() : array
     {
+
+        //@todo da castare con buffer process aggiungendo il bucket
         return self::$cache_rawdata;
-    }
-
-
-
-
-    /**
-     * @param array|null $data
-     * @return array|null
-     */
-    private function cacheSave(array $data = null) : ?array
-    {
-        if (Kernel::$Environment::CACHE_DATABASE_ADAPTER) {
-            self::$cache[$this->cache_key]["data"]                                      = $data;
-        }
-
-        return $data;
-    }
-
-    /**
-     * @param array $where
-     * @param array|null $fields
-     * @param array|null $sort
-     * @param int|null $limit
-     * @param int|null $offset
-     * @param string|null $table_name
-     * @return bool
-     */
-    private function cacheRead(array $where, array $fields = null, array $sort = null, int $limit = null, int $offset = null, string $table_name = null) : bool
-    {
-        $this->cacheReadKey($this->cacheTable($table_name), $where, $fields, $sort, $limit, $offset);
-
-        return 0 && isset(self::$cache[$this->cache_key]["data"]);
-    }
-
-
-    /**
-     * @param string|null $table_name
-     * @return string
-     */
-    private function cacheTable(string $table_name = null) : string
-    {
-        return ($table_name
-            ? $table_name
-            : $this->table
-        );
-    }
-
-    /**
-     * @param string $table
-     * @param array $where
-     * @param array|null $fields
-     * @param array|null $sort
-     * @param int|null $limit
-     * @param int|null $offset
-     */
-    private function cacheReadKey(string $table, array $where, array $fields = null, array $sort = null, int $limit = null, int $offset = null) : void
-    {
-        $this->cache_key                                                            = $this->cacheParamArray("SELECT", $fields, "*") .
-                                                                                        " FROM " . $table .
-                                                                                        $this->cacheParamArray(" WHERE", $where) .
-                                                                                        $this->cacheParamArray(" ORDER BY", $sort) .
-                                                                                        $this->cacheParamString(" LIMIT", $limit) .
-                                                                                        $this->cacheParamString(" OFFSET", $offset);
-        $label                                                                      = (count(self::$cache_rawdata) + 1) . ". " . " Read => " . $table . " (" . $this->cache_key . ")";
-        $value                                                                      = "From Cache";
-        if (!isset(self::$cache[$this->cache_key])) {
-            self::$cache[$this->cache_key]["count"]                                 = 0;
-            self::$cache[$this->cache_key]["query"]                                 = array(
-                "select"    => $fields,
-                "from"      => $table,
-                "where"     => $where,
-                "sort"      => $sort,
-                "limit"     => $limit,
-                "offset"    => $offset
-            );
-            $value                                                                  = "From Database";
-        } elseif (Kernel::$Environment::DEBUG) {
-            Debug::dumpLog(static::ERROR_BUCKET . "_duplicate", $this->cache_key);
-        }
-        self::$cache_rawdata[$label]                                                = $value;
-
-        self::$cache[$this->cache_key]["count"]++;
-        if (self::$cache[$this->cache_key]["count"] > Env::get("DATABASE_MAX_RECURSION")) {
-            Debug::dump("Max Recursion ("  . Env::get("DATABASE_MAX_RECURSION") . ") : " . self::$cache[$this->cache_key]["query"]);
-            exit;
-        }
-    }
-
-    /**
-     * @param string $prefix
-     * @param string $param
-     * @param string|null $default
-     * @return string|null
-     */
-    private function cacheParamString(string $prefix, string $param = null, string $default = null) : ?string
-    {
-        if (!$param) {
-            $param = $default;
-        }
-
-        return ($param
-            ? $prefix . " " . $param
-            : null
-        );
-    }
-
-    /**
-     * @param string $prefix
-     * @param array|null $param
-     * @param string|null $default
-     * @return string|null
-     */
-    private function cacheParamArray(string $prefix, array $param = null, string $default = null) : ?string
-    {
-        if ($param !== null) {
-            if ($default) {
-                $param = array_keys($param);
-            }
-            $param = $this->cacheArray2String($param);
-            if ($prefix == " ORDER BY") {
-                $param = str_replace(
-                    array(
-                        '= -1',
-                        '= 1',
-                        '= DESC',
-                        '= ASC',
-                        '= desc',
-                        '= asc'
-                    ),
-                    array(
-                        "DESC",
-                        "ASC",
-                        "DESC",
-                        "ASC",
-                        "DESC",
-                        "ASC"
-                    ),
-                    $param
-                );
-            }
-        }
-
-        return $this->cacheParamString($prefix, $param, $default);
-    }
-
-    /**
-     * @param array $param
-     * @return string
-     */
-    private function cacheArray2String(array $param) : string
-    {
-        /*{
-            "id": [
-            297,
-            298
-        ],
-  "start": {
-            "$gt": "020-07-29 05:49:00"
-  }
-}*/
-
-        return str_replace(
-            array(
-                ':{"$gt":',
-                ':{"$gte":',
-                ':{"$lt":',
-                ':{"$lte":',
-                ':{"$eq":',
-                ':{"$regex":',
-                ':{"$in":',
-                ':{"$nin":',
-                ':{"$ne":',
-                ':{"$inset":',
-                ':[',']}',
-                ':',
-                '{', '}', '[', ']', '"', '"'),
-            array(
-                " > ",
-                " >= ",
-                " < ",
-                " <= ",
-                " = ",
-                " REGEXP ",
-                " IN(",
-                " NOT IN(",
-                " <> ",
-                " FIND_IN_SET(",
-                " IN(", ')',
-                " = ",
-                ""),
-            (string)json_encode($param)
-        );
     }
 }

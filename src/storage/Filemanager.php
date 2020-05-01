@@ -33,6 +33,7 @@ use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Request;
 use stdClass;
+use Exception;
 
 /**
  * Class Filemanager
@@ -792,11 +793,19 @@ class Filemanager implements Dumpable
      * @param string|null $username
      * @param string|null $password
      * @param array|null $headers
-     * @return stdClass
+     * @return stdClass|array|null
+     * @throws Exception
+     * @todo da tipizzare
      */
-    public static function fileGetContentJson(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : ?stdClass
+    public static function fileGetContentJson(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null)
     {
-        return json_decode(self::fileGetContent($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers));
+        $res                                        = json_decode(self::fileGetContent($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers));
+
+        if (json_last_error() != JSON_ERROR_NONE) {
+            throw new Exception("Response is not a valid JSON", 406);
+        }
+
+        return $res;
     }
     /**
      * @param string $url
@@ -895,7 +904,7 @@ class Filemanager implements Dumpable
      */
     private static function loadFile(string $path, $context = null, array &$headers = null) : string
     {
-        $content                            = file_get_contents($path, false, $context);
+        $content                            = @file_get_contents($path, false, $context);
         if ($content === false) {
             Error::register("File inaccessible: " . ($path ? $path : "empty"));
         }

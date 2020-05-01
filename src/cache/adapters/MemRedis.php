@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\cache\adapters;
 
+use phpformsframework\libs\Kernel;
 use Redis as MC;
 
 /**
@@ -45,7 +46,7 @@ class MemRedis extends MemAdapter
      */
     public function __construct(string $bucket = null)
     {
-        parent::__construct($bucket);
+        parent::__construct(Kernel::$Environment::APPNAME . "/" . $bucket);
 
         $this->conn = new MC();
         $this->conn->pconnect(static::$server, static::$port, $this->getTTL(), $this->appid); // x is sent as persistent_id and would be another connection than the three before.

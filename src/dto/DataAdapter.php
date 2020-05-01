@@ -60,9 +60,9 @@ abstract class DataAdapter
         return $this->getObjectVars(true);
     }
     /**
-     * @return stdClass|null
+     * @return stdClass|array|null
      */
-    public function toObject() : ?stdClass
+    public function toObject() /*: ?stdClass con array sequenziali da errore */
     {
         $vars                               = $this->toArray();
         return (!empty($vars)
@@ -70,13 +70,17 @@ abstract class DataAdapter
             : null
         );
     }
+
     /**
+     * @param bool $diableDebug
      * @return string
      */
-    public function toJson() : string
+    public function toJson(bool $diableDebug = false) : string
     {
         $vars                               = $this->getVars();
-        $this->setDebugger($vars);
+        if (!$diableDebug) {
+            $this->setDebugger($vars);
+        }
 
         return (string) json_encode($vars);
     }

@@ -347,11 +347,7 @@ class Response
     private static function sendHeadersByMimeType(string $mimetype) : void
     {
         if (!headers_sent()) {
-            if (0) {
-                self::sendHeaders(array("mimetype" => $mimetype));
-            } else {
-                header("Content-type: " . $mimetype);
-            }
+            self::sendHeaders(array("mimetype" => $mimetype));
         }
     }
 
@@ -376,8 +372,13 @@ class Response
             header("Accept-Ranges: bytes");
             header("Content-Length: " . $size);
         }
+
         if (strlen($etag)) {
             header("ETag: " . $etag);
+        }
+
+        if (!$mimetype) {
+            $mimetype = Request::accept();
         }
 
         if ($mimetype) {

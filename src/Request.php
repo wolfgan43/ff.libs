@@ -959,9 +959,7 @@ class Request implements Configurable, Dumpable
     {
         static $last_update                                                                     = 0;
 
-        if ($last_update < self::$page->rules->last_update
-            && !empty(self::$page->rules->header)
-        ) {
+        if ($last_update < self::$page->rules->last_update) {
             $last_update                                                                        = self::$page->rules->last_update;
 
             //if (self::securityHeaderParams(self::$page)) {

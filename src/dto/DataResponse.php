@@ -39,12 +39,12 @@ class DataResponse extends DataAdapter
 
     const CONTENT_TYPE              = "application/json";
 
-    private $outputOnlyBody          = false;
+    private $outputOnlyBody         = false;
 
     /**
      * @var array
      */
-    private $data                    = array();
+    protected $data                 = array();
 
     /**
      * DataResponse constructor.
@@ -175,7 +175,7 @@ class DataResponse extends DataAdapter
      */
     public function output() : string
     {
-        return $this->toJson();
+        return $this->toJson($this->outputOnlyBody);
     }
     /**
      * @return array
@@ -184,12 +184,20 @@ class DataResponse extends DataAdapter
     {
         return ($this->outputOnlyBody
             ? $this->data
-            : [
-                "data"      => $this->data,
-                "error"     => $this->error,
-                "status"    => $this->status
-            ]
+            : $this->getDefaultVars()
         );
+    }
+
+    /**
+     * @return array
+     */
+    protected function getDefaultVars() : array
+    {
+        return [
+            "data"      => $this->data,
+            "error"     => $this->error,
+            "status"    => $this->status
+        ];
     }
     /**
      * @return array
@@ -199,9 +207,9 @@ class DataResponse extends DataAdapter
         return $this->data;
     }
     /**
-     * @return stdClass
+     * @return stdClass|array|null
      */
-    public function toObject() : ?stdClass
+    public function toObject() /*: ?stdClass con array sequenziali da errore */
     {
         return (!empty($this->data)
             ? json_decode(json_encode($this->data))

@@ -20,7 +20,9 @@ class RequestPage extends Mappable
     public const REQUEST_RAWDATA            = "rawdata";
     public const REQUEST_VALID              = "valid";
     public const REQUEST_UNKNOWN            = "unknown";
-
+    private const SECURITY_HEADERS          = [
+                                                "csrf" => "HTTP_CSRF"
+                                            ];
     public $path_info                       = null;
     public $script_path                     = null;
 
@@ -315,38 +317,44 @@ class RequestPage extends Mappable
      */
     private function securityHeaderParams(array $headers) : bool
     {
-        $errors                                                                         = null;
+        $errors                                                                             = null;
         if ($this->isAllowedSize($this->getRequestHeaders(), Request::METHOD_HEAD)) {
-            foreach ($this->rules->header as $rule) {
-                $header_key                                                             = str_replace("-", "_", $rule["name"]);
-                if ($rule["name"] == "Authorization") {
-                    $header_name                                                        = "Authorization";
-                } else {
-                    $header_name                                                        = "HTTP_" . strtoupper($header_key);
-                }
-
-                $this->setHeader($header_key);
-                if (isset($rule["required"]) && !isset($headers[$header_name])) {
-                    $errors[400][]                                                      = $rule["name"] . " is required";
-                } elseif (isset($rule["required_ifnot"]) && !isset($headers["HTTP_" . strtoupper($rule["required_ifnot"])]) && !isset($headers[$header_name])) {
-                    $errors[400][]                                                      = $rule["name"] . " is required";
-                } elseif (isset($headers[$header_name])) {
-                    $validator_rule                                                     = (
-                        isset($rule["validator"])
-                        ? $rule["validator"]
-                        : null
-                    );
-                    $validator_range                                                    = (
-                        isset($rule["validator_range"])
-                        ? $rule["validator_range"]
-                        : null
-                    );
-                    $validator                                                          = Validator::is($headers[$header_name], $header_key . " (in header)", $validator_rule, $validator_range);
-                    if ($validator->isError()) {
-                        $errors[$validator->status][]                                   = $validator->error;
+            if (!empty($this->rules->header)) {
+                foreach ($this->rules->header as $rule) {
+                    $header_key                                                             = str_replace("-", "_", $rule["name"]);
+                    if ($rule["name"] == "Authorization") {
+                        $header_name                                                        = "Authorization";
+                    } else {
+                        $header_name                                                        = "HTTP_" . strtoupper($header_key);
                     }
 
-                    $this->setHeader($header_key, $headers[$header_name]);
+                    $this->setHeader($header_key);
+                    if (isset($rule["required"]) && !isset($headers[$header_name])) {
+                        $errors[400][]                                                      = $rule["name"] . " is required";
+                    } elseif (isset($rule["required_ifnot"]) && !isset($headers["HTTP_" . strtoupper($rule["required_ifnot"])]) && !isset($headers[$header_name])) {
+                        $errors[400][]                                                      = $rule["name"] . " is required";
+                    } elseif (isset($headers[$header_name])) {
+                        $validator_rule                                                     = (
+                            isset($rule["validator"])
+                            ? $rule["validator"]
+                            : null
+                        );
+                        $validator_range                                                    = (
+                            isset($rule["validator_range"])
+                            ? $rule["validator_range"]
+                            : null
+                        );
+                        $validator                                                          = Validator::is($headers[$header_name], $header_key . " (in header)", $validator_rule, $validator_range);
+                        if ($validator->isError()) {
+                            $errors[$validator->status][]                                   = $validator->error;
+                        }
+
+                        $this->setHeader($header_key, $headers[$header_name]);
+                    }
+                }
+            } else {
+                foreach (self::SECURITY_HEADERS as $header_key => $header_name) {
+                    $this->setHeader($header_key, $headers[$header_name] ?? null);
                 }
             }
         } else {

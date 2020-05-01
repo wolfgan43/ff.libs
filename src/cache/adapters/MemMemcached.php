@@ -26,6 +26,7 @@
 namespace phpformsframework\libs\cache\adapters;
 
 use Memcached as MC;
+use phpformsframework\libs\Kernel;
 
 /**
  * Class MemMemcached
@@ -45,7 +46,7 @@ class MemMemcached extends MemAdapter
      */
     public function __construct(string $bucket = null)
     {
-        parent::__construct($bucket);
+        parent::__construct(Kernel::$Environment::APPNAME . "/" . $bucket);
 
         $this->conn = new MC($this->appid);
 

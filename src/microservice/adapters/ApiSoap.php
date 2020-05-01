@@ -1,7 +1,7 @@
 <?php
 namespace phpformsframework\libs\microservice\adapters;
 
-use phpformsframework\libs\Log;
+use phpformsframework\libs\App;
 use SoapClient;
 use SoapHeader;
 use stdClass;
@@ -13,27 +13,29 @@ use Exception;
  */
 class ApiSoap extends ApiAdapter
 {
-    protected const ERROR_LABEL     = "Api Soap: ";
+    protected const ERROR_RESPONSE_INVALID_FORMAT                       = "Response is not a valid Object";
+
+    private const ERROR_MISSING_WSDL                                    = "Method not found in wsdl";
     /**
      * @var SoapClient|null
      */
-    private $client                 = null;
+    private $client                                                     = null;
 
-    private $schema                 = [];
-    private $dtds                   = [];
-    private $defaults               = [];
-    private $sFunctions             = [];
+    private $schema                                                     = [];
+    private $dtds                                                       = [];
+    private $defaults                                                   = [];
+    private $sFunctions                                                 = [];
 
-    protected $header_namespace     = null;
-    protected $header_name          = null;
+    protected $header_namespace                                         = null;
+    protected $header_name                                              = null;
 
-    protected $body_namespace       = null;
+    protected $body_namespace                                           = null;
 
-    protected $wsdl                 = null;
+    protected $wsdl                                                     = null;
 
-    protected $encoding             = 'UTF-8';
-    protected $wsdl_ttl             = 900;
-    protected $version              = SOAP_1_2;
+    protected $encoding                                                 = 'UTF-8';
+    protected $wsdl_ttl                                                 = 900;
+    protected $version                                                  = SOAP_1_2;
 
 
     /**
@@ -54,8 +56,8 @@ class ApiSoap extends ApiAdapter
      */
     public function setHeader(string $namespace, string $root) : self
     {
-        $this->header_namespace     = $namespace;
-        $this->header_name          = $root;
+        $this->header_namespace                                         = $namespace;
+        $this->header_name                                              = $root;
 
         return $this;
     }
@@ -67,31 +69,31 @@ class ApiSoap extends ApiAdapter
     private function getClient() : ?SoapClient
     {
         if (!$this->client) {
-            $options                    = array(
-                'location'              => $this->endpoint,
-                'uri'                   => $this->body_namespace,
-                'style'                 => SOAP_RPC,
-                'use'                   => SOAP_ENCODED,
-                'soap_version'          => $this->version,
-                'cache_wsdl'            => WSDL_CACHE_NONE,
-                'connection_timeout'    => self::REQUEST_TIMEOUT,
-                'trace'                 => true,
-                'encoding'              => $this->encoding,
-                'exceptions'            => true
+            $options                                                    = array(
+                'location'                                              => $this->endpoint,
+                'uri'                                                   => $this->body_namespace,
+                'style'                                                 => SOAP_RPC,
+                'use'                                                   => SOAP_ENCODED,
+                'soap_version'                                          => $this->version,
+                'cache_wsdl'                                            => WSDL_CACHE_NONE,
+                'connection_timeout'                                    => self::REQUEST_TIMEOUT,
+                'trace'                                                 => true,
+                'encoding'                                              => $this->encoding,
+                'exceptions'                                            => true
             );
 
             if ($this->http_auth_username && $this->http_auth_secret) {
-                $options                = $options + array(
-                    'login'             => $this->http_auth_username,
-                    'password'          => $this->http_auth_secret
+                $options                                                = $options + array(
+                    'login'                                             => $this->http_auth_username,
+                    'password'                                          => $this->http_auth_secret
                 );
             }
 
             try {
-                $this->client = new SoapClient($this->wsdl, $options);
+                $this->client                                           = new SoapClient($this->wsdl, $options);
                 $this->parseSoapTypes($this->client);
             } catch (Exception $e) {
-                throw new Exception(static::ERROR_LABEL . $e->getMessage(), 501);
+                throw new Exception($e->getMessage(), 501);
             }
         }
 
@@ -119,31 +121,31 @@ class ApiSoap extends ApiAdapter
      */
     protected function get(string $method, array $params = null, array $headers = null) : stdClass
     {
-        $client                         = $this->getClient();
+        $client                                                         = $this->getClient();
 
-        $request                        = $this->getRequest($method, $params);
-        $requestHeaders                 = $this->getSoapHeader($headers);
+        $request                                                        = $this->getRequest($method, $params);
+        $requestHeaders                                                 = $this->getSoapHeader($headers);
         try {
             if (isset($this->sFunctions[$method])) {
                 if ($requestHeaders) {
                     $client->__setSoapHeaders($requestHeaders);
                 }
 
-                $response               = $this->getResponse($method, $request);
+                $response                                               = $this->getResponse($method, $request);
             } else {
-                throw new Exception(static::ERROR_LABEL . "Method not found in wsdl", 404);
+                throw new Exception(self::ERROR_MISSING_WSDL, 404);
             }
         } catch (Exception $e) {
-            Log::debugging([
-                $method => [
-                    "header"            => $requestHeaders,
-                    "request"           => $request,
-                    "response"          => $this->sFunctions[$method]->response,
-                    "dtd"               => $this->sFunctions[$method]->dtd
+            App::debug([
+                $this->endpoint . "::" . $method => [
+                    "header"                                            => $requestHeaders,
+                    "request"                                           => $request,
+                    "response"                                          => $this->sFunctions[$method]->response,
+                    "dtd"                                               => $this->sFunctions[$method]->dtd
                 ]
             ]);
 
-            throw new Exception(static::ERROR_LABEL . $method . " (". $e->getMessage() . ")", 500);
+            throw new Exception($e->getMessage(), 500);
         }
 
         return $response;
@@ -196,7 +198,7 @@ class ApiSoap extends ApiAdapter
     private function parseSoapTypes(SoapClient $soap): void
     {
         if (empty($this->schema)) {
-            $types = $soap->__getTypes();
+            $types                                                      = $soap->__getTypes();
 
             foreach ($types as $type) {
                 $this->parseSoapType($type);
@@ -217,10 +219,10 @@ class ApiSoap extends ApiAdapter
     {
         foreach ($this->dtds as $struct => $type) {
             if (isset($this->schema[$type])) {
-                $this->dtds[$struct]                        = $this->schema[$type]["dtd"];
-                $this->defaults[$struct]                    = $this->schema[$type]["default"];
+                $this->dtds[$struct]                                    = $this->schema[$type]["dtd"];
+                $this->defaults[$struct]                                = $this->schema[$type]["default"];
             } else {
-                $this->defaults[$struct]                    = $this->setDefault($type);
+                $this->defaults[$struct]                                = $this->setDefault($type);
             }
         }
     }
@@ -230,19 +232,19 @@ class ApiSoap extends ApiAdapter
      */
     private function parseSoapType(string $type) : void
     {
-        $regex                                              = '/^\s(\w*?)\s(\w*?);/mi';
-        $regex_struct                                       = '/struct\s(.*?)\s/';
+        $regex                                                          = '/^\s(\w*?)\s(\w*?);/mi';
+        $regex_struct                                                   = '/struct\s(.*?)\s/';
 
         preg_match($regex_struct, $type, $match_struct);
-        $struct = isset($match_struct[1]) ? $match_struct[1] : null;
+        $struct                                                         = $match_struct[1] ?? null;
         preg_match_all($regex, $type, $matches);
 
         if (isset($matches[1]) && isset($match_struct[1])) {
             $dtd = array_combine($matches[2], $matches[1]);
             foreach ($dtd as $dtd_key => $dtd_value) {
-                $this->dtds[$struct . "." . $dtd_key]        = $dtd_value;
-                $this->schema[$struct]["dtd"][$dtd_key]     =& $this->dtds[$struct . "." . $dtd_key];
-                $this->schema[$struct]["default"][$dtd_key] =& $this->defaults[$struct . "." . $dtd_key];
+                $this->dtds[$struct . "." . $dtd_key]                   = $dtd_value;
+                $this->schema[$struct]["dtd"][$dtd_key]                 =& $this->dtds[$struct . "." . $dtd_key];
+                $this->schema[$struct]["default"][$dtd_key]             =& $this->defaults[$struct . "." . $dtd_key];
             }
         }
     }
@@ -254,7 +256,7 @@ class ApiSoap extends ApiAdapter
      */
     private function getRequest(string $method, array $params) : array
     {
-        $schema             = $this->sFunctions[$method]->request ?? null;
+        $schema                                                         = $this->sFunctions[$method]->request ?? null;
 
         return ($schema
             ? $this->mergeRequest($schema, $params)
@@ -270,10 +272,10 @@ class ApiSoap extends ApiAdapter
     private function mergeRequest(array $schema, array $params) : array
     {
         if (count($schema) == 1) {
-            $key = array_keys($schema)[0];
-            $res            = [$key => array_replace_recursive($schema[$key], $params)];
+            $key                                                        = array_keys($schema)[0];
+            $res                                                        = [$key => array_replace_recursive($schema[$key], $params)];
         } else {
-            $res            = array_replace_recursive($schema, $params);
+            $res                                                        = array_replace_recursive($schema, $params);
         }
 
         return $res;
@@ -288,9 +290,9 @@ class ApiSoap extends ApiAdapter
     {
         $this->getClient();
 
-        $schema             = $this->schema[$this->sFunctions[$method]->response]["default"] ?? null;
+        $schema                                                         = $this->schema[$this->sFunctions[$method]->response]["default"] ?? null;
         if (isset($schema[$method]) || isset($schema[$method . "Result"])) {
-            $schema         = array_pop($schema);
+            $schema                                                     = array_pop($schema);
         }
 
         return $schema;
@@ -303,9 +305,9 @@ class ApiSoap extends ApiAdapter
      */
     private function getResponse(string $method, array $request) : stdClass
     {
-        $response           = $this->client->__soapCall($method, $request);
+        $response                                                       = $this->client->__soapCall($method, $request);
         if (!empty($response) && isset($response->{$method . "Result"})) {
-            $response       = $response->{$method . "Result"};
+            $response                                                   = $response->{$method . "Result"};
         }
 
         return $response ?? new stdClass();
@@ -317,9 +319,9 @@ class ApiSoap extends ApiAdapter
      */
     private function getSoapHeader(array $headers = null) : ?SoapHeader
     {
-        $soapHeader         = null;
+        $soapHeader                                                     = null;
         if ($this->header_namespace) {
-            $soapHeader     = new SoapHeader($this->header_namespace, $this->header_name, $headers, true);
+            $soapHeader                                                 = new SoapHeader($this->header_namespace, $this->header_name, $headers, true);
         }
         return $soapHeader;
     }

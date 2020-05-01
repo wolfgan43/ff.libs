@@ -555,13 +555,11 @@ abstract class DatabaseAdapter
         $query_read                                     = clone $query;
         $query_read->select                             = $this->querySelect([$this->key_primary => true], false);
         if ($this->driver->read($query_read)) {
-            $keys                                       = array_column((array) $this->driver->getRecordset(), $this->key_primary);
+            $keys                                       = array_column((array) $this->driver->getRecordset(), $this->key_name);
         }
 
         if (count($keys)) {
             $query_update                               = clone $query;
-            //togliendolo sfrutta il buffer dei db essendo la where gia richiamata prima
-            //$query_update->where                        = $this->queryWhere([$this->key_primary => $keys]);
 
             if ($this->driver->update($query_update)) {
                 $res                                = array(
@@ -775,8 +773,8 @@ abstract class DatabaseAdapter
         $query->select          = $this->querySelect($select, empty($this->table["skip_control"]));
         $query->sort            = $this->querySort($sort);
         $query->where           = $this->queryWhere($where);
-        $query->limit           = $limit;
-        $query->offset          = $offset;
+        $query->limit           = $limit    < 0 ? null : $limit;
+        $query->offset          = $offset   < 0 ? null : $offset;
 
         return $query;
     }

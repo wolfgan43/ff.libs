@@ -371,12 +371,17 @@ class Request implements Configurable, Dumpable
     {
         return (object) self::captureHeaders();
     }
+
     /**
-     * @return stdClass
+     * @param bool $toArray
+     * @return stdClass|array
      */
-    public static function rawdata(): stdClass
+    public static function rawdata(bool $toArray = false)
     {
-        return (object) self::body(RequestPage::REQUEST_RAWDATA);
+        return ($toArray
+            ? self::body(RequestPage::REQUEST_RAWDATA)
+            : (object) self::body(RequestPage::REQUEST_RAWDATA)
+        );
     }
 
     /**

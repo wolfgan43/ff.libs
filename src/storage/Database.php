@@ -26,7 +26,6 @@
 
 namespace phpformsframework\libs\storage;
 
-use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\util\AdapterManager;
 
@@ -35,13 +34,11 @@ use phpformsframework\libs\util\AdapterManager;
  * @package phpformsframework\libs\storage
  * @property DatabaseAdapter[] $adapters
  */
-class Database implements Dumpable
+class Database
 {
     use AdapterManager;
 
     public const ERROR_BUCKET                                               = "database";
-
-    private const NAME_SPACE                                                = __NAMESPACE__ . '\\adapters\\';
 
     public const ACTION_READ                                                = "read";
     public const ACTION_DELETE                                              = "delete";
@@ -59,12 +56,9 @@ class Database implements Dumpable
     public const COUNT                                                      = "count";
 
     private static $singletons                                              = null;
-    private static $cache                                                   = null;
-    private static $cache_rawdata                                           = array();
 
     private $table                                                          = null;
     private $result                                                         = null;
-    private $cache_key                                                      = null;
 
     /**
      * @param array $databaseAdapters
@@ -242,17 +236,5 @@ class Database implements Dumpable
     private function getResult() : ?array
     {
         return array_shift($this->result);
-    }
-
-
-
-    /**
-     * @return array
-     */
-    public static function dump() : array
-    {
-
-        //@todo da castare con buffer process aggiungendo il bucket
-        return self::$cache_rawdata;
     }
 }

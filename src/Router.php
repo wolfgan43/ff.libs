@@ -133,7 +133,7 @@ class Router implements Configurable, Dumpable
         $target                                             = $path;
         if (!isset(self::$cache[$target])) {
             self::$target                                   = $target;
-            self::$cache[$target]                           =  self::process($path);
+            self::$cache[$target]                           = self::process($path);
         }
 
         return self::$cache[$target];
@@ -144,13 +144,7 @@ class Router implements Configurable, Dumpable
      */
     public static function run(string $path = null) : void
     {
-        $rule = (
-            $path
-            ? self::find($path)
-            : self::$cache[self::$target]
-        );
-
-        if (is_array($rule)) {
+        if ($rule = self::find($path)) {
             $destination                                    = $rule["destination"];
 
             if ($destination) {
@@ -161,11 +155,9 @@ class Router implements Configurable, Dumpable
                 } elseif (is_numeric($destination) || ctype_digit($destination)) {
                     Response::sendError($destination);
                 } else {
-                    self::execute($destination . $path);
+                    self::runWebRoot($destination);
                 }
             }
-        } elseif ($rule) {
-            self::execute(Constant::DISK_PATH . $rule . $path);
         } else {
             self::runWebRoot($path);
         }
@@ -193,6 +185,8 @@ class Router implements Configurable, Dumpable
             }
 
             if ($file) {
+                Response::sendHeaders();
+
                 self::execute($webroot . $file);
             }
         }
@@ -204,7 +198,7 @@ class Router implements Configurable, Dumpable
      */
     public static function addRoute(string $path, string $destination) : void
     {
-        self::addRule($path, array("destination" => $destination));
+        self::addRule($path, array("route" => $destination));
     }
 
     /**
@@ -243,9 +237,9 @@ class Router implements Configurable, Dumpable
         if ($path) {
             if ($destination || $redirect) {
                 $rule                   = array(
-                                            "source"        => $source
-                                            , "destination" => $destination
-                                            , "redirect"    => $redirect //null or redirect code
+                                            "source"        => $source,
+                                            "destination"   => $destination,
+                                            "redirect"      => $redirect //null or redirect code
                                         );
             }
             if (!self::setRoutes($path, $rule)) {
@@ -345,20 +339,18 @@ class Router implements Configurable, Dumpable
         $matches                                        = array();
         $match_path                                     = null;
         $tmp_path                                       = rtrim($path, DIRECTORY_SEPARATOR);
-        if ($tmp_path) {
-            do {
-                if (isset(self::$routes[$tmp_path])) {
-                    if (!$match_path) {
-                        $match_path                     = $tmp_path;
-                    }
-                    if (self::$routes[$tmp_path]) {
-                        $res                            = self::$routes[$tmp_path];
-                        break;
-                    }
+        do {
+            if (isset(self::$routes[$tmp_path])) {
+                if (!$match_path) {
+                    $match_path                         = $tmp_path;
                 }
-                $tmp_path                               = dirname($tmp_path);
-            } while ($tmp_path != DIRECTORY_SEPARATOR);
-        }
+                if (self::$routes[$tmp_path]) {
+                    $res                                = self::$routes[$tmp_path];
+                    break;
+                }
+            }
+            $tmp_path                                   = dirname($tmp_path);
+        } while (!empty($tmp_path) && $tmp_path != DIRECTORY_SEPARATOR);
 
         if ($res) {
             $res["path"]                                = $match_path;
@@ -400,7 +392,7 @@ class Router implements Configurable, Dumpable
                     $output                                         = (new $class_name)->$method(...$params);
                 }
             } catch (Exception $e) {
-                Error::register($e->getMessage(), static::ERROR_BUCKET);
+                Response::sendError($e->getCode(), $e->getMessage());
             }
         } elseif (is_callable($method)) {
             $output                                                 = $method(...$params);

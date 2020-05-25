@@ -81,9 +81,7 @@ class ApiJsonWsp extends ApiAdapter
      */
     protected function getResponseSchema(string $method) : ?array
     {
-        $schema                                 = null;
-
-        return $schema;
+        return null;
     }
 
     /**

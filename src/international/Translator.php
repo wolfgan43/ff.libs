@@ -26,10 +26,10 @@
 
 namespace phpformsframework\libs\international;
 
+use phpformsframework\libs\App;
 use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
-use phpformsframework\libs\storage\Orm;
 
 /**
  * Class Translator
@@ -189,17 +189,17 @@ class Translator
                                                             , "word"    => $code
                                                         );
         if ($lang) {
-            $orm                                        = Orm::getInstance("international");
-            $res                                        = $orm->read(array(
+            $orm                                        = App::orm("international");
+            $res                                        = $orm->readOne(array(
                                                             "translation.description"
                                                             , "translation.is_new"
                                                         ), array(
                                                             "lang.code" => $i18n["lang"]
                                                             , "translation.word_code" => substr($i18n["code"], 0, 254)
-                                                        ), null, 1);
-            if (is_array($res)) {
-                $i18n["word"]                           = $res["description"];
-                $i18n["cache"]                          = !$res["is_new"];
+                                                        ));
+            if ($res) {
+                $i18n["word"]                           = $res->description;
+                $i18n["cache"]                          = !$res->is_new;
             } elseif (self::INSERT_EMPTY) {
                 $orm->insert(array(
                     "lang.code"                         =>  $i18n["lang"]

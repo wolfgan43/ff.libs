@@ -25,6 +25,8 @@
  */
 namespace phpformsframework\libs;
 
+use phpformsframework\libs\dto\Mapping;
+
 /**
  * Class Mappable
  * @package phpformsframework\libs

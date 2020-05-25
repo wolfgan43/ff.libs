@@ -31,6 +31,7 @@ namespace phpformsframework\libs;
  */
 class Error
 {
+    private const ERROR_UNKNOWN                                 = "Unknown";
     const STATUS_CODE                                           = array(
                                                                       100 => "100 Continue"
                                                                     , 101 => "101 Switching Protocols"
@@ -147,7 +148,7 @@ class Error
 
         return (isset($status_code[$code])
             ? $status_code[$code]
-            : null
+            : self::ERROR_UNKNOWN
         );
     }
 
@@ -291,7 +292,7 @@ class Error
             self::$errors[$bucket][]                    = $error;
 
             Log::alert($error);
-            Response::sendError(500, $error, Debug::dumpBackTrace());
+            Response::sendError(500, $error);
         }
     }
 

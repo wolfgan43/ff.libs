@@ -640,33 +640,36 @@ class Config implements Dumpable
                 $attr                                                                   = Dir::getXmlAttr($engine);
                 if (isset($attr["source"])) {
                     $schema[$key][self::SCHEMA_ROUTER]["source"]                        = $attr["source"];
-                    unset($attr["source"]);
                 }
-                if (isset($attr["path"])) {
+
+                if (isset($attr["redirect"])) {
+                    $schema[$key][self::SCHEMA_ROUTER]["destination"]                   = $attr["redirect"];
+                    $schema[$key][self::SCHEMA_ROUTER]["redirect"]                      = 301;
+                } elseif (isset($attr["path"])) {
                     $schema[$key][self::SCHEMA_ROUTER]["destination"]                   = $attr["path"];
-                    unset($attr["path"]);
-                    unset($attr["obj"]);
-                    unset($attr["instance"]);
-                    unset($attr["method"]);
-                    unset($attr["params"]);
                 } else {
                     if (isset($attr["obj"])) {
                         $schema[$key][self::SCHEMA_ROUTER]["destination"]["obj"]        = $attr["obj"];
-                        unset($attr["obj"]);
                     }
                     if (isset($attr["instance"])) {
                         $schema[$key][self::SCHEMA_ROUTER]["destination"]["instance"]   = $attr["instance"];
-                        unset($attr["instance"]);
                     }
                     if (isset($attr["method"])) {
                         $schema[$key][self::SCHEMA_ROUTER]["destination"]["method"]     = $attr["method"];
-                        unset($attr["method"]);
                     }
                     if (isset($attr["params"])) {
                         $schema[$key][self::SCHEMA_ROUTER]["destination"]["params"]     = explode(",", $attr["params"]);
-                        unset($attr["params"]);
                     }
                 }
+
+                unset($attr["source"]);
+                unset($attr["redirect"]);
+                unset($attr["path"]);
+                unset($attr["obj"]);
+                unset($attr["instance"]);
+                unset($attr["method"]);
+                unset($attr["params"]);
+
                 if (isset($attr["priority"])) {
                     $schema[$key][self::SCHEMA_ROUTER]["priority"]                      = $attr["priority"];
                     unset($attr["priority"]);

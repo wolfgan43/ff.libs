@@ -499,7 +499,7 @@ class Log
     {
         $log_path = self::getLogDir();
         if ($log_path) {
-            $file = $log_path . '/' . Kernel::$Environment::APPNAME . "_" . date("Y-m-d") . "_" . $filename . '.txt';
+            $file = $log_path . DIRECTORY_SEPARATOR . str_replace(DIRECTORY_SEPARATOR, "", Kernel::$Environment::APPNAME) . "_" . date("Y-m-d") . "_" . $filename . '.txt';
 
             if ($override) {
                 Filemanager::fsave($data, $file);

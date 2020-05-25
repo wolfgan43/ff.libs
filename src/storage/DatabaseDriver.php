@@ -127,10 +127,9 @@ abstract class DatabaseDriver
     abstract public function numRows() : ?int;
 
     /**
-     * @param object|null $obj
      * @return array|null
      */
-    abstract public function getRecordset(object &$obj = null) : ?array;
+    abstract public function getRecordset() : ?array;
 
     /**
      * @return array
@@ -165,46 +164,6 @@ abstract class DatabaseDriver
      * @return mixed
      */
     abstract protected function convertID(string $value);
-
-    /**
-     *
-     * @param string Nome del campo
-     * @param string Tipo di dato inserito
-     * @param bool $bReturnPlain
-     * @param bool $return_error
-     * @return mixed Dato recuperato dal DB
-     */
-    public function getField(string $Name, string $data_type = "Text", bool $bReturnPlain = false, bool $return_error = true)
-    {
-        if (!$this->query_id) {
-            $this->errorHandler("f() called with no query pending");
-            return false;
-        }
-
-        if (isset($this->fields[$Name])) {
-            $tmp = $this->record[$Name];
-        } else {
-            if ($return_error) {
-                $tmp = "NO_FIELD [" . $Name . "]";
-            } else {
-                $tmp = null;
-            }
-        }
-
-        if ($bReturnPlain) {
-            if ($data_type == "Number") {
-                if (strpos($tmp, ".") === false) {
-                    return (int)$tmp;
-                } else {
-                    return (double)$tmp;
-                }
-            } else {
-                return $tmp;
-            }
-        } else {
-            return new Data($tmp, $data_type, $this->locale);
-        }
-    }
 
     /**
      * @todo da tipizzare

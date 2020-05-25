@@ -5,7 +5,6 @@ use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\storage\Database;
 use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\storage\Media;
-use phpformsframework\libs\storage\Orm;
 use Exception;
 
 /**
@@ -166,13 +165,13 @@ trait EndUserManager
     }
 
     /**
-     * @param string $ormModel
+     * @param string|null $ormModel
      * @param string|null $mainTable
      * @return storage\OrmModel
      */
-    public static function orm(string $ormModel, string $mainTable = null) : storage\OrmModel
+    public static function orm(string $ormModel = null, string $mainTable = null) : storage\OrmModel
     {
-        return Orm::getInstance($ormModel, $mainTable);
+        return Model::orm($ormModel, $mainTable);
     }
 
     /**

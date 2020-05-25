@@ -123,6 +123,15 @@ abstract class App implements Dumpable
     }
 
     /**
+     * @param string $model_name|null
+     * @return Model
+     */
+    public static function db(string $model_name = null) : Model
+    {
+        return new Model($model_name);
+    }
+
+    /**
      * @param string $name
      * @param array|null $config
      * @param string|null $return

@@ -26,7 +26,6 @@
 
 namespace phpformsframework\libs\dto;
 
-use phpformsframework\libs\Mapping;
 use stdClass;
 
 /**
@@ -125,6 +124,7 @@ class DataResponse extends DataAdapter
     /**
      * @param string $key
      * @return stdClass|array|string|null
+     * @todo da tipizzare
      */
     public function get(string $key)
     {
@@ -140,6 +140,15 @@ class DataResponse extends DataAdapter
         );
     }
 
+    /**
+     * @param int $offset
+     * @return array|string|null
+     * @todo da tipizzare
+     */
+    public function getArray(int $offset)
+    {
+        return $this->data[$offset] ?? null;
+    }
     /**
      * @param string $key
      * @return bool
@@ -224,5 +233,4 @@ class DataResponse extends DataAdapter
     {
         return empty($this->data);
     }
-
 }

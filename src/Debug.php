@@ -133,6 +133,7 @@ class Debug
             $res["exTime - Conf"]           = Config::exTime();
             $res["exTime - App"]            = self::exTimeApp();
             $res["App - Cache"]             = (self::cacheDisabled() ? "off" : "on (" . Kernel::$Environment::CACHE_MEM_ADAPTER . ", " . Kernel::$Environment::CACHE_DATABASE_ADAPTER . ", " . Kernel::$Environment::CACHE_MEDIA_ADAPTER . ")");
+            $res["backtrace"]               = self::dumpBackTrace();
         }
         return $res;
     }

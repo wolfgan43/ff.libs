@@ -2,6 +2,7 @@
 namespace phpformsframework\libs\microservice\adapters;
 
 use phpformsframework\libs\App;
+use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\international\Data;
 use phpformsframework\libs\mock\Mockable;
 use stdClass;
@@ -21,6 +22,7 @@ abstract class ApiAdapter
     protected const ERROR_RESPONSE_INVALID_FORMAT                       = "Response Invalid Format";
 
     private const ERROR_RESPONSE_EMPTY                                  = "Response Empty";
+    private const ERROR_ENDPOINT_EMPTY                                  = "Endpoint Empty";
     private const ERROR_REQUEST_LABEL                                   = "::request";
     private const ERROR_RESPONSE_LABEL                                  = "::response";
 
@@ -31,8 +33,9 @@ abstract class ApiAdapter
     protected $http_auth_secret                                         = null;
 
     protected $headers                                                  = [];
+    protected $requests                                                 = [];
 
-    private $request                                                    = null;
+    private $method                                                     = null;
     private $exTimePreflight                                            = null;
     /**
      * @param string $method
@@ -42,7 +45,7 @@ abstract class ApiAdapter
      */
     public function __call(string $method, array $arguments) : object
     {
-        $this->request                                                  = $method;
+        $this->method                                                   = $method;
 
         return $this->send($method, $arguments[0], $arguments[1] ?? null);
     }
@@ -78,8 +81,8 @@ abstract class ApiAdapter
     public function __construct(string $url = null, string $username = null, string $secret = null)
     {
         $this->endpoint                                                 = $url      ?? $this->endpoint;
-        $this->http_auth_username                                       = $username ?? $username;
-        $this->http_auth_secret                                         = $secret   ?? $secret;
+        $this->http_auth_username                                       = $username ?? $this->http_auth_username;
+        $this->http_auth_secret                                         = $secret   ?? $this->http_auth_secret;
     }
 
     /**
@@ -97,54 +100,61 @@ abstract class ApiAdapter
         return $discover["headers"] ?? null;
     }
 
+    private function dataResponse() : DataResponse
+    {
+        $class_name                                                     = static::NAMESPACE_DATARESPONSE . "DataResponse";
+        return new $class_name();
+    }
     /**
      * @param string $method
      * @param array|null $params
      * @param array|null $headers
-     * @return object
+     * @return DataResponse
      * @throws Exception
      */
-    public function send(string $method, array $params = null, array $headers = null) : object
+    public function send(string $method, array $params = null, array $headers = null) : DataResponse
     {
         App::stopWatch("api/remote");
-        /** @var \phpformsframework\libs\dto\DataResponse $DataResponse */
+
         $exception                                                      = null;
         $response                                                       = null;
-        $class_name                                                     = static::NAMESPACE_DATARESPONSE . "DataResponse";
-        $DataResponse                                                   = new $class_name();
-
-        $headers                                                        = $this->getHeader($headers);
-        try {
-            $response                                                   = $this->getMock() ?? $this->get($method, $params, $headers);
-        } catch (Exception $e) {
-            $exception                                                  = $e;
-        }
-
-        self::debug($method, $params, $headers);
-        if ($exception) {
-            /** Response Invalid Format (nojson or no object) */
-            App::debug($exception->getMessage(), $this->endpoint . self::ERROR_RESPONSE_LABEL);
-            throw new Exception($exception->getMessage(), $exception->getCode());
-        } elseif (isset($response->data, $response->status, $response->error)) {
-            if ($response->status >= 400) {
-                /** Request Wrong Params */
-                App::debug($response->error, $this->endpoint . self::ERROR_REQUEST_LABEL);
-                throw new Exception($response->error, $response->status);
+        $DataResponse                                                   = $this->dataResponse();
+        if($this->endpoint) {
+            $headers                                                     = $this->getHeader($headers);
+            try {
+                $response                                               = $this->getMock() ?? $this->get($method, $params, $headers);
+            } catch (Exception $e) {
+                $exception                                              = $e;
             }
-            $DataResponse->fillObject($response->data);
-            unset($response->data, $response->error, $response->status, $response->debug);
-            foreach (get_object_vars($response) as $property => $value) {
-                $DataResponse->$property                                = $value;
+
+            self::debug($method, $params, $headers);
+            if ($exception) {
+                /** Response Invalid Format (nojson or no object) */
+                App::debug($exception->getMessage(), $this->endpoint . self::ERROR_RESPONSE_LABEL);
+                throw new Exception($exception->getMessage(), $exception->getCode());
+            } elseif (isset($response->data, $response->status, $response->error)) {
+                if ($response->status >= 400) {
+                    /** Request Wrong Params */
+                    App::debug($response->error, $this->endpoint . self::ERROR_REQUEST_LABEL);
+                    throw new Exception($response->error, $response->status);
+                }
+                $DataResponse->fillObject($response->data);
+                unset($response->data, $response->error, $response->status, $response->debug);
+                foreach (get_object_vars($response) as $property => $value) {
+                    $DataResponse->$property                            = $value;
+                }
+            } elseif (empty($response)) {
+                /** Response is empty */
+                App::debug(self::ERROR_RESPONSE_EMPTY, $this->endpoint . self::ERROR_RESPONSE_LABEL);
+                throw new Exception(self::ERROR_RESPONSE_EMPTY, 404);
+            } else {
+                $DataResponse->fillObject($response);
+                $DataResponse->outputMode(true);
             }
-        } elseif (empty($response)) {
-            /** Response is empty */
-            App::debug(self::ERROR_RESPONSE_EMPTY, $this->endpoint . self::ERROR_RESPONSE_LABEL);
-            throw new Exception(self::ERROR_RESPONSE_EMPTY, 404);
         } else {
-            $DataResponse->fillObject($response);
-            $DataResponse->outputMode(true);
+            $DataResponse->error(500, self::ERROR_RESPONSE_EMPTY);
+            App::debug(self::ERROR_ENDPOINT_EMPTY, $method . self::ERROR_RESPONSE_LABEL);
         }
-
         return $DataResponse;
     }
 
@@ -174,11 +184,12 @@ abstract class ApiAdapter
     {
         $schema                                                         = null;
         if ($this->mockEnabled) {
-            $request                                                    = $this->request ?? parse_url($this->endpoint, PHP_URL_PATH);
 
-            $schema                                                     = $this->getResponseSchema($request);
+            $method                                                     = $this->method ?? parse_url($this->endpoint, PHP_URL_PATH);
+
+            $schema                                                     = $this->getResponseSchema($method);
             if ($schema) {
-                $schema                                                 = json_decode(json_encode(array_replace_recursive($schema, $this->mock($request))));
+                $schema                                                 = json_decode(json_encode(array_replace_recursive($schema, $this->mock($method))));
             }
         }
 

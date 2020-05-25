@@ -289,27 +289,26 @@ class MySqli extends DatabaseDriver
     }
 
     /**
-     * @param object|null $obj
      * @return array|null
      */
-    public function getRecordset(object &$obj = null) : ?array
+    public function getRecordset() : ?array
     {
         $res = null;
         if (!$this->query_id) {
             $this->errorHandler("eachAll called with no query pending");
         }
-        if ($obj != null) {
-            $res = @mysqli_fetch_object($this->query_id, $obj);
-        } else {
-            $res = mysqli_fetch_all($this->query_id, MYSQLI_ASSOC);
-        }
-        if ($this->use_found_rows) {
-            $this->numRows();
-        } elseif (is_array($res)) {
-            $this->num_rows = count($res);
-        }
+
+        $res = mysqli_fetch_all($this->query_id, MYSQLI_ASSOC);
         if (isset($res[0])) {
             $this->fields                   = array_keys($res[0]);
+        }
+
+        if ($this->use_found_rows) {
+            $this->numRows();
+        } elseif (!empty($res)) {
+            $this->num_rows                     = count($res);
+        } else {
+            $this->num_rows                     = 0;
         }
 
         $this->freeMemory();
@@ -377,7 +376,7 @@ class MySqli extends DatabaseDriver
                         : null
                     );
                 if ($this->query($query_string)) {
-                    $res = $this->getRecordset()[0];
+                    $res = $this->getRecordset();
                 }
                 break;
             case self::CMD_PROCESS_LIST:

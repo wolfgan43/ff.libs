@@ -213,10 +213,9 @@ class MongoDB extends DatabaseDriver
     }
 
     /**
-     * @param object|null $obj
      * @return array|null
      */
-    public function getRecordset(object &$obj = null) : ?array
+    public function getRecordset() :?array
     {
         $res = null;
         if (!$this->query_id) {
@@ -372,7 +371,6 @@ class MongoDB extends DatabaseDriver
             case self::ACTION_UPDATE:
                 if (class_exists("MongoDB\Driver\BulkWrite")) {
                     $bulk = new BulkWrite();
-                    //print_r($this->query_params);
                     $bulk->update($this->query_params->where, $this->query_params->update, $this->query_params->options);
                     if (!$this->link_id->executeBulkWrite($this->database . "." . $this->query_params->from, $bulk)) {
                         $this->errorHandler("MongoDB Update: " . $this->error);
@@ -410,7 +408,7 @@ class MongoDB extends DatabaseDriver
         switch ($action) {
             case self::CMD_COUNT:
                 if ($this->processQueryParams($query)) {
-                    $res[self::CMD_COUNT] = $this->numRows();
+                    $res[][self::CMD_COUNT] = $this->numRows();
                 }
                 break;
             case self::CMD_PROCESS_LIST:
@@ -542,9 +540,8 @@ class MongoDB extends DatabaseDriver
         if (!$this->link_id) {
             $this->errorHandler("insert_id() called with no DB connection");
         }
-
+        
         return (string) $this->buffered_insert_id;
-        //return $this->objectID2string($this->buffered_insert_id);
     }
 
     /**

@@ -26,81 +26,246 @@
 
 namespace phpformsframework\libs\storage\dto;
 
+use phpformsframework\libs\dto\Mapping;
+
 /**
  * Class OrmResult
  * @package phpformsframework\libs\storage\dto
  */
 class OrmResults
 {
-    private $map_class  = null;
-    private $recordset  = array();
-    private $count      = null;
+    use Mapping;
+
+    private $recordset              = array();
+    private $countRecordset         = null;
+    private $countTotal             = null;
+
+    private $record_map_class       = null;
+    private $key_name               = null;
+    private $recordset_keys         = null;
+
+    private $filter                 = null;
 
     /**
      * OrmResult constructor.
      * @param array|null $recordset
      * @param int|null $count
+     * @param array|null $recordset_keys
+     * @param string|null $primary_key
+     * @param string|null $record_map_class
      */
-    public function __construct(array $recordset = null, int $count = null)
+    public function __construct(array $recordset = null, int $count = null, array $recordset_keys = null, string $primary_key = null, string $record_map_class = null)
     {
-        $this->recordset    = (array) $recordset;
-        $this->count        = $count;
+        $this->recordset            = (array) $recordset;
+        $this->recordset_keys       = $recordset_keys;
+
+        $this->key_name             = $primary_key;
+        $this->countTotal           = $count;
+        $this->record_map_class     = $record_map_class;
+
+        $this->countRecordset       = (
+            empty($this->recordset)
+            ? $this->countTotal
+            : count($this->recordset)
+        );
     }
 
     /**
-     * @param string $map_class
-     * @return OrmResults
+     * @return string
      */
-    public function setMap(string $map_class = null) : self
+    public function getPrimaryKey() : string
     {
-        $this->map_class    = $map_class;
-        return $this;
+        return $this->key_name;
     }
     /**
      * @return int|null
      */
-    public function count() : ?int
+    public function countRecordset() : ?int
     {
-        return $this->count;
+        return $this->countRecordset;
+    }
+    /**
+     * @return int|null
+     */
+    public function countTotal() : ?int
+    {
+        return $this->countTotal;
     }
 
     /**
+     * @param array $fields
+     * @return OrmResults
+     */
+    public function filter(array $fields) : self
+    {
+        $this->filter               = array_fill_keys($fields, true);
+
+        return $this;
+    }
+
+    /**
+     * @param string|null $class_name
+     * @param bool $send_record_to_constructor
      * @return object|null
      */
-    public function first() : ?object
+    public function first(string $class_name = null, bool $send_record_to_constructor = false) : ?object
     {
-        return $this->seek(0);
+        return $this->mapRecord($this->seek(0), $class_name, $send_record_to_constructor);
     }
 
     /**
+     * @param string|null $class_name
+     * @param bool $send_record_to_constructor
+     * @return object|null
+     */
+    public function last(string $class_name = null, bool $send_record_to_constructor = false) : ?object
+    {
+        return $this->mapRecord($this->seek($this->countRecordset - 1), $class_name, $send_record_to_constructor);
+    }
+
+    /**
+     * @param int $offset
+     * @param string|null $class_name
+     * @param bool $send_record_to_constructor
+     * @return object|null
+     */
+    public function get(int $offset, string $class_name = null, bool $send_record_to_constructor = false) : ?object
+    {
+        return $this->mapRecord($this->seek($offset), $class_name, $send_record_to_constructor);
+    }
+
+    /**
+     * @param int $offset
+     * @param bool $recoursive
      * @return array|null
      */
-    public function toArray() : ?array
+    public function getArray(int $offset, bool $recoursive = true) : ?array
+    {
+        return (
+            $recoursive
+            ? $this->seek($offset)
+            : (array) json_decode(json_encode($this->seek($offset)))
+        );
+    }
+    /**
+     * @param $callback
+     * @param string|null $class_name
+     * @param bool $use_record_to_constructor
+     */
+    public function each($callback, string $class_name = null, bool $use_record_to_constructor = false) : void
+    {
+        $map_class_name             = $this->getMapClassName($class_name);
+
+        foreach ($this->recordset as $record) {
+            $callback($this->mapRecord($record, $map_class_name, $use_record_to_constructor));
+        }
+    }
+
+    /**
+     * @param string|null $key_name
+     * @return array
+     */
+    public function keys(string $key_name = null) : array
+    {
+        return array_column($this->recordset_keys ?? $this->recordset, $key_name ?? $this->key_name) ?? [];
+    }
+
+    /**
+     * @param int $offset
+     * @return string|null
+     */
+    public function key(int $offset) : ?string
+    {
+        return $this->keys()[$offset] ?? null;
+    }
+
+    /**
+     * @return array
+     */
+    public function toArray() : array
     {
         return $this->recordset;
     }
 
     /**
-     * @param int $offset
-     * @return null
+     * @param string $class_name
+     * @param bool $use_record_to_constructor
+     * @return object[]
      */
-    public function seek(int $offset)
+    public function toObject(string $class_name = null, bool $use_record_to_constructor = false) : array
     {
-        return (isset($this->recordset[$offset])
-            ? $this->getRecord($this->recordset[$offset])
-            : null
+        $map_class_name             = $this->getMapClassName($class_name);
+        return ($map_class_name
+            ? $this->mapRecordset($map_class_name, $use_record_to_constructor)
+            : json_decode(json_encode($this->recordset))
         );
     }
 
     /**
-     * @param array $record
-     * @return object
+     * @param int $offset
+     * @return array|null
      */
-    private function getRecord(array $record) : object
+    public function seek(int $offset) : ?array
     {
-        return ($this->map_class
-            ? new $this->map_class($record)
-            : json_decode(json_encode($record))
+        return $this->recordset[$offset] ?? null;
+    }
+
+    /**
+     * @param string|null $class_name
+     * @return string|null
+     */
+    private function getMapClassName(string $class_name = null) : ?string
+    {
+        return $class_name ?? $this->record_map_class;
+    }
+
+    /**
+     * @param string $class_name
+     * @param bool $send_record_to_constructor
+     * @return object[]
+     */
+    private function mapRecordset(string $class_name, bool $send_record_to_constructor = false) : array
+    {
+        $recordset                  = array();
+        foreach ($this->recordset as $record) {
+            $recordset[]            = $this->mapRecord($record, $class_name, $send_record_to_constructor);
+        }
+
+        return $recordset;
+    }
+
+    /**
+     * @param string $class_name
+     * @param bool $send_record_to_constructor
+     * @param array $record
+     * @return object[]
+     */
+    private function mapRecord(array $record = null, string $class_name = null, bool $send_record_to_constructor = false) : ?object
+    {
+        $obj                        = null;
+        if (!empty($record)) {
+            $record                 = $this->reduce($record);
+            if (!$class_name) {
+                $obj                = json_decode(json_encode($record));
+            } elseif ($send_record_to_constructor) {
+                $obj                = new $class_name($record);
+            } else {
+                $obj                = new $class_name();
+                $this->autoMapping($record, $obj);
+            }
+        }
+        return $obj;
+    }
+
+    /**
+     * @param array $record
+     * @return array
+     */
+    private function reduce(array $record) : array
+    {
+        return ($this->filter
+            ? array_intersect_key($record, $this->filter)
+            : $record
         );
     }
 }

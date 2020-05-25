@@ -154,7 +154,6 @@ abstract class DatabaseAdapter
      * @var DatabaseDriver
      */
     protected $driver                   = null;
-    //protected $query                    = null;
 
     private $prototype                  = array();
     private $to                         = array();
@@ -269,7 +268,6 @@ abstract class DatabaseAdapter
      */
     private function fieldWhere(array &$res, $value, string $struct_type, string $name = null, string $or = null) : void
     {
-        //echo $this->table_name . " : " . $struct_type . "  " . $this->key_name . " => " . $this->key_primary . " => " . static::KEY_NAME . " => " . self::KEY_NAME . "<br>\n\n";
         if ($this->key_name != $this->key_primary && $name == $this->key_primary) {
             $name = $this->convertKeyPrimary($name);
         }
@@ -353,6 +351,10 @@ abstract class DatabaseAdapter
         }
 
         foreach ($fields as $name => $value) {
+            if (!isset($this->struct[$name])) {
+                continue;
+            }
+
             if (is_bool($value) || $name == $value) {
                 $value                  = $name;
                 $this->converter($name);
@@ -438,6 +440,10 @@ abstract class DatabaseAdapter
         $res                            = array();
         if ($fields) {
             foreach ($fields as $name => $value) {
+                if (!isset($this->struct[$name])) {
+                    continue;
+                }
+
                 $struct_type            = $this->converter($name);
 
                 $res[$name]             = (
@@ -462,6 +468,10 @@ abstract class DatabaseAdapter
         $res                                                = array();
         if ($fields) {
             foreach ($fields as $name => $value) {
+                if (!isset($this->struct[$name])) {
+                    continue;
+                }
+
                 $struct_type                                = $this->converter($name);
                 if ($value === "++") {
                     $res[self::OP_INC_DEC][$name]           = $this->fieldOperation($this->fieldIn($name, $value), $struct_type, $name, self::OP_INC_DEC);
@@ -479,9 +489,10 @@ abstract class DatabaseAdapter
 
     /**
      * @param DatabaseQuery $query
-     * @return array|null
+     * @return array|object|null
+     * todo da tipizzare
      */
-    private function processRead(DatabaseQuery $query) : ?array
+    private function processRead(DatabaseQuery $query)
     {
         return ($this->driver->read($query)
             ? $this->driver->getRecordset()
@@ -574,7 +585,7 @@ abstract class DatabaseAdapter
             if ($this->driver->insert($query_insert)) {
                 $res                                = array(
                                                         self::INDEX_PRIMARY => array(
-                                                            $this->key_primary => array($this->driver->getInsertID())
+                                                            $this->key_primary => $this->driver->getInsertID()
                                                         ),
                                                         "action"    => self::ACTION_INSERT
                                                     );
@@ -913,10 +924,9 @@ abstract class DatabaseAdapter
             $res[self::RESULT]                                  = $db;
             $res[self::COUNT]                                   = $this->driver->numRows();
 
-            $count_recordset                                    = count($res[self::RESULT]);
+            $count_recordset                                    = (is_array($res[self::RESULT]) ? count($res[self::RESULT]) : null);
             if ($count_recordset && (!empty($query->limit) || $count_recordset < static::MAX_NUMROWS)) {
-                $map_class = null; //@todo da implementare
-                $this->convertRecordset($res, array_flip($this->index2query), $map_class);
+                $this->convertRecordset($res, array_flip($this->index2query));
             }
         }
 
@@ -926,21 +936,22 @@ abstract class DatabaseAdapter
     /**
      * @param array $db
      * @param array|null $indexes
-     * @param string|null $map_class
      */
-    protected function convertRecordset(array &$db, array $indexes = null, string $map_class = null) : void
+    protected function convertRecordset(array &$db, array $indexes = null) : void
     {
         $use_control                                    = !empty($indexes);
         if ($use_control || count($this->to)) {
             foreach ($db[self::RESULT] as &$record) {
                 if ($use_control) {
                     $index                              = array_intersect_key($record, $indexes);
+
                     if (isset($record[$this->key_name])) {
                         $index[$this->key_primary]      = $record[$this->key_name];
                     }
 
                     $db[self::INDEX][]                  = $index;
                 }
+
                 $record                                 = $this->fields2output($record);
             }
         }

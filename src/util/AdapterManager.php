@@ -9,8 +9,8 @@ use phpformsframework\libs\Error;
  */
 trait AdapterManager
 {
-    private $adapters   = array();
-    private $adapter    = null;
+    private $adapters                                       = array();
+    private $adapter                                        = null;
 
     /**
      * @param string $adapterName

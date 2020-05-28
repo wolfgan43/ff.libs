@@ -138,9 +138,9 @@ class Model implements Configurable, Dumpable
 
     /**
      * @param array $where
-     * @return array|null
+     * @return OrmResults
      */
-    public function delete(array $where) : ?array
+    public function delete(array $where) : OrmResults
     {
         return $this->getOrm()->delete($where);
     }

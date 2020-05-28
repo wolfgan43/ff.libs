@@ -2,10 +2,12 @@
 namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\ClassDetector;
+use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\dto\Mapping;
 use phpformsframework\libs\Model;
 use phpformsframework\libs\security\Validator;
 use Exception;
+use phpformsframework\libs\storage\dto\OrmResults;
 
 /**
  * Class OrmItem
@@ -16,7 +18,7 @@ class OrmItem
     use ClassDetector;
     use Mapping;
 
-    private const PRIVATE_PROPERTIES        = [
+    private const PRIVATE_PROPERTIES                                            = [
         "dbCollection"  => true,
         "dbTable"       => true,
         "dbJoins"       => true,
@@ -29,27 +31,30 @@ class OrmItem
         "recordKey"     => true
     ];
 
-    protected $dbCollection                 = null;
-    protected $dbTable                      = null;
-    protected $dbJoins                      = [];
-    protected $dbRequired                   = [];
-    protected $dbValidator                  = [];
-    protected $dbConversion                 = [];
+    protected $dbCollection                                                     = null;
+    protected $dbTable                                                          = null;
+    protected $dbJoins                                                          = [];
+    protected $dbRequired                                                       = [];
+    protected $dbValidator                                                      = [];
+    protected $dbConversion                                                     = [];
 
-    private $db                             = null;
-    private $where                          = null;
-    private $primaryKey                     = null;
-    private $recordKey                      = null;
+    protected $toDataResponse                                                   = [];
+
+    private $db                                                                 = null;
+    private $where                                                              = null;
+    private $primaryKey                                                         = null;
+    private $recordKey                                                          = null;
+
     /**
      * OrmItem constructor.
      * @param array $where
      */
     public function __construct(array $where = null)
     {
-        $this->where                        = $where;
-        $collection                         = $this->dbCollection ?? $this->getClassName();
+        $this->where                                                            = $where;
+        $collection                                                             = $this->dbCollection ?? $this->getClassName();
 
-        $this->db                           = new Model($collection);
+        $this->db                                                               = new Model($collection);
         $this->db->table($this->dbTable);
         foreach ($this->dbJoins as $join => $fields) {
             if (is_int($join)) {
@@ -60,6 +65,28 @@ class OrmItem
         }
 
         $this->read();
+    }
+
+    /**
+     * @param object $obj
+     * @return OrmItem
+     */
+    public function fillWithObject(object $obj) : self
+    {
+        $this->fill((array) $obj);
+
+        return $this;
+    }
+
+    /**
+     * @param array $fields
+     * @return OrmItem
+     */
+    public function fill(array $fields) : self
+    {
+        $this->autoMapping($fields);
+
+        return $this;
     }
 
     /**
@@ -84,9 +111,9 @@ class OrmItem
     }
 
     /**
-     * @return array|null
+     * @return OrmResults|null
      */
-    public function delete() : ?array
+    public function delete() : ?OrmResults
     {
         return ($this->primaryKey && $this->recordKey
             ? $this->db->delete([$this->primaryKey => $this->recordKey])
@@ -95,11 +122,29 @@ class OrmItem
     }
 
     /**
+     * @param array $where
+     * @return OrmResults
+     */
+    public function list(array $where) : OrmResults
+    {
+        return $this->db->read($where);
+    }
+
+    /**
+     * @return DataResponse
+     */
+    public function toDataResponse() : DataResponse
+    {
+        return new DataResponse($this->fieldSetPurged(array_fill_keys($this->toDataResponse, true)));
+    }
+
+    /**
+     * @param array $fields
      * @return array
      */
-    private function fieldSetPurged() : array
+    private function fieldSetPurged(array $fields = self::PRIVATE_PROPERTIES) : array
     {
-        return array_diff_key(get_object_vars($this), self::PRIVATE_PROPERTIES);
+        return array_diff_key(get_object_vars($this), $fields);
     }
 
     /**
@@ -153,13 +198,15 @@ class OrmItem
     private function read()
     {
         if ($this->where) {
-            $item                           = $this->db
+            $item                                                               = $this->db
                 ->read($this->where, null, 1);
 
-            $this->recordKey                = $item->key(0);
-            $this->primaryKey               = $item->getPrimaryKey();
+            $this->recordKey                                                    = $item->key(0);
+            $this->primaryKey                                                   = $item->getPrimaryKey();
 
-            $this->autoMapping($item->getArray(0, false));
+            if ($record = $item->getArray(0)) {
+                $this->autoMapping($record);
+            }
         }
     }
 

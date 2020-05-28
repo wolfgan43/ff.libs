@@ -136,16 +136,11 @@ class OrmResults
 
     /**
      * @param int $offset
-     * @param bool $recoursive
      * @return array|null
      */
-    public function getArray(int $offset, bool $recoursive = true) : ?array
+    public function getArray(int $offset) : ?array
     {
-        return (
-            $recoursive
-            ? $this->seek($offset)
-            : (array) json_decode(json_encode($this->seek($offset)))
-        );
+        return $this->seek($offset);
     }
     /**
      * @param $callback

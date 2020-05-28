@@ -151,29 +151,31 @@ class Request implements Configurable, Dumpable
     {
         if (!empty($rawdata["header"])) {
             foreach ($rawdata["header"] as $header) {
-                self::loadRequestMapping($obj, Dir::getXmlAttr($header), "header");
+                self::loadRequestMapping($obj, (object) Dir::getXmlAttr($header), "header");
             }
         }
         if (!empty($rawdata["get"])) {
             foreach ($rawdata["get"] as $get) {
-                self::loadRequestMapping($obj, Dir::getXmlAttr($get), "query");
+                self::loadRequestMapping($obj, (object) Dir::getXmlAttr($get), "query");
             }
         }
         if (!empty($rawdata["post"])) {
             foreach ($rawdata["post"] as $post) {
-                self::loadRequestMapping($obj, Dir::getXmlAttr($post), "body");
+                self::loadRequestMapping($obj, (object) Dir::getXmlAttr($post), "body");
             }
         }
     }
 
     /**
      * @param array $obj
-     * @param array $attr
+     * @param stdClass $attr
      * @param string $bucket
      */
-    private static function loadRequestMapping(&$obj, array $attr, string $bucket = "body"): void
+    private static function loadRequestMapping(&$obj, stdClass $attr, string $bucket = "body"): void
     {
-        $key                    = $attr["name"];
+        $key                    = $attr->name;
+        $attr->name             = str_replace("-", "_", $attr->name);
+
         $obj[$bucket][$key]     = $attr;
     }
 

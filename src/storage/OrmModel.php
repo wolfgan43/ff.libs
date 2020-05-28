@@ -397,9 +397,9 @@ class OrmModel extends Mappable
 
     /**
      * @param array $where
-     * @return array|null
+     * @return OrmResults|null
      */
-    public function delete(array $where) : ?array
+    public function delete(array $where) : ?OrmResults
     {
         $this->cacheRequest(self::ACTION_DELETE, [$where]);
 

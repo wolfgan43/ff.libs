@@ -19,6 +19,8 @@ class Model implements Configurable, Dumpable
     private const INSERT                                        = "insert";
     private const FAKE                                          = "fake";
     private const DTD                                           = "dtd";
+    private const DOT                                           = ".";
+    private const SELECT_ALL                                    = ".*";
 
     private static $models                                      = null;
 
@@ -161,17 +163,32 @@ class Model implements Configurable, Dumpable
     }
 
     /**
-     * @return array
+     * @return stdClass
      */
-    public function dtd() : array
+    public function dtd() : stdClass
     {
-        return $this->schema->dtd;
+        return (object) $this->getOrm()->dtd($this->schema->output ?? $this->table);
+    }
+
+    /**
+     * @return stdClass
+     */
+    public function dtdModel() : stdClass
+    {
+        return (object) $this->schema->dtd ?? null;
+    }
+    /**
+     * @return OrmModel
+     */
+    private function getOrm() : OrmModel
+    {
+        return $this->orm ?? $this->setOrm();
     }
 
     /**
      * @return OrmModel
      */
-    private function getOrm() : OrmModel
+    private function setOrm() : OrmModel
     {
         if ($this->schema) {
             $this->orm                                      =& OrmModel::getInstance($this->schema->bucket, $this->schema->output, $this->mapclass ?? $this->schema->mapclass);
@@ -229,11 +246,12 @@ class Model implements Configurable, Dumpable
     {
         if ($table_name) {
             if ($fields) {
+                unset($ref[$table_name . self::SELECT_ALL]);
                 foreach ($fields as $field => $alias) {
-                    $ref[$table_name . "." . (is_int($field) ? $alias : $field)]    = $alias;
+                    $ref[$table_name . self::DOT . (is_int($field) ? $alias : $field)]  = $alias;
                 }
             } else {
-                $ref[$table_name . ".*"]                                            = $table_name . ".*";
+                $ref[$table_name . self::SELECT_ALL]                                = $table_name . self::SELECT_ALL;
             }
         } else {
             $ref                                                                    = array();
@@ -254,7 +272,7 @@ class Model implements Configurable, Dumpable
                     continue;
                 }
 
-                $res[$table_name . "." . $field]                                    = $value;
+                $res[$table_name . self::DOT . $field]                              = $value;
             }
         } else {
             $res = $fields;
@@ -329,7 +347,7 @@ class Model implements Configurable, Dumpable
                 $fields                                                         = $model["field"];
                 $prefix                                                         = (
                     $schema[$model_name][self::BUCKET]
-                    ? $schema[$model_name][self::BUCKET] . "."
+                    ? $schema[$model_name][self::BUCKET] . self::DOT
                     : null
                 );
                 foreach ($fields as $field) {

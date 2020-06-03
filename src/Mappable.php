@@ -59,7 +59,7 @@ abstract class Mappable
      */
     protected function loadMap(string $name, string $prefix = null) : void
     {
-        $prefix                 = self::getClassName($prefix);
+        $prefix                 = strtolower(self::getClassName($prefix));
 
         Debug::stopWatch("mapping/" . $prefix . "_" . $name);
 

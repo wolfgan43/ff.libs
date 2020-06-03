@@ -259,6 +259,15 @@ class OrmModel extends Mappable
     }
 
     /**
+     * @param string $table
+     * @return array|null
+     */
+    public function dtd(string $table) : ?array
+    {
+        return $this->struct[$table] ?? null;
+    }
+
+    /**
      * @param $query
      * @return array|null
      */
@@ -332,8 +341,6 @@ class OrmModel extends Mappable
 
         $this->cacheUpdate();
 
-        $this->setCount(count($this->result_keys));
-
         return $this->getResult();
     }
 
@@ -350,7 +357,20 @@ class OrmModel extends Mappable
 
         $this->cacheUpdate();
 
-        $this->setCount(count($this->result_keys));
+        return $this->getResult();
+    }
+
+    /**
+     * @param array $where
+     * @return OrmResults|null
+     */
+    public function delete(array $where) : OrmResults
+    {
+        $this->cacheRequest(self::ACTION_DELETE, [$where]);
+
+        $this->set($where);
+
+        $this->cacheUpdate();
 
         return $this->getResult();
     }
@@ -393,21 +413,6 @@ class OrmModel extends Mappable
         }
 
         return $this->getResult()->first();
-    }
-
-    /**
-     * @param array $where
-     * @return OrmResults|null
-     */
-    public function delete(array $where) : ?OrmResults
-    {
-        $this->cacheRequest(self::ACTION_DELETE, [$where]);
-
-        $res                        = null;
-
-        $this->cacheUpdate();
-
-        return $res;
     }
 
     /**
@@ -701,6 +706,7 @@ class OrmModel extends Mappable
     {
         $insert_key                                                                         = null;
         $update_key                                                                         = null;
+        $delete_key                                                                         = null;
         $data                                                                               = $this->getCurrentData($controller, $table);
         $modelName                                                                          = $data->getController($controller);
         $ormModel                                                                           = $this->getModel($modelName);
@@ -708,6 +714,9 @@ class OrmModel extends Mappable
         $key_name                                                                           = $data->def->key_primary;
 
         if (!empty($data->insert) && empty($data->set) && !empty($data->where)) {
+            /**
+             * Insert unique
+             */
             $regs                                                                           = $storage->read($data->insert, array($key_name => true));
             if (is_array($regs)) {
                 $this->setKeyRelationship($data, $key_name, array_column($regs[self::INDEX], $key_name), $controller);
@@ -718,6 +727,9 @@ class OrmModel extends Mappable
                 }
             }
         } elseif (!empty($data->insert) && empty($data->set) && empty($data->where)) {
+            /**
+             * Insert
+             */
             $regs                                                                           = $storage->insert($data->insert, $data->def->table[self::TNAME]);
 
             if (is_array($regs)) {
@@ -746,14 +758,26 @@ class OrmModel extends Mappable
                     $data->where[$external_name]                                            = $this->main->where[$primary_name];
                 }
             }
-            //@todo da far tornare se possibile l'id dei record aggiornati
-            $update_key                                                                     = !empty($data->where) && (bool) $storage->update($data->set, $data->where, $data->def->table[self::TNAME]);
+            if (!empty($data->where)) {
+                $regs                                                                       = $storage->update($data->set, $data->where, $data->def->table[self::TNAME]);
+                $update_key                                                                 = $regs[self::INDEX_PRIMARY][$key_name];
+            }
         } elseif (empty($data->insert) && !empty($data->set) && !empty($data->where)) {
-            //@todo da far tornare se possibile l'id dei record aggiornati
-            $update_key                                                                     = (bool) $storage->update($data->set, $data->where, $data->def->table[self::TNAME]);
+            /**
+             * update
+             */
+            $regs                                                                           = $storage->update($data->set, $data->where, $data->def->table[self::TNAME]);
+            $update_key                                                                     = $regs[self::INDEX_PRIMARY][$key_name];
         } elseif (empty($data->insert) && empty($data->set) && !empty($data->where)) {
-            Error::register("Catrina: data not managed", static::ERROR_BUCKET);
+            /**
+             * Delete
+             */
+            $regs                                                                           = $storage->delete($data->where, $data->def->table[self::TNAME]);
+            $delete_key                                                                     = $regs[self::INDEX_PRIMARY][$key_name];
         } elseif (!empty($data->insert) && !empty($data->set) && !empty($data->where)) {
+            /**
+             * UpSert
+             */
             $regs                                                                           = $storage->write(
                 $data->insert,
                 $data->set,
@@ -769,12 +793,19 @@ class OrmModel extends Mappable
 
         $this->setKeyRelationship($data, $key_name, $insert_key, $controller);
 
-        if ($insert_key !== null) {
-            $this->result_keys[$data->def->mainTable][]                                     = [$data->def->key_primary => $insert_key];
-        }
+        $this->setResultKeys($data, $insert_key);
+        $this->setResultKeys($data, $update_key);
+        $this->setResultKeys($data, $delete_key);
+    }
 
-        if ($update_key !== null) {
-            $this->result_keys[$data->def->mainTable][]                                     = [$data->def->key_primary => $insert_key];
+    /**
+     * @param OrmQuery $data
+     * @param string|null $key
+     */
+    private function setResultKeys(OrmQuery $data, string $key = null) : void
+    {
+        if ($key !== null) {
+            $this->result_keys[$data->def->mainTable][]                                     = [$data->def->key_primary => $key];
         }
     }
 

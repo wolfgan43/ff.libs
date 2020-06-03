@@ -205,6 +205,7 @@ class Validator
     private const REQUEST_MAX_SIZE                          = array(
                                                                 Request::METHOD_GET     => 256,
                                                                 Request::METHOD_PUT     => 10240,
+                                                                Request::METHOD_PATCH   => 10240,
                                                                 Request::METHOD_POST    => 10240,
                                                                 Request::METHOD_HEAD    => 2048,
                                                                 "DEFAULT"               => 128,

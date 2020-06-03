@@ -319,7 +319,8 @@ class Debug
             if (isset($trace["file"]) && basename($trace["file"]) == "Debug.php") {
                 continue;
             }
-            $class_name = basename(str_replace("\\", "/", $trace["class"]));
+
+            $class_name = basename(str_replace("\\", "/", $trace["class"] ?? null));
             if (isset($trace["file"])) {
                 $caller = $class_name . "::" . $trace["function"];
                 $pad = self::MAX_PAD - strlen($caller);

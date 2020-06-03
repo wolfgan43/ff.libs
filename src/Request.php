@@ -887,13 +887,9 @@ class Request implements Configurable, Dumpable
             case self::METHOD_GET:
             case self::METHOD_POST:
             case self::METHOD_PUT:
+            case self::METHOD_PATCH:
+            case self::METHOD_DELETE:
                 self::securityHeaders($origin);
-                break;
-            case self::METHOD_PATCH: //todo: to manage
-                self::sendError(405);
-                break;
-            case self::METHOD_DELETE: //todo: to manage
-                self::sendError(405);
                 break;
             default:
                 self::sendError(405);
@@ -923,8 +919,6 @@ class Request implements Configurable, Dumpable
     {
         switch ($method) {
             case self::METHOD_POST:
-            case self::METHOD_PATCH:
-            case self::METHOD_DELETE:
                 $req                                                                            = (
                     self::isFormData()
                     ? $_POST
@@ -932,6 +926,9 @@ class Request implements Configurable, Dumpable
                 );
                 break;
             case self::METHOD_GET:
+            case self::METHOD_PUT:
+            case self::METHOD_PATCH:
+            case self::METHOD_DELETE:
                 $req                                                                            = $_GET;
                 break;
             case "COOKIE":
@@ -940,7 +937,6 @@ class Request implements Configurable, Dumpable
             case "SESSION":
                 $req                                                                            = $_SESSION;
                 break;
-            case self::METHOD_PUT:
             default:
                 $req                                                                            = $_REQUEST;
         }

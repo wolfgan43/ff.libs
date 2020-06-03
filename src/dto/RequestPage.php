@@ -401,13 +401,15 @@ class RequestPage extends Mappable
                         }
                     }
                 }
+
                 $this->setUnknown($rawdata);
                 foreach ($this->getRequestUnknown() as $unknown_key => $unknown) {
                     $errors                                                                 = $errors + $this->securityValidation($unknown, $unknown_key);
                 }
+                $this->setRequest(self::REQUEST_RAWDATA, $this->body[self::REQUEST_VALID] + $this->body[self::REQUEST_UNKNOWN]);
+            } else {
+                $this->setRequest(self::REQUEST_RAWDATA, $rawdata);
             }
-
-            $this->setRequest(self::REQUEST_RAWDATA, $rawdata);
         } else {
             $errors[413][]                                                                  = "Request Max Size Exceeded";
         }

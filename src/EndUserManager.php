@@ -188,7 +188,7 @@ trait EndUserManager
      */
     public static function cacheEnabled() : bool
     {
-        return !Kernel::$Environment::DISABLE_CACHE;
+        return Kernel::$Environment::CACHE_ORM;
     }
 
     /**

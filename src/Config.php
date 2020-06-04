@@ -322,6 +322,7 @@ class Config implements Dumpable
 
             $cache->set($map_name, self::$mapping_data[$bucket][$name]);
         }
+
         Debug::stopWatch(self::SCHEMA_CONF . "/map/". $map_name);
     }
 

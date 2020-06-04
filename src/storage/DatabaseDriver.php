@@ -32,42 +32,31 @@ use phpformsframework\libs\international\Data;
  * Class DatabaseDriver
  * @package phpformsframework\libs\storage
  */
-abstract class DatabaseDriver
+abstract class DatabaseDriver implements Constant
 {
-    protected const ERROR_BUCKET        = Database::ERROR_BUCKET;
+    protected static $_dbs 	                = array();
 
-    protected const ACTION_READ         = Database::ACTION_READ;
-    protected const ACTION_DELETE       = Database::ACTION_DELETE;
-    protected const ACTION_INSERT       = Database::ACTION_INSERT;
-    protected const ACTION_UPDATE       = Database::ACTION_UPDATE;
-    protected const ACTION_CMD          = Database::ACTION_CMD;
+    protected $locale                       = "ISO9075";
 
-    protected const CMD_COUNT           = Database::CMD_COUNT;
-    protected const CMD_PROCESS_LIST    = Database::CMD_PROCESS_LIST;
+    protected $host                         = null;
+    protected $database                     = null;
+    protected $user                         = null;
+    protected $secret                       = null;
 
-    protected static $_dbs 	            = array();
+    protected $row	                        = -1;
+    protected $errno                        = 0;
+    protected $error                        = "";
 
-    protected $locale                   = "ISO9075";
+    protected $link_id                      = null;
+    protected $query_id                     = null;
+    protected $fields                       = array();
+    protected $fields_names	                = array();
 
-    protected $host                     = null;
-    protected $database                 = null;
-    protected $user                     = null;
-    protected $secret                   = null;
+    protected $num_rows                     = null;
+    protected $record                       = null;
+    protected $buffered_insert_id           = null;
 
-    protected $row	                    = -1;
-    protected $errno                    = 0;
-    protected $error                    = "";
-
-    protected $link_id                  = null;
-    protected $query_id                 = null;
-    protected $fields                   = array();
-    protected $fields_names	            = array();
-
-    protected $num_rows                 = null;
-    protected $record                   = null;
-    protected $buffered_insert_id       = null;
-
-    abstract public static function freeAll();
+    abstract public static function freeAll() : void;
 
     /**
      * @param string|null $Database
@@ -198,7 +187,7 @@ abstract class DatabaseDriver
      */
     private function toSqlData(Data $Data) : ?string
     {
-        return $this->toSqlString(DatabaseAdapter::FTYPE_STRING, $Data->getValue($Data->data_type, $this->locale));
+        return $this->toSqlString(self::FTYPE_STRING, $Data->getValue($Data->data_type, $this->locale));
     }
 
     /**
@@ -210,20 +199,20 @@ abstract class DatabaseDriver
     protected function toSqlArray(string $type, array $Array)
     {
         switch ($type) {
-            case DatabaseAdapter::FTYPE_ARRAY_JSON:
+            case self::FTYPE_ARRAY_JSON:
                 $value = $this->toSqlEscape(json_encode($Array));
                 break;
-            case DatabaseAdapter::FTYPE_OBJECT:
+            case self::FTYPE_OBJECT:
                 $value = $this->toSqlEscape(serialize($Array));
                 break;
-            case DatabaseAdapter::FTYPE_PRIMARY:
+            case self::FTYPE_PRIMARY:
                 $value = array_map(function ($value) {
                     return $this->convertID($value);
                 }, $Array);
                 break;
-            case DatabaseAdapter::FTYPE_ARRAY:
-            case DatabaseAdapter::FTYPE_ARRAY_OF_NUMBER:
-            case DatabaseAdapter::FTYPE_ARRAY_INCREMENTAL:
+            case self::FTYPE_ARRAY:
+            case self::FTYPE_ARRAY_OF_NUMBER:
+            case self::FTYPE_ARRAY_INCREMENTAL:
             default:
                 $value = array_map(function ($value) {
                     return $this->toSqlEscape($value);
@@ -239,7 +228,7 @@ abstract class DatabaseDriver
      */
     private function toSqlObject(object $Object) : ?string
     {
-        return $this->toSqlString(DatabaseAdapter::FTYPE_STRING, serialize($Object));
+        return $this->toSqlString(self::FTYPE_STRING, serialize($Object));
     }
 
     /**
@@ -249,7 +238,7 @@ abstract class DatabaseDriver
     private function toSqlDateTime(DateTime $Object) : ?string
     {
         //@todo to implement
-        return $this->toSqlString(DatabaseAdapter::FTYPE_STRING, $Object->format('Y-M-d H:m:s'));
+        return $this->toSqlString(self::FTYPE_STRING, $Object->format('Y-M-d H:m:s'));
     }
     /**
      * @todo da tipizzare
@@ -261,33 +250,33 @@ abstract class DatabaseDriver
     {
         if ($value !== null) {
             switch ($type) {
-                case DatabaseAdapter::FTYPE_PRIMARY:
+                case self::FTYPE_PRIMARY:
                     $value = $this->convertID($value);
                     break;
-                case DatabaseAdapter::FTYPE_BOOLEAN:
-                case DatabaseAdapter::FTYPE_BOOL:
+                case self::FTYPE_BOOLEAN:
+                case self::FTYPE_BOOL:
                     $value = (bool) $value;
                     break;
-                case DatabaseAdapter::FTYPE_NUMBER:
-                case DatabaseAdapter::FTYPE_NUMBER_BIG:
-                case DatabaseAdapter::FTYPE_NUMBER_DECIMAN:
-                case DatabaseAdapter::FTYPE_TIMESTAMP:
+                case self::FTYPE_NUMBER:
+                case self::FTYPE_NUMBER_BIG:
+                case self::FTYPE_NUMBER_DECIMAN:
+                case self::FTYPE_TIMESTAMP:
                     $value = (
                         strlen($value)
                         ? (int) $this->toSqlEscape($value)
                         : 0
                     );
                     break;
-                case DatabaseAdapter::FTYPE_NUMBER_FLOAT:
+                case self::FTYPE_NUMBER_FLOAT:
                     $value = (
                         strlen($value)
                         ? (float) $this->toSqlEscape($value)
                         : 0
                     );
                     break;
-                case DatabaseAdapter::FTYPE_DATE:
-                case DatabaseAdapter::FTYPE_TIME:
-                case DatabaseAdapter::FTYPE_DATE_TIME:
+                case self::FTYPE_DATE:
+                case self::FTYPE_TIME:
+                case self::FTYPE_DATE_TIME:
                     $value = (
                         strlen($value)
                         ? $this->toSqlEscape((new Data($value, $type))->getValue($type, $this->locale))

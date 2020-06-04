@@ -38,7 +38,7 @@ use Exception;
  * Class DatabaseAdapter
  * @package phpformsframework\libs\storage
  */
-abstract class DatabaseAdapter
+abstract class DatabaseAdapter implements Constant
 {
     private const OPERATOR_COMPARISON   = [
                                             '$gt'       => self::FTYPE_NUMBER,
@@ -65,17 +65,6 @@ abstract class DatabaseAdapter
     protected const OP_ADD_TO_SET       = '$addToSet';
     protected const OP_SET              = '$set';
 
-    private const ACTION_READ           = Database::ACTION_READ;
-    private const ACTION_DELETE         = Database::ACTION_DELETE;
-    private const ACTION_INSERT         = Database::ACTION_INSERT;
-    private const ACTION_UPDATE         = Database::ACTION_UPDATE;
-    private const ACTION_CMD            = Database::ACTION_CMD;
-    private const ACTION_WRITE          = Database::ACTION_WRITE;
-
-    private const CMD_COUNT             = Database::CMD_COUNT;
-    private const CMD_PROCESS_LIST      = Database::CMD_PROCESS_LIST;
-
-    protected const ERROR_BUCKET        = Database::ERROR_BUCKET;
     private const ERROR_READ_IS_EMPTY   = "where is empty";
     private const ERROR_INSERT_IS_EMPTY = "insert is empty";
     private const ERROR_UPDATE_IS_EMPTY = "set and/or where are empty";
@@ -97,33 +86,6 @@ abstract class DatabaseAdapter
 
     protected const MAX_NUMROWS         = 10000;
     protected const MAX_RESULTS         = 1000;
-
-    public const FTYPE_ARRAY            = "array";
-    public const FTYPE_ARRAY_INCREMENTAL= "arrayIncremental";
-    public const FTYPE_ARRAY_OF_NUMBER  = "arrayOfNumber";
-    public const FTYPE_BOOLEAN          = "boolean";
-    public const FTYPE_BOOL             = "bool";
-    public const FTYPE_DATE             = "date";
-    public const FTYPE_NUMBER           = "number";
-    public const FTYPE_TIMESTAMP        = "timestamp";
-    public const FTYPE_PRIMARY          = "primary";
-    public const FTYPE_STRING           = "string";
-    public const FTYPE_CHAR             = "char";
-    public const FTYPE_TEXT             = "text";
-
-    public const FTYPE_ARRAY_JSON       = "json";
-    public const FTYPE_NUMBER_BIG       = "bigint";
-    public const FTYPE_NUMBER_FLOAT     = "float";
-
-    public const FTYPE_NUMBER_DECIMAN   = "currency";
-
-    public const FTYPE_BLOB             = "blob";
-
-    public const FTYPE_TIME             = "time";
-    public const FTYPE_DATE_TIME        = "datetime";
-
-    public const FTYPE_OBJECT           = "object";
-
 
     private $connection                 = array(
                                             "host"          => null

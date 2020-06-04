@@ -113,10 +113,12 @@ class OrmItem
 
     /**
      * @param string $model_name
+     * @throws Exception
      */
     private function loadModel(string $model_name)
     {
-        $this->db                                                               = new Model($model_name);
+        $this->db                                                               = new Model();
+        $this->db->loadModel($model_name);
         $dtd = $this->db->dtdModel();
         foreach ($dtd as $item) {
          //da finire
@@ -129,9 +131,10 @@ class OrmItem
      */
     private function loadCollection()
     {
-        $collection                                                             = $this->dbCollection ?? $this->getClassName();
+        $collection_name                                                        = $this->dbCollection ?? $this->getClassName();
 
-        $this->db                                                               = new Model($collection);
+        $this->db                                                               = new Model();
+        $this->db->loadCollection($collection_name);
         $this->db->table($this->dbTable);
         foreach ($this->dbJoins as $join => $fields) {
             if (is_int($join)) {
@@ -182,6 +185,7 @@ class OrmItem
             $this->recordKey                                                    = $item->key(0);
             $this->primaryKey                                                   = $item->getPrimaryKey();
         }
+
         return $this->recordKey;
     }
 
@@ -254,7 +258,7 @@ class OrmItem
     {
         $required                                                               = array_diff_key(array_fill_keys($this->dbRequired, true), array_filter($vars));
         if (!empty($required)) {
-            $this->error(array_keys($required), "are required");
+            $this->error(array_keys($required), " are required");
         }
     }
 
@@ -269,7 +273,7 @@ class OrmItem
         $dtd                                                                    = $this->db->dtd();
         foreach ($validators as $field => $value) {
             if (is_array($this->dbValidator[$field])) {
-                if ($dtd->$field == DatabaseAdapter::FTYPE_ARRAY || $dtd->$field == DatabaseAdapter::FTYPE_ARRAY_OF_NUMBER) {
+                if ($dtd->$field == Database::FTYPE_ARRAY || $dtd->$field == Database::FTYPE_ARRAY_OF_NUMBER) {
                     $arrField                                                   = explode(",", str_Replace(", ", ",", $value));
                     if (count(array_diff($arrField, $this->dbValidator[$field]))) {
                         $errors[]                                               = $field . " must be: [" . implode(", ", $this->dbValidator[$field]) . "]";

@@ -27,7 +27,7 @@
 namespace phpformsframework\libs\storage\dto;
 
 /**
- * Class OrmDef
+ * Class OrmQuery
  * @package phpformsframework\libs\storage\dto
  */
 class OrmQuery

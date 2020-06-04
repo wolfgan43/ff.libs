@@ -71,6 +71,7 @@ class Constant
     const PROFILING                         = false;
     const DEBUG                             = true;
     const DISABLE_CACHE                     = false;
+    const CACHE_BUFFER                      = true;
     const ACCEPTED_LANG                     = array("en");
 
     /**

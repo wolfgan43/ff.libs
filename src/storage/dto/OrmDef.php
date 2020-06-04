@@ -26,7 +26,7 @@
 
 namespace phpformsframework\libs\storage\dto;
 
-use phpformsframework\libs\storage\DatabaseAdapter;
+use phpformsframework\libs\storage\Database;
 
 /**
  * Class OrmDef
@@ -52,14 +52,7 @@ class OrmDef
 
     public function setKeyPrimary()
     {
-        $this->key_primary  = (string) array_search(DatabaseAdapter::FTYPE_PRIMARY, $this->struct);
-    }
-    /**
-     * @return int|null
-     */
-    public function count() : ?int
-    {
-        return $this->count;
+        $this->key_primary  = (string) array_search(Database::FTYPE_PRIMARY, $this->struct);
     }
 
     /**

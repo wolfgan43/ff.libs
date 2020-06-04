@@ -71,7 +71,7 @@ class MySqli extends DatabaseDriver
     /**
      * Kill All instance of DB
      */
-    public static function freeAll()
+    public static function freeAll() : void
     {
         foreach (static::$_dbs as $link) {
             @mysqli_kill($link, mysqli_thread_id($link));
@@ -524,6 +524,9 @@ class MySqli extends DatabaseDriver
      */
     protected function toSqlString(string $type, string $value = null): ?string
     {
+        if ($type == self::FTYPE_BOOLEAN || $type == self::FTYPE_BOOL) {
+            return $this->tpSqlEscaper((int) (bool) $value);
+        }
         return $this->tpSqlEscaper(parent::toSqlString($type, $value));
     }
 

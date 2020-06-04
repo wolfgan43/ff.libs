@@ -133,7 +133,7 @@ class DatabaseMysqli extends DatabaseAdapter
             $res = $this->fieldOperationNULL($struct_type, $name, $op);
         } else {
             if ($name == $this->key_name) {
-                $struct_type = DatabaseAdapter::FTYPE_PRIMARY;
+                $struct_type = self::FTYPE_PRIMARY;
             }
 
             $res = $this->replacer(

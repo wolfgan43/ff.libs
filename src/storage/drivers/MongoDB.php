@@ -70,7 +70,7 @@ class MongoDB extends DatabaseDriver
 
     private $use_found_rows         = false;
 
-    public static function freeAll()
+    public static function freeAll() : void
     {
         static::$_dbs = array();
     }

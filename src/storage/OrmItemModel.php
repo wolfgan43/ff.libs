@@ -3,7 +3,6 @@ namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\ClassDetector;
 use phpformsframework\libs\dto\DataResponse;
-use phpformsframework\libs\dto\DataTableResponse;
 use phpformsframework\libs\dto\Mapping;
 use phpformsframework\libs\Model;
 use phpformsframework\libs\security\Validator;
@@ -11,31 +10,14 @@ use Exception;
 use phpformsframework\libs\storage\dto\OrmResults;
 
 /**
- * Class OrmItem
+ * Class OrmItemModel
  * @package phpformsframework\libs\storage
  */
-class OrmItem
+class OrmItemModel
 {
     use ClassDetector;
     use Mapping;
 
-    private const PRIVATE_PROPERTIES                                            = [
-        "dbCollection"  => true,
-        "dbTable"       => true,
-        "dbJoins"       => true,
-        "dbRequired"    => true,
-        "dbValidator"   => true,
-        "dbConversion"  => true,
-        "toDataResponse"=> true,
-        "db"            => true,
-        "primaryKey"    => true,
-        "recordKey"     => true,
-        "models"        => true
-    ];
-
-    protected $dbCollection                                                     = null;
-    protected $dbTable                                                          = null;
-    protected $dbJoins                                                          = [];
     protected $dbRequired                                                       = [];
     /**
      * you can specify for each field witch validator you want:
@@ -57,122 +39,63 @@ class OrmItem
     protected $dbValidator                                                      = [];
     protected $dbConversion                                                     = [];
 
-    protected $toDataResponse                                                   = [];
-
     /**
      * @var Model|null
      */
     private $db                                                                 = null;
     private $primaryKey                                                         = null;
     private $recordKey                                                          = null;
-    /**
-     * @var OrmItemModel|null
-     */
-    private $models                                                             = [];
 
-    /**
-     * @param array|null $where
-     * @param array|null $sort
-     * @param int|null $limit
-     * @param int|null $offset
-     * @return DataTableResponse
-     * @throws Exception
-     */
-    public static function search(array $where = null, array $sort = null, int $limit = null, int $offset = null) : DataTableResponse
-    {
-        $dataTableResponse                                                      = new DataTableResponse();
-        $item                                                                   = new static();
-        $recordset                                                              = $item->db
-            ->table($item->dbTable, $item->toDataResponse)
-            ->read($where, $sort, $limit, $offset);
-
-        if ($recordset->countRecordset()) {
-            $dataTableResponse->fill($recordset->toArray());
-            $dataTableResponse->recordsFiltered                                 = $recordset->countRecordset();
-            $dataTableResponse->recordsTotal                                    = $recordset->countTotal();
-        } else {
-            $dataTableResponse->error(404, "not Found");
-        }
-        return $dataTableResponse;
-    }
+    private $data                                                               = null;
 
     /**
      * OrmItem constructor.
      * @param array $where
+     * @param string|null $model_name
+     * @throws Exception
      */
-    public function __construct(array $where = null)
+    public function __construct(string $model_name, array $where = null)
     {
-        $this->loadCollection();
+        $this->loadModel($model_name);
         $this->read($where);
     }
 
     /**
+     * @todo da tipizzare
      * @param string $name
-     * @return OrmItemModel|null
-     * @throws Exception
+     * @return mixed|null
      */
-    public function __get(string $name) : ?OrmItemModel
+    public function __get(string $name)
     {
-        return (property_exists($this, $name)
-            ? $this->$name
-            : $this->getModel($name)
-        );
+        return $this->data[$name] ?? null;
     }
 
     /**
+     * @todo da tipizzare
      * @param string $name
-     * @param array|null $where
-     * @return OrmItemModel|null
-     * @throws Exception
+     * @param $value
      */
-    public function getModel(string $name, array $where = null) : ?OrmItemModel
+    public function __set(string $name, $value) : void
     {
-        if (!isset($this->models[$name])) {
-            $this->loadModel($name, $where);
+        if (array_key_exists($name, $this->data)) {
+            $this->data[$name]                                                  = $value;
         }
-        return $this->models[$name];
-    }
-
-    /**
-     * @return string|null
-     */
-    public function getID() : ?string
-    {
-        return $this->recordKey;
     }
 
     /**
      * @param string|null $name
-     * @param array|null $where
      * @throws Exception
      */
-    private function loadModel(string $name, array $where = null)
+    private function loadModel(string $name = null)
     {
-        $this->models[$name]                                                    = new OrmItemModel($name, $where);
-    }
-
-    /**
-     *
-     */
-    private function loadCollection()
-    {
-        $collection_name                                                        = $this->dbCollection ?? $this->getClassName();
-
         $this->db                                                               = new Model();
-        $this->db->loadCollection($collection_name);
-        $this->db->table($this->dbTable);
-        foreach ($this->dbJoins as $join => $fields) {
-            if (is_int($join)) {
-                $this->db->join($fields);
-            } else {
-                $this->db->join($join, $fields);
-            }
-        }
+        $this->db->loadModel($name);
+        $this->data                                                             = $this->db->dtdModel();
     }
 
     /**
      * @param object $obj
-     * @return OrmItem
+     * @return OrmItemModel
      */
     public function fillWithObject(object $obj) : self
     {
@@ -183,11 +106,11 @@ class OrmItem
 
     /**
      * @param array $fields
-     * @return OrmItem
+     * @return OrmItemModel
      */
     public function fill(array $fields) : self
     {
-        $this->autoMapping($fields);
+        $this->data                                                             = array_replace($this->data, array_intersect_key($fields, $this->data));
 
         return $this;
     }
@@ -198,7 +121,7 @@ class OrmItem
      */
     public function apply() : string
     {
-        $vars                                                                   = $this->fieldSetPurged();
+        $vars                                                                   = $this->data;
         //$vars = $this->fieldConvert($vars); //@todo da finire
         $this->verifyRequire($vars);
         $this->verifyValidator($vars);
@@ -209,9 +132,6 @@ class OrmItem
             $item                                                               = $this->db->insert($vars);
             $this->recordKey                                                    = $item->key(0);
             $this->primaryKey                                                   = $item->getPrimaryKey();
-            if (!$this->recordKey) {
-                throw new Exception($this->db->getName() .  "::db->insert Missing primary " . $this->primaryKey, 500);
-            }
         }
 
         return $this->recordKey;
@@ -240,24 +160,12 @@ class OrmItem
      */
     public function toDataResponse() : DataResponse
     {
-        $response = new DataResponse($this->fieldSetPurged(array_fill_keys($this->toDataResponse, true)));
+        $response                                                               = new DataResponse($this->data);
         if (!$this->recordKey) {
             $response->error(404, $this->db->getName() . " not stored");
         }
 
         return $response;
-    }
-
-    /**
-     * @param array $fields
-     * @return array
-     */
-    private function fieldSetPurged(array $fields = null) : array
-    {
-        return ($fields
-            ? array_intersect_key(get_object_vars($this), $fields)
-            : array_diff_key(get_object_vars($this), self::PRIVATE_PROPERTIES)
-        );
     }
 
     /**
@@ -337,9 +245,7 @@ class OrmItem
                 $this->recordKey                                                = $item->key(0);
                 $this->primaryKey                                               = $item->getPrimaryKey();
 
-                if ($record = $item->getArray(0)) {
-                    $this->autoMapping($record);
-                }
+                $this->data                                                     = $item->getArray(0);
             }
         }
     }

@@ -33,12 +33,14 @@ class Model implements Configurable, Dumpable
     private $collection                                                             = null;
     private $table                                                                  = null;
     private $mapclass                                                               = null;
-    private $select                                                                 = [];
+    private $select                                                                 = null;
     private $selectJoin                                                             = [];
+    private $where                                                                  = null;
     /**
      * @var stdClass
      */
     private $schema                                                                 = null;
+    private $name                                                                   = null;
 
 
 
@@ -73,6 +75,7 @@ class Model implements Configurable, Dumpable
     {
         if (isset(self::$models[$collection_or_model])) {
             $this->schema                                                           = (object) self::$models[$collection_or_model];
+            $this->name                                                             = $collection_or_model;
         } else {
             $this->collection                                                       = $collection_or_model;
         }
@@ -85,6 +88,7 @@ class Model implements Configurable, Dumpable
     public function loadCollection(string $collection_name) : self
     {
         $this->schema                                                               = null;
+        $this->name                                                                 = null;
         $this->collection                                                           = $collection_name;
 
         return $this;
@@ -102,7 +106,9 @@ class Model implements Configurable, Dumpable
         }
 
         $this->schema                                                               = (object) (self::$models[$model_name]);
+        $this->name                                                                 = $model_name;
         $this->collection                                                           = null;
+
         return $this;
     }
 
@@ -141,12 +147,10 @@ class Model implements Configurable, Dumpable
     public function read(array $where = null, array $sort = null, int $limit = null, int $offset = null) : OrmResults
     {
         $select                                                                     = (
-            empty($this->select)
-            ? $this->schema->read ?? []
-            : $this->select
+            $this->select ?? $this->schema->read ?? []
         ) + $this->selectJoin;
 
-        return $this->getOrm()->read($select, $where, $sort, $limit, $offset);
+        return $this->getOrm()->read($select, $this->setWhere($where), $sort, $limit, $offset);
     }
 
     /**
@@ -155,7 +159,8 @@ class Model implements Configurable, Dumpable
      */
     public function insert(array $fields) : OrmResults
     {
-        $insert                                                                     = (
+        $insert                                                                     = array_replace(
+            $this->where,
             $this->schema
             ? $this->fill($this->schema->insert, $fields)
             : $this->fieldSet($fields, $this->table)
@@ -206,12 +211,21 @@ class Model implements Configurable, Dumpable
     }
 
     /**
+     * @return array
+     */
+    public function dtdModel() : ?array
+    {
+        return $this->schema->dtd ?? null;
+    }
+
+    /**
      * @return stdClass
      */
-    public function dtdModel() : stdClass
+    public function getName() : ?string
     {
-        return (object) $this->schema->dtd ?? null;
+        return $this->name ?? $this->collection . DIRECTORY_SEPARATOR . $this->table;
     }
+
     /**
      * @return OrmModel
      */
@@ -232,6 +246,23 @@ class Model implements Configurable, Dumpable
         }
 
         return $this->orm;
+    }
+
+    /**
+     * @param array|null $where
+     * @return array|null
+     */
+    private function setWhere(array $where = null) : ?array
+    {
+        if ($where && ($table = $this->schema->output ?? $this->table ?? null)) {
+            foreach ($where as $key => $value) {
+                if (strpos($key, ".") === false) {
+                    $key = $table . "." . $key;
+                }
+                $this->where[$key]                                                  = $value;
+            }
+        }
+        return $this->where;
     }
 
     /**
@@ -277,7 +308,7 @@ class Model implements Configurable, Dumpable
      * @param string $table_name
      * @param array|null $fields
      */
-    private function fieldSelect(array &$ref, string $table_name = null, array $fields = null) : void
+    private function fieldSelect(array &$ref = null, string $table_name = null, array $fields = null) : void
     {
         if ($table_name) {
             if ($fields) {
@@ -310,7 +341,7 @@ class Model implements Configurable, Dumpable
                 $res[$table_name . self::DOT . $field]                              = $value;
             }
         } else {
-            $res = $fields;
+            $res                                                                    = $fields;
         }
         return $res;
     }

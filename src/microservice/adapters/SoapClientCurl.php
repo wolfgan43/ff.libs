@@ -43,15 +43,13 @@ class SoapClientCurl extends SoapClient
 
         $this->setAction($action);
 
-        curl_setopt($ch, CURLOPT_URL, $location );
+        curl_setopt($ch, CURLOPT_URL, $location);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $requestXML);
         curl_setopt($ch, CURLOPT_POST, 1);
         if (!empty($this->_login) && !empty($this->_password)) {
             curl_setopt($ch, CURLOPT_USERPWD, $this->_login . ":" . $this->_password);
         }
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
 
         $headers = array();
         $headers[] = 'Content-Type: text/xml; charset=' . (empty($this->_encoding) ? self::ENCODING : $this->_encoding);
@@ -82,7 +80,7 @@ class SoapClientCurl extends SoapClient
      */
     private function setAction(string &$action = null) : void
     {
-        if(!$action) {
+        if (!$action) {
             $action = $this->__action;
         }
     }

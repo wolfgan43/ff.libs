@@ -671,21 +671,6 @@ class Log
      */
     private static function fetch(string $content, string $routine = null, string $action = null, int $status = null) : string
     {
-        $server = null;
-        /*foreach ($_SERVER as $key => $value) {
-            if (!is_array($value)) {
-                $server[$key] = $value;
-            }
-        }*/
-
-        if (is_array($server)) {
-            $content = str_replace(
-                array_keys($server),
-                array_values($server),
-                $content
-            );
-        }
-
         $microtime  = explode(".", microtime(true));
         $micro      = (
             isset($microtime[1])

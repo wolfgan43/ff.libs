@@ -965,7 +965,6 @@ class Request implements Configurable, Dumpable
         if ($last_update < self::$page->rules->last_update) {
             $last_update                                                                        = self::$page->rules->last_update;
 
-            //if (self::securityHeaderParams(self::$page)) {
             if (self::$page->loadHeaders($_SERVER)) {
                 self::sendError(self::$page->error, self::$page->status);
             }

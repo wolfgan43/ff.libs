@@ -43,29 +43,6 @@ class Env implements Configurable
     private static $permanent                                       = array();
 
     /**
-     * @return array
-     */
-    private static function loadDotEnv() : array
-    {
-        $file                                                       = file_get_contents(
-            Constant::DISK_PATH . '/.env' .
-            (
-                isset(self::$vars["ENVIRONMENT"])
-                ? "." . self::$vars["ENVIRONMENT"]
-                : ""
-            )
-        );
-        $arrEnv                                                     = array();
-
-        $envString                                                  = str_replace(array("\r\n", "\n\n", "\n", '"true"', '"false"', '"null"'), array("\n", "&", "&", 'true', 'false', 'null'), $file);
-        parse_str($envString, $arrEnv);
-
-        self::$dotenv                                               = $arrEnv;
-
-        return self::$dotenv;
-    }
-
-    /**
      * @param null|string $key
      * @return mixed|null
      */
@@ -197,8 +174,6 @@ class Env implements Configurable
      */
     public static function loadSchema(array $rawdata, string $bucket = "default") : array
     {
-        //self::loadDotEnv();
-
         if (!empty($rawdata)) {
             foreach ($rawdata as $key => $value) {
                 self::$packages[$bucket][$key]                      = Dir::getXmlAttr($value);

@@ -35,20 +35,8 @@ abstract class ApiAdapter
     protected $headers                                                  = [];
     protected $requests                                                 = [];
 
-    private $method                                                     = null;
+    private $action                                                     = null;
     private $exTimePreflight                                            = null;
-    /**
-     * @param string $method
-     * @param array $arguments
-     * @return object
-     * @throws Exception
-     */
-    public function __call(string $method, array $arguments) : object
-    {
-        $this->method                                                   = $method;
-
-        return $this->send($method, $arguments[0], $arguments[1] ?? null);
-    }
 
     /**
      * @param string $method
@@ -70,7 +58,18 @@ abstract class ApiAdapter
      */
     abstract protected function getResponseSchema(string $method) : ?array;
 
+    /**
+     * @param string $method
+     * @param array $arguments
+     * @return object
+     * @throws Exception
+     */
+    public function __call(string $method, array $arguments) : object
+    {
+        $this->action                                                   = $arguments["action"] ?? $method;
 
+        return $this->send($method, $arguments[0], $arguments[1] ?? null);
+    }
 
     /**
      * JsonWsp constructor.
@@ -100,6 +99,9 @@ abstract class ApiAdapter
         return $discover["headers"] ?? null;
     }
 
+    /**
+     * @return DataResponse
+     */
     private function dataResponse() : DataResponse
     {
         $class_name                                                     = static::NAMESPACE_DATARESPONSE . "DataResponse";
@@ -119,7 +121,7 @@ abstract class ApiAdapter
         $exception                                                      = null;
         $response                                                       = null;
         $DataResponse                                                   = $this->dataResponse();
-        if($this->endpoint) {
+        if ($this->endpoint) {
             $headers                                                     = $this->getHeader($headers);
             try {
                 $response                                               = $this->getMock() ?? $this->get($method, $params, $headers);
@@ -185,7 +187,7 @@ abstract class ApiAdapter
         $schema                                                         = null;
         if ($this->mockEnabled) {
 
-            $method                                                     = $this->method ?? parse_url($this->endpoint, PHP_URL_PATH);
+            $method                                                     = $this->action ?? parse_url($this->endpoint, PHP_URL_PATH);
 
             $schema                                                     = $this->getResponseSchema($method);
             if ($schema) {

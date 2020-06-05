@@ -66,7 +66,7 @@ class OrmItem
     private $primaryKey                                                         = null;
     private $recordKey                                                          = null;
     /**
-     * @var OrmItemModel|null
+     * @var OrmModel|null
      */
     private $models                                                             = [];
 
@@ -108,10 +108,10 @@ class OrmItem
 
     /**
      * @param string $name
-     * @return OrmItemModel|null
+     * @return OrmModel|null
      * @throws Exception
      */
-    public function __get(string $name) : ?OrmItemModel
+    public function __get(string $name) : ?OrmModel
     {
         return (property_exists($this, $name)
             ? $this->$name
@@ -122,10 +122,10 @@ class OrmItem
     /**
      * @param string $name
      * @param array|null $where
-     * @return OrmItemModel|null
+     * @return OrmModel|null
      * @throws Exception
      */
-    public function getModel(string $name, array $where = null) : ?OrmItemModel
+    public function getModel(string $name, array $where = null) : ?OrmModel
     {
         if (!isset($this->models[$name])) {
             $this->loadModel($name, $where);
@@ -148,7 +148,7 @@ class OrmItem
      */
     private function loadModel(string $name, array $where = null)
     {
-        $this->models[$name]                                                    = new OrmItemModel($name, $where);
+        $this->models[$name]                                                    = new OrmModel($name, $where);
     }
 
     /**

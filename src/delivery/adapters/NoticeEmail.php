@@ -79,10 +79,14 @@ class NoticeEmail extends NoticeAdapter
     }
 
     /**
-     * @param string $template
+     * @param string|null $template
      */
-    private function setTemplate(string $template) : void
+    private function setTemplate(string $template = null) : void
     {
+        if (!$template) {
+            Error::register("Template mail empty", static::ERROR_BUCKET);
+        }
+
         $this->template = (
             strpos($template, "/") === false
             ? Resource::get($template, "email")

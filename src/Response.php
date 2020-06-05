@@ -390,7 +390,7 @@ class Response
                 header("Vary: Accept-Encoding");
             }
 
-            header("Content-type: $content_type");
+            header("Content-Type: $content_type");
         }
 
         if ($disposition && $filename) {

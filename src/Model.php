@@ -3,7 +3,7 @@ namespace phpformsframework\libs;
 
 use Exception;
 use phpformsframework\libs\storage\dto\OrmResults;
-use phpformsframework\libs\storage\OrmModel;
+use phpformsframework\libs\storage\Orm;
 use stdClass;
 
 /**
@@ -27,7 +27,7 @@ class Model implements Configurable, Dumpable
     private static $models                                                          = null;
 
     /**
-     * @var OrmModel|null
+     * @var Orm|null
      */
     private $orm                                                                    = null;
     private $collection                                                             = null;
@@ -35,7 +35,7 @@ class Model implements Configurable, Dumpable
     private $mapclass                                                               = null;
     private $select                                                                 = null;
     private $selectJoin                                                             = [];
-    private $where                                                                  = null;
+    private $where                                                                  = [];
     /**
      * @var stdClass
      */
@@ -55,14 +55,14 @@ class Model implements Configurable, Dumpable
     }
 
     /**
-     * @param string|null $ormModel
+     * @param string|null $collection
      * @param string|null $mainTable
      * @param string|null $mapClass
-     * @return OrmModel
+     * @return Orm
      */
-    public static function orm(string $ormModel = null, string $mainTable = null, string $mapClass = null) : OrmModel
+    public static function orm(string $collection = null, string $mainTable = null, string $mapClass = null) : Orm
     {
-        return OrmModel::getInstance($ormModel, $mainTable, $mapClass);
+        return Orm::getInstance($collection, $mainTable, $mapClass);
     }
 
 
@@ -227,22 +227,22 @@ class Model implements Configurable, Dumpable
     }
 
     /**
-     * @return OrmModel
+     * @return Orm
      */
-    private function getOrm() : OrmModel
+    private function getOrm() : Orm
     {
         return $this->orm ?? $this->setOrm();
     }
 
     /**
-     * @return OrmModel
+     * @return Orm
      */
-    private function setOrm() : OrmModel
+    private function setOrm() : Orm
     {
         if ($this->schema) {
-            $this->orm                                                              =& OrmModel::getInstance($this->schema->bucket, $this->schema->output, $this->mapclass ?? $this->schema->mapclass);
+            $this->orm                                                              =& Orm::getInstance($this->schema->bucket, $this->schema->output, $this->mapclass ?? $this->schema->mapclass);
         } else {
-            $this->orm                                                              =& OrmModel::getInstance($this->collection, $this->table, $this->mapclass);
+            $this->orm                                                              =& Orm::getInstance($this->collection, $this->table, $this->mapclass);
         }
 
         return $this->orm;
@@ -432,37 +432,3 @@ class Model implements Configurable, Dumpable
         self::$models                                                               = $schema;
     }
 }
-
-/*
-App::db("user")
-    ->where("last_login")           ->greater("12123123")
-    ->where("username", true)   ->equal("pippo")
-    ->filter(["name", "surname"])
-    ->read();
-
-
-$pippo = App::db("patient")
-    ->filter(["name", "surname"])
-    ->where("name", true)->equal("alesssandro")
-    ->where("role", "anagraph_role")->equal("dottore")
-    ->read(2, 1);
-
-
-
-App::db("user")
-    ->set("email", "pippo@pluto.it")
-    ->set("name", "pippo")
-
-    ->where("last_login")->grater("12123123")
-    ->where("username")->equal("pippo")
-
-    ->update();
-
-
-App::db("user")
-    ->insert
-        ->set("uuid")
-        ->set("user", "pippo")
-        ->set("email", "pippo@pluto.it")
-    ->execute();
-*/

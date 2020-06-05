@@ -1,6 +1,5 @@
 {
-  "bucket": "international",
-  "type": "international",
+  "collection": "international",
   "main_table": "lang",
   "adapters": {
     "mysqli": null

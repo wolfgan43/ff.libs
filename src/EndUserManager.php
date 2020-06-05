@@ -128,6 +128,7 @@ trait EndUserManager
     /**
      * @param bool $return
      * @return array
+     * @todo da sistemare non funziona
      */
     public static function dumpDatabase(bool $return = false) : array
     {
@@ -165,13 +166,13 @@ trait EndUserManager
     }
 
     /**
-     * @param string|null $ormModel
+     * @param string|null $collection
      * @param string|null $mainTable
-     * @return storage\OrmModel
+     * @return storage\Orm
      */
-    public static function orm(string $ormModel = null, string $mainTable = null) : storage\OrmModel
+    public static function orm(string $collection = null, string $mainTable = null) : storage\Orm
     {
-        return Model::orm($ormModel, $mainTable);
+        return Model::orm($collection, $mainTable);
     }
 
     /**

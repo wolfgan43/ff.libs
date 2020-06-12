@@ -37,24 +37,28 @@ class Notice
 {
     use AdapterManager;
 
-    const NAME_SPACE                                        = __NAMESPACE__ . '\\adapters\\';
-
     private static $singleton                               = null;
 
     /**
-     * @param string $noticeAdapters
+     * @param string $noticeAdapter
      * @return Notice
      */
-    public static function getInstance(string $noticeAdapters) : self
+    public static function getInstance(string $noticeAdapter) : self
     {
         if (self::$singleton === null) {
-            self::$singleton                                = new Notice();
-            self::$singleton->setAdapter($noticeAdapters);
-
+            self::$singleton                                = new Notice($noticeAdapter);
         }
         return self::$singleton;
     }
 
+    /**
+     * Messenger constructor.
+     * @param string $noticeAdapter
+     */
+    public function __construct(string $noticeAdapter)
+    {
+        $this->setAdapter($noticeAdapter);
+    }
     /**
      * @param string $target
      * @param string|null $name

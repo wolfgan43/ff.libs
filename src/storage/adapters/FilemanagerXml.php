@@ -43,6 +43,7 @@ class FilemanagerXml extends FilemanagerAdapter
      * @param string $file_path
      * @param string|null $var
      * @return array|null
+     * @throws Exception
      */
     protected function loadFile(string $file_path, string $var = null) : ?array
     {

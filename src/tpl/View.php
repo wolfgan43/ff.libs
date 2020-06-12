@@ -4,6 +4,7 @@ namespace phpformsframework\libs\tpl;
 use phpformsframework\libs\Dir;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
+use phpformsframework\libs\util\AdapterManager;
 
 /**
  * Class View
@@ -11,13 +12,9 @@ use phpformsframework\libs\Kernel;
  */
 class View
 {
-    const ERROR_BUCKET                              = "view";
-    const NAME_SPACE                                = __NAMESPACE__ . '\\adapters\\';
+    use AdapterManager;
 
-    /**
-     * @var ViewAdapter
-     */
-    private $adapter                                = null;
+    const ERROR_BUCKET                              = "view";
 
     /**
      * View constructor.
@@ -25,16 +22,7 @@ class View
      */
     public function __construct(string $templateAdapter = null)
     {
-        if (!$templateAdapter) {
-            $templateAdapter                        = Kernel::$Environment::TEMPLATE_ADAPTER;
-        }
-
-        $class_name                                 = static::NAME_SPACE . "View" . ucfirst($templateAdapter);
-        if (class_exists($class_name)) {
-            $this->adapter                          = new $class_name();
-        } else {
-            Error::register("Template Adapter not supported: " . $templateAdapter, static::ERROR_BUCKET);
-        }
+        $this->setAdapter($templateAdapter ?? Kernel::$Environment::TEMPLATE_ADAPTER);
     }
     /**
      * @return string

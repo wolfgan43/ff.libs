@@ -152,7 +152,7 @@ class Config implements Dumpable
             "dirstruct_scan"                                                => self::$dirstruct_scan,
             "mapping_files"                                                 => self::$mapping_files,
             "mapping_data"                                                  => self::$mapping_data,
-            "class_configurable"                                            => self::$class_configurable,
+            "class_configurable"                                            => self::$class_configurable
         );
     }
 

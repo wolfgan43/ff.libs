@@ -20,7 +20,7 @@
         <rule source="^/autodiscover/*"                 destination="404" />
     </badpath>
     <models>
-        <model name="user" bucket="access" output="users" mapclass="\phpformsframework\libs\security\User">
+        <model name="user" collection="access" table="users" mapclass="\phpformsframework\libs\security\User">
             <field name="uuid"              db="users.uuid"                         source="$uuid"                  fake="fdbba8ff-86a4-442f-a3c4-ac034210b7e9" />
             <field name="username"          db="users.username"                     source="$username"              fake="nobody" />
             <field name="email"             db="users.email"                        source="$email"                 fake="john.doe@nobody.it" />

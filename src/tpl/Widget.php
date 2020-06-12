@@ -169,11 +169,10 @@ abstract class Widget
         if (is_object($name)) {
             $this->injectAssets($name);
         } else {
+
             $widget_name                            = $this->getSkin();
             $view                                   = new View();
-
             $this->parseRequiredAssets();
-
             $resources                              = $this->getResources();
             $this->addJs($widget_name, $resources->getJs($name));
             $this->addCss($widget_name, $resources->getCss($name));
@@ -184,6 +183,7 @@ abstract class Widget
                                                             $this->renderTemplate($view, $data);
                                                         })
                                                         ->display();
+
         }
     }
 

@@ -3,6 +3,7 @@ namespace phpformsframework\libs\cache;
 
 use phpformsframework\libs\App;
 use phpformsframework\libs\Dumpable;
+use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Log;
 use stdClass;
 
@@ -55,7 +56,7 @@ class Buffer implements Dumpable
     {
         self::startWatch($bucket, $action);
 
-        if (!App::cacheEnabled()) {
+        if (!self::cacheEnabled()) {
             return true;
         }
         $pid                                            = self::hash($bucket, $action, $params);
@@ -72,7 +73,7 @@ class Buffer implements Dumpable
     public static function store($response) : void
     {
         $exTime                                             = self::stopWatch();
-        if (App::cacheEnabled()) {
+        if (self::cacheEnabled()) {
             $cache                                          =& self::$cache[self::$pid];
 
             $cache->response                                = $response;
@@ -94,7 +95,7 @@ class Buffer implements Dumpable
     public static function update() : void
     {
         $exTime                                             = self::stopWatch();
-        if (App::cacheEnabled()) {
+        if (self::cacheEnabled()) {
             $cache                                          =& self::$cache[self::$pid];
 
             $cache->exTime                                  = $exTime;
@@ -242,10 +243,21 @@ class Buffer implements Dumpable
     }
 
     /**
+     * @return bool
+     */
+    private static function cacheEnabled() : bool
+    {
+        return Kernel::$Environment::CACHE_BUFFER;
+    }
+
+    /**
      * @return array
      */
     public static function dump(): array
     {
-        return self::$cache;
+        return [
+            "cache"     => self::$cache,
+            "process"   => self::$process
+        ];
     }
 }

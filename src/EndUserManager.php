@@ -95,14 +95,6 @@ trait EndUserManager
     }
 
     /**
-     * @param string $message
-     */
-    public static function throwException(string $message) : void
-    {
-        Error::register($message, static::ERROR_BUCKET);
-    }
-
-    /**
      * @param $data
      * @param string|null $bucket
      */
@@ -181,14 +173,6 @@ trait EndUserManager
     public static function debugEnabled() : bool
     {
         return Kernel::$Environment::DEBUG;
-    }
-
-    /**
-     * @return bool
-     */
-    public static function cacheEnabled() : bool
-    {
-        return Kernel::$Environment::CACHE_BUFFER;
     }
 
     /**

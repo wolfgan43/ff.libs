@@ -128,18 +128,18 @@ class Database implements Constant
     }
 
     /**
-     * @param array $where
-     * @param null|array $fields
-     * @param null|array $sort
-     * @param null|int $limit
+     * @param array|null $fields
+     * @param array|null $where
+     * @param array|null $sort
+     * @param int|null $limit
      * @param int|null $offset
-     * @param null|string $table_name
+     * @param string|null $table_name
      * @return array|null
      */
-    public function read(array $where, array $fields = null, array $sort = null, int $limit = null, int $offset = null, string $table_name = null) : ?array
+    public function read(array $fields = null, array $where = null, array $sort = null, int $limit = null, int $offset = null, string $table_name = null) : ?array
     {
         foreach ($this->adapters as $adapter_name => $adapter) {
-            $this->result[$adapter_name]                                    = $adapter->read($where, $fields, $sort, $limit, $offset, $table_name);
+            $this->result[$adapter_name]                                    = $adapter->read($fields, $where, $sort, $limit, $offset, $table_name);
         }
 
         return $this->getResult();

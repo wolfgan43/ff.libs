@@ -285,7 +285,7 @@ class Orm extends Mappable
     public function read(array $select = null, array $where = null, array $sort = null, int $limit = null, int $offset = null) : ?OrmResults
     {
         if ($this->cacheRequest(self::ACTION_READ, [$select, $where, $sort, $limit, $offset], $this->result)) {
-            $this->get($where, $select, $sort, $limit, $offset);
+            $this->get($select, $where, $sort, $limit, $offset);
 
             $this->cacheStore($this->result);
         }
@@ -303,7 +303,7 @@ class Orm extends Mappable
     public function readOne(array $select = null, array $where = null, array $sort = null, int $offset = null) : ?object
     {
         if ($this->cacheRequest(self::ACTION_READONE, [$select, $where, $sort, $offset], $this->result)) {
-            $this->get($where, $select, $sort, 1, $offset);
+            $this->get($select, $where, $sort, 1, $offset);
             $this->cacheStore($this->result);
         }
 
@@ -414,13 +414,13 @@ class Orm extends Mappable
     }
 
     /**
-     * @param null|array $where
      * @param null|array $select
+     * @param null|array $where
      * @param null|array $sort
      * @param int $limit
      * @param int|null $offset
      */
-    private function get(array $where = null, array $select = null, array $sort = null, int $limit = null, int $offset = null) : void
+    private function get(array $select = null, array $where = null, array $sort = null, int $limit = null, int $offset = null) : void
     {
         $this->clearResult();
 
@@ -452,9 +452,9 @@ class Orm extends Mappable
         /**
          * Run Main query if where isset
          */
-        if (!$this->main->runned && !empty($this->main->where)) {
+        if (!$this->main->runned) {
             $this->setCount($this->getData($this->main, $this->main->service, $this->main->def->mainTable, $limit, $offset));
-            $this->main->runned                                                 = true;
+            $this->main->runned                                                             = true;
             $counter++;
         }
 
@@ -501,123 +501,122 @@ class Orm extends Mappable
     private function getData(OrmQuery $data, string $controller, string $table, int $limit = null, int $offset = null) : ?int
     {
         $count                                                                              = null;
-        if (!empty($data->where)) {
-            $main_table                                                                     = $data->def->mainTable;
-            $Orm                                                                            = $this->getModel($controller);
-            $regs                                                                           = $Orm
+
+        $main_table                                                                         = $data->def->mainTable;
+        $Orm                                                                                = $this->getModel($controller);
+        $regs                                                                               = $Orm
                                                                                                 ->setStorage($data->def)
                                                                                                 ->read(
-                                                                                                    $data->where,
                                                                                                     $data->select(true),
+                                                                                                    $data->where,
                                                                                                     $data->sort,
                                                                                                     $limit,
                                                                                                     $offset
                                                                                                 );
-            if (!empty($regs[self::RESULT])) {
-                $thisTable                                                              = $table;
-                $aliasTable                                                             = $data->def->table[self::TALIAS];
-                $this->result[$thisTable]                                               = $regs[self::RESULT];
-                $this->result_keys[$thisTable]                                          = $regs[self::INDEX]    ?? null;
-                $count                                                                  = $regs[self::COUNT];
-                if (!empty($data->def->relationship)) {
-                    foreach ($data->def->relationship as $ref => $relation) {
-                        unset($whereRef);
-                        $manyToMany             = false;
-                        $oneToMany              = isset($relation[self::FREL_TABLE_NAME]) && isset($data->def->struct[$ref]);
-                        if (!$oneToMany && !isset($relation[self::FREL_EXTERNAL])) {
-                            Error::register("Relation malformed: " . $thisTable . " => " . $ref  . " => " . print_r($relation, true));
+        if (!empty($regs[self::RESULT])) {
+            $thisTable                                                                          = $table;
+            $aliasTable                                                                         = $data->def->table[self::TALIAS];
+            $this->result[$thisTable]                                                           = $regs[self::RESULT];
+            $this->result_keys[$thisTable]                                                      = $regs[self::INDEX]    ?? null;
+            $count                                                                              = $regs[self::COUNT];
+            if (!empty($data->def->relationship)) {
+                foreach ($data->def->relationship as $ref => $relation) {
+                    unset($whereRef);
+                    $manyToMany                                                                 = false;
+                    $oneToMany                                                                  = isset($relation[self::FREL_TABLE_NAME]) && isset($data->def->struct[$ref]);
+                    if (!$oneToMany && !isset($relation[self::FREL_EXTERNAL])) {
+                        Error::register("Relation malformed: " . $thisTable . " => " . $ref  . " => " . print_r($relation, true));
+                    }
+                    if ($oneToMany) {
+                        $thisKey                                                                = $ref;
+
+                        $relTable                                                               = $relation[self::FREL_TABLE_NAME];
+                        $relKey                                                                 = $relation[self::FREL_TABLE_KEY];
+
+                        if ($relTable != $main_table && isset($data->def->relationship[$main_table])) {
+                            $manyToMany                                                         = true;
                         }
-                        if ($oneToMany) {
-                            $thisKey            = $ref;
-
-                            $relTable           = $relation[self::FREL_TABLE_NAME];
-                            $relKey             = $relation[self::FREL_TABLE_KEY];
-
-                            if ($relTable != $main_table && isset($data->def->relationship[$main_table])) {
-                                $manyToMany     = true;
-                            }
-                        } elseif (isset($data->def->struct[$relation[self::FREL_EXTERNAL]])) {
-                            if ($ref != $main_table && isset($data->def->relationship[$main_table])) {
-                                $manyToMany     = true;
-                            }
-                            if (isset($data->def->relationship[$relation[self::FREL_EXTERNAL]])) {
-                                $oneToMany      = true;
-                            }
-
-                            $thisKey            = $relation[self::FREL_EXTERNAL];
-
-                            $relTable           = $ref;
-                            $relKey             = $relation[self::FREL_PRIMARY];
-                        } else {
-                            $thisKey            = $relation[self::FREL_PRIMARY];
-
-                            $relTable           = $ref;
-                            $relKey             = $relation[self::FREL_EXTERNAL];
+                    } elseif (isset($data->def->struct[$relation[self::FREL_EXTERNAL]])) {
+                        if ($ref != $main_table && isset($data->def->relationship[$main_table])) {
+                            $manyToMany                                                         = true;
+                        }
+                        if (isset($data->def->relationship[$relation[self::FREL_EXTERNAL]])) {
+                            $oneToMany                                                          = true;
                         }
 
-                        if (isset($this->rel_done[$thisTable . "." . $thisKey][$relTable . "." . $relKey])) {
-                            continue;
-                        }
+                        $thisKey                                                                = $relation[self::FREL_EXTERNAL];
 
-                        if ($main_table == $relTable) {
-                            $whereRef           =& $this->main;
-                        } elseif (isset($this->subs[$controller][$relTable])) {
-                            $whereRef           =& $this->subs[$controller][$relTable];
-                        } elseif (isset($this->services_by_data->tables[$controller . "." . $relTable])) {
-                            Error::register("Relationship not found: " . $thisTable . "." . $thisKey . " => " . $relTable . "." . $relKey);
-                        }
+                        $relTable                                                               = $ref;
+                        $relKey                                                                 = $relation[self::FREL_PRIMARY];
+                    } else {
+                        $thisKey                                                                = $relation[self::FREL_PRIMARY];
 
-                        $keyValue = array_column($regs[self::INDEX], $thisKey);
-                        if (isset($whereRef) && count($keyValue)) {
-                            $this->whereBuilder($whereRef, $keyValue, $relKey);
-                        } elseif (isset($this->services_by_data->tables[$controller . "." . $relTable])) {
-                            Error::register("Relationship found but missing keyValue in result. Check in configuration indexes: " . $thisTable . " => " . $thisKey . " (" . $relTable . "." . $relKey . ")");
-                        }
+                        $relTable                                                               = $ref;
+                        $relKey                                                                 = $relation[self::FREL_EXTERNAL];
+                    }
 
-                        $this->rel[$relTable][$thisTable] = $keyValue;
-                        $this->rel_done[$thisTable . "." . $thisKey][$relTable . "." . $relKey] = true;
+                    if (isset($this->rel_done[$thisTable . "." . $thisKey][$relTable . "." . $relKey])) {
+                        continue;
+                    }
 
-                        if (isset($this->result[$relTable])) {
-                            foreach ($keyValue as $keyCounter => $keyID) {
-                                if (isset($regs[self::INDEX][$keyCounter][$thisKey]) && $regs[self::INDEX][$keyCounter][$thisKey] == $keyID) {
-                                    if ($main_table == $thisTable) {
-                                        $keyParents                                                                             = array_keys($this->rel[$thisTable][$relTable], $keyID);
-                                        foreach ($keyParents as $keyParent) {
-                                            /**
-                                             * Remove if exist reference of Result in sub table for prevent circular references
-                                             */
-                                            unset($this->result[$relTable][$keyParent][$aliasTable]);
+                    if ($main_table == $relTable) {
+                        $whereRef                                                               =& $this->main;
+                    } elseif (isset($this->subs[$controller][$relTable])) {
+                        $whereRef                                                               =& $this->subs[$controller][$relTable];
+                    } elseif (isset($this->services_by_data->tables[$controller . "." . $relTable])) {
+                        Error::register("Relationship not found: " . $thisTable . "." . $thisKey . " => " . $relTable . "." . $relKey);
+                    }
 
-                                            if (!$oneToMany && !$manyToMany) {
-                                                $this->result[$thisTable][$keyCounter][$Orm->getTableAlias($relTable)][]        =& $this->result[$relTable][$keyParent];
-                                            } else {
-                                                $this->result[$thisTable][$keyCounter][$Orm->getTableAlias($relTable)]          =& $this->result[$relTable][$keyParent];
-                                            }
-                                        }
-                                    } elseif ($manyToMany) {
-                                        $keyParents                                                                             = array_keys($this->rel[$thisTable][$relTable], $keyID);
-                                        foreach ($keyParents as $keyParent) {
-                                            /**
-                                             * Remove if exist reference of Result in sub table for prevent circular references
-                                             */
-                                            unset($this->result[$relTable][$keyParent][$aliasTable]);
+                    $keyValue = array_column($regs[self::INDEX], $thisKey);
+                    if (isset($whereRef) && count($keyValue)) {
+                        $this->whereBuilder($whereRef, $keyValue, $relKey);
+                    } elseif (isset($this->services_by_data->tables[$controller . "." . $relTable])) {
+                        Error::register("Relationship found but missing keyValue in result. Check in configuration indexes: " . $thisTable . " => " . $thisKey . " (" . $relTable . "." . $relKey . ")");
+                    }
 
-                                            $this->result[$thisTable][$keyCounter][$Orm->getTableAlias($relTable)]              =& $this->result[$relTable][$keyParent];
-                                        }
-                                    } else {
-                                        $keyParents                                                                             = array_keys($this->rel[$thisTable][$relTable], $keyID);
+                    $this->rel[$relTable][$thisTable] = $keyValue;
+                    $this->rel_done[$thisTable . "." . $thisKey][$relTable . "." . $relKey] = true;
 
+                    if (isset($this->result[$relTable])) {
+                        foreach ($keyValue as $keyCounter => $keyID) {
+                            if (isset($regs[self::INDEX][$keyCounter][$thisKey]) && $regs[self::INDEX][$keyCounter][$thisKey] == $keyID) {
+                                if ($main_table == $thisTable) {
+                                    $keyParents                                                                             = array_keys($this->rel[$thisTable][$relTable], $keyID);
+                                    foreach ($keyParents as $keyParent) {
                                         /**
                                          * Remove if exist reference of Result in sub table for prevent circular references
                                          */
-                                        unset($this->result[$thisTable][$keyCounter][$Orm->getTableAlias($relTable)]);
+                                        unset($this->result[$relTable][$keyParent][$aliasTable]);
 
-                                        foreach ($keyParents as $keyParent) {
-                                            if ($oneToMany || $manyToMany) {
-                                                $this->result[$relTable][$keyParent][$aliasTable][]                             =& $this->result[$thisTable][$keyCounter];
-                                            } else {
-                                                $this->result[$relTable][$keyParent][$aliasTable]                               =& $this->result[$thisTable][$keyCounter];
-                                            }
+                                        if (!$oneToMany && !$manyToMany) {
+                                            $this->result[$thisTable][$keyCounter][$Orm->getTableAlias($relTable)][]        =& $this->result[$relTable][$keyParent];
+                                        } else {
+                                            $this->result[$thisTable][$keyCounter][$Orm->getTableAlias($relTable)]          =& $this->result[$relTable][$keyParent];
+                                        }
+                                    }
+                                } elseif ($manyToMany) {
+                                    $keyParents                                                                             = array_keys($this->rel[$thisTable][$relTable], $keyID);
+                                    foreach ($keyParents as $keyParent) {
+                                        /**
+                                         * Remove if exist reference of Result in sub table for prevent circular references
+                                         */
+                                        unset($this->result[$relTable][$keyParent][$aliasTable]);
+
+                                        $this->result[$thisTable][$keyCounter][$Orm->getTableAlias($relTable)]              =& $this->result[$relTable][$keyParent];
+                                    }
+                                } else {
+                                    $keyParents                                                                             = array_keys($this->rel[$thisTable][$relTable], $keyID);
+
+                                    /**
+                                     * Remove if exist reference of Result in sub table for prevent circular references
+                                     */
+                                    unset($this->result[$thisTable][$keyCounter][$Orm->getTableAlias($relTable)]);
+
+                                    foreach ($keyParents as $keyParent) {
+                                        if ($oneToMany || $manyToMany) {
+                                            $this->result[$relTable][$keyParent][$aliasTable][]                             =& $this->result[$thisTable][$keyCounter];
+                                        } else {
+                                            $this->result[$relTable][$keyParent][$aliasTable]                               =& $this->result[$thisTable][$keyCounter];
                                         }
                                     }
                                 }
@@ -651,8 +650,8 @@ class Orm extends Mappable
             $regs                                                                           = $this->getModel($data->getController($controller))
                                                                                                 ->setStorage($data->def)
                                                                                                 ->read(
-                                                                                                    $data->where,
                                                                                                     $data->select(true),
+                                                                                                    $data->where,
                                                                                                     $data->sort,
                                                                                                     $limit,
                                                                                                     $offset
@@ -715,7 +714,7 @@ class Orm extends Mappable
             /**
              * Insert unique
              */
-            $regs                                                                           = $storage->read($data->insert, array($key_name => true));
+            $regs                                                                           = $storage->read(array($key_name => true), $data->insert);
             if (is_array($regs)) {
                 $this->setKeyRelationship($data, $key_name, array_column($regs[self::INDEX], $key_name), $controller);
             } else {
@@ -739,7 +738,14 @@ class Orm extends Mappable
                 if (!isset($this->main->where[$key_main_primary])) {
                     $regs                                                                   = $this->getModel($modelName)
                                                                                                 ->setStorage($this->main->def)
-                                                                                                ->read($this->main->where, array($key_main_primary => true), null, null, null, $this->main->def->table[self::TNAME]);
+                                                                                                ->read(
+                                                                                                    array($key_main_primary => true),
+                                                                                                    $this->main->where,
+                                                                                                    null,
+                                                                                                    null,
+                                                                                                    null,
+                                                                                                    $this->main->def->table[self::TNAME]
+                                                                                                );
                     if (is_array($regs)) {
                         $this->main->where[$key_main_primary]                               = array_column($regs[self::INDEX], $key_main_primary);
                     }
@@ -816,8 +822,8 @@ class Orm extends Mappable
                                                                                                 ->getMainModel()
                                                                                                 ->setStorage($this->main->def)
                                                                                                 ->read(
-                                                                                                    $this->main->where,
-                                                                                                    array_keys($this->main->def->indexes)
+                                                                                                    array_keys($this->main->def->indexes),
+                                                                                                    $this->main->where
                                                                                                 );
         if (is_array($res)) {
             $this->main->where                                                              = array_replace($this->main->where, $res);
@@ -845,6 +851,9 @@ class Orm extends Mappable
                     }
                     if ($key && $field_ext && $field_ext != $key_name) {
                         if ($tbl != $this->main->def->mainTable) {
+                            if (!isset($this->rev[$tbl])) {
+                                Error::register("relationship missing Controller for table: " . $tbl . " from controller " . $controller, static::ERROR_BUCKET);
+                            }
                             $rev_controller                                                 = $this->rev[$tbl];
                             $sub = $this->getSubs($rev_controller, $tbl);
                             if (!empty($sub->insert)) {

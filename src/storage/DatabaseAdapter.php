@@ -65,7 +65,6 @@ abstract class DatabaseAdapter implements Constant
     protected const OP_ADD_TO_SET       = '$addToSet';
     protected const OP_SET              = '$set';
 
-    private const ERROR_READ_IS_EMPTY   = "where is empty";
     private const ERROR_INSERT_IS_EMPTY = "insert is empty";
     private const ERROR_UPDATE_IS_EMPTY = "set and/or where are empty";
     private const ERROR_WRITE_IS_EMPTY  = "insert and/or set and/or where are empty";
@@ -122,6 +121,9 @@ abstract class DatabaseAdapter implements Constant
     private $in                         = array();
 
 
+    /**
+     * @return mixed
+     */
     abstract protected function getDriver();
 
     /**
@@ -731,15 +733,15 @@ abstract class DatabaseAdapter implements Constant
     }
 
     /**
-     * @param array $where
      * @param array $select
+     * @param array|null $where
      * @param array|null $sort
      * @param int|null $limit
      * @param int|null $offset
      * @param string|null $table_name
      * @return DatabaseQuery
      */
-    private function getQueryRead(array $where, array $select, array $sort = null, int $limit = null, int $offset = null, string $table_name = null) : DatabaseQuery
+    private function getQueryRead(array $select, array $where = null, array $sort = null, int $limit = null, int $offset = null, string $table_name = null) : DatabaseQuery
     {
         $query                  = $this->getQuery(self::ACTION_READ, $table_name);
 
@@ -864,22 +866,20 @@ abstract class DatabaseAdapter implements Constant
     }
 
     /**
-     * @param array $where
      * @param array $fields
+     * @param array|null $where
      * @param array|null $sort
      * @param int|null $limit
      * @param int|null $offset
      * @param string|null $table_name
      * @return array|null
      */
-    public function read(array $where, array $fields, array $sort = null, int $limit = null, int $offset = null, string $table_name = null) : ?array
+    public function read(array $fields, array $where = null, array $sort = null, int $limit = null, int $offset = null, string $table_name = null) : ?array
     {
-        if (empty($where)) {
-            Error::register(static::ERROR_READ_IS_EMPTY);
-        }
+
 
         $res                                                    = null;
-        $query                                                  = $this->getQueryRead($where, $fields, $sort, $limit, $offset, $table_name);
+        $query                                                  = $this->getQueryRead($fields, $where, $sort, $limit, $offset, $table_name);
 
         $db                                                     = $this->processRead($query);
         if ($db) {
@@ -927,7 +927,7 @@ abstract class DatabaseAdapter implements Constant
     public function insert(array $insert, string $table_name = null) : ?array
     {
         if (empty($insert)) {
-            Error::register(static::ERROR_INSERT_IS_EMPTY);
+            Error::register(self::ERROR_INSERT_IS_EMPTY);
         }
 
         return $this->processInsert($this->getQueryInsert($insert, $table_name));
@@ -942,7 +942,7 @@ abstract class DatabaseAdapter implements Constant
     public function update(array $set, array $where, string $table_name = null) : ?array
     {
         if (empty($set) || empty($where)) {
-            Error::register(static::ERROR_UPDATE_IS_EMPTY);
+            Error::register(self::ERROR_UPDATE_IS_EMPTY);
         }
 
         return $this->processUpdate($this->getQueryUpdate($set, $where, $table_name));
@@ -958,7 +958,7 @@ abstract class DatabaseAdapter implements Constant
     public function write(array $insert, array $set, array $where, string $table_name = null) : ?array
     {
         if (empty($insert) || empty($set) || empty($where)) {
-            Error::register(static::ERROR_WRITE_IS_EMPTY);
+            Error::register(self::ERROR_WRITE_IS_EMPTY);
         }
 
         return $this->processWrite($this->getQueryWrite($insert, $set, $where, $table_name));
@@ -972,7 +972,7 @@ abstract class DatabaseAdapter implements Constant
     public function delete(array $where, string $table_name = null) : ?array
     {
         if (empty($where)) {
-            Error::register(static::ERROR_DELETE_IS_EMPTY);
+            Error::register(self::ERROR_DELETE_IS_EMPTY);
         }
 
         return $this->processDelete($this->getQueryDelete($where, $table_name));
@@ -987,7 +987,7 @@ abstract class DatabaseAdapter implements Constant
     public function cmd(array $where, string $action = self::CMD_COUNT, string $table_name = null) : ?array
     {
         if (empty($where)) {
-            Error::register(static::ERROR_CMD_IS_EMPTY);
+            Error::register(self::ERROR_CMD_IS_EMPTY);
         }
 
         return $this->processCmd($this->getQueryCmd($where, $table_name), $action);

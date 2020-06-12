@@ -118,7 +118,7 @@ class Resource extends Mappable implements Dumpable
     public static function get(string $name, string $type) : ?string
     {
         if (!self::$singleton) {
-            self::$singleton = new Resource();
+            self::$singleton                    = new Resource();
         }
 
 

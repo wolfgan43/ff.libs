@@ -93,6 +93,8 @@ class PageHtml extends Mappable
      */
     public function __construct(string $map_name = "default")
     {
+        Debug::stopWatch("tpl/page/html");
+
         parent::__construct($map_name, self::class);
 
         $this->GridSystem                       = Gridsystem::getInstance();
@@ -523,6 +525,7 @@ class PageHtml extends Mappable
      */
     public function render() : DataHtml
     {
+        Debug::stopWatch("tpl/page/html");
 
         return new DataHtml(["html" => $this->parseHtml()]);
     }

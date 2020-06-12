@@ -105,7 +105,7 @@ abstract class DatabaseDriver implements Constant
     abstract public function multiQuery(array $queries) : ?array;
 
     /**
-     * @param object|null $obj
+     * @param object $obj
      * @return bool
      */
     abstract public function nextRecord(object &$obj = null) : bool;
@@ -214,6 +214,10 @@ abstract class DatabaseDriver implements Constant
             case self::FTYPE_ARRAY_OF_NUMBER:
             case self::FTYPE_ARRAY_INCREMENTAL:
             default:
+                if (is_array($Array[0])) {
+                    $this->errorHandler("Multidimensional Array not managed: " . json_encode($Array));
+                }
+
                 $value = array_map(function ($value) {
                     return $this->toSqlEscape($value);
                 }, $Array);
@@ -242,6 +246,7 @@ abstract class DatabaseDriver implements Constant
     }
     /**
      * @todo da tipizzare
+     * @todo i cast int e fload danno problemi con numeri enormi.
      * @param string|null $value
      * @param string $type
      * @return string|null

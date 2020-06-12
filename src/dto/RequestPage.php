@@ -323,6 +323,7 @@ class RequestPage extends Mappable
         if ($this->isAllowedSize($this->getRequestHeaders(), Request::METHOD_HEAD)) {
             if (!empty($this->rules->header)) {
                 foreach ($this->rules->header as $rule) {
+                    $rule                                                                   = (object) $rule; //@todo necessario per design pattern
                     $header_key                                                             = $rule->name;
                     if ($rule->name == "Authorization") {
                         $header_name                                                        = "Authorization";
@@ -374,6 +375,7 @@ class RequestPage extends Mappable
             $rawdata                                                                        = $this->normalizeRawData($request);
             if (!empty($this->rules->$bucket)) {
                 foreach ($this->rules->$bucket as $key => $rule) {
+                    $rule                                                                   = (object) $rule; //@todo necessario per design pattern
                     if (isset($rule->required) && $rule->required === true && !isset($request[$key])) {
                         $errors[400][]                                                      = $key . self::ERROR_IS_REQUIRED;
                     } elseif (isset($rule->required_ifnot) && !isset($_SERVER[$rule->required_ifnot]) && !isset($request[$key])) {
@@ -441,8 +443,9 @@ class RequestPage extends Mappable
         $errors                                                                             = array();
         if (!empty($_FILES)) {
             foreach ($_FILES as $file_name => $file) {
-                if (isset($this->rules->body[$file_name]->mime) && strpos($this->rules->body[$file_name]->mime, $file["type"]) === false) {
-                    $errors[400][]                                                          = $file_name . " must be type " . $this->rules->body[$file_name]->mime;
+                $rule                                                                       = (object) ($this->rules->body[$file_name] ?? null); //@todo necessario per design pattern
+                if (isset($rule->mime) && strpos($rule->mime, $file["type"]) === false) {
+                    $errors[400][]                                                          = $file_name . " must be type " . $rule->mime;
                 } else {
                     $validator                                                              = Validator::is($file_name, $file_name, "file");
                     if ($validator->isError()) {

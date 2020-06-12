@@ -26,7 +26,6 @@
 namespace phpformsframework\libs\cache\adapters;
 
 use phpformsframework\libs\Constant;
-use phpformsframework\libs\Dir;
 use phpformsframework\libs\storage\Filemanager;
 
 /**
@@ -35,6 +34,8 @@ use phpformsframework\libs\storage\Filemanager;
  */
 class MemFs extends MemAdapter
 {
+    private const CACHE_DISK_PATH = Constant::CACHE_DISK_PATH . DIRECTORY_SEPARATOR . "data";
+
     /**
      * Inserisce un elemento nella cache
      * Oltre ai parametri indicati, accetta un numero indefinito di chiavi per relazione i valori memorizzati
@@ -53,38 +54,31 @@ class MemFs extends MemAdapter
 
             $res = Filemanager::getInstance("php")->write(
                 $value,
-                self::getCacheDiskPath()
-                . DIRECTORY_SEPARATOR . $bucket
-                . DIRECTORY_SEPARATOR . $name
+                self::getCacheDiskPath(DIRECTORY_SEPARATOR . $bucket . DIRECTORY_SEPARATOR . $name)
             );
         }
         return $res;
     }
 
     /**
-     * Recupera un elemento dalla cache
      * @param String $name il nome dell'elemento
      * @param String|null $bucket il name space
      * @return Mixed l'elemento
      */
     public function get(string $name, string $bucket = null)
     {
-        $res = false;
+        $res = null;
         if ($this->is_readable) {
             $this->getKey("get", $bucket, $name);
-            $res = Filemanager::getInstance("php")
-                ->read(
-                    "/cache/data"
-                    . "/" . $bucket
-                    . "/" . $name
-                );
+
+            $res = Filemanager::loadScript(DIRECTORY_SEPARATOR . $bucket . DIRECTORY_SEPARATOR . $name, self::CACHE_DISK_PATH);
+
         }
 
         return $res;
     }
 
     /**
-     * Cancella una variabile
      * @param String $name il nome dell'elemento
      * @param String|null $bucket il name space
      * @return bool
@@ -93,9 +87,7 @@ class MemFs extends MemAdapter
     {
         $this->getKey("del", $bucket, $name);
         return Filemanager::xPurgeDir(
-            self::getCacheDiskPath()
-            . "/" . $bucket
-            . "/" . $name
+            self::getCacheDiskPath(DIRECTORY_SEPARATOR . $bucket . DIRECTORY_SEPARATOR . $name)
         );
     }
 
@@ -106,16 +98,16 @@ class MemFs extends MemAdapter
     {
         $this->getKey("clear", $bucket);
         Filemanager::xPurgeDir(
-            self::getCacheDiskPath()
-            . "/" . $bucket
+            self::getCacheDiskPath(DIRECTORY_SEPARATOR . $bucket)
         );
     }
 
     /**
+     * @param string $path
      * @return string
      */
-    private function getCacheDiskPath() : string
+    private function getCacheDiskPath(string $path) : string
     {
-        return Constant::DISK_PATH . Dir::findCachePath("data", true);
+        return self::CACHE_DISK_PATH . $path;
     }
 }

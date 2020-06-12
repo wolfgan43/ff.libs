@@ -28,6 +28,7 @@ namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Constant;
+use phpformsframework\libs\Dir;
 use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
@@ -70,7 +71,7 @@ class Filemanager implements Dumpable
      */
     public static function getInstance(string $filemanagerAdapter, string $file = null, string $var = null, int $expire = null) : FilemanagerAdapter
     {
-        if ($filemanagerAdapter && !isset(self::$singletons[$filemanagerAdapter])) {
+        if (!isset(self::$singletons[$filemanagerAdapter])) {
             $class_name                                                 = static::NAME_SPACE . "Filemanager" . ucfirst($filemanagerAdapter);
             self::$singletons[$filemanagerAdapter]                      = new $class_name($file, $var, $expire);
         }
@@ -89,6 +90,23 @@ class Filemanager implements Dumpable
             "contents"      => self::$cache["request"]
         );
     }
+
+    /**
+     * @param string $path
+     * @param string|null $base_path
+     * @return array|null
+     */
+    public static function loadScript(string $path, string $base_path = null) : ?array
+    {
+        Debug::stopWatch("loadscript" . $path);
+
+        $res = Dir::autoload(($base_path ?? Constant::DISK_PATH) . $path . "." . Constant::PHP_EXT);
+
+        Debug::stopWatch("loadscript" . $path);
+
+        return $res;
+    }
+
 
     /**
      * @param string $type
@@ -769,6 +787,7 @@ class Filemanager implements Dumpable
      * @param string|null $password
      * @param array|null $headers
      * @return string
+     * @throws Exception
      */
     public static function fileGetContent(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : string
     {
@@ -807,6 +826,7 @@ class Filemanager implements Dumpable
 
         return $res;
     }
+
     /**
      * @param string $url
      * @param array|null $params
@@ -819,6 +839,7 @@ class Filemanager implements Dumpable
      * @param string|null $password
      * @param array|null $headers
      * @return array|null
+     * @throws Exception
      */
     public static function fileGetContentWithHeaders(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : ?array
     {
@@ -901,12 +922,13 @@ class Filemanager implements Dumpable
      * @param resource $context
      * @param array|null $headers
      * @return string
+     * @throws Exception
      */
     private static function loadFile(string $path, $context = null, array &$headers = null) : string
     {
         $content                            = @file_get_contents($path, false, $context);
         if ($content === false) {
-            Error::register("File inaccessible: " . ($path ? $path : "empty"));
+            throw new Exception("File inaccessible: " . ($path ? $path : "empty"), 403);
         }
 
         if (isset($http_response_header) && isset($headers)) {

@@ -115,22 +115,22 @@ class OrmItem
     {
         return (property_exists($this, $name)
             ? $this->$name
-            : $this->getModel($name)
+            : $this->extend($name)
         );
     }
 
     /**
-     * @param string $name
+     * @param string $model_name
      * @param array|null $where
      * @return OrmModel|null
      * @throws Exception
      */
-    public function getModel(string $name, array $where = null) : ?OrmModel
+    public function extend(string $model_name, array $where = null) : ?OrmModel
     {
-        if (!isset($this->models[$name])) {
-            $this->loadModel($name, $where);
+        if (!isset($this->models[$model_name])) {
+            $this->loadModel($model_name, $where);
         }
-        return $this->models[$name];
+        return $this->models[$model_name];
     }
 
     /**
@@ -300,7 +300,7 @@ class OrmItem
         foreach ($validators as $field => $value) {
             if (is_array($this->dbValidator[$field])) {
                 if ($dtd->$field == Database::FTYPE_ARRAY || $dtd->$field == Database::FTYPE_ARRAY_OF_NUMBER) {
-                    $arrField                                                   = explode(",", str_Replace(", ", ",", $value));
+                    $arrField                                                   = explode(",", str_replace(", ", ",", $value));
                     if (count(array_diff($arrField, $this->dbValidator[$field]))) {
                         $errors[]                                               = $field . " must be: [" . implode(", ", $this->dbValidator[$field]) . "]";
                     }

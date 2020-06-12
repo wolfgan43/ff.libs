@@ -293,7 +293,6 @@ class Debug
                 if ($reflect->implementsInterface(__NAMESPACE__ . '\\Dumpable')) {
                     $classDumpable              = $class_name;
                     $parent                     = $reflect->getParentClass();
-
                     if (!$parent || !isset($implements[basename(str_replace('\\', '/', $parent->getName()))])) {
                         $implements[basename(str_replace('\\', '/', $class_name))]    = (array) $classDumpable::dump();
                     }
@@ -331,7 +330,7 @@ class Debug
             } else {
                 $operation = (
                     isset($trace["class"])
-                    ?  $class_name . $trace["type"] . $trace["function"] . '(' . implode(", ", $trace["args"]) . ')'
+                    ?  $class_name . $trace["type"] . $trace["function"] . '(' . json_encode($trace["args"]) . ')'
                     : $trace["function"]
                 );
 
@@ -392,6 +391,8 @@ class Debug
      */
     public static function dump(string $error_message = null, bool $return = false) : ?string
     {
+        self::stopWatch("debugger");
+
         if (Request::isCli() || Request::accept() != "text/html") {
             echo self::dumpCommandLine($error_message);
             exit;
@@ -553,7 +554,7 @@ class Debug
                     . 'DB: '        . (Kernel::$Environment::DISABLE_CACHE ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_DATABASE_ADAPTER      . '</span>, '
                     . 'Media: '     . (Kernel::$Environment::DISABLE_CACHE ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_MEDIA_ADAPTER     . '</span>'
                 . ')</span>'
-            . '<span style="padding:15px;">ExTime: ' . self::exTimeApp() . '</span>'
+            . '<span style="padding:15px;">ExTime: ' . self::exTimeApp() . ' + {debug_extime}</span>'
             . $html_benchmark
             . '</div>';
 
@@ -568,6 +569,8 @@ class Debug
         $html   .= '</tr>';
         $html   .= '</tbody>';
         $html   .= '</table>';
+
+        $html = str_replace("{debug_extime}", self::stopWatch("debugger"), $html);
 
         if ($return) {
             return $html;

@@ -14,8 +14,8 @@ class Model implements Configurable, Dumpable
 {
     private const ERROR_BUCKET                                                      = "model";
     private const ERROR_MODEL_NOT_FOUND                                             = "Model not Found";
-    private const BUCKET                                                            = "bucket";
-    private const OUTPUT                                                            = "output";
+    private const COLLECTION                                                        = "collection";
+    private const TABLE                                                             = "table";
     private const MAPCLASS                                                          = "mapclass";
     private const READ                                                              = "read";
     private const INSERT                                                            = "insert";
@@ -207,7 +207,7 @@ class Model implements Configurable, Dumpable
      */
     public function dtd() : stdClass
     {
-        return (object) $this->getOrm()->dtd($this->schema->output ?? $this->table);
+        return (object) $this->getOrm()->dtd($this->schema->table ?? $this->table);
     }
 
     /**
@@ -240,7 +240,7 @@ class Model implements Configurable, Dumpable
     private function setOrm() : Orm
     {
         if ($this->schema) {
-            $this->orm                                                              =& Orm::getInstance($this->schema->bucket, $this->schema->output, $this->mapclass ?? $this->schema->mapclass);
+            $this->orm                                                              =& Orm::getInstance($this->schema->collection, $this->schema->table, $this->mapclass ?? $this->schema->mapclass);
         } else {
             $this->orm                                                              =& Orm::getInstance($this->collection, $this->table, $this->mapclass);
         }
@@ -254,7 +254,7 @@ class Model implements Configurable, Dumpable
      */
     private function setWhere(array $where = null) : ?array
     {
-        if ($where && ($table = $this->schema->output ?? $this->table ?? null)) {
+        if ($where && ($table = $this->schema->table ?? $this->table ?? null)) {
             foreach ($where as $key => $value) {
                 if (strpos($key, ".") === false) {
                     $key = $table . "." . $key;
@@ -354,8 +354,7 @@ class Model implements Configurable, Dumpable
     public static function loadConfigRules($configRules)
     {
         return $configRules
-            ->add("models")
-            ->add("modelsview");
+            ->add("models");
     }
 
     /**
@@ -394,14 +393,14 @@ class Model implements Configurable, Dumpable
             if (isset($model_attr->name) && isset($model["field"])) {
                 $model_name                                                         = $model_attr->name;
 
-                $schema[$model_name][self::BUCKET]                                  = $model_attr->bucket   ?? null;
-                $schema[$model_name][self::OUTPUT]                                  = $model_attr->output   ?? null;
-                $schema[$model_name][self::MAPCLASS]                                = $model_attr->mapclass ?? null;
+                $schema[$model_name][self::COLLECTION]                              = $model_attr->collection   ?? null;
+                $schema[$model_name][self::TABLE]                                   = $model_attr->table        ?? null;
+                $schema[$model_name][self::MAPCLASS]                                = $model_attr->mapclass     ?? null;
 
                 $fields                                                             = $model["field"];
                 $prefix                                                             = (
-                    $schema[$model_name][self::BUCKET]
-                    ? $schema[$model_name][self::BUCKET] . self::DOT
+                    $schema[$model_name][self::COLLECTION]
+                    ? $schema[$model_name][self::COLLECTION] . self::DOT
                     : null
                 );
                 foreach ($fields as $field) {

@@ -102,11 +102,11 @@ class Dir
     /**
      * @param $path
      * @param bool $once
-     * @return bool|mixed
+     * @return mixed|null
      */
     public static function autoload($path, $once = false)
     {
-        $rc                                                         = false;
+        $rc                                                         = null;
         if (self::checkDiskPath($path)) {
             $rc                                                     = (
                 $once

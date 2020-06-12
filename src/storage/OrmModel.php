@@ -208,7 +208,7 @@ class OrmModel
         foreach ($validators as $field => $value) {
             if (is_array($this->dbValidator[$field])) {
                 if ($dtd->$field == Database::FTYPE_ARRAY || $dtd->$field == Database::FTYPE_ARRAY_OF_NUMBER) {
-                    $arrField                                                   = explode(",", str_Replace(", ", ",", $value));
+                    $arrField                                                   = explode(",", str_replace(", ", ",", $value));
                     if (count(array_diff($arrField, $this->dbValidator[$field]))) {
                         $errors[]                                               = $field . " must be: [" . implode(", ", $this->dbValidator[$field]) . "]";
                     }

@@ -510,11 +510,11 @@ class MySqli extends DatabaseDriver
 
     /**
      * @param string $value
-     * @return int
+     * @return string
      */
-    protected function convertID(string $value) : int
+    protected function convertID(string $value) : string
     {
-        return (int) $value;
+        return $value;
     }
 
     /**

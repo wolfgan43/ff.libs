@@ -44,7 +44,6 @@ class Messenger
     use AdapterManager;
 
     const ERROR_BUCKET                                      = "messenger";
-    const NAME_SPACE                                        = Notice::NAME_SPACE;
 
     private $to                                             = null;
     private $content                                        = null;
@@ -73,11 +72,7 @@ class Messenger
      */
     public function __construct(string $messengerAdapter = null)
     {
-        if (!$this->adapter && !$messengerAdapter) {
-            $messengerAdapter                               = Kernel::$Environment::MESSENGER_ADAPTER;
-        }
-
-        $this->setAdapter($messengerAdapter);
+        $this->setAdapter($messengerAdapter ?? Kernel::$Environment::MESSENGER_ADAPTER);
     }
 
     /**

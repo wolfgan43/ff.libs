@@ -28,6 +28,10 @@ namespace phpformsframework\libs\tpl;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\tpl\adapters\PageHtml;
 
+/**
+ * Class Page
+ * @package phpformsframework\libs\tpl
+ */
 class Page
 {
     const NAME_SPACE                            = __NAMESPACE__ . '\\adapters\\';

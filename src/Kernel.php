@@ -114,10 +114,9 @@ class Kernel
         if ($page->validation && $page->isInvalidURL()) {
             $this->Response->redirect($page->canonicalUrl());
         }
-
         self::useCache(!$page->nocache);
 
-        Config::autoloadRegister();
+        Config::autoloadRegister(static::NAMESPACE);
 
         Router::run($page->script_path);
     }

@@ -286,12 +286,16 @@ class Config implements Dumpable
     }
 
     /**
-     *
+     * @param string $namespace
      */
-    public static function autoloadRegister() : void
+    public static function autoloadRegister(string $namespace) : void
     {
         if (!empty(self::$autoloads)) {
-            Autoloader::register(self::$autoloads);
+            /**
+             * @var Autoloader $class_name
+             */
+            $class_name = $namespace . "Autoloader";
+            $class_name::register(self::$autoloads);
         }
     }
 

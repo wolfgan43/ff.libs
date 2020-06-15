@@ -35,6 +35,7 @@ use phpformsframework\libs\Error;
 use phpformsframework\libs\Mappable;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\storage\Filemanager;
+use Exception;
 
 /**
  * Class Resource
@@ -103,6 +104,7 @@ class Resource extends Mappable implements Dumpable
         if (!self::$singleton) {
             self::$singleton = new Resource();
         }
+//echo "type " . $type . "<br>\n";
 
         return (isset(self::$singleton->resources[$type])
             ? self::$singleton->resources[$type]
@@ -120,7 +122,7 @@ class Resource extends Mappable implements Dumpable
         if (!self::$singleton) {
             self::$singleton                    = new Resource();
         }
-
+//echo "get " . $name . "type " . $type . "<br>\n";
 
         $file                                   = null;
         $pathinfo                               = Request::pathinfo();
@@ -149,7 +151,7 @@ class Resource extends Mappable implements Dumpable
         if (!self::$singleton) {
             self::$singleton = new Resource();
         }
-
+//echo "widget " . $name . "<br>\n";
         return new DataHtml(self::$singleton->resources["widget"][$name]);
     }
 
@@ -157,6 +159,7 @@ class Resource extends Mappable implements Dumpable
      * @param string $name
      * @param string $type
      * @return string|null
+     * @throws Exception
      */
     public static function load(string $name, string $type) : ?string
     {

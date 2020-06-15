@@ -34,7 +34,8 @@ use phpformsframework\libs\storage\Filemanager;
  */
 class MemFs extends MemAdapter
 {
-    private const CACHE_DISK_PATH = Constant::CACHE_DISK_PATH . DIRECTORY_SEPARATOR . "data";
+    private const CACHE_PATH        = Constant::CACHE_PATH . DIRECTORY_SEPARATOR . "data";
+    private const CACHE_DISK_PATH   = Constant::DISK_PATH . DIRECTORY_SEPARATOR . self::CACHE_PATH;
 
     /**
      * Inserisce un elemento nella cache
@@ -56,6 +57,8 @@ class MemFs extends MemAdapter
                 $value,
                 self::getCacheDiskPath(DIRECTORY_SEPARATOR . $bucket . DIRECTORY_SEPARATOR . $name)
             );
+        } else {
+            $this->clear($bucket);
         }
         return $res;
     }
@@ -72,7 +75,6 @@ class MemFs extends MemAdapter
             $this->getKey("get", $bucket, $name);
 
             $res = Filemanager::loadScript(DIRECTORY_SEPARATOR . $bucket . DIRECTORY_SEPARATOR . $name, self::CACHE_DISK_PATH);
-
         }
 
         return $res;
@@ -97,9 +99,7 @@ class MemFs extends MemAdapter
     public function clear(string $bucket = null) : void
     {
         $this->getKey("clear", $bucket);
-        Filemanager::xPurgeDir(
-            self::getCacheDiskPath(DIRECTORY_SEPARATOR . $bucket)
-        );
+        Filemanager::xPurgeDir(self::CACHE_PATH . DIRECTORY_SEPARATOR . $bucket);
     }
 
     /**

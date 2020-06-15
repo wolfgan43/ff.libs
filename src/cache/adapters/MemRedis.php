@@ -91,6 +91,8 @@ class MemRedis extends MemAdapter
                 ? $this->conn->hSet($bucket, $name, $value)
                 : $this->conn->set($name, $value)
             );
+        } else {
+            $this->clear($bucket);
         }
 
         return $res;

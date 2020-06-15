@@ -2,13 +2,13 @@
 namespace phpformsframework\libs\tpl;
 
 use phpformsframework\libs\Dir;
-use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\util\AdapterManager;
 
 /**
  * Class View
  * @package phpformsframework\libs\tpl
+ * @property ViewAdapter adapter
  */
 class View
 {

@@ -43,6 +43,7 @@ use phpformsframework\libs\tpl\AssetsManager;
 use phpformsframework\libs\tpl\Gridsystem;
 use phpformsframework\libs\tpl\Resource;
 use phpformsframework\libs\tpl\View;
+use Exception;
 
 /**
  * Class PageHtml
@@ -136,6 +137,7 @@ class PageHtml extends Mappable
     /**
      * @param string $name
      * @return PageHtml
+     * @throws Exception
      */
     public function setLayout(string $name) : PageHtml
     {
@@ -148,6 +150,7 @@ class PageHtml extends Mappable
      * @param string|DataHtml|View $content
      * @param string $where
      * @return PageHtml
+     * @throws Exception
      */
     public function addContent($content = null, string $where = self::MAIN_CONTENT) : PageHtml
     {
@@ -159,6 +162,7 @@ class PageHtml extends Mappable
     /**
      * @param string|DataHtml|View $content
      * @return false|string|null
+     * @throws Exception
      */
     private function getHtml($content) : ?string
     {
@@ -194,6 +198,7 @@ class PageHtml extends Mappable
     /**
      * @param string $string
      * @return string|null
+     * @throws Exception
      */
     private function getHtmlByString(string $string) : ?string
     {
@@ -415,6 +420,7 @@ class PageHtml extends Mappable
 
     /**
      * @return string
+     * @throws Exception
      */
     private function parseLayout() : string
     {
@@ -475,6 +481,7 @@ class PageHtml extends Mappable
 
     /**
      * @return string
+     * @throws Exception
      */
     private function parseBody() : string
     {
@@ -509,6 +516,7 @@ class PageHtml extends Mappable
 
     /**
      * @return string
+     * @throws Exception
      */
     private function parseHtml() : string
     {
@@ -522,6 +530,7 @@ class PageHtml extends Mappable
 
     /**
      * @return DataHtml
+     * @throws Exception
      */
     public function render() : DataHtml
     {
@@ -535,6 +544,7 @@ class PageHtml extends Mappable
      * @param string $msg
      * @param string|null $description
      * @return DataHtml
+     * @throws Exception
      */
     public function renderError(int $status, string $msg, string $description = null) : DataHtml
     {

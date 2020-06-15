@@ -466,7 +466,7 @@ class Filemanager implements Dumpable
     private static function purgeDir(string $absolute_path, string $relative_path, bool $exclude_dir = false) : bool
     {
         $res = true;
-        if (file_exists($absolute_path) && is_dir($absolute_path)) {
+        if (is_dir($absolute_path)) {
             $handle = opendir($absolute_path);
             if ($handle !== false) {
                 while (false !== ($file = readdir($handle))) {

@@ -291,11 +291,7 @@ class Config implements Dumpable
     public static function autoloadRegister() : void
     {
         if (!empty(self::$autoloads)) {
-            spl_autoload_register(function ($class_name) {
-                foreach (self::$autoloads as $autoload => $namespace) {
-                    Dir::autoload(Constant::DISK_PATH . $autoload . DIRECTORY_SEPARATOR . str_replace(array($namespace, '\\'), array('', '/'), $class_name) . "." . Constant::PHP_EXT);
-                }
-            });
+            Autoloader::register(self::$autoloads);
         }
     }
 
@@ -378,65 +374,7 @@ class Config implements Dumpable
         $cache                                                              = Mem::getInstance(static::ERROR_BUCKET);
         $rawdata                                                            = $cache->get("rawdata");
         if (!$rawdata) {
-            $rawdata                                                        = array();
-
-
-            foreach (self::$class_configurable as $class_basename => $class_name) {
-                /**
-                 * @var Configurable $class_name
-                 */
-                $configRules                                                = new ConfigRules($class_basename);
-                self::addRules($class_name::loadConfigRules($configRules));
-            }
-
-
-            /**
-             * Find Config.xml
-             */
-            $paths = array_replace(
-                Constant::CONFIG_DISK_PATHS,
-                $paths
-            );
-
-            Filemanager::scan($paths, function ($file) {
-                $pathinfo                                                   = pathinfo($file);
-                switch ($pathinfo["extension"]) {
-                    case "xml":
-                        self::$config_files[$file]                          = filemtime($file);
-
-                        self::loadXml($file);
-                        break;
-                    case "map":
-                        $arrFN                                              = explode("_", $pathinfo["filename"], 2);
-                        self::$mapping_files[$arrFN[0]][$arrFN[1]]          = $file;
-                        break;
-                    default:
-                        Error::registerWarning("Config file Extension not supported", static::ERROR_BUCKET);
-                }
-            });
-
-            /**
-             * Load Kernel Config by Xml
-             */
-            static::loadDirStruct();
-            static::loadEngine();
-            static::loadPages();
-
-            /**
-             * @var Configurable $class_name
-             */
-
-            foreach (self::$class_configurable as $class_basename => $class_name) {
-                Debug::stopWatch(self::SCHEMA_CONF . "/" . $class_basename);
-                if (isset(self::$config_data[$class_basename])) {
-                    $rawdata[$class_basename]                               = $class_name::loadSchema(self::$config_data[$class_basename]);
-                    unset(self::$config_data[$class_basename]);
-                } else {
-                    Error::registerWarning("no configuration for: " . $class_basename, static::ERROR_BUCKET);
-                }
-                Debug::stopWatch(self::SCHEMA_CONF . "/" . $class_basename);
-            }
-
+            $rawdata                                                        = self::loadFile($paths);
             $cache->set("rawdata", self::dump() + $rawdata);
         } else {
             self::loadConfig($rawdata);
@@ -457,9 +395,76 @@ class Config implements Dumpable
     }
 
     /**
+     * @param array $paths
+     * @return array
+     */
+    private static function loadFile(array $paths) : array
+    {
+        $rawdata                                                        = array();
+
+        foreach (self::$class_configurable as $class_basename => $class_name) {
+            /**
+             * @var Configurable $class_name
+             */
+            $configRules                                                = new ConfigRules($class_basename);
+            self::addRules($class_name::loadConfigRules($configRules));
+        }
+
+
+        /**
+         * Find Config.xml
+         */
+        $paths = array_replace(
+            Constant::CONFIG_DISK_PATHS,
+            $paths
+        );
+
+        Filemanager::scan($paths, function ($file) {
+            $pathinfo                                                   = pathinfo($file);
+            switch ($pathinfo["extension"]) {
+                case "xml":
+                    self::$config_files[$file]                          = filemtime($file);
+
+                    self::loadFileXml($file);
+                    break;
+                case "map":
+                    $arrFN                                              = explode("_", $pathinfo["filename"], 2);
+                    self::$mapping_files[$arrFN[0]][$arrFN[1]]          = $file;
+                    break;
+                default:
+                    Error::registerWarning("Config file Extension not supported", static::ERROR_BUCKET);
+            }
+        });
+
+        /**
+         * Load Kernel Config by Xml
+         */
+        static::loadDirStruct();
+        static::loadEngine();
+        static::loadPages();
+
+        /**
+         * @var Configurable $class_name
+         */
+        foreach (self::$class_configurable as $class_basename => $class_name) {
+            Debug::stopWatch(self::SCHEMA_CONF . "/" . $class_basename);
+            if (isset(self::$config_data[$class_basename])) {
+                $rawdata[$class_basename]                               = $class_name::loadSchema(self::$config_data[$class_basename]);
+                unset(self::$config_data[$class_basename]);
+            } else {
+                Error::registerWarning("no configuration for: " . $class_basename, static::ERROR_BUCKET);
+            }
+            Debug::stopWatch(self::SCHEMA_CONF . "/" . $class_basename);
+        }
+
+        return $rawdata;
+    }
+
+
+    /**
      * @param string $file
      */
-    private static function loadXml(string $file) : void
+    private static function loadFileXml(string $file) : void
     {
         self::$config_files[$file]                                          = filemtime($file);
         $configs                                                            = Filemanager::getInstance("xml")->read($file);
@@ -474,14 +479,14 @@ class Config implements Dumpable
 
                     switch (self::$config_rules[$key]["method"]) {
                         case self::RAWDATA_XML_REPLACE:
-                            self::loadXmlReplace($context, $config);
+                            self::loadFileXmlReplace($context, $config);
                             break;
                         case self::RAWDATA_XML_MERGE:
-                            self::loadXmlMerge($context, $config);
+                            self::loadFileXmlMerge($context, $config);
                             break;
                         case self::RAWDATA_XML_MERGE_RECOURSIVE:
                         default:
-                            self::loadXmlMergeSub($context, $config);
+                            self::loadFileXmlMergeSub($context, $config);
                     }
                 } else {
                     self::$config_unknown[$key]                             = $config;
@@ -497,7 +502,7 @@ class Config implements Dumpable
      * @param string $key
      * @param array $config
      */
-    private static function loadXmlReplace(string $key, array $config) : void
+    private static function loadFileXmlReplace(string $key, array $config) : void
     {
         self::$config_data[$key]                                            = array_replace(self::$config_data[$key], (array)$config);
     }
@@ -506,7 +511,7 @@ class Config implements Dumpable
      * @param string $key
      * @param array $config
      */
-    private static function loadXmlMerge(string $key, array $config) : void
+    private static function loadFileXmlMerge(string $key, array $config) : void
     {
         if (!empty($config)) {
             if (!isset($config[0])) {
@@ -520,7 +525,7 @@ class Config implements Dumpable
      * @param string $key
      * @param array $config
      */
-    private static function loadXmlMergeSub(string $key, array $config) : void
+    private static function loadFileXmlMergeSub(string $key, array $config) : void
     {
         if (!empty($config)) {
             foreach ($config as $sub_key => $sub_config) {

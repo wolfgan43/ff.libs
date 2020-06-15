@@ -54,6 +54,8 @@ class MemApc extends MemAdapter
         } elseif ($this->is_writeable) {
             $key = $this->getKey("set", $bucket, $name);
             $res = apc_store($key, $this->setValue($value), $this->getTTL());
+        } else {
+            $this->clear($bucket);
         }
 
         return $res;

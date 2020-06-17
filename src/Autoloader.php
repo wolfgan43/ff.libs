@@ -25,23 +25,87 @@
  */
 namespace phpformsframework\libs;
 
+use phpformsframework\libs\cache\Mem;
+use phpformsframework\libs\storage\Filemanager;
+use ReflectionClass;
+use ReflectionException;
 /**
  * Class Autoloader
  * @package phpformsframework\libs
  */
 class Autoloader
 {
+    protected const ERROR_BUCKET                                            = "config";
+
+    private static $classes = [];
     /**
      * @param array|null $paths
+     * @throws ReflectionException
      */
     public static function register(array $paths)
     {
-        if (!empty($paths)) {
-            spl_autoload_register(function ($class_name) use ($paths) {
-                foreach ($paths as $autoload => $namespace) {
-                    Dir::autoload(Constant::DISK_PATH . $autoload . DIRECTORY_SEPARATOR . str_replace(array($namespace, '\\'), array('', '/'), $class_name) . "." . Constant::PHP_EXT);
-                }
+        $cache                                                              = Mem::getInstance(static::ERROR_BUCKET);
+        self::$classes                                                      = $cache->get("autoloader");
+
+        if (self::$classes) {
+            spl_autoload_register(function ($class_name) {
+                include self::$classes[$class_name];
             });
+        } else {
+            self::spl($paths);
+            if (!Kernel::$Environment::DISABLE_CACHE) {
+                $classes = get_declared_classes();
+                $patterns = array_fill_keys(array_keys($paths), ["flag" => 8, "filter" => ["php"]]);
+                Filemanager::scan($patterns, function ($path) {
+                    include_once($path);
+                });
+
+                $classes = array_diff(get_declared_classes(), $classes);
+                foreach ($classes as $class_name) {
+                    $class = new ReflectionClass($class_name);
+                    self::$classes[$class_name] = $class->getFileName();
+                }
+
+                $cache->set("autoloader", self::$classes);
+            }
         }
+    }
+
+    /**
+     * @param string $abs_path
+     * @param bool $once
+     * @return mixed|null
+     */
+    public static function loadScript(string $abs_path, bool $once = false)
+    {
+        Debug::stopWatch("loadscript" . $abs_path);
+
+        $rc                                                         = null;
+        if (Dir::checkDiskPath($abs_path)) {
+            $rc                                                     = (
+                $once
+                ? require_once($abs_path)
+                : include($abs_path)
+            );
+        }
+
+        Debug::stopWatch("loadscript" . $abs_path);
+
+        return $rc;
+    }
+
+    /**
+     * @param array $paths
+     */
+    private static function spl(array $paths) : void
+    {
+        spl_autoload_register(function ($class_name) use ($paths) {
+            foreach ($paths as $autoload => $namespace) {
+                //echo Constant::DISK_PATH . $autoload . DIRECTORY_SEPARATOR . str_replace(array($namespace, '\\'), array('', '/'), $class_name) . "." . Constant::PHP_EXT . "<br>";
+                if (self::loadScript(Constant::DISK_PATH . $autoload . DIRECTORY_SEPARATOR . str_replace(array($namespace, '\\'), array('', '/'), $class_name) . "." . Constant::PHP_EXT)) {
+                    break;
+                };
+            }
+        });
     }
 }

@@ -243,10 +243,7 @@ class RequestPage extends Mappable
      */
     public function getRequestValid() : array
     {
-        return (isset($this->body[self::REQUEST_VALID])
-            ? $this->body[self::REQUEST_VALID]
-            : array()
-        );
+        return $this->body[self::REQUEST_VALID] ?? [];
     }
 
     /**
@@ -374,6 +371,7 @@ class RequestPage extends Mappable
         if ($this->isAllowedSize($request, $method) && $this->isAllowedSize($this->getRequestHeaders(), Request::METHOD_HEAD)) {
             $rawdata                                                                        = $this->normalizeRawData($request);
             if (!empty($this->rules->$bucket)) {
+                $this->body[self::REQUEST_VALID]                                            = [];
                 foreach ($this->rules->$bucket as $key => $rule) {
                     $rule                                                                   = (object) $rule; //@todo necessario per design pattern
                     if (isset($rule->required) && $rule->required === true && !isset($request[$key])) {

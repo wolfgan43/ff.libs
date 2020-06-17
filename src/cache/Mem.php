@@ -27,8 +27,8 @@
 namespace phpformsframework\libs\cache;
 
 use phpformsframework\libs\cache\adapters\MemAdapter;
-use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
+use phpformsframework\libs\util\AdapterManager;
 
 /**
  * Class Mem
@@ -36,7 +36,7 @@ use phpformsframework\libs\Kernel;
  */
 class Mem // apc | memcached | redis | globals
 {
-    const NAME_SPACE                                    = __NAMESPACE__ . '\\adapters\\';
+    use AdapterManager;
 
     private static $singletons                          = null;
 
@@ -56,12 +56,7 @@ class Mem // apc | memcached | redis | globals
         }
 
         if (!isset(self::$singletons[$memAdapter][$bucket])) {
-            $class_name                                 = static::NAME_SPACE . "Mem" . ucfirst($memAdapter);
-            if (class_exists($class_name)) {
-                self::$singletons[$memAdapter][$bucket] = new $class_name($bucket, $force, $force);
-            } else {
-                Error::register("Cache Mem Adapter not supported: " . $memAdapter);
-            }
+            self::$singletons[$memAdapter][$bucket]     = self::loadAdapter($memAdapter, [$bucket, $force, $force]);
         }
 
         return self::$singletons[$memAdapter][$bucket];

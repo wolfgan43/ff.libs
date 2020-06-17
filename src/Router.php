@@ -141,6 +141,7 @@ class Router implements Configurable, Dumpable
 
     /**
      * @param string|null $path
+     * @throws Exception
      */
     public static function run(string $path = null) : void
     {
@@ -257,7 +258,7 @@ class Router implements Configurable, Dumpable
         /*
          * Anti injection, prevent error fs
          */
-        if (!Dir::autoload($script)) {
+        if (!Autoloader::loadScript($script)) {
             Error::run(Request::pathinfo());
         }
         exit;
@@ -375,11 +376,12 @@ class Router implements Configurable, Dumpable
     }
 
     /**
-     * @todo da tipizzare
      * @param string $class_name
      * @param string $method
      * @param array $params
      * @return mixed|null
+     * @throws Exception
+     * @todo da tipizzare
      */
     public static function caller(string $class_name, string $method, array $params)
     {

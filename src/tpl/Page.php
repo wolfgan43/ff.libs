@@ -27,6 +27,7 @@ namespace phpformsframework\libs\tpl;
 
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\tpl\adapters\PageHtml;
+use phpformsframework\libs\util\AdapterManager;
 
 /**
  * Class Page
@@ -34,8 +35,7 @@ use phpformsframework\libs\tpl\adapters\PageHtml;
  */
 class Page
 {
-    const NAME_SPACE                            = __NAMESPACE__ . '\\adapters\\';
-    const ASSETS_PATH                           =  Constant::LIBS_FF_DISK_PATH . DIRECTORY_SEPARATOR . 'assets';
+    use AdapterManager;
 
     private static $singleton                   = null;
 
@@ -47,8 +47,7 @@ class Page
     public static function getInstance($type, $extension_name = "default")
     {
         if (!self::$singleton) {
-            $class_name                         = self::NAME_SPACE . "Page" . ucfirst($type);
-            self::$singleton                    = new $class_name($extension_name);
+            self::$singleton                    = self::loadAdapter($type, [$extension_name]);
         }
 
         return self::$singleton;

@@ -104,7 +104,7 @@ class Resource extends Mappable implements Dumpable
         if (!self::$singleton) {
             self::$singleton = new Resource();
         }
-//echo "type " . $type . "<br>\n";
+//  echo "type " . $type . "<br>\n";
 
         return (isset(self::$singleton->resources[$type])
             ? self::$singleton->resources[$type]

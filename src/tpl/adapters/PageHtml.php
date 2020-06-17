@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\tpl\adapters;
 
+use phpformsframework\libs\Autoloader;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dir;
@@ -209,7 +210,7 @@ class PageHtml extends Mappable
             }
             if (pathinfo($string, PATHINFO_EXTENSION) == "php") {
                 ob_start();
-                Dir::autoload($string);
+                Autoloader::loadScript($string);
                 $html                           = ob_get_contents();
                 ob_end_clean();
             } else {

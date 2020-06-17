@@ -124,7 +124,6 @@ class Hook implements Configurable, Dumpable
     private static function addCallback($name, callable $func, int $priority = self::HOOK_PRIORITY_NORMAL, bool $override = false) : void
     {
         if (is_callable($func)) {
-            Debug::dumpCaller("addHook::" . $name);
             if (!isset(self::$events[$name])) {
                 self::$events[$name]                                                    = array();
             }

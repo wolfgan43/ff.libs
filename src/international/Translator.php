@@ -30,6 +30,7 @@ use phpformsframework\libs\App;
 use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
+use phpformsframework\libs\util\AdapterManager;
 
 /**
  * Class Translator
@@ -37,8 +38,9 @@ use phpformsframework\libs\Kernel;
  */
 class Translator
 {
+    use AdapterManager;
+
     const ERROR_BUCKET                                  = "translator";
-    const NAME_SPACE                                    = __NAMESPACE__ . '\\adapters\\';
     const ADAPTER                                       = false;
 
     const REGEXP                                        = '/\{_([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)\}/U';
@@ -62,12 +64,7 @@ class Translator
             $translatorAdapter                          = Kernel::$Environment::TRANSLATOR_ADAPTER;
         }
         if (!isset(self::$singletons[$translatorAdapter])) {
-            $class_name                                 = static::NAME_SPACE . "Translator" . ucfirst($translatorAdapter);
-            if (class_exists($class_name)) {
-                self::$singletons[$translatorAdapter]   = new $class_name($auth);
-            } else {
-                Error::register("Translator Adapter not supported: " . $translatorAdapter, static::ERROR_BUCKET);
-            }
+            self::$singletons[$translatorAdapter]       = self::loadAdapter($translatorAdapter, [$auth]);
         }
 
         return self::$singletons[$translatorAdapter];

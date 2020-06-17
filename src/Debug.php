@@ -89,13 +89,6 @@ class Debug
     {
         return Kernel::$Environment::DISABLE_CACHE;
     }
-    /**
-     * @return bool
-     */
-    public static function isProfiling() : bool
-    {
-        return Kernel::$Environment::PROFILING;
-    }
 
     /**
      * @param $data
@@ -195,40 +188,6 @@ class Debug
         $trace                                  = self::dumpCommandLine($data);
 
         Log::warning($trace, $filename);
-    }
-
-    /**
-     * @todo da tipizzare
-     * @param array|string|null $note
-     * @param array|null $backtrace
-     */
-    public static function dumpCaller($note = null, array $backtrace = null) : void
-    {
-        if (Kernel::$Environment::PROFILING) {
-            $debug_backtrace                    = (
-                is_array($backtrace)
-                ? $backtrace
-                : debug_backtrace()
-            );
-            foreach ($debug_backtrace as $trace) {
-                if (basename($trace["file"]) == "Debug.php") {
-                    continue;
-                }
-                if (basename($trace["file"]) == "cm.php") {
-                    break;
-                }
-
-                if ($trace["file"]) {
-                    $res = $trace["line"] . ' Line in: ' . str_replace(Constant::DISK_PATH, "", $trace["file"]);
-                } else {
-                    $res = 'Func: ' . $trace["function"];
-                }
-                if ($res) {
-                    self::$debug[] = $res . "\n" . str_repeat(" ", 8) . (is_array($note) ? print_r($note, true) : $note);
-                    break;
-                }
-            }
-        }
     }
 
     /**
@@ -600,7 +559,6 @@ class Debug
     {
         static $res;
 
-        Debug::stopWatch("debug/benchmark");
         if (function_exists("getrusage")) {
             $ru = getrusage();
             if ($end) {
@@ -608,58 +566,12 @@ class Debug
                 $res["mem_peak"] 		= self::convertMem(memory_get_peak_usage());
                 $res["cpu"] 			= number_format(abs(($ru['ru_utime.tv_usec'] + $ru['ru_stime.tv_usec']) - $res["cpu"]), 0, ',', '.');
 
-                if (extension_loaded('xhprof') && is_dir(Constant::DISK_PATH . "/xhprof_lib") && class_exists("XHProfRuns_Default")) {
-                    $path_info          = (
-                        $_SERVER["PATH_INFO"] == DIRECTORY_SEPARATOR
-                                            ? "Home"
-                                            : $_SERVER["PATH_INFO"]
-                                        );
-
-                    $xhr_path_info      = (
-                        $_SERVER["XHR_PATH_INFO"] == DIRECTORY_SEPARATOR
-                                            ? "Home"
-                                            : $_SERVER["XHR_PATH_INFO"]
-                                        );
-                    $profiler_namespace = str_replace(array(".", "&", "?", "__nocache__"), array(",", "", "", ""), "[" . round($res["exTime"], 2) . "s] "
-                        . str_replace(DIRECTORY_SEPARATOR, "_", trim($path_info, DIRECTORY_SEPARATOR))
-                        . (
-                            $xhr_path_info != $path_info && $xhr_path_info
-                            ? " (" . str_replace(DIRECTORY_SEPARATOR, "_", trim($xhr_path_info, DIRECTORY_SEPARATOR)) . ")"
-                            : ""
-                        )
-                        . (
-                            Request::isAjax()
-                            ? " - Request"
-                            : ""
-                        ))
-                        . (
-                            $end !== true
-                            ? " - " . $end
-                            : ""
-                        );
-
-                    $xhprof_data = xhprof_disable();
-                    $xhprof_runs = new \XHProfRuns_Default();
-                    $run_id = $xhprof_runs->save_run($xhprof_data, $profiler_namespace);
-                    $res["url"] = sprintf("http" . ($_SERVER["HTTPS"] ? "s" : "") . "://" . $_SERVER["HTTP_HOST"] . '/xhprof_html/index.php?run=%s&source=%s', $run_id, $profiler_namespace);
-                }
-
-                Log::debugging($res, "benchmark");
-
                 return $res;
             } else {
                 $res["cpu"]             = $ru['ru_utime.tv_usec'] + $ru['ru_stime.tv_usec'];
-
-                if (extension_loaded('xhprof') && is_dir(Constant::DISK_PATH . "/xhprof_lib")) {
-                    Dir::autoload(Constant::DISK_PATH . '/xhprof_lib/utils/xhprof_lib.php', true);
-                    Dir::autoload(Constant::DISK_PATH . '/xhprof_lib/utils/xhprof_runs.php', true);
-
-                    xhprof_enable(XHPROF_FLAGS_NO_BUILTINS | XHPROF_FLAGS_CPU | XHPROF_FLAGS_MEMORY);
-                }
             }
         }
 
-        Debug::stopWatch("debug/benchmark");
         return null;
     }
 

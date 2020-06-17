@@ -30,6 +30,7 @@ use phpformsframework\libs\dto\DataHtml;
 use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\EndUserManager;
 use stdClass;
+use Exception;
 
 /**
  * Class Widget
@@ -111,6 +112,7 @@ abstract class Widget
 
     /**
      * @return DataHtml
+     * @throws Exception
      */
     private function getPage() : DataHtml
     {
@@ -169,7 +171,6 @@ abstract class Widget
         if (is_object($name)) {
             $this->injectAssets($name);
         } else {
-
             $widget_name                            = $this->getSkin();
             $view                                   = new View();
             $this->parseRequiredAssets();

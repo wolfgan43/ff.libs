@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\cache\adapters;
 
+use phpformsframework\libs\Autoloader;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\storage\Filemanager;
 
@@ -35,7 +36,7 @@ use phpformsframework\libs\storage\Filemanager;
 class MemFs extends MemAdapter
 {
     private const CACHE_PATH        = Constant::CACHE_PATH . DIRECTORY_SEPARATOR . "data";
-    private const CACHE_DISK_PATH   = Constant::DISK_PATH . DIRECTORY_SEPARATOR . self::CACHE_PATH;
+    private const CACHE_DISK_PATH   = Constant::DISK_PATH . self::CACHE_PATH;
 
     /**
      * Inserisce un elemento nella cache
@@ -74,7 +75,7 @@ class MemFs extends MemAdapter
         if ($this->is_readable) {
             $this->getKey("get", $bucket, $name);
 
-            $res = Filemanager::loadScript(DIRECTORY_SEPARATOR . $bucket . DIRECTORY_SEPARATOR . $name, self::CACHE_DISK_PATH);
+            $res = Autoloader::loadScript(self::CACHE_DISK_PATH . DIRECTORY_SEPARATOR . $bucket . DIRECTORY_SEPARATOR . $name . "." . Constant::PHP_EXT);
         }
 
         return $res;

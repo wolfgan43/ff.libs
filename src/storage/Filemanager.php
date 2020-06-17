@@ -28,11 +28,11 @@ namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Constant;
-use phpformsframework\libs\Dir;
 use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Request;
+use phpformsframework\libs\util\AdapterManager;
 use stdClass;
 use Exception;
 
@@ -42,7 +42,7 @@ use Exception;
  */
 class Filemanager implements Dumpable
 {
-    const NAME_SPACE                                                    = __NAMESPACE__ . '\\adapters\\';
+    use AdapterManager;
 
     private static $singletons                                          = null;
     private static $storage                                             = null;
@@ -72,8 +72,7 @@ class Filemanager implements Dumpable
     public static function getInstance(string $filemanagerAdapter, string $file = null, string $var = null, int $expire = null) : FilemanagerAdapter
     {
         if (!isset(self::$singletons[$filemanagerAdapter])) {
-            $class_name                                                 = static::NAME_SPACE . "Filemanager" . ucfirst($filemanagerAdapter);
-            self::$singletons[$filemanagerAdapter]                      = new $class_name($file, $var, $expire);
+            self::$singletons[$filemanagerAdapter]                      = self::loadAdapter($filemanagerAdapter, [$file, $var, $expire]);
         }
 
         return self::$singletons[$filemanagerAdapter];
@@ -90,23 +89,6 @@ class Filemanager implements Dumpable
             "contents"      => self::$cache["request"]
         );
     }
-
-    /**
-     * @param string $path
-     * @param string|null $base_path
-     * @return array|null
-     */
-    public static function loadScript(string $path, string $base_path = null) : ?array
-    {
-        Debug::stopWatch("loadscript" . $path);
-
-        $res = Dir::autoload(($base_path ?? Constant::DISK_PATH) . $path . "." . Constant::PHP_EXT);
-
-        Debug::stopWatch("loadscript" . $path);
-
-        return $res;
-    }
-
 
     /**
      * @param string $type

@@ -100,25 +100,6 @@ class Dir
     }
 
     /**
-     * @param $path
-     * @param bool $once
-     * @return mixed|null
-     */
-    public static function autoload($path, $once = false)
-    {
-        $rc                                                         = null;
-        if (self::checkDiskPath($path)) {
-            $rc                                                     = (
-                $once
-                                                                        ? require_once($path)
-                                                                        : include($path)
-                                                                    );
-        }
-
-        return $rc;
-    }
-
-    /**
      * @todo da tipizzare
      * @param array $item
      * @return mixed

@@ -114,10 +114,11 @@ class Response
     }
 
     /**
-     * @todo da tipizzare
      * @param int $status
      * @param string|null $msg
      * @return void
+     * @throws Exception
+     * @todo da tipizzare
      */
     public static function sendError(int $status = 404, string $msg = null) : void
     {

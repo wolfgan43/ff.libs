@@ -42,8 +42,10 @@ class Constant
     );
     const DOCUMENT_ROOT                     = DOCUMENT_ROOT;
     const SITE_PATH                         = SITE_PATH;
-    const APPID                             = null;
+
     const APPNAME                           = null;
+    const APPID                             = null;
+
     const PROJECT_DOCUMENT_ROOT             = null;
 
     const LOCALE_LANG_CODE                  = null; //IT, EN

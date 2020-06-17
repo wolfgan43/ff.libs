@@ -25,7 +25,7 @@
  */
 namespace phpformsframework\libs\storage\adapters;
 
-use phpformsframework\libs\Dir;
+use phpformsframework\libs\Autoloader;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\FilemanagerAdapter;
 
@@ -47,7 +47,7 @@ class FilemanagerPhp extends FilemanagerAdapter
         $return                                                 = null;
         $output                                                 = exec("php -l " . addslashes($file_path));
         if (strpos($output, "No syntax errors") === 0) {
-            $include                                            = Dir::autoload($file_path);
+            $include                                            = Autoloader::loadScript($file_path);
             if ($include === 1) {
                 if (!$var) {
                     $arrDefVars                                 = get_defined_vars();

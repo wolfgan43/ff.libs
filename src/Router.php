@@ -150,7 +150,7 @@ class Router implements Configurable, Dumpable
 
             if ($destination) {
                 if (is_array($destination)) {
-                    Response::send(self::caller($destination["obj"], $destination["method"], self::replaceMatches($rule["matches"], $destination["params"] ?? [])));
+                    Response::send(self::caller($destination["obj"], $destination["method"] ?? Request::method(true), self::replaceMatches($rule["matches"], $destination["params"] ?? [])));
                 } elseif ($rule["redirect"]) {
                     Response::redirect(self::replaceMatches($rule["matches"], $destination), $rule["redirect"]);
                 } elseif (is_numeric($destination) || ctype_digit($destination)) {

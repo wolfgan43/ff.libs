@@ -287,6 +287,7 @@ class Config implements Dumpable
 
     /**
      * @param string $namespace
+     * @throws \ReflectionException
      */
     public static function autoloadRegister(string $namespace) : void
     {
@@ -377,6 +378,17 @@ class Config implements Dumpable
 
         $cache                                                              = Mem::getInstance(static::ERROR_BUCKET);
         $rawdata                                                            = $cache->get("rawdata");
+
+        //@todo da infilare nella cache centralizzata
+        if (!Kernel::useCache() && !empty($rawdata["config_files"])) {
+            foreach ($rawdata["config_files"] as $config_file => $last_update) {
+                if (filemtime($config_file) > $last_update) {
+                    $rawdata = null;
+                    break;
+                }
+            }
+        }
+
         if (!$rawdata) {
             $rawdata                                                        = self::loadFile($paths);
             $cache->set("rawdata", self::dump() + $rawdata);
@@ -622,15 +634,11 @@ class Config implements Dumpable
 
                 $request[$key]                                                          = $page;
                 $request[$key][self::SCHEMA_CONF]                                       = $attr;
-
-
             }
 
             self::$config_data[self::SCHEMA_ROUTER][self::SCHEMA_PAGES]                 = $router;
             self::$config_data[self::SCHEMA_REQUEST]["path2params"]                     = $path2params;
             self::$config_data[self::SCHEMA_REQUEST][self::SCHEMA_PAGES]                = $request;
-
-
         }
 
         Debug::stopWatch(self::SCHEMA_CONF . "/" . self::SCHEMA_PAGES);
@@ -661,9 +669,6 @@ class Config implements Dumpable
                     if (isset($attr["obj"])) {
                         $schema[$key][self::SCHEMA_ROUTER]["destination"]["obj"]        = $attr["obj"];
                     }
-                    if (isset($attr["instance"])) {
-                        $schema[$key][self::SCHEMA_ROUTER]["destination"]["instance"]   = $attr["instance"];
-                    }
                     if (isset($attr["method"])) {
                         $schema[$key][self::SCHEMA_ROUTER]["destination"]["method"]     = $attr["method"];
                     }
@@ -676,7 +681,6 @@ class Config implements Dumpable
                 unset($attr["redirect"]);
                 unset($attr["path"]);
                 unset($attr["obj"]);
-                unset($attr["instance"]);
                 unset($attr["method"]);
                 unset($attr["params"]);
 

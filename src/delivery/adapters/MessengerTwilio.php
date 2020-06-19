@@ -44,7 +44,7 @@ class MessengerTwilio extends MessengerAdapter
      * @param string $message
      * @param array $to
      */
-    public function send(string $message, array $to) : void
+    public function send(string $message, array $to = null) : void
     {
         if ($message) {
             if (!empty($to)) {

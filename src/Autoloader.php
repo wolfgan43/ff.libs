@@ -46,14 +46,13 @@ class Autoloader
     {
         $cache                                                              = Mem::getInstance(static::ERROR_BUCKET);
         self::$classes                                                      = $cache->get("autoloader");
-
         if (self::$classes) {
             spl_autoload_register(function ($class_name) {
                 include self::$classes[$class_name];
             });
         } else {
             self::spl($paths);
-            if (!Kernel::$Environment::DISABLE_CACHE) {
+            if (Kernel::useCache()) {
                 $classes = get_declared_classes();
                 $patterns = array_fill_keys(array_keys($paths), ["flag" => 8, "filter" => ["php"]]);
                 Filemanager::scan($patterns, function ($path) {

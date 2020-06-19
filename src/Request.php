@@ -706,12 +706,13 @@ class Request implements Configurable, Dumpable
     }
 
     /**
+     * @param bool $toLower
      * @return string|null
      */
-    public static function method() : ?string
+    public static function method(bool $toLower = false) : ?string
     {
         return (isset($_SERVER["REQUEST_METHOD"])
-            ? strtoupper($_SERVER["REQUEST_METHOD"])
+            ? ($toLower ? strtolower($_SERVER["REQUEST_METHOD"]) : strtoupper($_SERVER["REQUEST_METHOD"]))
             : null
         );
     }

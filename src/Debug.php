@@ -87,7 +87,7 @@ class Debug
      */
     public static function cacheDisabled() : bool
     {
-        return Kernel::$Environment::DISABLE_CACHE;
+        return !Kernel::useCache();
     }
 
     /**
@@ -509,9 +509,9 @@ class Debug
                     . 'Translate: ' . '<em>' . Kernel::$Environment::TRANSLATOR_ADAPTER . '</em>'
                 . ')</span>'
                         . '<span style="padding:15px;">Cache ('
-                    . 'Mem: '       . (Kernel::$Environment::DISABLE_CACHE ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_MEM_ADAPTER      . '</span>, '
-                    . 'DB: '        . (Kernel::$Environment::DISABLE_CACHE ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_DATABASE_ADAPTER      . '</span>, '
-                    . 'Media: '     . (Kernel::$Environment::DISABLE_CACHE ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_MEDIA_ADAPTER     . '</span>'
+                    . 'Mem: '       . (!Kernel::useCache() ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_MEM_ADAPTER      . '</span>, '
+                    . 'DB: '        . (!Kernel::useCache() ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_DATABASE_ADAPTER      . '</span>, '
+                    . 'Media: '     . (!Kernel::useCache() ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_MEDIA_ADAPTER     . '</span>'
                 . ')</span>'
             . '<span style="padding:15px;">ExTime: ' . self::exTimeApp() . ' + {debug_extime}</span>'
             . $html_benchmark

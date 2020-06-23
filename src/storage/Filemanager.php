@@ -55,12 +55,12 @@ class Filemanager implements Dumpable
     private static $callback                                            = null;
     private static $patterns                                            = null;
 
-    const SCAN_DIR                                                      = 1;
-    const SCAN_DIR_RECURSIVE                                            = 2;
-    const SCAN_FILE                                                     = 4;
-    const SCAN_FILE_RECURSIVE                                           = 8;
-    const SCAN_ALL                                                      = 16;
-    const SCAN_ALL_RECURSIVE                                            = 32;
+    public const SCAN_DIR                                               = 1;
+    public const SCAN_DIR_RECURSIVE                                     = 2;
+    public const SCAN_FILE                                              = 4;
+    public const SCAN_FILE_RECURSIVE                                    = 8;
+    public const SCAN_ALL                                               = 16;
+    public const SCAN_ALL_RECURSIVE                                     = 32;
 
     /**
      * @param string $filemanagerAdapter

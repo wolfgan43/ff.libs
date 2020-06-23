@@ -43,114 +43,87 @@ class MemRedis extends MemAdapter
     /**
      * MemRedis constructor.
      * @param string|null $bucket
+     * @param bool $readable
+     * @param bool $writeable
      */
-    public function __construct(string $bucket = null)
+    public function __construct(string $bucket, bool $readable = true, bool $writeable = true)
     {
-        parent::__construct(Kernel::$Environment::APPNAME . "/" . $bucket);
+        parent::__construct(Kernel::$Environment::APPNAME . "/" . $bucket, $readable, $writeable);
 
         $this->conn = new MC();
-        $this->conn->pconnect(static::$server, static::$port, $this->getTTL(), $this->appid); // x is sent as persistent_id and would be another connection than the three before.
+        $this->conn->pconnect(static::$server, static::$port, $this->getTTL(), $this->appid);
         if (static::$auth) {
             $this->conn->auth(static::$auth);
         }
         switch (static::$serializer) {
             case "PHP":
-                $this->conn->setOption(MC::OPT_SERIALIZER, MC::SERIALIZER_PHP);	// use built-in serialize/unserialize
+                $this->conn->setOption(MC::OPT_SERIALIZER, MC::SERIALIZER_PHP);
                 break;
             case "IGBINARY":
-                $this->conn->setOption(MC::OPT_SERIALIZER, MC::SERIALIZER_IGBINARY);	// use igBinary serialize/unserialize
+                $this->conn->setOption(MC::OPT_SERIALIZER, MC::SERIALIZER_IGBINARY);
                 break;
             default:
-                $this->conn->setOption(MC::OPT_SERIALIZER, MC::SERIALIZER_NONE);	// don't serialize data
+                $this->conn->setOption(MC::OPT_SERIALIZER, MC::SERIALIZER_NONE);
 
         }
-
-
-        //$this->conn->setOption(MC::OPT_PREFIX, self::APPID . ':');	// use custom prefix on all keys
     }
 
     /**
-     * @todo da tipizzare
-     * Inserisce un elemento nella cache
-     * Oltre ai parametri indicati, accetta un numero indefinito di chiavi per relazione i valori memorizzati
-     * @param String $name il nome dell'elemento
-     * @param Mixed|null $value l'elemento
-     * @param String|null $bucket il name space
-     * @return bool if storing both value and rel table will success
+     * @param string $name
+     * @param string|null $bucket
+     * @return mixed
      */
-    public function set(string $name, $value = null, string $bucket = null) : bool
+    protected function load(string $name, string $bucket = null)
     {
-        $res = false;
-        if ($value === null) {
-            $res = $this->del($name, $bucket);
-        } elseif ($this->is_writeable) {
-            $this->getKey("set", $bucket, $name);
-
-            $res = (
-                $bucket
-                ? $this->conn->hSet($bucket, $name, $value)
-                : $this->conn->set($name, $value)
-            );
-        } else {
-            $this->clear($bucket);
-        }
-
-        return $res;
+        return ($bucket
+            ? $this->conn->hGet($bucket, $name)
+            : $this->conn->get($name)
+        );
     }
 
     /**
-     * @todo da tipizzare
-     * Recupera un elemento dalla cache
-     * @param String $name il nome dell'elemento
-     * @param String|null $bucket il name space
-     * @return Mixed l'elemento
+     * @param string $name
+     * @param mixed $value
+     * @param string|null $bucket
+     * @return bool
      */
-    public function get(string $name, string $bucket = null)
+    protected function write(string $name, $value, string $bucket = null): bool
     {
-        $res = null;
-        if ($this->is_readable) {
-            $this->getKey("get", $bucket, $name);
-
-            if ($bucket) {
-                $res = (
-                    $name
-                    ? $this->conn->hGet($bucket, $name)
-                    : $this->conn->hGetAll($bucket)
-                );
-            } else {
-                $res = $this->conn->get($name);
-            }
-        }
-
-        return $res;
+        return ($bucket
+            ? $this->conn->hSet($bucket, $name, $value)
+            : $this->conn->set($name, $value)
+        );
     }
+
 
     /**
      * Cancella una variabile
      * @param String $name il nome dell'elemento
-     * @param String|null $bucket il name space
      * @return bool
      */
-    public function del(string $name, string $bucket = null) : bool
+    public function del(string $name) : bool
     {
-        $this->getKey("del", $bucket, $name);
+        parent::del($name);
+
+        $bucket = $this->getBucket();
 
         return ($bucket
             ? $this->conn->hDel($bucket, $name)
             : $this->conn->delete($name)
         );
     }
+
     /**
      * Pulisce la cache
      * Accetta un numero indefinito di parametri che possono essere utilizzati per cancellare i dati basandosi sulle relazioni
      * Se non si specificano le relazioni, verrà cancellata l'intera cache
-     * @param string|null $bucket
      */
-    public function clear(string $bucket = null) : void
+    public function clear() : void
     {
-        $this->getKey("del", $bucket);
+        parent::clear();
 
-        // global reset
+        $bucket = $this->getBucket();
+
         if ($bucket) {
             $this->conn->delete($bucket);
         } else {

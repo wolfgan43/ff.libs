@@ -29,6 +29,7 @@ use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\storage\Filemanager;
 use ReflectionClass;
 use ReflectionException;
+
 /**
  * Class Autoloader
  * @package phpformsframework\libs
@@ -51,22 +52,34 @@ class Autoloader
                 include self::$classes[$class_name];
             });
         } else {
-            self::spl($paths);
-            if (Kernel::useCache()) {
-                $classes = get_declared_classes();
-                $patterns = array_fill_keys(array_keys($paths), ["flag" => 8, "filter" => ["php"]]);
-                Filemanager::scan($patterns, function ($path) {
-                    include_once($path);
-                });
-
-                $classes = array_diff(get_declared_classes(), $classes);
-                foreach ($classes as $class_name) {
-                    $class = new ReflectionClass($class_name);
-                    self::$classes[$class_name] = $class->getFileName();
+            $config_dirs = [];
+            foreach ($paths as $path) {
+                if (is_dir($path)) {
+                    $config_dirs[$path] = filemtime($path);
                 }
-
-                $cache->set("autoloader", self::$classes);
             }
+            $paths = array_keys($config_dirs);
+
+            $patterns = array_fill_keys($paths, ["flag" => Filemanager::SCAN_DIR_RECURSIVE]);
+            Filemanager::scan($patterns, function ($path) use (&$config_dirs) {
+                $config_dirs[$path] = filemtime($path);
+            });
+
+            self::spl($paths);
+
+            $classes = get_declared_classes();
+            $patterns = array_fill_keys($paths, ["flag" => Filemanager::SCAN_FILE_RECURSIVE, "filter" => ["php"]]);
+            Filemanager::scan($patterns, function ($path) {
+                include_once($path);
+            });
+
+            $classes = array_diff(get_declared_classes(), $classes);
+            foreach ($classes as $class_name) {
+                $class = new ReflectionClass($class_name);
+                self::$classes[$class_name] = $class->getFileName();
+            }
+
+            $cache->set("autoloader", self::$classes, $config_dirs);
         }
     }
 
@@ -99,9 +112,8 @@ class Autoloader
     private static function spl(array $paths) : void
     {
         spl_autoload_register(function ($class_name) use ($paths) {
-            foreach ($paths as $autoload => $namespace) {
-                //echo Constant::DISK_PATH . $autoload . DIRECTORY_SEPARATOR . str_replace(array($namespace, '\\'), array('', '/'), $class_name) . "." . Constant::PHP_EXT . "<br>";
-                if (self::loadScript(Constant::DISK_PATH . $autoload . DIRECTORY_SEPARATOR . str_replace(array($namespace, '\\'), array('', '/'), $class_name) . "." . Constant::PHP_EXT)) {
+            foreach ($paths as $autoload) {
+                if (self::loadScript($autoload . DIRECTORY_SEPARATOR . str_replace(array('\\'), array('/'), $class_name) . "." . Constant::PHP_EXT)) {
                     break;
                 };
             }

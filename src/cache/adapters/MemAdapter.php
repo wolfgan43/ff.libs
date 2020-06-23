@@ -34,6 +34,13 @@ use phpformsframework\libs\Kernel;
  */
 abstract class MemAdapter implements Dumpable
 {
+    private static $indexes       = null;
+
+    protected const ACTION_GET      = "get";
+    protected const ACTION_SET      = "set";
+    protected const ACTION_DEL      = "del";
+    protected const ACTION_CLEAR    = "clear";
+
     protected $appid                = null;
 
     public static $serializer       = "PHP";
@@ -53,41 +60,28 @@ abstract class MemAdapter implements Dumpable
     }
 
     /**
-     * @todo da tipizzare
-     * @param string $name
-     * @param null $value
-     * @param string|null $bucket
-     * @return bool
-     */
-    abstract public function set(string $name, $value = null, string $bucket = null) : bool;
-
-    /**
-     * @todo da tipizzare
      * @param string $name
      * @param string|null $bucket
      * @return mixed
      */
-    abstract public function get(string $name, string $bucket = null);
+    abstract protected function load(string $name, string $bucket = null);
 
     /**
-     * @param string $name
+     * @param string $path
+     * @param mixed $data
      * @param string|null $bucket
      * @return bool
      */
-    abstract public function del(string $name, string $bucket = null) : bool;
+    abstract protected function write(string $path, $data, string $bucket = null) : bool;
 
-    /**
-     * @param string|null $bucket
-     */
-    abstract public function clear(string $bucket = null) : void;
 
     /**
      * MemAdapter constructor.
-     * @param string|null $bucket
+     * @param string $bucket
      * @param bool $readable
      * @param bool $writeable
      */
-    public function __construct(string $bucket = null, bool $readable = true, bool $writeable = true)
+    public function __construct(string $bucket, bool $readable = true, bool $writeable = true)
     {
         $this->appid        = Kernel::$Environment::APPID;
         $this->bucket       = $bucket;
@@ -95,6 +89,65 @@ abstract class MemAdapter implements Dumpable
         $this->is_writeable = $writeable;
     }
 
+    /**
+     * @param String $name
+     * @param Mixed|null $value
+     * @param null $files_expire
+     * @return bool
+     * @todo da tipizzare
+     */
+    public function set(string $name, $value = null, $files_expire = null) : bool
+    {
+        $res = false;
+        if ($value === null) {
+            $res = $this->del($name);
+        } elseif ($this->is_writeable || 1) {
+            $this->cache($this->bucket, self::ACTION_SET, $name);
+
+            $res = $this->write($name, $value, $this->getBucket());
+
+            $this->setIndex($name, $files_expire);
+        } else {
+            $this->clear();
+        }
+        return $res;
+    }
+
+    /**
+     * @param String $name il nome dell'elemento
+     * @return Mixed l'elemento
+     * @todo da tipizzare
+     */
+    public function get(string $name)
+    {
+        $res = null;
+        if ($this->is_readable || $this->checkIndex($name)) {
+            $this->cache($this->bucket, self::ACTION_GET, $name);
+
+            $res = $this->load($name, $this->getBucket());
+        }
+
+        return $res;
+    }
+
+    /**
+     * @param string $name
+     * @return bool
+     */
+    public function del(string $name) : bool
+    {
+        $this->cache($this->bucket, self::ACTION_DEL, $name);
+
+        return true;
+    }
+
+    /**
+     *
+     */
+    public function clear() : void
+    {
+        $this->cache($this->bucket, self::ACTION_CLEAR);
+    }
     /**
      * @param string $bucket
      * @param string $action
@@ -126,34 +179,20 @@ abstract class MemAdapter implements Dumpable
     }
 
     /**
-     * @param string|null $name
      * @return string
      */
-    protected function getBucket(string $name = null) : string
+    protected function getBucket() : string
     {
-        return ($name
-            ? $name
-            : $this->bucket
-        );
+        return $this->bucket;
     }
 
     /**
-     * @param string $action
-     * @param string|null $bucket
-     * @param string|null $name
+     * @param string $name
      * @return string
      */
-    protected function getKey(string $action, string &$bucket = null, string &$name = null) : string
+    private function key(string $name) : string
     {
-        $bucket = $this->getBucket($bucket);
-        $name = ltrim($name, "/");
-
-        $this->cache($bucket, $action, $name);
-
-        return ($bucket
-            ? $bucket . "/" . $name
-            : $name
-        );
+        return $this->bucket . DIRECTORY_SEPARATOR . $name;
     }
 
     /**
@@ -200,5 +239,61 @@ abstract class MemAdapter implements Dumpable
                 $data = null;
         }
         return $data;
+    }
+
+    /**
+     * @param string $name
+     * @param array $indexes
+     */
+    protected function setIndex(string $name, array $indexes = null) : void
+    {
+        $key = $this->key($name);
+
+        if ($indexes && $this->verifyIndexes($key, $indexes)) {
+            self::$indexes[$key] = $indexes;
+            echo "setIndex<br>\n";
+            $this->write("index", self::$indexes);
+        }
+    }
+
+    /**
+     * @param string $key
+     * @param array $indexes
+     * @return bool
+     */
+    private function verifyIndexes(string $key, array $indexes) : bool
+    {
+        return !isset(self::$indexes[$key]) || !empty(array_diff(self::$indexes[$key], $indexes));
+    }
+
+    /**
+     * @param string $name
+     * @return array
+     */
+    private function getIndex(string $name) : array
+    {
+        if (!self::$indexes) {
+            self::$indexes = $this->load("index");
+            echo "getIndex<br>\n";
+        }
+
+        return self::$indexes[$this->key($name)] ?? [];
+    }
+
+    /**
+     * @param string $name
+     * @return bool
+     */
+    protected function checkIndex(string $name) : bool
+    {
+        foreach ($this->getIndex($name) as $file_index => $last_update) {
+            if (stat($file_index)["mtime"] > $last_update) {
+                return false;
+            }
+            echo "checkIndex: $file_index<br>\n";
+        }
+
+        echo "checkIndex: ALL UPDATED! (" . $this->key($name) . ")<br>\n";
+        return true;
     }
 }

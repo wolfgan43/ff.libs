@@ -26,7 +26,6 @@
 
 namespace phpformsframework\libs\cache\adapters;
 
-use APCIterator as MC;
 use function apc_store;
 use function apc_fetch;
 use function apc_delete;
@@ -39,78 +38,53 @@ use function apc_clear_cache;
 class MemApc extends MemAdapter
 {
     /**
-     * Inserisce un elemento nella cache
-     * Oltre ai parametri indicati, accetta un numero indefinito di chiavi per relazione i valori memorizzati
-     * @param String $name il nome dell'elemento
-     * @param Mixed|null $value l'elemento
-     * @param String|null $bucket il name space
-     * @return bool if storing both value and rel table will success
+     * @param string $name
+     * @param string|null $bucket
+     * @return mixed
      */
-    public function set(string $name, $value = null, string $bucket = null) : bool
+    protected function load(string $name, string $bucket = null)
     {
-        $res = false;
-        if ($value === null) {
-            $res = $this->del($name, $bucket);
-        } elseif ($this->is_writeable) {
-            $key = $this->getKey("set", $bucket, $name);
-            $res = apc_store($key, $this->setValue($value), $this->getTTL());
-        } else {
-            $this->clear($bucket);
-        }
+        $success = null;
+        $res = @apc_fetch($bucket . DIRECTORY_SEPARATOR . $name, $success);
 
-        return $res;
+        return ($success
+            ? $this->getValue($res)
+            : null
+        );
     }
 
     /**
-     * Recupera un elemento dalla cache
-     * @param String $name il nome dell'elemento
-     * @param String|null $bucket il name space
-     * @return Mixed l'elemento
+     * @param string $name
+     * @param mixed $value
+     * @param string|null $bucket
+     * @return bool
      */
-    public function get(string $name, string $bucket = null)
+    protected function write(string $name, $value, string $bucket = null): bool
     {
-        $res = false;
-        if ($this->is_readable) {
-            $key = $this->getKey("get", $bucket, $name);
-
-            if ($name) {
-                $success = null;
-                apc_fetch($key, $success);
-                if ($success) {
-                    $res = $this->getValue($res);
-                }
-            } else {
-                foreach (new MC('user', '#^' . preg_quote($bucket) . '\.#') as $item) {
-                    $res[$item["key"]] = $item["value"];
-                }
-            }
-        }
-        return $res;
+        return @apc_store($bucket . DIRECTORY_SEPARATOR . $name, $this->setValue($value), $this->getTTL());
     }
 
     /**
      * Cancella una variabile
      * @param String $name il nome dell'elemento
-     * @param String|null $bucket il name space
      * @return bool
      */
-    public function del(string $name, string $bucket = null) : bool
+    public function del(string $name) : bool
     {
-        $key = $this->getKey("del", $bucket, $name);
+        parent::del($name);
 
-        return @apc_delete($key);
+        return @apc_delete($this->getBucket() . DIRECTORY_SEPARATOR . $name);
     }
+
     /**
      * Pulisce la cache
      * Accetta un numero indefinito di parametri che possono essere utilizzati per cancellare i dati basandosi sulle relazioni
      * Se non si specificano le relazioni, verrà cancellata l'intera cache
-     * @param string|null $bucket
      */
-    public function clear(string $bucket = null) : void
+    public function clear() : void
     {
-        $this->getKey("clear", $bucket);
+        parent::clear();
 
-        // global reset
-        apc_clear_cache("user");
+        apc_clear_cache($this->getBucket());
     }
 }

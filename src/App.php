@@ -28,6 +28,7 @@ namespace phpformsframework\libs;
 use phpformsframework\libs\dto\RequestPage;
 use phpformsframework\libs\tpl\Widget;
 use stdClass;
+use Exception;
 
 /**
  * Class App
@@ -58,6 +59,7 @@ abstract class App implements Dumpable
     /**
      * @param string $environment
      * @return RequestPage
+     * @throws Exception
      */
     public static function &construct(string $environment) : RequestPage
     {

@@ -29,6 +29,7 @@ namespace phpformsframework\libs;
 use phpformsframework\libs\dto\RequestPage;
 use phpformsframework\libs\international\Locale;
 use stdClass;
+use Exception;
 
 /**
  * Class Request
@@ -266,6 +267,7 @@ class Request implements Configurable, Dumpable
     /**
      * @access private
      * @return RequestPage
+     * @throws Exception
      */
     public static function &pageConfiguration(): RequestPage
     {
@@ -368,6 +370,7 @@ class Request implements Configurable, Dumpable
 
     /**
      * @return stdClass
+     * @throws Exception
      */
     public static function headers() : stdClass
     {
@@ -377,6 +380,7 @@ class Request implements Configurable, Dumpable
     /**
      * @param bool $toArray
      * @return stdClass|array
+     * @throws Exception
      */
     public static function rawdata(bool $toArray = false)
     {
@@ -388,6 +392,7 @@ class Request implements Configurable, Dumpable
 
     /**
      * @return array
+     * @throws Exception
      */
     public static function valid(): array
     {
@@ -396,23 +401,26 @@ class Request implements Configurable, Dumpable
 
     /**
      * @return stdClass
+     * @throws Exception
      */
     public static function cookie() : stdClass
     {
-        return (object) self::body("COOKIE");
+        return (object) ($_COOKIE ?? []);
     }
 
     /**
      * @return stdClass
+     * @throws Exception
      */
     public static function session() : stdClass
     {
-        return (object) self::body("SESSION");
+        return (object) ($_SESSION ?? []);
     }
 
     /**
      * @param string $scope
      * @return stdClass
+     * @throws Exception
      */
     public static function getModel(string $scope) : stdClass
     {
@@ -422,6 +430,7 @@ class Request implements Configurable, Dumpable
     /**
      * @param bool $with_unknown
      * @return string
+     * @throws Exception
      */
     public static function getQuery(bool $with_unknown = false): string
     {
@@ -464,7 +473,7 @@ class Request implements Configurable, Dumpable
     }
 
     /**
-     *
+     * @throws Exception
      */
     private static function capture()
     {
@@ -490,6 +499,7 @@ class Request implements Configurable, Dumpable
      * @param string $scope
      * @param null|string $method
      * @return array
+     * @throws Exception
      */
     private static function body(string $scope = RequestPage::REQUEST_RAWDATA, string $method = null) : array
     {
@@ -612,6 +622,7 @@ class Request implements Configurable, Dumpable
     /**
      * @param string|null $phpurl_part
      * @return string
+     * @throws Exception
      */
     public static function url(string $phpurl_part = null): string
     {
@@ -843,9 +854,10 @@ class Request implements Configurable, Dumpable
         header('Access-Control-Max-Age: 86400');    // cache for 1 day
         header("Content-Type: text/plain");
     }
-    
+
     /**
      * @return bool
+     * @throws Exception
      */
     private static function security() : bool
     {
@@ -901,6 +913,7 @@ class Request implements Configurable, Dumpable
 
     /**
      * @param string|null $origin
+     * @throws Exception
      */
     private static function securityHeaders(string $origin = null) : void
     {
@@ -932,12 +945,6 @@ class Request implements Configurable, Dumpable
             case self::METHOD_DELETE:
                 $req                                                                            = $_GET;
                 break;
-            case "COOKIE":
-                $req                                                                            = $_COOKIE;
-                break;
-            case "SESSION":
-                $req                                                                            = $_SESSION;
-                break;
             default:
                 $req                                                                            = $_REQUEST;
         }
@@ -956,8 +963,10 @@ class Request implements Configurable, Dumpable
                 || stripos($_SERVER["CONTENT_TYPE"], "/form-data") !== false
             ));
     }
+
     /**
      * @return array
+     * @throws Exception
      */
     private static function captureHeaders() : array
     {
@@ -981,10 +990,12 @@ class Request implements Configurable, Dumpable
     {
         return self::$page->method;
     }
+
     /**
      * @param null|string $scope
      * @param null|string $method
      * @return null|array
+     * @throws Exception
      */
     private static function captureBody(string $scope = null, string $method = null) : ?array
     {
@@ -1013,14 +1024,15 @@ class Request implements Configurable, Dumpable
     /**
      * @param string $path_info
      * @param array|null $request
+     * @param array|null $headers
      * @return RequestPage
      */
-    public static function getPage(string $path_info, array $request = null) : RequestPage
+    public static function getPage(string $path_info, array $request = null, array $headers = null) : RequestPage
     {
         $page           = new RequestPage($path_info, self::$pages, self::$path2params, self::$patterns);
-        if (is_array($request)) {
-            $page->loadRequest($request);
-        }
+
+        $page->loadRequest($request);
+        $page->loadHeaders($headers, true);
 
         return $page;
     }
@@ -1038,7 +1050,7 @@ class Request implements Configurable, Dumpable
     }
 
     /**
-     *
+     * @throws Exception
      */
     private static function verifyInvalidRequest()
     {
@@ -1060,6 +1072,7 @@ class Request implements Configurable, Dumpable
     /**
      * @param string $error
      * @param int $status
+     * @throws Exception
      */
     private static function sendError(string $error, int $status = 400)
     {

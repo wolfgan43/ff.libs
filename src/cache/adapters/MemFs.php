@@ -37,70 +37,55 @@ class MemFs extends MemAdapter
 {
     private const CACHE_PATH        = Constant::CACHE_PATH . DIRECTORY_SEPARATOR . "data";
     private const CACHE_DISK_PATH   = Constant::DISK_PATH . self::CACHE_PATH;
+    private const FILE_TYPE         = Constant::PHP_EXT;
+
+
 
     /**
-     * Inserisce un elemento nella cache
-     * Oltre ai parametri indicati, accetta un numero indefinito di chiavi per relazione i valori memorizzati
-     * @param String $name il nome dell'elemento
-     * @param Mixed|null $value l'elemento
-     * @param String|null $bucket il name space
-     * @return bool if storing both value and rel table will success
+     * @param string $name
+     * @param string|null $bucket
+     * @return mixed
      */
-    public function set(string $name, $value = null, string $bucket = null) : bool
+    protected function load(string $name, string $bucket = null)
     {
-        $res = false;
-        if ($value === null) {
-            $res = $this->del($name, $bucket);
-        } elseif ($this->is_writeable) {
-            $this->getKey("set", $bucket, $name);
-
-            $res = Filemanager::getInstance("php")->write(
-                $value,
-                self::getCacheDiskPath(DIRECTORY_SEPARATOR . $bucket . DIRECTORY_SEPARATOR . $name)
-            );
-        } else {
-            $this->clear($bucket);
-        }
-        return $res;
+        return Autoloader::loadScript($this->getCacheDiskPath($bucket . DIRECTORY_SEPARATOR . $name));
     }
 
     /**
-     * @param String $name il nome dell'elemento
-     * @param String|null $bucket il name space
-     * @return Mixed l'elemento
-     */
-    public function get(string $name, string $bucket = null)
-    {
-        $res = null;
-        if ($this->is_readable) {
-            $this->getKey("get", $bucket, $name);
-
-            $res = Autoloader::loadScript(self::CACHE_DISK_PATH . DIRECTORY_SEPARATOR . $bucket . DIRECTORY_SEPARATOR . $name . "." . Constant::PHP_EXT);
-        }
-
-        return $res;
-    }
-
-    /**
-     * @param String $name il nome dell'elemento
-     * @param String|null $bucket il name space
+     * @param string $name
+     * @param mixed $data
+     * @param string|null $bucket
      * @return bool
      */
-    public function del(string $name, string $bucket = null) : bool
+    protected function write(string $name, $data, string $bucket = null) : bool
     {
-        $this->getKey("del", $bucket, $name);
-        return Filemanager::xPurgeDir(
-            self::getCacheDiskPath(DIRECTORY_SEPARATOR . $bucket . DIRECTORY_SEPARATOR . $name)
+        return Filemanager::getInstance(self::FILE_TYPE)->write(
+            $data,
+            self::getCacheDiskPath($bucket . DIRECTORY_SEPARATOR . $name)
         );
     }
 
     /**
-     * @param string|null $bucket
+     * @param String $name il nome dell'elemento
+     * @return bool
      */
-    public function clear(string $bucket = null) : void
+    public function del(string $name) : bool
     {
-        $this->getKey("clear", $bucket);
-        Filemanager::xPurgeDir(self::CACHE_PATH . DIRECTORY_SEPARATOR . $bucket);
+        parent::del($name);
+
+        return Filemanager::xPurgeDir(
+            self::getCacheDiskPath($this->getBucket() . DIRECTORY_SEPARATOR . $name)
+        );
+    }
+
+    /**
+     *
+     */
+    public function clear() : void
+    {
+        parent::clear();
+
+        Filemanager::xPurgeDir(self::CACHE_PATH . $this->getBucket());
     }
 
     /**
@@ -109,6 +94,14 @@ class MemFs extends MemAdapter
      */
     private function getCacheDiskPath(string $path) : string
     {
-        return self::CACHE_DISK_PATH . $path;
+        return self::CACHE_DISK_PATH . $path . "." . Constant::PHP_EXT;
+    }
+
+    /**
+     * @return string
+     */
+    protected function getBucket(): string
+    {
+        return DIRECTORY_SEPARATOR . parent::getBucket();
     }
 }

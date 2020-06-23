@@ -287,20 +287,27 @@ class RequestPage extends Mappable
 
     /**
      * @param array $server
+     * @param bool $isCli
      * @return bool
      */
-    public function loadHeaders(array $server) : bool
+    public function loadHeaders(array $server = null, bool $isCli = false) : bool
     {
-        return $this->securityHeaderParams($server);
+        return ($server
+            ? $this->securityHeaderParams($server, $isCli)
+            : false
+        );
     }
 
     /**
      * @param array $request
      * @return bool
      */
-    public function loadRequest(array $request) : bool
+    public function loadRequest(array $request = null) : bool
     {
-        return $this->securityParams($this->path2params + $request, $this->method);
+        return (is_array($request)
+            ? $this->securityParams($this->path2params + $request, $this->method)
+            : false
+        );
     }
     /**
      * @return bool
@@ -312,9 +319,10 @@ class RequestPage extends Mappable
 
     /**
      * @param array $headers
+     * @param bool $isCli
      * @return bool
      */
-    private function securityHeaderParams(array $headers) : bool
+    private function securityHeaderParams(array $headers, bool $isCli = false) : bool
     {
         $errors                                                                             = null;
         if ($this->isAllowedSize($this->getRequestHeaders(), Request::METHOD_HEAD)) {
@@ -322,7 +330,9 @@ class RequestPage extends Mappable
                 foreach ($this->rules->header as $rule) {
                     $rule                                                                   = (object) $rule; //@todo necessario per design pattern
                     $header_key                                                             = $rule->name;
-                    if ($rule->name == "Authorization") {
+                    if ($isCli) {
+                        $header_name                                                        = $header_key;
+                    } elseif ($rule->name == "Authorization") {
                         $header_name                                                        = "Authorization";
                     } else {
                         $header_name                                                        = "HTTP_" . strtoupper($header_key);

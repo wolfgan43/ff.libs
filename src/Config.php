@@ -203,11 +203,7 @@ class Config implements Dumpable
 
                 self::$dirstruct[$dir_key][$dir_name]                       = $dir_attr;
                 if (isset(self::$dirstruct[$dir_key][$dir_name]["autoload"])) {
-                    self::$autoloads[self::$dirstruct[$dir_key][$dir_name]["path"]] = (
-                        isset(self::$dirstruct[$dir_key][$dir_name]["namespace"])
-                        ? rtrim(self::$dirstruct[$dir_key][$dir_name]["namespace"], '\\') . '\\'
-                        : null
-                    );
+                    self::$autoloads[]                                      = Constant::DISK_PATH . self::$dirstruct[$dir_key][$dir_name]["path"];
                 }
             }
 
@@ -378,20 +374,9 @@ class Config implements Dumpable
 
         $cache                                                              = Mem::getInstance(static::ERROR_BUCKET);
         $rawdata                                                            = $cache->get("rawdata");
-
-        //@todo da infilare nella cache centralizzata
-        if (!Kernel::useCache() && !empty($rawdata["config_files"])) {
-            foreach ($rawdata["config_files"] as $config_file => $last_update) {
-                if (filemtime($config_file) > $last_update) {
-                    $rawdata = null;
-                    break;
-                }
-            }
-        }
-
         if (!$rawdata) {
             $rawdata                                                        = self::loadFile($paths);
-            $cache->set("rawdata", self::dump() + $rawdata);
+            $cache->set("rawdata", self::dump() + $rawdata, self::$config_files);
         } else {
             self::loadConfig($rawdata);
 
@@ -416,6 +401,8 @@ class Config implements Dumpable
      */
     private static function loadFile(array $paths) : array
     {
+        clearstatcache();
+
         $rawdata                                                        = array();
 
         foreach (self::$class_configurable as $class_basename => $class_name) {

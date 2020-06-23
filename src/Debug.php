@@ -495,6 +495,7 @@ class Debug
                 . '<span style="padding:15px;">CPU: ' . $benchmark["cpu"] . '</span>';
         }
 
+        $html .= "<div class='x-debug-profiler' ><a href='#?' class='x-debug-profiler--btn' ></a><div class='wrapper' >";
         $html .= '<hr />' . '<div style="text-align: center;">'
             . '<span style="padding:15px;">BackTrace: ' . count($debug_backtrace) . '</span>'
             . '<span style="padding:15px;">Errors: ' . $errors_count . '</span>'
@@ -528,6 +529,7 @@ class Debug
         $html   .= '</tr>';
         $html   .= '</tbody>';
         $html   .= '</table>';
+        $html   .= '</div></div>';
 
         $html = str_replace("{debug_extime}", self::stopWatch("debugger"), $html);
 

@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\cache\adapters;
 
+use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Kernel;
 
@@ -34,7 +35,7 @@ use phpformsframework\libs\Kernel;
  */
 abstract class MemAdapter implements Dumpable
 {
-    private static $indexes       = null;
+    private static $indexes         = null;
 
     protected const ACTION_GET      = "get";
     protected const ACTION_SET      = "set";
@@ -110,6 +111,9 @@ abstract class MemAdapter implements Dumpable
         } else {
             $this->clear();
         }
+
+        Debug::stopWatch("Cache" . DIRECTORY_SEPARATOR . $this->bucket . DIRECTORY_SEPARATOR . $name);
+
         return $res;
     }
 
@@ -120,11 +124,15 @@ abstract class MemAdapter implements Dumpable
      */
     public function get(string $name)
     {
+        Debug::stopWatch("Cache" . DIRECTORY_SEPARATOR . $this->bucket . DIRECTORY_SEPARATOR . $name);
+
         $res = null;
         if ($this->is_readable || $this->checkIndex($name)) {
             $this->cache($this->bucket, self::ACTION_GET, $name);
 
             $res = $this->load($name, $this->getBucket());
+
+            Debug::stopWatch("Cache" . DIRECTORY_SEPARATOR . $this->bucket . DIRECTORY_SEPARATOR . $name);
         }
 
         return $res;
@@ -251,7 +259,7 @@ abstract class MemAdapter implements Dumpable
 
         if ($indexes && $this->verifyIndexes($key, $indexes)) {
             self::$indexes[$key] = $indexes;
-            echo "setIndex<br>\n";
+//            echo "setIndex<br>\n";
             $this->write("index", self::$indexes);
         }
     }
@@ -274,7 +282,7 @@ abstract class MemAdapter implements Dumpable
     {
         if (!self::$indexes) {
             self::$indexes = $this->load("index");
-            echo "getIndex<br>\n";
+//            echo "getIndex<br>\n";
         }
 
         return self::$indexes[$this->key($name)] ?? [];
@@ -290,10 +298,10 @@ abstract class MemAdapter implements Dumpable
             if (stat($file_index)["mtime"] > $last_update) {
                 return false;
             }
-            echo "checkIndex: $file_index<br>\n";
+ //           echo "checkIndex: $file_index<br>\n";
         }
 
-        echo "checkIndex: ALL UPDATED! (" . $this->key($name) . ")<br>\n";
+//        echo "checkIndex: ALL UPDATED! (" . $this->key($name) . ")<br>\n";
         return true;
     }
 }

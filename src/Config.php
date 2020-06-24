@@ -317,7 +317,7 @@ class Config implements Dumpable
                 self::$mapping_data[$bucket][$name]                         = Filemanager::getInstance("json")->read(self::$mapping_files[$bucket][$name]);
             }
 
-            $cache->set($map_name, self::$mapping_data[$bucket][$name]);
+            $cache->set($map_name, self::$mapping_data[$bucket][$name], [self::$mapping_files[$bucket][$name] => filemtime(self::$mapping_files[$bucket][$name])]);
         }
 
         Debug::stopWatch(self::SCHEMA_CONF . "/map/". $map_name);

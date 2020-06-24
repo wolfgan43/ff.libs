@@ -226,7 +226,7 @@ class DatabaseMysqli extends DatabaseAdapter
         $res = parent::queryInsert($fields);
 
         return [
-            "head" => implode(static::CONCAT, array_keys($res)),
+            "head" => "`" . implode("`" . static::CONCAT . "`", array_keys($res)) . "`",
             "body" => implode(static::CONCAT, array_values($res))
         ];
     }

@@ -334,9 +334,9 @@ class Model implements Configurable, Dumpable
         $res                                                                        = [];
         if ($table_name) {
             foreach ($fields as $field => $value) {
-                if (is_object($value) || is_array($value)) {
-                    continue;
-                }
+                //if (is_object($value) || is_array($value)) {
+                    //continue; todo da verificare perche inserito
+                //}
 
                 $res[$table_name . self::DOT . $field]                              = $value;
             }

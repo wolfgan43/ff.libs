@@ -115,6 +115,7 @@ class ViewHtml implements ViewAdapter
             if ($root_element !== null) {
                 $this->root_element = $root_element;
             }
+
             $this->DBlocks[$this->root_element] = Filemanager::fileGetContent($template_path);
             if ($this->DBlocks[$this->root_element] !== false) {
                 $this->getDVars();
@@ -133,7 +134,7 @@ class ViewHtml implements ViewAdapter
                 , "DVars"       => $this->DVars
                 , "DBlockVars"  => $this->DBlockVars
                 , "root_element"=> $this->root_element
-            ));
+            ), [$template_path => filemtime($template_path)]);
         } else {
             $this->DBlocks      = $res["DBlocks"];
             $this->DVars        = $res["DVars"];

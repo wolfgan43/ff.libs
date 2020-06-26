@@ -35,7 +35,7 @@ use function apc_clear_cache;
  * Class MemApc
  * @package phpformsframework\libs\cache\adapters
  */
-class MemApc extends MemAdapter
+class BufferApc extends BufferAdapter
 {
     /**
      * @param string $name

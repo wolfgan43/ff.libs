@@ -25,23 +25,23 @@
  */
 namespace phpformsframework\libs\cache\adapters;
 
+use Memcached as MC;
 use phpformsframework\libs\Kernel;
-use Redis as MC;
 
 /**
- * Class MemRedis
+ * Class MemMemcached
  * @package phpformsframework\libs\cache\adapters
  */
-class MemRedis extends MemAdapter
+class BufferMemcached extends BufferAdapter
 {
-    public static $server       = "127.0.0.1";
-    public static $port         = 6379;
-    public static $auth         = null;
+    public static $server   = "127.0.0.1";
+    public static $port     = 11211;
+    public static $auth     = null;
 
     private $conn	= null;
 
     /**
-     * MemRedis constructor.
+     * MemMemcached constructor.
      * @param string|null $bucket
      * @param bool $readable
      * @param bool $writeable
@@ -50,21 +50,14 @@ class MemRedis extends MemAdapter
     {
         parent::__construct(Kernel::$Environment::APPNAME . "/" . $bucket, $readable, $writeable);
 
-        $this->conn = new MC();
-        $this->conn->pconnect(static::$server, static::$port, $this->getTTL(), $this->appid);
-        if (static::$auth) {
-            $this->conn->auth(static::$auth);
-        }
-        switch (static::$serializer) {
-            case "PHP":
-                $this->conn->setOption(MC::OPT_SERIALIZER, MC::SERIALIZER_PHP);
-                break;
-            case "IGBINARY":
-                $this->conn->setOption(MC::OPT_SERIALIZER, MC::SERIALIZER_IGBINARY);
-                break;
-            default:
-                $this->conn->setOption(MC::OPT_SERIALIZER, MC::SERIALIZER_NONE);
+        $this->conn = new MC($this->appid);
 
+        if (static::$auth) {
+            $this->conn->setOption(MC::OPT_BINARY_PROTOCOL, true);
+            $this->conn->addServer(static::$server, static::$port);
+            $this->conn->setSaslAuthData($this->appid, static::$auth);
+        } else {
+            $this->conn->addServer(static::$server, static::$port);
         }
     }
 
@@ -75,9 +68,10 @@ class MemRedis extends MemAdapter
      */
     protected function load(string $name, string $bucket = null)
     {
-        return ($bucket
-            ? $this->conn->hGet($bucket, $name)
-            : $this->conn->get($name)
+        $res = $this->conn->get($bucket . DIRECTORY_SEPARATOR . $name);
+        return ($this->conn->getResultCode() === MC::RES_SUCCESS
+            ? $this->getValue($res)
+            : null
         );
     }
 
@@ -89,12 +83,8 @@ class MemRedis extends MemAdapter
      */
     protected function write(string $name, $value, string $bucket = null): bool
     {
-        return ($bucket
-            ? $this->conn->hSet($bucket, $name, $value)
-            : $this->conn->set($name, $value)
-        );
+        return $this->conn->set($bucket . DIRECTORY_SEPARATOR . $name, $this->setValue($value), $this->getTTL());
     }
-
 
     /**
      * Cancella una variabile
@@ -105,12 +95,7 @@ class MemRedis extends MemAdapter
     {
         parent::del($name);
 
-        $bucket = $this->getBucket();
-
-        return ($bucket
-            ? $this->conn->hDel($bucket, $name)
-            : $this->conn->delete($name)
-        );
+        return $this->conn->delete($this->getBucket() . DIRECTORY_SEPARATOR . $name);
     }
 
     /**
@@ -122,12 +107,6 @@ class MemRedis extends MemAdapter
     {
         parent::clear();
 
-        $bucket = $this->getBucket();
-
-        if ($bucket) {
-            $this->conn->delete($bucket);
-        } else {
-            $this->conn->flushDb();
-        }
+        $this->conn->flush();
     }
 }

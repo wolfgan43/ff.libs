@@ -26,8 +26,9 @@
 
 namespace phpformsframework\libs\tpl;
 
-use phpformsframework\libs\cache\Mem;
+use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\Config;
+use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\dto\DataHtml;
 use phpformsframework\libs\Dumpable;
@@ -82,14 +83,36 @@ class Resource extends Mappable implements Dumpable
     {
         Debug::stopWatch("resource/loadResources");
 
-        $cache                                  = Mem::getInstance("resource");
+        $cache                                  = Buffer::cache("resource");
         $this->resources                        = $cache->get("rawdata");
         if (!$this->resources) {
             $patterns                           = Config::getScans($this->rules);
             Filemanager::scanExclude($excludeDirname);
             $this->resources                    = Filemanager::scan($patterns);
 
-            $cache->set("rawdata", $this->resources);
+            $config_dirs                        = [];
+            $dirs                               = [];
+            $last_path                          = null;
+            $paths                              = array_keys($patterns);
+            sort($paths);
+
+            foreach ($paths as $path) {
+                if (strpos($path, $last_path) === false) {
+                    $path                       = dirname(rtrim($path, "\\*"));
+                    $dirs[$path]                = ["flag" => Filemanager::SCAN_DIR_RECURSIVE];
+                    $last_path                  = $path;
+
+                    if (is_dir(Constant::DISK_PATH . $path)) {
+                        $config_dirs[Constant::DISK_PATH . $path] = filemtime(Constant::DISK_PATH . $path);
+                    }
+                }
+            }
+
+            Filemanager::scan($dirs, function ($path) use (&$config_dirs) {
+                $config_dirs[$path]             = filemtime($path);
+            });
+
+            $cache->set("rawdata", $this->resources, $config_dirs);
         }
 
         Debug::stopWatch("resource/loadResources");
@@ -104,7 +127,7 @@ class Resource extends Mappable implements Dumpable
         if (!self::$singleton) {
             self::$singleton = new Resource();
         }
-//  echo "type " . $type . "<br>\n";
+        //  echo "type " . $type . "<br>\n";
 
         return (isset(self::$singleton->resources[$type])
             ? self::$singleton->resources[$type]
@@ -122,7 +145,7 @@ class Resource extends Mappable implements Dumpable
         if (!self::$singleton) {
             self::$singleton                    = new Resource();
         }
-//echo "get " . $name . "type " . $type . "<br>\n";
+        //echo "get " . $name . "type " . $type . "<br>\n";
 
         $file                                   = null;
         $pathinfo                               = Request::pathinfo();
@@ -151,7 +174,7 @@ class Resource extends Mappable implements Dumpable
         if (!self::$singleton) {
             self::$singleton = new Resource();
         }
-//echo "widget " . $name . "<br>\n";
+        //echo "widget " . $name . "<br>\n";
         return new DataHtml(self::$singleton->resources["widget"][$name]);
     }
 

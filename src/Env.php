@@ -25,7 +25,7 @@
  */
 namespace phpformsframework\libs;
 
-use phpformsframework\libs\cache\Mem;
+use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\storage\Filemanager;
 use DirectoryIterator;
 
@@ -70,7 +70,7 @@ class Env implements Configurable
 
         if ($permanent) {
             self::$permanent[$key]                                  = self::$vars[$key];
-            $cache                                                  = Mem::getInstance(static::CACHE_BUCKET, true);
+            $cache                                                  = Buffer::cache(static::CACHE_BUCKET, true);
             $cache->set("permanent", self::$permanent);
         }
 
@@ -126,7 +126,7 @@ class Env implements Configurable
      */
     private static function loadPermanent() : array
     {
-        $cache                                                      = Mem::getInstance(static::CACHE_BUCKET, true);
+        $cache                                                      = Buffer::cache(static::CACHE_BUCKET, true);
         $permanent                                                  = $cache->get("permanent");
         if ($permanent) {
             self::$permanent                                        = $permanent;

@@ -277,6 +277,19 @@ class Response
     private static function endScript($message = null) : void
     {
         Log::write($message);
+        /*global $performance_test;
+        global $performance_test_mid;
+        $tmp = microtime(true);
+
+        $tot = floor(($tmp - $performance_test) * 1000);
+        $framew = floor(($performance_test_mid - $performance_test) * 1000);
+        $interf = floor(($tmp - $performance_test_mid) * 1000);
+
+        $framew_rate = floor(($framew * 100) / $tot);
+        $interf_rate = floor(($interf * 100) / $tot);
+
+        var_dump($tmp - $performance_test, $performance_test_mid - $performance_test, $tmp - $performance_test_mid);
+        var_dump($framew_rate, $interf_rate);*/
         exit;
     }
 

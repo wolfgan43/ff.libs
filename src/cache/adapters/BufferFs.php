@@ -33,7 +33,7 @@ use phpformsframework\libs\storage\Filemanager;
  * Class MemFs
  * @package phpformsframework\libs\cache\adapters
  */
-class MemFs extends MemAdapter
+class BufferFs extends BufferAdapter
 {
     private const CACHE_PATH        = Constant::CACHE_PATH . DIRECTORY_SEPARATOR . "data";
     private const CACHE_DISK_PATH   = Constant::DISK_PATH . self::CACHE_PATH;

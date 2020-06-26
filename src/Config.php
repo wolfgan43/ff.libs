@@ -25,12 +25,13 @@
  */
 namespace phpformsframework\libs;
 
-use phpformsframework\libs\cache\Mem;
+use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\dto\ConfigRules;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\security\Buckler;
 use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\storage\Media;
+use Exception;
 
 /**
  * Class Config
@@ -283,7 +284,7 @@ class Config implements Dumpable
 
     /**
      * @param string $namespace
-     * @throws \ReflectionException
+     * @throws Exception
      */
     public static function autoloadRegister(string $namespace) : void
     {
@@ -308,7 +309,7 @@ class Config implements Dumpable
         $map_name                                                           = $bucket . "_" . $name;
         Debug::stopWatch(self::SCHEMA_CONF . "/map/" . $map_name);
 
-        $cache                                                              = Mem::getInstance("maps");
+        $cache                                                              = Buffer::cache("maps");
         self::$mapping_data[$bucket][$name]                                 = $cache->get($map_name);
         if (!self::$mapping_data[$bucket][$name]) {
             self::$mapping_data[$bucket][$name]                             = array();
@@ -372,7 +373,7 @@ class Config implements Dumpable
     {
         Debug::stopWatch(self::SCHEMA_CONF . "/load");
 
-        $cache                                                              = Mem::getInstance(static::ERROR_BUCKET);
+        $cache                                                              = Buffer::cache(static::ERROR_BUCKET);
         $rawdata                                                            = $cache->get("rawdata");
         if (!$rawdata) {
             $rawdata                                                        = self::loadFile($paths);

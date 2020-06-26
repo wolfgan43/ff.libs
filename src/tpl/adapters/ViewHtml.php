@@ -25,15 +25,16 @@
  */
 namespace phpformsframework\libs\tpl\adapters;
 
+use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Error;
-use phpformsframework\libs\cache\Mem;
 use phpformsframework\libs\Hook;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\tpl\ViewAdapter;
 use stdClass;
+use Exception;
 
 /**
  * Class ViewHtml
@@ -69,6 +70,7 @@ class ViewHtml implements ViewAdapter
     /**
      * @param string $template_file
      * @return ViewAdapter
+     * @throws Exception
      */
     public function fetch(string $template_file) : ViewAdapter
     {
@@ -89,6 +91,7 @@ class ViewHtml implements ViewAdapter
     /**
      * @param string $template_path
      * @param string|null $root_element
+     * @throws Exception
      */
     private function loadFile(string $template_path, string $root_element = null) : void
     {
@@ -109,7 +112,7 @@ class ViewHtml implements ViewAdapter
 
         Debug::stopWatch("tpl/" . $tpl_name);
 
-        $cache = Mem::getInstance("tpl");
+        $cache = Buffer::cache("tpl");
         $res = $cache->get($tpl_name);
         if (!$res) {
             if ($root_element !== null) {

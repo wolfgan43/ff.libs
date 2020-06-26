@@ -25,7 +25,7 @@
  */
 namespace phpformsframework\libs\international;
 
-use phpformsframework\libs\cache\Mem;
+use phpformsframework\libs\cache\Buffer;
 
 /**
  * Class TranslatorAdapter
@@ -59,7 +59,7 @@ abstract class TranslatorAdapter
         $fromto                                         = strtoupper($fromLang . "|" . $toLang);
 
         self::$translation[$fromto][$words]             = $words_translated;
-        Mem::getInstance(static::CACHE_DICTIONARY_BUCKET . $fromto)->set($words, self::$translation[$fromto][$words]);
+        Buffer::cache(static::CACHE_DICTIONARY_BUCKET . $fromto)->set($words, self::$translation[$fromto][$words]);
 
         return self::$translation[$fromto][$words];
     }
@@ -75,7 +75,7 @@ abstract class TranslatorAdapter
         $fromto                                         = strtoupper(Translator::getLangDefault($fromLang)  . "|" . Translator::getLang($toLang));
 
         if (!isset(self::$translation[$fromto][$words])) {
-            $cache                                      = Mem::getInstance(static::CACHE_DICTIONARY_BUCKET . $fromto);
+            $cache                                      = Buffer::cache(static::CACHE_DICTIONARY_BUCKET . $fromto);
             self::$translation[$fromto][$words]         = $cache->get($words);
         }
 

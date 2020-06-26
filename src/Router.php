@@ -150,6 +150,8 @@ class Router implements Configurable, Dumpable
 
             if ($destination) {
                 if (is_array($destination)) {
+//                    global $performance_test_mid;
+//                    $performance_test_mid = microtime(true);
                     Response::send(self::caller($destination["obj"], $destination["method"] ?? Request::method(true), self::replaceMatches($rule["matches"], $destination["params"] ?? [])));
                 } elseif ($rule["redirect"]) {
                     Response::redirect(self::replaceMatches($rule["matches"], $destination), $rule["redirect"]);

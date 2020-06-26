@@ -27,7 +27,7 @@
 namespace phpformsframework\libs\international;
 
 use phpformsframework\libs\App;
-use phpformsframework\libs\cache\Mem;
+use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\util\AdapterManager;
@@ -89,7 +89,7 @@ class Translator
         $lang_code                                      = self::getLang($language);
 
         self::$cache[$lang_code]                        = null;
-        Mem::getInstance(static::CACHE_BUCKET . $lang_code)->clear();
+        Buffer::cache(static::CACHE_BUCKET . $lang_code)->clear();
     }
 
     /**
@@ -144,7 +144,7 @@ class Translator
             Error::register("Lang not accepted: " . $lang_code . " Lang allowed: " . implode(", ", Kernel::$Environment::ACCEPTED_LANG), static::ERROR_BUCKET);
         }
         if (!isset(self::$cache[$lang_code][$code])) {
-            $cache                                      = Mem::getInstance(static::CACHE_BUCKET . $lang_code);
+            $cache                                      = Buffer::cache(static::CACHE_BUCKET . $lang_code);
             self::$cache[$lang_code][$code]             = $cache->get($code);
             if (!self::$cache[$lang_code][$code]) {
                 self::$cache[$lang_code][$code]         = self::getWordByCodeFromDB($code, $lang_code);

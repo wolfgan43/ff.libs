@@ -125,7 +125,7 @@ class Debug
             $res                            = self::$debug + Buffer::exTime();
             $res["exTime - Conf"]           = Config::exTime();
             $res["exTime - App"]            = self::exTimeApp();
-            $res["App - Cache"]             = (self::cacheDisabled() ? "off" : "on (" . Kernel::$Environment::CACHE_MEM_ADAPTER . ", " . Kernel::$Environment::CACHE_DATABASE_ADAPTER . ", " . Kernel::$Environment::CACHE_MEDIA_ADAPTER . ")");
+            $res["App - Cache"]             = (self::cacheDisabled() ? "off" : "on (" . Kernel::$Environment::CACHE_BUFFER_ADAPTER . ", " . Kernel::$Environment::CACHE_DATABASE_ADAPTER . ", " . Kernel::$Environment::CACHE_MEDIA_ADAPTER . ")");
             $res["backtrace"]               = self::dumpBackTrace();
         }
         return $res;
@@ -510,7 +510,7 @@ class Debug
                     . 'Translate: ' . '<em>' . Kernel::$Environment::TRANSLATOR_ADAPTER . '</em>'
                 . ')</span>'
                         . '<span style="padding:15px;">Cache ('
-                    . 'Mem: '       . (!Kernel::useCache() ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_MEM_ADAPTER      . '</span>, '
+                    . 'Mem: '       . (!Kernel::useCache() ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_BUFFER_ADAPTER      . '</span>, '
                     . 'DB: '        . (!Kernel::useCache() ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_DATABASE_ADAPTER      . '</span>, '
                     . 'Media: '     . (!Kernel::useCache() ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_MEDIA_ADAPTER     . '</span>'
                 . ')</span>'

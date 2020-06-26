@@ -196,7 +196,7 @@ class DatabaseMysqli extends DatabaseAdapter
      */
     protected function querySelect(array $fields = null, bool $skip_control = false) : string
     {
-        return implode(static::CONCAT, array_keys(parent::querySelect($fields, $skip_control)));
+        return "`" . implode("`" . static::CONCAT . "`", array_keys(parent::querySelect($fields, $skip_control))) . "`";
     }
 
     /**

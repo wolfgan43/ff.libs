@@ -25,10 +25,11 @@
  */
 namespace phpformsframework\libs;
 
-use phpformsframework\libs\cache\Mem;
+use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\storage\Filemanager;
 use ReflectionClass;
 use ReflectionException;
+use Exception;
 
 /**
  * Class Autoloader
@@ -38,47 +39,50 @@ class Autoloader
 {
     protected const ERROR_BUCKET                                            = "config";
 
-    private static $classes = [];
+    private static $classes                                                 = [];
+
     /**
      * @param array|null $paths
-     * @throws ReflectionException
+     * @throws Exception
      */
     public static function register(array $paths)
     {
-        $cache                                                              = Mem::getInstance(static::ERROR_BUCKET);
+        $cache                                                              = Buffer::cache(static::ERROR_BUCKET);
         self::$classes                                                      = $cache->get("autoloader");
         if (self::$classes) {
             spl_autoload_register(function ($class_name) {
                 include self::$classes[$class_name];
             });
         } else {
-            $config_dirs = [];
+            $config_dirs                                                    = [];
             foreach ($paths as $path) {
                 if (is_dir($path)) {
-                    $config_dirs[$path] = filemtime($path);
+                    $config_dirs[$path]                                     = filemtime($path);
                 }
             }
-            $paths = array_keys($config_dirs);
-
-            $patterns = array_fill_keys($paths, ["flag" => Filemanager::SCAN_DIR_RECURSIVE]);
+            $paths                                                          = array_keys($config_dirs);
+            $patterns                                                       = array_fill_keys($paths, ["flag" => Filemanager::SCAN_DIR_RECURSIVE]);
             Filemanager::scan($patterns, function ($path) use (&$config_dirs) {
-                $config_dirs[$path] = filemtime($path);
+                $config_dirs[$path]                                         = filemtime($path);
             });
 
             self::spl($paths);
 
-            $classes = get_declared_classes();
-            $patterns = array_fill_keys($paths, ["flag" => Filemanager::SCAN_FILE_RECURSIVE, "filter" => ["php"]]);
+            $classes                                                        = get_declared_classes();
+            $patterns                                                       = array_fill_keys($paths, ["flag" => Filemanager::SCAN_FILE_RECURSIVE, "filter" => [Constant::PHP_EXT]]);
             Filemanager::scan($patterns, function ($path) {
                 include_once($path);
             });
 
             $classes = array_diff(get_declared_classes(), $classes);
-            foreach ($classes as $class_name) {
-                $class = new ReflectionClass($class_name);
-                self::$classes[$class_name] = $class->getFileName();
+            try {
+                foreach ($classes as $class_name) {
+                    $class                                                      = new ReflectionClass($class_name);
+                    self::$classes[$class_name]                                 = $class->getFileName();
+                }
+            } catch (ReflectionException $e) {
+                App::throwError($e->getCode(), $e->getMessage());
             }
-
             $cache->set("autoloader", self::$classes, $config_dirs);
         }
     }
@@ -92,9 +96,9 @@ class Autoloader
     {
         Debug::stopWatch("loadscript" . $abs_path);
 
-        $rc                                                         = null;
+        $rc                                                                 = null;
         if (Dir::checkDiskPath($abs_path)) {
-            $rc                                                     = (
+            $rc                                                             = (
                 $once
                 ? require_once($abs_path)
                 : include($abs_path)

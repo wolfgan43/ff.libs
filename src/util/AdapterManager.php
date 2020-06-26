@@ -14,7 +14,7 @@ trait AdapterManager
      * @param string $adapterName
      * @param array|null $args
      * @param string $class_name
-     * @return object
+     * @return mixed
      */
     private static function loadAdapter(string $adapterName, array $args = array(), $class_name = __CLASS__) : object
     {

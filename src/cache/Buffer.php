@@ -2,9 +2,11 @@
 namespace phpformsframework\libs\cache;
 
 use phpformsframework\libs\App;
+use phpformsframework\libs\cache\adapters\BufferAdapter;
 use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Log;
+use phpformsframework\libs\util\AdapterManager;
 use stdClass;
 
 /**
@@ -13,6 +15,8 @@ use stdClass;
  */
 class Buffer implements Dumpable
 {
+    use AdapterManager;
+
     private const SEP                                   = "/";
     private const SEP_EXTIME                            = "exTime - ";
     private const SYMBOL                                = " (from cache)";
@@ -29,6 +33,17 @@ class Buffer implements Dumpable
      * @var stdClass
      */
     private static $tid                                 = null;
+
+    /**
+     * @param string $bucket
+     * @param bool|null $force
+     * @param string|null $bufferAdapter
+     * @return BufferAdapter
+     */
+    public static function cache(string $bucket, bool $force = null, string $bufferAdapter = null) : BufferAdapter
+    {
+        return self::loadAdapter($bufferAdapter ?? Kernel::$Environment::CACHE_BUFFER_ADAPTER, [$bucket, $force ?? Kernel::useCache()]);
+    }
 
     /**
      * @return array|null

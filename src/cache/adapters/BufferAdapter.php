@@ -30,10 +30,10 @@ use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Kernel;
 
 /**
- * Class MemAdapter
+ * Class BufferAdapter
  * @package phpformsframework\libs\cache\adapters
  */
-abstract class MemAdapter implements Dumpable
+abstract class BufferAdapter implements Dumpable
 {
     private static $indexes         = null;
 
@@ -77,7 +77,7 @@ abstract class MemAdapter implements Dumpable
 
 
     /**
-     * MemAdapter constructor.
+     * BufferAdapter constructor.
      * @param string $bucket
      * @param bool $readable
      * @param bool $writeable
@@ -259,7 +259,7 @@ abstract class MemAdapter implements Dumpable
 
         if ($indexes && $this->verifyIndexes($key, $indexes)) {
             self::$indexes[$key] = $indexes;
-//            echo "setIndex<br>\n";
+            echo "setIndex<br>\n";
             $this->write("index", self::$indexes);
         }
     }
@@ -282,7 +282,7 @@ abstract class MemAdapter implements Dumpable
     {
         if (!self::$indexes) {
             self::$indexes = $this->load("index");
-//            echo "getIndex<br>\n";
+            echo "getIndex<br>\n";
         }
 
         return self::$indexes[$this->key($name)] ?? [];
@@ -294,14 +294,15 @@ abstract class MemAdapter implements Dumpable
      */
     protected function checkIndex(string $name) : bool
     {
-        foreach ($this->getIndex($name) as $file_index => $last_update) {
-            if (stat($file_index)["mtime"] > $last_update) {
+        $indexes = $this->getIndex($name);
+        foreach ($indexes as $file_index => $last_update) {
+            if (filemtime($file_index) > $last_update) {
                 return false;
             }
- //           echo "checkIndex: $file_index<br>\n";
+            echo "checkIndex: $file_index<br>\n";
         }
 
-//        echo "checkIndex: ALL UPDATED! (" . $this->key($name) . ")<br>\n";
-        return true;
+        echo "checkIndex: " . (empty($indexes) ? "NO" : "ALL") . " UPDATED! (" . $this->key($name) . ")<br>\n";
+        return !empty($indexes);
     }
 }

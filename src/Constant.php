@@ -134,7 +134,7 @@ class Constant
     /**
      * @var string[Apc|Fs|Global|Memcached|Redis]
      */
-    const CACHE_MEM_ADAPTER                 = "Fs";
+    const CACHE_BUFFER_ADAPTER              = "Fs";
     /**
      * @var string[Native|ElasticSearch]
      */

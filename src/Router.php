@@ -150,6 +150,7 @@ class Router implements Configurable, Dumpable
             : self::$cache[self::$target]
         );
 
+
         if (is_array($rule)) {
             $destination                                    = $rule["destination"];
 
@@ -193,6 +194,8 @@ class Router implements Configurable, Dumpable
             }
 
             if ($file) {
+                Response::sendHeaders();
+
                 self::execute($webroot . $file);
             }
         }
@@ -276,8 +279,10 @@ class Router implements Configurable, Dumpable
      */
     private static function setRoutes(string $source, array $rule = null) : bool
     {
+
         $key = rtrim(rtrim(rtrim(ltrim($source, "^"), "$"), "*"), DIRECTORY_SEPARATOR);
         if (strpos($key, "*") === false && strpos($key, "+") === false && strpos($key, "(") === false && strpos($key, "[") === false) {
+
             self::$routes[$key] = $rule;
             return true;
         }
@@ -345,20 +350,19 @@ class Router implements Configurable, Dumpable
         $matches                                        = array();
         $match_path                                     = null;
         $tmp_path                                       = rtrim($path, DIRECTORY_SEPARATOR);
-        if ($tmp_path) {
-            do {
-                if (isset(self::$routes[$tmp_path])) {
-                    if (!$match_path) {
-                        $match_path                     = $tmp_path;
-                    }
-                    if (self::$routes[$tmp_path]) {
-                        $res                            = self::$routes[$tmp_path];
-                        break;
-                    }
+
+        do {
+            if (isset(self::$routes[$tmp_path])) {
+                if (!$match_path) {
+                    $match_path                     = $tmp_path;
                 }
-                $tmp_path                               = dirname($tmp_path);
-            } while ($tmp_path != DIRECTORY_SEPARATOR);
-        }
+                if (self::$routes[$tmp_path]) {
+                    $res                            = self::$routes[$tmp_path];
+                    break;
+                }
+            }
+            $tmp_path                               = dirname($tmp_path);
+        } while (!empty($tmp_path) && $tmp_path != DIRECTORY_SEPARATOR);
 
         if ($res) {
             $res["path"]                                = $match_path;
@@ -400,7 +404,7 @@ class Router implements Configurable, Dumpable
                     $output                                         = (new $class_name)->$method(...$params);
                 }
             } catch (Exception $e) {
-                Error::register($e->getMessage(), static::ERROR_BUCKET);
+                Response::sendError($e->getCode(), $e->getMessage());
             }
         } elseif (is_callable($method)) {
             $output                                                 = $method(...$params);

@@ -1343,19 +1343,18 @@ class Media implements Configurable
     }
 
     /**
-     * @param bool $abs
+     * @param bool $check_exist
      * @return string
      */
-    private function getFinalFile(bool $abs = true) : string
+    private function getFinalFile(bool $check_exist = false) : ?string
     {
-        $final_path                                                 = false;
+        $final_path                                                 = null;
+        if ($check_exist && empty($this->final["exist"])) {
+            return $final_path;
+        }
 
         if ($this->final) {
-            $final_path                                             = (
-                $abs
-                                                                            ? $this->basepathCache()
-                                                                            : ""
-                                                                        )
+            $final_path                                             = $this->basepathCache()
                                                                         . $this->final["dirname"]
                                                                         . (
                                                                             $this->final["dirname"] == DIRECTORY_SEPARATOR
@@ -1637,6 +1636,11 @@ class Media implements Configurable
         return $setting;
     }
 
+    public function cacheIsValid(string $source_file, string $cache_file = null) : bool
+    {
+        return $cache_file
+            && (!Kernel::$Environment::DISABLE_CACHE || filemtime($cache_file) >= filemtime($source_file));
+    }
     /**
      * @param string|null $filename
      * @return string|null
@@ -1650,32 +1654,22 @@ class Media implements Configurable
             }
 
             if ($this->final) {
-                $final_file                                         = $this->getFinalFile();
+                $final_file                                         = $this->getFinalFile(true);
 
                 $modeCurrent                                        = $this->getMode();
                 if (is_array($modeCurrent)) {
-                    $fmtime                                         = (
-                        $this->final["exist"]
-                                                                        ? filemtime($final_file)
-                                                                        : "-1"
-                                                                    );
-                    if (Kernel::$Environment::DEBUG
-                        || !$this->final["exist"]
-                       // || $fmtime      <= $modeCurrent["last_update"] //todo: da fare controllo sul file di importazione dei mode
-                        || $fmtime      <= filemtime($this->basepath . $this->filesource)
-                    ) {
+                    if (!$this->cacheIsValid($this->basepath . $this->filesource, $final_file)) {
                         $this->createImage($modeCurrent);
-
                         Hook::handle("media_on_create_image", $final_file);
                     }
                 } elseif (!$modeCurrent && is_file($this->basepath . $this->filesource)) {
-                    if (!is_file($final_file)) {
+                    if (!$this->cacheIsValid($this->basepath . $this->filesource, $final_file)) {
                         $this->saveFromOriginal($this->basepath . $this->filesource, $final_file);
                     }
                 } else {
                     $icon                                           = $this->getIconPath(basename($this->filesource), true);
 
-                    if (!is_file($final_file) && $icon) {
+                    if (!$this->cacheIsValid($this->basepath . $this->filesource, $final_file) && $icon) {
                         $this->saveFromOriginal($icon, $final_file);
                     }
                 }

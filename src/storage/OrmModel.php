@@ -125,10 +125,7 @@ class OrmModel extends Mappable
      */
     public function setMainTable(string $main_table = null) : self
     {
-        if ($main_table) {
-            if (!isset($this->tables[$main_table])) {
-                Error::register("MainTable '" . $main_table . "' not found in " . $this->type);
-            }
+        if ($main_table && isset($this->tables[$main_table])) {
             $this->main_table                                                               = $main_table;
         } else {
             $this->main_table                                                               = $this->default_table;

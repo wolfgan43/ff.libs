@@ -50,6 +50,7 @@ class Constant
 
     const LOCALE_LANG_CODE                  = null; //IT, EN
     const LOCALE_COUNTRY_CODE               = null; //IT, US
+    const LOCALE_TIME_ZONE                  = "UTC";
 
     /**
      * Disk Settings

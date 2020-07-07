@@ -14,12 +14,26 @@ class ApiJsonWsp extends ApiAdapter
 {
     protected const ERROR_RESPONSE_INVALID_FORMAT = "Response is not a valid Json";
 
+    protected $method                           = Request::METHOD_POST;
+
     private $timeout                            = self::REQUEST_TIMEOUT;
     private $user_agent                         = null;
     private $cookie                             = null;
     private $https                              = null;
 
+    /**
+     * @param string $method
+     * @param array $arguments
+     * @return object
+     * @throws Exception
+     */
+    public function __call(string $method, array $arguments) : object
+    {
+        $this->endpoint                         .= "/" . $method;
 
+        $arguments["action"]                    = $method;
+        return parent::__call($this->method, $arguments);
+    }
 
     /**
      * JsonWsp constructor.
@@ -32,7 +46,7 @@ class ApiJsonWsp extends ApiAdapter
         parent::__construct($url, $username, $secret);
 
         $this->user_agent                       = Request::userAgent();
-        $this->https                            = false; //Request::isHTTPS();
+        $this->https                            = false;
     }
 
     /**
@@ -81,9 +95,7 @@ class ApiJsonWsp extends ApiAdapter
      */
     protected function getResponseSchema(string $method) : ?array
     {
-        $schema                                 = null;
-
-        return $schema;
+        return null;
     }
 
     /**

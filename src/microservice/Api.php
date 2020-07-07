@@ -27,11 +27,7 @@ class Api
      */
     public function __construct($url, string $apiAdapter = null)
     {
-        if (!$this->adapter && !$apiAdapter) {
-            $apiAdapter                     = Kernel::$Environment::MICROSERVICE_ADAPTER;
-        }
-
-        $this->setAdapter($apiAdapter, [$url], static::CLASSNAME);
+        $this->setAdapter($apiAdapter ?? Kernel::$Environment::MICROSERVICE_ADAPTER, [$url], static::CLASSNAME);
     }
 
     /**

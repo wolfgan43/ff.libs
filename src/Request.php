@@ -463,7 +463,7 @@ class Request implements Configurable, Dumpable
     {
         $error = error_get_last();
         if ($error) {
-            self::sendError($error["message"], 500);
+            self::sendError(500, $error["message"]);
         } else {
             self::captureServer();
 
@@ -964,7 +964,7 @@ class Request implements Configurable, Dumpable
 
             //if (self::securityHeaderParams(self::$page)) {
             if (self::$page->loadHeaders($_SERVER)) {
-                self::sendError(self::$page->error, self::$page->status);
+                self::sendError(self::$page->status, self::$page->error);
             }
         }
 
@@ -997,7 +997,7 @@ class Request implements Configurable, Dumpable
             $request                                                                        = self::getReq($method);
 
             if (self::$page->loadRequest($request) || self::$page->loadRequestFile()) {
-                self::sendError(self::$page->error, self::$page->status);
+                self::sendError(self::$page->status, self::$page->error);
             }
         }
 
@@ -1050,15 +1050,15 @@ class Request implements Configurable, Dumpable
         }
 
         if ($error) {
-            self::sendError($error, 405);
+            self::sendError(405, $error);
         }
     }
 
     /**
-     * @param string $error
      * @param int $status
+     * @param string|null $error
      */
-    private static function sendError(string $error, int $status = 400)
+    private static function sendError(int $status, string $error = null) : void
     {
         Response::sendError($status, $error);
     }

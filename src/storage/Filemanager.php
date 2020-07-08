@@ -28,10 +28,12 @@ namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Constant;
+use phpformsframework\libs\Dir;
 use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Request;
+use phpformsframework\libs\security\Validator;
 use stdClass;
 use Exception;
 
@@ -837,6 +839,20 @@ class Filemanager implements Dumpable
     }
 
     /**
+     * @param string $filename
+     * @param string $data
+     * @return false
+     */
+    public static function filePutContents(string $filename, string $data) : bool
+    {
+        if (!Dir::checkDiskPath(dirname($filename))) {
+            return false;
+        }
+
+        return file_put_contents($filename, $data);
+    }
+
+    /**
      * @param string $method
      * @param string $url
      * @param array|null $params
@@ -904,6 +920,10 @@ class Filemanager implements Dumpable
      */
     private static function loadFile(string $path, $context = null, array &$headers = null) : string
     {
+        if (Validator::is($path, "", "url")->isError() && !Dir::checkDiskPath($path)) {
+            return "";
+        }
+
         $content                            = @file_get_contents($path, false, $context);
         if ($content === false) {
             Error::register("File inaccessible: " . ($path ? $path : "empty"));

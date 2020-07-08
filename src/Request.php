@@ -855,6 +855,9 @@ class Request implements Configurable, Dumpable
         header('X-XSS-Protection: 1; mode=block');
         header('Access-Control-Allow-Headers: DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,content-type');
 
+        if (self::isHTTPS()) {
+            header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
+        }
 
         switch (self::method()) {
             case self::METHOD_OPTIONS:

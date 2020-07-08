@@ -290,14 +290,10 @@ class Request implements Configurable, Dumpable
             : null
         );
         $requestURI                     = self::requestURI();
-        $queryString                    = self::queryString();
         if ($requestURI) {
-            self::$orig_path_info       = rtrim(rtrim($queryString
-                ? rtrim($requestURI, $queryString)
-                : $requestURI, "?"), "/");
-
+            self::$orig_path_info       = rtrim(explode("?", $requestURI)[0], "/");
             if (Constant::SITE_PATH) {
-                self::$orig_path_info    = str_replace(Constant::SITE_PATH, "", self::$orig_path_info);
+                self::$orig_path_info   = str_replace(Constant::SITE_PATH, "", self::$orig_path_info);
             }
         }
         if (!self::$orig_path_info) {

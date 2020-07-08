@@ -321,11 +321,7 @@ class ApiSoap extends ApiAdapter
      */
     private function getResponse(string $method, array $request) : stdClass
     {
-        $request = array_filter($request, function ($value) {
-            return !is_array($value) && !is_object($value);
-        });
-
-        $response                                                       = (object) $this->client->__soapCall($method, $request);
+        $response                                                       = (object) @$this->client->__soapCall($method, $request);
         if (!empty($response)) {
             if (isset($response->{$method . "Result"})) {
                 $response                                               = $response->{$method . "Result"};

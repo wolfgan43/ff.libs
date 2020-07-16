@@ -45,6 +45,8 @@ class Filemanager implements Dumpable
 {
     const NAME_SPACE                                                    = __NAMESPACE__ . '\\adapters\\';
 
+    private const ERROR_FILE_FORBIDDEN                                  = "File inaccessible";
+
     private static $singletons                                          = null;
     private static $storage                                             = null;
     private static $scanExclude                                         = null;
@@ -926,7 +928,8 @@ class Filemanager implements Dumpable
 
         $content                            = @file_get_contents($path, false, $context);
         if ($content === false) {
-            Error::register("File inaccessible: " . ($path ? $path : "empty"));
+            Debug::set(($path ? $path : "empty"), self::ERROR_FILE_FORBIDDEN);
+            throw new Exception(self::ERROR_FILE_FORBIDDEN, 403);
         }
 
         if (isset($http_response_header) && isset($headers)) {

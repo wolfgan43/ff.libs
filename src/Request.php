@@ -453,6 +453,22 @@ class Request implements Configurable, Dumpable
     }
 
     /**
+     * @return string|null
+     */
+    public static function getBearerToken() : ?string
+    {
+        $headers                                                    = self::getAuthorizationHeader();
+        // HEADER: Get the access token from the header
+        if (!empty($headers) && preg_match('/Bearer\s(\S+)/', $headers, $matches)) {
+            return $matches[1];
+        }
+        if (isset($_SERVER["HTTP_BEARER"])) {
+            return $_SERVER["HTTP_BEARER"];
+        }
+        return null;
+    }
+
+    /**
      *
      */
     private static function capture()

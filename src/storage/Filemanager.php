@@ -806,7 +806,11 @@ class Filemanager implements Dumpable
         $res                                        = json_decode(self::fileGetContent($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers));
 
         if (json_last_error() != JSON_ERROR_NONE) {
-            throw new Exception("Response is not a valid JSON", 406);
+            if(is_null($res)) {
+                throw new Exception("Response is Null", 406);
+            } else {
+                throw new Exception("Response is not a valid JSON: " . json_last_error_msg(), 406);
+            }
         }
 
         return $res;

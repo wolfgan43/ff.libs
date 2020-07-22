@@ -5,9 +5,8 @@ use SoapClient;
 use SoapFault;
 
 if(!class_exists("SoapClient")) {
-    return null;
+    class SoapClient {}
 }
-
 
 /**
  * Class SoapClientCurl

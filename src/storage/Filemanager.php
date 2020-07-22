@@ -26,16 +26,14 @@
 
 namespace phpformsframework\libs\storage;
 
+use Exception;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Constant;
-use phpformsframework\libs\Dir;
 use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Request;
-use phpformsframework\libs\security\Validator;
 use stdClass;
-use Exception;
 
 /**
  * Class Filemanager
@@ -777,7 +775,7 @@ class Filemanager implements Dumpable
     public static function fileGetContent(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : string
     {
         $key                                        = self::normalizeUrlAndParams($method, $url, $params);
-        $context                                    = self::streamContext($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers);
+        $context                                    = self::streamContext($params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers);
         $location                                   = self::getUrlLocation($url);
 
         self::$cache["request"][$key]               = $location;
@@ -797,23 +795,11 @@ class Filemanager implements Dumpable
      * @param string|null $username
      * @param string|null $password
      * @param array|null $headers
-     * @return stdClass|array|null
-     * @throws Exception
-     * @todo da tipizzare
+     * @return stdClass
      */
-    public static function fileGetContentJson(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null)
+    public static function fileGetContentJson(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : ?stdClass
     {
-        $res                                        = json_decode(self::fileGetContent($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers));
-
-        if (json_last_error() != JSON_ERROR_NONE) {
-            if(is_null($res)) {
-                throw new Exception("Response is Null", 406);
-            } else {
-                throw new Exception("Response is not a valid JSON: " . json_last_error_msg(), 406);
-            }
-        }
-
-        return $res;
+        return json_decode(self::fileGetContent($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers));
     }
     /**
      * @param string $url
@@ -832,7 +818,7 @@ class Filemanager implements Dumpable
     {
         $response_headers                           = array();
         $key                                        = self::normalizeUrlAndParams($method, $url, $params);
-        $context                                    = self::streamContext($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers);
+        $context                                    = self::streamContext($params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers);
         $location                                   = self::getUrlLocation($url);
 
         self::$cache["request"][$key]               = $location;
@@ -842,20 +828,6 @@ class Filemanager implements Dumpable
             "headers" => self::parseResponseHeaders($response_headers),
             "content" => self::$cache["response"][$location][$key]
         );
-    }
-
-    /**
-     * @param string $filename
-     * @param string $data
-     * @return false
-     */
-    public static function filePutContents(string $filename, string $data) : bool
-    {
-        if (!Dir::checkDiskPath(dirname($filename))) {
-            return false;
-        }
-
-        return file_put_contents($filename, $data);
     }
 
     /**
@@ -923,13 +895,10 @@ class Filemanager implements Dumpable
      * @param resource $context
      * @param array|null $headers
      * @return string
+     * @throws Exception
      */
     private static function loadFile(string $path, $context = null, array &$headers = null) : string
     {
-        if (Validator::is($path, "", "url")->isError() && !Dir::checkDiskPath($path)) {
-            return "";
-        }
-
         $content                            = @file_get_contents($path, false, $context);
         if ($content === false) {
             Debug::set(($path ? $path : "empty"), self::ERROR_FILE_FORBIDDEN);
@@ -957,7 +926,7 @@ class Filemanager implements Dumpable
      * @param array|null $headers
      * @return resource
      */
-    private static function streamContext(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 60, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null)
+    private static function streamContext(array $params = null, string $method = Request::METHOD_POST, int $timeout = 60, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null)
     {
         if (!$username) {
             $username                       = Kernel::$Environment::HTTP_AUTH_USERNAME;
@@ -975,10 +944,9 @@ class Filemanager implements Dumpable
             : array()
         );
 
-        if ($method == Request::METHOD_POST) {
-            $headers[]                      = "Content-type: application/x-www-form-urlencoded";
-        }
-        if (strpos($url, Request::hostname()) !== false && $username) {
+
+
+        if ($username) {
             $headers["Authorization"]       = "Authorization: Basic " . base64_encode($username . ":" . $password);
         }
 
@@ -997,17 +965,32 @@ class Filemanager implements Dumpable
                 'ignore_errors'             => true
             )
         );
+
+        if ($method == Request::METHOD_POST) {
+            $content_type                   = "Content-Type: application/x-www-form-urlencoded";
+            foreach ($headers as $header_key => $header_value) {
+                if (strtolower($header_key) == "content-type") {
+                    $content_type           = $header_value;
+                    unset($headers[$header_key]);
+                    break;
+                }
+            }
+
+            $headers["Content-Type"]        = $content_type;
+            $opts["http"]["content"]        = (
+            strpos($headers["Content-Type"], "json") === false
+                ? http_build_query($params)
+                : json_encode($params)
+            );
+        }
+
         if ($user_agent) {
             $opts['http']['user_agent']     = $user_agent;
         }
-        if ($headers) {
+
+        if (!empty($headers)) {
             $opts['http']['header']         = implode("\r\n", $headers);
         }
-
-        if ($params && $method == Request::METHOD_POST) {
-            $opts["http"]["content"]    = http_build_query($params);
-        }
-
 
         /** @todo da implementare per gestire il trasgerimento dei file
 

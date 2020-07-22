@@ -23,8 +23,8 @@ abstract class ApiAdapter
 
     private const ERROR_RESPONSE_EMPTY                                  = "Response Empty";
     private const ERROR_ENDPOINT_EMPTY                                  = "Endpoint Empty";
-    private const ERROR_REQUEST_LABEL                                   = "::request ";
-    private const ERROR_RESPONSE_LABEL                                  = "::response ";
+    private const ERROR_REQUEST_LABEL                                   = "::request";
+    private const ERROR_RESPONSE_LABEL                                  = "::response";
 
     protected static $preflight                                         = null;
 
@@ -130,9 +130,10 @@ abstract class ApiAdapter
             }
 
             self::debug($method, $params, $headers, $response->debug ?? null);
+
             if ($exception) {
                 /** Response Invalid Format (nojson or no object) */
-                App::debug($exception->getMessage(), $method . self::ERROR_RESPONSE_LABEL . $this->endpoint);
+                App::debug($exception->getMessage(), $this->endpoint . self::ERROR_RESPONSE_LABEL);
                 throw new Exception($exception->getMessage(), $exception->getCode());
             } elseif (isset($response->data, $response->status, $response->error)) {
                 if ($response->status >= 400) {
@@ -142,6 +143,7 @@ abstract class ApiAdapter
                 } else {
                     App::debug(empty($response->data) ? self::ERROR_RESPONSE_EMPTY : $response->data, $method . self::ERROR_RESPONSE_LABEL . $this->endpoint);
                 }
+
                 $DataResponse->fillObject($response->data);
                 unset($response->data, $response->error, $response->status, $response->debug);
                 foreach (get_object_vars($response) as $property => $value) {
@@ -149,11 +151,13 @@ abstract class ApiAdapter
                 }
             } elseif (empty($response)) {
                 /** Response is empty */
-                App::debug(self::ERROR_RESPONSE_EMPTY, $method . self::ERROR_RESPONSE_LABEL . $this->endpoint);
+                App::debug(self::ERROR_RESPONSE_EMPTY, $method . $this->endpoint . self::ERROR_RESPONSE_LABEL);
                 throw new Exception(self::ERROR_RESPONSE_EMPTY, 404);
             } else {
                 $DataResponse->fillObject($response);
                 $DataResponse->outputMode(true);
+                App::debug($response, $method . self::ERROR_RESPONSE_LABEL . $this->endpoint);
+
             }
         } else {
             $DataResponse->error(500, self::ERROR_RESPONSE_EMPTY);
@@ -166,7 +170,6 @@ abstract class ApiAdapter
      * @param string $method
      * @param array|null $params
      * @param array|null $headers
-     * @param stdClass|null $debug
      */
     private function debug(string $method, array $params = null, array $headers = null, stdClass $debug = null) : void
     {
@@ -179,7 +182,7 @@ abstract class ApiAdapter
             "exTimePreflight"                                           => $this->exTimePreflight,
             "exTimeRequest"                                             => App::stopWatch("api/remote"),
             "debug"                                                     => $debug
-        ], $method . self::ERROR_REQUEST_LABEL . $this->endpoint);
+        ], $method . self::ERROR_REQUEST_LABEL . " " . $this->endpoint);
     }
 
     /**

@@ -4,10 +4,6 @@ namespace phpformsframework\libs\microservice\adapters;
 use SoapClient;
 use SoapFault;
 
-if(!class_exists("SoapClient")) {
-    class SoapClient {}
-}
-
 /**
  * Class SoapClientCurl
  * @package phpformsframework\libs\microservice\adapters

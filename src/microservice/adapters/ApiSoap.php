@@ -77,7 +77,7 @@ class ApiSoap extends ApiAdapter
                 'use'                                                   => SOAP_ENCODED,
                 'soap_version'                                          => $this->version,
                 'cache_wsdl'                                            => WSDL_CACHE_NONE,
-                'connection_timeout'                                    => self::REQUEST_TIMEOUT,
+                'connection_timeout'                                    => $this->timeout,
                 'trace'                                                 => true,
                 'encoding'                                              => $this->encoding,
                 'exceptions'                                            => true

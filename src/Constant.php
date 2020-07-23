@@ -104,6 +104,9 @@ class Constant
     const HTTP_AUTH_USERNAME                = null;
     const HTTP_AUTH_SECRET                  = null;
 
+    const SSL_VERIFYPEER                    = true;
+    const SSL_VERIFYHOST                    = true;
+
     const FTP_USERNAME                      = null;
     const FTP_SECRET                        = null;
 

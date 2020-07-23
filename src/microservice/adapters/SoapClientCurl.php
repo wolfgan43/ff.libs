@@ -6,6 +6,7 @@ if(!class_exists("SoapClient")) {
     return null;
 }
 
+use phpformsframework\libs\Constant;
 use SoapClient;
 use SoapFault;
 
@@ -55,6 +56,9 @@ class SoapClientCurl extends SoapClient
         if (!empty($this->_login) && !empty($this->_password)) {
             curl_setopt($ch, CURLOPT_USERPWD, $this->_login . ":" . $this->_password);
         }
+
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, Constant::SSL_VERIFYPEER);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, Constant::SSL_VERIFYHOST);
 
         $headers = array();
         $headers[] = 'Content-Type: text/xml; charset=' . (empty($this->_encoding) ? self::ENCODING : $this->_encoding);

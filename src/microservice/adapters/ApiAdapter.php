@@ -28,6 +28,8 @@ abstract class ApiAdapter
 
     protected static $preflight                                         = null;
 
+    protected $timeout                                                  = self::REQUEST_TIMEOUT;
+
     protected $endpoint                                                 = null;
     protected $http_auth_username                                       = null;
     protected $http_auth_secret                                         = null;

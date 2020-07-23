@@ -764,7 +764,6 @@ class Filemanager implements Dumpable
      * @param array|null $params
      * @param string $method
      * @param int $timeout
-     * @param bool $ssl_verify
      * @param string|null $user_agent
      * @param array|null $cookie
      * @param string|null $username
@@ -772,10 +771,10 @@ class Filemanager implements Dumpable
      * @param array|null $headers
      * @return string
      */
-    public static function fileGetContent(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : string
+    public static function fileGetContent(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : string
     {
         $key                                        = self::normalizeUrlAndParams($method, $url, $params);
-        $context                                    = self::streamContext($params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers);
+        $context                                    = self::streamContext($params, $method, $timeout, $user_agent, $cookie, $username, $password, $headers);
         $location                                   = self::getUrlLocation($url);
 
         self::$cache["request"][$key]               = $location;
@@ -789,7 +788,6 @@ class Filemanager implements Dumpable
      * @param array|null $params
      * @param string $method
      * @param int $timeout
-     * @param bool $ssl_verify
      * @param string|null $user_agent
      * @param array|null $cookie
      * @param string|null $username
@@ -799,9 +797,9 @@ class Filemanager implements Dumpable
      * @throws Exception
      * @todo da tipizzare
      */
-    public static function fileGetContentJson(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null)
+    public static function fileGetContentJson(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null)
     {
-        $res                                        = json_decode(self::fileGetContent($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers));
+        $res                                        = json_decode(self::fileGetContent($url, $params, $method, $timeout, $user_agent, $cookie, $username, $password, $headers));
 
         if (json_last_error() != JSON_ERROR_NONE) {
             if (is_null($res)) {
@@ -819,7 +817,6 @@ class Filemanager implements Dumpable
      * @param array|null $params
      * @param string $method
      * @param int $timeout
-     * @param bool $ssl_verify
      * @param string|null $user_agent
      * @param array|null $cookie
      * @param string|null $username
@@ -827,11 +824,11 @@ class Filemanager implements Dumpable
      * @param array|null $headers
      * @return array|null
      */
-    public static function fileGetContentWithHeaders(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : ?array
+    public static function fileGetContentWithHeaders(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : ?array
     {
         $response_headers                           = array();
         $key                                        = self::normalizeUrlAndParams($method, $url, $params);
-        $context                                    = self::streamContext($params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers);
+        $context                                    = self::streamContext($params, $method, $timeout, $user_agent, $cookie, $username, $password, $headers);
         $location                                   = self::getUrlLocation($url);
 
         self::$cache["request"][$key]               = $location;
@@ -931,7 +928,6 @@ class Filemanager implements Dumpable
      * @param array|null $params
      * @param string $method
      * @param int $timeout
-     * @param bool $ssl_verify
      * @param string|null $user_agent
      * @param array|null $cookie
      * @param string|null $username
@@ -939,7 +935,7 @@ class Filemanager implements Dumpable
      * @param array|null $headers
      * @return resource
      */
-    private static function streamContext(array $params = null, string $method = Request::METHOD_POST, int $timeout = 60, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null)
+    private static function streamContext(array $params = null, string $method = Request::METHOD_POST, int $timeout = 60, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null)
     {
         if (!$username) {
             $username                       = Kernel::$Environment::HTTP_AUTH_USERNAME;
@@ -969,8 +965,8 @@ class Filemanager implements Dumpable
 
         $opts = array(
             'ssl'                           => array(
-                "verify_peer" 		        => $ssl_verify,
-                "verify_peer_name" 	        => $ssl_verify
+                "verify_peer" 		        => Constant::SSL_VERIFYPEER,
+                "verify_peer_name" 	        => Constant::SSL_VERIFYHOST
             ),
             'http'                          => array(
                 'method'  			        => $method,

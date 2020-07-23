@@ -795,12 +795,25 @@ class Filemanager implements Dumpable
      * @param string|null $username
      * @param string|null $password
      * @param array|null $headers
-     * @return stdClass
+     * @return stdClass|array|null
+     * @throws Exception
+     * @todo da tipizzare
      */
-    public static function fileGetContentJson(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : ?stdClass
+    public static function fileGetContentJson(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null)
     {
-        return json_decode(self::fileGetContent($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers));
+        $res                                        = json_decode(self::fileGetContent($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers));
+
+        if (json_last_error() != JSON_ERROR_NONE) {
+            if (is_null($res)) {
+                throw new Exception("Response is Null", 406);
+            } else {
+                throw new Exception("Response is not a valid JSON: " . json_last_error_msg(), 406);
+            }
+        }
+
+        return $res;
     }
+
     /**
      * @param string $url
      * @param array|null $params

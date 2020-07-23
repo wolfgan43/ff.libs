@@ -965,8 +965,8 @@ class Filemanager implements Dumpable
 
         $opts = array(
             'ssl'                           => array(
-                "verify_peer" 		        => Constant::SSL_VERIFYPEER,
-                "verify_peer_name" 	        => Constant::SSL_VERIFYHOST
+                "verify_peer" 		        => Kernel::$Environment::SSL_VERIFYPEER,
+                "verify_peer_name" 	        => Kernel::$Environment::SSL_VERIFYHOST
             ),
             'http'                          => array(
                 'method'  			        => $method,

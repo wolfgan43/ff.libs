@@ -29,6 +29,7 @@ namespace phpformsframework\libs\storage;
 use Exception;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Constant;
+use phpformsframework\libs\Dir;
 use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
@@ -841,6 +842,20 @@ class Filemanager implements Dumpable
     }
 
     /**
+     * @param string $filename
+     * @param string $data
+     * @return false
+     */
+    public static function filePutContents(string $filename, string $data) : bool
+    {
+        if (!Dir::checkDiskPath(dirname($filename))) {
+            return false;
+        }
+
+        return file_put_contents($filename, $data);
+    }
+
+    /**
      * @param string $method
      * @param string $url
      * @param array|null $params
@@ -966,7 +981,7 @@ class Filemanager implements Dumpable
         $opts = array(
             'ssl'                           => array(
                 "verify_peer" 		        => Kernel::$Environment::SSL_VERIFYPEER,
-                "verify_peer_name" 	        => Kernel::$Environment::SSL_VERIFYHOST
+                "verify_peer_name" 	        => Kernel::$Environment::SSL_VERIFYPEER
             ),
             'http'                          => array(
                 'method'  			        => $method,

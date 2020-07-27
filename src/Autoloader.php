@@ -26,7 +26,7 @@
 namespace phpformsframework\libs;
 
 use phpformsframework\libs\cache\Buffer;
-use phpformsframework\libs\storage\Filemanager;
+use phpformsframework\libs\storage\FilemanagerScan;
 use ReflectionClass;
 use ReflectionException;
 use Exception;
@@ -39,7 +39,7 @@ class Autoloader
 {
     protected const ERROR_BUCKET                                            = "config";
 
-    private static $classes                                                 = [];
+    private static $classes                                                 = null;
 
     /**
      * @param array|null $paths
@@ -51,34 +51,45 @@ class Autoloader
         self::$classes                                                      = $cache->get("autoloader");
         if (self::$classes) {
             spl_autoload_register(function ($class_name) {
-                include self::$classes[$class_name];
+                if (isset(self::$classes[$class_name])) {
+                    include self::$classes[$class_name];
+                }
             });
         } else {
             $config_dirs                                                    = [];
-            foreach ($paths as $path) {
-                if (is_dir($path)) {
-                    $config_dirs[$path]                                     = filemtime($path);
+            foreach ($paths as $i => $path) {
+                $abs_path = Constant::DISK_PATH . $path;
+                if (is_dir($abs_path)) {
+                    $config_dirs[$abs_path]                                 = filemtime($abs_path);
+                } else {
+                    unset($paths[$i]);
                 }
             }
-            $paths                                                          = array_keys($config_dirs);
-            $patterns                                                       = array_fill_keys($paths, ["flag" => Filemanager::SCAN_DIR_RECURSIVE]);
-            Filemanager::scan($patterns, function ($path) use (&$config_dirs) {
+            //$paths                                                          = array_keys($config_dirs);
+            $patterns                                                       = array_fill_keys($paths, ["flag" => FilemanagerScan::SCAN_DIR_RECURSIVE]);
+
+            FilemanagerScan::scan($patterns, function ($path) use (&$config_dirs) {
                 $config_dirs[$path]                                         = filemtime($path);
             });
 
             self::spl($paths);
 
             $classes                                                        = get_declared_classes();
-            $patterns                                                       = array_fill_keys($paths, ["flag" => Filemanager::SCAN_FILE_RECURSIVE, "filter" => [Constant::PHP_EXT]]);
-            Filemanager::scan($patterns, function ($path) {
+            $patterns                                                       = array_fill_keys($paths, ["flag" => FilemanagerScan::SCAN_FILE_RECURSIVE, "filter" => [Constant::PHP_EXT]]);
+            FilemanagerScan::scan($patterns, function ($path) {
                 include_once($path);
             });
 
-            $classes = array_diff(get_declared_classes(), $classes);
+            $classes                                                        = array_diff(get_declared_classes(), $classes);
             try {
+                $lib_namespace                                              = substr(static::class, 0, strrpos(static::class, '\\'));
                 foreach ($classes as $class_name) {
-                    $class                                                      = new ReflectionClass($class_name);
-                    self::$classes[$class_name]                                 = $class->getFileName();
+                    $class                                                  = new ReflectionClass($class_name);
+                    if (strpos($class->getNamespaceName(), $lib_namespace) === false
+                        && strpos($class->getNamespaceName(), Constant::NAME_SPACE) === false
+                    ) {
+                        self::$classes[$class_name]                         = $class->getFileName();
+                    }
                 }
             } catch (ReflectionException $e) {
                 App::throwError($e->getCode(), $e->getMessage());
@@ -117,10 +128,19 @@ class Autoloader
     {
         spl_autoload_register(function ($class_name) use ($paths) {
             foreach ($paths as $autoload) {
-                if (self::loadScript($autoload . DIRECTORY_SEPARATOR . str_replace(array('\\'), array('/'), $class_name) . "." . Constant::PHP_EXT)) {
+                if (self::loadScript(Constant::DISK_PATH . $autoload . DIRECTORY_SEPARATOR . self::getClassPath($class_name) . "." . Constant::PHP_EXT)) {
                     break;
                 };
             }
         });
+    }
+
+    /**
+     * @param string $class_name
+     * @return string
+     */
+    private static function getClassPath(string $class_name) : string
+    {
+        return str_replace(array('\\'), array('/'), $class_name);
     }
 }

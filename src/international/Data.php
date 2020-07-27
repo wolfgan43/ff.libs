@@ -314,7 +314,7 @@ class Data
             $raw_value = $this->ori_value;
         }
         if ($raw_value === null) {
-            return null;
+            return false;
         }
         $data_type = $this->getDataType($data_type);
         if ($data_type == self::TYPE_TEXT) {

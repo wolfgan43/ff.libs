@@ -259,7 +259,7 @@ abstract class BufferAdapter implements Dumpable
 
         if ($indexes && $this->verifyIndexes($key, $indexes)) {
             self::$indexes[$key] = $indexes;
-            echo "setIndex<br>\n";
+
             $this->write("index", self::$indexes);
         }
     }
@@ -282,7 +282,6 @@ abstract class BufferAdapter implements Dumpable
     {
         if (!self::$indexes) {
             self::$indexes = $this->load("index");
-            echo "getIndex<br>\n";
         }
 
         return self::$indexes[$this->key($name)] ?? [];
@@ -299,10 +298,8 @@ abstract class BufferAdapter implements Dumpable
             if (filemtime($file_index) > $last_update) {
                 return false;
             }
-            echo "checkIndex: $file_index<br>\n";
         }
 
-        echo "checkIndex: " . (empty($indexes) ? "NO" : "ALL") . " UPDATED! (" . $this->key($name) . ")<br>\n";
         return !empty($indexes);
     }
 }

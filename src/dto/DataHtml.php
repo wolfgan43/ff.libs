@@ -26,7 +26,7 @@
 
 namespace phpformsframework\libs\dto;
 
-use phpformsframework\libs\tpl\AssetsManager;
+use phpformsframework\libs\gui\AssetsManager;
 
 /**
  * Class DataHtml

@@ -294,14 +294,10 @@ class Request implements Configurable, Dumpable
             : null
         );
         $requestURI                     = self::requestURI();
-        $queryString                    = self::queryString();
         if ($requestURI) {
-            self::$orig_path_info       = rtrim(rtrim($queryString
-                ? rtrim($requestURI, $queryString)
-                : $requestURI, "?"), "/");
-
+            self::$orig_path_info       = rtrim(explode("?", $requestURI)[0], "/");
             if (Constant::SITE_PATH) {
-                self::$orig_path_info    = str_replace(Constant::SITE_PATH, "", self::$orig_path_info);
+                self::$orig_path_info   = str_replace(Constant::SITE_PATH, "", self::$orig_path_info);
             }
         }
         if (!self::$orig_path_info) {
@@ -324,7 +320,7 @@ class Request implements Configurable, Dumpable
                 Response::redirect($hostname . substr(self::$orig_path_info, strlen($aliasname)) . $query);
             }
 
-            self::$root_path = $aliasname;
+            self::$root_path            = $aliasname;
         }
 
 
@@ -473,13 +469,28 @@ class Request implements Configurable, Dumpable
     }
 
     /**
+     * @return string|null
+     */
+    public static function getBearerToken() : ?string
+    {
+        $headers                                                    = self::getAuthorizationHeader();
+        // HEADER: Get the access token from the header
+        if (!empty($headers) && preg_match('/Bearer\s(\S+)/', $headers, $matches)) {
+            return $matches[1];
+        }
+        if (isset($_SERVER["HTTP_BEARER"])) {
+            return $_SERVER["HTTP_BEARER"];
+        }
+        return null;
+    }
+    /**
      * @throws Exception
      */
     private static function capture()
     {
         $error = error_get_last();
         if ($error) {
-            self::sendError($error["message"], 500);
+            self::sendError(500, $error["message"]);
         } else {
             self::captureServer();
 
@@ -879,6 +890,9 @@ class Request implements Configurable, Dumpable
         header('X-XSS-Protection: 1; mode=block');
         header('Access-Control-Allow-Headers: DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,content-type');
 
+        if (self::isHTTPS()) {
+            header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
+        }
 
         switch (self::method()) {
             case self::METHOD_OPTIONS:
@@ -888,15 +902,6 @@ class Request implements Configurable, Dumpable
                 self::corsPreflight($origin);
                 exit;
                 break;
-            case self::METHOD_TRACE: //todo: to manage
-                self::sendError(405);
-                break;
-            case self::METHOD_CONNECT: //todo: to manage
-                self::sendError(405);
-                break;
-            case self::METHOD_PROPFIND: //todo: to manage
-                self::sendError(405);
-                break;
             case self::METHOD_GET:
             case self::METHOD_POST:
             case self::METHOD_PUT:
@@ -904,6 +909,9 @@ class Request implements Configurable, Dumpable
             case self::METHOD_DELETE:
                 self::securityHeaders($origin);
                 break;
+            case self::METHOD_TRACE: //todo: to manage
+            case self::METHOD_CONNECT: //todo: to manage
+            case self::METHOD_PROPFIND: //todo: to manage
             default:
                 self::sendError(405);
         }
@@ -976,7 +984,7 @@ class Request implements Configurable, Dumpable
             $last_update                                                                        = self::$page->rules->last_update;
 
             if (self::$page->loadHeaders($_SERVER)) {
-                self::sendError(self::$page->error, self::$page->status);
+                self::sendError(self::$page->status, self::$page->error);
             }
         }
 
@@ -1011,7 +1019,7 @@ class Request implements Configurable, Dumpable
             $request                                                                        = self::getReq($method);
 
             if (self::$page->loadRequest($request) || self::$page->loadRequestFile()) {
-                self::sendError(self::$page->error, self::$page->status);
+                self::sendError(self::$page->status, self::$page->error);
             }
         }
 
@@ -1065,18 +1073,18 @@ class Request implements Configurable, Dumpable
         }
 
         if ($error) {
-            self::sendError($error, 405);
+            self::sendError(405, $error);
         }
     }
 
     /**
-     * @param string $error
      * @param int $status
+     * @param string|null $msg
      * @throws Exception
      */
-    private static function sendError(string $error, int $status = 400)
+    private static function sendError(int $status, string $msg = null) : void
     {
-        Response::sendError($status, $error);
+        Response::sendError($status, $msg);
     }
 
     /**

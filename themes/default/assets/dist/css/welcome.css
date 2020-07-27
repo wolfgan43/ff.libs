@@ -1,0 +1,7 @@
+HEADER {
+    height: 100vh;
+    background-color: #cacaca !important;
+}
+.container {
+    padding-top: 50vh;
+}

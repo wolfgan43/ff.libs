@@ -28,15 +28,18 @@ trait Mapping
      */
     protected function autoMapping(array $map, object &$obj = null) : void
     {
+        foreach ($this->getProp($map, $obj) as $key => $value) {
+            $obj->$key              = $value;
+        }
+    }
+
+    private function getProp(array $map, object &$obj = null) : array
+    {
         if (!$obj) {
-            $obj                =& $this;
+            $obj                    = $this;
         }
 
-        $has                    = $this->getObjectProperties($obj);
-        $properties             = array_intersect_key($map, $has);
-
-        foreach ($properties as $key => $value) {
-            $obj->$key         = $value;
-        }
+        $has                        = $this->getObjectProperties($obj);
+        return array_intersect_key($map, $has);
     }
 }

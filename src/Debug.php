@@ -46,8 +46,8 @@ class Debug
                                                 "Log"       => true
                                             );
     private static $app_start               = null;
-
     private static $startWatch              = array();
+
     private static $exTime                  = array();
 
     private static $debug                   = [];
@@ -59,19 +59,19 @@ class Debug
     public function __construct()
     {
         self::$app_start                    = microtime(true);
+        if (isset($_SERVER["REQUEST_TIME"])) {
+            self::$exTime["autoload"]       = self::$app_start - $_SERVER["REQUEST_TIME"];
+        }
+        error_reporting(E_ALL);
+        ini_set('display_errors', "On");
 
-        if (self::isEnabled()) {
-            error_reporting(E_ALL);
-            ini_set('display_errors', "On");
+        $_SERVER["HTTPS"]               = "on";
 
-            $_SERVER["HTTPS"]               = "on";
-
-            /**
-             * Performance Profiling
-             */
-            if (Kernel::$Environment::PROFILING) {
-                self::benchmark();
-            }
+        /**
+         * Performance Profiling
+         */
+        if (Kernel::$Environment::PROFILING) {
+            self::benchmark();
         }
     }
 
@@ -106,7 +106,6 @@ class Debug
                     $bucket                 .= "#" . $count[$bucket];
                 }
                 self::$debug[$bucket]       = $data;
-
             } elseif (is_array($data)) {
                 self::$debug                = array_replace(self::$debug, $data);
             } else {
@@ -154,8 +153,6 @@ class Debug
             self::$exTimeLog[$bucket . " #" . microtime(true)] = self::$startWatch[$bucket];
             return null;
         }
-
-
     }
 
     /**
@@ -164,8 +161,8 @@ class Debug
      */
     public static function exTime(string $bucket) : ?float
     {
-        return (isset(self::$startWatch[$bucket])
-            ? number_format(self::$startWatch[$bucket], 3, '.', '')
+        return (isset(self::$exTime[$bucket])
+            ? number_format(self::$exTime[$bucket], 3, '.', '')
             : null
         );
     }
@@ -179,16 +176,7 @@ class Debug
         return number_format($duration, 3, '.', '');
     }
 
-    /**
-     * @param string $filename
-     * @param string $data
-     */
-    public static function dumpLog(string $filename, string $data = null) : void
-    {
-        $trace                                  = self::dumpCommandLine($data);
 
-        Log::warning($trace, $filename);
-    }
 
     /**
      * @return array|null
@@ -378,6 +366,7 @@ class Debug
         if (!empty($dumpable)) {
             foreach ($dumpable as $interface => $dump) {
                 $dump = array_filter($dump);
+                ksort($dump);
                 if (!empty($dump)) {
                     $html_dumpable .= '<hr />' . '<h5>&nbsp;' . $interface . '</h5>';
                     $html_dumpable .= '<ul>';
@@ -423,7 +412,7 @@ class Debug
 
         $errors = array_filter(Error::dump());
         $errors_count = 0;
-        $dirstruct = Config::getDirBucket(false);
+        $dirstruct = Config::getDirBucket();
         if (!empty($dirstruct)) {
             foreach ($dirstruct as $dirBucket) {
                 foreach ($dirBucket as $dir) {
@@ -514,7 +503,7 @@ class Debug
                     . 'DB: '        . (!Kernel::useCache() ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_DATABASE_ADAPTER      . '</span>, '
                     . 'Media: '     . (!Kernel::useCache() ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_MEDIA_ADAPTER     . '</span>'
                 . ')</span>'
-            . '<span style="padding:15px;">ExTime: ' . self::exTimeApp() . ' + {debug_extime}</span>'
+            . '<span style="padding:15px;">ExTime: ' . self::exTime("autoload") . " + " . self::exTimeApp() . ' + {debug_extime}</span>'
             . $html_benchmark
             . '</div>';
 
@@ -592,6 +581,17 @@ class Debug
         }
 
         return $res;
+    }
+
+    /**
+     * @param string $filename
+     * @param string $data
+     */
+    public static function dumpLog(string $filename, string $data = null) : void
+    {
+        $trace                                  = self::dumpCommandLine($data);
+
+        Log::warning($trace, $filename);
     }
 
     /**

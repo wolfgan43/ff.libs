@@ -1,6 +1,15 @@
 <?php
 namespace phpformsframework\libs\microservice\adapters;
 
+if (!class_exists("SoapClient")) {
+    class SoapClientCurl
+    {
+    }
+    return null;
+}
+
+use phpformsframework\libs\Kernel;
+use phpformsframework\libs\util\Normalize;
 use SoapClient;
 use SoapFault;
 
@@ -51,12 +60,16 @@ class SoapClientCurl extends SoapClient
             curl_setopt($ch, CURLOPT_USERPWD, $this->_login . ":" . $this->_password);
         }
 
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, Kernel::$Environment::SSL_VERIFYPEER);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, Kernel::$Environment::SSL_VERIFYHOST);
+
         $headers = array();
         $headers[] = 'Content-Type: text/xml; charset=' . (empty($this->_encoding) ? self::ENCODING : $this->_encoding);
         $headers[] = 'Soapaction: ' . $action;
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
         $res = curl_exec($ch);
+        Normalize::removeBom($res);
 
         if (curl_errno($ch)) {
             throw new SoapFault("HTTP", self::ERROR_HOST_NOT_FOUND);

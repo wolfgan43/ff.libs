@@ -92,12 +92,11 @@ class DataAdapter extends Mappable
     /**
      * DataAdapter constructor.
      * @param string $map
-     * @param string|null $prefix
      */
-    public function __construct(string $map, string $prefix = null)
+    public function __construct(string $map)
     {
         $this->locale = $map;
-        parent::__construct($map, $prefix);
+        parent::__construct($map);
     }
 
     /**

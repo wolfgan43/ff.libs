@@ -16,10 +16,8 @@ class ApiJsonWsp extends ApiAdapter
 
     protected $method                           = Request::METHOD_POST;
 
-    private $timeout                            = self::REQUEST_TIMEOUT;
-    private $user_agent                         = null;
-    private $cookie                             = null;
-    private $https                              = null;
+    protected $user_agent                       = null;
+    protected $cookie                           = null;
 
     /**
      * @param string $method
@@ -46,7 +44,6 @@ class ApiJsonWsp extends ApiAdapter
         parent::__construct($url, $username, $secret);
 
         $this->user_agent                       = Request::userAgent();
-        $this->https                            = false;
     }
 
     /**
@@ -80,7 +77,6 @@ class ApiJsonWsp extends ApiAdapter
             $params,
             $method,
             $this->timeout,
-            $this->https,
             $this->user_agent,
             $this->cookie,
             $this->http_auth_username,
@@ -96,62 +92,5 @@ class ApiJsonWsp extends ApiAdapter
     protected function getResponseSchema(string $method) : ?array
     {
         return null;
-    }
-
-    /**
-     * @param int $timeout
-     * @return self
-     */
-    public function setTimeout(int $timeout) : self
-    {
-        $this->timeout                          = $timeout;
-
-        return $this;
-    }
-
-    /**
-     * @param string $user_agent
-     * @return self
-     */
-    public function setUserAgent(string $user_agent) : self
-    {
-        $this->user_agent                       = $user_agent;
-
-        return $this;
-    }
-
-    /**
-     * @param string $cookie
-     * @return self
-     */
-    public function setCookie(string $cookie) : self
-    {
-        $this->cookie                           = $cookie;
-
-        return $this;
-    }
-
-    /**
-     * @param string $username
-     * @param string $secret
-     * @return self
-     */
-    public function setHttpAuth(string $username, string $secret) : self
-    {
-        $this->http_auth_username               = $username;
-        $this->http_auth_secret                 = $secret;
-
-        return $this;
-    }
-
-    /**
-     * @param bool $enable
-     * @return self
-     */
-    public function setHttps(bool $enable) : self
-    {
-        $this->https                            = $enable;
-
-        return $this;
     }
 }

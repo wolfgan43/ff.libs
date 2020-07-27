@@ -25,10 +25,6 @@ class Kernel
     public static $Environment      = null;
 
     /**
-     * @var Debug
-     */
-    public $Debug                   = Debug::class;
-    /**
      * @var Request
      */
     public $Request                 = Request::class;
@@ -37,6 +33,10 @@ class Kernel
      */
     public $Response                = Response::class;
 
+    /**
+     * @var Debug
+     */
+    private $Debug                   = null;
 
     /**
      * @return Kernel
@@ -60,12 +60,12 @@ class Kernel
     }
 
     /**
-     * @param string $bucket
+     * @param string|null $bucket
      * @param bool $toArray
      * @return array|object|null
      * @todo far ritornare ?array|object quando sara supportato da php
      */
-    protected function dirStruct(string $bucket = Config::APP_BASE_NAME, bool $toArray = true)
+    protected function dirStruct(string $bucket = null, bool $toArray = true)
     {
         $res                        = Config::getDirBucket($bucket);
 
@@ -83,17 +83,16 @@ class Kernel
         self::$singleton            = $this;
         self::$Environment          = $environment;
 
-        $this->Debug                = new $this->Debug();
+        if (self::$Environment::DEBUG) {
+            $this->Debug            = new Debug();
+        }
+
         $this->Request              = new $this->Request();
         $this->Response             = new $this->Response();
 
         $this->useCache(!self::$Environment::DISABLE_CACHE && !isset($_GET["__nocache__"]));
 
-        if (!isset($_SERVER["HTTP_HOST"])) {
-            $_SERVER["HTTP_HOST"]   = null;
-        }
-
-        Config::load(self::$Environment::CONFIG_DISK_PATHS);
+        Config::load(self::$Environment::CONFIG_PATHS);
     }
 
     /**

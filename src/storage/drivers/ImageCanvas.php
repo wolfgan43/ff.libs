@@ -54,7 +54,12 @@ class ImageCanvas
 
     private $tmb_res						= array();
 
-    public function __construct($dim_x = null, $dim_y = null)
+    /**
+     * ImageCanvas constructor.
+     * @param int|null $dim_x
+     * @param int|null $dim_y
+     */
+    public function __construct(int $dim_x = null, int $dim_y = null)
     {
         $this->cvs_res_dim_x = $dim_x;
         $this->cvs_res_dim_y = $dim_y;
@@ -62,26 +67,26 @@ class ImageCanvas
 
 
     /**
-     * @param ImageThumb $obj
+     * @param ImageRender $obj
+     * @param int $z
      * @param int $dim_x_start
      * @param int $dim_y_start
-     * @param int $z
      * @param string $method
-     * @param null $dim_x
-     * @param null $dim_y
-     * @param null $dim_max_x
-     * @param null $dim_max_y
+     * @param int|null $dim_x
+     * @param int|null $dim_y
+     * @param int|null $dim_max_x
+     * @param int|null $dim_max_y
      */
-    public function addChild($obj, $z = 0, $dim_x_start = 0, $dim_y_start = 0, $method = "none", $dim_x = null, $dim_y = null, $dim_max_x = null, $dim_max_y = null)
+    public function addChild(ImageRender $obj, int $z = 0, int $dim_x_start = 0, int $dim_y_start = 0, string $method = "none", int $dim_x = null, int $dim_y = null, int $dim_max_x = null, int $dim_max_y = null) : void
     {
         $this->tmb_res[$z][]                            = array();
         $count_image                                    = count($this->tmb_res[$z]) - 1;
 
         if ($dim_max_x && $obj->new_res_max_x > $dim_max_x) {
-            $obj->new_res_max_x = $dim_max_x;
+            $obj->new_res_max_x                         = $dim_max_x;
         }
         if ($dim_max_y && $obj->new_res_max_y > $dim_max_y) {
-            $obj->new_res_max_y = $dim_max_y;
+            $obj->new_res_max_y                         = $dim_max_y;
         }
 
         $this->tmb_res[$z][$count_image]["obj"]			= $obj;
@@ -103,6 +108,7 @@ class ImageCanvas
     {
         return $ref["obj"];
     }
+
     public function process($filename = null)
     {
         ksort($this->tmb_res);
@@ -200,7 +206,7 @@ class ImageCanvas
                             0,
                             $render_dim->x,
                             $render_dim->y
-                                            );
+                        );
 
                         @imagedestroy($src_res);
 

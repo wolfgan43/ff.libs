@@ -26,7 +26,7 @@
 namespace phpformsframework\libs;
 
 use phpformsframework\libs\dto\RequestPage;
-use phpformsframework\libs\tpl\Widget;
+use phpformsframework\libs\gui\Widget;
 use stdClass;
 use Exception;
 

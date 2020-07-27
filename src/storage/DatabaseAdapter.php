@@ -30,7 +30,6 @@ use phpformsframework\libs\international\Data;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Kernel;
-use phpformsframework\libs\tpl\Gridsystem;
 use phpformsframework\libs\security\Validator;
 use Exception;
 
@@ -1093,8 +1092,6 @@ abstract class DatabaseAdapter implements Constant
                                                                                 : $this->getColorPalette(rand(0, 14))
                                                                             );
                     $res                                                    = '<span style="background-color: #' . $hex . ';">' . $arrSource[0] . '</span>';
-                } elseif ($source) {
-                    $res                                                    = Gridsystem::getInstance()->get($source, "icon-tag");
                 }
                 break;
             case "TIMEELAPSED":

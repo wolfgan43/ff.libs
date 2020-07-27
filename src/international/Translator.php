@@ -130,14 +130,14 @@ class Translator
     }
 
     /**
-     * @param string $code
-     * @param string $language Upper Code (es: ENG, ITA, SPA)
+     * @param string|null $code
+     * @param string|null $language Upper Code (es: ENG, ITA, SPA)
      * @return string
      */
-    public static function get_word_by_code(string $code, string $language = null) : string
+    public static function get_word_by_code(string $code = null, string $language = null) : string
     {
         if (!$code || !Locale::isMultiLang()) {
-            return $code;
+            return (string) $code;
         }
         $lang_code                                      = self::getLang($language);
         if (array_search($lang_code, Kernel::$Environment::ACCEPTED_LANG) === false) {

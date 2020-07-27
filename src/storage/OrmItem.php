@@ -237,8 +237,9 @@ class OrmItem
     }
     /**
      * @return DataResponse
+     * @todo da tipizzare
      */
-    public function toDataResponse() : DataResponse
+    public function toDataResponse()
     {
         $response = new DataResponse($this->fieldSetPurged(array_fill_keys($this->toDataResponse, true)));
         if (!$this->recordKey) {

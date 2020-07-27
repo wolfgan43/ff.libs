@@ -27,9 +27,9 @@ namespace phpformsframework\libs;
 
 use phpformsframework\libs\dto\DataAdapter;
 use phpformsframework\libs\dto\DataResponse;
+use phpformsframework\libs\gui\controllers\ErrorController;
 use phpformsframework\libs\storage\drivers\Array2XML;
 use Exception;
-use phpformsframework\libs\tpl\Page;
 
 /**
  * Class Response
@@ -131,8 +131,9 @@ class Response
             case "text/html":
                 Log::registerProcedure("Router", "page" . Log::CLASS_SEP . "error");
 
-                $response = Page::getInstance("html")
-                    ->renderError($status, $msg ? $msg : "Oops!");
+                (new ErrorController())
+                    ->error($status, $msg ?? "Oops!")
+                    ->display();
                 break;
             case "php/cli":
                 Debug::dump($msg);
@@ -277,19 +278,6 @@ class Response
     private static function endScript($message = null) : void
     {
         Log::write($message);
-        /*global $performance_test;
-        global $performance_test_mid;
-        $tmp = microtime(true);
-
-        $tot = floor(($tmp - $performance_test) * 1000);
-        $framew = floor(($performance_test_mid - $performance_test) * 1000);
-        $interf = floor(($tmp - $performance_test_mid) * 1000);
-
-        $framew_rate = floor(($framew * 100) / $tot);
-        $interf_rate = floor(($interf * 100) / $tot);
-
-        var_dump($tmp - $performance_test, $performance_test_mid - $performance_test, $tmp - $performance_test_mid);
-        var_dump($framew_rate, $interf_rate);*/
         exit;
     }
 

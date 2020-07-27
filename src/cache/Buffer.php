@@ -46,6 +46,16 @@ class Buffer implements Dumpable
     }
 
     /**
+     * @param string $source_file
+     * @param string|null $cache_file
+     * @return bool
+     */
+    public static function cacheIsValid(string $source_file, string $cache_file = null) : bool
+    {
+        return $cache_file
+            && (self::cacheEnabled() || filemtime($cache_file) >= filemtime($source_file));
+    }
+    /**
      * @return array|null
      */
     public static function exTime() : array

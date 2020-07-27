@@ -30,7 +30,7 @@ use phpformsframework\libs\dto\DataError;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\delivery\drivers\Mailer;
-use phpformsframework\libs\tpl\Resource;
+use phpformsframework\libs\gui\Resource;
 
 /**
  * Class NoticeEmail

@@ -14,19 +14,42 @@
         <dir type="app" path="/app/conf/packages" />
         <dir type="app" path="/uploads"  writable="true" />
 
-        <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/common/*" scan="common" />
-        <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/css/*" scan="css" />
-        <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/fonts/*" scan="fonts" />
-        <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/images/*" scan="images" />
-        <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/js/*" scan="js" />
-        <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/layouts/*" scan="layouts" />
-        <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/xml/*" scan="xml" />
+        <dir type="gui" path="[LIBS_PATH]/phpformsframework/libs/themes/*/assets/dist/audio/*" scan="audio" />
+        <dir type="gui" path="[LIBS_PATH]/phpformsframework/libs/themes/*/assets/dist/css/*" scan="css" />
+        <dir type="gui" path="[LIBS_PATH]/phpformsframework/libs/themes/*/assets/dist/fonts/*" scan="fonts" />
+        <dir type="gui" path="[LIBS_PATH]/phpformsframework/libs/themes/*/assets/dist/img/*" scan="images" />
+        <dir type="gui" path="[LIBS_PATH]/phpformsframework/libs/themes/*/assets/dist/js/*" scan="js" />
+        <dir type="gui" path="[LIBS_PATH]/phpformsframework/libs/themes/*/assets/dist/video/*" scan="video" />
 
-        <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/widgets/*/*" scan="widgets" />
-        <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/widgets/*/images/*" scan="widgets/images" />
-        <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/widgets/*/fonts/*/*" scan="widgets/fonts" />
-        <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/widgets/*/audio/*" scan="widgets/audio" />
-        <dir type="assets" path="[LIBS_PATH]/phpformsframework/libs/assets/widgets/*/video/*" scan="widgets/video" />
+        <dir type="gui" path="[LIBS_PATH]/phpformsframework/libs/src/gui/controllers/*" scan="controller" />
 
+        <dir type="gui" path="[LIBS_PATH]/phpformsframework/libs/themes/*/email/*" scan="email" />
+        <dir type="gui" path="[LIBS_PATH]/phpformsframework/libs/themes/*/layouts/*" scan="layouts" />
+        <dir type="gui" path="[LIBS_PATH]/phpformsframework/libs/themes/*/views/*" scan="views" />
+
+        <dir type="gui" path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/*" scan="widgets" />
+        <dir type="gui" path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/img/*" scan="widgets/images" />
+        <dir type="gui" path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/fonts/*/*" scan="widgets/fonts" />
+        <dir type="gui" path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/audio/*" scan="widgets/audio" />
+        <dir type="gui" path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/video/*" scan="widgets/video" />
+
+
+        <dir    type="app"          name="conf"         path="[PROJECT_DOCUMENT_ROOT]/conf"  />
+        <dir    type="app"          name="public"       path="[PROJECT_DOCUMENT_ROOT]/public" webroot="true" />
+        <dir    type="app"          name="models"       path="[PROJECT_DOCUMENT_ROOT]/models" autoload="true" />
+        <dir    type="app"          name="helpers"      path="[PROJECT_DOCUMENT_ROOT]/helpers" autoload="true" namespace="hcore\app\helpers" />
+        <dir    type="app"          name="controllers"  path="[PROJECT_DOCUMENT_ROOT]/controllers" autoload="true" />
+        <dir    type="app"          name="themes"       path="[PROJECT_DOCUMENT_ROOT]/themes" />
+
+        <dir    type="gui"          name="views"        path="views" />
+        <dir    type="gui"          name="layouts"      path="layouts" />
+        <dir    type="gui"          name="email"        path="email" />
+
+        <dir    type="assets"       name="audio"        path="/assets/dist/audio" />
+        <dir    type="assets"       name="css"          path="/assets/dist/css" />
+        <dir    type="assets"       name="fonts"        path="/assets/dist/fonts" />
+        <dir    type="assets"       name="images"       path="/assets/dist/img" />
+        <dir    type="assets"       name="js"           path="/assets/dist/js"  />
+        <dir    type="assets"       name="video"        path="/assets/dist/video" />
     </dirs>
 </configdata>

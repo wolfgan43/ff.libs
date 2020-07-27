@@ -28,11 +28,14 @@ namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Constant;
+use phpformsframework\libs\Dir;
 use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Request;
+use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\util\AdapterManager;
+use phpformsframework\libs\util\Normalize;
 use stdClass;
 use Exception;
 
@@ -44,23 +47,11 @@ class Filemanager implements Dumpable
 {
     use AdapterManager;
 
+    private const ERROR_FILE_FORBIDDEN                                  = "File inaccessible";
+
     private static $singletons                                          = null;
-    private static $storage                                             = null;
-    private static $scanExclude                                         = null;
     private static $cache                                               = null;
 
-    /**
-     * @var null|callable $callback
-     */
-    private static $callback                                            = null;
-    private static $patterns                                            = null;
-
-    public const SCAN_DIR                                               = 1;
-    public const SCAN_DIR_RECURSIVE                                     = 2;
-    public const SCAN_FILE                                              = 4;
-    public const SCAN_FILE_RECURSIVE                                    = 8;
-    public const SCAN_ALL                                               = 16;
-    public const SCAN_ALL_RECURSIVE                                     = 32;
 
     /**
      * @param string $filemanagerAdapter
@@ -84,9 +75,7 @@ class Filemanager implements Dumpable
     public static function dump() : array
     {
         return array(
-            "patterns"      => self::$patterns,
-            "storage"       => self::$storage,
-            "contents"      => self::$cache["request"]
+            "loaded"      => self::$cache["request"]
         );
     }
 
@@ -475,264 +464,11 @@ class Filemanager implements Dumpable
         return $res;
     }
 
-    /**
-     * @param array|null $patterns
-     */
-    public static function scanExclude(array $patterns = null) : void
-    {
-        if ($patterns) {
-            if ($patterns[0]) {
-                $patterns = array_fill_keys($patterns, true);
-            }
-
-            self::$scanExclude = array_replace((array)self::$scanExclude, $patterns);
-        }
-    }
-
-    /**
-     * @param array $patterns
-     * @param callable|null $callback
-     * @return array|null
-     */
-    public static function scan(array $patterns, callable $callback = null) : ?array
-    {
-        Debug::stopWatch("filemanager/scan");
-
-        self::$callback             = $callback;
-        self::$patterns[]           = $patterns;
-
-        foreach ($patterns as $pattern => $opt) {
-            self::scanRun($pattern, $opt);
-        }
-
-        Debug::stopWatch("filemanager/scan");
-
-        return self::$storage;
-    }
-
-    /**
-     * @param string $file
-     * @param array|null $opt
-     */
-    private static function scanAddItem(string $file, array $opt = null) : void
-    {
-        if (self::$callback) {
-            $file_info = pathinfo($file);
-
-            if (isset($opt["filter"]) && (!isset($file_info["extension"]) || !isset($opt["filter"][$file_info["extension"]]))) {
-                return;
-            }
-            if (isset($opt["name"]) && !isset($opt["name"][$file_info["basename"]])) {
-                return;
-            }
-            $callback = self::$callback;
-            $callback($file, self::$storage);
-        } elseif (!$opt) {
-            self::$storage["rawdata"][] = $file;
-        } else {
-            $file_info = pathinfo($file);
-            if (isset($opt["filter"]) && !isset($opt["filter"][$file_info["extension"]])) {
-                return;
-            }
-            if (isset($opt["name"]) && !isset($opt["name"][$file_info["basename"]])) {
-                return;
-            }
-
-            if (isset($opt["type"])) {
-                self::setStorage($file_info, $opt);
-            } else {
-                self::$storage["rawdata"][] = $file;
-            }
-        }
-    }
-
-    /**
-     * @param string $pattern
-     * @param array|null $what
-     */
-    private static function scanRun(string $pattern, array $what = null) : void
-    {
-        if ($pattern) {
-            $pattern = (
-                strpos($pattern, Constant::DISK_PATH) === 0
-                    ? ""
-                    : Constant::DISK_PATH
-                )
-                . $pattern
-                . (
-                    strpos($pattern, "*") === false
-                    ? '/*'
-                    : ''
-                );
-
-            $flag = (
-                isset($what["flag"]) && $what["flag"]
-                ? $what["flag"]
-                : $what
-            );
 
 
-            if (isset($what["filter"]) && $what["filter"] && isset($what["filter"][0])) {
-                $what["filter"] = array_combine($what["filter"], $what["filter"]);
-            }
-            if (isset($what["name"]) && $what["name"] && isset($what["name"][0])) {
-                $what["name"] = array_combine($what["name"], $what["name"]);
-            }
 
-            switch ($flag) {
-                case Filemanager::SCAN_DIR:
-                    if (self::$callback) {
-                        self::globDirCallback($pattern);
-                    } else {
-                        self::globDir($pattern);
-                    }
-                    break;
-                case Filemanager::SCAN_DIR_RECURSIVE:
-                    self::globDirRecursive($pattern);
-                    break;
-                case Filemanager::SCAN_ALL:
-                    self::glob($pattern, ["dir" => true]);
-                    break;
-                case Filemanager::SCAN_ALL_RECURSIVE:
-                    self::globFilterRecursive($pattern, ["dir" => true]);
-                    break;
-                case Filemanager::SCAN_FILE:
-                    self::glob($pattern, $what);
-                    break;
-                case Filemanager::SCAN_FILE_RECURSIVE:
-                    self::globFilterRecursive($pattern, $what);
-                    break;
-                case null:
-                    self::globRecursive($pattern);
-                    break;
-                default:
-                    if (isset($what["filter"])) {
-                        $what["filter"] = array_fill_keys($what["filter"], true);
-                    }
-                    self::globFilterRecursive($pattern, $what);
-            }
-        }
-    }
 
-    /**
-     * @param string $pattern
-     */
-    private static function globDir(string $pattern) : void
-    {
-        self::$storage["rawdata"] = glob($pattern, GLOB_ONLYDIR);
-    }
 
-    /**
-     * @param string $pattern
-     */
-    private static function globDirCallback(string $pattern) : void
-    {
-        foreach (glob($pattern, GLOB_ONLYDIR) as $file) {
-            self::scanAddItem($file);
-        }
-    }
-
-    /**
-     * @param string $pattern
-     */
-    private static function globDirRecursive(string $pattern) : void
-    {
-        foreach (glob($pattern, GLOB_ONLYDIR) as $file) {
-            self::scanAddItem($file);
-            self::globDirRecursive($file . '/*');
-        }
-    }
-
-    /**
-     * @param string $pattern
-     * @param array|null $opt
-     */
-    private static function glob(string $pattern, array $opt = null) : void
-    {
-        $flags = null;
-        $limit = null;
-        if (is_array($opt["filter"])) {
-            $flags = GLOB_BRACE;
-            $limit = ".{" . implode(",", $opt["filter"]) . "}";
-            unset($opt["filter"]);
-        }
-
-        foreach (glob($pattern . $limit, $flags) as $file) {
-            if (!empty($opt["dir"]) || is_file($file)) {
-                self::scanAddItem($file, $opt);
-            }
-        }
-    }
-
-    /**
-     * @param string $pattern
-     */
-    private static function globRecursive(string $pattern) : void
-    {
-        foreach (glob($pattern) as $file) {
-            if (is_file($file)) {
-                self::scanAddItem($file);
-            } else {
-                self::globRecursive($file . '/*');
-            }
-        }
-    }
-
-    /**
-     * @param string $pattern
-     * @param array|null $opt
-     */
-    private static function globFilterRecursive(string $pattern, array $opt = null) : void
-    {
-        $final_dir = basename(dirname($pattern)); //todo:: da togliere
-        if (isset(self::$scanExclude[$final_dir])) {
-            return;
-        }
-        foreach (glob($pattern) as $file) {
-            if (is_file($file)) {
-                self::scanAddItem($file, $opt);
-            } else {
-                if (!empty($opt["dir"])) {
-                    self::scanAddItem($file);
-                }
-                self::globFilterRecursive($file . '/*', $opt);
-            }
-        }
-    }
-
-    /**
-     * @param array $file_info
-     * @param array $opt
-     */
-    private static function setStorage(array $file_info, array $opt) : void
-    {
-        $file                                           = $file_info["dirname"] . "/" . $file_info["basename"];
-        $type                                           = (
-            isset($opt["type"])
-            ? $opt["type"]
-            : "unknowns"
-        );
-
-        $file_info["parentname"]                        = basename($file_info["dirname"]);
-        if (isset($opt["rootpath"])) {
-            $file_info["rootpath"]                      = realpath($file_info["dirname"] . DIRECTORY_SEPARATOR . $opt["rootpath"]);
-            $file_info["rootname"]                      = basename($file_info["rootpath"]);
-        }
-
-        if (isset($opt["prototype"])) {
-            $key                                        = str_replace(array_keys($file_info), array_values($file_info), $opt["prototype"]);
-        } else {
-            $key                                        = $file_info["filename"];
-        }
-
-        if (isset($opt["groupby"])) {
-            $file_info["/"]                             = '"]["';
-            $group                                      = str_replace(array_keys($file_info), array_values($file_info), $opt["groupby"]);
-            eval('self::$storage[$type]["' . $group . '"][$key]   = $file;');
-        } else {
-            self::$storage[$type][$key]                 = $file;
-        }
-    }
 
     /**
      * @param string $filepath
@@ -762,7 +498,6 @@ class Filemanager implements Dumpable
      * @param array|null $params
      * @param string $method
      * @param int $timeout
-     * @param bool $ssl_verify
      * @param string|null $user_agent
      * @param array|null $cookie
      * @param string|null $username
@@ -771,10 +506,10 @@ class Filemanager implements Dumpable
      * @return string
      * @throws Exception
      */
-    public static function fileGetContent(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : string
+    public static function fileGetContent(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : string
     {
         $key                                        = self::normalizeUrlAndParams($method, $url, $params);
-        $context                                    = self::streamContext($params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers);
+        $context                                    = self::streamContext($params, $method, $timeout, $user_agent, $cookie, $username, $password, $headers);
         $location                                   = self::getUrlLocation($url);
 
         self::$cache["request"][$key]               = $location;
@@ -788,7 +523,6 @@ class Filemanager implements Dumpable
      * @param array|null $params
      * @param string $method
      * @param int $timeout
-     * @param bool $ssl_verify
      * @param string|null $user_agent
      * @param array|null $cookie
      * @param string|null $username
@@ -798,12 +532,16 @@ class Filemanager implements Dumpable
      * @throws Exception
      * @todo da tipizzare
      */
-    public static function fileGetContentJson(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null)
+    public static function fileGetContentJson(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null)
     {
-        $res                                        = json_decode(self::fileGetContent($url, $params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers));
+        $res                                        = json_decode(self::fileGetContent($url, $params, $method, $timeout, $user_agent, $cookie, $username, $password, $headers));
 
         if (json_last_error() != JSON_ERROR_NONE) {
-            throw new Exception("Response is not a valid JSON", 406);
+            if (is_null($res)) {
+                throw new Exception("Response is Null", 406);
+            } else {
+                throw new Exception("Response is not a valid JSON: " . json_last_error_msg(), 406);
+            }
         }
 
         return $res;
@@ -814,7 +552,6 @@ class Filemanager implements Dumpable
      * @param array|null $params
      * @param string $method
      * @param int $timeout
-     * @param bool $ssl_verify
      * @param string|null $user_agent
      * @param array|null $cookie
      * @param string|null $username
@@ -823,11 +560,11 @@ class Filemanager implements Dumpable
      * @return array|null
      * @throws Exception
      */
-    public static function fileGetContentWithHeaders(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : ?array
+    public static function fileGetContentWithHeaders(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : ?array
     {
         $response_headers                           = array();
         $key                                        = self::normalizeUrlAndParams($method, $url, $params);
-        $context                                    = self::streamContext($params, $method, $timeout, $ssl_verify, $user_agent, $cookie, $username, $password, $headers);
+        $context                                    = self::streamContext($params, $method, $timeout, $user_agent, $cookie, $username, $password, $headers);
         $location                                   = self::getUrlLocation($url);
 
         self::$cache["request"][$key]               = $location;
@@ -837,6 +574,20 @@ class Filemanager implements Dumpable
             "headers" => self::parseResponseHeaders($response_headers),
             "content" => self::$cache["response"][$location][$key]
         );
+    }
+
+    /**
+     * @param string $filename
+     * @param string $data
+     * @return false
+     */
+    public static function filePutContents(string $filename, string $data) : bool
+    {
+        if (!Dir::checkDiskPath(dirname($filename))) {
+            return false;
+        }
+
+        return file_put_contents($filename, $data);
     }
 
     /**
@@ -890,7 +641,7 @@ class Filemanager implements Dumpable
                 $head[trim($t[0])]          = trim($t[1]);
             } else {
                 $head[]                     = $v;
-                if (preg_match("#HTTP/[0-9\.]+\s+([0-9]+)#", $v, $out)) {
+                if (preg_match("#HTTP/[0-9.]+\s+([0-9]+)#", $v, $out)) {
                     $head['response_code']  = intval($out[1]);
                 }
             }
@@ -903,16 +654,22 @@ class Filemanager implements Dumpable
      * @param string $path
      * @param resource $context
      * @param array|null $headers
-     * @return string
+     * @return string|null
      * @throws Exception
      */
-    private static function loadFile(string $path, $context = null, array &$headers = null) : string
+    private static function loadFile(string $path, $context = null, array &$headers = null) : ?string
     {
-        $content                            = @file_get_contents($path, false, $context);
-        if ($content === false) {
-            throw new Exception("File inaccessible: " . ($path ? $path : "empty"), 403);
+        if (Validator::is($path, "", "url")->isError() && !Dir::checkDiskPath($path)) {
+            return "";
         }
 
+        $content                            = @file_get_contents($path, false, $context);
+        if ($content === false) {
+            Debug::set(($path ? $path : "empty"), self::ERROR_FILE_FORBIDDEN);
+            throw new Exception(self::ERROR_FILE_FORBIDDEN, 403);
+        }
+
+        Normalize::removeBom($content);
         if (isset($http_response_header) && isset($headers)) {
             $headers                        = $http_response_header;
         }
@@ -925,7 +682,6 @@ class Filemanager implements Dumpable
      * @param array|null $params
      * @param string $method
      * @param int $timeout
-     * @param bool $ssl_verify
      * @param string|null $user_agent
      * @param array|null $cookie
      * @param string|null $username
@@ -933,7 +689,7 @@ class Filemanager implements Dumpable
      * @param array|null $headers
      * @return resource
      */
-    private static function streamContext(array $params = null, string $method = Request::METHOD_POST, int $timeout = 60, bool $ssl_verify = false, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null)
+    private static function streamContext(array $params = null, string $method = Request::METHOD_POST, int $timeout = 60, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null)
     {
         if (!$username) {
             $username                       = Kernel::$Environment::HTTP_AUTH_USERNAME;
@@ -961,8 +717,8 @@ class Filemanager implements Dumpable
 
         $opts = array(
             'ssl'                           => array(
-                "verify_peer" 		        => $ssl_verify,
-                "verify_peer_name" 	        => $ssl_verify
+                "verify_peer" 		        => Kernel::$Environment::SSL_VERIFYPEER,
+                "verify_peer_name" 	        => Kernel::$Environment::SSL_VERIFYPEER
             ),
             'http'                          => array(
                 'method'  			        => $method,

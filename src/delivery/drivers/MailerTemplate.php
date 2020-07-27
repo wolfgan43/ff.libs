@@ -29,9 +29,9 @@ use phpformsframework\libs\Error;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Request;
-use phpformsframework\libs\storage\Filemanager;
-use phpformsframework\libs\security\Validator;
-use phpformsframework\libs\tpl\View;
+use phpformsframework\libs\storage\FilemanagerScan;
+use phpformsframework\libs\gui\View;
+use phpformsframework\libs\util\Normalize;
 
 /**
  * Class MailerTemplate
@@ -129,7 +129,7 @@ final class MailerTemplate extends Mailer
 
         if ($this->tpl_html_path) {
             if (is_dir(dirname($this->tpl_html_path) . "/images")) {
-                Filemanager::scan(array(dirname($this->tpl_html_path) . "/images" => array("jpg", "png", "svg", "gif")), function ($image) {
+                FilemanagerScan::scan(array(dirname($this->tpl_html_path) . "/images" => array("jpg", "png", "svg", "gif")), function ($image) {
                     $this->addImage($image);
                 });
             }
@@ -377,7 +377,7 @@ final class MailerTemplate extends Mailer
                 $res = $this->link2TagA($link, $value);
                 break;
             case "smart_url":
-                $res = Validator::urlRewrite($value);
+                $res = Normalize::urlRewrite($value);
                 break;
             default:
                 $res = $value;

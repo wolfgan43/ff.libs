@@ -20,7 +20,13 @@ trait ClassDetector
         }
 
         if (!isset($classes[$class_name])) {
-            $classes[$class_name] = substr(strrchr($class_name, "\\"), 1);
+            $pos = strrpos($class_name, '\\');
+
+            $classes[$class_name] = (
+                $pos === false
+                ? $class_name
+                : substr($class_name, $pos + 1)
+            );
         }
 
         return $classes[$class_name];

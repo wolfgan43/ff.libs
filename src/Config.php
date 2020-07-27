@@ -30,6 +30,7 @@ use phpformsframework\libs\dto\ConfigRules;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\security\Buckler;
 use phpformsframework\libs\storage\Filemanager;
+use phpformsframework\libs\storage\FilemanagerScan;
 use phpformsframework\libs\storage\Media;
 use Exception;
 
@@ -69,7 +70,10 @@ class Config implements Dumpable
      * @var null
      */
     private static $exTime                                                  = null;
-
+    /**
+     * @var null
+     */
+    private static $config_dirs                                             = null;
     /**
      * @var null
      */
@@ -143,6 +147,7 @@ class Config implements Dumpable
     {
         return array(
             "config_rules"                                                  => self::$config_rules,
+            "config_dirs"                                                   => self::$config_dirs,
             "config_files"                                                  => self::$config_files,
             "config_data"                                                   => self::$config_data,
             "config_unknown"                                                => self::$config_unknown,
@@ -178,10 +183,13 @@ class Config implements Dumpable
         if (!empty($dirs)) {
             foreach ($dirs as $dir) {
                 $dir_attr                                                   = Dir::getXmlAttr($dir);
+                if (!isset($dir_attr["path"])) {
+                    continue;
+                }
+
                 $dir_attr["path"]                                           = str_replace("[PROJECT_DOCUMENT_ROOT]", Kernel::$Environment::PROJECT_DOCUMENT_ROOT, $dir_attr["path"]);
 
                 $dir_key                                                    = $dir_attr["type"];
-                $dir_name                                                   = ltrim(basename($dir_attr["path"]), ".");
                 if (isset($dir_attr["scan"])) {
                     $scan_type                                              = self::APP_BASE_NAME;
                     $scan_path                                              = str_replace("[LIBS_PATH]", Constant::LIBS_PATH, $dir_attr["path"]);
@@ -201,10 +209,13 @@ class Config implements Dumpable
                 if (isset($dir_attr["webroot"])) {
                     self::$webroot                                          = Constant::DISK_PATH . $dir_attr["path"];
                 }
-
-                self::$dirstruct[$dir_key][$dir_name]                       = $dir_attr;
-                if (isset(self::$dirstruct[$dir_key][$dir_name]["autoload"])) {
-                    self::$autoloads[]                                      = Constant::DISK_PATH . self::$dirstruct[$dir_key][$dir_name]["path"];
+                if (isset($dir_attr["name"])) {
+                    $dir_name                                               = $dir_attr["name"];
+                    unset($dir_attr["name"], $dir_attr["type"]);
+                    self::$dirstruct[$dir_key][$dir_name]                   = $dir_attr;
+                    if (isset(self::$dirstruct[$dir_key][$dir_name]["autoload"])) {
+                        self::$autoloads[]                                  = self::$dirstruct[$dir_key][$dir_name]["path"];
+                    }
                 }
             }
 
@@ -228,10 +239,7 @@ class Config implements Dumpable
      */
     public static function getFilesMap(string $bucket) : ?array
     {
-        return (isset(self::$mapping_files[$bucket])
-            ? self::$mapping_files[$bucket]
-            : null
-        );
+        return self::$mapping_files[$bucket] ?? null;
     }
 
     /**
@@ -251,7 +259,7 @@ class Config implements Dumpable
      * @param string|false $bucket
      * @return array|null
      */
-    public static function getDirBucket(string $bucket = self::APP_BASE_NAME) : ?array
+    public static function getDirBucket(string $bucket = null) : ?array
     {
         if (!$bucket) {
             return self::$dirstruct;
@@ -316,9 +324,9 @@ class Config implements Dumpable
 
             if (isset(self::$mapping_files[$bucket][$name])) {
                 self::$mapping_data[$bucket][$name]                         = Filemanager::getInstance("json")->read(self::$mapping_files[$bucket][$name]);
-            }
 
-            $cache->set($map_name, self::$mapping_data[$bucket][$name], [self::$mapping_files[$bucket][$name] => filemtime(self::$mapping_files[$bucket][$name])]);
+                $cache->set($map_name, self::$mapping_data[$bucket][$name], [self::$mapping_files[$bucket][$name] => filemtime(self::$mapping_files[$bucket][$name])]);
+            }
         }
 
         Debug::stopWatch(self::SCHEMA_CONF . "/map/". $map_name);
@@ -377,7 +385,7 @@ class Config implements Dumpable
         $rawdata                                                            = $cache->get("rawdata");
         if (!$rawdata) {
             $rawdata                                                        = self::loadFile($paths);
-            $cache->set("rawdata", self::dump() + $rawdata, self::$config_files);
+            $cache->set("rawdata", self::dump() + $rawdata, self::$config_dirs + self::$config_files);
         } else {
             self::loadConfig($rawdata);
 
@@ -419,12 +427,18 @@ class Config implements Dumpable
          * Find Config.xml
          */
         $paths = array_replace(
-            Constant::CONFIG_DISK_PATHS,
+            Constant::CONFIG_PATHS,
             $paths
         );
 
-        Filemanager::scan($paths, function ($file) {
+        FilemanagerScan::scan($paths, function ($file) {
             $pathinfo                                                   = pathinfo($file);
+            $dir                                                        = $pathinfo["dirname"];
+
+            if (!isset(self::$config_dirs[$dir])) {
+                self::$config_dirs[$dir]                                = filemtime($dir);
+            }
+
             switch ($pathinfo["extension"]) {
                 case "xml":
                     self::$config_files[$file]                          = filemtime($file);
@@ -470,7 +484,6 @@ class Config implements Dumpable
      */
     private static function loadFileXml(string $file) : void
     {
-        self::$config_files[$file]                                          = filemtime($file);
         $configs                                                            = Filemanager::getInstance("xml")->read($file);
         if (is_array($configs)) {
             foreach ($configs as $key => $config) {
@@ -551,6 +564,7 @@ class Config implements Dumpable
     public static function loadConfig(array $config) : void
     {
         self::$config_rules                                                 = $config["config_rules"];
+        self::$config_dirs                                                  = $config["config_dirs"];
         self::$config_files                                                 = $config["config_files"];
         self::$config_data                                                  = $config["config_data"];
         self::$config_unknown                                               = $config["config_unknown"];

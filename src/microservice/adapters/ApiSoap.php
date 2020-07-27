@@ -77,7 +77,7 @@ class ApiSoap extends ApiAdapter
                 'use'                                                   => SOAP_ENCODED,
                 'soap_version'                                          => $this->version,
                 'cache_wsdl'                                            => WSDL_CACHE_NONE,
-                'connection_timeout'                                    => self::REQUEST_TIMEOUT,
+                'connection_timeout'                                    => $this->timeout,
                 'trace'                                                 => true,
                 'encoding'                                              => $this->encoding,
                 'exceptions'                                            => true
@@ -321,7 +321,7 @@ class ApiSoap extends ApiAdapter
      */
     private function getResponse(string $method, array $request) : stdClass
     {
-        $response                                                       = (object) $this->client->__soapCall($method, $request);
+        $response                                                       = (object) @$this->client->__soapCall($method, $request);
         if (!empty($response)) {
             if (isset($response->{$method . "Result"})) {
                 $response                                               = $response->{$method . "Result"};

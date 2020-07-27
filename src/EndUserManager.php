@@ -86,12 +86,12 @@ trait EndUserManager
 
     /**
      * @param int $status
-     * @param string $message
+     * @param string $msg
      * @throws Exception
      */
-    public static function throwError(int $status, string $message) : void
+    public static function throwError(int $status, string $msg) : void
     {
-        throw new Exception($message, $status);
+        throw new Exception($msg, $status);
     }
 
     /**

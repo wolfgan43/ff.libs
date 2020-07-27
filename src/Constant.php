@@ -37,8 +37,8 @@ define("SITE_PATH", !empty($_SERVER["DOCUMENT_ROOT"]) ? str_replace(rtrim($_SERV
 class Constant
 {
     const NAME_SPACE                        = "phpformsframework\\libs\\";
-    const CONFIG_DISK_PATHS                 = array(
-        self::CONFIG_FF_DISK_PATH           => array("filter" => array("xml", "map"))
+    const CONFIG_PATHS                      = array(
+        self::CONFIG_FF_PATH                => array("flag" => 8, "filter" => array("xml", "map"))
     );
     const DOCUMENT_ROOT                     = DOCUMENT_ROOT;
     const SITE_PATH                         = SITE_PATH;
@@ -46,7 +46,8 @@ class Constant
     const APPNAME                           = null;
     const APPID                             = null;
 
-    const PROJECT_DOCUMENT_ROOT             = null;
+    const PROJECT_DOCUMENT_ROOT             = DIRECTORY_SEPARATOR . "app";
+    const PROJECT_DISK_PATH                 = self::DISK_PATH . self::PROJECT_DOCUMENT_ROOT;
 
     const LOCALE_LANG_CODE                  = null; //IT, EN
     const LOCALE_COUNTRY_CODE               = null; //IT, US
@@ -64,7 +65,7 @@ class Constant
     const LIBS_DISK_PATH                    = self::DOCUMENT_ROOT . self::LIBS_PATH;
     const LIBS_FF_PATH                      = DIRECTORY_SEPARATOR . "phpformsframework" . DIRECTORY_SEPARATOR . "libs";
     const LIBS_FF_DISK_PATH                 = self::LIBS_DISK_PATH . self::LIBS_FF_PATH;
-    const CONFIG_FF_DISK_PATH               = self::LIBS_FF_DISK_PATH . DIRECTORY_SEPARATOR . 'conf';
+    const CONFIG_FF_PATH                    = self::VENDOR_LIBS_DIR . DIRECTORY_SEPARATOR . 'conf';
     const CACHE_DISK_PATH                   = self::DISK_PATH . self::CACHE_PATH;
     const UPLOAD_DISK_PATH                  = self::DISK_PATH . self::UPLOAD_PATH;
 
@@ -105,6 +106,9 @@ class Constant
      */
     const HTTP_AUTH_USERNAME                = null;
     const HTTP_AUTH_SECRET                  = null;
+
+    const SSL_VERIFYPEER                    = true;
+    const SSL_VERIFYHOST                    = true;
 
     const FTP_USERNAME                      = null;
     const FTP_SECRET                        = null;
@@ -152,14 +156,25 @@ class Constant
      * @var string[Soap|JsonWsp]
      */
     const MICROSERVICE_ADAPTER              = "JsonWsp";
+    /**
+     * @var string[Bootstrap3|Bootstrap4|Foundation6]
+     */
+    const GRIDSYSTEM_ADAPTER                = "bootstrap4";
+    /**
+     * @var string[Glyphicons3|Fontawesome4|Fontawesome6]
+     */
+    const FONTICON_ADAPTER                  = "fontawesome6";
+    /**
+     * @var string[html]
+     */
+    const CONTROLLER_ADAPTER                = "html";
+
 
     /**
      * System settings
      */
     const PHP_EXT                           = "php";
     const ENCODING                          = "utf-8";
-    const FRAMEWORK_CSS                     = "bootstrap4";
-    const FONT_ICON                         = "fontawesome4";
 
     /**
      * @var RequestPage

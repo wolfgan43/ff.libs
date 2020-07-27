@@ -1,43 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  ~ VGallery: CMS based on FormsFramework
-  ~ Copyright (C) 2004-2015 Alessandro Stucchi <wolfgan@gmail.com>
-  ~
-  ~ This program is free software: you can redistribute it and/or modify
-  ~ it under the terms of the GNU General Public License as published by
-  ~ the Free Software Foundation, either version 3 of the License, or
-  ~ (at your option) any later version.
-  ~
-  ~ This program is distributed in the hope that it will be useful,
-  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
-  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  ~ GNU General Public License for more details.
-  ~
-  ~ You should have received a copy of the GNU General Public License
-  ~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
-  ~
-  ~  @package VGallery
-  ~  @subpackage core
-  ~  @author Alessandro Stucchi <wolfgan@gmail.com>
-  ~  @copyright Copyright (c) 2004, Alessandro Stucchi
-  ~  @license http://opensource.org/licenses/gpl-3.0.html
-  ~  @link https://github.com/wolfgan43/vgallery
-  -->
-
 <configdata>
     <request>
         <get name="__nocache__"     scope="system"  hide="true" />
     </request>
     <dirs>
-        <dir type="cache" path="/cache/.thumbs" writable="true" />
-        <dir type="cache" path="/cache/assets" writable="false" />
-        <dir type="cache" path="/cache/assets/images" writable="true" />
-        <dir type="cache" path="/cache/assets/css" writable="true" />
-        <dir type="cache" path="/cache/assets/js" writable="true" />
-        <dir type="cache" path="/cache/assets/fonts" writable="true" />
-        <dir type="cache" path="/cache/assets/widgets" writable="true" />
-        <dir type="cache" path="/cache/logs" writable="true" />
-        <dir type="cache" path="/cache/error" writable="true" />
-        <dir type="cache" path="/cache/data" writable="true" />
+        <dir type="cache" name="thumbs"     path="/cache/.thumbs" writable="true" />
+        <dir type="cache" name="assets"     path="/cache/assets" writable="false" />
+        <dir type="cache" name="images"     path="/cache/assets/images" writable="true" />
+        <dir type="cache" name="css"        path="/cache/assets/css" writable="true" />
+        <dir type="cache" name="js"         path="/cache/assets/js" writable="true" />
+        <dir type="cache" name="fonts"      path="/cache/assets/fonts" writable="true" />
+        <dir type="cache" name="widgets"    path="/cache/assets/widgets" writable="true" />
+        <dir type="cache" name="logs"       path="/cache/logs" writable="true" />
+        <dir type="cache" name="error"      path="/cache/error" writable="true" />
+        <dir type="cache" name="data"       path="/cache/data" writable="true" />
     </dirs>
 </configdata>

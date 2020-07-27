@@ -8,8 +8,8 @@
         "tpl"
       ]
     },
-    "common": {
-      "flag": 4,
+    "views": {
+      "flag": 8,
       "type": "common",
       "filter": [
         "html",
@@ -31,7 +31,7 @@
       ]
     },
     "images": {
-      "flag": 4,
+      "flag": 8,
       "type": "images",
       "filter": [
         "jpg",
@@ -126,6 +126,149 @@
       "filter": [
         "html"
       ]
+    },
+    "theme": {
+      "flag" : 8,
+      "patterns" : {
+        "/assets/dist/css/" : {
+          "type": "assets/css",
+          "filter": [
+            "css"
+          ]
+        },
+        "/assets/dist/js/" : {
+          "type": "assets/js",
+          "filter": [
+            "js"
+          ]
+        },
+        "/assets/dist/fonts/" : {
+          "type": "assets/fonts",
+          "filter": [
+            "otf",
+            "eot",
+            "svg",
+            "ttf",
+            "woff",
+            "woff2"
+          ]
+        },
+        "/assets/dist/img/" : {
+          "type": "assets/images",
+          "filter": [
+            "jpg",
+            "png",
+            "svg",
+            "jpeg",
+            "gif",
+            "webp"
+          ]
+        },
+        "/assets/dist/audio/" : {
+          "type": "assets/audio",
+          "filter": [
+            "mp3"
+          ]
+        },
+        "/assets/dist/video/" : {
+          "type": "assets/video",
+          "filter": [
+            "avi"
+          ]
+        },
+
+        "/email/img/" : {
+          "type": "email/images",
+          "filter": [
+            "jpg",
+            "png",
+            "svg",
+            "jpeg",
+            "gif",
+            "webp"
+          ]
+        },
+        "/email/" : {
+          "type": "email",
+          "filter": [
+            "html"
+          ]
+        },
+        "/layouts/" : {
+          "type": "layouts",
+          "filter": [
+            "html"
+          ]
+        },
+        "/views/" : {
+          "type": "views",
+          "filter": [
+            "html"
+          ]
+        },
+        "/widgets/*/images/": {
+          "type": "widgets",
+          "prototype" : "filename",
+          "rootpath": "../",
+          "groupby": "rootname/images",
+          "filter": [
+            "jpg",
+            "png",
+            "svg",
+            "jpeg",
+            "gif"
+          ]
+        },
+        "/widgets/*/fonts/": {
+          "type": "widgets",
+          "prototype" : "basename",
+          "rootpath": "../../",
+          "groupby": "rootname/fonts",
+          "filter": [
+            "otf",
+            "eot",
+            "svg",
+            "ttf",
+            "woff",
+            "woff2"
+          ]
+        },
+        "/widgets/*/audio/": {
+          "type": "widgets",
+          "prototype" : "basename",
+          "rootpath": "../",
+          "groupby": "rootname/audio",
+          "filter": [
+            "mp3"
+          ]
+        },
+        "/widgets/*/video/": {
+          "type": "widgets",
+          "prototype" : "basename",
+          "rootpath": "../",
+          "groupby": "rootname/video",
+          "filter": [
+            "avi"
+          ]
+        },
+        "/widgets/*/": {
+          "type": "widgets",
+          "prototype" : "filename",
+          "groupby": "parentname/extension",
+          "filter": [
+            "html",
+            "css",
+            "js"
+          ]
+        }
+      }
+    },
+    "controller" : {
+      "flag" : 8,
+      "filter": [
+        "php"
+      ],
+      "type" : "controllers"
     }
   }
 }

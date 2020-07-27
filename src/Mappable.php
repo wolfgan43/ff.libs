@@ -36,39 +36,66 @@ abstract class Mappable
     use Mapping;
     use ClassDetector;
 
-    protected const ERROR_BUCKET          = "mappable";
+    protected const ERROR_BUCKET            = "mappable";
 
     /**
+     * @param $map |null
+     * @param string|null $class_name
      * @todo da tipizzare
      * Mappable constructor.
-     * @param $map|null
-     * @param string|null $prefix
      */
-    public function __construct($map = null, string $prefix = null)
+    public function __construct($map = null, string $class_name = null)
     {
         if (is_array($map)) {
             $this->autoMapping($map);
         } elseif ($map) {
-            $this->loadMap($map, $prefix);
+            $this->autoMapping($this->loadMap($map, $this->getPrefix($class_name)));
         }
+    }
+
+    /**
+     * @param array $maps
+     * @param string|null $class_name
+     */
+    protected function loadMaps(array $maps, string $class_name = null) : void
+    {
+        $res                                = array();
+        foreach ($maps as $name) {
+            $res                            = array_replace_recursive($res, $this->loadMap($name, $this->getPrefix($class_name)));
+        }
+
+        $this->autoMapping($res);
     }
 
     /**
      * @param string $name
      * @param string|null $prefix
+     * @return array
      */
-    protected function loadMap(string $name, string $prefix = null) : void
+    private function loadMap(string $name, string $prefix) : array
     {
-        $prefix                 = strtolower(self::getClassName($prefix));
+        $bucket                             = $prefix . "_" . $name;
 
-        Debug::stopWatch("mapping/" . $prefix . "_" . $name);
-
-        $map                    = Config::mapping($prefix, $name);
-        if (!empty($map)) {
-            $this->autoMapping($map);
-        } else {
-            Error::register("Mapping: " . basename(str_replace("\\", DIRECTORY_SEPARATOR, get_called_class())) . ": " . $prefix . "_" . $name . " not found", static::ERROR_BUCKET);
+        Debug::stopWatch("mapping/" . $bucket);
+        $map                                = Config::mapping($prefix, $name);
+        if (empty($map)) {
+            Response::httpCode(500);
+            if (Kernel::$Environment::DEBUG) {
+                echo "Mapping: " . basename(str_replace("\\", DIRECTORY_SEPARATOR, get_called_class())) . ": " . $bucket . " not found";
+            }
+            exit;
         }
-        Debug::stopWatch("mapping/" . $prefix . "_" . $name);
+        Debug::stopWatch("mapping/" . $bucket);
+
+        return $map;
+    }
+
+    /**
+     * @param string|null $class_name
+     * @return string
+     */
+    private function getPrefix(string $class_name = null) : string
+    {
+        return strtolower(self::getClassName($class_name));
     }
 }

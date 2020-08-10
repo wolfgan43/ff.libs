@@ -16,11 +16,10 @@ use SoapFault;
  */
 class SoapClientCurl extends SoapClient
 {
-    private const ENCODING              = "UTF-8";
-    private const ERROR_HOST_NOT_FOUND  = 'Connection Failed to Host';
-    private const ERROR_RESPONSE_IS_EMPTY  = 'Response is Empty';
+    private const ENCODING                  = "UTF-8";
+    private const ERROR_RESPONSE_IS_EMPTY   = 'Response is Empty';
 
-    public $__action                    = null;
+    public $__action                        = null;
 
     /**
      * @param string $request
@@ -68,7 +67,7 @@ class SoapClientCurl extends SoapClient
         $res = curl_exec($ch);
 
         if (curl_errno($ch)) {
-            throw new SoapFault("HTTP", self::ERROR_HOST_NOT_FOUND);
+            throw new SoapFault("HTTP", curl_error($ch));
         } elseif (empty($res)) {
             throw new SoapFault("HTTP", self::ERROR_RESPONSE_IS_EMPTY);
         } elseif (substr($res, 0, 1) != "<") {

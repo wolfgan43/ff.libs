@@ -6,9 +6,8 @@ use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\dto\DataTableResponse;
 use phpformsframework\libs\dto\Mapping;
 use phpformsframework\libs\Model;
-use phpformsframework\libs\security\Validator;
-use Exception;
 use phpformsframework\libs\storage\dto\OrmResults;
+use Exception;
 
 /**
  * Class OrmItem
@@ -18,6 +17,7 @@ class OrmItem
 {
     use ClassDetector;
     use Mapping;
+    use OrmUtil;
 
     private const PRIVATE_PROPERTIES                                            = [
         "dbCollection"  => true,
@@ -36,35 +36,9 @@ class OrmItem
     protected $dbCollection                                                     = null;
     protected $dbTable                                                          = null;
     protected $dbJoins                                                          = [];
-    protected $dbRequired                                                       = [];
-    /**
-     * you can specify for each field witch validator you want:
-     *  - Associative array field_name => validator
-     *  - Validator can be:
-     *      - Array of value
-     *      - Callback with the value as args. The return must be boolean.
-     *        if true the value is valid.
-     *      - String you can use the validation in class Validator.
-     * @example
-     * ->dbValidator[
-     *      "field_a" => ["myOptionA", "myOptionB", "myOptionC"],
-     *      "field_b" => "Mycallback",
-     *      "field_c" => "password"
-     * ];
-     * @var array
-     *
-     */
-    protected $dbValidator                                                      = [];
-    protected $dbConversion                                                     = [];
 
     protected $toDataResponse                                                   = [];
 
-    /**
-     * @var Model|null
-     */
-    private $db                                                                 = null;
-    private $primaryKey                                                         = null;
-    private $recordKey                                                          = null;
     /**
      * @var OrmModel|null
      */
@@ -87,7 +61,7 @@ class OrmItem
             ->read($where, $sort, $limit, $offset);
 
         if ($recordset->countRecordset()) {
-            $dataTableResponse->fill($recordset->toArray());
+            $dataTableResponse->fill($recordset->getAllArray());
             $dataTableResponse->recordsFiltered                                 = $recordset->countRecordset();
             $dataTableResponse->recordsTotal                                    = $recordset->countTotal();
         } else {
@@ -131,14 +105,6 @@ class OrmItem
             $this->loadModel($model_name, $where);
         }
         return $this->models[$model_name];
-    }
-
-    /**
-     * @return string|null
-     */
-    public function getID() : ?string
-    {
-        return $this->recordKey;
     }
 
     /**
@@ -218,114 +184,6 @@ class OrmItem
     }
 
     /**
-     * @return OrmResults|null
-     */
-    public function delete() : ?OrmResults
-    {
-        return ($this->primaryKey && $this->recordKey
-            ? $this->db->delete([$this->primaryKey => $this->recordKey])
-            : null
-        );
-    }
-
-    /**
-     * @return bool
-     */
-    public function isStored() : bool
-    {
-        return !empty($this->recordKey);
-    }
-    /**
-     * @return DataResponse
-     * @todo da tipizzare
-     */
-    public function toDataResponse()
-    {
-        $response = new DataResponse($this->fieldSetPurged(array_fill_keys($this->toDataResponse, true)));
-        if (!$this->recordKey) {
-            $response->error(404, $this->db->getName() . " not stored");
-        }
-
-        return $response;
-    }
-
-    /**
-     * @param array $fields
-     * @return array
-     */
-    private function fieldSetPurged(array $fields = null) : array
-    {
-        return ($fields
-            ? array_intersect_key(get_object_vars($this), $fields)
-            : array_diff_key(get_object_vars($this), self::PRIVATE_PROPERTIES)
-        );
-    }
-
-    /**
-     * @param array $vars
-     * @return array
-     */
-    private function fieldConvert(array $vars) : array
-    {
-        //@todo da finire con funzioni vere probabilmente
-        foreach ($this->dbConversion as $field => $convert) {
-            if (array_key_exists($field, $vars)) {
-                $vars[$convert] = $vars[$field];
-                unset($vars[$field]);
-            }
-        }
-        return $vars;
-    }
-
-    /**
-     * @param array $vars
-     * @throws Exception
-     */
-    private function verifyRequire(array $vars) : void
-    {
-        $required                                                               = array_diff_key(array_fill_keys($this->dbRequired, true), array_filter($vars));
-        if (!empty($required)) {
-            $this->error(array_keys($required), " are required");
-        }
-    }
-
-    /**
-     * @param array $vars
-     * @throws Exception
-     */
-    private function verifyValidator(array $vars) : void
-    {
-        $errors                                                                 = null;
-        $validators                                                             = array_intersect_key($vars, $this->dbValidator);
-        $dtd                                                                    = $this->db->dtd();
-        foreach ($validators as $field => $value) {
-            if (is_array($this->dbValidator[$field])) {
-                if ($dtd->$field == Database::FTYPE_ARRAY || $dtd->$field == Database::FTYPE_ARRAY_OF_NUMBER) {
-                    $arrField                                                   = explode(",", str_replace(", ", ",", $value));
-                    if (count(array_diff($arrField, $this->dbValidator[$field]))) {
-                        $errors[]                                               = $field . " must be: [" . implode(", ", $this->dbValidator[$field]) . "]";
-                    }
-                } elseif (!in_array($value, $this->dbValidator[$field])) {
-                    $errors[]                                                   = $field . " must be: [" . implode(", ", $this->dbValidator[$field]) . "]";
-                }
-            } elseif (method_exists($this, $this->dbValidator[$field])) {
-                if (!$this->{$this->dbValidator[$field]}($value)) {
-                    $errors[]                                                   = $field . " not valid";
-                }
-            } else {
-                $validator                                                      = Validator::is($value, $field, $this->dbValidator[$field]);
-                if ($validator->isError()) {
-                    $errors[]                                                   = $validator->error;
-                }
-            }
-        }
-
-        if ($errors) {
-            $this->error($errors);
-        }
-    }
-
-    /**
      * @param array|null $where
      */
     private function read(array $where = null) : void
@@ -346,12 +204,55 @@ class OrmItem
     }
 
     /**
-     * @param array $errors
-     * @param string|null $suffix
-     * @throws Exception
+     * @return DataResponse
+     * @todo da tipizzare
      */
-    private function error(array $errors, string $suffix = null) : void
+    public function toDataResponse()
     {
-        throw new Exception($this->db->getName() .  "::db->" . ($this->recordKey ? "update" : "insert") . ": " . implode(", ", $errors) . $suffix, 400);
+        $response = new DataResponse($this->fieldSetPurged(array_fill_keys($this->toDataResponse, true)));
+        if (!$this->recordKey) {
+            $response->error(404, $this->db->getName() . " not stored");
+        }
+
+        return $response;
+    }
+
+    /**
+     * @return OrmResults|null
+     */
+    public function delete() : ?OrmResults
+    {
+        return ($this->primaryKey && $this->recordKey
+            ? $this->db->delete([$this->primaryKey => $this->recordKey])
+            : null
+        );
+    }
+
+    /**
+     * @return bool
+     */
+    public function isStored() : bool
+    {
+        return !empty($this->recordKey);
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getID() : ?string
+    {
+        return $this->recordKey;
+    }
+
+    /**
+     * @param array $fields
+     * @return array
+     */
+    private function fieldSetPurged(array $fields = null) : array
+    {
+        return ($fields
+            ? array_intersect_key(get_object_vars($this), $fields)
+            : array_diff_key(get_object_vars($this), self::PRIVATE_PROPERTIES)
+        );
     }
 }

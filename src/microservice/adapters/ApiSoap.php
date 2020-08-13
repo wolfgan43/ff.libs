@@ -173,8 +173,8 @@ class ApiSoap extends ApiAdapter
                 preg_match_all($regex_request, $match_funcs[4], $match_request);
                 $function->request                                      = array_combine($match_request[2], $match_request[1]);
                 foreach ($function->request as $param  => &$type) {
-                    $this->dtds[$request_name . "." . $param]           = $type; //$this->setDefault($type);
-                    $this->defaults[$request_name . "." . $param]       = null; //$this->setDefault($type);
+                    $this->dtds[$request_name . "." . $param]           = $type;
+                    $this->defaults[$request_name . "." . $param]       = null;
 
                     $function->dtd[$param]                              =& $this->dtds[$request_name . "." . $param];
                     $function->request[$param]                          =& $this->defaults[$request_name . "." . $param];

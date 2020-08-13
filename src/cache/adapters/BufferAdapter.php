@@ -293,12 +293,16 @@ abstract class BufferAdapter implements Dumpable
      */
     protected function checkIndex(string $name) : bool
     {
+        Debug::stopWatch("CacheIndex" . DIRECTORY_SEPARATOR . $this->bucket . DIRECTORY_SEPARATOR . $name);
+
         $indexes = $this->getIndex($name);
         foreach ($indexes as $file_index => $last_update) {
             if (filemtime($file_index) > $last_update) {
                 return false;
             }
         }
+
+        Debug::stopWatch("CacheIndex" . DIRECTORY_SEPARATOR . $this->bucket . DIRECTORY_SEPARATOR . $name);
 
         return !empty($indexes);
     }

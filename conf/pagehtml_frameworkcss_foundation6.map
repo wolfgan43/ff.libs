@@ -1,9 +1,0 @@
-{
-  "css": {
-    "foundation": "https:\/\/cdnjs.cloudflare.com\/ajax\/libs\/foundation\/6.5.3\/css\/foundation.min.css"
-  },
-  "js": {
-    "jquery": "https:\/\/cdnjs.cloudflare.com\/ajax\/libs\/jquery\/3.4.0\/jquery.slim.min.js",
-    "foundation": "https:\/\/cdnjs.cloudflare.com\/ajax\/libs\/foundation\/6.5.3\/js\/foundation.min.js"
-  }
-}

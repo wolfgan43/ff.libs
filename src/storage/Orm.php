@@ -82,8 +82,6 @@ class Orm extends Mappable
 
     private $default_table                                                                  = null;
 
-    //protected $bucket                                                                       = null;
-    //protected $type                                                                         = null;
     protected $collection                                                                   = null;
     protected $main_table                                                                   = null;
 

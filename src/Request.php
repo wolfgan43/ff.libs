@@ -269,17 +269,15 @@ class Request implements Configurable, Dumpable
      * @return RequestPage
      * @throws Exception
      */
-    public static function &pageConfiguration(): RequestPage
+    public static function pageConfiguration(&$page) : void
     {
         self::rewritePathInfo();
 
-        self::$page = self::getPage(self::$orig_path_info);
+        $page                           = self::getPage(self::$orig_path_info);
 
         Log::setRoutine(self::$page->log);
 
         self::capture();
-
-        return self::$page;
     }
 
     /**
@@ -1010,13 +1008,13 @@ class Request implements Configurable, Dumpable
         static $last_update                                                                     = 0;
 
         if ($last_update < self::$page->rules->last_update) {
-            $last_update                                                                    = self::$page->rules->last_update;
+            $last_update                                                                        = self::$page->rules->last_update;
 
             if (!$method) {
-                $method = self::getRequestMethod();
+                $method                                                                         = self::getRequestMethod();
             }
 
-            $request                                                                        = self::getReq($method);
+            $request                                                                            = self::getReq($method);
 
             if (self::$page->loadRequest($request) || self::$page->loadRequestFile()) {
                 self::sendError(self::$page->status, self::$page->error);
@@ -1035,14 +1033,14 @@ class Request implements Configurable, Dumpable
      * @param array|null $headers
      * @return RequestPage
      */
-    public static function getPage(string $path_info, array $request = null, array $headers = null) : RequestPage
+    public static function &getPage(string $path_info, array $request = null, array $headers = null) : RequestPage
     {
-        $page           = new RequestPage($path_info, self::$pages, self::$path2params, self::$patterns);
+        self::$page                                                                             = new RequestPage($path_info, self::$pages, self::$path2params, self::$patterns);
 
-        $page->loadRequest($request);
-        $page->loadHeaders($headers, true);
+        self::$page->loadRequest($request);
+        self::$page->loadHeaders($headers, true);
 
-        return $page;
+        return self::$page;
     }
 
 

@@ -65,7 +65,6 @@ class Autoloader
                     unset($paths[$i]);
                 }
             }
-            //$paths                                                          = array_keys($config_dirs);
             $patterns                                                       = array_fill_keys($paths, ["flag" => FilemanagerScan::SCAN_DIR_RECURSIVE]);
 
             FilemanagerScan::scan($patterns, function ($path) use (&$config_dirs) {
@@ -130,7 +129,7 @@ class Autoloader
             foreach ($paths as $autoload) {
                 if (self::loadScript(Constant::DISK_PATH . $autoload . DIRECTORY_SEPARATOR . self::getClassPath($class_name) . "." . Constant::PHP_EXT)) {
                     break;
-                };
+                }
             }
         });
     }

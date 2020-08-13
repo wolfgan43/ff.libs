@@ -47,7 +47,7 @@ class Filemanager implements Dumpable
 {
     use AdapterManager;
 
-    private const ERROR_FILE_FORBIDDEN                                  = "File inaccessible";
+    private const ERROR_FILE_FORBIDDEN                                  = "failed to open stream: check verify ssl connection also";
 
     private static $singletons                                          = null;
     private static $cache                                               = null;

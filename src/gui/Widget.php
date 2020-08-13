@@ -47,7 +47,6 @@ abstract class Widget
 
     private static $singleton                   = null;
     private static $grid_system                 = null;
-    private static $tpl                         = null;
 
     protected $script_path                      = null;
     protected $path_info                        = null;

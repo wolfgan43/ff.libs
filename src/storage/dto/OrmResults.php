@@ -124,25 +124,6 @@ class OrmResults
     }
 
     /**
-     * @param int $offset
-     * @param string|null $class_name
-     * @param bool $send_record_to_constructor
-     * @return object|null
-     */
-    public function get(int $offset, string $class_name = null, bool $send_record_to_constructor = false) : ?object
-    {
-        return $this->mapRecord($this->seek($offset), $class_name, $send_record_to_constructor);
-    }
-
-    /**
-     * @param int $offset
-     * @return array|null
-     */
-    public function getArray(int $offset) : ?array
-    {
-        return $this->seek($offset);
-    }
-    /**
      * @param $callback
      * @param string|null $class_name
      * @param bool $use_record_to_constructor
@@ -175,9 +156,29 @@ class OrmResults
     }
 
     /**
+     * @param int $offset
+     * @param string|null $class_name
+     * @param bool $send_record_to_constructor
+     * @return object|null
+     */
+    public function get(int $offset, string $class_name = null, bool $send_record_to_constructor = false) : ?object
+    {
+        return $this->mapRecord($this->seek($offset), $class_name, $send_record_to_constructor);
+    }
+
+    /**
+     * @param int $offset
+     * @return array|null
+     */
+    public function getArray(int $offset) : ?array
+    {
+        return $this->seek($offset);
+    }
+
+    /**
      * @return array
      */
-    public function toArray() : array
+    public function getAllArray() : array
     {
         return $this->recordset;
     }
@@ -187,7 +188,7 @@ class OrmResults
      * @param bool $use_record_to_constructor
      * @return object[]
      */
-    public function toObject(string $class_name = null, bool $use_record_to_constructor = false) : array
+    public function getAllObject(string $class_name = null, bool $use_record_to_constructor = false) : array
     {
         $map_class_name             = $this->getMapClassName($class_name);
         return ($map_class_name

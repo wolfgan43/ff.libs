@@ -637,7 +637,7 @@ class Media implements Configurable
     /**
      * @param string $file
      * @param string|null $mode
-     * @return array|null
+     * @return stdClass
      * @throws Exception
      */
     private static function getInfo(string $file, string $mode = null) : stdClass
@@ -1068,16 +1068,14 @@ class Media implements Configurable
      */
     private function staticResourceName(string &$mode = null) : string
     {
-        if ($mode) {
-            $name                                                   = str_replace("-" . $mode, "", $this->pathinfo->filename);
-        } else {
-            $arrFilename                                            = explode("-", $this->pathinfo->filename, 2);
-            $name                                                   = $arrFilename[0];
-            if (isset($arrFilename[1])) {
-                $mode                                               = $arrFilename[1];
-            }
+        if (!$mode) {
+            $mode                                                   = $this->getModeByNoImg($this->pathinfo->filename);
         }
-        return $name;
+
+        return ($mode
+            ? str_replace("-" . $mode, "", $this->pathinfo->filename)
+            : $this->pathinfo->filename
+        );
     }
     /**
      * @param string|null $mode
@@ -1480,7 +1478,7 @@ class Media implements Configurable
         //Watermark Text
         if ($params->wmk_word_enable) {
             $cThumb->new_res_font["caption"]                        = $params->shortdesc;
-            if (preg_match('/^[A-F0-9]{1,}$/is', strtoupper($params->word_color))) {
+            if (preg_match('/^[A-F0-9]+$/is', strtoupper($params->word_color))) {
                 $cThumb->new_res_font["color"]                      = $params->word_color;
             }
             if (is_numeric($params->word_size) && $params->word_size > 0) {
@@ -1706,8 +1704,8 @@ class Media implements Configurable
     }
 
     /**
-     * @param array $source
-     * @param array $image
+     * @param stdClass $source
+     * @param stdClass $image
      * @param string $sep
      * @param string|null $mode
      * @return string

@@ -76,21 +76,6 @@ class Debug
     }
 
     /**
-     * @return bool
-     */
-    private static function isEnabled() : bool
-    {
-        return Kernel::$Environment::DEBUG;
-    }
-    /**
-     * @return bool
-     */
-    public static function cacheDisabled() : bool
-    {
-        return !Kernel::useCache();
-    }
-
-    /**
      * @param $data
      * @param string $bucket
      */
@@ -120,11 +105,11 @@ class Debug
     public static function get() : ?array
     {
         $res                                = null;
-        if (self::isEnabled()) {
+        if (Kernel::$Environment::DEBUG) {
             $res                            = self::$debug + Buffer::exTime();
             $res["exTime - Conf"]           = Config::exTime();
             $res["exTime - App"]            = self::exTimeApp();
-            $res["App - Cache"]             = (self::cacheDisabled() ? "off" : "on (" . Kernel::$Environment::CACHE_BUFFER_ADAPTER . ", " . Kernel::$Environment::CACHE_DATABASE_ADAPTER . ", " . Kernel::$Environment::CACHE_MEDIA_ADAPTER . ")");
+            $res["App - Cache"]             = (!Kernel::useCache() ? "off" : "on (" . Kernel::$Environment::CACHE_BUFFER_ADAPTER . ", " . Kernel::$Environment::CACHE_DATABASE_ADAPTER . ", " . Kernel::$Environment::CACHE_MEDIA_ADAPTER . ")");
             $res["backtrace"]               = self::dumpBackTrace();
         }
         return $res;
@@ -502,8 +487,8 @@ class Debug
                     . 'Mem: '       . (!Kernel::useCache() ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_BUFFER_ADAPTER      . '</span>, '
                     . 'DB: '        . (!Kernel::useCache() ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_DATABASE_ADAPTER      . '</span>, '
                     . 'Media: '     . (!Kernel::useCache() ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_MEDIA_ADAPTER     . '</span>'
-                . ')</span>'
-            . '<span style="padding:15px;">ExTime: ' . self::exTime("autoload") . " + " . self::exTimeApp() . ' + {debug_extime}</span>'
+                . ')</span><br />'
+            . '<span style="padding:15px;">ExTime ' . (self::exTime("autoload") + self::exTimeApp()) . ' (Autoloader: ' . self::exTime("autoload") . " + App: " . self::exTimeApp() . ' + Debugger: {debug_extime})</span>'
             . $html_benchmark
             . '</div>';
 
@@ -532,9 +517,9 @@ class Debug
 
     /**
      * @param int $size
-     * @return float
+     * @return string
      */
-    private static function convertMem(int $size) : float
+    private static function convertMem(int $size) : string
     {
         $unit=array('B','KB','MB','GB','TB','PB');
         return @round($size/pow(1024, ($i=(int) floor(log($size, 1024)))), 2).' '.$unit[$i];
@@ -542,7 +527,6 @@ class Debug
 
 
     /**
-     * @todo da valutare e togliere
      * @param bool $end
      * @return mixed
      */

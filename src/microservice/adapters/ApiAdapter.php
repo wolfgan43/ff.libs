@@ -23,8 +23,8 @@ abstract class ApiAdapter
 
     private const ERROR_RESPONSE_EMPTY                                  = "Response Empty";
     private const ERROR_ENDPOINT_EMPTY                                  = "Endpoint Empty";
-    private const ERROR_REQUEST_LABEL                                   = "::request";
-    private const ERROR_RESPONSE_LABEL                                  = "::response";
+    private const ERROR_REQUEST_LABEL                                   = "::request ";
+    private const ERROR_RESPONSE_LABEL                                  = "::response ";
 
     protected static $preflight                                         = null;
 
@@ -135,7 +135,7 @@ abstract class ApiAdapter
 
             if ($exception) {
                 /** Response Invalid Format (nojson or no object) */
-                App::debug($exception->getMessage(), $this->endpoint . self::ERROR_RESPONSE_LABEL);
+                App::debug($exception->getMessage(), $method . self::ERROR_RESPONSE_LABEL . $this->endpoint);
                 throw new Exception($exception->getMessage(), $exception->getCode());
             } elseif (isset($response->data, $response->status, $response->error)) {
                 if ($response->status >= 400) {
@@ -153,7 +153,7 @@ abstract class ApiAdapter
                 }
             } elseif (empty($response)) {
                 /** Response is empty */
-                App::debug(self::ERROR_RESPONSE_EMPTY, $method . $this->endpoint . self::ERROR_RESPONSE_LABEL);
+                App::debug(self::ERROR_RESPONSE_EMPTY, $method . self::ERROR_RESPONSE_LABEL . $this->endpoint);
                 throw new Exception(self::ERROR_RESPONSE_EMPTY, 404);
             } else {
                 $DataResponse->fillObject($response);
@@ -184,7 +184,7 @@ abstract class ApiAdapter
             "exTimePreflight"                                           => $this->exTimePreflight,
             "exTimeRequest"                                             => App::stopWatch("api/remote"),
             "debug"                                                     => $debug
-        ], $method . self::ERROR_REQUEST_LABEL . " " . $this->endpoint);
+        ], $method . self::ERROR_REQUEST_LABEL . $this->endpoint);
     }
 
     /**

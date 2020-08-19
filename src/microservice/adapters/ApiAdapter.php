@@ -156,6 +156,7 @@ abstract class ApiAdapter
             } else {
                 $DataResponse->fillObject($response);
                 $DataResponse->outputMode(true);
+                App::debug($response, $method . self::ERROR_RESPONSE_LABEL . $this->endpoint);
             }
         } else {
             $DataResponse->error(500, self::ERROR_RESPONSE_EMPTY);

@@ -534,11 +534,12 @@ class Filemanager implements Dumpable
      */
     public static function fileGetContentJson(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null)
     {
-        $res                                        = json_decode(self::fileGetContent($url, $params, $method, $timeout, $user_agent, $cookie, $username, $password, $headers));
-
+        $rawdata                                    = self::fileGetContent($url, $params, $method, $timeout, $user_agent, $cookie, $username, $password, $headers);
+        $res                                        = json_decode($rawdata);
         if (json_last_error() != JSON_ERROR_NONE) {
-            if (is_null($res)) {
-                throw new Exception("Response is Null", 406);
+            Debug::set($rawdata, $method . "::response " . $url . "::rawdata");
+            if (empty($rawdata)) {
+                throw new Exception("Response is Empty", 406);
             } else {
                 throw new Exception("Response is not a valid JSON: " . json_last_error_msg(), 406);
             }

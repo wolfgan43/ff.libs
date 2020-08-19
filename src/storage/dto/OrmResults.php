@@ -56,18 +56,19 @@ class OrmResults
      */
     public function __construct(array $recordset = null, int $count = null, array $recordset_keys = null, string $primary_key = null, string $record_map_class = null)
     {
-        $this->recordset            = (array) $recordset;
-        $this->recordset_keys       = $recordset_keys;
-
         $this->key_name             = $primary_key;
         $this->countTotal           = $count;
         $this->record_map_class     = $record_map_class;
 
+        $counter                    = $recordset ?? $recordset_keys;
         $this->countRecordset       = (
-            empty($this->recordset)
+            empty($counter)
             ? $this->countTotal
-            : count($this->recordset)
+            : count($counter)
         );
+
+        $this->recordset            = (array) $recordset;
+        $this->recordset_keys       = $recordset_keys;
     }
 
     /**

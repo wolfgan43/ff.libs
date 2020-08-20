@@ -513,7 +513,7 @@ class Request implements Configurable, Dumpable
     private static function body(string $scope = RequestPage::REQUEST_RAWDATA, string $method = null) : array
     {
         return (
-            0 && self::$page->issetRequest()
+            self::$page->issetRequest()
             ? self::$page->getRequest($scope)
             : self::captureBody($scope, $method)
         );

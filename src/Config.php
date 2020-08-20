@@ -116,7 +116,6 @@ class Config implements Dumpable
      */
     private static $dirstruct_scan                                          = null;
 
-    //@todo: da popolare con l'installer
     /**
      * @var array
      */

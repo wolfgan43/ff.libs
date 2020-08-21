@@ -26,10 +26,6 @@ class Model implements Configurable, Dumpable
 
     private static $models                                                          = null;
 
-    /**
-     * @var Orm|null
-     */
-    private $orm                                                                    = null;
     private $collection                                                             = null;
     private $table                                                                  = null;
     private $mapclass                                                               = null;
@@ -157,7 +153,7 @@ class Model implements Configurable, Dumpable
      * @param array $fields
      * @return OrmResults
      */
-    public function insert(array $fields) : OrmResults
+    public function insert(array &$fields) : OrmResults
     {
         $insert                                                                     = array_replace(
             $this->where,
@@ -197,10 +193,12 @@ class Model implements Configurable, Dumpable
     /**
      * @return array
      * @throws Exception
+     * @todo da eliminare
      */
     public function readByRequest() : array
     {
-        return $this->fill($this->schema->insert, Request::rawdata(true));
+        $request = Request::rawdata(true);
+        return $this->fill($this->schema->insert, $request);
     }
 
     /**
@@ -232,21 +230,10 @@ class Model implements Configurable, Dumpable
      */
     private function getOrm() : Orm
     {
-        return $this->orm ?? $this->setOrm();
-    }
-
-    /**
-     * @return Orm
-     */
-    private function setOrm() : Orm
-    {
-        if ($this->schema) {
-            $this->orm                                                              =& Orm::getInstance($this->schema->collection, $this->schema->table, $this->mapclass ?? $this->schema->mapclass);
-        } else {
-            $this->orm                                                              =& Orm::getInstance($this->collection, $this->table, $this->mapclass);
-        }
-
-        return $this->orm;
+        return ($this->schema
+            ? Orm::getInstance($this->schema->collection, $this->schema->table, $this->mapclass ?? $this->schema->mapclass)
+            : Orm::getInstance($this->collection, $this->table, $this->mapclass)
+        );
     }
 
     /**
@@ -271,7 +258,7 @@ class Model implements Configurable, Dumpable
      * @param array $request
      * @return array
      */
-    private function fill(array $model, array $request) : array
+    private function fill(array $model, array &$request) : array
     {
         if (!empty($request)) {
             $request_key                                                            = array();
@@ -299,6 +286,8 @@ class Model implements Configurable, Dumpable
                 array_keys($model),
                 explode("#", substr($prototype, 0, -1))
             );
+
+            $request                                                                = array_combine(array_keys($request), $model);
         }
 
         return array_filter($model);

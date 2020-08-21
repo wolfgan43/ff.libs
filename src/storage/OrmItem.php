@@ -70,6 +70,27 @@ class OrmItem
         return $dataTableResponse;
     }
 
+    public static function deleteAll(array $where) : OrmResults
+    {
+        $item                                                                   = new static();
+        return $item->db
+            ->table($item->dbTable)
+            ->delete($where);
+    }
+
+    public static function updateAll(array $set, array $where = null) : OrmResults
+    {
+        $item                                                                   = new static();
+        return $item->db
+            ->table($item->dbTable)
+            ->update($set, $where);
+    }
+
+    public static function load(array $data) : self
+    {
+        return (new static())->fill($data);
+    }
+
     /**
      * OrmItem constructor.
      * @param array $where
@@ -140,7 +161,7 @@ class OrmItem
      * @param object $obj
      * @return OrmItem
      */
-    public function fillWithObject(object $obj) : self
+    public function fillByObject(object $obj) : self
     {
         $this->fill((array) $obj);
 

@@ -215,10 +215,7 @@ class RequestPage extends Mappable
      */
     public function getRequest(string $scope = self::REQUEST_RAWDATA) : array
     {
-        return (isset($this->body[$scope])
-            ? $this->body[$scope]
-            : array()
-        );
+        return $this->body[$scope] ?? [];
     }
 
     /**

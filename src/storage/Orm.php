@@ -807,7 +807,7 @@ class Orm extends Mappable
     private function setResultKeys(OrmQuery $data, string $key = null) : void
     {
         if ($key !== null) {
-            $this->result_keys[$data->def->mainTable][]                                     = [$data->def->key_primary => $key];
+            $this->result_keys[$data->table][]                                              = [$data->def->key_primary => $key];
         }
     }
 
@@ -853,7 +853,7 @@ class Orm extends Mappable
                                 Error::register("relationship missing Controller for table: " . $tbl . " from controller " . $controller, static::ERROR_BUCKET);
                             }
                             $rev_controller                                                 = $this->rev[$tbl];
-                            $sub = $this->getSubs($rev_controller, $tbl);
+                            $sub                                                            = $this->getSubs($rev_controller, $tbl);
                             if (!empty($sub->insert)) {
                                 $sub->insert[$field_ext]                                    = $key;
                             }
@@ -924,7 +924,7 @@ class Orm extends Mappable
                                                                                                     $command
                                                                                             );
 
-            $this->result[$data->def->mainTable]                                            = $regs;
+            $this->result[$data->table]                                                     = $regs;
         }
     }
 
@@ -980,6 +980,7 @@ class Orm extends Mappable
                 $this->main                                                                 = $this->subs[$subService][$subTable];
             } else {
                 $this->main->def                                                            = $Orm->getStruct($subTable);
+                $this->main->table                                                          = $subTable;
             }
             $this->main->service                                                            = $subService;
 
@@ -994,6 +995,7 @@ class Orm extends Mappable
             $mainTable                                                                      = $this->getMainTable();
 
             $this->main->def                                                                = $this->getStruct($mainTable);
+            $this->main->table                                                              = $mainTable;
             $this->main->service                                                            = $this->getCollection();
 
             if ($scopes[self::SCOPE_WHERE] === true) {
@@ -1017,6 +1019,7 @@ class Orm extends Mappable
         if (!isset($this->subs[$service][$table])) {
             $this->subs[$service][$table]                                                   = new OrmQuery();
             $this->subs[$service][$table]->def                                              = $this->getModel($service)->getStruct($table);
+            $this->subs[$service][$table]->table                                            = $table;
         }
 
         return $this->subs[$service][$table];

@@ -45,6 +45,7 @@ class OrmQuery
      * @var OrmDef
      */
     public $def                 = null;
+    public $table               = null;
 
     /**
      * @param string|null $controller

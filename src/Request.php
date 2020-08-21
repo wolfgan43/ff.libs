@@ -64,11 +64,14 @@ class Request implements Configurable, Dumpable
      * @var RequestPage $page
      */
     private static $page            = null;
+    /**
+     * @var RequestPage $page[]
+     */
+    private static $pageLoaded      = [];
 
     private static $orig_path_info  = null;
     private static $root_path       = null;
     private static $path_info       = null;
-
     /**
      * @return array
      */
@@ -266,7 +269,8 @@ class Request implements Configurable, Dumpable
 
     /**
      * @access private
-     * @return RequestPage
+     * @param $page
+     * @return void
      * @throws Exception
      */
     public static function pageConfiguration(&$page) : void
@@ -394,6 +398,15 @@ class Request implements Configurable, Dumpable
     }
 
     /**
+     * @param string $scope
+     * @return stdClass
+     * @throws Exception
+     */
+    public static function getModel(string $scope) : stdClass
+    {
+        return (object) self::body($scope);
+    }
+    /**
      * @return stdClass
      * @throws Exception
      */
@@ -409,16 +422,6 @@ class Request implements Configurable, Dumpable
     public static function session() : stdClass
     {
         return (object) ($_SESSION ?? []);
-    }
-
-    /**
-     * @param string $scope
-     * @return stdClass
-     * @throws Exception
-     */
-    public static function getModel(string $scope) : stdClass
-    {
-        return (object) self::body($scope);
     }
 
     /**
@@ -954,7 +957,6 @@ class Request implements Configurable, Dumpable
             default:
                 $req                                                                            = $_REQUEST;
         }
-
         return array_filter((array)$req);
     }
 
@@ -1035,14 +1037,29 @@ class Request implements Configurable, Dumpable
      */
     public static function &getPage(string $path_info, array $request = null, array $headers = null) : RequestPage
     {
-        self::$page                                                                             = new RequestPage($path_info, self::$pages, self::$path2params, self::$patterns);
+        $app                                                                                    = self::loadApp($path_info, $request, $headers);
 
-        self::$page->loadRequest($request);
-        self::$page->loadHeaders($headers, true);
+        self::$path_info                                                                        = $path_info;
+        self::$page                                                                             = $app->page;
+
+        self::$page->loadRequest($app->request);
+        self::$page->loadHeaders($app->headers, true);
 
         return self::$page;
     }
 
+    private static function loadApp(string $path_info, array $request = null, array $headers = null) : stdClass
+    {
+        if (!isset(self::$pageLoaded[$path_info])) {
+            self::$pageLoaded[$path_info]                                                       = [
+                "page"      => new RequestPage($path_info, self::$pages, self::$path2params, self::$patterns),
+                "request"   => $request,
+                "headers"   => $headers
+            ];
+        }
+
+        return (object) self::$pageLoaded[$path_info];
+    }
 
     /**
      * @return string|null

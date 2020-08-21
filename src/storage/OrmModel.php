@@ -69,7 +69,7 @@ class OrmModel
      * @param object $obj
      * @return OrmModel
      */
-    public function fillWithObject(object $obj) : self
+    public function fillByObject(object $obj) : self
     {
         $this->fill((array) $obj);
 
@@ -93,15 +93,14 @@ class OrmModel
      */
     public function apply() : string
     {
-        $vars                                                                   = $this->data;
-        //$vars = $this->fieldConvert($vars); //@todo da finire
-        $this->verifyRequire($vars);
-        $this->verifyValidator($vars);
+        //$this->fieldConvert($this->data); //@todo da finire
+        $this->verifyRequire($this->data);
+        $this->verifyValidator($this->data);
 
         if ($this->recordKey) {
-            $this->db->update($vars, [$this->primaryKey => $this->recordKey]);
+            $this->db->update($this->data, [$this->primaryKey => $this->recordKey]);
         } else {
-            $item                                                               = $this->db->insert($vars);
+            $item                                                               = $this->db->insert($this->data);
             $this->recordKey                                                    = $item->key(0);
             $this->primaryKey                                                   = $item->getPrimaryKey();
         }

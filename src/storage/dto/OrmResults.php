@@ -153,6 +153,10 @@ class OrmResults
      */
     public function key(int $offset) : ?string
     {
+        if ($offset < 0) {
+            $offset = $this->countRecordset + $offset;
+        }
+
         return $this->keys()[$offset] ?? null;
     }
 

@@ -22,14 +22,29 @@ class OrmModel
 
     /**
      * OrmItem constructor.
-     * @param array $where
      * @param string|null $model_name
+     * @param OrmItem $ref
+     * @param array|null $rawdata
      * @throws Exception
      */
-    public function __construct(string $model_name, array $where = null)
+    public function __construct(string $model_name, OrmItem &$ref, array $rawdata = null)
     {
         $this->loadModel($model_name);
-        $this->read($where);
+
+        $informationSchema                                                      = $this->db->dtdInformationSchema();
+
+        if (!property_exists($ref, $informationSchema->table)) {
+            throw new Exception("missing relation Field: " . $informationSchema->table . " in Class " . get_class($ref) . " for Model: " . $model_name);
+        }
+
+        if ($rawdata) {
+            $this->fill($rawdata);
+            $ref->{$informationSchema->table}                                   = $this->apply();
+        }
+
+        if (!empty($ref->{$informationSchema->table})) {
+            $this->read([$informationSchema->key => $ref->{$informationSchema->table}]);
+        }
     }
 
     /**

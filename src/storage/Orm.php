@@ -117,7 +117,7 @@ class Orm extends Mappable
     public $count                                                                           = null;
 
     /**
-     * @param string $collection
+     * @param string|null $collection
      * @param string|null $mainTable
      * @param string|null $mapClass
      * @return Orm
@@ -276,7 +276,7 @@ class Orm extends Mappable
      * @param null|array $select
      * @param null|array $where
      * @param null|array $sort
-     * @param int $limit
+     * @param int|null $limit
      * @param int|null $offset
      * @return array|null
      */
@@ -415,7 +415,7 @@ class Orm extends Mappable
      * @param null|array $select
      * @param null|array $where
      * @param null|array $sort
-     * @param int $limit
+     * @param int|null $limit
      * @param int|null $offset
      */
     private function get(array $select = null, array $where = null, array $sort = null, int $limit = null, int $offset = null) : void
@@ -492,7 +492,7 @@ class Orm extends Mappable
      * @param OrmQuery $data
      * @param string $controller
      * @param string $table
-     * @param int $limit
+     * @param int|null $limit
      * @param int|null $offset
      * @return int|null
      */

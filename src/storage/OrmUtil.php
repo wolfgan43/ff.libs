@@ -75,7 +75,7 @@ trait OrmUtil
     {
         $errors                                                                 = null;
         $validators                                                             = array_intersect_key($vars, $this->dbValidator);
-        $dtd                                                                    = $this->db->dtd();
+        $dtd                                                                    = $this->db->dtdStore();
         foreach ($validators as $field => $value) {
             if (is_array($this->dbValidator[$field])) {
                 if ($dtd->$field == Database::FTYPE_ARRAY || $dtd->$field == Database::FTYPE_ARRAY_OF_NUMBER) {

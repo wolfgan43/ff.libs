@@ -153,7 +153,7 @@ class Model implements Configurable, Dumpable
      * @param array $fields
      * @return OrmResults
      */
-    public function insert(array &$fields) : OrmResults
+    public function insert(array $fields) : OrmResults
     {
         $insert                                                                     = array_replace(
             $this->where,
@@ -193,7 +193,7 @@ class Model implements Configurable, Dumpable
     /**
      * @return array
      * @throws Exception
-     * @todo da eliminare
+     * @todo da eliminare una volta dismesso auth
      */
     public function readByRequest() : array
     {
@@ -204,7 +204,7 @@ class Model implements Configurable, Dumpable
     /**
      * @return stdClass
      */
-    public function dtd() : stdClass
+    public function dtdStore() : stdClass
     {
         return (object) $this->getOrm()->dtd($this->schema->table ?? $this->table);
     }
@@ -217,6 +217,17 @@ class Model implements Configurable, Dumpable
         return $this->schema->dtd ?? null;
     }
 
+    /**
+     * @return stdClass
+     */
+    public function dtdInformationSchema() : stdClass
+    {
+        $table      = $this->schema->table ?? $this->table;
+        return (object) [
+            "table" => $table,
+            "key"   => array_search("primary", $this->getOrm()->dtd($table))
+        ];
+    }
     /**
      * @return stdClass
      */
@@ -258,7 +269,7 @@ class Model implements Configurable, Dumpable
      * @param array $request
      * @return array
      */
-    private function fill(array $model, array &$request) : array
+    private function fill(array $model, array $request) : array
     {
         if (!empty($request)) {
             $request_key                                                            = array();
@@ -286,16 +297,14 @@ class Model implements Configurable, Dumpable
                 array_keys($model),
                 explode("#", substr($prototype, 0, -1))
             );
-
-            $request                                                                = array_combine(array_keys($request), $model);
         }
 
         return array_filter($model);
     }
 
     /**
-     * @param array $ref
-     * @param string $table_name
+     * @param array|null $ref
+     * @param string|null $table_name
      * @param array|null $fields
      */
     private function fieldSelect(array &$ref = null, string $table_name = null, array $fields = null) : void
@@ -315,8 +324,8 @@ class Model implements Configurable, Dumpable
     }
 
     /**
-     * @param string $table_name
      * @param array|null $fields
+     * @param string|null $table_name
      * @return array
      */
     private function fieldSet(array $fields, string $table_name = null) : array

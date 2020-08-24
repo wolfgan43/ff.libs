@@ -236,7 +236,7 @@ class Buffer implements Dumpable
                                                                 (self::$cache[self::$pid]->pkey ?? null) .
                                                                 ($from_cache ? self::SYMBOL : "");
 
-        self::$process[$label]                              = $value;
+        self::$process[$label]                              = preg_replace('/\s+/', ' ', $value);
 
         return self::$process[$label];
     }

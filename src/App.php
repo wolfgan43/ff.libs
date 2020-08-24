@@ -125,7 +125,7 @@ abstract class App implements Dumpable
     }
 
     /**
-     * @param string $collection_or_model|null
+     * @param string|null $collection_or_model
      * @return Model
      */
     public static function db(string $collection_or_model = null) : Model

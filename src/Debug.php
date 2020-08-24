@@ -107,9 +107,12 @@ class Debug
         $res                                = null;
         if (Kernel::$Environment::DEBUG) {
             $res                            = self::$debug + Buffer::exTime();
+            $res["exTime - Autoload"]       = self::exTime("autoload");
             $res["exTime - Conf"]           = Config::exTime();
-            $res["exTime - App"]            = self::exTimeApp();
+            $res["exTime - EndUser"]        = self::exTimeApp() - Config::exTime() - array_sum(Buffer::exTime());
+            $res["exTime - App"]            = self::exTime("autoload") + self::exTimeApp();
             $res["App - Cache"]             = (!Kernel::useCache() ? "off" : "on (" . Kernel::$Environment::CACHE_BUFFER_ADAPTER . ", " . Kernel::$Environment::CACHE_DATABASE_ADAPTER . ", " . Kernel::$Environment::CACHE_MEDIA_ADAPTER . ")");
+            $res["query"]                   = Buffer::dump()["process"];
             $res["backtrace"]               = self::dumpBackTrace();
         }
         return $res;
@@ -569,7 +572,7 @@ class Debug
 
     /**
      * @param string $filename
-     * @param string $data
+     * @param string|null $data
      */
     public static function dumpLog(string $filename, string $data = null) : void
     {

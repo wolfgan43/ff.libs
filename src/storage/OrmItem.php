@@ -30,7 +30,8 @@ class OrmItem
         "db"            => true,
         "primaryKey"    => true,
         "recordKey"     => true,
-        "models"        => true
+        "models"        => true,
+        "model"         => true
     ];
 
     protected $dbCollection                                                     = null;
@@ -40,9 +41,10 @@ class OrmItem
     protected $toDataResponse                                                   = [];
 
     /**
-     * @var OrmModel|null
+     * @var OrmModel[]|null
      */
     private $models                                                             = [];
+    private $model                                                              = null;
 
     /**
      * @param array|null $where
@@ -93,7 +95,7 @@ class OrmItem
 
     /**
      * OrmItem constructor.
-     * @param array $where
+     * @param array|null $where
      */
     public function __construct(array $where = null)
     {
@@ -102,40 +104,21 @@ class OrmItem
     }
 
     /**
-     * @param string $name
+     * @param string|null $model_name
+     * @param array|null $fill
      * @return OrmModel|null
      * @throws Exception
      */
-    public function __get(string $name) : ?OrmModel
+    public function &extend(string $model_name = null, array $fill = null) : ?OrmModel
     {
-        return (property_exists($this, $name)
-            ? $this->$name
-            : $this->extend($name)
+        $this->model                                                            = $model_name;
+        $this->models[$this->model]                                             = (
+            $this->model
+            ? new OrmModel($this->model, $this, $fill)
+            : null
         );
-    }
 
-    /**
-     * @param string $model_name
-     * @param array|null $where
-     * @return OrmModel|null
-     * @throws Exception
-     */
-    public function extend(string $model_name, array $where = null) : ?OrmModel
-    {
-        if (!isset($this->models[$model_name])) {
-            $this->loadModel($model_name, $where);
-        }
-        return $this->models[$model_name];
-    }
-
-    /**
-     * @param string|null $name
-     * @param array|null $where
-     * @throws Exception
-     */
-    private function loadModel(string $name, array $where = null)
-    {
-        $this->models[$name]                                                    = new OrmModel($name, $where);
+        return $this->models[$this->model];
     }
 
     /**
@@ -235,6 +218,10 @@ class OrmItem
             $response->error(404, $this->db->getName() . " not stored");
         }
 
+        if ($this->model) {
+            $response->set($this->model, $this->models[$this->model]->toDataResponse()->toArray());
+        }
+
         return $response;
     }
 
@@ -266,7 +253,7 @@ class OrmItem
     }
 
     /**
-     * @param array $fields
+     * @param array|null $fields
      * @return array
      */
     private function fieldSetPurged(array $fields = null) : array

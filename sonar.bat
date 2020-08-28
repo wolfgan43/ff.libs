@@ -1,0 +1,2 @@
+start cmd /c C:\sonarqube\sonar-scanner-4\bin\sonar-scanner.bat -Dsonar.host.url=https://sonar.hcore.app -Dsonar.login=0b1b73f6a7e39dbe5ae4a61803356fe8335f13e2 -Dsonar.projectKey=libs -Dsonar.projectBaseDir=C:\htdocs\vendor\phpformsframework\libs -Dsonar.sources=. -Dsonar.exclusions=docs/**,**/themes/**/email/**,**/tests/**,**/.idea/**,**/.git/**
+exit

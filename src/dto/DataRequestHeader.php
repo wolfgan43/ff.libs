@@ -42,6 +42,6 @@ class DataRequestHeader extends Mappable
      */
     public function __construct()
     {
-        parent::__construct((array) Request::headers());
+        parent::__construct(Request::headers(true));
     }
 }

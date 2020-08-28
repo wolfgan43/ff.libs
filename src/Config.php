@@ -255,7 +255,7 @@ class Config implements Dumpable
     }
 
     /**
-     * @param string|false $bucket
+     * @param string|null $bucket
      * @return array|null
      */
     public static function getDirBucket(string $bucket = null) : ?array

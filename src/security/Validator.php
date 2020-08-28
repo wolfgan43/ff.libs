@@ -60,13 +60,13 @@ class Validator
                                                                 "float"             => array(
                                                                     "filter"        => FILTER_VALIDATE_FLOAT,
                                                                     "flags"         => null, //FILTER_FLAG_ALLOW_THOUSAND
-                                                                    "options"       => array("default" => 0),
+                                                                    "options"       => array("default" => null),
                                                                     "length"        => 32
                                                                 ),
                                                                 "int"               => array(
                                                                     "filter"        => FILTER_VALIDATE_INT,
                                                                     "flags"         => null, //FILTER_FLAG_ALLOW_OCTAL | FILTER_FLAG_ALLOW_HEX
-                                                                    "options"       => array("default" => 0),
+                                                                    "options"       => array("default" => null),
                                                                     "length"        => 16
                                                                 ),
                                                                 "timestamp"         => array(

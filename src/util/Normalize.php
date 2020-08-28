@@ -18,6 +18,7 @@ class Normalize
             $res = substr($res, 3);
         }
     }
+
     /**
      * @param string $testo
      * @param string $char_sep

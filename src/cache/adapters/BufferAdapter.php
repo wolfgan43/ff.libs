@@ -102,7 +102,7 @@ abstract class BufferAdapter implements Dumpable
         $res = false;
         if ($value === null) {
             $res = $this->del($name);
-        } elseif ($this->is_writeable || 1) {
+        } elseif ($this->is_writeable) {
             $this->cache($this->bucket, self::ACTION_SET, $name);
 
             $res = $this->write($name, $value, $this->getBucket());
@@ -251,7 +251,7 @@ abstract class BufferAdapter implements Dumpable
 
     /**
      * @param string $name
-     * @param array $indexes
+     * @param array|null $indexes
      */
     protected function setIndex(string $name, array $indexes = null) : void
     {

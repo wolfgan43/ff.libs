@@ -133,9 +133,10 @@ class RequestPage extends Mappable
 
         return $path_info;
     }
+
     /**
      * @param array $config
-     * @param array $patterns
+     * @param array|null $patterns
      */
     private function setPattern(array &$config, array $patterns = null) : void
     {
@@ -193,6 +194,15 @@ class RequestPage extends Mappable
 
         return $this;
     }
+
+    /**
+     * @return bool
+     */
+    public function issetHeaders() : bool
+    {
+        return (!empty($this->headers));
+    }
+
     /**
      * @return array
      */
@@ -283,7 +293,7 @@ class RequestPage extends Mappable
     }
 
     /**
-     * @param array $server
+     * @param array|null $server
      * @param bool $isCli
      * @return bool
      */
@@ -296,7 +306,7 @@ class RequestPage extends Mappable
     }
 
     /**
-     * @param array $request
+     * @param array|null $request
      * @return bool
      */
     public function loadRequest(array $request = null) : bool

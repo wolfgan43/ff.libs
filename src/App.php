@@ -37,13 +37,14 @@ use Exception;
 abstract class App implements Dumpable
 {
     use EndUserManager;
+    use ClassDetector;
 
     const NAME_SPACE                                                = __NAMESPACE__ . '\\';
     const ERROR_BUCKET                                              = 'app';
 
     private static $script_engine                                   = null;
     /**
-     * @var stdClass
+     * @var stdClass|security\UserData
      */
     protected static $user                                          = null;
     /**
@@ -138,14 +139,15 @@ abstract class App implements Dumpable
      * @param array|null $config
      * @param string|null $return
      * @return dto\DataHtml
+     * @throws Exception
      */
     public static function widget(string $name, array $config = null, string $return = null) : dto\DataHtml
     {
-        $class_name                                                 = get_called_class();
+        $class_name                                                 = static::getClassName();
 
-        Log::registerProcedure(str_replace(static::NAME_SPACE, "", $class_name), "widget" . Log::CLASS_SEP . $name);
+        Log::registerProcedure($class_name, "widget" . Log::CLASS_SEP . $name);
 
-        return Widget::getInstance($name, $config, $class_name::NAME_SPACE)
+        return Widget::getInstance($name, $config, str_replace($class_name, "", static::class))
             ->render($return);
     }
 
@@ -153,6 +155,7 @@ abstract class App implements Dumpable
      * @param string $name
      * @param array|null $config
      * @return dto\DataHtml
+     * @throws Exception
      */
     public static function page(string $name, array $config = null) : dto\DataHtml
     {

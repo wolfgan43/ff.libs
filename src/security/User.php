@@ -1,88 +1,68 @@
 <?php
 namespace phpformsframework\libs\security;
 
-use hcore\security\UUID;
-use phpformsframework\libs\storage\Media;
-use phpformsframework\libs\storage\OrmItem;
+use phpformsframework\libs\App;
+use phpformsframework\libs\dto\DataResponse;
 
 /**
- * Class DataUser
- * @package phpformsframework\libs\dto
+ * Class User
+ * @package phpformsframework\libs\security
  */
-class User extends OrmItem
+class User extends App
 {
-    protected $dbCollection         = "access";
-    protected $dbTable              = "users";
-    protected $dbJoins              = [
-        "tokens"        => [
-            "token"     => "name",
-            "expire"
-        ]
-    ];
-    protected $dbRequired           = [
-        "uuid", "username", "email", "tel"
-    ];
-    protected $dbValidator = [
-        "email" => "email"
-    ];
-    protected $dbConversion = [
-        "slug" => "username:toSlug"
-    ];
+    private const ERROR_USER_NOT_FOUND                          = "Wrong user or Password";
+    private const USER_LABEL                                    = "user";
 
-    private const MODES             = [
-      "crop"            => "x",
-      "proportional"    => "-",
-    ];
-    public $SID     = null;
-    public $uuid                    = null;
-    public $username                = null;
-    public $acl                     = null;
-    public $status                  = null;
-    public $token                   = null;
-    public $model                   = null;
+    private static $session                                     = null;
 
-    public $env                     = array();
-    public $profile                 = array();
-    public $permission              = array();
-
-    public $anagraph                = null;
-
-    public $slug                    = null;
-    public $avatar                  = null;
-    public $display_name            = null;
-    public $email                   = null;
-    public $tel                     = null;
-    public $locale                  = null;
-    public $lang                    = null;
-
-    /**
-     * User constructor.
-     * @param array|null $where
-     */
-    public function __construct(array $where = null)
+    public static function isLogged() : bool
     {
-        parent::__construct($where);
+        return (bool) self::session()->verify();
+    }
 
-        if (!$where) {
-            $this->uuid = UUID::v4();
+    public static function get() : ?UserData
+    {
+        if (!self::$user && self::session()->verify()) {
+            self::$user                                         = UserData::load(self::session()->get(self::USER_LABEL));
+        }
+
+        return self::$user;
+    }
+
+    public static function set(UserData $user = null) : void
+    {
+        if (self::session()->verify()) {
+            self::session()->set(self::USER_LABEL, $user->toDataResponse()->toArray());
+            self::$user                                         = $user;
         }
     }
 
-    /**
-     * @param int|null $max_width
-     * @param int|null $max_height
-     * @param string $mode
-     * @return string|null
-     */
-    public function getAvatar(int $max_width = null, int $max_height = null, string $mode = "crop") : ?string
+    private static function session() : Session
     {
-        if ($max_width && $max_height) {
-            $mode = (
-                $max_width && $max_height
-                ? $max_width . self::MODES[$mode] . $max_height
-                : null
-            );
+        if (!self::$session) {
+            self::$session                                      = new Session();
         }
-        return Media::getUrl($this->avatar, $mode, "url");
+
+        return self::$session;
+    }
+
+    public static function login(string $username, string $secret, bool $permanent = null) : DataResponse
+    {
+        $user                                                   = new UserData(["username" => $username, "password" => $secret]);
+        if (!$user->isStored()) {
+            self::throwError(401, self::ERROR_USER_NOT_FOUND);
+        }
+
+        $response                                               = self::session()->create($permanent, $user->acl);
+        self::set($user);
+
+        return $response;
+    }
+    public static function logout() : DataResponse
+    {
+        self::session()->destroy();
+        self::$user                                             = null;
+
+        return new DataResponse();
     }
 }

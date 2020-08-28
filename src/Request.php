@@ -367,18 +367,30 @@ class Request implements Configurable, Dumpable
     }
 
     /**
-     * @return stdClass
+     * @param bool $toArray
+     * @return stdClass|array
      * @throws Exception
+     * @todo da tipizzare
      */
-    public static function headers() : stdClass
+    public static function headers(bool $toArray = false)
     {
-        return (object) self::captureHeaders();
+        $headers = (
+            self::$page->issetHeaders()
+            ? self::$page->getHeaders()
+            : self::captureHeaders()
+        );
+
+        return ($toArray
+            ? $headers
+            : (object) $headers
+        );
     }
 
     /**
      * @param bool $toArray
      * @return stdClass|array
      * @throws Exception
+     * @todo da tipizzare
      */
     public static function rawdata(bool $toArray = false)
     {
@@ -505,7 +517,6 @@ class Request implements Configurable, Dumpable
             unset($_POST);
         }
     }
-
 
     /**
      * @param string $scope
@@ -902,7 +913,7 @@ class Request implements Configurable, Dumpable
 
                 self::corsPreflight($origin);
                 exit;
-                break;
+
             case self::METHOD_GET:
             case self::METHOD_POST:
             case self::METHOD_PUT:

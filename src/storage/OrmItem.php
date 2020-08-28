@@ -51,10 +51,10 @@ class OrmItem
      * @param array|null $sort
      * @param int|null $limit
      * @param int|null $offset
+     * @param int $draw
      * @return DataTableResponse
-     * @throws Exception
      */
-    public static function search(array $where = null, array $sort = null, int $limit = null, int $offset = null) : DataTableResponse
+    public static function search(array $where = null, array $sort = null, int $limit = null, int $offset = null, int $draw = 0) : DataTableResponse
     {
         $dataTableResponse                                                      = new DataTableResponse();
         $item                                                                   = new static();
@@ -66,6 +66,7 @@ class OrmItem
             $dataTableResponse->fill($recordset->getAllArray());
             $dataTableResponse->recordsFiltered                                 = $recordset->countRecordset();
             $dataTableResponse->recordsTotal                                    = $recordset->countTotal();
+            $dataTableResponse->draw                                            = $draw + 1;
         } else {
             $dataTableResponse->error(404, "not Found");
         }

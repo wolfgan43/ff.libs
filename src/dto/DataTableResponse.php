@@ -7,7 +7,7 @@ namespace phpformsframework\libs\dto;
  */
 class DataTableResponse extends DataResponse
 {
-    public $draw                = 1;
+    public $draw                = 0;
     public $recordsTotal        = 0;
     public $recordsFiltered     = 0;
 

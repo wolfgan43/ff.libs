@@ -226,7 +226,7 @@ class Log
     /**
      * @param int|null $type
      * @param string|null $bucket
-     * @param string $format
+     * @param string|null $format
      * @param bool|null $unalterable
      * @param callable|null $write_if
      * @param bool|null $override
@@ -343,8 +343,8 @@ class Log
     /** system is unusable [SYSTEM]
      * @param $message
      * @param string|null $bucket
-     * @param string $routine
-     * @param string $action
+     * @param string|null $routine
+     * @param string|null $action
      */
     public static function emergency($message, string $bucket = null, string $routine = null, string $action = null)
     {
@@ -354,7 +354,7 @@ class Log
     /** critical conditions [REQUEST]
      * @param $message
      * @param string|null $bucket
-     * @param int $status
+     * @param int|null $status
      */
     public static function alert($message, string $bucket = null, int $status = null)
     {
@@ -364,8 +364,8 @@ class Log
     /** action must be taken immediately [SYSTEM]
      * @param $message
      * @param string|null $bucket
-     * @param string $routine
-     * @param string $action
+     * @param string|null $routine
+     * @param string|null $action
      */
     public static function critical($message, string $bucket = null, string $routine = null, string $action = null)
     {
@@ -375,7 +375,7 @@ class Log
     /** error conditions  [REQUEST]
      * @param $message
      * @param string|null $bucket
-     * @param int $status
+     * @param int|null $status
      */
     public static function error($message, string $bucket = null, int $status = null)
     {
@@ -385,8 +385,8 @@ class Log
     /** warning conditions [SYSTEM]
      * @param $message
      * @param string|null $bucket
-     * @param string $routine
-     * @param string $action
+     * @param string|null $routine
+     * @param string|null $action
      */
     public static function warning($message, string $bucket = null, string $routine = null, string $action = null)
     {
@@ -396,7 +396,7 @@ class Log
     /** normal but significant condition [REQUEST]
      * @param $message
      * @param string|null $bucket
-     * @param int $status
+     * @param int|null $status
      */
     public static function notice($message, string $bucket = null, int $status = null)
     {
@@ -406,7 +406,7 @@ class Log
     /** informational messages [REQUEST]
      * @param $message
      * @param string|null $bucket
-     * @param int $status
+     * @param int|null $status
      */
     public static function info($message, string $bucket = null, int $status = null)
     {

@@ -170,7 +170,7 @@ class Resource extends Mappable implements Dumpable
 
             foreach ($paths as $path) {
                 if (strpos($path, $last_path) === false) {
-                    $path                       = dirname(rtrim($path, "\\*"));
+                    $path                       = rtrim($path, DIRECTORY_SEPARATOR . "*") . "*";
                     $dirs[$path]                = ["flag" => FilemanagerScan::SCAN_DIR_RECURSIVE];
                     $last_path                  = $path;
 
@@ -183,7 +183,6 @@ class Resource extends Mappable implements Dumpable
             FilemanagerScan::scan($dirs, function ($path) use (&$config_dirs) {
                 $config_dirs[$path]             = filemtime($path);
             });
-
 
             $cache->set("rawdata", $this->resources, $config_dirs);
         }

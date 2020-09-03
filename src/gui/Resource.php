@@ -169,7 +169,7 @@ class Resource extends Mappable implements Dumpable
             sort($paths);
 
             foreach ($paths as $path) {
-                if (strpos($path, $last_path) === false) {
+                if (!$last_path || strpos($path, $last_path) === false) {
                     $path                       = rtrim($path, DIRECTORY_SEPARATOR . "*") . "*";
                     $dirs[$path]                = ["flag" => FilemanagerScan::SCAN_DIR_RECURSIVE];
                     $last_path                  = $path;

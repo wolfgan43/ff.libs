@@ -25,6 +25,13 @@
  */
 namespace phpformsframework\libs\gui\adapters;
 
+if (!class_exists("BladeOne")) {
+    class ViewBlade
+    {
+    }
+    return null;
+}
+
 use Exception;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Dir;

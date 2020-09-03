@@ -25,6 +25,13 @@
  */
 namespace phpformsframework\libs\gui\adapters;
 
+if (!class_exists("Smarty")) {
+    class ViewSmarty
+    {
+    }
+    return null;
+}
+
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\gui\ViewAdapter;
 use Smarty;

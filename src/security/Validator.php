@@ -273,14 +273,14 @@ class Validator
                 }
 
                 if (isset($rule["callback"])) {
-                    $error                              = ${$rule["callback"]}($what);
+                    $error                              = $rule["callback"]($what);
                     if ($error) {
                         $dataError                      = self::isError($error, $type);
                     }
                 }
             }
         } elseif(isset($rule["callback"])) {
-            $error                                      = ${$rule["callback"]}($what);
+            $error                                      = $rule["callback"]($what);
             if ($error) {
                 $dataError                              = self::isError($error, $type);
             }

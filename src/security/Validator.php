@@ -184,7 +184,7 @@ class Validator
                                                                 "base64"            => array(
                                                                     "filter"        => null,
                                                                     "flags"         => null,
-                                                                    "callback"      => "\phpformsframework\libs\security\Validator::isBase64",
+                                                                    "callback"      => "\phpformsframework\libs\security\Validator::checkBase64",
                                                                     "length"        => 0
                                                                 )
                                                             );
@@ -236,6 +236,7 @@ class Validator
      */
     public static function is(&$what, string $fakename, string $type = null, $range = null) : DataError
     {
+        $dataError = new DataError();
         if (!array_key_exists($type, self::RULES)) {
             $type                                       = (
                 is_array($what)
@@ -333,6 +334,11 @@ class Validator
             case "json":
                 $value = json_decode($value, true);
                 break;
+            case "base64":
+                $value = urldecode($value);
+                $value = str_replace(' ', '+', $value);
+                $value = base64_decode($value, true);
+                break;
             case "boolean":
             case "bool":
             case "integer":
@@ -341,16 +347,13 @@ class Validator
             case "double":
             case "string":
                 settype($value, $type);
-                break;
-            case "base64":
-                $value = base64_decode($value);
-                break;
             default:
+                if (!is_array($value) && !is_object($value)) {
+                    $value = urldecode($value);
+                }
         }
 
-        if (!is_array($value) && !is_object($value)) {
-            $value = urldecode($value);
-        }
+
     }
     /**
      * @param string|null $value
@@ -506,13 +509,16 @@ class Validator
 
     /**
      * @param string $data
-     * @return bool
+     * @return string|null
      */
-    public static function isBase64(string $data) : bool
+    public static function checkBase64(string $data) : ?string
     {
-        $res                                                                = base64_decode($data);
+        $res                                                                = base64_decode($data, true);
 
-        return $res !== false;
+        return ($res === false
+            ? self::getErrorName() . " is not a valid base64."
+            : null
+        );
     }
 
     /**

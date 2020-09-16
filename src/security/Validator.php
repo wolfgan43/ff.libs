@@ -513,7 +513,7 @@ class Validator
      */
     public static function checkBase64(string $data) : ?string
     {
-        $res                                                                = base64_decode($data, true);
+        $res                                                                = base64_decode(str_replace(' ', '+', urldecode($data)), true);
 
         return ($res === false
             ? self::getErrorName() . " is not a valid base64."

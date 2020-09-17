@@ -39,6 +39,7 @@ use phpformsframework\libs\Request;
 class Validator
 {
     private const MEMORY_LIMIT                              = 12000000;
+    private const MEMORY_LIMIT_BASE64                       = 33000000;
     const RULES                                             = array(
                                                                 "bool"              => array(
                                                                     "filter"        => FILTER_VALIDATE_BOOLEAN,
@@ -286,9 +287,9 @@ class Validator
                 $dataError                              = self::isError($error, $type);
             }
         }
-
-        self::transform($what, $type);
-
+        if(!$dataError->isError()) {
+            self::transform($what, $type);
+        }
         return $dataError;
     }
 
@@ -513,6 +514,10 @@ class Validator
      */
     public static function checkBase64(string $data) : ?string
     {
+        if(strlen($data) > self::MEMORY_LIMIT_BASE64) {
+            return self::getErrorName() . " base64 Memory Limit Reached.";
+        }
+
         $res                                                                = base64_decode(str_replace(' ', '+', urldecode($data)), true);
 
         return ($res === false

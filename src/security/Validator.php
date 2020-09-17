@@ -178,7 +178,7 @@ class Validator
                                                                 "file"              => array(
                                                                     "filter"        => FILTER_CALLBACK,
                                                                     "flags"         => null,
-                                                                    "callback"      => '\phpformsframework\libs\security\Validator::isFile',
+                                                                    "options"       => '\phpformsframework\libs\security\Validator::isFile',
                                                                     "length"        => 0
                                                                 ),
                                                                 "base64"            => array(

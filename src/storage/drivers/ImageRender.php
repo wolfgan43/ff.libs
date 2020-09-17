@@ -27,7 +27,12 @@
 namespace phpformsframework\libs\storage\drivers;
 
 use phpformsframework\libs\Constant;
+use stdClass;
 
+/**
+ * Class ImageRender
+ * @package phpformsframework\libs\storage\drivers
+ */
 abstract class ImageRender
 {
     const ERROR_BUCKET                          = "storage";
@@ -81,9 +86,20 @@ abstract class ImageRender
 
     private $pre_processed                      = false;
     private $watermark                          = array();
-    abstract protected function load_image($src_res_path);
 
-    public function __construct($new_res_dim_real_x = null, $new_res_dim_real_y = null, $src_res = null)
+    /**
+     * @param string $src_res_path
+     * @return resource|null
+     */
+    abstract protected function load_image(string $src_res_path);
+
+    /**
+     * ImageRender constructor.
+     * @param int|null $new_res_dim_real_x
+     * @param int|null $new_res_dim_real_y
+     * @param resource|null $src_res
+     */
+    public function __construct(int $new_res_dim_real_x = null, int $new_res_dim_real_y = null, $src_res = null)
     {
         if ($new_res_dim_real_x !== null) {
             $this->new_res_dim_real_x = $new_res_dim_real_x;
@@ -99,7 +115,7 @@ abstract class ImageRender
     /**
      * @param ImageThumb $Thumb
      */
-    public function addWatermark($Thumb)
+    public function addWatermark(ImageThumb $Thumb) : void
     {
         $this->watermark[] = $Thumb;
     }
@@ -107,15 +123,15 @@ abstract class ImageRender
     /**
      * @return ImageThumb[]
      */
-    public function getWatermark()
+    public function getWatermark() : array
     {
         return $this->watermark;
     }
 
     /**
-     * @return object
+     * @return stdClass
      */
-    public function getFinalDim()
+    public function getFinalDim() : stdClass
     {
         return (object) array(
             "x" => $this->new_res_dim_real_x
@@ -123,6 +139,9 @@ abstract class ImageRender
         );
     }
 
+    /**
+     *
+     */
     public function pre_process()
     {
         if ($this->src_res === null) {
@@ -135,6 +154,9 @@ abstract class ImageRender
         }
     }
 
+    /**
+     *
+     */
     private function calc_dim()
     {
         // Recupera le informazioni sulla dimensione della risorsa immagine caricata da file
@@ -378,7 +400,10 @@ abstract class ImageRender
         $this->new_res_dim_y = $this->new_res_dim_y - ($this->new_res_frame_size * 2);
     }
 
-    private function drawText($new_res)
+    /**
+     * @param resource $new_res
+     */
+    private function drawText($new_res) : void
     {
         if (!strlen($this->new_res_font["caption"])) {
             return;
@@ -463,9 +488,12 @@ abstract class ImageRender
             $color_font,
             $this::FONTS_DISK_PATH . DIRECTORY_SEPARATOR . $this->new_res_font["type"],
             $this->new_res_font["caption"]
-                    );
+        );
     }
 
+    /**
+     * @return false|resource
+     */
     public function process()
     {
         if ($this->src_res === null && !$this->pre_processed) {
@@ -473,7 +501,7 @@ abstract class ImageRender
         }
 
         if (!$this->src_res) {
-            return null;
+            return false;
         }
 
         $tmp_res = imagecreatetruecolor(

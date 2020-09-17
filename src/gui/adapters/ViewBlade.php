@@ -26,6 +26,10 @@
 namespace phpformsframework\libs\gui\adapters;
 
 if (!class_exists("BladeOne")) {
+    /**
+     * Class ViewBlade
+     * @package phpformsframework\libs\gui\adapters
+     */
     class ViewBlade
     {
     }
@@ -95,6 +99,7 @@ class ViewBlade extends BladeOne implements ViewAdapter
 
     /**
      * @return string
+     * @throws Exception
      */
     public function display() : string
     {

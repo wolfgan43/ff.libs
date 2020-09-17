@@ -231,24 +231,6 @@ class FilemanagerScan implements Dumpable
                 return;
             }
 
-            if (isset($opt->patterns)) {
-                foreach ($opt->patterns as $pattern =>  $rule) {
-                    $rule = (object) $rule;
-                    $regexp = "#" . str_replace("\*", "(.*)", preg_quote($pattern, "#")) . "#i";
-                    if (preg_match($regexp, $file)) {
-                    //if (strpos($file, $pattern) !== false) {
-                        if (self::scanIsInvalidItem($file_info, $rule)) {
-                            return;
-                        }
-
-                        if (!empty($rule->type)) {
-                            self::setStorage($file_info, $rule);
-                            return;
-                        }
-                    }
-                }
-            }
-
             if (isset($opt->type)) {
                 self::setStorage($file_info, $opt);
             } else {
@@ -263,13 +245,18 @@ class FilemanagerScan implements Dumpable
      */
     private static function setStorage(stdClass $file_info, stdClass $opt) : void
     {
-        $file                                           = $file_info->dirname . "/" . $file_info->basename;
+        $file                                           = $file_info->dirname . DIRECTORY_SEPARATOR . $file_info->basename;
         $type                                           = $opt->type ?? "unknowns";
 
         $file_info->parentname                          = basename($file_info->dirname);
         if (isset($opt->rootpath)) {
             $file_info->rootpath                        = realpath($file_info->dirname . DIRECTORY_SEPARATOR . $opt->rootpath);
             $file_info->rootname                        = basename($file_info->rootpath);
+        }
+
+        if (isset($opt->replace[$file_info->extension])) {
+            $file_info->filename                        = str_replace("." . $opt->replace[$file_info->extension], "", $file_info->filename);
+            $file_info->extension                       = $opt->replace[$file_info->extension];
         }
 
         $arrFileInfo                                    = (array) $file_info;

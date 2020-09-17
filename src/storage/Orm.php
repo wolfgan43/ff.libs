@@ -26,6 +26,7 @@
 
 namespace phpformsframework\libs\storage;
 
+use Exception;
 use phpformsframework\libs\cache\Cashable;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Error;
@@ -176,6 +177,7 @@ class Orm extends Mappable
     /**
      * @param string $table_name
      * @return OrmDef
+     * @throws Exception
      */
     private function getStruct(string $table_name) : OrmDef
     {
@@ -194,6 +196,7 @@ class Orm extends Mappable
      * @param string $key
      * @param null $error
      * @return array|null
+     * @throws Exception
      */
     private function extractData(array $def, string $key, $error = null) : ?array
     {
@@ -279,6 +282,7 @@ class Orm extends Mappable
      * @param int|null $limit
      * @param int|null $offset
      * @return array|null
+     * @throws Exception
      */
     public function read(array $select = null, array $where = null, array $sort = null, int $limit = null, int $offset = null) : ?OrmResults
     {
@@ -297,6 +301,7 @@ class Orm extends Mappable
      * @param null|array $sort
      * @param int|null $offset
      * @return object|null
+     * @throws Exception
      */
     public function readOne(array $select = null, array $where = null, array $sort = null, int $offset = null) : ?object
     {
@@ -311,6 +316,7 @@ class Orm extends Mappable
     /**
      * @param array $insert
      * @return OrmResults
+     * @throws Exception
      */
     public function insertUnique(array $insert) : OrmResults
     {
@@ -328,6 +334,7 @@ class Orm extends Mappable
     /**
      * @param array $insert
      * @return OrmResults
+     * @throws Exception
      */
     public function insert(array $insert) : OrmResults
     {
@@ -344,6 +351,7 @@ class Orm extends Mappable
      * @param array $set
      * @param array $where
      * @return OrmResults
+     * @throws Exception
      */
     public function update(array $set, array $where) : OrmResults
     {
@@ -359,6 +367,7 @@ class Orm extends Mappable
     /**
      * @param array $where
      * @return OrmResults|null
+     * @throws Exception
      */
     public function delete(array $where) : OrmResults
     {
@@ -376,6 +385,7 @@ class Orm extends Mappable
      * @param null|array $set
      * @param null|array $insert
      * @return OrmResults
+     * @throws Exception
      */
     public function write(array $where, array $set = null, array $insert = null) : OrmResults
     {
@@ -394,6 +404,7 @@ class Orm extends Mappable
      * @param string $action
      * @param null|array $where
      * @return object|null
+     * @throws Exception
      */
     public function cmd(string $action, array $where = null) : ?object
     {
@@ -417,6 +428,7 @@ class Orm extends Mappable
      * @param null|array $sort
      * @param int|null $limit
      * @param int|null $offset
+     * @throws Exception
      */
     private function get(array $select = null, array $where = null, array $sort = null, int $limit = null, int $offset = null) : void
     {
@@ -442,6 +454,7 @@ class Orm extends Mappable
      * @param int|null $limit
      * @param int|null $offset
      * @return int
+     * @throws Exception
      */
     private function throwRunner(int $limit = null, int $offset = null) : int
     {
@@ -464,6 +477,7 @@ class Orm extends Mappable
     /**
      * @param bool $unique
      * @return int
+     * @throws Exception
      */
     private function throwRunnerSubs(bool $unique = false) : int
     {
@@ -495,6 +509,7 @@ class Orm extends Mappable
      * @param int|null $limit
      * @param int|null $offset
      * @return int|null
+     * @throws Exception
      */
     private function getData(OrmQuery $data, string $controller, string $table, int $limit = null, int $offset = null) : ?int
     {
@@ -634,6 +649,7 @@ class Orm extends Mappable
      * @param int|null $limit
      * @param int|null $offset
      * @return int|null
+     * @throws Exception
      */
     private function getDataSingle(string $controller, string $table, int $limit = null, int $offset = null) : ?int
     {
@@ -671,6 +687,7 @@ class Orm extends Mappable
      * @param null|array $where
      * @param null|array $set
      * @param null|array $insert
+     * @throws Exception
      */
     private function set(array $where = null, array $set = null, array $insert = null) : void
     {
@@ -696,6 +713,7 @@ class Orm extends Mappable
     /**
      * @param string|null $controller
      * @param string|null $table
+     * @throws Exception
      */
     private function setData(string $controller = null, string $table = null) : void
     {
@@ -813,6 +831,7 @@ class Orm extends Mappable
 
     /**
      * @param Orm $Orm
+     * @throws Exception
      */
     private function setMainIndexes(Orm $Orm) : void
     {
@@ -829,11 +848,12 @@ class Orm extends Mappable
     }
 
     /**
-     * @todo da tipizzare
      * @param OrmQuery $data
      * @param string $key_name
      * @param string|array|null $key
      * @param string|null $controller
+     * @throws Exception
+     * @todo da tipizzare
      */
     private function setKeyRelationship(OrmQuery $data, string $key_name, $key = null, string $controller = null) : void
     {
@@ -876,6 +896,7 @@ class Orm extends Mappable
 
     /**
      * @param string|null $cmd
+     * @throws Exception
      */
     private function execSub(string $cmd = null) : void
     {
@@ -911,6 +932,7 @@ class Orm extends Mappable
      * @param string $command
      * @param string|null $controller
      * @param string|null $table
+     * @throws Exception
      */
     private function cmdData(string $command, string $controller = null, string $table = null) : void
     {
@@ -958,6 +980,7 @@ class Orm extends Mappable
     /**
      * @param array $scopes
      * @return bool
+     * @throws Exception
      */
     private function resolveFieldsByScopes(array $scopes) : bool
     {
@@ -1013,6 +1036,7 @@ class Orm extends Mappable
      * @param null $service
      * @param null $table
      * @return OrmQuery
+     * @throws Exception
      */
     private function &getSubs($service = null, $table = null) : OrmQuery
     {
@@ -1028,6 +1052,7 @@ class Orm extends Mappable
     /**
      * @param string $scope
      * @param array|null $fields
+     * @throws Exception
      */
     private function resolveFields($scope, array $fields = null) : void
     {
@@ -1148,7 +1173,7 @@ class Orm extends Mappable
     }
 
     /**
-     * @param string $model
+     * @param string|null $model
      * @return Orm
      */
     private function getModel(string $model = null) : Orm

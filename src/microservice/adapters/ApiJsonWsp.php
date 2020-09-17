@@ -35,7 +35,7 @@ class ApiJsonWsp extends ApiAdapter
 
     /**
      * JsonWsp constructor.
-     * @param string $url
+     * @param string|null $url
      * @param string|null $username
      * @param string|null $secret
      */
@@ -48,6 +48,7 @@ class ApiJsonWsp extends ApiAdapter
 
     /**
      * @return array
+     * @throws Exception
      */
     public function preflight() : ?array
     {

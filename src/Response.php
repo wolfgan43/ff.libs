@@ -148,13 +148,13 @@ class Response
     }
 
 
-
     /**
-     * @todo da tipizzare
      * @param mixed $data
      * @param string $content_type
      * @param null|int $status
      * @return void
+     * @throws Exception
+     * @todo da tipizzare
      */
     public static function sendRawData($data, string $content_type, $status = null)
     {
@@ -181,9 +181,10 @@ class Response
     }
 
     /**
-     * @todo da tipizzare
      * @param mixed $data
      * @return string
+     * @throws Exception
+     * @todo da tipizzare
      */
     private static function toXml($data) : string
     {
@@ -252,10 +253,11 @@ class Response
 
     /**
      * @param DataAdapter $response
+     * @param array|null $headers
      * @param null|int $status
      * @return void
      */
-    public static function send(DataAdapter $response, int $status = null) : void
+    public static function send(DataAdapter $response, array $headers = [], int $status = null) : void
     {
         if (self::isValidContentType($response::CONTENT_TYPE)) {
             self::httpCode(
@@ -264,7 +266,7 @@ class Response
                 : $status
             );
 
-            self::sendHeadersByMimeType($response::CONTENT_TYPE);
+            self::sendHeadersByMimeType($response::CONTENT_TYPE, $headers);
             echo $response->output();
         }
 
@@ -284,6 +286,7 @@ class Response
     /**
      * @param string $response
      * @return void
+     * @throws Exception
      */
     public function sendHtml(string $response) : void
     {
@@ -293,6 +296,7 @@ class Response
     /**
      * @param array $response
      * @return void
+     * @throws Exception
      */
     public function sendJson(array $response) : void
     {
@@ -300,7 +304,7 @@ class Response
     }
 
     /**
-     * @param string $destination
+     * @param string|null $destination
      * @param int|null $http_response_code
      * @param array|null $headers
      */
@@ -345,11 +349,12 @@ class Response
 
     /**
      * @param string $mimetype
+     * @param array $headers
      */
-    private static function sendHeadersByMimeType(string $mimetype) : void
+    private static function sendHeadersByMimeType(string $mimetype, array $headers = []) : void
     {
         if (!headers_sent()) {
-            self::sendHeaders(array("mimetype" => $mimetype));
+            self::sendHeaders(array_replace($headers, ["mimetype" => $mimetype]));
         }
     }
 

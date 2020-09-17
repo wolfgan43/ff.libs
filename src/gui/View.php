@@ -4,6 +4,7 @@ namespace phpformsframework\libs\gui;
 use phpformsframework\libs\Dir;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\util\AdapterManager;
+use stdClass;
 
 /**
  * Class View
@@ -16,12 +17,18 @@ class View
 
     const ERROR_BUCKET                              = "view";
 
+    private $config                                 = null;
+
     /**
      * View constructor.
+     * @param array|null $config
      * @param string|null $templateAdapter
      */
-    public function __construct(string $templateAdapter = null)
+    public function __construct(array $config = null, string $templateAdapter = null)
     {
+        if ($config) {
+            $this->config                           = json_decode(json_encode($config));
+        }
         $this->setAdapter($templateAdapter ?? Kernel::$Environment::TEMPLATE_ADAPTER);
     }
     /**
@@ -91,5 +98,13 @@ class View
     public function display() : string
     {
         return $this->adapter->display();
+    }
+
+    /**
+     * @return object
+     */
+    public function getConfig() : object
+    {
+        return $this->config ?? new stdClass();
     }
 }

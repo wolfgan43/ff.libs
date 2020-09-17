@@ -1,0 +1,15 @@
+{
+   "api": {
+      "login": "\/api\/auth2\/user\/signin",
+      "recover": "\/api\/auth2\/user\/recover",
+      "change": "\/api\/auth2\/user\/change"
+   },
+   "title":"Reset Password",
+   "description":"Enter your email address and we'll send you a code to reset your password",
+   "error": null,
+   "redirect": "\/",
+   "logo": "100x50",
+   "logo_path": null,
+   "login_path": "\/login",
+   "recover_path": "\/recover"
+}

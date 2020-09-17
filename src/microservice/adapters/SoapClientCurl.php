@@ -2,6 +2,10 @@
 namespace phpformsframework\libs\microservice\adapters;
 
 if (!class_exists("SoapClient")) {
+    /**
+     * Class SoapClientCurl
+     * @package phpformsframework\libs\microservice\adapters
+     */
     class SoapClientCurl
     {
     }

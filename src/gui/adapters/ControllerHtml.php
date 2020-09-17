@@ -33,7 +33,6 @@ use phpformsframework\libs\dto\DataHtml;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Mappable;
 use phpformsframework\libs\international\Locale;
-use phpformsframework\libs\Request;
 use phpformsframework\libs\Response;
 use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\storage\Filemanager;
@@ -62,7 +61,7 @@ class ControllerHtml extends Mappable
     private $http_status_code                   = null;
 
     private $encoding                           = Constant::ENCODING;
-    private $path                               = null;
+    private $path_info                          = null;
     private $title                              = null;
     private $description                        = null;
     private $lang                               = null;
@@ -95,10 +94,11 @@ class ControllerHtml extends Mappable
 
     /**
      * PageHtml constructor.
+     * @param string $path_info
      * @param int $http_status_code
-     * @param string $map_name
+     * @param string|null $map_name
      */
-    public function __construct(int $http_status_code, string $map_name = null)
+    public function __construct(string $path_info, int $http_status_code, string $map_name = null)
     {
         Debug::stopWatch("gui/controller/html");
 
@@ -109,7 +109,7 @@ class ControllerHtml extends Mappable
         $this->http_status_code                 = $http_status_code;
         $this->lang                             = Locale::getLang("tiny_code");
         $this->region                           = Locale::getCountry("tiny_code");
-        $this->path                             = Request::pathinfo();
+        $this->path_info                        = $path_info;
     }
 
     /**
@@ -118,7 +118,7 @@ class ControllerHtml extends Mappable
      */
     public function setEncoding(string $encoding) : self
     {
-        $this->encoding = $encoding;
+        $this->encoding                         = $encoding;
 
         return $this;
     }
@@ -140,24 +140,23 @@ class ControllerHtml extends Mappable
     }
 
     /**
-     * @param string $name|null
+     * @param string|null $name
      * @param string|null $theme
      * @return $this
      * @throws Exception
-     *
      * @todo da gestire il tema
      */
     public function setLayout(string $name = null, string $theme = null) : self
     {
         if ($name) {
-            $this->layout = Resource::load($name, "layouts");
+            $this->layout                       = Resource::load($name, "layouts");
         }
 
         return $this;
     }
 
     /**
-     * @param string|DataHtml|View $content
+     * @param null $content
      * @param string $where
      * @return $this
      * @throws Exception
@@ -225,7 +224,7 @@ class ControllerHtml extends Mappable
             } else {
                 $html                           = Filemanager::fileGetContent($string);
             }
-        } elseif (!Validator::is($string, "", "url")->isError()) {
+        } elseif (!Validator::is($string, $string, "url")->isError()) {
             $html                               = Filemanager::fileGetContent($string);
         } else {
             $html                               = $string;
@@ -238,8 +237,8 @@ class ControllerHtml extends Mappable
      */
     private function getTileDefault()
     {
-        return ($this->path && $this->path != DIRECTORY_SEPARATOR
-            ? ucfirst(basename($this->path))
+        return ($this->path_info && $this->path_info != DIRECTORY_SEPARATOR
+            ? ucfirst(basename($this->path_info))
             : static::TITLE_DEFAULT
         );
     }
@@ -378,7 +377,7 @@ class ControllerHtml extends Mappable
 
     /**
      * @param string $key
-     * @param string $content
+     * @param string|null $content
      * @return $this
      */
     private function setContent(string $key, string $content = null) : self
@@ -441,6 +440,7 @@ class ControllerHtml extends Mappable
 
     /**
      * @return string
+     * @throws Exception
      */
     private function parseDebug() : string
     {

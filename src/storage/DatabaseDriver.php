@@ -26,6 +26,7 @@
 namespace phpformsframework\libs\storage;
 
 use DateTime;
+use Exception;
 use phpformsframework\libs\international\Data;
 
 /**
@@ -105,7 +106,7 @@ abstract class DatabaseDriver implements Constant
     abstract public function multiQuery(array $queries) : ?array;
 
     /**
-     * @param object $obj
+     * @param object|null $obj
      * @return bool
      */
     abstract public function nextRecord(object &$obj = null) : bool;
@@ -155,10 +156,11 @@ abstract class DatabaseDriver implements Constant
     abstract protected function convertID(string $value);
 
     /**
-     * @todo da tipizzare
      * @param mixed $mixed
      * @param string $type
      * @return mixed
+     * @throws Exception
+     * @todo da tipizzare
      */
     public function toSql($mixed, string $type)
     {
@@ -184,6 +186,7 @@ abstract class DatabaseDriver implements Constant
     /**
      * @param Data $Data
      * @return string|null
+     * @throws Exception
      */
     private function toSqlData(Data $Data) : ?string
     {
@@ -229,6 +232,7 @@ abstract class DatabaseDriver implements Constant
     /**
      * @param object $Object
      * @return string|null
+     * @throws Exception
      */
     private function toSqlObject(object $Object) : ?string
     {
@@ -238,18 +242,21 @@ abstract class DatabaseDriver implements Constant
     /**
      * @param DateTime $Object
      * @return string|null
+     * @throws Exception
      */
     private function toSqlDateTime(DateTime $Object) : ?string
     {
         //@todo to implement
         return $this->toSqlString(self::FTYPE_STRING, $Object->format('Y-M-d H:m:s'));
     }
+
     /**
-     * @todo da tipizzare
-     * @todo i cast int e fload danno problemi con numeri enormi.
      * @param string|null $value
      * @param string $type
      * @return string|null
+     * @throws Exception
+     * @todo da tipizzare
+     * @todo i cast int e fload danno problemi con numeri enormi.
      */
     protected function toSqlString(string $type, string $value = null)
     {

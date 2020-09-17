@@ -26,6 +26,7 @@
 namespace phpformsframework\libs;
 
 use phpformsframework\libs\cache\Buffer;
+use phpformsframework\libs\delivery\Notice;
 use phpformsframework\libs\storage\Filemanager;
 use ReflectionClass;
 use Exception;
@@ -109,7 +110,8 @@ class Debug
             $res                            = self::$debug + Buffer::exTime();
             $res["exTime - Autoload"]       = self::exTime("autoload");
             $res["exTime - Conf"]           = Config::exTime();
-            $res["exTime - EndUser"]        = self::exTimeApp() - Config::exTime() - array_sum(Buffer::exTime());
+            $res["exTime - Delivery"]       = Notice::exTime();
+            $res["exTime - UserCode"]       = self::exTimeApp() - Config::exTime() - array_sum(Buffer::exTime()) - Notice::exTime();
             $res["exTime - App"]            = self::exTime("autoload") + self::exTimeApp();
             $res["App - Cache"]             = (!Kernel::useCache() ? "off" : "on (" . Kernel::$Environment::CACHE_BUFFER_ADAPTER . ", " . Kernel::$Environment::CACHE_DATABASE_ADAPTER . ", " . Kernel::$Environment::CACHE_MEDIA_ADAPTER . ")");
             $res["query"]                   = Buffer::dump()["process"];
@@ -214,6 +216,7 @@ class Debug
 
     /**
      * @return array
+     * @throws Exception
      */
     private static function dumpInterface() : array
     {
@@ -323,6 +326,7 @@ class Debug
      * @param string|null $error_message
      * @param bool $return
      * @return string|null
+     * @throws Exception
      */
     public static function dump(string $error_message = null, bool $return = false) : ?string
     {

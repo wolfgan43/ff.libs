@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\delivery;
 
+use phpformsframework\libs\Debug;
 use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\util\AdapterManager;
 
@@ -37,7 +38,18 @@ class Notice
 {
     use AdapterManager;
 
+    protected const ERROR_BUCKET                            = "delivery";
+
     private static $singleton                               = null;
+    private static $exTime                                  = null;
+
+    /**
+     * @return float
+     */
+    public static function exTime() : ?float
+    {
+        return self::$exTime;
+    }
 
     /**
      * @param string $noticeAdapter
@@ -96,6 +108,8 @@ class Notice
      */
     public function sendLongMessage(string $title, array $fields, string $template = null): DataResponse
     {
+        Debug::stopWatch(static::ERROR_BUCKET);
+
         $dataResponse                                       = new DataResponse();
         foreach ($this->adapters as $key => $adapter) {
             $result                                         = $adapter->sendLongMessage($title, $fields, $template);
@@ -104,6 +118,8 @@ class Notice
                 $dataResponse->error($result->status, $result->error);
             }
         }
+
+        self::$exTime = Debug::stopWatch(static::ERROR_BUCKET);
 
         return $dataResponse;
     }
@@ -114,6 +130,8 @@ class Notice
      */
     public function send(string $message) : DataResponse
     {
+        Debug::stopWatch(static::ERROR_BUCKET);
+
         $dataResponse                                       = new DataResponse();
         foreach ($this->adapters as $key => $adapter) {
             $result                                         = $adapter->send($message);
@@ -122,6 +140,8 @@ class Notice
                 $dataResponse->error($result->status, $result->error);
             }
         }
+
+        self::$exTime = Debug::stopWatch(static::ERROR_BUCKET);
 
         return $dataResponse;
     }

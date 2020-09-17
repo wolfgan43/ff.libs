@@ -52,12 +52,12 @@ class ErrorController extends Controller
      */
     public function get() : void
     {
-        $error = Translator::get_word_by_code($this->error);
+        $error = Translator::getWordByCode($this->error);
 
         $errorView = $this->view()
             ->assign("site_path", Constant::SITE_PATH)
             ->assign("title", $error)
-            ->assign("description", Translator::get_word_by_code($this->description ?? Error::getErrorMessage($this->http_status_code)));
+            ->assign("description", Translator::getWordByCode($this->description ?? Error::getErrorMessage($this->http_status_code)));
 
         if ($this->email_support) {
             $errorView->assign("email_support", $this->email_support);

@@ -23,11 +23,11 @@
  *  @license http://opensource.org/licenses/gpl-3.0.html
  *  @link https://github.com/wolfgan43/vgallery
  */
-
 namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\util\AdapterManager;
+use Exception;
 
 /**
  * Class Database
@@ -80,7 +80,9 @@ class Database implements Constant
     /**
      * Database constructor.
      *
-
+     * @param array|null $databaseAdapters
+     * @param array|null $struct
+     * @example string $databaseAdapters: mysqli OR mongodb OR ecc
      * @example array $databaseAdapters: [mysqli, mongodb]
      * @example arrayAssociative $databaseAdapters: [mysqli : {
      * "host"          => null
@@ -92,9 +94,6 @@ class Database implements Constant
      * , "key"         => null
      * }
      *
-     * @example string $databaseAdapters: mysqli OR mongodb OR ecc
-     * @param array|string $databaseAdapters
-     * @param array|null $struct
      */
     public function __construct(array $databaseAdapters = null, array $struct = null)
     {
@@ -135,6 +134,7 @@ class Database implements Constant
      * @param int|null $offset
      * @param string|null $table_name
      * @return array|null
+     * @throws Exception
      */
     public function read(array $fields = null, array $where = null, array $sort = null, int $limit = null, int $offset = null, string $table_name = null) : ?array
     {
@@ -149,6 +149,7 @@ class Database implements Constant
      * @param array $insert
      * @param null|string $table_name
      * @return array|null
+     * @throws Exception
      */
     public function insert(array $insert, string $table_name = null) : ?array
     {
@@ -164,6 +165,7 @@ class Database implements Constant
      * @param array $where
      * @param null|string $table_name
      * @return array|null
+     * @throws Exception
      */
     public function update(array $set, array $where, string $table_name = null) : ?array
     {
@@ -180,6 +182,7 @@ class Database implements Constant
      * @param array $where
      * @param null|string $table_name
      * @return array|null
+     * @throws Exception
      */
     public function write(array $insert, array $set, array $where, string $table_name = null) : ?array
     {
@@ -194,6 +197,7 @@ class Database implements Constant
      * @param array $where
      * @param null|string $table_name
      * @return array|null
+     * @throws Exception
      */
     public function delete(array $where, string $table_name = null) : ?array
     {
@@ -209,6 +213,7 @@ class Database implements Constant
      * @param string $action
      * @param null|string $table_name
      * @return array|null
+     * @throws Exception
      */
     public function cmd(array $where, string $action, string $table_name = null) : ?array
     {

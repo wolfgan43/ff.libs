@@ -1,0 +1,19 @@
+.login-box-page .welcome-box-title {
+    font-size: 22px;
+    font-family: "Raleway",sans-serif;
+    margin-bottom: 15px;
+}
+.login-box-page .welcome-box-subtitle {
+    font-size: 18px;
+    font-family: "Raleway",sans-serif;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+.login-box-page .welcome-box-avatar {
+    text-align: center;
+}
+.login-box-page .welcome-box-avatar IMG {
+    width: 200px;
+    height: 200px;
+    margin: 0 auto;
+}

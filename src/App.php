@@ -26,9 +26,13 @@
 namespace phpformsframework\libs;
 
 use phpformsframework\libs\dto\RequestPage;
-use phpformsframework\libs\gui\Widget;
-use stdClass;
+
 use Exception;
+use phpformsframework\libs\international\Locale;
+use phpformsframework\libs\security\Discover;
+use phpformsframework\libs\security\Validator;
+use phpformsframework\libs\storage\Filemanager;
+use phpformsframework\libs\util\Normalize;
 
 /**
  * Class App
@@ -37,20 +41,11 @@ use Exception;
 abstract class App implements Dumpable
 {
     use EndUserManager;
-    use ClassDetector;
 
     const NAME_SPACE                                                = __NAMESPACE__ . '\\';
     const ERROR_BUCKET                                              = 'app';
 
     private static $script_engine                                   = null;
-    /**
-     * @var stdClass|security\UserData
-     */
-    protected static $user                                          = null;
-    /**
-     * @var stdClass
-     */
-    protected static $user_acl                                      = null;
 
     /**
      * @var Constant
@@ -126,47 +121,67 @@ abstract class App implements Dumpable
     }
 
     /**
-     * @param string|null $collection_or_model
-     * @return Model
+     * @return Normalize
      */
-    public static function db(string $collection_or_model = null) : Model
+    public static function normalize() : util\Normalize
     {
-        return new Model($collection_or_model);
+        static $normalize       = null;
+
+        if (!$normalize) {
+            $normalize          = new Normalize();
+        }
+
+        return $normalize;
     }
 
     /**
-     * @param string $name
-     * @param array|null $config
-     * @param string|null $return
-     * @return dto\DataHtml
-     * @throws Exception
+     * @return Validator
      */
-    public static function widget(string $name, array $config = null, string $return = null) : dto\DataHtml
+    public static function validator() : security\Validator
     {
-        $class_name                                                 = static::getClassName();
+        static $validator       = null;
+        if (!$validator) {
+            $validator          = new Validator();
+        }
 
-        Log::registerProcedure($class_name, "widget" . Log::CLASS_SEP . $name);
-
-        return Widget::getInstance($name, $config, str_replace($class_name, "", static::class))
-            ->render($return);
+        return $validator;
     }
 
     /**
-     * @param string $name
-     * @param array|null $config
-     * @return dto\DataHtml
-     * @throws Exception
+     * @return Filemanager
      */
-    public static function page(string $name, array $config = null) : dto\DataHtml
+    public static function filemanager() : storage\Filemanager
     {
-        return self::widget($name, $config, "page");
+        static $filemanager     = null;
+        if (!$filemanager) {
+            $filemanager        = new Filemanager();
+        }
+
+        return $filemanager;
     }
 
     /**
-     * @return stdClass|null
+     * @return Discover
      */
-    public static function getCurrentUser() : ?stdClass
+    public static function discover() : security\Discover
     {
-        return self::$user;
+        static $discover        = null;
+        if (!$discover) {
+            $discover           = new Discover();
+        }
+
+        return $discover;
+    }
+    /**
+     * @return Locale
+     */
+    public static function locale() : international\Locale
+    {
+        static $locale          = null;
+        if (!$locale) {
+            $locale             = new Locale();
+        }
+
+        return $locale;
     }
 }

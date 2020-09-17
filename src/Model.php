@@ -139,6 +139,7 @@ class Model implements Configurable, Dumpable
      * @param int|null $limit
      * @param int|null $offset
      * @return OrmResults
+     * @throws Exception
      */
     public function read(array $where = null, array $sort = null, int $limit = null, int $offset = null) : OrmResults
     {
@@ -152,6 +153,7 @@ class Model implements Configurable, Dumpable
     /**
      * @param array $fields
      * @return OrmResults
+     * @throws Exception
      */
     public function insert(array $fields) : OrmResults
     {
@@ -168,6 +170,7 @@ class Model implements Configurable, Dumpable
      * @param array $set
      * @param array $where
      * @return OrmResults
+     * @throws Exception
      */
     public function update(array $set, array $where) : OrmResults
     {
@@ -177,6 +180,7 @@ class Model implements Configurable, Dumpable
     /**
      * @param array $where
      * @return OrmResults
+     * @throws Exception
      */
     public function delete(array $where) : OrmResults
     {

@@ -1,0 +1,118 @@
+.login-box-page {
+    padding: 30px;
+    background-color: #fff;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 40px;
+    width: 400px;
+}
+.login-box-page .login-box-title {
+    font-size: 22px;
+    font-family: "Raleway",sans-serif;
+    margin-bottom: 15px;
+}
+.login-box-page .login-input-container .field-label {
+    line-height: 1.2;
+    font-size: 13px;
+    color: #A7A7A7;
+}
+
+.login-box-page .login-input-container input[type="text"],
+.login-box-page .login-input-container input[type="password"],
+.login-box-page .login-input-container input[type="date"],
+.login-box-page .login-input-container input[type="datetime"],
+.login-box-page .login-input-container input[type="datetime-local"],
+.login-box-page .login-input-container input[type="month"],
+.login-box-page .login-input-container input[type="week"],
+.login-box-page .login-input-container input[type="email"],
+.login-box-page .login-input-container input[type="tel"],
+.login-box-page .login-input-container input[type="number"],
+.login-box-page .login-input-container SELECT,
+.login-box-page .login-input-container TEXTAREA {
+    font-family: "Open Sans", sans-serif;
+    background-color: #fff;
+    border-color: #DDD;
+    font-size: 13px;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.login-box-page .login-input-container #loginUtenteNewBox {
+    display: block;
+    text-align: center;
+    font-weight: bold;
+    font-family: "Raleway",sans-serif;
+    border: 1px solid #ff9800;
+    background-color: #ff9800;
+    color: white;
+}
+.login-box-page .login-input-container input:last-of-type {
+    margin-bottom: 0;
+}
+.login-box-page .login-input-container #loginUtenteNewBox:hover {
+    color: #ff9800;
+    background-color: white;
+}
+
+.login-box-page .social-button {
+    color: #fff;
+    text-transform: none;
+    text-align: center;
+    display: block;
+    padding: 4px 10px;
+    font-family: "Raleway",sans-serif;
+    font-weight: bold;
+    margin-bottom: 1rem;
+}
+.login-box-page .social-button:hover {
+    background-color: white !important;
+}
+.login-box-page .social-button.facebook-register-button {
+    border: 1px solid #3b5999;
+    background-color: #3b5999;
+}
+.login-box-page .social-button.facebook-register-button:hover {
+    color: #3b5999;
+}
+.login-box-page .social-button.twitter-register-button {
+    border: 1px solid #55acee;
+    background-color: #55acee;
+}
+.login-box-page .social-button.twitter-register-button:hover {
+    color: #55acee;
+}
+.login-box-page .social-button.linkedin-register-button {
+    border: 1px solid #0077B5;
+    background-color: #0077B5;
+}
+.login-box-page .social-button.linkedin-register-button:hover {
+    color: #0077B5;
+}
+.login-box-page .social-button.gplus-register-button {
+    border: 1px solid #dd4b39;
+    background-color: #dd4b39;
+}
+.login-box-page .social-button.gplus-register-button:hover {
+    color: #dd4b39;
+}
+.login-box-page .social-button.dribble-register-button {
+    border: 1px solid #ea4c89;
+    background-color: #ea4c89;
+}
+.login-box-page .social-button.dribble-register-button:hover {
+    color: #ea4c89;
+}
+.login-box-page .social-button.instagram-register-button {
+    border: 1px solid #e4405f;
+    background-color: #e4405f;
+}
+.login-box-page .social-button.instagram-register-button:hover {
+    color: #e4405f;
+}
+.login-box-page .social-button.ff-register-button {
+    border: 1px solid #25D366;
+    background-color: #25D366;
+}
+.login-box-page .social-button.ff-register-button:hover {
+    color: #25D366;
+}

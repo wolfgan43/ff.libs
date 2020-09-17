@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\delivery\adapters;
 
+use Exception;
 use phpformsframework\libs\delivery\NoticeAdapter;
 use phpformsframework\libs\dto\DataError;
 use phpformsframework\libs\Error;
@@ -54,6 +55,7 @@ class NoticeEmail extends NoticeAdapter
     /**
      * @param string $message
      * @return DataError
+     * @throws Exception
      */
     public function send(string $message) : DataError
     {
@@ -67,6 +69,7 @@ class NoticeEmail extends NoticeAdapter
      * @param array|null $fields
      * @param string|null $template
      * @return DataError
+     * @throws Exception
      */
     public function sendLongMessage(string $title, array $fields = null, string $template = null) : DataError
     {
@@ -80,6 +83,7 @@ class NoticeEmail extends NoticeAdapter
 
     /**
      * @param string|null $template
+     * @throws Exception
      */
     private function setTemplate(string $template = null) : void
     {
@@ -99,6 +103,7 @@ class NoticeEmail extends NoticeAdapter
 
     /**
      * @return DataError
+     * @throws Exception
      */
     protected function process() : DataError
     {

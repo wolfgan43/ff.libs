@@ -1,6 +1,7 @@
 <?php
 namespace phpformsframework\libs\gui\controllers;
 
+use Exception;
 use phpformsframework\libs\gui\Controller;
 use phpformsframework\libs\Request;
 
@@ -12,7 +13,7 @@ class WelcomeController extends Controller
 {
 
     /**
-     *
+     * @throws Exception
      */
     public function get(): void
     {

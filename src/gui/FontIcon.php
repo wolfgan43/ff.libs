@@ -27,6 +27,10 @@ namespace phpformsframework\libs\gui;
 
 use phpformsframework\libs\Mappable;
 
+/**
+ * Class FontIcon
+ * @package phpformsframework\libs\gui
+ */
 class FontIcon extends Mappable
 {
     protected $button_type  = null;
@@ -39,6 +43,12 @@ class FontIcon extends Mappable
     private $buttons        = array();
     private $buttons_style  = array();
 
+    /**
+     * FontIcon constructor.
+     * @param string $map_name
+     * @param array|null $buttons_style
+     * @param array|null $buttons
+     */
     public function __construct(string $map_name, array $buttons_style = null, array $buttons = null)
     {
         parent::__construct($map_name);
@@ -55,7 +65,13 @@ class FontIcon extends Mappable
         }
     }
 
-    public function action($params, $use_source = false)
+    /**
+     * @param array|string $params
+     * @param bool $use_source
+     * @return array|null
+     * @todo da tipizzare
+     */
+    public function action($params, bool $use_source = false) : ?array
     {
         $res                                            = null;
         if ($params) {
@@ -73,7 +89,13 @@ class FontIcon extends Mappable
         return $res;
     }
 
-    private function iconsTagStack($values, $params = null)
+    /**
+     * @param array $values
+     * @param array|string|null $params
+     * @return string|null
+     * @todo da tipizzare
+     */
+    private function iconsTagStack(array $values, $params = null) : ?string
     {
         $items                                          = null;
         $container                                      = $this->action($params, true);
@@ -97,7 +119,13 @@ class FontIcon extends Mappable
         );
     }
 
-    public function iconTag($value, $params = null)
+    /**
+     * @param array|string $value
+     * @param array|string|null $params
+     * @return string|null
+     * @todo da tipizzare
+     */
+    public function iconTag($value, $params = null) : ?string
     {
         $res                                            = $this->icon($value, $params);
 
@@ -106,7 +134,14 @@ class FontIcon extends Mappable
             : null
         );
     }
-    public function icon($value, $params = null)
+
+    /**
+     * @param array|string $value
+     * @param array|string|null $params
+     * @return string|null
+     * @todo da tipizzare
+     */
+    public function icon($value, $params = null) : ?string
     {
         $res                                            = null;
 
@@ -137,7 +172,13 @@ class FontIcon extends Mappable
         );
     }
 
-    public function button($value, $params = null)
+    /**
+     * @param array|string $value
+     * @param array|string|null $params
+     * @return string|null
+     * @todo da tipizzare
+     */
+    public function button($value, $params = null) : ?string
     {
         $res                                            = null;
         if (isset($this->buttons[$value])) {

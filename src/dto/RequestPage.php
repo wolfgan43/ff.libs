@@ -4,6 +4,7 @@ namespace phpformsframework\libs\dto;
 use phpformsframework\libs\Mappable;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\security\Validator;
+use phpformsframework\libs\security\ValidatorFile;
 use phpformsframework\libs\util\TypesConverter;
 use stdClass;
 
@@ -29,18 +30,21 @@ class RequestPage extends Mappable
     public $path_info                       = null;
     public $script_path                     = null;
 
-    public $log                             = null;
-    public $validation                      = true;
-    public $nocache                         = false;
-    public $https                           = null;
-    public $method                          = null;
-    public $root_path                       = null;
-    public $namespace                       = null;
-    public $map                             = null;
-    public $acl                             = null;
-    public $accept                          = "*/*";
+    public $log                             = null;     //gestito in request
+    public $onerror                         = null;     //gestito in kernel (valori gestiti "redirect")
+    public $nocache                         = false;    //gestito in kernel
+    public $https                           = null;     //gestito in request
+    public $method                          = null;     //gestito in request
 
-    public $layout                          = null;
+    public $namespace                       = null;     //gestito in api
+    public $map                             = null;     //gestito in self
+    public $acl                             = null;     //gestito in secureManager
+    public $accept                          = "*/*";    //gestito in request
+
+    public $isAjax                          = null;     //gestito in self (impostato nel costruttore)
+    public $layout                          = null;     //non gestito
+    public $auth                            = null;     //non gestito
+    public $vpn                             = null;     //non gestito
 
     /**
      * @var RequestPageRules $rules
@@ -65,6 +69,7 @@ class RequestPage extends Mappable
     {
         parent::__construct($this->setRules($this->findEnvByPathInfo($path_info, $path2params), $pages, $patterns));
 
+        $this->isAjax               = Request::isAjax();
         $this->method               = (
             $this->method
             ? strtoupper($this->method)
@@ -158,7 +163,7 @@ class RequestPage extends Mappable
      */
     public function isInvalidURL() : bool
     {
-        return $this->method == Request::METHOD_GET && !Request::isAjax() && count($this->getRequestUnknown());
+        return $this->method == Request::METHOD_GET && !$this->isAjax && count($this->getRequestUnknown());
     }
 
     /**
@@ -331,7 +336,7 @@ class RequestPage extends Mappable
      */
     private function securityHeaderParams(array $headers, bool $isCli = false) : bool
     {
-        $errors                                                                             = null;
+        $errors                                                                             = array();
         if ($this->isAllowedSize($this->getRequestHeaders(), Request::METHOD_HEAD)) {
             if (!empty($this->rules->header)) {
                 foreach ($this->rules->header as $rule) {
@@ -346,18 +351,18 @@ class RequestPage extends Mappable
                     }
 
                     $this->setHeader($header_key);
-                    if (isset($rule->required) && !isset($headers[$header_name])) {
+                    if (isset($rule->required) && $rule->required === true && !isset($headers[$header_name])) {
                         $errors[400][]                                                      = $rule->name . self::ERROR_IS_REQUIRED;
                     } elseif (isset($rule->required_ifnot) && !isset($headers["HTTP_" . strtoupper($rule->required_ifnot)]) && !isset($headers[$header_name])) {
                         $errors[400][]                                                      = $rule->name . self::ERROR_IS_REQUIRED;
                     } elseif (isset($headers[$header_name])) {
-                        $validator_rule                                                     = $rule->validator ?? null;
-                        $validator_range                                                    = $rule->validator_range ?? null;
-                        $validator                                                          = Validator::is($headers[$header_name], $header_key . " (in header)", $validator_rule, $validator_range);
-                        if ($validator->isError()) {
-                            $errors[$validator->status][]                                   = $validator->error;
-                        }
-
+                        $this->securityValidation(
+                            $errors,
+                            $headers[$header_name],
+                            $header_key . " (in header)",
+                            $rule->validator        ?? null,
+                            $rule->validator_range ?? $rule->validator_mime ?? null
+                        );
                         $this->setHeader($header_key, $headers[$header_name]);
                     }
                 }
@@ -396,11 +401,13 @@ class RequestPage extends Mappable
                     } elseif (isset($rule->required_ifnot) && !isset($_SERVER[$rule->required_ifnot]) && !isset($request[$key])) {
                         $errors[400][]                                                      = $key . self::ERROR_IS_REQUIRED;
                     } elseif (isset($request[$key])) {
-                        $validator_rule                                                     = $rule->validator ?? null;
-                        $validator_range                                                    = $rule->validator_range ?? null;
-
-                        $errors                                                             = $errors + $this->securityValidation($request[$key], $rule->name, $validator_rule, $validator_range);
-
+                        $this->securityValidation(
+                            $errors,
+                            $request[$key],
+                            $rule->name,
+                            $rule->validator        ?? null,
+                            $rule->validator_range ?? $rule->validator_mime ?? null
+                        );
 
                         if (isset($rule->scope)) {
                             $this->setRequest($rule->scope, $request[$key], $rule->name);
@@ -421,14 +428,14 @@ class RequestPage extends Mappable
 
                 $this->setUnknown($rawdata);
                 foreach ($this->getRequestUnknown() as $unknown_key => $unknown) {
-                    $errors                                                                 = $errors + $this->securityValidation($unknown, $unknown_key);
+                    $this->securityValidation($errors, $unknown, $unknown_key);
                 }
                 $this->setRequest(self::REQUEST_RAWDATA, $this->body[self::REQUEST_VALID] + $this->body[self::REQUEST_UNKNOWN]);
             } else {
                 $this->setRequest(self::REQUEST_RAWDATA, $rawdata);
             }
         } else {
-            $errors[413][]                                                                  = "Request Max Size Exceeded";
+            $errors[413][]                                                                  = $method . " Max Size Exceeded";
         }
 
         $this->error($errors);
@@ -455,39 +462,38 @@ class RequestPage extends Mappable
      */
     private function securityFileParams() : bool
     {
-        $errors                                                                             = array();
         if (!empty($_FILES)) {
+            $errors                                                                         = array();
             foreach ($_FILES as $file_name => $file) {
+                $this->path2params[$file_name]                                              = $file["name"];
+
                 $rule                                                                       = (object) ($this->rules->body[$file_name] ?? null); //@todo necessario per design pattern
-                if (isset($rule->mime) && strpos($rule->mime, $file["type"]) === false) {
-                    $errors[400][]                                                          = $file_name . " must be type " . $rule->mime;
-                } else {
-                    $validator                                                              = Validator::is($file_name, $file_name, "file");
-                    if ($validator->isError()) {
-                        $errors[$validator->status][] = $validator->error;
-                    }
+
+                if ($error = ValidatorFile::check($file_name, $rule->validator_mime ?? null)) {
+                    $errors[400][]                                       = $error;
                 }
             }
+
+            $this->error($errors);
         }
 
-        $this->error($errors);
+
 
         return $this->isError();
     }
 
     /**
-     * @todo da tipizzare
+     * @param array $errors
      * @param $value
-     * @param string $fakename
+     * @param string $context
      * @param string|null $type
      * @param string|null $range
      * @return array
+     * @todo da tipizzare
      */
-    private function securityValidation(&$value, string $fakename, string $type = null, string $range = null) : array
+    private function securityValidation(array &$errors, &$value, string $context, string $type = null, string $range = null) : array
     {
-        $errors                                                                             = array();
-
-        $validator                                                                          = Validator::is($value, $fakename, $type, $range);
+        $validator                                                                          = Validator::is($value, $context, $type, $range);
         if ($validator->isError()) {
             $errors[$validator->status][]                                                   = $validator->error;
         }
@@ -530,7 +536,7 @@ class RequestPage extends Mappable
      */
     private function bucketByMethod(string $method) : string
     {
-        return ($method == Request::METHOD_GET || $method == Request::METHOD_PUT
+        return ($method == Request::METHOD_GET || $method == Request::METHOD_PUT || $method == Request::METHOD_PATCH || $method == Request::METHOD_DELETE
             ? "query"
             : "body"
         );

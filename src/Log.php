@@ -25,7 +25,9 @@
  */
 namespace phpformsframework\libs;
 
+use phpformsframework\libs\security\SecureManager;
 use phpformsframework\libs\storage\Filemanager;
+use Exception;
 
 /**
  * Class Log
@@ -33,6 +35,8 @@ use phpformsframework\libs\storage\Filemanager;
  */
 class Log
 {
+    use SecureManager;
+
     public const CLASS_SEP                                      = "->";
 
     private const ENCODE_JSON                                   = "json";
@@ -305,9 +309,14 @@ class Log
     /**
      * @return string
      */
-    protected static function getUser(): string
+    protected static function getUserInfo(): ?string
     {
-        $res = App::getCurrentUser()->uuid ?? null;
+        try {
+            $res = self::getUser()->uuid ?? null;
+        } catch (Exception $e) {
+            $res = null;
+        }
+
         if (!$res) {
             $res = (
                 isset($_COOKIE[session_name()])
@@ -416,9 +425,9 @@ class Log
     /** debug-level messages
      * @param $message
      * @param string|null $bucket
-     * @param string $routine
-     * @param string $action
-     * @param int $status
+     * @param string|null $routine
+     * @param string|null $action
+     * @param int|null $status
      */
     public static function debugging($message, string $bucket = null, string $routine = null, string $action = null, int $status = null)
     {
@@ -710,7 +719,7 @@ class Log
                 $routine,
                 $action,
                 self::getIdentity(),
-                self::getUser(),
+                self::getUserInfo(),
                 Debug::exTimeApp(),
                 strftime('%d/%b/%Y'),
                 strftime('%H:%M:%S'),

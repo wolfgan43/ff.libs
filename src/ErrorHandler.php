@@ -44,8 +44,8 @@ class ErrorHandler
      *
      * @param string $errdes la descrizione dell'errore
      * @param int $errno il codice errore, può essere E_USER_ERROR o E_USER_WARNING
-     * @param object $context l'oggetto contesto dell'errore. Se non esiste è null
-     * @param array $variables le variabili definite al momento della generazione dell'errore, normalmente recuperate tramite get_defined_vars()
+     * @param object|null $context l'oggetto contesto dell'errore. Se non esiste è null
+     * @param array|null $variables le variabili definite al momento della generazione dell'errore, normalmente recuperate tramite get_defined_vars()
      */
     public static function raise(string $errdes, int $errno = E_USER_ERROR, object $context = null, array $variables = null) : void
     {
@@ -65,7 +65,14 @@ class ErrorHandler
         trigger_error($id, $errno);
     }
 
-    public static function run($errno, $errstr, $errfile, $errline)
+    /**
+     * @param int $errno
+     * @param string $errstr
+     * @param string $errfile
+     * @param int $errline
+     * @return bool
+     */
+    public static function run(int $errno, string $errstr, string $errfile, int $errline) : bool
     {
         static $error_id = -1;
 
@@ -301,7 +308,11 @@ EOD
         return false;
     }
 
-    private static function removeGlobals($params)
+    /**
+     * @param array $params
+     * @return array|null
+     */
+    private static function removeGlobals(array $params) : ?array
     {
         $res = null;
         if (!empty($params)) {
@@ -333,7 +344,11 @@ EOD
         return $res;
     }
 
-    private static function compactConstants($params)
+    /**
+     * @param array $params
+     * @return array
+     */
+    private static function compactConstants(array $params) : array
     {
         ksort($params);
         foreach ($params as $key => $value) {
@@ -362,7 +377,10 @@ EOD
         return $params;
     }
 
-    private static function compactConstantsReduce(&$node)
+    /**
+     * @param array $node
+     */
+    private static function compactConstantsReduce(array &$node) : void
     {
         foreach ($node as $key => $value) {
             if (is_array($node[$key])) {
@@ -383,13 +401,18 @@ EOD
         ksort($node);
     }
 
-    private static function structPrint(&$arg, $recursion = 0, $display_lines = true)
+    /**
+     * @param array|object $arg
+     * @param int $recursion
+     * @param bool $display_lines
+     */
+    private static function structPrint(&$arg, int $recursion = 0, bool $display_lines = true) : void
     {
         if (!$recursion) {
             self::out("<code>");
         }
-        // FIRST OF ALL, get members
 
+        // FIRST OF ALL, get members
         if (is_array($arg)) {
             if (!$recursion && $display_lines) {
                 self::out('<div style="border-top: 1px dashed black; margin-top: 2px; margin-bottom: 2px;"></div>');
@@ -504,17 +527,26 @@ EOD
         }
     }
 
-    private static function logEnabled()
+    /**
+     * @return bool
+     */
+    private static function logEnabled() : bool
     {
         return self::$log;
     }
 
-    private static function hideEnabled()
+    /**
+     * @return bool
+     */
+    private static function hideEnabled() : bool
     {
         return self::$hide;
     }
 
-    private static function out($text)
+    /**
+     * @param string $text
+     */
+    private static function out(string $text) : void
     {
         if (self::logEnabled()) {
             @fwrite(self::$log_fp, $text);

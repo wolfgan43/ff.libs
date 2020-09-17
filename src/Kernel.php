@@ -1,8 +1,7 @@
 <?php
 namespace phpformsframework\libs;
 
-use phpformsframework\libs\util\TypesConverter;
-
+use Exception;
 /**
  * Class Kernel
  * @package phpformsframework\libs
@@ -10,8 +9,6 @@ use phpformsframework\libs\util\TypesConverter;
  */
 class Kernel
 {
-    use TypesConverter;
-
     const NAMESPACE                 = null;
     /**
      * @var Kernel
@@ -97,6 +94,7 @@ class Kernel
 
     /**
      * @access private
+     * @throws Exception
      */
     public function run()
     {
@@ -110,7 +108,7 @@ class Kernel
             Hook::handle("on_app_run", $this);
         }
 
-        if ($page->validation && $page->isInvalidURL()) {
+        if ($page->onerror == "redirect" && $page->isInvalidURL()) {
             $this->Response->redirect($page->canonicalUrl());
         }
         self::useCache(!$page->nocache);
@@ -118,5 +116,17 @@ class Kernel
         Config::autoloadRegister(static::NAMESPACE);
 
         Router::run($page->script_path);
+    }
+
+    /**
+     * @param array $d
+     * @return object|null
+     */
+    private function array2object(array $d) : ?object
+    {
+        return (is_array($d)
+            ? (object) array_map(__FUNCTION__, $d)
+            : null
+        );
     }
 }

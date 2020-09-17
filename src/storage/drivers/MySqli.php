@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\storage\drivers;
 
+use Exception;
 use phpformsframework\libs\cache\Cashable;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\DatabaseDriver;
@@ -126,6 +127,7 @@ class MySqli extends DatabaseDriver
      * @param string|null $User
      * @param string|null $Secret
      * @return bool
+     * @throws Exception
      */
     public function connect(string $Database = null, string $Host = null, string $User = null, string $Secret = null) : bool
     {
@@ -182,9 +184,11 @@ class MySqli extends DatabaseDriver
 
         return is_object($this->link_id);
     }
+
     /**
      * @param DatabaseQuery $query
      * @return bool
+     * @throws Exception
      */
     public function read(DatabaseQuery $query) : bool
     {
@@ -221,6 +225,7 @@ class MySqli extends DatabaseDriver
     /**
      * @param DatabaseQuery $query
      * @return bool
+     * @throws Exception
      */
     public function insert(DatabaseQuery $query) : bool
     {
@@ -237,6 +242,7 @@ class MySqli extends DatabaseDriver
     /**
      * @param DatabaseQuery $query
      * @return bool
+     * @throws Exception
      */
     public function update(DatabaseQuery $query) : bool
     {
@@ -250,6 +256,7 @@ class MySqli extends DatabaseDriver
     /**
      * @param DatabaseQuery $query
      * @return bool
+     * @throws Exception
      */
     public function delete(DatabaseQuery $query) : bool
     {
@@ -263,6 +270,7 @@ class MySqli extends DatabaseDriver
      * Esegue una query senza restituire un recordset
      * @param string $query_string
      * @return bool
+     * @throws Exception
      */
     private function execute(string $query_string) : bool
     {
@@ -290,6 +298,7 @@ class MySqli extends DatabaseDriver
 
     /**
      * @return array|null
+     * @throws Exception
      */
     public function getRecordset() : ?array
     {
@@ -335,6 +344,7 @@ class MySqli extends DatabaseDriver
      * Esegue una query
      * @param string $query_string
      * @return bool
+     * @throws Exception
      */
     private function query($query_string) : bool
     {
@@ -362,6 +372,7 @@ class MySqli extends DatabaseDriver
      * @param DatabaseQuery $query
      * @param string $action
      * @return array|null
+     * @throws Exception
      */
     public function cmd(DatabaseQuery $query, string $action = self::CMD_COUNT) : ?array
     {
@@ -395,6 +406,7 @@ class MySqli extends DatabaseDriver
     /**
      * @param array $Query
      * @return array|null
+     * @throws Exception
      */
     public function multiQuery(array $Query) : ?array
     {
@@ -428,6 +440,7 @@ class MySqli extends DatabaseDriver
      * Sposta il puntatore al DB al record successivo (va chiamato almeno una volta)
      * @param object|null $obj
      * @return bool
+     * @throws Exception
      */
     public function nextRecord(object &$obj = null) : bool
     {
@@ -458,6 +471,7 @@ class MySqli extends DatabaseDriver
     /**
      * Conta il numero di righe
      * @return int|null
+     * @throws Exception
      */
     public function numRows() : ?int
     {
@@ -487,8 +501,10 @@ class MySqli extends DatabaseDriver
     {
         return $keys;
     }
+
     /**
      * @return string|null
+     * @throws Exception
      */
     public function getInsertID() : ?string
     {
@@ -500,7 +516,7 @@ class MySqli extends DatabaseDriver
     }
 
     /**
-     * @param string $DataValue|null
+     * @param string|null $DataValue
      * @return string|null
      */
     protected function toSqlEscape(string $DataValue = null) : ?string
@@ -521,6 +537,7 @@ class MySqli extends DatabaseDriver
      * @param string $type
      * @param string|null $value
      * @return string|null
+     * @throws Exception
      */
     protected function toSqlString(string $type, string $value = null): ?string
     {
@@ -546,7 +563,7 @@ class MySqli extends DatabaseDriver
     }
 
     /**
-     * @param string $value
+     * @param string|null $value
      * @return string
      */
     private function tpSqlEscaper(string $value = null) : string
@@ -572,6 +589,7 @@ class MySqli extends DatabaseDriver
 
     /**
      * @param string $msg
+     * @throws Exception
      */
     protected function errorHandler(string $msg) : void
     {

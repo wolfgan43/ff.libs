@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\international\adapters;
 
+use Exception;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\international\TranslatorAdapter;
 use phpformsframework\libs\security\Validator;
@@ -41,6 +42,7 @@ class TranslatorTransltr extends TranslatorAdapter
      * @param string|null $toLang
      * @param string|null $fromLang
      * @return string|null
+     * @throws Exception
      */
     public function translate(string $words, string $toLang = null, string $fromLang = null) : ?string
     {
@@ -53,7 +55,7 @@ class TranslatorTransltr extends TranslatorAdapter
             if (!$res) {
                 $transalted = Filemanager::fileGetContent("http://www.transltr.org/api/translate?text=" . urlencode($words) . "&to=" . strtolower(substr($toLang, 0, 2)) . "&from=" . strtolower(substr($fromLang, 0, 2)) . ($this->code ? "&key=" . $this->code : ""));
                 if ($transalted) {
-                    $buffer                             = Validator::json2Array($transalted);
+                    $buffer                             = Validator::jsonDecode($transalted);
                     if ($buffer["translationText"]) {
                         $res                            = $this->save($words, $toLang, $fromLang, $buffer["translationText"]);
                     }

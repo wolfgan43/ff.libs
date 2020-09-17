@@ -37,7 +37,14 @@ class GridSystem
     private static $buttons                                 = null;
     private static $components                              = null;
 
-    public static function colsWrapper($bucket, &$buffer, $col, $content, $count)
+    /**
+     * @param string $bucket
+     * @param array $buffer
+     * @param int $col
+     * @param string $content
+     * @param int $count
+     */
+    public static function colsWrapper(string $bucket, array &$buffer, int $col, string $content, int $count): void
     {
         static $cache = null;
 
@@ -100,7 +107,13 @@ class GridSystem
         }
     }
 
-    public static function calcResolution($resolution, $rev = false)
+    /**
+     * @param array|string $resolution
+     * @param bool $rev
+     * @return array|null
+     * @todo da tipizzare
+     */
+    public static function calcResolution($resolution, bool $rev = false) : ?array
     {
         $res = null;
         if ($resolution) {
@@ -125,7 +138,11 @@ class GridSystem
         return $res;
     }
 
-    public static function &findComponent($name)
+    /**
+     * @param string $name
+     * @return array|null
+     */
+    public static function &findComponent(string $name) : ?array
     {
         $ref = null;
         $arrName = explode(".", $name);
@@ -149,14 +166,23 @@ class GridSystem
         return $ref;
     }
 
-    public static function setComponent($name, $data)
+    /**
+     * @param string $name
+     * @param array $data
+     */
+    public static function setComponent(string $name, array $data) : void
     {
         $ref =& self::findComponent($name);
 
         $ref = $data;
     }
 
-    public static function extend($data, $what)
+    /**
+     * @param array $data
+     * @param string $what
+     * @return array|null
+     */
+    public static function extend(array $data, string $what) : ?array
     {
         if (is_array($data) && $what) {
             if ($what == "buttons") {
@@ -171,11 +197,19 @@ class GridSystem
         return null;
     }
 
-    private static function extendButtons($buttons)
+    /**
+     * @param array $buttons
+     */
+    private static function extendButtons(array $buttons) : void
     {
         self::$buttons = array_replace_recursive(self::$buttons, $buttons);
     }
-    private static function extendComponents($component, $key)
+
+    /**
+     * @param array $component
+     * @param string $key
+     */
+    private static function extendComponents(array $component, string $key) : void
     {
         self::$components[$key] = array_replace_recursive((array) self::$components[$key], $component);
     }

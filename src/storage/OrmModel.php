@@ -125,6 +125,7 @@ class OrmModel
 
     /**
      * @param array|null $where
+     * @throws Exception
      */
     private function read(array $where = null) : void
     {
@@ -156,6 +157,7 @@ class OrmModel
 
     /**
      * @return OrmResults|null
+     * @throws Exception
      */
     public function delete() : ?OrmResults
     {

@@ -11,7 +11,7 @@ trait ClassDetector
      * @param string|null $class_name
      * @return string
      */
-    private static function getClassName(string $class_name = null) : string
+    protected static function getClassName(string $class_name = null) : string
     {
         static $classes             = [];
 

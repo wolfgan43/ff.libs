@@ -50,6 +50,10 @@ class MailerAdapter
     public $from_name                                       = null;
     public $debug_email                                     = null;
 
+    /**
+     * MailerAdapter constructor.
+     * @throws Exception
+     */
     public function __construct()
     {
         try {

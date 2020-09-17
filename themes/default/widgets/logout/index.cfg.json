@@ -1,0 +1,13 @@
+{
+   "api": {
+      "login": "\/api\/auth2\/user\/signin",
+      "logout": "\/api\/auth2\/user\/signout"
+   },
+   "error": null,
+   "redirect": "\/",
+   "logo": "100x50",
+   "logo_path": null,
+   "login_path": "\/login",
+   "logout_path": "\/logout",
+   "avatar": "100x100"
+}

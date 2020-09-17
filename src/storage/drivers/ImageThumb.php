@@ -30,6 +30,10 @@ use phpformsframework\libs\Constant;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\Media;
 
+/**
+ * Class ImageThumb
+ * @package phpformsframework\libs\storage\drivers
+ */
 class ImageThumb extends ImageRender
 {
     const IMAGES_DISK_PATH                      = Constant::LIBS_FF_DISK_PATH . DIRECTORY_SEPARATOR . "assets" . DIRECTORY_SEPARATOR . "images";
@@ -66,10 +70,10 @@ class ImageThumb extends ImageRender
      * Carica un immagine da disco per la creazione del thumbnail, basandosi sul mime-type
      * E' in grado di convertire i file PDF usando l'utility convert di linux
      * E' anche possibile associare icone a mime-type predefiniti
-     * @param String $src_res_path Il percorso dell'immagine da caricare
-     * @return resource La risorsa immagine caricata
+     * @param string $src_res_path Il percorso dell'immagine da caricare
+     * @return resource|null La risorsa immagine caricata
      */
-    protected function load_image($src_res_path)
+    protected function load_image(string $src_res_path)
     {
         $mime = Media::getMimeByFilename($src_res_path);
         if (is_dir($src_res_path)) {
@@ -160,9 +164,9 @@ class ImageThumb extends ImageRender
      * Recupera il percorso del tema corrente
      * Utile per caricare le icone per i mime-type predefiniti
      * @param string $file
-     * @return String il percorso del tema corrente
+     * @return string il percorso del tema corrente
      */
-    private function get_template_dir($file)
+    private function get_template_dir(string $file) : string
     {
         if ($this->icon_path && is_file($this->icon_path . DIRECTORY_SEPARATOR . $file)) {
             return $this->icon_path . DIRECTORY_SEPARATOR . $file;

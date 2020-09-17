@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\delivery\adapters;
 
+use Exception;
 use phpformsframework\libs\delivery\drivers\MessengerAdapter;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\international\Locale;
@@ -42,7 +43,8 @@ class MessengerTwilio extends MessengerAdapter
 
     /**
      * @param string $message
-     * @param array $to
+     * @param array|null $to
+     * @throws Exception
      */
     public function send(string $message, array $to = null) : void
     {

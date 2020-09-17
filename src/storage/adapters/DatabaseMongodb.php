@@ -26,6 +26,7 @@
 
 namespace phpformsframework\libs\storage\adapters;
 
+use Exception;
 use phpformsframework\libs\storage\DatabaseAdapter;
 use phpformsframework\libs\storage\drivers\MongoDB as nosql;
 
@@ -50,6 +51,7 @@ class DatabaseMongodb extends DatabaseAdapter
 
     /**
      * @return array
+     * @throws Exception
      */
     protected function getConnector() : array
     {
@@ -94,12 +96,13 @@ class DatabaseMongodb extends DatabaseAdapter
     }
 
     /**
-     * @todo da tipizzare
      * @param $value
      * @param string $struct_type
      * @param string|null $name
      * @param string|null $op
      * @return mixed
+     * @throws Exception
+     * @todo da tipizzare
      */
     protected function fieldOperation($value, string $struct_type, string $name = null, string $op = null)
     {
@@ -125,6 +128,7 @@ class DatabaseMongodb extends DatabaseAdapter
      * @param array $db
      * @param array|null $indexes
      * @param string|null $map_class
+     * @throws Exception
      */
     protected function convertRecordset(array &$db, array $indexes = null, string $map_class = null) : void
     {

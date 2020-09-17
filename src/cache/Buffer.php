@@ -108,11 +108,6 @@ class Buffer implements Dumpable
 
             Log::debugging($cache->request, $cache->bucket, $cache->bucket, $cache->action);
         }
-
-        /*  print_r(self::exTime());
-          print_r(self::$cache);
-          print_r(self::$process);
-          print_r(self::$exTime);*/
     }
 
     /**

@@ -198,6 +198,6 @@ class Array2XML
             $json
         );
 
-        return Validator::json2Array($json_normalized);
+        return Validator::jsonDecode($json_normalized);
     }
 }

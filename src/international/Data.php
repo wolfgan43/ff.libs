@@ -147,8 +147,9 @@ class Data
 
     /**
      * @param string $data_type
-     * @param string $locale
+     * @param string|null $locale
      * @return string
+     * @throws Exception
      */
     public static function getEmpty(string $data_type, string $locale = null) : string
     {
@@ -192,12 +193,14 @@ class Data
             : Locale::getLang("code")
         );
     }
+
     /**
      * crea un oggetto Data
      *
      * @param mixed $value il valore originale del dato
-     * @param string $data_type il tipo del dato
-     * @param string $locale la localizzazione del dato originale
+     * @param string|null $data_type il tipo del dato
+     * @param string|null $locale la localizzazione del dato originale
+     * @throws Exception
      */
     public function __construct($value = null, string $data_type = null, string $locale = null)
     {
@@ -213,15 +216,15 @@ class Data
     }
 
 
-
     /**
      * set all the proper value fields in one shot.
      *
-     * @todo da tipizzare
      * @param mixed $value il valore da impostare nell'oggetto preesistente
-     * @param string $data_type il tipo del dato da memorizzare (sovrascriverà quello attuale). Se omesso viene considerato il tipo attuale.
-     * @param string $locale il locale del dato da impostare. se omesso viene utilizzato quello attuale.
+     * @param string|null $data_type il tipo del dato da memorizzare (sovrascriverà quello attuale). Se omesso viene considerato il tipo attuale.
+     * @param string|null $locale il locale del dato da impostare. se omesso viene utilizzato quello attuale.
      * @return Data
+     * @throws Exception
+     * @todo da tipizzare
      */
     public function setValue($value, string $data_type = null, string $locale = null) : self
     {
@@ -249,7 +252,7 @@ class Data
     }
 
     /**
-     * @param string $type
+     * @param string|null $type
      * @return string
      */
     private function getDataType(string $type = null) : string
@@ -259,10 +262,12 @@ class Data
             : $this->data_type
         );
     }
+
     /**
      * @param string $prefix
      * @param string $type
      * @return string
+     * @throws Exception
      */
     private function getFunc(string $prefix, string $type) : string
     {
@@ -277,6 +282,7 @@ class Data
      * @param string|null $data_type
      * @param string|null $locale
      * @return string|null
+     * @throws Exception
      */
     public function getValue(string $data_type = null, string $locale = null) : ?string
     {
@@ -302,11 +308,12 @@ class Data
     }
 
     /**
-     * @todo da tipizzare
      * @param mixed|null $raw_value
      * @param string|null $data_type
      * @param string|null $locale
      * @return bool
+     * @throws Exception
+     * @todo da tipizzare
      */
     public function checkValue($raw_value = null, string $data_type = null, string $locale = null) : bool
     {

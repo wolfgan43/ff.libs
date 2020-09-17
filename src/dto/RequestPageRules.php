@@ -4,6 +4,19 @@ namespace phpformsframework\libs\dto;
 /**
  * Class ConfigPage
  * @package phpformsframework\libs\dto
+ *
+ * name
+ * scope
+ * hide
+ * default
+ * validator
+ * validator_range
+ * validator_mime
+ * required
+ * required_ifnot
+ *
+ * vpn**
+ * auth**
  */
 class RequestPageRules
 {

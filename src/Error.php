@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs;
 
+use Exception;
 /**
  * Class Error
  * @package phpformsframework\libs
@@ -225,6 +226,7 @@ class Error
 
     /**
      * @param string $path_info
+     * @throws Exception
      */
     public static function run(string $path_info) : void
     {
@@ -236,7 +238,6 @@ class Error
             switch ($rule["type"]) {
                 case "media":
                     Response::sendError("404");
-                    break;
                     break;
                 case "html":
                     Response::sendError("403");
@@ -285,6 +286,7 @@ class Error
     /**
      * @param string $error
      * @param string|null $bucket
+     * @throws Exception
      */
     public static function register(string $error, string $bucket = null) : void
     {
@@ -312,6 +314,7 @@ class Error
     /**
      * @param string $from_bucket
      * @param string $to_bucket
+     * @throws Exception
      */
     public static function transfer(string $from_bucket, string $to_bucket) : void
     {

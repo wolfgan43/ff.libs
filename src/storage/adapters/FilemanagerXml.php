@@ -54,6 +54,7 @@ class FilemanagerXml extends FilemanagerAdapter
      * @param array $data
      * @param string|null $var
      * @return string
+     * @throws Exception
      */
     protected function output(array $data, string $var = null) : string
     {

@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\delivery\drivers;
 
+use Exception;
 use phpformsframework\libs\international\Translator;
 
 /**
@@ -49,10 +50,11 @@ final class MailerSimple extends Mailer
 
     /**
      * @return string
+     * @throws Exception
      */
     protected function processSubject() : string
     {
-        return Translator::get_word_by_code($this->subject);
+        return Translator::getWordByCode($this->subject);
     }
 
     /**

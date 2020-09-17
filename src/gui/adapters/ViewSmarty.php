@@ -26,6 +26,10 @@
 namespace phpformsframework\libs\gui\adapters;
 
 if (!class_exists("Smarty")) {
+    /**
+     * Class ViewSmarty
+     * @package phpformsframework\libs\gui\adapters
+     */
     class ViewSmarty
     {
     }
@@ -72,6 +76,7 @@ class ViewSmarty extends Smarty implements ViewAdapter
      * @param mixed|null $value
      * @param bool $nocache
      * @return ViewAdapter
+     * @todo da tipizzare
      */
     public function assign($tpl_var, $value = null, $nocache = false) : ViewAdapter
     {

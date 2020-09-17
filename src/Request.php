@@ -37,6 +37,8 @@ use Exception;
  */
 class Request implements Configurable, Dumpable
 {
+    public const UPLOAD_PARAM_NAME  = "files";
+
     public const METHOD_GET         = "GET";
     public const METHOD_POST        = "POST";
     public const METHOD_PUT         = "PUT";
@@ -1029,7 +1031,7 @@ class Request implements Configurable, Dumpable
 
             $request                                                                            = self::getReq($method);
 
-            if (self::$page->loadRequest($request) || self::$page->loadRequestFile()) {
+            if (self::$page->loadRequestFile() || self::$page->loadRequest($request)) {
                 self::sendError(self::$page->status, self::$page->error);
             }
         }

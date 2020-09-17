@@ -28,6 +28,7 @@ namespace phpformsframework\libs\dto;
 
 use phpformsframework\libs\Mappable;
 use phpformsframework\libs\Request;
+use Exception;
 
 /**
  * Class DataRequestHeader
@@ -39,6 +40,7 @@ class DataRequestHeader extends Mappable
 
     /**
      * DataRequestHeader constructor.
+     * @throws Exception
      */
     public function __construct()
     {

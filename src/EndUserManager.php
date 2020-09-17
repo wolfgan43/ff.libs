@@ -1,10 +1,6 @@
 <?php
 namespace phpformsframework\libs;
 
-use phpformsframework\libs\international\Translator;
-use phpformsframework\libs\storage\Database;
-use phpformsframework\libs\storage\Filemanager;
-use phpformsframework\libs\storage\Media;
 use Exception;
 
 /**
@@ -13,15 +9,6 @@ use Exception;
  */
 trait EndUserManager
 {
-    /**
-     * @todo da tipizzare
-     * @return Kernel
-     */
-    public static function &Server()
-    {
-        return Kernel::load();
-    }
-
     /**
      * @todo da tipizzare
      * @return Request
@@ -52,14 +39,6 @@ trait EndUserManager
             ? Env::get($name)
             : Env::set($name, $value, $permanent)
         );
-    }
-
-    /**
-     * @param array $value
-     */
-    public static function envFill(array $value) : void
-    {
-        Env::fill($value);
     }
 
     /**
@@ -104,70 +83,6 @@ trait EndUserManager
     }
 
     /**
-     * @param bool $return
-     * @return string|null
-     */
-    public static function dumpError(bool $return = false) : ?string
-    {
-        if (!$return) {
-            echo Error::raise(static::ERROR_BUCKET);
-            exit;
-        }
-
-        return Error::raise(static::ERROR_BUCKET);
-    }
-
-    /**
-     * @param bool $return
-     * @return array
-     * @todo da sistemare non funziona
-     */
-    public static function dumpDatabase(bool $return = false) : array
-    {
-        if (!$return) {
-            print_r(Database::dump());
-            exit;
-        }
-
-        return Database::dump();
-    }
-
-    /**
-     * @param bool $return
-     * @return array
-     */
-    public static function dumpAjaxContent(bool $return = false) : ?array
-    {
-        if (!$return) {
-            print_r(Filemanager::dumpContent());
-            exit;
-        }
-
-        return Filemanager::dumpContent();
-    }
-
-
-    /**
-     * @param string $code
-     * @param null|string $language
-     * @return string
-     */
-    public static function translate(string $code, string $language = null) : string
-    {
-        return Translator::get_word_by_code($code, $language);
-    }
-
-    /**
-     * @param string|null $collection
-     * @param string|null $mainTable
-     * @return storage\Orm
-     */
-    public static function orm(string $collection = null, string $mainTable = null) : storage\Orm
-    {
-        return Model::orm($collection, $mainTable);
-    }
-
-    /**
      * @return bool
      */
     public static function debugEnabled() : bool
@@ -185,28 +100,12 @@ trait EndUserManager
     }
 
     /**
-     * @todo da tipizzare
-     * @param string $file_disk_path
-     * @param null|string $mode
-     * @param string $key
-     * @return array|string
+     * @param string|null $collection
+     * @param string|null $mainTable
+     * @return storage\Orm
      */
-    public static function mediaUrl(string $file_disk_path, string $mode = null, string $key = "url")
+    public static function orm(string $collection = null, string $mainTable = null) : storage\Orm
     {
-        return Media::getUrl($file_disk_path, $mode, $key);
-    }
-
-    /**
-     * @return bool
-     */
-    public static function aclVerify()
-    {
-        if (($acl = App::configuration()->page->acl)  && ($user = App::getCurrentUser())) {
-            $user_acl   = explode(",", $user->acl_profile);
-            $acls       = explode(",", $acl);
-
-            return !empty(array_intersect($acls, $user_acl));
-        }
-        return true;
+        return Model::orm($collection, $mainTable);
     }
 }

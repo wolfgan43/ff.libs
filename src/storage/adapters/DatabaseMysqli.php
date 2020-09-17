@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\storage\adapters;
 
+use Exception;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\DatabaseAdapter;
 use phpformsframework\libs\storage\drivers\MySqli as sql;
@@ -120,12 +121,13 @@ class DatabaseMysqli extends DatabaseAdapter
     }
 
     /**
-     * @todo da tipizzare
      * @param $value
      * @param string $struct_type
      * @param string|null $name
      * @param string|null $op
      * @return string
+     * @throws Exception
+     * @todo da tipizzare
      */
     protected function fieldOperation($value, string $struct_type, string $name = null, string $op = null) : string
     {
@@ -150,8 +152,9 @@ class DatabaseMysqli extends DatabaseAdapter
     /**
      * @param string $struct_type
      * @param string $name
-     * @param string $op
+     * @param string|null $op
      * @return string
+     * @throws Exception
      */
     protected function fieldOperationNULL(string $struct_type, string $name, string $op = null) : string
     {
@@ -193,6 +196,7 @@ class DatabaseMysqli extends DatabaseAdapter
      * @param array|null $fields
      * @param bool $skip_control
      * @return string
+     * @throws Exception
      */
     protected function querySelect(array $fields = null, bool $skip_control = false) : string
     {
@@ -202,6 +206,7 @@ class DatabaseMysqli extends DatabaseAdapter
     /**
      * @param array|null $fields
      * @return string
+     * @throws Exception
      */
     protected function querySort(array $fields = null) : string
     {
@@ -211,6 +216,7 @@ class DatabaseMysqli extends DatabaseAdapter
     /**
      * @param array|null $fields
      * @return string
+     * @throws Exception
      */
     protected function queryWhere(array $fields = null) : string
     {
@@ -220,6 +226,7 @@ class DatabaseMysqli extends DatabaseAdapter
     /**
      * @param array|null $fields
      * @return array
+     * @throws Exception
      */
     protected function queryInsert(array $fields = null) : array
     {
@@ -234,6 +241,7 @@ class DatabaseMysqli extends DatabaseAdapter
     /**
      * @param array|null $fields
      * @return string
+     * @throws Exception
      */
     protected function queryUpdate(array $fields = null) : string
     {

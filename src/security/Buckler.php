@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\security;
 
+use Exception;
 use phpformsframework\libs\Configurable;
 use phpformsframework\libs\Dir;
 use phpformsframework\libs\Log;
@@ -88,6 +89,10 @@ class Buckler implements Configurable
             "rules"     => self::$rules
         );
     }
+
+    /**
+     * @throws Exception
+     */
     public static function antiVulnerabilityScanner()
     {
         self::checkLoadAvg();
@@ -136,6 +141,9 @@ class Buckler implements Configurable
 
     }
 
+    /**
+     * @throws Exception
+     */
     private static function checkLoadAvg()
     {
         if (function_exists("sys_getloadavg")) {

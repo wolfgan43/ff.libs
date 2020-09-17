@@ -154,6 +154,7 @@ class ViewHtml implements ViewAdapter
     /**
      * @param string $content
      * @param string|null $root_element
+     * @throws Exception
      */
     public function fetchContent(string $content, string $root_element = null) : void
     {
@@ -173,7 +174,7 @@ class ViewHtml implements ViewAdapter
     }
 
     /**
-     *
+     * @throws Exception
      */
     private function getDVars() : void
     {
@@ -350,6 +351,7 @@ class ViewHtml implements ViewAdapter
      * @param bool $bRepeat
      * @param bool $bBefore
      * @return bool
+     * @throws Exception
      */
     public function parse(string $sTplName, bool $bRepeat = false, bool $bBefore = false) : bool
     {
@@ -390,6 +392,7 @@ class ViewHtml implements ViewAdapter
 
     /**
      * @return string
+     * @throws Exception
      */
     public function display() : string
     {
@@ -401,6 +404,7 @@ class ViewHtml implements ViewAdapter
      * @param string $block_name
      * @param string|null $minify
      * @return string|null
+     * @throws Exception
      */
     private function getBlockContent(string $block_name, string $minify = null) : ?string
     {
@@ -462,7 +466,7 @@ class ViewHtml implements ViewAdapter
     }
 
     /**
-     *
+     * @throws Exception
      */
     private function translateView(): void
     {
@@ -470,7 +474,7 @@ class ViewHtml implements ViewAdapter
         foreach ($this->DVars as $nName => $count) {
             if (substr($nName, 0, 1) == "_") {
                 $translation->key[]           = "{" . $nName . "}";
-                $translation->value[]         = Translator::get_word_by_code(substr($nName, 1));
+                $translation->value[]         = Translator::getWordByCode(substr($nName, 1));
             }
         }
         if (isset($translation->key)) {
@@ -481,6 +485,7 @@ class ViewHtml implements ViewAdapter
     /**
      * @param string $sTplName
      * @return string
+     * @throws Exception
      */
     private function proceedTpl(string $sTplName) : string
     {

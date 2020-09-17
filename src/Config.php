@@ -164,7 +164,7 @@ class Config implements Dumpable
     /**
      * @return float
      */
-    public static function exTime() : float
+    public static function exTime() : ?float
     {
         return self::$exTime;
     }
@@ -480,6 +480,7 @@ class Config implements Dumpable
 
     /**
      * @param string $file
+     * @throws Exception
      */
     private static function loadFileXml(string $file) : void
     {

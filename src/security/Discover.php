@@ -25,12 +25,15 @@
  */
 namespace phpformsframework\libs\security;
 
-use InvalidArgumentException;
 use phpformsframework\libs\Request;
 
+/**
+ * Class Discover
+ * @package phpformsframework\libs\security
+ */
 class Discover
 {
-    public static function device()
+    public static function device() : array
     { //todo: da scrivere bene
         $device 										= new mobileDetect();
 
@@ -49,7 +52,7 @@ class Discover
         return $res;
     }
 
-    public static function browser()
+    public static function browser() : array
     {
         return array(
             "name"  => "Chrome"
@@ -68,7 +71,7 @@ class Discover
                 );*/
     }
 
-    public static function platform()
+    public static function platform() : string
     {
         return "windows";
         /*
@@ -78,18 +81,12 @@ class Discover
         */
     }
 
-
     /**
      * Parses a user agent string into its important parts
-     *
-     * @author Jesse G. Donat <donatj@gmail.com>
-     * @link https://github.com/donatj/PhpUserAgent
-     * @link http://donatstudios.com/PHP-Parser-HTTP_USER_AGENT
-     * @param string|null $u_agent User agent string to parse or null. Uses HTTP_USER_AGENT on NULL
-     * @throws InvalidArgumentException on not having a proper user agent to parse.
-     * @return string[] an array with browser, version and platform keys
+     * @param string|null $u_agent
+     * @return array
      */
-    public static function parse_user_agent($u_agent = null)
+    public static function parseUserAgent(string $u_agent = null) : array
     {
         if (!$u_agent) {
             $u_agent = Request::userAgent();
@@ -235,12 +232,15 @@ class Discover
         return array( 'platform' => $platform ?: null, 'browser' => $browser ?: null, 'version' => $version ?: null );
     }
 
-
-    public static function visitor($key = null, $user_agent = null)
+    /**
+     * @param string|null $user_agent
+     * @return array|null
+     */
+    public static function visitor(string $user_agent = null) : ?string
     {
-        $visitor                        = false;
-        if ($user_agent === null) {
-            $user_agent = Request::userAgent();
+        $visitor                        = null;
+        if (!$user_agent) {
+            $user_agent                 = Request::userAgent();
         }
 
         if (!self::isCrawler($user_agent)) {
@@ -249,31 +249,30 @@ class Discover
             if (isset($_COOKIE["_ga"])) {
                 $ga = explode(".", $_COOKIE["_ga"]);
 
-                $visitor = array(
-                    "unique"        => $ga[2]
-                    , "created"     => $ga[3]
-                    , "last_update" => $ga[3]
+                $visitor            = array(
+                    "unique"        => $ga[2],
+                    "created"       => $ga[3],
+                    "last_update"   => $ga[3]
                 );
             } elseif (isset($_COOKIE["__utma"])) {
                 $utma = explode(".", $_COOKIE["__utma"]);
 
-                $visitor = array(
-                    "unique" => $utma[1]
-                , "created" => $utma[2]
-                , "last_update" => $utma[4]
+                $visitor            = array(
+                    "unique"        => $utma[1],
+                    "created"       => $utma[2],
+                    "last_update"   => $utma[4]
                 );
             } elseif (isset($_COOKIE["_uv"])) {
                 $uv = explode(".", $_COOKIE["_uv"]);
 
-                $visitor = array(
-                    "unique" => $uv[0]
-                , "created" => $uv[1]
-                , "last_update" => $uv[2]
+                $visitor            = array(
+                    "unique"        => $uv[0],
+                    "created"       => $uv[1],
+                    "last_update"   => $uv[2]
                 );
                 if ($visitor["last_update"] + (60 * 60 * 24) < time()) {
                     $visitor["last_update"] = time();
 
-                    //$_COOKIE["_uv"] = implode(".", $visitor);
                     setcookie("_uv", implode(".", $visitor), $long_time);
                 }
             } else {
@@ -283,53 +282,53 @@ class Discover
                 )));
 
                 $offset = (strlen($access[0]) - 9);
-                $visitor = array(
-                    "unique" => substr($access[0], $offset, 9)
-                    , "created" => time()
-                    , "last_update" => time()
+                $visitor            = array(
+                    "unique"        => substr($access[0], $offset, 9),
+                    "created"       => time(),
+                    "last_update"   => time()
                 );
-                //$_COOKIE["_uv"] = implode(".", $visitor);
                 setcookie("_uv", implode(".", $visitor), $long_time);
             }
         }
 
-        return ($key
-            ? $visitor[$key]
-            : $visitor
-        );
+        return $visitor["unique"] ?? null;
     }
 
-    public static function isCrawler($user_agent = null)
+    /**
+     * @param string|null $user_agent
+     * @return bool
+     */
+    public static function isCrawler(string $user_agent = null) : bool
     {
         $isCrawler = true;
         $crawlers = array(
-            'Google'=>'Google',
-            'MSN' => 'msnbot',
-            'Rambler'=>'Rambler',
-            'Yahoo'=> 'Yahoo',
-            'AbachoBOT'=> 'AbachoBOT',
-            'accoona'=> 'Accoona',
-            'AcoiRobot'=> 'AcoiRobot',
-            'ASPSeek'=> 'ASPSeek',
-            'CrocCrawler'=> 'CrocCrawler',
-            'Dumbot'=> 'Dumbot',
-            'FAST-WebCrawler'=> 'FAST-WebCrawler',
-            'GeonaBot'=> 'GeonaBot',
-            'Gigabot'=> 'Gigabot',
-            'Lycos spider'=> 'Lycos',
-            'MSRBOT'=> 'MSRBOT',
-            'Altavista robot'=> 'Scooter',
-            'AltaVista robot'=> 'Altavista',
-            'ID-Search Bot'=> 'IDBot',
-            'eStyle Bot'=> 'eStyle',
-            'Scrubby robot'=> 'Scrubby',
-            'Screaming SEO bot'=> 'Screaming Frog',
-            'GenericBot' => 'bot',
-            'GenericSEO' => 'seo',
-            'GenericCrawler' => 'crawler'
+            'Google'            => 'Google',
+            'MSN'               => 'msnbot',
+            'Rambler'           => 'Rambler',
+            'Yahoo'             => 'Yahoo',
+            'AbachoBOT'         => 'AbachoBOT',
+            'accoona'           => 'Accoona',
+            'AcoiRobot'         => 'AcoiRobot',
+            'ASPSeek'           => 'ASPSeek',
+            'CrocCrawler'       => 'CrocCrawler',
+            'Dumbot'            => 'Dumbot',
+            'FAST-WebCrawler'   => 'FAST-WebCrawler',
+            'GeonaBot'          => 'GeonaBot',
+            'Gigabot'           => 'Gigabot',
+            'Lycos spider'      => 'Lycos',
+            'MSRBOT'            => 'MSRBOT',
+            'Altavista robot'   => 'Scooter',
+            'AltaVista robot'   => 'Altavista',
+            'ID-Search Bot'     => 'IDBot',
+            'eStyle Bot'        => 'eStyle',
+            'Scrubby robot'     => 'Scrubby',
+            'Screaming SEO bot' => 'Screaming Frog',
+            'GenericBot'        => 'bot',
+            'GenericSEO'        => 'seo',
+            'GenericCrawler'    => 'crawler'
         );
 
-        if ($user_agent === null) {
+        if (!$user_agent) {
             $user_agent = Request::userAgent();
         }
         if ($user_agent) {

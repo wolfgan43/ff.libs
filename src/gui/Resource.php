@@ -30,7 +30,6 @@ use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\Config;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
-use phpformsframework\libs\dto\DataHtml;
 use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Mappable;
@@ -46,6 +45,8 @@ use phpformsframework\libs\storage\FilemanagerScan;
 class Resource extends Mappable implements Dumpable
 {
     const ERROR_BUCKET                          = "resource";
+
+    private const WIDGET_LABEL                  = "widgets";
     /**
      * @var Resource
      */
@@ -113,14 +114,14 @@ class Resource extends Mappable implements Dumpable
 
     /**
      * @param string $name
-     * @return DataHtml
+     * @return array
      */
-    public static function widget(string $name) : DataHtml
+    public static function widget(string $name) : array
     {
         if (!self::$singleton) {
             self::$singleton = new Resource();
         }
-        return new DataHtml(self::$singleton->resources["widget"][$name] ?? []);
+        return self::$singleton->resources[self::WIDGET_LABEL][$name] ?? [];
     }
 
     /**

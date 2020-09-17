@@ -1,0 +1,81 @@
+{
+   "api": {
+      "login": "\/api\/auth\/user\/login",
+      "logout": "\/api\/auth\/user\/logout",
+      "recover": "\/api\/auth\/user\/recover",
+      "change": "\/api\/auth\/user\/change",
+      "registration": "\/api\/auth\/user\/registration",
+      "requestActivation": "\/api\/auth\/user\/request\/activation",
+      "activate": "\/api\/auth\/user\/activate"
+   },
+   "title":"Sign In",
+   "description":"Enter your email address and password to access admin panel.",
+   "domain":false,
+   "stay_connect":true,
+   "error": null,
+   "redirect": "\/",
+   "logo": "100x50",
+   "logo_path": null,
+   "login_path": "\/login",
+   "logout_path": "\/logout",
+   "registration_path": "\/registration",
+   "activation_path": "\/activation",
+   "recover_path": "\/recover",
+   "social":{
+      "facebook":{
+         "enable":false,
+         "path":"\/api\/auth\/user\/social\/facebook",
+         "icon":"fas fa-facebook-f",
+         "name":"Facebook",
+         "app":{
+            "id":null,
+            "secret":null,
+            "scope":null
+         }
+      },
+      "gplus":{
+         "enable":false,
+         "path":"\/api\/auth\/user\/social\/gplus",
+         "icon":"fas fa-google-plus-g",
+         "name":"GooglePlus",
+         "app":{
+            "id":null,
+            "secret":null,
+            "scope":null
+         }
+      },
+      "twitter":{
+         "enable":false,
+         "path":"\/api\/auth\/user\/social\/twitter",
+         "icon":"fas fa-twitter",
+         "name":"Twitter",
+         "app":{
+            "id":null,
+            "secret":null,
+            "scope":null
+         }
+      },
+      "linkedin":{
+         "enable":false,
+         "path":"\/api\/auth\/user\/social\/linkedin",
+         "icon":"fas fa-linkedin-in",
+         "name":"Linkedin",
+         "app":{
+            "id":null,
+            "secret":null,
+            "scope":null
+         }
+      },
+      "dribbble":{
+         "enable":false,
+         "path":"\/api\/auth\/user\/social\/dribbble",
+         "icon":"fas fa-dribbble",
+         "name":"Dribbble",
+         "app":{
+            "id":null,
+            "secret":null,
+            "scope":null
+         }
+      }
+   }
+}

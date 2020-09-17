@@ -60,21 +60,13 @@ class UserData extends OrmItem
     public $lang                    = null;
 
     /**
-     * @param int|null $max_width
-     * @param int|null $max_height
-     * @param string $mode
+     * @param string|null $mode
+     * @param string $noavatar
      * @return string|null
      * @throws Exception
      */
-    public function getAvatar(int $max_width = null, int $max_height = null, string $mode = "crop") : ?string
+    public function getAvatar(string $mode = null, string $noavatar = "noavatar") : ?string
     {
-        if ($max_width && $max_height) {
-            $mode = (
-                $max_width && $max_height
-                ? $max_width . self::MODES[$mode] . $max_height
-                : null
-            );
-        }
-        return Media::getUrl($this->avatar, $mode, "url");
+        return Media::getUrl($this->avatar ?? $noavatar, $mode);
     }
 }

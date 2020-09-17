@@ -47,30 +47,34 @@
       "filter": [
         "otf",
         "eot",
-        "svg",
-        "ttf",
-        "woff",
+        "svg", 
+        "ttf", 
+        "woff", 
         "woff2"
       ]
     },
     "widgets": {
       "flag": 4,
-      "type": "widget",
+      "type": "widgets",
       "prototype" : "filename",
       "groupby": "parentname/extension",
+      "replace": {
+        "json" : "cfg"
+      },
       "filter": [
         "html",
         "css",
-        "js"
+        "js",
+        "json"
       ]
     },
     "widgets/images": {
       "flag": 4,
-      "type": "widget",
+      "type": "widgets",
       "prototype" : "filename",
       "rootpath": "../",
       "groupby": "rootname/images",
-      "filter": [
+      "filter": [ 
         "jpg",
         "png",
         "svg",
@@ -80,7 +84,7 @@
     },
     "widgets/fonts": {
       "flag": 4,
-      "type": "widget",
+      "type": "widgets",
       "prototype" : "basename",
       "rootpath": "../../",
       "groupby": "rootname/fonts",
@@ -95,7 +99,7 @@
     },
     "widgets/audio": {
       "flag": 4,
-      "type": "widget",
+      "type": "widgets",
       "prototype" : "basename",
       "rootpath": "../",
       "groupby": "rootname/audio",
@@ -105,7 +109,7 @@
     },
     "widgets/video": {
       "flag": 4,
-      "type": "widget",
+      "type": "widgets",
       "prototype" : "basename",
       "rootpath": "../",
       "groupby": "rootname/video",
@@ -126,142 +130,6 @@
       "filter": [
         "html"
       ]
-    },
-    "theme": {
-      "flag" : 8,
-      "patterns" : {
-        "/assets/dist/css/" : {
-          "type": "assets/css",
-          "filter": [
-            "css"
-          ]
-        },
-        "/assets/dist/js/" : {
-          "type": "assets/js",
-          "filter": [
-            "js"
-          ]
-        },
-        "/assets/dist/fonts/" : {
-          "type": "assets/fonts",
-          "filter": [
-            "otf",
-            "eot",
-            "svg",
-            "ttf",
-            "woff",
-            "woff2"
-          ]
-        },
-        "/assets/dist/img/" : {
-          "type": "assets/images",
-          "filter": [
-            "jpg",
-            "png",
-            "svg",
-            "jpeg",
-            "gif",
-            "webp"
-          ]
-        },
-        "/assets/dist/audio/" : {
-          "type": "assets/audio",
-          "filter": [
-            "mp3"
-          ]
-        },
-        "/assets/dist/video/" : {
-          "type": "assets/video",
-          "filter": [
-            "avi"
-          ]
-        },
-
-        "/email/img/" : {
-          "type": "email/images",
-          "filter": [
-            "jpg",
-            "png",
-            "svg",
-            "jpeg",
-            "gif",
-            "webp"
-          ]
-        },
-        "/email/" : {
-          "type": "email",
-          "filter": [
-            "html"
-          ]
-        },
-        "/layouts/" : {
-          "type": "layouts",
-          "filter": [
-            "html"
-          ]
-        },
-        "/views/" : {
-          "type": "views",
-          "filter": [
-            "html"
-          ]
-        },
-        "/widgets/*/images/": {
-          "type": "widgets",
-          "prototype" : "filename",
-          "rootpath": "../",
-          "groupby": "rootname/images",
-          "filter": [
-            "jpg",
-            "png",
-            "svg",
-            "jpeg",
-            "gif"
-          ]
-        },
-        "/widgets/*/fonts/": {
-          "type": "widgets",
-          "prototype" : "basename",
-          "rootpath": "../../",
-          "groupby": "rootname/fonts",
-          "filter": [
-            "otf",
-            "eot",
-            "svg",
-            "ttf",
-            "woff",
-            "woff2"
-          ]
-        },
-        "/widgets/*/audio/": {
-          "type": "widgets",
-          "prototype" : "basename",
-          "rootpath": "../",
-          "groupby": "rootname/audio",
-          "filter": [
-            "mp3"
-          ]
-        },
-        "/widgets/*/video/": {
-          "type": "widgets",
-          "prototype" : "basename",
-          "rootpath": "../",
-          "groupby": "rootname/video",
-          "filter": [
-            "avi"
-          ]
-        },
-        "/widgets/*/": {
-          "type": "widgets",
-          "prototype" : "filename",
-          "groupby": "parentname/extension",
-          "filter": [
-            "html",
-            "css",
-            "js"
-          ]
-        }
-      }
     },
     "controller" : {
       "flag" : 8,

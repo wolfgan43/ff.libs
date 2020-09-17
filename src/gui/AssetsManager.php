@@ -5,6 +5,7 @@ use phpformsframework\libs\Constant;
 use phpformsframework\libs\Dir;
 use phpformsframework\libs\Env;
 use phpformsframework\libs\storage\Media;
+use Exception;
 
 /**
  * Trait AssetsManager
@@ -36,8 +37,9 @@ trait AssetsManager
     }
 
     /**
-     * @param string $url
+     * @param string|null $url
      * @return string
+     * @throws Exception
      */
     private function mask(string $url = null) : string
     {
@@ -59,6 +61,7 @@ trait AssetsManager
      * @param string $key
      * @param string|null $url
      * @return self
+     * @throws Exception
      */
     private function addAsset(array &$ref, string $type, string $key, string $url = null) : self
     {
@@ -69,6 +72,7 @@ trait AssetsManager
         if ($this->resolveUrl($key, $url)) {
             $ref[$key]                          = $this->mask($url);
         }
+
         return $this;
     }
 
@@ -77,6 +81,7 @@ trait AssetsManager
      * @param string $type
      * @param string $key
      * @return string|null
+     * @throws Exception
      */
     private function addAssetDeps(array &$ref, string $type, string $key) : ?string
     {
@@ -124,6 +129,7 @@ trait AssetsManager
      * @param string $key
      * @param string|null $url
      * @return self
+     * @throws Exception
      */
     public function addJs(string $key, string $url = null) : self
     {
@@ -134,6 +140,7 @@ trait AssetsManager
      * @param string $key
      * @param string|null $url
      * @return self
+     * @throws Exception
      */
     public function addCss(string $key, string $url = null) : self
     {
@@ -144,15 +151,18 @@ trait AssetsManager
      * @param string $key
      * @param string|null $url
      * @return self
+     * @throws Exception
      */
     public function addFont(string $key, string $url = null) : self
     {
         return $this->addAsset($this->fonts, "fonts", $key, $url);
     }
+
     /**
      * @param string $key
      * @param string|null $url
      * @return self
+     * @throws Exception
      */
     public function addImage(string $key, string $url = null) : self
     {

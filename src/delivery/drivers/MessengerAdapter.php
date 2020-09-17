@@ -53,6 +53,7 @@ abstract class MessengerAdapter
 
     /**
      * MessengerAdapter constructor.
+     * @throws Exception
      */
     public function __construct()
     {
@@ -72,8 +73,6 @@ abstract class MessengerAdapter
         } catch (Exception $e) {
             Error::register("SMS Params Missing: " . $e->getMessage(), static::ERROR_BUCKET);
         }
-
-
     }
 
     /**

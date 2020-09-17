@@ -28,6 +28,7 @@ namespace phpformsframework\libs\storage\adapters;
 use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\storage\FilemanagerAdapter;
+use Exception;
 
 /**
  * Class FilemanagerJson
@@ -38,14 +39,15 @@ class FilemanagerJson extends FilemanagerAdapter //todo: da finire
     const EXT                                                   = "json";
 
     /**
-     * @todo da tipizzare
      * @param string $file_path
      * @param string|null $var
      * @return array|null
+     * @throws Exception
+     * @todo da tipizzare
      */
     protected function loadFile(string $file_path, string $var = null) : ?array
     {
-        return Validator::json2Array(Filemanager::fileGetContent($file_path));
+        return Validator::jsonDecode(Filemanager::fileGetContent($file_path));
     }
 
     /**

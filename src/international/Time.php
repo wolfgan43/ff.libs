@@ -31,11 +31,10 @@ class Time
     private $dateTime           = null;
 
 
-
     /**
      * Time constructor.
      * @param int|null $timestamp
-     * @throws Exception
+     * @param string|null $timezone
      */
     public function __construct(int $timestamp = null, string $timezone = null)
     {

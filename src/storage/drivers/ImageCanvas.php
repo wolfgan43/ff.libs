@@ -26,6 +26,7 @@
 
 namespace phpformsframework\libs\storage\drivers;
 
+use Exception;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\storage\Filemanager;
@@ -109,7 +110,11 @@ class ImageCanvas
         return $ref["obj"];
     }
 
-    public function process($filename = null)
+    /**
+     * @param string|null $filename
+     * @throws Exception
+     */
+    public function process(string $filename = null) : void
     {
         ksort($this->tmb_res);
 

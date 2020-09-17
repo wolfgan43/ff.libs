@@ -167,7 +167,8 @@ class Router implements Configurable, Dumpable
     }
 
     /**
-     * @param string $path|null
+     * @param string|null $path
+     * @throws Exception
      */
     private static function runWebRoot(string $path = null) : void
     {
@@ -252,6 +253,7 @@ class Router implements Configurable, Dumpable
 
     /**
      * @param string $script
+     * @throws Exception
      */
     private static function execute(string $script) : void
     {

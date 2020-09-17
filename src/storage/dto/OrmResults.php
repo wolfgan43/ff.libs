@@ -189,7 +189,7 @@ class OrmResults
     }
 
     /**
-     * @param string $class_name
+     * @param string|null $class_name
      * @param bool $use_record_to_constructor
      * @return object[]
      */
@@ -236,9 +236,9 @@ class OrmResults
     }
 
     /**
-     * @param string $class_name
+     * @param array|null $record
+     * @param string|null $class_name
      * @param bool $send_record_to_constructor
-     * @param array $record
      * @return object[]
      */
     private function mapRecord(array $record = null, string $class_name = null, bool $send_record_to_constructor = false) : ?object

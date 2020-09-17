@@ -209,6 +209,7 @@ abstract class ApiAdapter
      * @param string $type
      * @param string|null $default
      * @return mixed
+     * @throws Exception
      * @todo da tipizzare
      */
     protected function setDefault(string $type, string $default = null)

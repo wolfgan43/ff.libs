@@ -545,7 +545,7 @@ class MongoDB extends DatabaseDriver
     }
 
     /**
-     * @param string $DataValue|null
+     * @param string|null $DataValue
      * @return string|null
      */
     protected function toSqlEscape(string $DataValue = null) : ?string

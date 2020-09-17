@@ -1,0 +1,216 @@
+{
+  "collection": "access",
+  "main_table": "users",
+  "adapters": {
+    "mysqli": null
+  },
+  "connectors": {
+    "mysqli": {
+      "host": null,
+      "username": null,
+      "password": null,
+      "name": null,
+      "prefix": "ACCESS_DATABASE_",
+      "table": null,
+      "key": "id",
+      "key_rel" : "_id"
+    },
+    "mongodb": {
+      "host": null,
+      "username": null,
+      "password": null,
+      "name": null,
+      "prefix": "ACCESS_MONGO_DATABASE_",
+      "table": null,
+      "key": "id",
+      "key_rel" : "_id"
+    },
+    "fs": {
+      "service": "php",
+      "path": "\/cache\/access",
+      "name": [
+        "username_slug"
+      ]
+    }
+  },
+  "struct": {
+    "users": {
+      "id": "primary",
+      "uuid": "string",
+      "domain": "string",
+      "acl": "number",
+      "acl_primary": "string",
+      "acl_profile": "string",
+      "expire": "timestamp",
+      "status": "number",
+      "username": "string",
+      "username_slug": "string:inSlug",
+      "email": "string",
+      "tel": "string",
+      "password": "string:inPassword",
+      "avatar": "string",
+      "created": "number",
+      "last_update": "number",
+      "last_login": "number",
+      "lang_id": "number",
+      "verified_email": "number",
+      "verified_tel": "number",
+      "locale": "string"
+    },
+    "groups": {
+      "id": "primary",
+      "name": "string",
+      "level": "number"
+    },
+    "user_groups": {
+      "id": "primary",
+      "user_id": "number",
+      "group_id": "number"
+    },
+    "devices": {
+      "id": "primary",
+      "client_id": "string",
+      "user_id": "number",
+      "uuid": "string",
+      "type": "string",
+      "last_update": "number",
+      "hits": "number",
+      "ips": "text"
+    },
+    "tokens": {
+      "id": "primary",
+      "type": "string",
+      "token": "string",
+      "expire": "timestamp",
+      "device": "string",
+      "uuid" : "string"
+    }
+  },
+  "relationship": {
+    "users": {
+      "user_groups": {
+        "external": "user_id",
+        "primary": "id"
+      },
+      "devices": {
+        "external": "user_id",
+        "primary": "id"
+      }
+    },
+    "devices": {
+      "user_id": {
+        "tbl": "users",
+        "key": "id"
+      },
+      "users": {
+        "external": "user_id",
+        "primary": "id"
+      }
+    },
+    "tokens": {
+      "uuid": {
+        "tbl": "users",
+        "key": "uuid"
+      },
+      "device": {
+        "tbl": "devices",
+        "key": "uuid"
+      },
+      "users": {
+        "external": "uuid",
+        "primary": "uuid"
+      },
+      "devices": {
+        "external": "device",
+        "primary": "uuid"
+      }
+    },
+    "groups": {
+      "user_groups": {
+        "external": "group_id",
+        "primary": "id"
+      }
+    },
+    "user_groups": {
+      "user_id": {
+        "tbl": "users",
+        "key": "id"
+      },
+      "group_id": {
+        "tbl": "groups",
+        "key": "id"
+      },
+      "users": {
+        "external": "user_id",
+        "primary": "id"
+      },
+      "groups": {
+        "external": "group_id",
+        "primary": "id"
+      }
+    }
+  },
+  "indexes": {
+    "users": {
+      "domain": "hardindex",
+      "acl": "hardindex"
+    },
+    "devices": {
+      "user_id": "hardindex",
+      "uuid": "hardindex"
+    },
+    "tokens": {
+      "user_id": "hardindex",
+      "uuid": "hardindex"
+    }
+  },
+  "tables": {
+    "users": {
+      "name": "access_users",
+      "alias": "user",
+      "engine": "InnoDB",
+      "crypt": false,
+      "pairing": false,
+      "transfert": false,
+      "charset": "utf8"
+    },
+    "groups": {
+      "name": "access_groups",
+      "alias": "group",
+      "engine": "InnoDB",
+      "crypt": false,
+      "pairing": false,
+      "transfert": false,
+      "charset": "utf8"
+    },
+    "user_groups": {
+      "name": "access_users_groups",
+      "alias": "user_groups",
+      "engine": "InnoDB",
+      "crypt": false,
+      "pairing": false,
+      "transfert": false,
+      "charset": "utf8"
+    },
+    "devices": {
+      "name": "access_devices",
+      "alias": "device",
+      "engine": "InnoDB",
+      "crypt": false,
+      "pairing": false,
+      "transfert": false,
+      "charset": "utf8"
+    },
+    "tokens": {
+      "name": "access_tokens",
+      "alias": "token",
+      "engine": "InnoDB",
+      "crypt": false,
+      "pairing": false,
+      "transfert": false,
+      "charset": "utf8"
+    }
+  },
+  "alias": {},
+  "version": 1
+}

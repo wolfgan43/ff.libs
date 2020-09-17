@@ -75,21 +75,10 @@ class Filemanager implements Dumpable
     public static function dump() : array
     {
         return array(
-            "loaded"      => self::$cache["request"]
+            "loaded"           => self::$cache["request"]
         );
     }
 
-    /**
-     * @param string $type
-     * @return array
-     */
-    public static function dumpContent(string $type = "remote") : ?array
-    {
-        return (isset(self::$cache["response"][$type])
-            ? self::$cache["response"][$type]
-            : null
-        );
-    }
     /**
      * @param string $content
      * @param string $file
@@ -653,14 +642,14 @@ class Filemanager implements Dumpable
 
     /**
      * @param string $path
-     * @param resource $context
+     * @param resource|null $context
      * @param array|null $headers
      * @return string|null
      * @throws Exception
      */
     private static function loadFile(string $path, $context = null, array &$headers = null) : ?string
     {
-        if (Validator::is($path, "", "url")->isError() && !Dir::checkDiskPath($path)) {
+        if (Validator::is($path, $path, "url")->isError() && !Dir::checkDiskPath($path)) {
             return "";
         }
 

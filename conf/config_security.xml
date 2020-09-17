@@ -19,6 +19,64 @@
 
         <rule source="^/autodiscover/*"                 destination="404" />
     </badpath>
+    <pages>
+        <!-- Widgets -->
+        <page path="/login" engine="auth-login">
+            <header name="csrf"     />
+            <header name="refresh"  />
+            <header name="domain"            />
+
+            <get name="domain"                  scope="auth" />
+
+            <post name="domain"              scope="auth" />
+            <post name="username"            scope="auth" required="true" validator="username" />
+            <post name="password"            scope="auth" required="true" validator="password" />
+            <post name="permanent"           scope="auth" validator="bool" />
+        </page>
+        <page path="/logout" engine="auth-logout">
+            <header name="csrf"     />
+        </page>
+        <page path="/activation" engine="auth-activation">
+            <header name="csrf"     />
+            <header name="domain"     />
+
+            <get name="code"            scope="auth" validator="totp"/>
+            <get name="identity"        scope="auth" validator="email"/>
+            <get name="error"           scope="auth"/>
+
+            <post name="code"           scope="auth" validator="totp"/>
+            <post name="identity"       scope="auth" validator="email" />
+            <post name="answer"         scope="auth"/>
+        </page>
+
+        <page path="/recover" engine="auth-recover">
+            <header name="csrf"     />
+            <post name="code"           scope="auth" validator="totp" />
+            <post name="identity"       scope="auth" validator="email" />
+            <post name="value"          scope="auth" validator="password" />
+            <post name="answer"         scope="auth" />
+        </page>
+        <page path="/registration" engine="auth-registration">
+            <header name="csrf"     />
+
+            <get name="domain"             scope="auth"  />
+
+            <post name="username"           scope="auth" required="true" validator="username" />
+            <post name="password"           scope="auth" required="true" validator="password" />
+            <post name="email"              scope="auth" validator="email" />
+            <post name="tel"                scope="auth" validator="tel" />
+            <post name="avatar"             scope="auth"  />
+        </page>
+    </pages>
+
+    <engine>
+        <auth-login             obj="phpformsframework\libs\security\widgets\Login"             method="page"       log="notice.auth"           />
+        <auth-logout            obj="phpformsframework\libs\security\widgets\Logout"            method="page"       log="notice.auth"           />
+        <auth-activation        obj="phpformsframework\libs\security\widgets\Activation"        method="page"       log="notice.auth"           />
+        <auth-recover           obj="phpformsframework\libs\security\widgets\Recover"           method="page"       log="notice.auth"           />
+        <auth-registration      obj="phpformsframework\libs\security\widgets\Registration"      method="page"       log="notice.auth"           />
+    </engine>
+
     <models>
         <model name="user" collection="access" table="users" mapclass="\phpformsframework\libs\security\User">
             <field name="uuid"              db="users.uuid"                         source="$uuid"                  fake="fdbba8ff-86a4-442f-a3c4-ac034210b7e9" />

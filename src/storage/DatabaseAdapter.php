@@ -30,8 +30,8 @@ use phpformsframework\libs\international\Data;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Kernel;
-use phpformsframework\libs\security\Validator;
 use Exception;
+use phpformsframework\libs\util\Normalize;
 
 /**
  * Class DatabaseAdapter
@@ -83,7 +83,6 @@ abstract class DatabaseAdapter implements Constant
     private const INDEX_PRIMARY         = Database::INDEX_PRIMARY;
 
     protected const MAX_NUMROWS         = 10000;
-    protected const MAX_RESULTS         = 1000;
 
     private $connection                 = array(
                                             "host"          => null
@@ -160,6 +159,7 @@ abstract class DatabaseAdapter implements Constant
      * @param string $field_output
      * @param string|null $field_db
      * @return string
+     * @throws Exception
      */
     private function converter(string &$field_output, string $field_db = null) : string
     {
@@ -187,10 +187,12 @@ abstract class DatabaseAdapter implements Constant
 
         return $casts;
     }
+
     /**
      * @param string $field_db
      * @param string|null $field_output
      * @return string
+     * @throws Exception
      */
     private function converterStruct(string $field_db, string $field_output = null) : string
     {
@@ -271,11 +273,11 @@ abstract class DatabaseAdapter implements Constant
     abstract protected function fieldOperation($value, string $struct_type, string $name = null, string $op = null);
 
     /**
-     * @todo da tipizzare
      * @param string $struct_type
      * @param string $name
-     * @param string $op|null
+     * @param string|null $op
      * @return mixed
+     * @todo da tipizzare
      */
     abstract protected function fieldOperationNULL(string $struct_type, string $name, string $op = null);
 
@@ -304,6 +306,7 @@ abstract class DatabaseAdapter implements Constant
      * @param array $fields
      * @param bool $use_control
      * @return array|string
+     * @throws Exception
      * @todo da tipizzare
      */
     protected function querySelect(array $fields, bool $use_control = true)
@@ -338,9 +341,10 @@ abstract class DatabaseAdapter implements Constant
     }
 
     /**
-     * @todo da tipizzare
      * @param array|null $fields
      * @return array|string
+     * @throws Exception
+     * @todo da tipizzare
      */
     protected function querySort(array $fields = null)
     {
@@ -356,9 +360,10 @@ abstract class DatabaseAdapter implements Constant
     }
 
     /**
-     * @todo da tipizzare
      * @param array|null $fields
      * @return array|string
+     * @throws Exception
+     * @todo da tipizzare
      */
     protected function queryWhere(array $fields = null)
     {
@@ -397,6 +402,7 @@ abstract class DatabaseAdapter implements Constant
     /**
      * @param array|null $fields
      * @return array
+     * @throws Exception
      */
     protected function queryInsert(array $fields = null) : array
     {
@@ -422,9 +428,10 @@ abstract class DatabaseAdapter implements Constant
     }
 
     /**
-     * @todo da tipizzare
      * @param array|null $fields
      * @return array|string
+     * @throws Exception
+     * @todo da tipizzare
      */
     protected function queryUpdate(array $fields = null)
     {
@@ -520,6 +527,7 @@ abstract class DatabaseAdapter implements Constant
     /**
      * @param DatabaseQuery $query
      * @return array|null
+     * @throws Exception
      */
     private function processWrite(DatabaseQuery $query) : ?array
     {
@@ -588,6 +596,7 @@ abstract class DatabaseAdapter implements Constant
 
     /**
      * @return bool
+     * @throws Exception
      */
     private function loadDriver() : bool
     {
@@ -626,6 +635,7 @@ abstract class DatabaseAdapter implements Constant
 
     /**
      * @return array
+     * @throws Exception
      */
     protected function getConnector() : array
     {
@@ -689,6 +699,7 @@ abstract class DatabaseAdapter implements Constant
     }
 
     /**
+     *
      */
     private function setIndex2Query() : void
     {
@@ -706,6 +717,7 @@ abstract class DatabaseAdapter implements Constant
      * @param string $action
      * @param string|null $table_name
      * @return DatabaseQuery
+     * @throws Exception
      */
     private function getQuery(string $action, string $table_name = null) : DatabaseQuery
     {
@@ -739,6 +751,7 @@ abstract class DatabaseAdapter implements Constant
      * @param int|null $offset
      * @param string|null $table_name
      * @return DatabaseQuery
+     * @throws Exception
      */
     private function getQueryRead(array $select, array $where = null, array $sort = null, int $limit = null, int $offset = null, string $table_name = null) : DatabaseQuery
     {
@@ -757,6 +770,7 @@ abstract class DatabaseAdapter implements Constant
      * @param array $insert
      * @param string|null $table_name
      * @return DatabaseQuery
+     * @throws Exception
      */
     private function getQueryInsert(array $insert, string $table_name = null) : DatabaseQuery
     {
@@ -772,6 +786,7 @@ abstract class DatabaseAdapter implements Constant
      * @param array $where
      * @param string|null $table_name
      * @return DatabaseQuery
+     * @throws Exception
      */
     private function getQueryUpdate(array $set, array $where, string $table_name = null) : DatabaseQuery
     {
@@ -789,6 +804,7 @@ abstract class DatabaseAdapter implements Constant
      * @param array $where
      * @param string|null $table_name
      * @return DatabaseQuery
+     * @throws Exception
      */
     private function getQueryWrite(array $insert, array $set, array $where, string $table_name = null) : DatabaseQuery
     {
@@ -805,6 +821,7 @@ abstract class DatabaseAdapter implements Constant
      * @param array $where
      * @param string|null $table_name
      * @return DatabaseQuery
+     * @throws Exception
      */
     private function getQueryDelete(array $where, string $table_name = null) : DatabaseQuery
     {
@@ -819,6 +836,7 @@ abstract class DatabaseAdapter implements Constant
      * @param array $where
      * @param string|null $table_name
      * @return DatabaseQuery
+     * @throws Exception
      */
     private function getQueryCmd(array $where, string $table_name = null) : DatabaseQuery
     {
@@ -872,6 +890,7 @@ abstract class DatabaseAdapter implements Constant
      * @param int|null $offset
      * @param string|null $table_name
      * @return array|null
+     * @throws Exception
      */
     public function read(array $fields, array $where = null, array $sort = null, int $limit = null, int $offset = null, string $table_name = null) : ?array
     {
@@ -897,6 +916,7 @@ abstract class DatabaseAdapter implements Constant
     /**
      * @param array $db
      * @param array|null $indexes
+     * @throws Exception
      */
     protected function convertRecordset(array &$db, array $indexes = null) : void
     {
@@ -922,6 +942,7 @@ abstract class DatabaseAdapter implements Constant
      * @param array $insert
      * @param string|null $table_name
      * @return array|null
+     * @throws Exception
      */
     public function insert(array $insert, string $table_name = null) : ?array
     {
@@ -937,6 +958,7 @@ abstract class DatabaseAdapter implements Constant
      * @param array $where
      * @param string|null $table_name
      * @return array|null
+     * @throws Exception
      */
     public function update(array $set, array $where, string $table_name = null) : ?array
     {
@@ -953,6 +975,7 @@ abstract class DatabaseAdapter implements Constant
      * @param array $where
      * @param string|null $table_name
      * @return array|null
+     * @throws Exception
      */
     public function write(array $insert, array $set, array $where, string $table_name = null) : ?array
     {
@@ -967,6 +990,7 @@ abstract class DatabaseAdapter implements Constant
      * @param array $where
      * @param string|null $table_name
      * @return array|null
+     * @throws Exception
      */
     public function delete(array $where, string $table_name = null) : ?array
     {
@@ -982,6 +1006,7 @@ abstract class DatabaseAdapter implements Constant
      * @param string $action
      * @param string|null $table_name
      * @return array|null
+     * @throws Exception
      */
     public function cmd(array $where, string $action = self::CMD_COUNT, string $table_name = null) : ?array
     {
@@ -996,6 +1021,7 @@ abstract class DatabaseAdapter implements Constant
     /**
      * @param string $key
      * @return string
+     * @throws Exception
      */
     private function getStructField(string $key) : string
     {
@@ -1021,6 +1047,7 @@ abstract class DatabaseAdapter implements Constant
     /**
      * @param array $record
      * @return array
+     * @throws Exception
      */
     protected function fields2output(array $record) : array
     {
@@ -1072,6 +1099,7 @@ abstract class DatabaseAdapter implements Constant
      * @param string $func
      * @param array|null $params
      * @return string
+     * @throws Exception
      */
     private function to(string $source, string $func, array $params = null) : ?string
     {
@@ -1101,9 +1129,9 @@ abstract class DatabaseAdapter implements Constant
                 $min                                                        = 60;
                 if ($time < 2 * $day) {
                     if ($time < $min) {
-                        $res                                                = Translator::get_word_by_code("about") . " " . Translator::get_word_by_code("a") . " " . Translator::get_word_by_code("minute") . " " . Translator::get_word_by_code("ago");
+                        $res                                                = Translator::getWordByCode("about") . " " . Translator::getWordByCode("a") . " " . Translator::getWordByCode("minute") . " " . Translator::getWordByCode("ago");
                     } elseif ($time > $day) {
-                        $res                                                = Translator::get_word_by_code("yesterday") . " " . Translator::get_word_by_code("at") . " " . date("G:i", $source);
+                        $res                                                = Translator::getWordByCode("yesterday") . " " . Translator::getWordByCode("at") . " " . date("G:i", $source);
                     } else {
                         $tokens                                             = array(
                                                                                 31536000 	=> 'year',
@@ -1120,7 +1148,7 @@ abstract class DatabaseAdapter implements Constant
                                 continue;
                             }
                             $res                                            = floor($time / $unit);
-                            $res                                            .= ' ' . Translator::get_word_by_code($text . (($res > 1) ? 's' : '')) . " " . Translator::get_word_by_code("ago");
+                            $res                                            .= ' ' . Translator::getWordByCode($text . (($res > 1) ? 's' : '')) . " " . Translator::getWordByCode("ago");
                             break;
                         }
                     }
@@ -1139,24 +1167,24 @@ abstract class DatabaseAdapter implements Constant
                 }
 
                 $conv                                                       = array(
-                                                                                $prefix . "01/" => " " . Translator::get_word_by_code("Januaunable to updatery") . " "
-                                                                                , $prefix . "02/" => " " . Translator::get_word_by_code("February") . " "
-                                                                                , $prefix . "03/" => " " . Translator::get_word_by_code("March") . " "
-                                                                                , $prefix . "04/" => " " . Translator::get_word_by_code("April") . " "
-                                                                                , $prefix . "05/" => " " . Translator::get_word_by_code("May") . " "
-                                                                                , $prefix . "06/" => " " . Translator::get_word_by_code("June") . " "
-                                                                                , $prefix . "07/" => " " . Translator::get_word_by_code("July") . " "
-                                                                                , $prefix . "08/" => " " . Translator::get_word_by_code("August") . " "
-                                                                                , $prefix . "09/" => " " . Translator::get_word_by_code("September") . " "
-                                                                                , $prefix . "10/" => " " . Translator::get_word_by_code("October") . " "
-                                                                                , $prefix . "11/" => " " . Translator::get_word_by_code("November") . " "
-                                                                                , $prefix . "12/" => " " . Translator::get_word_by_code("December") . " "
+                                                                                $prefix . "01/" => " " . Translator::getWordByCode("Januaunable to updatery") . " "
+                                                                                , $prefix . "02/" => " " . Translator::getWordByCode("February") . " "
+                                                                                , $prefix . "03/" => " " . Translator::getWordByCode("March") . " "
+                                                                                , $prefix . "04/" => " " . Translator::getWordByCode("April") . " "
+                                                                                , $prefix . "05/" => " " . Translator::getWordByCode("May") . " "
+                                                                                , $prefix . "06/" => " " . Translator::getWordByCode("June") . " "
+                                                                                , $prefix . "07/" => " " . Translator::getWordByCode("July") . " "
+                                                                                , $prefix . "08/" => " " . Translator::getWordByCode("August") . " "
+                                                                                , $prefix . "09/" => " " . Translator::getWordByCode("September") . " "
+                                                                                , $prefix . "10/" => " " . Translator::getWordByCode("October") . " "
+                                                                                , $prefix . "11/" => " " . Translator::getWordByCode("November") . " "
+                                                                                , $prefix . "12/" => " " . Translator::getWordByCode("December") . " "
                                                                             );
                 $res                                                        = str_replace(array_keys($conv), array_values($conv), $res);
                 if ($prefix) {
                     $res                                                    = str_replace("/", ", ", $res);
                 }
-                $res                                                        .= " " . Translator::get_word_by_code("at") . " " . Translator::get_word_by_code("hours") . " " . $oData->getValue("Time", Locale::getLang("code"));
+                $res                                                        .= " " . Translator::getWordByCode("at") . " " . Translator::getWordByCode("hours") . " " . $oData->getValue("Time", Locale::getLang("code"));
 
                 break;
             case "DATE":
@@ -1171,7 +1199,7 @@ abstract class DatabaseAdapter implements Constant
                 $res                                                        = $source;
                 break;
             case "SLUG":
-                $res                                                        = Validator::urlRewrite($source);
+                $res                                                        = Normalize::urlRewrite($source);
                 break;
             case "DESCRYPT":
                 $res                                                        = $this->decrypt($source, $params[0], $params[1]);
@@ -1266,7 +1294,7 @@ abstract class DatabaseAdapter implements Constant
                 $res                                                        = $this->encrypt($data, $params[0], $method);
                 break;
             case "SLUG":
-                $res                                                        = Validator::urlRewrite($data);
+                $res                                                        = Normalize::urlRewrite($data);
                 break;
             default:
                 $res                                                        = (

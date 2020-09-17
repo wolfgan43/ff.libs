@@ -26,6 +26,7 @@
 
 namespace phpformsframework\libs\international;
 
+use Exception;
 use phpformsframework\libs\App;
 use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\Error;
@@ -41,7 +42,6 @@ class Translator
     use AdapterManager;
 
     const ERROR_BUCKET                                  = "translator";
-    const ADAPTER                                       = false;
 
     const REGEXP                                        = '/\{_([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)\}/U';
 
@@ -96,6 +96,7 @@ class Translator
      * @param string $content
      * @param string|null $language
      * @return string
+     * @throws Exception
      */
     public static function process(string $content, string $language = null) : string
     {
@@ -107,7 +108,7 @@ class Translator
             $vars                                       = $matches[1];
             foreach ($vars as $code) {
                 $replace["keys"][]                      = "{_" . $code . "}";
-                $replace["values"][]                    = self::get_word_by_code($code, $language);
+                $replace["values"][]                    = self::getWordByCode($code, $language);
             }
 
             if ($replace) {
@@ -133,8 +134,9 @@ class Translator
      * @param string|null $code
      * @param string|null $language Upper Code (es: ENG, ITA, SPA)
      * @return string
+     * @throws Exception
      */
-    public static function get_word_by_code(string $code = null, string $language = null) : string
+    public static function getWordByCode(string $code = null, string $language = null) : string
     {
         if (!$code || !Locale::isMultiLang()) {
             return (string) $code;
@@ -175,6 +177,7 @@ class Translator
      * @param string $code
      * @param string|null $language
      * @return array
+     * @throws Exception
      */
     private static function getWordByCodeFromDB(string $code, string $language = null) : array
     {

@@ -26,9 +26,10 @@
 
 namespace phpformsframework\libs\security;
 
-use phpformsframework\libs\Constant;
+use Exception;
 use phpformsframework\libs\dto\DataError;
 use phpformsframework\libs\Env;
+use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Request;
 
@@ -38,7 +39,14 @@ use phpformsframework\libs\Request;
  */
 class Validator
 {
-    const RULES                                             = array(
+    public const REQUEST_UPLOAD_PARAM_NAME                  = Request::UPLOAD_PARAM_NAME;
+    private const ERROR_NO_BASE64                           = ' is not a valid base64.';
+
+    private const MEMORY_LIMIT                              = 10000000;      //10MB
+    private const MEMORY_LIMIT_BASE64                       = 33000000;      //33MB
+    private const REQUEST_LIMIT                             = 1024000000;    //1024MB
+    private const SPELL_CHECK                               = array("''", '""', '\\"', '\\', '../', './');
+    private const RULES                                     = array(
                                                                 "bool"              => array(
                                                                     "filter"        => FILTER_VALIDATE_BOOLEAN,
                                                                     "flags"         => FILTER_NULL_ON_FAILURE,
@@ -69,12 +77,6 @@ class Validator
                                                                     "options"       => array("default" => null),
                                                                     "length"        => 16
                                                                 ),
-                                                                "timestamp"         => array(
-                                                                    "filter"        => FILTER_CALLBACK,
-                                                                    "flags"         => null,
-                                                                    "options"       => '\phpformsframework\libs\security\Validator::isValidTimeStamp',
-                                                                    "length"        => 10
-                                                                ),
                                                                 "ip"                => array(
                                                                     "filter"        => FILTER_VALIDATE_IP,
                                                                     "flags"         => null, //FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
@@ -83,13 +85,10 @@ class Validator
                                                                 ),
                                                                 "mac"               => array(
                                                                     "filter"        => FILTER_VALIDATE_MAC,
+                                                                    "flags"         => null,
                                                                     "options"       => array("default" => null),
                                                                     "length"        => 24
                                                                 ),
-                                                                /*"regexp"          => array(
-                                                                    "filter"        => FILTER_VALIDATE_REGEXP,
-                                                                    "options"       => array("default" => null, "regexp" => '0')
-                                                                ),*/
                                                                 "url"               => array(
                                                                     "filter"        => FILTER_VALIDATE_URL,
                                                                     "flags"         => FILTER_FLAG_PATH_REQUIRED, // | FILTER_FLAG_SCHEME_REQUIRED | FILTER_FLAG_HOST_REQUIRED | FILTER_FLAG_QUERY_REQUIRED
@@ -123,30 +122,6 @@ class Validator
                                                                     "options"       => null,
                                                                     "length"        => 16
                                                                 ),
-                                                                "json"              => array(
-                                                                    "filter"        => FILTER_CALLBACK,
-                                                                    "flags"         => null,
-                                                                    "options"       => '\phpformsframework\libs\security\Validator::isJson',
-                                                                    "length"        => 10240
-                                                                ),
-                                                                "password"          => array(
-                                                                    "filter"        => FILTER_CALLBACK,
-                                                                    "flags"         => null,
-                                                                    "options"       => '\phpformsframework\libs\security\Validator::isPassword',
-                                                                    "length"        => 24
-                                                                ),
-                                                                "tel"               => array(
-                                                                    "filter"        => FILTER_CALLBACK,
-                                                                    "flags"         => null,
-                                                                    "options"       => '\phpformsframework\libs\security\Validator::isTel',
-                                                                    "length"        => 16
-                                                                ),
-                                                                "file"              => array(
-                                                                    "filter"        => FILTER_CALLBACK,
-                                                                    "flags"         => null,
-                                                                    "options"       => '\phpformsframework\libs\security\Validator::isFile',
-                                                                    "length"        => 0
-                                                                ),
                                                                 "encode"            => array(
                                                                     "filter"        => FILTER_SANITIZE_ENCODED,
                                                                     "flags"         => FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH,
@@ -157,30 +132,9 @@ class Validator
                                                                 "slug"              => array(
                                                                     "filter"        => FILTER_CALLBACK,
                                                                     "flags"         => null,
-                                                                    "options"       => '\phpformsframework\libs\security\Validator::urlRewrite',
+                                                                    "options"       => '\phpformsframework\libs\util\Normalize::urlRewrite',
                                                                     "normalize"     => true,
                                                                     "length"        => 128
-                                                                ),
-                                                                "uuid"              => array(
-                                                                    "filter"        => FILTER_CALLBACK,
-                                                                    "flags"         => null,
-                                                                    "options"       => '\phpformsframework\libs\security\Validator::isUUID',
-                                                                    "normalize"     => true,
-                                                                    "length"        => 128
-                                                                ),
-                                                                "totp"              => array(
-                                                                    "filter"        => FILTER_CALLBACK,
-                                                                    "flags"         => null,
-                                                                    "options"       => '\phpformsframework\libs\security\Validator::isTotp',
-                                                                    "normalize"     => true,
-                                                                    "length"        => 7
-                                                                ),
-                                                                "token"              => array(
-                                                                    "filter"        => FILTER_CALLBACK,
-                                                                    "flags"         => null,
-                                                                    "options"       => '\phpformsframework\libs\security\Validator::isToken',
-                                                                    "normalize"     => true,
-                                                                    "length"        => 2048
                                                                 ),
                                                                 "text"              => array(
                                                                     "filter"        => FILTER_CALLBACK,
@@ -188,39 +142,91 @@ class Validator
                                                                     "options"       => "nl2br",
                                                                     "normalize"     => true,
                                                                     "length"        => 128000
+                                                                ),
+                                                                "timestamp"         => array(
+                                                                    "filter"        => FILTER_CALLBACK,
+                                                                    "flags"         => null,
+                                                                    "options"       => '\phpformsframework\libs\security\Validator::isTimeStamp',
+                                                                    "length"        => 10
+                                                                ),
+                                                                "json"              => array(
+                                                                    "filter"        => FILTER_CALLBACK,
+                                                                    "flags"         => null,
+                                                                    "options"       => '\phpformsframework\libs\security\Validator::isJson',
+                                                                    "length"        => 10240
+                                                                ),
+                                                                "password"          => array(
+                                                                    "filter"        => FILTER_CALLBACK,
+                                                                    "flags"         => null,
+                                                                    "options"       => '\phpformsframework\libs\security\Validator::checkPassword',
+                                                                    "length"        => 24
+                                                                ),
+                                                                "tel"               => array(
+                                                                    "filter"        => FILTER_CALLBACK,
+                                                                    "flags"         => null,
+                                                                    "options"       => '\phpformsframework\libs\security\Validator::isTel',
+                                                                    "length"        => 16
+                                                                ),
+                                                                "uuid"              => array(
+                                                                    "filter"        => FILTER_CALLBACK,
+                                                                    "flags"         => null,
+                                                                    "options"       => '\phpformsframework\libs\security\Validator::isUUID',
+                                                                    "length"        => 128
+                                                                ),
+                                                                "totp"              => array(
+                                                                    "filter"        => FILTER_CALLBACK,
+                                                                    "flags"         => null,
+                                                                    "options"       => '\phpformsframework\libs\security\Validator::isTotp',
+                                                                    "length"        => 7
+                                                                ),
+                                                                "token"             => array(
+                                                                    "filter"        => FILTER_CALLBACK,
+                                                                    "flags"         => null,
+                                                                    "options"       => '\phpformsframework\libs\security\Validator::isToken',
+                                                                    "length"        => 2048
+                                                                ),
+                                                                "file"              => array(
+                                                                    "filter"        => FILTER_CALLBACK,
+                                                                    "flags"         => null,
+                                                                    "options"       => '\phpformsframework\libs\security\ValidatorFile::check',
+                                                                    "length"        => 0
+                                                                ),
+                                                                "base64"            => array(
+                                                                    "filter"        => null,
+                                                                    "flags"         => null,
+                                                                    "options"       => null,
+                                                                    "callback"      => '\phpformsframework\libs\security\Validator::checkBase64',
+                                                                    "length"        => 0
+                                                                ),
+                                                                "base64json"        => array(
+                                                                    "filter"        => null,
+                                                                    "flags"         => null,
+                                                                    "options"       => null,
+                                                                    "callback"      => '\phpformsframework\libs\security\Validator::checkJsonBase64',
+                                                                    "length"        => 0
+                                                                ),
+                                                                "base64file"        => array(
+                                                                    "filter"        => null,
+                                                                    "flags"         => null,
+                                                                    "options"       => null,
+                                                                    "callback"      => '\phpformsframework\libs\security\Validator::checkBase64File',
+                                                                    "length"        => 0
                                                                 )
-
-                                                            );
-    /**
-     * https://en.wikipedia.org/wiki/List_of_file_signatures
-     */
-    const SIGNATURES                                        = array(
-                                                                'image/jpeg'        => array(
-                                                                                        'FFD8FFDB',
-                                                                                        'FFD8FFE000104A4649460001',
-                                                                                        'FFD8FFEE',
-                                                                                        'FFD8FFE1....457869660000'
-                                                                                    ),
-                                                                'image/png'         => array(
-                                                                                        '89504E470D0A1A0A'
-                                                                                    ),
-                                                                'application/pdf'   => array(
-                                                                                        '255044462D'
-                                                                                    )
                                                             );
 
     private const REQUEST_MAX_SIZE                          = array(
                                                                 Request::METHOD_GET     => 256,
                                                                 Request::METHOD_PUT     => 10240,
                                                                 Request::METHOD_PATCH   => 10240,
-                                                                Request::METHOD_POST    => 10240,
+                                                                Request::METHOD_POST    => 10240000000000000000,
                                                                 Request::METHOD_HEAD    => 2048,
                                                                 "DEFAULT"               => 128,
                                                                 "FILES"                 => 1024000
                                                             );
     private const PASSWORD_LENGTH                           = 8;
-    private static $errors                                  = array();
-    private static $errorName                               = null;
+
+    private static $contextName                             = null;
+    private static $conversion                              = null;
 
     /**
  * @param string $method
@@ -228,18 +234,24 @@ class Validator
  */
     public static function getRequestMaxSize(string $method) : int
     {
-        $method = strtoupper($method);
-        return Env::get("VALIDATOR_REQUEST_MAX_SIZE_" . $method) ?? self::REQUEST_MAX_SIZE[$method] ?? self::REQUEST_MAX_SIZE["DEFAULT"];
+        $method                                             = strtoupper($method);
+        $size                                               = Env::get("VALIDATOR_REQUEST_MAX_SIZE_" . $method)
+                                                                ?? self::REQUEST_MAX_SIZE[$method]
+                                                                ?? self::REQUEST_MAX_SIZE["DEFAULT"];
+        return ($size < self::REQUEST_LIMIT
+            ? $size
+            : self::REQUEST_LIMIT
+        );
     }
 
     /**
      * @param $what
-     * @param string $fakename
+     * @param string $context
      * @param string|null $type
      * @param null $range
      * @return DataError
      */
-    public static function is(&$what, string $fakename, string $type = null, $range = null) : DataError
+    public static function is(&$what, string $context, string $type = null, $range = null) : DataError
     {
         if (!array_key_exists($type, self::RULES)) {
             $type                                       = (
@@ -250,42 +262,66 @@ class Validator
         }
         $rule                                           = self::RULES[$type];
 
-        self::setErrorName($fakename);
+        self::setContextName($context);
         self::setRuleOptions($rule, $range);
 
         $length                                         = (Env::get("VALIDATOR_" . strtoupper($type) . "_LENGTH") ?? $rule["length"]);
-        $dataError                                      = self::isAllowed((array) $what, $type, $length);
-        if (!$dataError->isError()) {
-            $validation                                 = filter_var($what, $rule["filter"], array(
-                                                            "flags"         => $rule["flags"],
-                                                            "options"       => $rule["options"]
-                                                        ));
+        $dataError                                      = self::isAllowed((array) $what, $length, $context . ": Max Length Exceeded. Validator is " . $type);
+        if ($dataError->isError()) {
+            return $dataError;
+        }
 
-            if ($validation === null) {
-                $dataError                              = self::isError(self::getErrorName() . " is not a valid " . $type . ($range ? ". The permitted values are [" . $range . "]" : ""), $type);
-            } elseif (is_array($validation)) {
-                if (is_array($what) && ($type != "array" && $type != "arrayint")) {
-                    $dataError                          = self::isError(self::getErrorName() . " is malformed");
-                }
-            } elseif ($validation != $what) {
-                if (isset($rule["normalize"])) {
-                    $what                               = $validation;
-                } else {
-                    $dataError                          = self::isError(self::getErrorName() . " is not a valid " . $type . ($validation && $validation !== true ? ". (" . $validation . " is valid!)" : ""), $type);
-                }
+        if (!empty($rule["filter"])) {
+            if ($dataError->get("size") > self::MEMORY_LIMIT) {
+                return $dataError->error(413, $context . ": Memory Limit Reached. Validator is " . $type);
             }
 
-            if (isset($rule["callback"])) {
-                $error                                  = call_user_func($rule["callback"], $what);
-                if ($error) {
-                    $dataError                          = self::isError($error, $type);
-                }
+            $validation                                 = filter_var($what, $rule["filter"], array(
+                                                            "flags"     => $rule["flags"]       ?? null,
+                                                            "options"   => $rule["options"]     ?? null
+                                                        ));
+
+            if ($validation === true || $validation == $what || ($validation === null && $rule["filter"] == FILTER_CALLBACK)) {
+                //da fare in modo piu elegante
+            } elseif (is_array($validation) && ($error = self::isArrayAllowed($what, $type))) {
+                $dataError->error(400, $error);
+            } elseif (isset($rule["normalize"])) {
+                $what                                   = $validation;
+            } else {
+                $dataError->error(
+                    400,
+                    $context . " is not a valid " . $type
+                        . ($validation ? ": " . $validation : "")
+                        . ($range ? ". The permitted values are [" . $range . "]" : "")
+                );
             }
         }
 
-        self::transform($what, $type);
+        if (isset($rule["callback"]) && (($error = self::isArrayAllowed($what, $type)) || ($error = $rule["callback"]($what, $rule["limit"] ?? null)))) {
+            $dataError->error(400, $error);
+        }
+
+        if (!$dataError->isError()) {
+            self::transform($what, $type);
+        }
+
+        self::$conversion                               = null;
 
         return $dataError;
+    }
+
+    /**
+     * @param string|array $what
+     * @param string $type
+     * @return string|null
+     * @todo da tipizzare
+     */
+    private static function isArrayAllowed($what, string $type) : ?string
+    {
+        return (is_array($what) && ($type != "array" && $type != "arrayint")
+            ? self::getContextName() . " Cannot be an Array."
+            : null
+        );
     }
 
     /**
@@ -304,9 +340,9 @@ class Validator
     /**
      * @todo da tipizzare
      * @param $what
-     * @param string|null $in
+     * @param string $in
      */
-    public static function transform(&$what, string $in = null) : void
+    private static function transform(&$what, string $in) : void
     {
         if ($in) {
             if (is_array($what)) {
@@ -322,13 +358,15 @@ class Validator
     /**
      * @todo da tipizzare
      * @param $value
-     * @param string|null $type
+     * @param string $type
      */
-    private static function cast(&$value, string $type = null) : void
+    private static function cast(&$value, string $type) : void
     {
         switch ($type) {
             case "json":
-                $value = json_decode($value, true);
+            case "base64":
+            case "base64file":
+                $value      = self::$conversion;
                 break;
             case "boolean":
             case "bool":
@@ -338,12 +376,11 @@ class Validator
             case "double":
             case "string":
                 settype($value, $type);
-                break;
+                // no break
             default:
-        }
-
-        if (!is_array($value) && !is_object($value)) {
-            $value = urldecode($value);
+                if (!is_array($value) && !is_object($value)) {
+                    $value          = urldecode($value);
+                }
         }
     }
     /**
@@ -352,18 +389,19 @@ class Validator
      */
     public static function isJson(string $value = null) : bool
     {
-        return $value && (bool) self::json2Array($value);
+        return $value && (bool) self::convertJson($value);
     }
 
     /**
      * @param string $string
+     * @param bool $toArray
      * @return array|null
      */
-    public static function json2Array(string $string) : ?array
+    public static function jsonDecode(string $string, bool $toArray = true) : ?array
     {
         $res                                                            = null;
         if (substr($string, 0, 1) == "{" || substr($string, 0, 1) == "[") {
-            $json                                                       = json_decode($string, true);
+            $json                                                       = json_decode($string, $toArray);
             if (json_last_error() == JSON_ERROR_NONE) {
                 $res                                                    = $json;
             }
@@ -374,40 +412,28 @@ class Validator
 
 
     /**
-     * @todo da tipizzare
      * @param mixed $value
-     * @param array|null $spellcheck
-     * @return string|null
+     * @return DataError
+     * @todo da tipizzare
      */
-    public static function checkSpecialChars($value, array $spellcheck = null) : ?string
+    public static function checkSpecialChars($value) : ?string
     {
-        $errors                                         = array();
-        if (!$spellcheck) {
-            $spellcheck = array("''", '""', '\\"', '\\', '../', './');
-        }
-
-        if (!is_array($value)) {
-            $value = array($value);
-        }
-        foreach ($value as $item) {
-            $check                                      = str_replace($spellcheck, "", $item);
-            if ($item != $check) {
-                $errorName                              = self::getErrorName();
-                $errors[$errorName]                     = $errorName . " is not a valid. " . "You can't use [" . implode(" ", $spellcheck) . "]";
+        $error                                          = null;
+        foreach ((array) $value as $item) {
+            if ($item != str_replace(self::SPELL_CHECK, "", $item)) {
+                $error                                  = self::getContextName() . " is not a valid. " . "You can't use [" . implode(" ", self::SPELL_CHECK) . "]";
+                break;
             }
         }
 
-        return (count($errors)
-            ? implode(", ", $errors)
-            : null
-        );
+        return $error;
     }
 
     /**
-     * @param int $timestamp
+     * @param mixed $timestamp
      * @return bool
      */
-    public static function isValidTimeStamp(int $timestamp) : bool
+    public static function isTimeStamp($timestamp) : bool
     {
         return (is_numeric($timestamp)
             && $timestamp > 0
@@ -420,142 +446,116 @@ class Validator
      */
     public static function isFile(string $value) : bool
     {
-        return !self::invalidFile($value);
-    }
-
-    /**
-     * Returns webserver max upload size in B/KB/MB/GB
-     * @param string $return
-     * @return int
-     */
-    public static function getMaxUploadSize(string $return = null) : int
-    {
-        $max_upload                                                         = min(ini_get('post_max_size'), ini_get('upload_max_filesize'));
-        $max_upload                                                         = str_replace('M', '', $max_upload);
-        switch ($return) {
-            case "K":
-                $res                                                        = $max_upload * 1024;
-                break;
-            case "M":
-                $res                                                        = $max_upload;
-                break;
-            case "G":
-                $res                                                        = (int) $max_upload / 1024;
-                break;
-            default:
-                $res                                                        = $max_upload *1024 * 1024;
-        }
-        return $res;
+        return !ValidatorFile::check($value);
     }
 
     /**
      * @param string $value
      * @return bool
+     * @throws Exception
      */
-    public static function invalidFile(string $value) : bool
+    public static function isBase64(string $value) : bool
     {
-        $res                                                                = false;
-        $error                                                              = array();
-
-        unset(self::$errors["file"]);
-        if (isset($_FILES[$value])) {
-            $names                                                          = (array) $_FILES[$value]["name"];
-            if (!empty($names)) {
-                foreach ($names as $index => $name) {
-                    if (!self::isFilePath($name)) {
-                        $error[]                                            = $name . " is not valid path";
-                    }
-                }
-            }
-
-            $sizes                                                          = (array) $_FILES[$value]["size"];
-            if (!empty($sizes)) {
-                foreach ($sizes as $index => $size) {
-                    if ($size > self::getMaxUploadSize()) {
-                        $error[]                                            = $names[$index] . ": Upload Limit Exceeded";
-                    }
-                }
-            }
-
-            $types                                                          = (array) $_FILES[$value]["type"];
-            if (!empty($types)) {
-                $files                                                      = (array) $_FILES[$value]["tmp_name"];
-                foreach ($types as $index => $type) {
-                    if (!self::checkMagicBytes($files[$index], $type)) {
-                        $error[]                                            = $names[$index] . " File type mismatch";
-                    }
-                }
-            }
-        } elseif (!self::isFilePath($value)) {
-            $error[]                                                        = $value . " is not valid path";
-        }
-
-        if (count($error)) {
-            $res = implode(", ", $error);
-            self::$errors["file"] = $res;
-        }
-
-        return $res;
+        return (bool) self::checkBase64($value);
     }
 
+
+
+
+
     /**
-     * @param string $type
+     * @param string $value
      * @return array|null
      */
-    private static function getSignature(string $type) : ?array
+    private static function &convertJson(string $value) : ?array
     {
-        return (isset(self::SIGNATURES[$type])
-            ? self::SIGNATURES[$type]
-            : null
-        );
-    }
-
-    /**
-     * @param string $file
-     * @param string $type
-     * @return bool
-     */
-    private static function checkMagicBytes(string $file, string $type) : bool
-    {
-        $checks                                                             = self::getSignature($type);
-        $isValid                                                            = false;
-        if (!empty($checks)) {
-            $handle                                                         = @fopen($file, 'rb');
-            if ($handle !== false && flock($handle, LOCK_EX)) {
-                foreach ($checks as $check) {
-                    fseek($handle, 0);
-                    $byteCount                                              = strlen($check) / 2;
-                    $contents                                               = fread($handle, $byteCount);
-                    $byteArray                                              = bin2hex($contents);
-                    $regex                                                  = '#' . $check . '#i';
-                    $isValid                                                = (bool)preg_match($regex, $byteArray);
-                    if ($isValid) {
-                        break;
-                    }
-
-                }
-                flock($handle, LOCK_UN);
-            }
-            @fclose($handle);
-        } else {
-            $isValid                                                        = true;
+        if (!isset(self::$conversion)) {
+            self::$conversion                                               = self::jsonDecode($value);
         }
 
-        return $isValid;
+        return self::$conversion;
     }
 
     /**
      * @param string $value
-     * @return bool
+     * @return string
+     * @throws Exception
      */
-    public static function isFilePath(string $value) : bool
+    private static function base64Decode(string $value) : string
     {
-        if (strpos($value, Constant::DISK_PATH) === 0) {
-            $res = false;
-        } else {
-            $res = !self::checkSpecialChars($value) && !preg_match('/[^A-Za-z0-9.\/\-_\s\$]/', $value);
+        if (strlen($value) > self::MEMORY_LIMIT_BASE64) {
+            Error::register(self::getContextName() . " base64 Memory Limit Reached.", 413);
         }
-        return (bool) $res;
+
+        $value = urldecode($value);
+        $value = str_replace(' ', '+', $value);
+        return (string) base64_decode($value, true);
+    }
+
+    /**
+     * @param string $value
+     * @return string|null
+     * @throws Exception
+     */
+    private static function &convertBase64(string $value) : ?string
+    {
+        if (!isset(self::$conversion)) {
+            self::$conversion                                               = self::base64Decode($value);
+        }
+
+        return self::$conversion;
+    }
+
+    /**
+     * @param string $value
+     * @return string|null
+     * @throws Exception
+     */
+    private static function checkBase64(string $value) : ?string
+    {
+        $res                                                                = self::convertBase64($value);
+        if (!$res || !ctype_print($res)) {
+            return self::getContextName() . self::ERROR_NO_BASE64;
+        }
+
+        return self::checkSpecialChars($res);
+    }
+
+    private static function checkJsonBase64(string $value) : ?string
+    {
+        //todo da fare
+    }
+
+    /**
+     * @param string $value
+     * @param string|null $mimetype_allowed
+     * @return string|null
+     */
+    private static function checkBase64File(string $value, string $mimetype_allowed = null) : ?string
+    {
+        $arrBase64                                                          = explode(";", $value, 3);
+        if (count($arrBase64) !== 3) {
+            return self::getContextName() . " invalid Format: [mimetype;filename;base64content]";
+        }
+
+        $tmpfname                                                           = tempnam(sys_get_temp_dir(), "php");
+        $handle                                                             = fopen($tmpfname, "w");
+        stream_filter_append($handle, 'convert.base64-decode', STREAM_FILTER_WRITE);
+
+        fwrite($handle, str_replace(' ', '+', urldecode($arrBase64[2])));
+        fclose($handle);
+
+        self::$conversion                                                   = $arrBase64[1];
+
+        $_FILES[self::REQUEST_UPLOAD_PARAM_NAME]                            = [
+                                                                                'name'          => $arrBase64[1],
+                                                                                'type'          => $arrBase64[0],
+                                                                                'tmp_name'      => $tmpfname,
+                                                                                'error'         => 0,
+                                                                                'size'          => filesize($tmpfname)
+                                                                            ];
+
+        return ValidatorFile::check(self::REQUEST_UPLOAD_PARAM_NAME, $mimetype_allowed);
     }
 
     /**
@@ -588,7 +588,7 @@ class Validator
      */
     public static function isPassword(string $value, string $rule = null) : bool
     {
-        return !(bool) self::invalidPassword($value, $rule);
+        return !(bool) self::checkPassword($value, $rule);
     }
 
     /**
@@ -621,14 +621,14 @@ class Validator
      * @param string $value
      * @return bool
      */
-    public static function invalidUsername(string $value) : bool
+    public static function checkUsername(string $value) : bool
     {
         $dataError = self::is($value, "username");
 
         return $dataError->isError();
     }
 
-    private static function invalidPasswordAlphaNum(string $value, array &$error) : void
+    private static function checkPasswordAlphaNum(string $value, array &$error) : void
     {
         if (strlen($value) < (Env::get("VALIDATOR_PASSWORD_LENGTH") ?? self::PASSWORD_LENGTH)) {
             $error[] = "Password too short!";
@@ -649,16 +649,13 @@ class Validator
      * @param string|null $rule
      * @return array|null
      */
-    public static function invalidPassword(string $value, string $rule = null) : ?string
+    public static function checkPassword(string $value, string $rule = null) : ?string
     {
-        $res                                                                = null;
         $error                                                              = array();
-
-        unset(self::$errors["password"]);
         if ($value) {
             switch ($rule) {
                 case "kerberos":
-                    self::invalidPasswordAlphaNum($value, $error);
+                    self::checkPasswordAlphaNum($value, $error);
 
                     if (!preg_match("#[^a-zA-Z0-9]+#", $value)) {
                         $error[] = "Password must include at least one Special Character!";
@@ -669,10 +666,6 @@ class Validator
 
                     if (!pspell_check($pspell_link, $word))                 $error[] = "Password must be impersonal!";
                     */
-                    if (count($error)) {
-                        $res                                                = implode(", ", $error);
-                        self::$errors["password"]                           = $res;
-                    }
                     break;
                 case "pin":
                     if (strlen($value) < 5) {
@@ -681,49 +674,42 @@ class Validator
                     if (!preg_match("#[0-9]+#", $value)) {
                         $error[] = "Password must include at least one number!";
                     }
-
-                    if (count($error)) {
-                        $res                                                = implode(", ", $error);
-                        self::$errors["password"]                           = $res;
-                    }
                     break;
                 default:
-                    self::invalidPasswordAlphaNum($value, $error);
-
-                    if (count($error)) {
-                        $res                                                = implode(", ", $error);
-                        self::$errors["password"]                           = $res;
-                    }
+                    self::checkPasswordAlphaNum($value, $error);
             }
         }
 
-        return $res;
+        return (!empty($error)
+            ? implode(", ", $error)
+            : null
+        );
     }
-
-
-
-
 
 
     /**
      * @param array $value
-     * @param string $type
      * @param int $length
+     * @param string $error_message
      * @return DataError
      */
-    private static function isAllowed(array $value, string $type, int $length) : DataError
+    private static function isAllowed(array $value, int $length, string $error_message) : DataError
     {
+        $size                                               = 0;
         $dataError                                          = new DataError();
         if ($length > 0) {
             foreach ($value as $item) {
-                if ((is_array($item) && strlen(serialize($item)) > $length)
-                    || (is_string($item) && strlen($item) > $length)
+                if ((is_array($item) && ($size += strlen(serialize($item))) > $length)
+                    || (is_string($item) && ($size += strlen($item)) > $length)
                 ) {
-                    $dataError                              = self::isError(self::getErrorName() . " Max Length Exceeded: " . $type, $type, 413);
+                    $dataError->error(413, $error_message);
                     break;
                 }
             }
+
+            $dataError->set("size", $size);
         }
+
         return $dataError;
     }
 
@@ -765,40 +751,24 @@ class Validator
             }
         } elseif (is_numeric($option)) {
             $rule["length"]                         = $option;
+        } else {
+            $rule["limit"]                          = $option;
         }
     }
 
     /**
      * @param string $name
      */
-    private static function setErrorName(string $name) : void
+    private static function setContextName(string $name) : void
     {
-        self::$errorName = $name;
+        self::$contextName = $name;
     }
 
     /**
      * @return string
      */
-    private static function getErrorName() : string
+    private static function getContextName() : string
     {
-        return self::$errorName;
-    }
-
-    /**
-     * @param string $error
-     * @param null|string $type
-     * @param int $status
-     * @return DataError
-     */
-    private static function isError(string $error, string $type = null, int $status = 400) : DataError
-    {
-        $dataError = new DataError();
-        $dataError->error($status, (
-            $type && isset(self::$errors[$type])
-            ? self::$errors[$type]
-            : $error
-        ));
-
-        return $dataError;
+        return self::$contextName;
     }
 }

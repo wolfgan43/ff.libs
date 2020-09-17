@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\delivery\drivers;
 
+use Exception;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Kernel;
@@ -60,6 +61,7 @@ final class MailerTemplate extends Mailer
     /**
      * MailerTemplate constructor.
      * @param string $template
+     * @throws Exception
      */
     public function __construct(string $template)
     {
@@ -85,18 +87,20 @@ final class MailerTemplate extends Mailer
 
     /**
      * @return string
+     * @throws Exception
      */
     protected function processSubject() : string
     {
         return str_replace(
             array_keys($this->fields),
             array_values($this->fields),
-            Translator::get_word_by_code($this->subject)
+            Translator::getWordByCode($this->subject)
         );
     }
 
     /**
      * @return string|null
+     * @throws Exception
      */
     protected function processBody() : ?string
     {
@@ -108,6 +112,7 @@ final class MailerTemplate extends Mailer
 
     /**
      * @return string|null
+     * @throws Exception
      */
     protected function processBodyAlt() : ?string
     {
@@ -119,6 +124,7 @@ final class MailerTemplate extends Mailer
 
     /**
      * @param string $template
+     * @throws Exception
      */
     private function loadTemplate(string $template) : void
     {
@@ -134,13 +140,13 @@ final class MailerTemplate extends Mailer
                 });
             }
 
-            $this->tpl_html = new View("Html");
+            $this->tpl_html = new View();
             $this->tpl_html->fetch($this->tpl_html_path);
 
             if (is_file(dirname($this->tpl_html_path) . "/default.txt")) {
                 $this->tpl_text_path = dirname($this->tpl_html_path) . "/default.txt";
 
-                $this->tpl_text = new View("Html");
+                $this->tpl_text = new View();
                 $this->tpl_text->fetch($this->tpl_text_path);
             }
         } else {
@@ -150,6 +156,7 @@ final class MailerTemplate extends Mailer
 
     /**
      *
+     * @throws Exception
      */
     private function processTemplate()
     {
@@ -229,6 +236,7 @@ final class MailerTemplate extends Mailer
      * @param string $value
      * @param array $groups
      * @param string|null $type
+     * @throws Exception
      */
     private function parseMailGroup(string $value, array $groups, string $type = null) : void
     {
@@ -291,6 +299,7 @@ final class MailerTemplate extends Mailer
      * @param string $name
      * @param string|null $type
      * @param bool $skip_label
+     * @throws Exception
      */
     private function parseMailField(string $value, string $name, string $type = null, bool $skip_label = false) : void
     {
@@ -336,7 +345,7 @@ final class MailerTemplate extends Mailer
     }
 
     /**
-     * @param string $type
+     * @param string|null $type
      * @param bool $reset_field
      */
     private function parseMailRow(string $type = null, bool $reset_field = false) : void
@@ -362,8 +371,9 @@ final class MailerTemplate extends Mailer
 
     /**
      * @param string $value
-     * @param string $type
+     * @param string|null $type
      * @return string
+     * @throws Exception
      */
     private function processMailField(string $value, string $type = null) : string
     {
@@ -391,6 +401,7 @@ final class MailerTemplate extends Mailer
      * @param string|null $alias
      * @param string|null $email_alias
      * @return string
+     * @throws Exception
      */
     private function link2TagA(string $description, string $alias = null, string $email_alias = null) : string
     {
@@ -403,7 +414,7 @@ final class MailerTemplate extends Mailer
             );
 
             if ($old_description != $description) {
-                $description = str_replace("[--alias--]", Translator::get_word_by_code($alias), $description);
+                $description = str_replace("[--alias--]", Translator::getWordByCode($alias), $description);
             }
         } else {
             $description = preg_replace(
@@ -420,7 +431,7 @@ final class MailerTemplate extends Mailer
 
             $description = preg_replace('/([.0-9a-z_-]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,4})/i', '<a href="mailto:$1@$2">[--mailalias--]</a>', $description);
             if ($old_description != $description) {
-                $description = str_replace("[--mailalias--]", Translator::get_word_by_code($email_alias), $description);
+                $description = str_replace("[--mailalias--]", Translator::getWordByCode($email_alias), $description);
             }
         } else {
             $description = preg_replace('/([.0-9a-z_-]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,4})/i', '<a href="mailto:$1@$2">$1@$2</a>', $description);

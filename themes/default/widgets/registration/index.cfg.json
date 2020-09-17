@@ -1,0 +1,15 @@
+{
+   "api": {
+      "login": "\/api\/auth2\/user\/signin",
+      "registration": "\/api\/auth2\/user\/signup"
+   },
+   "title":"Registration",
+   "description":"Fill all fields.",
+   "error": null,
+   "redirect": "\/",
+   "logo": "100x50",
+   "logo_path": null,
+   "login_path": "\/login",
+   "registration_path": "\/registration",
+   "activation_path": "\/activation"
+}

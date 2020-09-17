@@ -6,7 +6,6 @@ use phpformsframework\libs\ClassDetector;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\gui\adapters\ControllerHtml;
 use phpformsframework\libs\Kernel;
-use phpformsframework\libs\Response;
 use phpformsframework\libs\util\AdapterManager;
 use Exception;
 
@@ -27,6 +26,7 @@ abstract class Controller
 
     protected $headers                  = null;
     protected $request                  = null;
+    protected $script_path              = null;
     protected $path_info                = null;
     protected $xhr                      = null;
 
@@ -44,26 +44,20 @@ abstract class Controller
     abstract public function patch()    : void;
 
     /**
-     * @return ControllerHtml
-     */
-    public static function html() : ControllerHtml
-    {
-        return self::loadAdapter(Kernel::$Environment::CONTROLLER_ADAPTER, [Response::OK, self::TEMPLATE_DEFAULT]);
-    }
-
-    /**
      * Controller constructor.
      * @param string|null $controllerAdapter
      */
     public function __construct(string $controllerAdapter = null)
     {
-        $this->adapterName  = $controllerAdapter ?? Kernel::$Environment::CONTROLLER_ADAPTER;
+        $page               = App::configuration()->page;
 
-        $this->method       = App::request()->method();
-        $this->request      = App::configuration()->page->getRequest();
-        $this->headers      = App::configuration()->page->getHeaders();
-        $this->path_info    = App::configuration()->page->path_info;
-        $this->xhr          = App::request()->isAjax();
+        $this->adapterName  = $controllerAdapter ?? Kernel::$Environment::CONTROLLER_ADAPTER;
+        $this->method       = $page->method;
+        $this->request      = (object) $page->getRequest();
+        $this->headers      = (object) $page->getHeaders();
+        $this->script_path  = $page->script_path;
+        $this->path_info    = $page->path_info;
+        $this->xhr          = $page->isAjax;
     }
 
     /**
@@ -73,7 +67,7 @@ abstract class Controller
     private function adapter(string $template_type = null) : ControllerHtml
     {
         if (!$this->adapter) {
-            $this->setAdapter($this->adapterName, [$this->http_status_code, $template_type ?? $this->template]);
+            $this->setAdapter($this->adapterName, [$this->path_info, $this->http_status_code, $template_type ?? $this->template]);
         }
 
         return $this->adapter;
@@ -92,11 +86,18 @@ abstract class Controller
         return $this;
     }
 
+    /**
+     *
+     */
     public function display() : void
     {
         $this->{$this->method}();
     }
 
+    /**
+     * @param array|null $assign
+     * @throws Exception
+     */
     protected function default(array $assign = null) : void
     {
         $controller_name = str_replace("controller", "", strtolower($this->getClassName()));
@@ -125,18 +126,18 @@ abstract class Controller
      * @param string|null $template_name
      * @param string|null $theme_name
      * @return View
-     *
+     * @throws Exception
      * @todo da gestire il tema
      */
     protected function view(string $template_name = null, string $theme_name = null) : View
     {
         $template               = $this->getTemplate($template_name);
         $theme                  = $theme_name ?? "common";
-        if (!($res = Resource::get($template, $theme))) {
+        if (!($file_path = Resource::get($template, $theme))) {
             Error::register("View not Found: " . $template . " in " . $theme, static::ERROR_BUCKET);
         }
         return (new View())
-                ->fetch($res);
+                ->fetch($file_path);
     }
 
     /**

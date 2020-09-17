@@ -53,6 +53,7 @@ class OrmItem
      * @param int|null $offset
      * @param int $draw
      * @return DataTableResponse
+     * @throws Exception
      */
     public static function search(array $where = null, array $sort = null, int $limit = null, int $offset = null, int $draw = 0) : DataTableResponse
     {
@@ -73,6 +74,11 @@ class OrmItem
         return $dataTableResponse;
     }
 
+    /**
+     * @param array $where
+     * @return OrmResults
+     * @throws Exception
+     */
     public static function deleteAll(array $where) : OrmResults
     {
         $item                                                                   = new static();
@@ -81,6 +87,12 @@ class OrmItem
             ->delete($where);
     }
 
+    /**
+     * @param array $set
+     * @param array|null $where
+     * @return OrmResults
+     * @throws Exception
+     */
     public static function updateAll(array $set, array $where = null) : OrmResults
     {
         $item                                                                   = new static();
@@ -89,6 +101,10 @@ class OrmItem
             ->update($set, $where);
     }
 
+    /**
+     * @param array $data
+     * @return static
+     */
     public static function load(array $data) : self
     {
         return (new static())->fill($data);
@@ -97,6 +113,7 @@ class OrmItem
     /**
      * OrmItem constructor.
      * @param array|null $where
+     * @throws Exception
      */
     public function __construct(array $where = null)
     {
@@ -190,6 +207,7 @@ class OrmItem
 
     /**
      * @param array|null $where
+     * @throws Exception
      */
     private function read(array $where = null) : void
     {
@@ -228,6 +246,7 @@ class OrmItem
 
     /**
      * @return OrmResults|null
+     * @throws Exception
      */
     public function delete() : ?OrmResults
     {

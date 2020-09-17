@@ -1,259 +1,160 @@
 <?php
-/**
- * VGallery: CMS based on FormsFramework
- * Copyright (C) 2004-2015 Alessandro Stucchi <wolfgan@gmail.com>
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- *  @package VGallery
- *  @subpackage core
- *  @author Alessandro Stucchi <wolfgan@gmail.com>
- *  @copyright Copyright (c) 2004, Alessandro Stucchi
- *  @license http://opensource.org/licenses/gpl-3.0.html
- *  @link https://github.com/wolfgan43/vgallery
- */
 namespace phpformsframework\libs\gui;
 
-use phpformsframework\libs\App;
+use phpformsframework\libs\cache\Buffer;
+use phpformsframework\libs\Debug;
+use phpformsframework\libs\dto\DataAdapter;
 use phpformsframework\libs\dto\DataHtml;
-use phpformsframework\libs\dto\DataResponse;
-use phpformsframework\libs\EndUserManager;
-use stdClass;
+use phpformsframework\libs\Response;
+use phpformsframework\libs\storage\Filemanager;
+use phpformsframework\libs\util\ResourceConverter;
 use Exception;
 
 /**
  * Class Widget
  * @package phpformsframework\libs\gui
- * @todo private function getSnippet()
  */
-abstract class Widget
+abstract class Widget extends Controller
 {
     use AssetsManager;
-    use EndUserManager;
+    use ResourceConverter;
 
-    const ERROR_BUCKET                          = "widget";
-    const NAME_SPACE_BASIC                      = "widgets\\";
+    private const RENDER_SNIPPET                    = "snippet";
+    private const RENDER_PAGE                       = "page";
+    private const RENDER_JSON                       = "json";
 
-    private static $singleton                   = null;
-    private static $grid_system                 = null;
+    protected const ERROR_BUCKET                    = "widget";
 
-    protected $script_path                      = null;
-    protected $path_info                        = null;
-    protected $is_ajax                          = null;
-    protected $request                          = null;
-    protected $method                           = null;
+    private static $render                          = null;
 
-    protected $skin                             = null;
-    protected $requiredJs                       = array();
-    protected $requiredCss                      = array();
+    private const NAME_SPACE_BASIC                  = "widgets\\";
 
+    protected $requiredJs                           = [];
+    protected $requiredCss                          = [];
 
-    private $name                               = null;
-    private $config                             = array();
+    private $name                                   = null;
+    private $config                                 = [];
+    private $resources                              = null;
+    private $skin                                   = null;
 
     /**
-     * @param stdClass $request
+     * @var View[]
+     */
+    private $views                                  = [];
+    /**
+     * @var array
+     */
+    private $view                                   = "index";
+
+    /**
+     * @param array|null $config
+     * @return DataHtml
+     * @throws Exception
+     */
+    public static function snippet(array $config = null) : DataHtml
+    {
+        self::$render                               = self::RENDER_SNIPPET;
+        return self::widget($config)->toDataHtml();
+    }
+
+    /**
+     * @param array|null $config
+     * @throws Exception
+     */
+    public static function page(array $config = null) : void
+    {
+        self::$render                               = self::RENDER_PAGE;
+
+        $widget = self::widget($config);
+        $widget->layout()
+            ->injectAssets($widget)
+            ->addContent($widget->html)
+            ->display();
+    }
+
+    /**
+     * @param array|null $config
+     */
+    protected static function displayHtml(array $config = null) : void
+    {
+        static::{self::$render}($config);
+    }
+
+    /**
+     * @param array|null $config
      * @return array
+     * @throws Exception
      */
-    abstract protected function getConfigDefault(stdClass $request) : array;
+    protected static function displayJson(array $config = null) : array
+    {
+        return self::widget($config, "get")->toArray();
+    }
 
     /**
-     * @param array $config
-     * @param stdClass $request
-     * @param bool $isAjax
-     * @return mixed
+     * @param array|null $config
+     * @param string|null $method
+     * @return static
+     * @throws Exception
      */
-    abstract protected function controller(array &$config, stdClass $request, bool $isAjax) : void;
+    private static function widget(array $config = null, string $method = null) : self
+    {
+        Debug::stopWatch(static::ERROR_BUCKET . "/" . self::getClassName());
 
-    /**
-     * @param array $config
-     * @param stdClass $request
-     * @return DataResponse|null
-     */
-    abstract protected function callToAction(array &$config, stdClass $request);
+        $widget = new static($config);
 
-    /**
-     * @param View $view
-     * @param array $config
-     */
-    abstract protected function renderTemplate(View &$view, array $config);
+        $widget->display($method);
+
+        Debug::stopWatch(static::ERROR_BUCKET . "/" . self::getClassName());
+
+        return $widget;
+    }
 
     /**
      * Widget constructor.
-     * @param string $name
      * @param array|null $config
+     */
+    public function __construct(array $config = null)
+    {
+        parent::__construct();
+
+        $this->name                                 = strtolower($this->getClassName());
+        $this->config                               = $config ?? [];
+    }
+
+    /**
+     * @param string|null $method
      * @throws Exception
      */
-    public function __construct(string $name, array $config = null)
+    public function display(string $method = null): void
     {
-        $configuration                          = App::configuration();
-        $request                                = App::request();
-
-        $this->script_path                      = $configuration->page->script_path;
-        $this->path_info                        = $configuration->page->path_info;
-        $this->is_ajax                          = $request->isAjax();
-        $this->request                          = $request->rawdata();
-        $this->method                           = $request->methodValid($request->method(), ["GET"]);
-
-        $this->config                           = array_replace_recursive($this->getConfigDefault($this->request), (array) $config);
-        $this->name                             = $name;
-    }
-
-    /**
-     * @return DataHtml
-     * @throws Exception
-     */
-    private function getPage() : DataHtml
-    {
-        return Controller::html()
-            ->injectAssets($this)
-            ->addContent($this->html)
-            ->toDataHtml();
-    }
-
-    /**
-     * @param string $name
-     * @param array|null $config
-     * @param string|null $bucket
-     * @return Widget
-     */
-    public static function getInstance(string $name, array $config = null, string $bucket = null) : Widget
-    {
-        self::stopwatch("widget/" . $name);
-
-        $class_name                             = $bucket . self::NAME_SPACE_BASIC . ucfirst($name);
-        if (!isset(self::$singleton[$class_name])) {
-            self::$singleton[$class_name]       = new $class_name($name, $config);
-        }
-
-        return self::$singleton[$class_name];
-    }
-
-
-
-    /**
-     * @return string
-     */
-    private function getSkin() : string
-    {
-        return $this->name . (
-            $this->skin
-            ? "-" . $this->skin
-            : ""
-        );
-    }
-
-    /**
-     * @return DataHtml
-     */
-    protected function getResources() : DataHtml
-    {
-        return Resource::widget($this->getSkin());
-    }
-
-    /**
-     * @param string|DataHtml $name
-     * @param array $data
-     */
-    protected function view($name, array $data = array()) : void
-    {
-        if (is_object($name)) {
-            $this->injectAssets($name);
+        if ($method) {
+            $this->$method();
         } else {
-            $widget_name                            = $this->getSkin();
-            $view                                   = new View();
-            $this->parseRequiredAssets();
-            $resources                              = $this->getResources();
-
-            $this->addJs($widget_name, $resources->getJs($name));
-            $this->addCss($widget_name, $resources->getCss($name));
-
-            $this->html                             = $view
-                                                        ->fetch($resources->html[$name])
-                                                        ->assign(function (&$view) use ($data) {
-                                                            $this->renderTemplate($view, $data);
-                                                        })
-                                                        ->display();
-
-        }
-    }
-
-
-    /**
-     * @param null|string $return
-     * @return DataHtml
-     * @throws Exception
-     */
-    public function render(string $return = null) : DataHtml
-    {
-        if ($this->method) {
-            $response = $this->callToAction($this->getConfig(), $this->request);
-            if ($response) {
-                $this->response()->send($response);
-            }
+            parent::display();
         }
 
-        $this->controller($this->getConfig(), $this->request, $this->is_ajax);
+        $this->parseAssets();
 
-        if (!$this->html) {
-            $this->view("index", $this->getConfig());
-        }
-
-        self::stopwatch("widget/" . $this->name);
-
-        switch ($return) {
-            case "snippet":
-                $output                             = null; //$this->getSnippet();
-                break;
-            case "page":
-                $output                             = $this->getPage();
-                break;
-            default:
-                $output                             = $this->toDataHtml();
-        }
-
-        return $output;
+        $this->html                                 = $this->getView()->display();
     }
 
     /**
-     * @param string $relative_path
-     * @return string
+     * @param DataAdapter $data
+     * @param array $headers
      */
-    protected function getUrl(string $relative_path) : string
+    protected function send(DataAdapter $data, array $headers = []) : void
     {
-        return App::configuration()::SITE_PATH . $relative_path;
+        Response::send($data, $headers);
     }
 
     /**
-     * @param string $url
+     * @param string|null $destination
+     * @param int|null $http_response_code
+     * @param array|null $headers
      */
-    protected function redirect(string $url) : void
+    protected function redirect(string $destination = null, int $http_response_code = null, array $headers = null)
     {
-        $this->response()->redirect($url);
-    }
-
-    /**
-     *
-     */
-    private function parseRequiredAssets()
-    {
-        foreach ($this->requiredJs as $js) {
-            $this->addJs($js);
-        }
-        foreach ($this->requiredCss as $css) {
-            $this->addCss($css);
-        }
+        Response::redirect($destination, $http_response_code, $headers);
     }
 
     /**
@@ -269,23 +170,142 @@ abstract class Widget
             "html"      => $this->html
         ]);
     }
+
     /**
-     * @return FrameworkCss
+     * @return View
+     * @throws Exception
      */
-    protected function gridSystem()
+    private function getView() : View
     {
-        if (!self::$grid_system) {
-            self::$grid_system = GridSystem::getInstance();
+        if (!$this->view) {
+            throw new Exception("View missing for " . $this->name, 400);
         }
 
-        return self::$grid_system;
+        return $this->views[$this->view];
     }
 
     /**
+     * @param string|null $template_name
+     * @param string|null $theme_name
+     * @return View
+     * @throws Exception
+     */
+    protected function view(string $template_name = null, string $theme_name = null) : View
+    {
+        $this->view                                 = $template_name ?? $this->view;
+        if (!isset($this->views[$this->view])) {
+            $resources                              = $this->getResources();
+            if (empty($resources->html[$this->view])) {
+                throw new Exception("Template not found for Widget " . $this->name, 404);
+            }
+
+            $this->views[$this->view]               = (new View($this->config($resources->cfg[$this->view] ?? null)))
+                                                        ->fetch($resources->html[$this->view]);
+        }
+
+        return $this->views[$this->view];
+    }
+
+    /**
+     * @param string|null $template_name
+     * @return object
+     */
+    protected function getConfig(string $template_name = null) : object
+    {
+        return json_decode(json_encode($this->config($this->getResources()->cfg[$template_name ?? $this->view] ?? null)));
+    }
+
+    /**
+     * @param string|null $file_path
+     * @return array|null
+     */
+    private function config(string $file_path = null) : ?array
+    {
+        static $configs = null;
+
+        if ($file_path && !isset($configs[$file_path])) {
+            $configs[$file_path] = array_replace_recursive($this->loadConfig($file_path), $this->config);
+        }
+
+        return $configs[$file_path] ?? null;
+    }
+
+    /**
+     * @return DataHtml
+     */
+    private function getResources() : object
+    {
+        $skin                                       = $this->getSkin();
+        if (!isset($this->resources[$skin])) {
+            $this->resources[$skin]                 = Resource::widget($skin);
+        }
+
+        return (object) ($this->resources[$skin] ?? null);
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function parseAssets() : void
+    {
+        $widget_name                            = $this->getSkin();
+        $resources                              = $this->getResources();
+
+        $this->parseRequiredAssets();
+        if (!empty($resources->js[$this->view])) {
+            $this->addJs($widget_name, $resources->js[$this->view]);
+        }
+        if (!empty($resources->css[$this->view])) {
+            $this->addCss($widget_name, $resources->css[$this->view]);
+        }
+
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function parseRequiredAssets() : void
+    {
+        foreach ($this->requiredJs as $js) {
+            $this->addJs($js);
+        }
+        foreach ($this->requiredCss as $css) {
+            $this->addCss($css);
+        }
+    }
+
+    /**
+     * @return string
+     */
+    private function getSkin() : string
+    {
+        return $this->name . (
+            $this->skin
+                ? "-" . $this->skin
+                : ""
+            );
+    }
+
+    /**
+     * @param string $file_path
      * @return array
      */
-    private function &getConfig()
+    private function loadConfig(string $file_path) : array
     {
-        return $this->config;
+        $widget_name                                                        = $this->getSkin();
+
+        Debug::stopWatch(static::ERROR_BUCKET . "/map/" . $widget_name);
+
+        $cache                                                              = Buffer::cache("widget");
+        $config                                                             = $cache->get($widget_name);
+        if (!$config) {
+            $config                                                         = Filemanager::getInstance("json")->read($file_path);
+
+            $cache->set($widget_name, $config, [$file_path => filemtime($file_path)]);
+        }
+
+        Debug::stopWatch(static::ERROR_BUCKET . "/map/". $widget_name);
+
+        return (array) $config;
     }
 }

@@ -91,7 +91,7 @@ class Messenger
     }
 
     /**
-     * @param array $connection
+     * @param array|null $connection
      * @return Messenger
      */
     public function setConnection(array $connection = null) : self
@@ -107,7 +107,7 @@ class Messenger
     }
 
     /**
-     * @param string $from
+     * @param string|null $from
      * @param string|null $label
      * @return Messenger
      */

@@ -32,8 +32,9 @@ use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\security\Validator;
-use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\Exception as MailerException;
 use PHPMailer\PHPMailer\PHPMailer;
+use Exception;
 
 /**
  * Class Mailer
@@ -82,6 +83,7 @@ abstract class Mailer
     /**
      * @param null|string $template
      * @return Mailer
+     * @throws Exception
      */
     public static function getInstance($template = null)
     {
@@ -119,6 +121,7 @@ abstract class Mailer
      * @param string|null $email
      * @param string|null $name
      * @return Mailer
+     * @throws Exception
      */
     public function addTo(string $email = null, string $name = null) : self
     {
@@ -131,6 +134,7 @@ abstract class Mailer
      * @param string|null $email
      * @param string|null $name
      * @return Mailer
+     * @throws Exception
      */
     public function addCC(string $email = null, string $name = null) : self
     {
@@ -143,6 +147,7 @@ abstract class Mailer
      * @param string|null $email
      * @param string|null $name
      * @return Mailer
+     * @throws Exception
      */
     public function addBCC(string $email = null, string $name = null) : self
     {
@@ -150,10 +155,12 @@ abstract class Mailer
 
         return $this;
     }
+
     /**
      * @param array[email => name] $emails
      * @param string[to|cc|bcc] $type
      * @return Mailer
+     * @throws Exception
      */
     public function addAddresses(array $emails, string $type) : self
     {
@@ -171,6 +178,7 @@ abstract class Mailer
      * @param string|null $email
      * @param null|string $name
      * @return Mailer
+     * @throws Exception
      */
     public function addAddress(string $type, string $email = null, string $name = null) : self
     {
@@ -204,6 +212,7 @@ abstract class Mailer
      * @param null|string $mime
      * @param null|string $encoded
      * @return Mailer
+     * @throws Exception
      */
     public function addAttach(string $attach, string $name = null, string $mime = "application/octet-stream", string $encoded = "base64") : self
     {
@@ -235,6 +244,7 @@ abstract class Mailer
      * @param string $image
      * @param string|null $name
      * @return Mailer
+     * @throws Exception
      */
     public function addImage(string $image, string $name = null) : self
     {
@@ -344,6 +354,7 @@ abstract class Mailer
      * @param string|null $to
      * @param string|null $message
      * @return DataError
+     * @throws Exception
      */
     public function send(string $subject = null, string $to = null, string $message = null) : DataError
     {
@@ -385,6 +396,7 @@ abstract class Mailer
 
     /**
      *
+     * @throws Exception
      */
     private function phpmailer()
     {
@@ -461,7 +473,7 @@ abstract class Mailer
                 if ($attach_value["path"]) {
                     try {
                         $mail->addAttachment($attach_value["path"], $attach_key, $attach_value["encoded"], $attach_value["mime"]);
-                    } catch (Exception $e) {
+                    } catch (MailerException $e) {
                         Error::register($e->getMessage(), static::ERROR_BUCKET);
                     }
                 } elseif ($attach_value["content"]) {
@@ -475,7 +487,7 @@ abstract class Mailer
             if (!$rc) {
                 Error::register($mail->ErrorInfo, static::ERROR_BUCKET);
             }
-        } catch (Exception $e) {
+        } catch (MailerException $e) {
             Error::register($e->getMessage(), static::ERROR_BUCKET);
         }
     }
@@ -536,6 +548,7 @@ abstract class Mailer
      * @param null $subject
      * @param null $message
      * @return mixed
+     * @throws Exception
      */
     public function preview($subject = null, $message = null)
     {
@@ -563,6 +576,7 @@ abstract class Mailer
 
     /**
      * @return array
+     * @throws Exception
      */
     public function getHeaders() : array
     {

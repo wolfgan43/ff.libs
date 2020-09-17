@@ -3,6 +3,7 @@ namespace phpformsframework\libs\security;
 
 use phpformsframework\libs\App;
 use phpformsframework\libs\dto\DataResponse;
+use Exception;
 
 /**
  * Class User
@@ -14,12 +15,24 @@ class User extends App
     private const USER_LABEL                                    = "user";
 
     private static $session                                     = null;
+    /**
+     * @var UserData
+     */
+    private static $user                                        = null;
 
+    /**
+     * @return bool
+     * @throws Exception
+     */
     public static function isLogged() : bool
     {
-        return (bool) self::session()->verify();
+        return (bool) (self::$user || self::session()->verify());
     }
 
+    /**
+     * @return UserData|null
+     * @throws Exception
+     */
     public static function get() : ?UserData
     {
         if (!self::$user && self::session()->verify()) {
@@ -29,14 +42,29 @@ class User extends App
         return self::$user;
     }
 
-    public static function set(UserData $user = null) : void
+    /**
+     * @param UserData|null $user
+     * @return UserData
+     * @throws Exception
+     */
+    public static function set(UserData $user = null) : UserData
     {
         if (self::session()->verify()) {
             self::session()->set(self::USER_LABEL, $user->toDataResponse()->toArray());
             self::$user                                         = $user;
         }
+
+        return self::$user;
     }
 
+    public static function clean() : void
+    {
+        self::$user                                             = null;
+    }
+
+    /**
+     * @return Session
+     */
     private static function session() : Session
     {
         if (!self::$session) {
@@ -46,6 +74,13 @@ class User extends App
         return self::$session;
     }
 
+    /**
+     * @param string $username
+     * @param string $secret
+     * @param bool|null $permanent
+     * @return DataResponse
+     * @throws Exception
+     */
     public static function login(string $username, string $secret, bool $permanent = null) : DataResponse
     {
         $user                                                   = new UserData(["username" => $username, "password" => $secret]);
@@ -58,6 +93,10 @@ class User extends App
 
         return $response;
     }
+
+    /**
+     * @return DataResponse
+     */
     public static function logout() : DataResponse
     {
         self::session()->destroy();

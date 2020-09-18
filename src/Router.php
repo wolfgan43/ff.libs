@@ -56,6 +56,8 @@ class Router implements Configurable, Dumpable
     private static $sorted                                  = false;
     private static $target                                  = null;
 
+    private static $script_engine                           = null;
+
     /**
      * @access private
      * @param dto\ConfigRules $configRules
@@ -122,6 +124,22 @@ class Router implements Configurable, Dumpable
             "routes"    => self::$routes,
             "rules"     => self::$rules
         );
+    }
+
+    /**
+     * @return string
+     */
+    public static function getRunner() : ?string
+    {
+        return self::$script_engine;
+    }
+
+    /**
+     * @param string $what
+     */
+    public static function setRunner(string $what) : void
+    {
+        self::$script_engine                                        = ucfirst(basename(str_replace('\\', '/', $what)));
     }
 
     /**
@@ -390,7 +408,7 @@ class Router implements Configurable, Dumpable
         $output                                                     = null;
         if ($class_name) {
             try {
-                App::setRunner($class_name);
+                self::setRunner($class_name);
 
                 if ($method && !is_array($method)) {
                     $output                                         = (new $class_name)->$method(...$params);

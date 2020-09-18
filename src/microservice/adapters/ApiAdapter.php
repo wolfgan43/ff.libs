@@ -2,6 +2,7 @@
 namespace phpformsframework\libs\microservice\adapters;
 
 use phpformsframework\libs\App;
+use phpformsframework\libs\Debug;
 use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\international\Data;
 use phpformsframework\libs\mock\Mockable;
@@ -92,11 +93,11 @@ abstract class ApiAdapter
      */
     public function discover() : ?array
     {
-        App::stopWatch("api/remote/preflight");
+        Debug::stopWatch("api/remote/preflight");
 
         $discover                                                       = $this->preflight();
 
-        $this->exTimePreflight                                          = App::stopWatch("api/remote/preflight");
+        $this->exTimePreflight                                          = Debug::stopWatch("api/remote/preflight");
 
         return $discover["headers"] ?? null;
     }
@@ -118,7 +119,7 @@ abstract class ApiAdapter
      */
     public function send(string $method, array $params = null, array $headers = null) : DataResponse
     {
-        App::stopWatch("api/remote");
+        Debug::stopWatch("api/remote");
 
         $exception                                                      = null;
         $response                                                       = null;
@@ -180,7 +181,7 @@ abstract class ApiAdapter
             "isRemote"                                                  => true,
             "isMock"                                                    => $this->mockEnabled,
             "exTimePreflight"                                           => $this->exTimePreflight,
-            "exTimeRequest"                                             => App::stopWatch("api/remote"),
+            "exTimeRequest"                                             => Debug::stopWatch("api/remote"),
             "debug"                                                     => $debug
         ], $method . self::ERROR_REQUEST_LABEL . $this->endpoint);
     }

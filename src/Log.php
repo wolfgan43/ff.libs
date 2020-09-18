@@ -431,7 +431,7 @@ class Log
      */
     public static function debugging($message, string $bucket = null, string $routine = null, string $action = null, int $status = null)
     {
-        if (App::debugEnabled()) {
+        if (Kernel::$Environment::DEBUG) {
             if ($routine) {
                 self::addTag($routine);
             }

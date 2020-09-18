@@ -1,7 +1,6 @@
 <?php
 namespace phpformsframework\libs\storage;
 
-use phpformsframework\libs\Model;
 use phpformsframework\libs\security\Validator;
 use Exception;
 

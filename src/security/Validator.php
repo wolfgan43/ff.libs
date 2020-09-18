@@ -32,6 +32,7 @@ use phpformsframework\libs\Env;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Request;
+use stdClass;
 
 /**
  * Class Validator
@@ -45,7 +46,7 @@ class Validator
     private const MEMORY_LIMIT                              = 10000000;      //10MB
     private const MEMORY_LIMIT_BASE64                       = 33000000;      //33MB
     private const REQUEST_LIMIT                             = 1024000000;    //1024MB
-    private const SPELL_CHECK                               = array("''", '""', '\\"', '\\', '../', './');
+    private const SPELL_CHECK                               = array("''", '""', '\\"', '\\', '../', './', 'file://');
     private const RULES                                     = array(
                                                                 "bool"              => array(
                                                                     "filter"        => FILTER_VALIDATE_BOOLEAN,
@@ -260,32 +261,32 @@ class Validator
                                                             : "string"
                                                         );
         }
-        $rule                                           = self::RULES[$type];
+        $rule                                           = (object) self::RULES[$type];
 
         self::setContextName($context);
         self::setRuleOptions($rule, $range);
 
-        $length                                         = (Env::get("VALIDATOR_" . strtoupper($type) . "_LENGTH") ?? $rule["length"]);
+        $length                                         = (Env::get("VALIDATOR_" . strtoupper($type) . "_LENGTH") ?? $rule->length);
         $dataError                                      = self::isAllowed((array) $what, $length, $context . ": Max Length Exceeded. Validator is " . $type);
         if ($dataError->isError()) {
             return $dataError;
         }
 
-        if (!empty($rule["filter"])) {
+        if (!empty($rule->filter)) {
             if ($dataError->get("size") > self::MEMORY_LIMIT) {
                 return $dataError->error(413, $context . ": Memory Limit Reached. Validator is " . $type);
             }
 
-            $validation                                 = filter_var($what, $rule["filter"], array(
-                                                            "flags"     => $rule["flags"]       ?? null,
-                                                            "options"   => $rule["options"]     ?? null
+            $validation                                 = filter_var($what, $rule->filter, array(
+                                                            "flags"     => $rule->flags         ?? null,
+                                                            "options"   => $rule->options       ?? null
                                                         ));
 
-            if ($validation === true || $validation == $what || ($validation === null && $rule["filter"] == FILTER_CALLBACK)) {
+            if ($validation === true || $validation == $what || ($validation === null && $rule->filter == FILTER_CALLBACK)) {
                 //da fare in modo piu elegante
             } elseif (is_array($validation) && ($error = self::isArrayAllowed($what, $type))) {
                 $dataError->error(400, $error);
-            } elseif (isset($rule["normalize"])) {
+            } elseif (isset($rule->normalize)) {
                 $what                                   = $validation;
             } else {
                 $dataError->error(
@@ -297,7 +298,7 @@ class Validator
             }
         }
 
-        if (isset($rule["callback"]) && (($error = self::isArrayAllowed($what, $type)) || ($error = $rule["callback"]($what, $rule["limit"] ?? null)))) {
+        if (isset($rule->callback) && (($error = self::isArrayAllowed($what, $type)) || ($error = ($rule->callback)($what, $rule->limit ?? null)))) {
             $dataError->error(400, $error);
         }
 
@@ -714,23 +715,23 @@ class Validator
     }
 
     /**
-     * @param array $rule
+     * @param stdClass $rule
      * @param string|null $range
      */
-    private static function setRuleOptions(array &$rule, string $range = null) : void
+    private static function setRuleOptions(stdClass &$rule, string $range = null) : void
     {
         if ($range) {
-            if ($rule["filter"] == FILTER_VALIDATE_INT || $rule["filter"] == FILTER_VALIDATE_FLOAT) {
+            if ($rule->filter == FILTER_VALIDATE_INT || $rule->filter == FILTER_VALIDATE_FLOAT) {
                 if (strpos($range, ":") !== false) {
                     $arrOpt                                 = explode(":", $range);
                     if (is_numeric($arrOpt[0])) {
-                        $rule["options"]["min_range"]       = $arrOpt[0];
+                        $rule->options["min_range"]         = $arrOpt[0];
                     }
                     if (is_numeric($arrOpt[1])) {
-                        $rule["options"]["max_range"]       = $arrOpt[1];
+                        $rule->options["max_range"]         = $arrOpt[1];
                     }
                 } elseif (is_numeric($range)) {
-                    $rule["options"]["decimal"]             = $range;
+                    $rule->options["decimal"]               = $range;
                 }
             } else {
                 self::setRuleOptionsString($rule, $range);
@@ -739,20 +740,20 @@ class Validator
     }
 
     /**
-     * @param array $rule
+     * @param stdClass $rule
      * @param string $option
      */
-    private static function setRuleOptionsString(array &$rule, string $option) : void
+    private static function setRuleOptionsString(stdClass &$rule, string $option) : void
     {
         if (strpos($option, ":") !== false) {
             $arrOpt                                 = explode(":", $option);
             if (is_numeric($arrOpt[1])) {
-                $rule["length"]                     = $arrOpt[1];
+                $rule->length                       = $arrOpt[1];
             }
         } elseif (is_numeric($option)) {
-            $rule["length"]                         = $option;
+            $rule->length                           = $option;
         } else {
-            $rule["limit"]                          = $option;
+            $rule->limit                            = $option;
         }
     }
 

@@ -1,11 +1,12 @@
 <?php
 namespace phpformsframework\libs\cache;
 
-use phpformsframework\libs\App;
 use phpformsframework\libs\cache\adapters\BufferAdapter;
+use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Log;
+use phpformsframework\libs\Router;
 use phpformsframework\libs\util\AdapterManager;
 use stdClass;
 
@@ -79,7 +80,7 @@ class Buffer implements Dumpable
      */
     public static function request(string $bucket, string $action, array $params = null, &$ref = null) : bool
     {
-        self::startWatch($bucket, $action);
+        self::watchStart($bucket, $action);
 
         if (!self::cacheEnabled()) {
             return true;
@@ -97,7 +98,7 @@ class Buffer implements Dumpable
      */
     public static function store($response) : void
     {
-        $exTime                                             = self::stopWatch();
+        $exTime                                             = self::watchStop();
         if (self::cacheEnabled()) {
             $cache                                          =& self::$cache[self::$pid];
 
@@ -114,7 +115,7 @@ class Buffer implements Dumpable
      */
     public static function update() : void
     {
-        $exTime                                             = self::stopWatch();
+        $exTime                                             = self::watchStop();
         if (self::cacheEnabled()) {
             $cache                                          =& self::$cache[self::$pid];
 
@@ -130,21 +131,21 @@ class Buffer implements Dumpable
      * @param string $bucket
      * @param string $action
      */
-    private static function startWatch(string $bucket, string $action) : void
+    private static function watchStart(string $bucket, string $action) : void
     {
         self::$tid                                          = new stdClass();
         self::$tid->bucket                                  = $bucket;
-        self::$tid->pkey                                    = App::getRunner() . self::SEP . $bucket . self::SEP . $action;
+        self::$tid->pkey                                    = Router::getRunner() . self::SEP . $bucket . self::SEP . $action;
 
-        App::stopWatch(self::$tid->pkey);
+        Debug::stopWatch(self::$tid->pkey);
     }
 
     /**
      * @return float
      */
-    private static function stopWatch() : float
+    private static function watchStop() : float
     {
-        $exTime                                             = App::stopWatch(self::$tid->pkey);
+        $exTime                                             = Debug::stopWatch(self::$tid->pkey);
 
         self::setStats($exTime, self::$tid->bucket, self::$tid->pkey);
 
@@ -187,7 +188,7 @@ class Buffer implements Dumpable
             self::setProcess($process, true);
         }
 
-        self::$cache[self::$pid]->exTime                    = self::stopWatch();
+        self::$cache[self::$pid]->exTime                    = self::watchStop();
 
         return false;
     }
@@ -207,7 +208,7 @@ class Buffer implements Dumpable
         self::$cache[self::$pid]->request                   = $params;
         self::$cache[self::$pid]->bucket                    = $bucket;
         self::$cache[self::$pid]->action                    = $action;
-        self::$cache[self::$pid]->pkey                      = App::getRunner() . self::SEP . self::$cache[self::$pid]->bucket . self::SEP . self::$cache[self::$pid]->action;
+        self::$cache[self::$pid]->pkey                      = Router::getRunner() . self::SEP . self::$cache[self::$pid]->bucket . self::SEP . self::$cache[self::$pid]->action;
 
         return true;
     }

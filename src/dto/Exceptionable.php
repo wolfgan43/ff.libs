@@ -1,7 +1,7 @@
 <?php
 namespace phpformsframework\libs\dto;
 
-use phpformsframework\libs\App;
+use phpformsframework\libs\Kernel;
 
 /**
  * Trait Exceptionable
@@ -35,7 +35,7 @@ trait Exceptionable
      */
     private function setError(string $msg = null) : void
     {
-        if (App::debugEnabled() || $this->status < 500) {
+        if (Kernel::$Environment::DEBUG || $this->status < 500) {
             $this->error                        = (
                 $this->error
                     ? $this->error . " "

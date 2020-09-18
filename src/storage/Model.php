@@ -1,9 +1,14 @@
 <?php
-namespace phpformsframework\libs;
+namespace phpformsframework\libs\storage;
 
 use Exception;
+use phpformsframework\libs\Configurable;
+use phpformsframework\libs\Dir;
+use phpformsframework\libs\dto\ConfigRules;
+use phpformsframework\libs\Dumpable;
+use phpformsframework\libs\Error;
+use phpformsframework\libs\Request;
 use phpformsframework\libs\storage\dto\OrmResults;
-use phpformsframework\libs\storage\Orm;
 use stdClass;
 
 /**
@@ -347,8 +352,8 @@ class Model implements Configurable, Dumpable
 
     /**
      * @access private
-     * @param dto\ConfigRules $configRules
-     * @return dto\ConfigRules
+     * @param ConfigRules $configRules
+     * @return ConfigRules
      */
     public static function loadConfigRules($configRules)
     {

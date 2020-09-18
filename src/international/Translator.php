@@ -27,10 +27,10 @@
 namespace phpformsframework\libs\international;
 
 use Exception;
-use phpformsframework\libs\App;
 use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
+use phpformsframework\libs\storage\Model;
 use phpformsframework\libs\util\AdapterManager;
 
 /**
@@ -189,7 +189,7 @@ class Translator
                                                             , "word"    => $code
                                                         );
         if ($lang) {
-            $orm                                        = App::orm("international");
+            $orm                                        = Model::orm("international");
             $res                                        = $orm->readOne(array(
                                                             "translation.description"
                                                             , "translation.is_new"

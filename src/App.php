@@ -26,13 +26,12 @@
 namespace phpformsframework\libs;
 
 use phpformsframework\libs\dto\RequestPage;
-
-use Exception;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\security\Discover;
 use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\util\Normalize;
+use Exception;
 
 /**
  * Class App
@@ -44,8 +43,6 @@ abstract class App implements Dumpable
 
     const NAME_SPACE                                                = __NAMESPACE__ . '\\';
     const ERROR_BUCKET                                              = 'app';
-
-    private static $script_engine                                   = null;
 
     /**
      * @var Constant
@@ -81,7 +78,7 @@ abstract class App implements Dumpable
     public static function dump(array $userVars = null) : array
     {
         return array(
-            "isRunnedAs"    => self::$script_engine,
+            "isRunnedAs"    => Router::getRunner(),
             "Configuration" => self::$configuration,
             "Vars"          => Env::get(),
             "userVars"      => $userVars,
@@ -90,34 +87,22 @@ abstract class App implements Dumpable
     }
 
     /**
-     * @return string
+     * @param int $status
+     * @param string $msg
+     * @throws Exception
      */
-    public static function getRunner() : string
+    public static function throwError(int $status, string $msg) : void
     {
-        return self::$script_engine;
+        throw new Exception($msg, $status);
     }
 
     /**
-     * @param string $what
+     * @param $data
+     * @param string|null $bucket
      */
-    public static function setRunner(string $what) : void
+    public static function debug($data, string $bucket = null) : void
     {
-        self::$script_engine                                        = ucfirst(basename(str_replace('\\', '/', $what)));
-    }
-
-    /**
-     * @param string $what
-     * @return bool
-     */
-    public static function isRunnedAs(string $what) : bool
-    {
-        if (self::$script_engine) {
-            $res                                                    = self::$script_engine == ucfirst($what);
-        } else {
-            $path                                                   = Dir::findAppPath($what, true);
-            $res                                                    = $path && strpos(Request::pathinfo(), $path) === 0;
-        }
-        return $res;
+        Debug::set($data, $bucket ?? static::ERROR_BUCKET);
     }
 
     /**

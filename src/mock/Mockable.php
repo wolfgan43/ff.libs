@@ -1,8 +1,9 @@
 <?php
 namespace phpformsframework\libs\mock;
 
-use phpformsframework\libs\App;
+use phpformsframework\libs\Kernel;
 use stdClass;
+
 /**
  * Trait Mockable
  * @package phpformsframework\libs\mock
@@ -41,7 +42,7 @@ trait Mockable
      */
     private function mockEnabled() : bool
     {
-        return $this->mockEnabled ?? App::debugEnabled();
+        return $this->mockEnabled ?? Kernel::$Environment::DEBUG;
     }
 
     /**

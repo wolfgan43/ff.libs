@@ -87,6 +87,8 @@ class Kernel
         $this->Request              = new $this->Request();
         $this->Response             = new $this->Response();
 
+        ini_set('memory_limit', self::$Environment::MEMORY_LIMIT);
+
         $this->useCache(!self::$Environment::DISABLE_CACHE && !isset($_GET["__nocache__"]));
 
         if (!isset($_SERVER["HTTP_HOST"])) {

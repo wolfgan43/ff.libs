@@ -38,8 +38,8 @@ use phpformsframework\libs\Request;
  */
 class Validator
 {
-    private const MEMORY_LIMIT                              = 12000000;
-    private const MEMORY_LIMIT_BASE64                       = 33000000;
+    private const MEMORY_LIMIT_REQUEST                      = 11;
+    private const MEMORY_LIMIT_BASE64                       = 4;
     const RULES                                             = array(
                                                                 "bool"              => array(
                                                                     "filter"        => FILTER_VALIDATE_BOOLEAN,
@@ -433,6 +433,25 @@ class Validator
         return !self::invalidFile($value);
     }
 
+    private static function size2Bytes(string $size) : int
+    {
+        $ums = [
+            "K" => 1,
+            "M" => 2,
+            "G" => 3,
+            "T" => 4,
+        ];
+
+        $um = strtoupper(substr($size, -1));
+
+        return (isset($ums[$um])
+            ? substr($size, 0, -1) * (pow(1024, $ums[$um]))
+            : $size
+        );
+    }
+
+
+
     /**
      * Returns webserver max upload size in B/KB/MB/GB
      * @param string|null $return
@@ -514,7 +533,7 @@ class Validator
      */
     public static function checkBase64(string $data) : ?string
     {
-        if(strlen($data) > self::MEMORY_LIMIT_BASE64) {
+        if(strlen($data) > (self::size2Bytes(Kernel::$Environment::MEMORY_LIMIT) / self::MEMORY_LIMIT_BASE64)) {
             return self::getErrorName() . " base64 Memory Limit Reached.";
         }
 
@@ -1003,9 +1022,10 @@ class Validator
         $dataError                                          = new DataError();
         if ($length > 0) {
             $error                                          = " Max Length Exceeded: ";
-            if($length > self::MEMORY_LIMIT) {
-                $length = self::MEMORY_LIMIT;
-                $error = " Memory Limit Reached." . $error;
+            $max_length                                     = (self::size2Bytes(Kernel::$Environment::MEMORY_LIMIT) / self::MEMORY_LIMIT_REQUEST);
+            if($length > $max_length) {
+                $length                                     = $max_length;
+                $error                                      = " Memory Limit Reached." . $error;
             }
             foreach ($value as $item) {
                 if ((is_array($item) && strlen(serialize($item)) > $length)

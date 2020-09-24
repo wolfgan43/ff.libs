@@ -80,6 +80,8 @@ class Kernel
         self::$singleton            = $this;
         self::$Environment          = $environment;
 
+        ini_set('memory_limit', self::$Environment::MEMORY_LIMIT);
+
         if (self::$Environment::DEBUG) {
             $this->Debug            = new Debug();
         }

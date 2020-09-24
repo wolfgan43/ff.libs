@@ -59,6 +59,7 @@ interface Constant
     public const FTYPE_DATE_TIME                                            = "datetime";
 
     public const FTYPE_OBJECT                                               = "object";
+    public const FTYPE_UUID                                                 = "uuid";
 
 
     public const ACTION_READ                                                = "read";
@@ -70,5 +71,4 @@ interface Constant
 
     public const CMD_COUNT                                                  = "count";
     public const CMD_PROCESS_LIST                                           = "processlist";
-
 }

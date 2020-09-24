@@ -43,8 +43,8 @@ class Validator
     public const REQUEST_UPLOAD_PARAM_NAME                  = Request::UPLOAD_PARAM_NAME;
     private const ERROR_NO_BASE64                           = ' is not a valid base64.';
 
-    private const MEMORY_LIMIT                              = 10000000;      //10MB
-    private const MEMORY_LIMIT_BASE64                       = 33000000;      //33MB
+    private const MEMORY_LIMIT_REQUEST                      = 11;
+    private const MEMORY_LIMIT_BASE64                       = 4;
     private const REQUEST_LIMIT                             = 1024000000;    //1024MB
     private const SPELL_CHECK                               = array("''", '""', '\\"', '\\', '../', './', 'file://');
     private const RULES                                     = array(
@@ -273,7 +273,7 @@ class Validator
         }
 
         if (!empty($rule->filter)) {
-            if ($dataError->get("size") > self::MEMORY_LIMIT) {
+            if ($dataError->get("size") > (self::size2Bytes(Kernel::$Environment::MEMORY_LIMIT) / self::MEMORY_LIMIT_REQUEST)) {
                 return $dataError->error(413, $context . ": Memory Limit Reached. Validator is " . $type);
             }
 
@@ -484,7 +484,7 @@ class Validator
      */
     private static function base64Decode(string $value) : string
     {
-        if (strlen($value) > self::MEMORY_LIMIT_BASE64) {
+        if (strlen($value) > (self::size2Bytes(Kernel::$Environment::MEMORY_LIMIT) / self::MEMORY_LIMIT_BASE64)) {
             Error::register(self::getContextName() . " base64 Memory Limit Reached.", 413);
         }
 
@@ -771,5 +771,26 @@ class Validator
     private static function getContextName() : string
     {
         return self::$contextName;
+    }
+
+    /**
+     * @param string $size
+     * @return int
+     */
+    private static function size2Bytes(string $size) : int
+    {
+        $ums = [
+            "K" => 1,
+            "M" => 2,
+            "G" => 3,
+            "T" => 4,
+        ];
+
+        $um = strtoupper(substr($size, -1));
+
+        return (isset($ums[$um])
+            ? substr($size, 0, -1) * (pow(1024, $ums[$um]))
+            : $size
+        );
     }
 }

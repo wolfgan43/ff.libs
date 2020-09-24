@@ -3,6 +3,7 @@ namespace phpformsframework\libs\storage;
 
 use Exception;
 use phpformsframework\libs\Configurable;
+use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dir;
 use phpformsframework\libs\dto\ConfigRules;
 use phpformsframework\libs\Dumpable;
@@ -17,7 +18,8 @@ use stdClass;
  */
 class Model implements Configurable, Dumpable
 {
-    private const ERROR_BUCKET                                                      = "model";
+    private const ERROR_BUCKET                                                      = Orm::ERROR_BUCKET;
+
     private const ERROR_MODEL_NOT_FOUND                                             = "Model not Found";
     private const COLLECTION                                                        = "collection";
     private const TABLE                                                             = "table";
@@ -168,6 +170,7 @@ class Model implements Configurable, Dumpable
             ? $this->fill($this->schema->insert, $fields)
             : $this->fieldSet($fields, $this->table)
         );
+
         return $this->getOrm()->insert($insert);
     }
 
@@ -211,11 +214,12 @@ class Model implements Configurable, Dumpable
     }
 
     /**
+     * @param string|null $table_name
      * @return stdClass
      */
-    public function dtdStore() : stdClass
+    public function dtdStore(string $table_name = null) : stdClass
     {
-        return (object) $this->getOrm()->dtd($this->schema->table ?? $this->table);
+        return (object) $this->getOrm()->dtd($table_name ?? $this->schema->table ?? $this->table);
     }
 
     /**
@@ -341,12 +345,23 @@ class Model implements Configurable, Dumpable
     {
         $res                                                                        = [];
         if ($table_name) {
+            $errors                                                                 = null;
+            $dtd                                                                    = self::dtdStore($table_name);
             foreach ($fields as $field => $value) {
-                $res[$table_name . self::DOT . $field]                              = $value;
+                if (is_array($value) && !isset($dtd->$field)) {
+                    $res                                                            = array_merge($res, self::fieldSet($value, $field));
+                } elseif (isset($dtd->$field)) {
+                    $res[$table_name . self::DOT . $field]                          = $value;
+                } else {
+                    $errors[]                                                       = "Missing Field: " . $field;
+                }
             }
+
+            Debug::set($errors, static::ERROR_BUCKET . "::table->" . $table_name);
         } else {
             $res                                                                    = $fields;
         }
+
         return $res;
     }
 

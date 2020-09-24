@@ -53,6 +53,8 @@ class Constant
     const LOCALE_COUNTRY_CODE               = null; //IT, US
     const LOCALE_TIME_ZONE                  = "UTC";
 
+    const MEMORY_LIMIT                      = '128M';
+
     /**
      * Disk Settings
      */

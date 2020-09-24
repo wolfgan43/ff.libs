@@ -50,7 +50,7 @@ class Orm extends Mappable
      */
     private static $singleton                                                               = null;
 
-    protected const ERROR_BUCKET                                                            = "orm";
+    public const ERROR_BUCKET                                                               = "orm";
 
     private const SCOPE_SELECT                                                              = "select";
     private const SCOPE_WHERE                                                               = "where";
@@ -700,7 +700,6 @@ class Orm extends Mappable
         ));
 
         $this->execSub();
-
         $this->setData();
 
         if (!empty($this->rev)) {
@@ -862,13 +861,14 @@ class Orm extends Mappable
                 $controller                                                                 = $this->main->service;
             }
             foreach ($data->def->relationship as $tbl => $rel) {
-                if (isset($rel[self::FREL_EXTERNAL]) && isset($this->subs[$controller][$tbl])) {
+                if (isset($rel[self::FREL_EXTERNAL])) {
                     $field_ext                                                              = $rel[self::FREL_EXTERNAL];
                     if (isset($data->def->struct[$field_ext])) {
                         $field_ext                                                          = $rel[self::FREL_PRIMARY];
                     }
+
                     if ($key && $field_ext && $field_ext != $key_name) {
-                        if ($tbl != $this->main->def->mainTable) {
+                        if (isset($this->subs[$controller][$tbl])) {
                             if (!isset($this->rev[$tbl])) {
                                 Error::register("relationship missing Controller for table: " . $tbl . " from controller " . $controller, static::ERROR_BUCKET);
                             }
@@ -880,7 +880,7 @@ class Orm extends Mappable
                             if (!empty($sub->set)) {
                                 $sub->where[$field_ext]                                     = $key;
                             }
-                        } else {
+                        } elseif ($tbl == $this->main->def->mainTable) {
                             if (!empty($this->main->insert)) {
                                 $this->main->insert[$field_ext]                             = $key;
                             }
@@ -1148,8 +1148,6 @@ class Orm extends Mappable
                         } else {
                             Error::register("Undefined Struct on Table: `" . $table . "` Model: `" . $service . "`", static::ERROR_BUCKET);
                         }
-                    } else {
-                        Error::register("missing field: `" . $parts[$fIndex] . "` on Table: `" . $table . "` Model: `" . $service . "`", static::ERROR_BUCKET);
                     }
                     continue;
                 }

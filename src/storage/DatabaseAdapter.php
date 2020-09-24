@@ -894,8 +894,6 @@ abstract class DatabaseAdapter implements Constant
      */
     public function read(array $fields, array $where = null, array $sort = null, int $limit = null, int $offset = null, string $table_name = null) : ?array
     {
-
-
         $res                                                    = null;
         $query                                                  = $this->getQueryRead($fields, $where, $sort, $limit, $offset, $table_name);
 

@@ -46,18 +46,52 @@ class OrmItem
     private $model                                                              = null;
 
     /**
-     * @param array|null $where
-     * @param array|null $sort
+     * @param array|null $query
+     * @param array|null $order
      * @param int|null $limit
      * @param int|null $offset
      * @param int $draw
      * @return DataTableResponse
      * @throws Exception
      */
-    public static function search(array $where = null, array $sort = null, int $limit = null, int $offset = null, int $draw = 0) : DataTableResponse
+    public static function search(array $query = null, array $order = null, int $limit = null, int $offset = null, int $draw = 0) : DataTableResponse
     {
         $dataTableResponse                                                      = new DataTableResponse();
         $item                                                                   = new static();
+
+        $where                                                                  = null;
+        if (is_array($query)) {
+            foreach ($query as $key => $value) {
+                if (is_array($value)) {
+                    $value                                                      = ['$in' => array_values($value)];
+                } elseif (stristr($value, "*")) {
+                    $value                                                      = ['$regex' => $value];
+                }
+                $where[$key]                                                    = $value;
+            }
+        }
+
+        $sort                                                                   = null;
+        if (is_array($order)) {
+            $fields                                                             = $item->toDataResponse;
+            sort($fields);
+            foreach ($order as $key => $value) {
+                if (isset($value["column"])) {
+                    if (is_array($value["column"])) {
+                        throw new Exception("Multi array not supported in order: " . $key, 400);
+                    }
+                    if (!isset($fields[$value["column"]]) && is_numeric($value["column"])) {
+                        throw new Exception("Order Column value not found: " . $key, 404);
+                    }
+
+                    $sort[$fields[$value["column"]] ?? $value["column"]]        = $value["dir"] ?? "asc";
+
+                } elseif (!is_array($value)) {
+                    $sort[$key]                                                 = $value;
+                }
+            }
+        }
+
         $recordset                                                              = $item->db
             ->table($item->dbTable, $item->toDataResponse)
             ->read($where, $sort, $limit, $offset);
@@ -186,6 +220,8 @@ class OrmItem
     public function apply() : string
     {
         $vars                                                                   = $this->fieldSetPurged();
+
+        //$this->setDefaults($vars);
         //$vars = $this->fieldConvert($vars); //@todo da finire
         $this->verifyRequire($vars);
         $this->verifyValidator($vars);

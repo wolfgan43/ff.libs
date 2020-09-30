@@ -32,7 +32,6 @@
         "ext-fileinfo": "*"
     },
     "require-dev": {
-        "fzaninotto/faker": "^1.9"
     },
     "suggest": {
         "ext-apache": "to use apache functions",

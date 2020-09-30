@@ -65,7 +65,7 @@ class DatabaseQuery
      */
     public function countRecords() : bool
     {
-        return $this->limit && $this->offset;
+        return $this->limit || $this->offset;
     }
 
     /**

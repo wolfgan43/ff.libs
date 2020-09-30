@@ -192,6 +192,10 @@ class MySqli extends DatabaseDriver
      */
     public function read(DatabaseQuery $query) : bool
     {
+        if (!$query->limit && $query->offset) {
+            $query->limit                               = static::MAX_NUMROWS;
+        }
+
         $count_num_rows                                 = $query->countRecords();
         $query_string                                   = "SELECT " .
             (
@@ -525,10 +529,10 @@ class MySqli extends DatabaseDriver
     }
 
     /**
-     * @param string $value
+     * @param string|null $value
      * @return string
      */
-    protected function convertID(string $value) : string
+    protected function convertID(string $value = null) : ?string
     {
         return $value;
     }

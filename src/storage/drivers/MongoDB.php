@@ -562,10 +562,10 @@ class MongoDB extends DatabaseDriver
     }
 
     /**
-     * @param string $value
+     * @param string|null $value
      * @return ObjectID
      */
-    protected function convertID(string $value) : ObjectID
+    protected function convertID(string $value = null) : ObjectID
     {
         return $this->getObjectID($value);
     }

@@ -37,6 +37,8 @@ abstract class DatabaseDriver implements Constant
 {
     protected static $_dbs 	                = array();
 
+    protected const MAX_NUMROWS             = DatabaseAdapter::MAX_NUMROWS;
+
     protected $locale                       = "ISO9075";
 
     protected $host                         = null;
@@ -149,11 +151,11 @@ abstract class DatabaseDriver implements Constant
     abstract protected function errorHandler(string $msg) : void;
 
     /**
-     * @todo da tipizzare
-     * @param string $value
+     * @param string|null $value
      * @return mixed
+     * @todo da tipizzare
      */
-    abstract protected function convertID(string $value);
+    abstract protected function convertID(string $value = null);
 
     /**
      * @param mixed $mixed
@@ -217,11 +219,10 @@ abstract class DatabaseDriver implements Constant
             case self::FTYPE_ARRAY_OF_NUMBER:
             case self::FTYPE_ARRAY_INCREMENTAL:
             default:
-                if (is_array($Array[0])) {
-                    $this->errorHandler("Multidimensional Array not managed: " . json_encode($Array));
-                }
-
-                $value = array_map(function ($value) {
+                $value = array_map(function ($value) use ($Array) {
+                    if (is_array($value)) {
+                        $this->errorHandler("Multidimensional Array not managed: " . json_encode($Array));
+                    }
                     return $this->toSqlEscape($value);
                 }, $Array);
         }

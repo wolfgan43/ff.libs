@@ -7,6 +7,7 @@ use phpformsframework\libs\dto\DataTableResponse;
 use phpformsframework\libs\dto\Mapping;
 use phpformsframework\libs\storage\dto\OrmResults;
 use Exception;
+use stdClass;
 
 /**
  * Class OrmItem
@@ -18,6 +19,15 @@ class OrmItem
     use Mapping;
     use OrmUtil;
 
+    private const SEARCH_OPERATORS                                              = [
+        'gt'            => '$gt',
+        'gte'           => '$gte',
+        'lt'            => '$lt',
+        'lte'           => '$lte',
+        'ne'            => '$ne',
+        'nin'           => '$nin',
+        'regex'         => '$regex',
+    ];
     private const PRIVATE_PROPERTIES                                            = [
         "dbCollection"  => true,
         "dbTable"       => true,
@@ -54,7 +64,7 @@ class OrmItem
      * @return DataTableResponse
      * @throws Exception
      */
-    public static function search(array $query = null, array $order = null, int $limit = null, int $offset = null, int $draw = 0) : DataTableResponse
+    public static function search(array $query = null, array $order = null, int $limit = null, int $offset = null, int $draw = null) : DataTableResponse
     {
         $dataTableResponse                                                      = new DataTableResponse();
         $item                                                                   = new static();
@@ -63,7 +73,17 @@ class OrmItem
         if (is_array($query)) {
             foreach ($query as $key => $value) {
                 if (is_array($value)) {
-                    $value                                                      = ['$in' => array_values($value)];
+                    foreach ($value as $op => $subvalue) {
+                        if (substr($op, 0, 1) == '$') {
+                            continue;
+                        }
+
+                        if (isset(self::SEARCH_OPERATORS[$op])) {
+                            $value[self::SEARCH_OPERATORS[$op]]                 = $subvalue;
+                        } else {
+                            $value['$in'][]                                     = $subvalue;
+                        }
+                    }
                 } elseif (stristr($value, "*")) {
                     $value                                                      = ['$regex' => $value];
                 }
@@ -85,7 +105,6 @@ class OrmItem
                     }
 
                     $sort[$fields[$value["column"]] ?? $value["column"]]        = $value["dir"] ?? "asc";
-
                 } elseif (!is_array($value)) {
                     $sort[$key]                                                 = $value;
                 }
@@ -174,6 +193,7 @@ class OrmItem
 
     /**
      *
+     * @throws Exception
      */
     private function loadCollection()
     {

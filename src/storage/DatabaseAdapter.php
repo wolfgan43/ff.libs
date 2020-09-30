@@ -39,6 +39,8 @@ use phpformsframework\libs\util\Normalize;
  */
 abstract class DatabaseAdapter implements Constant
 {
+    public const MAX_NUMROWS            = 10000;
+
     private const OPERATOR_COMPARISON   = [
                                             '$gt'       => self::FTYPE_NUMBER,
                                             '$gte'      => self::FTYPE_NUMBER,
@@ -81,8 +83,6 @@ abstract class DatabaseAdapter implements Constant
 
     private const COUNT                 = Database::COUNT;
     private const INDEX_PRIMARY         = Database::INDEX_PRIMARY;
-
-    protected const MAX_NUMROWS         = 10000;
 
     private $connection                 = array(
                                             "host"          => null
@@ -299,6 +299,7 @@ abstract class DatabaseAdapter implements Constant
         if (!$res) {
             $res[self::OP_ARRAY_DEFAULT]    = $this->fieldOperation($this->fieldIn($name, $values), $struct_type, $name, self::OP_ARRAY_DEFAULT);
         }
+
         return $res;
     }
 

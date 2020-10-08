@@ -72,6 +72,10 @@ class OrmItem
         $where                                                                  = null;
         if (is_array($query)) {
             foreach ($query as $key => $value) {
+                if (!isset($item->$key)) {
+                    continue;
+                }
+
                 if (is_array($value)) {
                     foreach ($value as $op => $subvalue) {
                         if (substr($op, 0, 1) == '$') {
@@ -96,10 +100,6 @@ class OrmItem
             $fields                                                             = $item->toDataResponse;
             sort($fields);
             foreach ($order as $key => $value) {
-                if (!isset($item->$key)) {
-                    continue;
-                }
-
                 if (isset($value["column"])) {
                     if (is_array($value["column"])) {
                         throw new Exception("Multi array not supported in order: " . $key, 400);

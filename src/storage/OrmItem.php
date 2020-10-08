@@ -96,6 +96,10 @@ class OrmItem
             $fields                                                             = $item->toDataResponse;
             sort($fields);
             foreach ($order as $key => $value) {
+                if (!isset($item->$key)) {
+                    continue;
+                }
+
                 if (isset($value["column"])) {
                     if (is_array($value["column"])) {
                         throw new Exception("Multi array not supported in order: " . $key, 400);
@@ -121,7 +125,7 @@ class OrmItem
             $dataTableResponse->recordsTotal                                    = $recordset->countTotal();
             $dataTableResponse->draw                                            = $draw + 1;
         } else {
-            $dataTableResponse->error(404, "not Found");
+            //$dataTableResponse->error(404, "not Found");
         }
         return $dataTableResponse;
     }

@@ -18,32 +18,32 @@ use stdClass;
  */
 class Model implements Configurable, Dumpable
 {
-    private const ERROR_BUCKET                                                      = Orm::ERROR_BUCKET;
+    private const ERROR_BUCKET                                                          = Orm::ERROR_BUCKET;
 
-    private const ERROR_MODEL_NOT_FOUND                                             = "Model not Found";
-    private const COLLECTION                                                        = "collection";
-    private const TABLE                                                             = "table";
-    private const MAPCLASS                                                          = "mapclass";
-    private const READ                                                              = "read";
-    private const INSERT                                                            = "insert";
-    private const FAKE                                                              = "fake";
-    private const DTD                                                               = "dtd";
-    private const DOT                                                               = ".";
-    private const SELECT_ALL                                                        = ".*";
+    private const ERROR_MODEL_NOT_FOUND                                                 = "Model not Found";
+    private const COLLECTION                                                            = "collection";
+    private const TABLE                                                                 = "table";
+    private const MAPCLASS                                                              = "mapclass";
+    private const READ                                                                  = "read";
+    private const INSERT                                                                = "insert";
+    private const FAKE                                                                  = "fake";
+    private const DTD                                                                   = "dtd";
+    private const DOT                                                                   = ".";
+    private const SELECT_ALL                                                            = ".*";
 
-    private static $models                                                          = null;
+    private static $models                                                              = null;
 
-    private $collection                                                             = null;
-    private $table                                                                  = null;
-    private $mapclass                                                               = null;
-    private $select                                                                 = null;
-    private $selectJoin                                                             = [];
-    private $where                                                                  = [];
+    private $collection                                                                 = null;
+    private $table                                                                      = null;
+    private $mapclass                                                                   = null;
+    private $select                                                                     = null;
+    private $selectJoin                                                                 = [];
+    private $where                                                                      = [];
     /**
      * @var stdClass
      */
-    private $schema                                                                 = null;
-    private $name                                                                   = null;
+    private $schema                                                                     = null;
+    private $name                                                                       = null;
 
 
 
@@ -77,10 +77,10 @@ class Model implements Configurable, Dumpable
     public function __construct(string $collection_or_model = null)
     {
         if (isset(self::$models[$collection_or_model])) {
-            $this->schema                                                           = (object) self::$models[$collection_or_model];
-            $this->name                                                             = $collection_or_model;
+            $this->schema                                                               = (object) self::$models[$collection_or_model];
+            $this->name                                                                 = $collection_or_model;
         } else {
-            $this->collection                                                       = $collection_or_model;
+            $this->collection                                                           = $collection_or_model;
         }
     }
 
@@ -90,9 +90,9 @@ class Model implements Configurable, Dumpable
      */
     public function loadCollection(string $collection_name) : self
     {
-        $this->schema                                                               = null;
-        $this->name                                                                 = null;
-        $this->collection                                                           = $collection_name;
+        $this->schema                                                                   = null;
+        $this->name                                                                     = null;
+        $this->collection                                                               = $collection_name;
 
         return $this;
     }
@@ -108,9 +108,9 @@ class Model implements Configurable, Dumpable
             throw new Exception(self::ERROR_MODEL_NOT_FOUND . ": " . $model_name, 501);
         }
 
-        $this->schema                                                               = (object) (self::$models[$model_name]);
-        $this->name                                                                 = $model_name;
-        $this->collection                                                           = null;
+        $this->schema                                                                   = (object) (self::$models[$model_name]);
+        $this->name                                                                     = $model_name;
+        $this->collection                                                               = null;
 
         return $this;
     }
@@ -122,7 +122,7 @@ class Model implements Configurable, Dumpable
      */
     public function table(string $table_name = null, array $fields = null) : self
     {
-        $this->table                                                                = $table_name;
+        $this->table                                                                    = $table_name;
         $this->fieldSelect($this->select, $table_name, $fields);
 
         return $this;
@@ -150,11 +150,27 @@ class Model implements Configurable, Dumpable
      */
     public function read(array $where = null, array $sort = null, int $limit = null, int $offset = null) : OrmResults
     {
-        $select                                                                     = (
+        $select                                                                         = (
             $this->select ?? $this->schema->read ?? []
         ) + $this->selectJoin;
 
         return $this->getOrm()->read($select, $this->setWhere($where), $sort, $limit, $offset);
+    }
+
+    /**
+     * @param array|null $where
+     * @param array|null $sort
+     * @param int|null $offset
+     * @return OrmResults
+     * @throws Exception
+     */
+    public function readOne(array $where = null, array $sort = null, int $offset = null) : OrmResults
+    {
+        $select                                                                         = (
+            $this->select ?? $this->schema->read ?? []
+            ) + $this->selectJoin;
+
+        return $this->getOrm()->read($select, $this->setWhere($where), $sort, 1, $offset, false);
     }
 
     /**
@@ -164,7 +180,7 @@ class Model implements Configurable, Dumpable
      */
     public function insert(array $fields) : OrmResults
     {
-        $insert                                                                     = array_replace(
+        $insert                                                                         = array_replace(
             $this->where,
             $this->schema
             ? $this->fill($this->schema->insert, $fields)
@@ -231,15 +247,12 @@ class Model implements Configurable, Dumpable
     }
 
     /**
-     * @return stdClass
+     * @param string|null $table
+     * @return stdClass|null
      */
-    public function dtdInformationSchema() : stdClass
+    public function informationSchema(string $table = null) : ?stdClass
     {
-        $table      = $this->schema->table ?? $this->table;
-        return (object) [
-            "table" => $table,
-            "key"   => array_search("primary", $this->getOrm()->dtd($table))
-        ];
+        return $this->getOrm()->informationSchema($table ?? $this->schema->table ?? $this->table);
     }
     /**
      * @return stdClass
@@ -271,7 +284,7 @@ class Model implements Configurable, Dumpable
                 if (strpos($key, ".") === false) {
                     $key = $table . "." . $key;
                 }
-                $this->where[$key]                                                  = $value;
+                $this->where[$key]                                                      = $value;
             }
         }
         return $this->where;
@@ -285,20 +298,20 @@ class Model implements Configurable, Dumpable
     private function fill(array $model, array $request) : array
     {
         if (!empty($request)) {
-            $request_key                                                            = array();
-            $request_value                                                          = array();
+            $request_key                                                                = array();
+            $request_value                                                              = array();
             foreach ($request as $key => $value) {
                 if (is_array($value)) {
-                    $value                                                          = json_encode($value);
+                    $value                                                              = json_encode($value);
                 }
 
-                $request_key[]                                                      = '$' . $key . "#";
-                $request_key[]                                                      = '$' . $key . " ";
-                $request_value[]                                                    = $value . "#";
-                $request_value[]                                                    = $value . " ";
+                $request_key[]                                                          = '$' . $key . "#";
+                $request_key[]                                                          = '$' . $key . " ";
+                $request_value[]                                                        = $value . "#";
+                $request_value[]                                                        = $value . " ";
             }
 
-            $prototype                                                              = str_replace(
+            $prototype                                                                  = str_replace(
                 $request_key,
                 $request_value,
                 implode("#", $model) . "#"
@@ -306,7 +319,7 @@ class Model implements Configurable, Dumpable
             $prototype = preg_replace('/\$[a-zA-Z]+/', "", $prototype);
 
 
-            $model                                                                  = array_combine(
+            $model                                                                      = array_combine(
                 array_keys($model),
                 explode("#", substr($prototype, 0, -1))
             );
@@ -329,10 +342,10 @@ class Model implements Configurable, Dumpable
                     $ref[$table_name . self::DOT . (is_int($field) ? $alias : $field)]  = $alias;
                 }
             } else {
-                $ref[$table_name . self::SELECT_ALL]                                = $table_name . self::SELECT_ALL;
+                $ref[$table_name . self::SELECT_ALL]                                    = $table_name . self::SELECT_ALL;
             }
         } else {
-            $ref                                                                    = array();
+            $ref                                                                        = array();
         }
     }
 
@@ -343,23 +356,23 @@ class Model implements Configurable, Dumpable
      */
     private function fieldSet(array $fields, string $table_name = null) : array
     {
-        $res                                                                        = [];
+        $res                                                                            = [];
         if ($table_name) {
-            $errors                                                                 = null;
-            $dtd                                                                    = self::dtdStore($table_name);
+            $errors                                                                     = null;
+            $dtd                                                                        = self::dtdStore($table_name);
             foreach ($fields as $field => $value) {
                 if (is_array($value) && !isset($dtd->$field)) {
-                    $res                                                            = array_merge($res, self::fieldSet($value, $field));
+                    $res                                                                = array_merge($res, self::fieldSet($value, $field));
                 } elseif (isset($dtd->$field)) {
-                    $res[$table_name . self::DOT . $field]                          = $value;
+                    $res[$table_name . self::DOT . $field]                              = $value;
                 } else {
-                    $errors[]                                                       = "Missing Field: " . $field;
+                    $errors[]                                                           = "Missing Field: " . $field;
                 }
             }
 
             Debug::set($errors, static::ERROR_BUCKET . "::table->" . $table_name);
         } else {
-            $res                                                                    = $fields;
+            $res                                                                        = $fields;
         }
 
         return $res;
@@ -382,7 +395,7 @@ class Model implements Configurable, Dumpable
      */
     public static function loadConfig(array $config)
     {
-        self::$models                                                               = $config["models"];
+        self::$models                                                                   = $config["models"];
     }
 
     /**
@@ -406,39 +419,41 @@ class Model implements Configurable, Dumpable
      */
     private static function loadModels(array $models) : void
     {
-        $schema                                                                     = array();
+        $schema                                                                         = array();
         foreach ($models as $model) {
-            $model_attr                                                             = (object) Dir::getXmlAttr($model);
-            if (isset($model_attr->name) && isset($model["field"])) {
-                $model_name                                                         = $model_attr->name;
+            $model_attr                                                                 = (object) Dir::getXmlAttr($model);
+            if (isset($model_attr->name)) {
+                $model_name                                                             = $model_attr->name;
 
-                $schema[$model_name][self::COLLECTION]                              = $model_attr->collection   ?? null;
-                $schema[$model_name][self::TABLE]                                   = $model_attr->table        ?? null;
-                $schema[$model_name][self::MAPCLASS]                                = $model_attr->mapclass     ?? null;
+                $schema[$model_name][self::COLLECTION]                                  = $model_attr->collection   ?? null;
+                $schema[$model_name][self::TABLE]                                       = $model_attr->table        ?? null;
+                $schema[$model_name][self::MAPCLASS]                                    = $model_attr->mapclass     ?? null;
 
-                $fields                                                             = $model["field"];
-                $prefix                                                             = (
-                    $schema[$model_name][self::COLLECTION]
-                    ? $schema[$model_name][self::COLLECTION] . self::DOT
-                    : null
-                );
-                foreach ($fields as $field) {
-                    $attr                                                           = (object) Dir::getXmlAttr($field);
-                    if (!isset($attr->name)) {
-                        continue;
-                    }
-                    $key                                                            = $attr->name;
+                if (isset($model["field"])) {
+                    $fields                                                             = $model["field"];
+                    $prefix                                                             = (
+                        $schema[$model_name][self::COLLECTION]
+                        ? $schema[$model_name][self::COLLECTION] . self::DOT
+                        : null
+                    );
+                    foreach ($fields as $field) {
+                        $attr                                                           = (object) Dir::getXmlAttr($field);
+                        if (!isset($attr->name)) {
+                            continue;
+                        }
+                        $key                                                            = $attr->name;
 
-                    $schema[$model_name][self::DTD][$key]                           = $attr->validator ?? null;
+                        $schema[$model_name][self::DTD][$key]                           = $attr->validator ?? null;
 
-                    if (isset($attr->fake)) {
-                        $schema[$model_name][self::FAKE][$key]                      = $attr->fake;
-                    }
-                    if (isset($attr->db)) {
-                        $schema[$model_name][self::READ][$prefix . $attr->db]       = $key;
+                        if (isset($attr->fake)) {
+                            $schema[$model_name][self::FAKE][$key]                      = $attr->fake;
+                        }
+                        if (isset($attr->db)) {
+                            $schema[$model_name][self::READ][$prefix . $attr->db]       = $key;
 
-                        if (isset($attr->source)) {
-                            $schema[$model_name][self::INSERT][$prefix .$attr->db]  = $attr->source;
+                            if (isset($attr->source)) {
+                                $schema[$model_name][self::INSERT][$prefix .$attr->db]  = $attr->source;
+                            }
                         }
                     }
                 }
@@ -447,6 +462,6 @@ class Model implements Configurable, Dumpable
             }
         }
 
-        self::$models                                                               = $schema;
+        self::$models                                                                   = $schema;
     }
 }

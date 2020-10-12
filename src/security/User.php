@@ -50,7 +50,7 @@ class User extends App
     public static function set(UserData $user = null) : UserData
     {
         if (self::session()->verify()) {
-            self::session()->set(self::USER_LABEL, $user->toDataResponse()->toArray());
+            self::session()->set(self::USER_LABEL, $user->toArray());
             self::$user                                         = $user;
         }
 

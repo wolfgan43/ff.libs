@@ -717,10 +717,11 @@ abstract class DatabaseAdapter implements Constant
     /**
      * @param string $action
      * @param string|null $table_name
+     * @param bool $calc_found_rows
      * @return DatabaseQuery
      * @throws Exception
      */
-    private function getQuery(string $action, string $table_name = null) : DatabaseQuery
+    private function getQuery(string $action, string $table_name = null, bool $calc_found_rows = false) : DatabaseQuery
     {
         $this->clearResult();
 
@@ -741,7 +742,7 @@ abstract class DatabaseAdapter implements Constant
             Error::register("Connection failed to database: " . static::TYPE, static::ERROR_BUCKET);
         }
 
-        return new DatabaseQuery($action, $this->table_name, $this->key_primary);
+        return new DatabaseQuery($action, $this->table_name, $this->key_primary, $calc_found_rows);
     }
 
     /**
@@ -751,12 +752,13 @@ abstract class DatabaseAdapter implements Constant
      * @param int|null $limit
      * @param int|null $offset
      * @param string|null $table_name
+     * @param bool $calc_found_rows
      * @return DatabaseQuery
      * @throws Exception
      */
-    private function getQueryRead(array $select, array $where = null, array $sort = null, int $limit = null, int $offset = null, string $table_name = null) : DatabaseQuery
+    private function getQueryRead(array $select, array $where = null, array $sort = null, int $limit = null, int $offset = null, bool $calc_found_rows = false, string $table_name = null) : DatabaseQuery
     {
-        $query                  = $this->getQuery(self::ACTION_READ, $table_name);
+        $query                  = $this->getQuery(self::ACTION_READ, $table_name, $calc_found_rows);
 
         $query->select          = $this->querySelect($select, empty($this->table["skip_control"]));
         $query->sort            = $this->querySort($sort);
@@ -889,14 +891,15 @@ abstract class DatabaseAdapter implements Constant
      * @param array|null $sort
      * @param int|null $limit
      * @param int|null $offset
+     * @param bool $calc_found_rows
      * @param string|null $table_name
      * @return array|null
      * @throws Exception
      */
-    public function read(array $fields, array $where = null, array $sort = null, int $limit = null, int $offset = null, string $table_name = null) : ?array
+    public function read(array $fields, array $where = null, array $sort = null, int $limit = null, int $offset = null, bool $calc_found_rows = false, string $table_name = null) : ?array
     {
         $res                                                    = null;
-        $query                                                  = $this->getQueryRead($fields, $where, $sort, $limit, $offset, $table_name);
+        $query                                                  = $this->getQueryRead($fields, $where, $sort, $limit, $offset, $calc_found_rows, $table_name);
 
         $db                                                     = $this->processRead($query);
         if ($db) {

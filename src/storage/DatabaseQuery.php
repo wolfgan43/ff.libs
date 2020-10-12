@@ -31,41 +31,43 @@ namespace phpformsframework\libs\storage;
  */
 class DatabaseQuery
 {
-    public $action          = null;
-    public $key_primary     = null;
-    public $options         = array();
+    public $action              = null;
+    public $key_primary         = null;
+    public $options             = array();
 
-    public $from            = null;
-    public $select          = null;
-    public $sort            = null;
-    public $where           = null;
-    public $limit           = null;
-    public $offset          = null;
+    public $from                = null;
+    public $select              = null;
+    public $sort                = null;
+    public $where               = null;
+    public $limit               = null;
+    public $offset              = null;
 
-    public $update          = null;
-    public $insert          = null;
+    public $update              = null;
+    public $insert              = null;
+
+    private $calc_found_rows    = false;
 
     /**
      * DatabaseQuery constructor.
      * @param string $action
      * @param string $table
      * @param string $key_primary
-     * @param array $options
+     * @param bool $calc_found_rows
      */
-    public function __construct(string $action, string $table, string $key_primary, array $options = array())
+    public function __construct(string $action, string $table, string $key_primary, bool $calc_found_rows)
     {
-        $this->action       = $action;
-        $this->from         = $table;
-        $this->key_primary  = $key_primary;
-        $this->options      = $options;
+        $this->action           = $action;
+        $this->from             = $table;
+        $this->key_primary      = $key_primary;
+        $this->calc_found_rows  = $calc_found_rows;
     }
 
     /**
      * @return bool
      */
-    public function countRecords() : bool
+    public function calcFoundRows() : bool
     {
-        return $this->limit || $this->offset;
+        return $this->calc_found_rows && ($this->limit || $this->offset);
     }
 
     /**

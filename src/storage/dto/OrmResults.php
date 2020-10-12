@@ -111,7 +111,7 @@ class OrmResults
      */
     public function first(string $class_name = null, bool $send_record_to_constructor = false) : ?object
     {
-        return $this->mapRecord($this->seek(0), $class_name, $send_record_to_constructor);
+        return $this->mapRecord($this->seek(0), $this->getMapClassName($class_name), $send_record_to_constructor);
     }
 
     /**
@@ -121,7 +121,7 @@ class OrmResults
      */
     public function last(string $class_name = null, bool $send_record_to_constructor = false) : ?object
     {
-        return $this->mapRecord($this->seek($this->countRecordset - 1), $class_name, $send_record_to_constructor);
+        return $this->mapRecord($this->seek($this->countRecordset - 1), $this->getMapClassName($class_name), $send_record_to_constructor);
     }
 
     /**
@@ -149,6 +149,15 @@ class OrmResults
 
     /**
      * @param int $offset
+     * @return array
+     */
+    public function indexes(int $offset) : array
+    {
+        return $this->recordset_keys[$offset] ?? [];
+    }
+
+    /**
+     * @param int $offset
      * @return string|null
      */
     public function key(int $offset) : ?string
@@ -168,7 +177,7 @@ class OrmResults
      */
     public function get(int $offset, string $class_name = null, bool $send_record_to_constructor = false) : ?object
     {
-        return $this->mapRecord($this->seek($offset), $class_name, $send_record_to_constructor);
+        return $this->mapRecord($this->seek($offset), $this->getMapClassName($class_name), $send_record_to_constructor);
     }
 
     /**

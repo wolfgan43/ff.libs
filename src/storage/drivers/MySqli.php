@@ -196,10 +196,9 @@ class MySqli extends DatabaseDriver
             $query->limit                               = static::MAX_NUMROWS;
         }
 
-        $count_num_rows                                 = $query->countRecords();
         $query_string                                   = "SELECT " .
             (
-                $count_num_rows
+                $query->calcFoundRows()
                 ? " SQL_CALC_FOUND_ROWS "
                 : ""
             ) . $query->select .

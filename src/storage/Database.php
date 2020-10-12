@@ -132,14 +132,15 @@ class Database implements Constant
      * @param array|null $sort
      * @param int|null $limit
      * @param int|null $offset
+     * @param bool $calc_found_rows
      * @param string|null $table_name
      * @return array|null
      * @throws Exception
      */
-    public function read(array $fields = null, array $where = null, array $sort = null, int $limit = null, int $offset = null, string $table_name = null) : ?array
+    public function read(array $fields = null, array $where = null, array $sort = null, int $limit = null, int $offset = null, bool $calc_found_rows = false, string $table_name = null) : ?array
     {
         foreach ($this->adapters as $adapter_name => $adapter) {
-            $this->result[$adapter_name]                                    = $adapter->read($fields, $where, $sort, $limit, $offset, $table_name);
+            $this->result[$adapter_name]                                    = $adapter->read($fields, $where, $sort, $limit, $offset, $calc_found_rows, $table_name);
         }
 
         return $this->getResult();

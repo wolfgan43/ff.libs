@@ -36,6 +36,7 @@ use phpformsframework\libs\storage\dto\OrmControllers;
 use phpformsframework\libs\storage\dto\OrmDef;
 use phpformsframework\libs\storage\dto\OrmQuery;
 use phpformsframework\libs\storage\dto\OrmResults;
+use stdClass;
 
 /**
  * Class Orm
@@ -93,6 +94,7 @@ class Orm extends Mappable
     protected $relationship                                                                 = null;
     protected $indexes                                                                      = null;
     protected $tables                                                                       = null;
+
     /**
      * @var OrmControllers
      */
@@ -204,11 +206,7 @@ class Orm extends Mappable
             Error::register("missing Table: `" . $key . "` on Map: " . $error . " Model: " . $this->collection, static::ERROR_BUCKET);
         }
 
-
-        return (isset($def[$key])
-            ? $def[$key]
-            : null
-        );
+        return $def[$key] ?? null;
     }
 
 
@@ -218,10 +216,7 @@ class Orm extends Mappable
      */
     private function getTableAlias(string $table_name) : ?string
     {
-        return (isset($this->tables[$table_name][self::TALIAS])
-            ? $this->tables[$table_name][self::TALIAS]
-            : null
-        );
+        return $this->tables[$table_name][self::TALIAS] ?? null;
     }
 
     /**
@@ -267,6 +262,32 @@ class Orm extends Mappable
     }
 
     /**
+     * @param string $table
+     * @return stdClass|null
+     */
+    public function informationSchema(string $table) : ?stdClass
+    {
+        static $keys        = null;
+        if (!isset($this->struct[$table])) {
+            return null;
+        }
+
+        if (!isset($keys[$table])) {
+            $keys[$table]   = array_search(Database::FTYPE_PRIMARY, $this->struct[$table]);
+        }
+
+        return (object) [
+            "collection"    => $this->collection,
+            "table"         => $table,
+            "dtd"           => $this->struct[$table],
+            "schema"        => $this->tables[$table],
+            "relationship"  => $this->relationship[$table],
+            "indexes"       => $this->indexes[$table] ?? null,
+            "key"           => $keys[$table]
+        ];
+    }
+
+    /**
      * @param $query
      * @return array|null
      */
@@ -281,13 +302,14 @@ class Orm extends Mappable
      * @param null|array $sort
      * @param int|null $limit
      * @param int|null $offset
+     * @param bool $calc_found_rows
      * @return array|null
      * @throws Exception
      */
-    public function read(array $select = null, array $where = null, array $sort = null, int $limit = null, int $offset = null) : ?OrmResults
+    public function read(array $select = null, array $where = null, array $sort = null, int $limit = null, int $offset = null, bool $calc_found_rows = true) : ?OrmResults
     {
         if ($this->cacheRequest(self::ACTION_READ, [$select, $where, $sort, $limit, $offset], $this->result)) {
-            $this->get($select, $where, $sort, $limit, $offset);
+            $this->get($select, $where, $sort, $limit, $offset, $calc_found_rows);
 
             $this->cacheStore($this->result);
         }
@@ -428,9 +450,10 @@ class Orm extends Mappable
      * @param null|array $sort
      * @param int|null $limit
      * @param int|null $offset
+     * @param bool $calc_found_rows
      * @throws Exception
      */
-    private function get(array $select = null, array $where = null, array $sort = null, int $limit = null, int $offset = null) : void
+    private function get(array $select = null, array $where = null, array $sort = null, int $limit = null, int $offset = null, bool $calc_found_rows = false) : void
     {
         $this->clearResult();
 
@@ -441,10 +464,10 @@ class Orm extends Mappable
                                                                                             ));
 
         if ($single_service) {
-            $this->setCount($this->getDataSingle($this->services_by_data->last, $this->services_by_data->last_table, $limit, $offset));
+            $this->setCount($this->getDataSingle($this->services_by_data->last, $this->services_by_data->last_table, $limit, $offset, $calc_found_rows));
         } else {
             $countRunner                                                                    = $this->throwRunnerSubs(true);
-            while ($this->throwRunner($limit, $offset) > 0) {
+            while ($this->throwRunner($limit, $offset, $calc_found_rows) > 0) {
                 $countRunner++;
             }
         }
@@ -453,10 +476,11 @@ class Orm extends Mappable
     /**
      * @param int|null $limit
      * @param int|null $offset
+     * @param bool $calc_found_rows
      * @return int
      * @throws Exception
      */
-    private function throwRunner(int $limit = null, int $offset = null) : int
+    private function throwRunner(int $limit = null, int $offset = null, bool $calc_found_rows = false) : int
     {
         $counter = 0;
 
@@ -464,7 +488,7 @@ class Orm extends Mappable
          * Run Main query if where isset
          */
         if (!$this->main->runned) {
-            $this->setCount($this->getData($this->main, $this->main->service, $this->main->def->mainTable, $limit, $offset));
+            $this->setCount($this->getData($this->main, $this->main->service, $this->main->def->mainTable, $limit, $offset, $calc_found_rows));
             $this->main->runned                                                             = true;
             $counter++;
         }
@@ -508,10 +532,11 @@ class Orm extends Mappable
      * @param string $table
      * @param int|null $limit
      * @param int|null $offset
+     * @param bool $calc_found_rows
      * @return int|null
      * @throws Exception
      */
-    private function getData(OrmQuery $data, string $controller, string $table, int $limit = null, int $offset = null) : ?int
+    private function getData(OrmQuery $data, string $controller, string $table, int $limit = null, int $offset = null, bool $calc_found_rows = false) : ?int
     {
         $count                                                                              = null;
 
@@ -524,7 +549,8 @@ class Orm extends Mappable
                                                                                                     $data->where,
                                                                                                     $data->sort,
                                                                                                     $limit,
-                                                                                                    $offset
+                                                                                                    $offset,
+                                                                                                    $calc_found_rows
                                                                                                 );
         if (!empty($regs[self::RESULT])) {
             $thisTable                                                                          = $table;
@@ -648,10 +674,11 @@ class Orm extends Mappable
      * @param string $table
      * @param int|null $limit
      * @param int|null $offset
+     * @param bool $calc_found_rows
      * @return int|null
      * @throws Exception
      */
-    private function getDataSingle(string $controller, string $table, int $limit = null, int $offset = null) : ?int
+    private function getDataSingle(string $controller, string $table, int $limit = null, int $offset = null, bool $calc_found_rows = false) : ?int
     {
         $count                                                                              = null;
         $data                                                                               = (
@@ -668,7 +695,8 @@ class Orm extends Mappable
                                                                                                     $data->where,
                                                                                                     $data->sort,
                                                                                                     $limit,
-                                                                                                    $offset
+                                                                                                    $offset,
+                                                                                                    $calc_found_rows
                                                                                                 );
             if (is_array($regs) && $regs[self::RESULT]) {
                 $this->result[$this->getMainTable()]                                        = $regs[self::RESULT];
@@ -756,6 +784,7 @@ class Orm extends Mappable
                                                                                                 ->read(
                                                                                                     array($key_main_primary => true),
                                                                                                     $this->main->where,
+                                                                                                    null,
                                                                                                     null,
                                                                                                     null,
                                                                                                     null,

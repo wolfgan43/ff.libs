@@ -30,7 +30,10 @@ class OrmModel
     {
         $this->loadModel($model_name);
 
-        $informationSchema                                                      = $this->db->dtdInformationSchema();
+        $informationSchema                                                      = $this->db->informationSchema();
+        if (!$informationSchema) {
+            throw new Exception("information schema not found in Class " . get_class($ref) . " for Model: " . $model_name);
+        }
 
         if (!property_exists($ref, $informationSchema->table)) {
             throw new Exception("missing relation Field: " . $informationSchema->table . " in Class " . get_class($ref) . " for Model: " . $model_name);
@@ -152,6 +155,14 @@ class OrmModel
         }
 
         return $response;
+    }
+
+    /**
+     * @return array
+     */
+    public function toArray() : array
+    {
+        return $this->data ?? [];
     }
 
     /**

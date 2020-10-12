@@ -28,9 +28,10 @@ class OrmItem
         'nin'           => '$nin',
         'regex'         => '$regex',
     ];
-    private const PRIVATE_PROPERTIES                                            = [
+    /*private const PRIVATE_PROPERTIES                                            = [
         "dbCollection"  => true,
         "dbTable"       => true,
+        "dbPrimaryKey"  => true,
         "dbJoins"       => true,
         "dbRequired"    => true,
         "dbValidator"   => true,
@@ -39,12 +40,15 @@ class OrmItem
         "db"            => true,
         "primaryKey"    => true,
         "recordKey"     => true,
+        "indexes"       => true,
+        "rawData"       => true,
         "models"        => true,
         "model"         => true
-    ];
+    ];*/
 
     protected $dbCollection                                                     = null;
     protected $dbTable                                                          = null;
+    protected $dbPrimaryKey                                                     = null;
     protected $dbJoins                                                          = [];
 
     protected $toDataResponse                                                   = [];
@@ -55,12 +59,30 @@ class OrmItem
     private $models                                                             = [];
     private $model                                                              = null;
 
+    private $indexes                                                            = [];
+    private $rawData                                                            = [];
+
+    /**
+     * @return stdClass
+     */
+    private static function dtd() : stdClass
+    {
+        $item                                                                   = new static();
+        return (object) [
+                "collection"        => $item->dbCollection,
+                "table"             => $item->dbTable,
+                "dataResponse"      => $item->toDataResponse,
+                "required"          => $item->dbRequired,
+                "key"               => $item->dbPrimaryKey
+            ];
+    }
+
     /**
      * @param array|null $query
      * @param array|null $order
      * @param int|null $limit
      * @param int|null $offset
-     * @param int $draw
+     * @param int|null $draw
      * @return DataTableResponse
      * @throws Exception
      */
@@ -71,8 +93,9 @@ class OrmItem
 
         $where                                                                  = null;
         if (is_array($query)) {
+            $dtd                                                                = $item->db->dtdStore();
             foreach ($query as $key => $value) {
-                if (!isset($item->$key)) {
+                if (!isset($dtd->$key)) {
                     continue;
                 }
 
@@ -159,22 +182,30 @@ class OrmItem
 
     /**
      * @param array $data
+     * @param array|null $indexes
+     * @param string|null $record_key
      * @return static
+     * @throws Exception
      */
-    public static function load(array $data) : self
+    public static function load(array $data, array $indexes = null, string $record_key = null) : self
     {
-        return (new static())->fill($data);
+        return (new static(null, $data, $record_key))
+            ->setIndexes($indexes);
     }
 
     /**
      * OrmItem constructor.
      * @param array|null $where
+     * @param array|null $fill
+     * @param string|null $recordKey
      * @throws Exception
      */
-    public function __construct(array $where = null)
+    public function __construct(array $where = null, array $fill = null, string $recordKey = null)
     {
         $this->loadCollection();
         $this->read($where);
+        $this->fill($fill);
+        $this->setRecordKey($recordKey);
     }
 
     /**
@@ -207,8 +238,19 @@ class OrmItem
         $this->db->loadCollection($collection_name);
         $this->db->table($this->dbTable);
         foreach ($this->dbJoins as $join => $fields) {
-            if (is_int($join)) {
-                $this->db->join($fields);
+            if (is_numeric($join)) {
+                $join                                                           = $fields;
+                $fields                                                         = null;
+            }
+
+            if (method_exists($join, 'dtd')) {
+                /**
+                 * @var OrmItem $join
+                 */
+                $dtd                                                            = $join::dtd();
+                //da trovare un modo di inserire gli id per le tabelle join e poi rimuoverlo se non era gia dichiarato nel toDataResponse
+                $dtd->dataResponse[] = "id";
+                $this->db->join($dtd->table, $fields ?? $dtd->dataResponse);
             } else {
                 $this->db->join($join, $fields);
             }
@@ -218,6 +260,7 @@ class OrmItem
     /**
      * @param object $obj
      * @return OrmItem
+     * @throws Exception
      */
     public function fillByObject(object $obj) : self
     {
@@ -227,12 +270,75 @@ class OrmItem
     }
 
     /**
-     * @param array $fields
+     * @param array|null $fields
      * @return OrmItem
+     * @throws Exception
      */
-    public function fill(array $fields) : self
+    public function fill(array $fields = null) : self
     {
-        $this->autoMapping($fields);
+        if ($fields) {
+            $informationSchema = $this->db->informationSchema();
+            foreach ($this->dbJoins as $mapClass) {
+                if (!method_exists($mapClass, 'dtd')) {
+                    continue;
+                }
+
+                $dtd = $mapClass::dtd();
+                if (isset($fields[$dtd->table])) {
+                    $informationSchemaJoin = $this->db->informationSchema($dtd->table);
+                    if (isset($informationSchemaJoin->relationship[$this->dbTable]) && is_array($fields[$dtd->table])) {
+                        /**
+                         * Many to One
+                         */
+                        if (!is_array($fields[$dtd->table])) {
+                            $this->error([$dtd->table . " must be object"]);
+                        }
+
+                        $this->{$dtd->table} = array_replace($this->{$dtd->table} ?? [], $fields[$dtd->table]);
+                        $this->rawData[$dtd->table] = $fields[$dtd->table];
+                    } elseif (isset($informationSchema->relationship[$dtd->table])) {
+                        /**
+                         * One to Many
+                         */
+                        if (!is_array($fields[$dtd->table]) || !isset($fields[$dtd->table][0])) {
+                            $this->error([$dtd->table . " must be array of object"]);
+                        }
+
+                        $relationship = (object) $informationSchema->relationship[$dtd->table];
+                        $primaryKey = $dtd->key ?? $relationship->primary;
+                        if (empty($this->{$dtd->table})) {
+                            $this->{$dtd->table} = $fields[$dtd->table];
+                            $this->rawData[$dtd->table] = $fields[$dtd->table];
+                        } else {
+                            $keys = array_flip(array_column($this->{$dtd->table} ?? [], $primaryKey));
+                            $data = [];
+                            foreach ($fields[$dtd->table] as $vars) {
+                                if (!empty($vars[$primaryKey]) && isset($keys[$vars[$primaryKey]])) {
+                                    /**
+                                     * Update
+                                     */
+                                    $data[$keys[$vars[$primaryKey]]] = array_replace($this->{$dtd->table}[$keys[$vars[$primaryKey]]], $vars);
+                                    $this->rawData[$dtd->table][$keys[$vars[$primaryKey]]] = $vars;
+                                } else {
+                                    /**
+                                     * Insert
+                                     */
+                                    $index = count($this->{$dtd->table}) + count($data);
+                                    $data[$index] = $vars;
+                                    $this->rawData[$dtd->table][$index] = $vars;
+                                }
+                            }
+
+                            $this->{$dtd->table} = array_replace($this->{$dtd->table}, $data);
+                        }
+                    }
+
+                    unset($fields[$dtd->table]);
+                }
+            }
+
+            $this->autoMapping($fields);
+        }
 
         return $this;
     }
@@ -243,15 +349,91 @@ class OrmItem
      */
     public function apply() : string
     {
-        $vars                                                                   = $this->fieldSetPurged();
+        $vars                                                                   = array_merge($this->fieldSetPurged(), $this->indexes);
+        $informationSchema                                                      = $this->db->informationSchema();
+        $dbRecord                                                               = $this->dbRecord();
 
-        //$this->setDefaults($vars);
+        /**
+         * @var OrmItem $mapClass
+         */
+        foreach ($this->dbJoins as $mapClass) {
+            if (!method_exists($mapClass, 'dtd')) {
+                continue;
+            }
+
+            $dtd = $mapClass::dtd();
+            $relData = $vars[$dtd->table];
+            $relDataDB = $dbRecord[$dtd->table] ?? null;
+            unset($vars[$dtd->table], $dbRecord[$dtd->table]);
+
+            $informationSchemaJoin = $this->db->informationSchema($dtd->table);
+            if (isset($informationSchemaJoin->relationship[$this->dbTable])) {
+                $relData = array_intersect_key($relData, $informationSchemaJoin->dtd);
+                if ($relDataDB == $relData) {
+                    continue;
+                }
+
+                /**
+                 * Many to One
+                 */
+                $relationship = (object) $informationSchemaJoin->relationship[$this->dbTable];
+                $external_key = $relationship->external;
+
+                $obj = $mapClass::load($relData, null, $this->indexes[$relationship->external] ?? null);
+                $obj->fill($this->rawData[$dtd->table]);
+                $vars[$external_key] = $obj->apply();
+                $this->{$dtd->table} = $obj->toArray();
+            } elseif (isset($informationSchema->relationship[$dtd->table])) {
+                /**
+                 * One to Many
+                 */
+                $relationship = (object) $informationSchema->relationship[$dtd->table];
+                $where = [$relationship->external => $this->recordKey];
+                $primaryKey = $dtd->key ?? $relationship->primary;
+
+                $keys = array_flip(array_column($this->{$dtd->table} ?? [], $primaryKey));
+                foreach ($relData as $index => $var) {
+                    if (isset($relDataDB[$index]) && $relDataDB[$index] == $var) {
+                        continue;
+                    }
+
+                    if (!empty($var[$primaryKey]) && isset($keys[$var[$primaryKey]]) && isset($this->{$dtd->table}[$keys[$var[$primaryKey]]][$relationship->primary])) {
+                        /**
+                         * Update
+                         */
+                        $obj = $mapClass::load($var, $where, $this->{$dtd->table}[$keys[$var[$primaryKey]]][$relationship->primary]);
+                        $obj->fill($this->rawData[$dtd->table][$keys[$var[$primaryKey]]]);
+                        $obj->apply();
+                        $this->{$dtd->table}[$keys[$var[$primaryKey]]] = $obj->toArray();
+                    } else {
+                        /**
+                         * Insert
+                         */
+                        $obj = $mapClass::load($var, $where);
+                        $obj->fill($this->rawData[$dtd->table][$index]);
+                        $obj->apply();
+                        $this->{$dtd->table}[$index] = $obj->toArray();
+                    }
+                }
+
+                // non ancora gestito
+
+                //togliere da ormmap relationship medicational_administration => therapy
+                //togliere da ormmap medicational_admin_id in therapy
+                //togliere remove medicational_admin_id in therapy
+                //togliere campo therapy da medicationAdministration::class
+            }
+        }
+
         //$vars = $this->fieldConvert($vars); //@todo da finire
         $this->verifyRequire($vars);
         $this->verifyValidator($vars);
 
+        $vars = array_intersect_key($vars, $informationSchema->dtd);
         if ($this->recordKey) {
-            $this->db->update($vars, [$this->primaryKey => $this->recordKey]);
+            if ($dbRecord != $vars) {
+                $this->db->update($vars, [$this->primaryKey => $this->recordKey]);
+            }
         } else {
             $item                                                               = $this->db->insert($vars);
             $this->recordKey                                                    = $item->key(0);
@@ -270,37 +452,54 @@ class OrmItem
      */
     private function read(array $where = null) : void
     {
-        if ($where) {
+        if (!empty($where)) {
             $item                                                               = $this->db
-                ->read($where, null, 1);
+                ->readOne($where);
 
             if ($item->countRecordset()) {
                 $this->recordKey                                                = $item->key(0);
                 $this->primaryKey                                               = $item->getPrimaryKey();
+                $this->indexes                                                  = $item->indexes(0);
 
                 if ($record = $item->getArray(0)) {
+                    $this->dbRecord($record);
                     $this->autoMapping($record);
                 }
             }
         }
     }
 
+    private function dbRecord(array $dbRecord = null) : array
+    {
+        static $record = null;
+
+        if ($dbRecord) {
+            $record = $dbRecord;
+        }
+        return $record;
+    }
+
     /**
      * @return DataResponse
      * @todo da tipizzare
      */
-    public function toDataResponse()
+    public function toDataResponse() : DataResponse
     {
-        $response = new DataResponse($this->fieldSetPurged(array_fill_keys($this->toDataResponse, true)));
+        $response = new DataResponse($this->toArray());
         if (!$this->recordKey) {
             $response->error(404, $this->db->getName() . " not stored");
         }
 
         if ($this->model) {
-            $response->set($this->model, $this->models[$this->model]->toDataResponse()->toArray());
+            $response->set($this->model, $this->models[$this->model]->toArray());
         }
 
         return $response;
+    }
+
+    public function toArray() : array
+    {
+        return $this->fieldSetPurged(array_fill_keys($this->toDataResponse, true));
     }
 
     /**
@@ -339,7 +538,24 @@ class OrmItem
     {
         return ($fields
             ? array_intersect_key(get_object_vars($this), $fields)
-            : array_diff_key(get_object_vars($this), self::PRIVATE_PROPERTIES)
+            : get_object_vars($this)
         );
+    }
+
+    private function setRecordKey(string $key = null) : self
+    {
+        if ($key) {
+            $this->recordKey = $key;
+            $this->primaryKey = $this->db->informationSchema()->key;
+        }
+
+        return $this;
+    }
+
+    private function setIndexes(array $indexes = null) : self
+    {
+        $this->indexes      = $indexes ?? [];
+
+        return $this;
     }
 }

@@ -281,8 +281,8 @@ class Orm extends Mappable
             "table"         => $table,
             "dtd"           => $this->struct[$table],
             "schema"        => $this->tables[$table],
-            "relationship"  => $this->relationship[$table],
-            "indexes"       => $this->indexes[$table] ?? null,
+            "relationship"  => $this->relationship[$table]  ?? null,
+            "indexes"       => $this->indexes[$table]       ?? null,
             "key"           => $keys[$table]
         ];
     }
@@ -606,7 +606,7 @@ class Orm extends Mappable
                         Error::register("Relationship not found: " . $thisTable . "." . $thisKey . " => " . $relTable . "." . $relKey);
                     }
 
-                    $keyValue = array_column($regs[self::INDEX], $thisKey);
+                    $keyValue = array_column($regs[self::INDEX] ?? [], $thisKey);
                     if (isset($whereRef) && count($keyValue)) {
                         $this->whereBuilder($whereRef, $keyValue, $relKey);
                     } elseif (isset($this->services_by_data->tables[$controller . "." . $relTable])) {

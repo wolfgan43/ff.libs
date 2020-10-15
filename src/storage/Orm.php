@@ -281,8 +281,8 @@ class Orm extends Mappable
             "table"         => $table,
             "dtd"           => $this->struct[$table],
             "schema"        => $this->tables[$table],
-            "relationship"  => $this->relationship[$table]  ?? null,
-            "indexes"       => $this->indexes[$table]       ?? null,
+            "relationship"  => $this->relationship[$table]  ?? [],
+            "indexes"       => $this->indexes[$table]       ?? [],
             "key"           => $keys[$table]
         ];
     }
@@ -1221,16 +1221,19 @@ class Orm extends Mappable
         if (empty($ref->where)) {
             $ref->where                                                                     = array();
         }
-        if (!isset($ref->where[$field])) {
-            $ref->where[$field]                                                             = (
-                count($keys) == 1
-                ? $keys[0]
-                : $keys
-            );
-        } elseif (is_array($ref->where[$field])) {
-            $ref->where[$field]                                                             = $ref->where[$field] + $keys;
-        } else {
-            $ref->where[$field]                                                             = array($ref->where[$field]) + $keys;
+
+        if (empty($ref->where[$ref->def->key_primary])) {
+            if (!isset($ref->where[$field])) {
+                $ref->where[$field]                                                         = (
+                    count($keys) == 1
+                    ? $keys[0]
+                    : $keys
+                );
+            } elseif (is_array($ref->where[$field])) {
+                $ref->where[$field]                                                         = $ref->where[$field] + $keys;
+            } else {
+                $ref->where[$field]                                                         = array($ref->where[$field]) + $keys;
+            }
         }
     }
 

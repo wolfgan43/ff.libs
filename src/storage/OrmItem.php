@@ -46,9 +46,9 @@ class OrmItem
     private $rawData                                                            = [];
     private $storedData                                                         = [];
 
+    private $oneToOne                                                           = [];
     private $oneToMany                                                          = [];
-    private $manyToOne                                                          = [];
-
+    private $informationSchema                                                  = null;
     /**
      * @return stdClass
      */
@@ -60,7 +60,7 @@ class OrmItem
                 "table"             => $item->dbTable,
                 "dataResponse"      => $item->toDataResponse,
                 "required"          => $item->dbRequired,
-                "key"               => $item->dbPrimaryKey
+                "primaryKey"        => $item->dbPrimaryKey
             ];
     }
 
@@ -169,30 +169,30 @@ class OrmItem
 
     /**
      * @param array $data
-     * @param array|null $indexes
      * @param string|null $record_key
      * @return static
      * @throws Exception
      */
-    public static function load(array $data, array $indexes = null, string $record_key = null) : self
+    public static function load(array $data, string $record_key = null) : self
     {
-        return (new static(null, $data, $record_key))
-            ->setIndexes($indexes);
+        return new static(null, $data, $record_key);
     }
 
     /**
      * OrmItem constructor.
      * @param array|null $where
      * @param array|null $fill
-     * @param string|null $recordKey
+     * @param string|null $record_key
      * @throws Exception
      */
-    public function __construct(array $where = null, array $fill = null, string $recordKey = null)
+    public function __construct(array $where = null, array $fill = null, string $record_key = null)
     {
-        $this->loadCollection();
+        $this->loadCollection(($where || $fill));
         $this->read($where);
         $this->fill($fill);
-        $this->setRecordKey($recordKey);
+        $this->setRecordKey($record_key);
+
+        $this->storedData = array_replace($this->storedData, $fill ?? []);
     }
 
     /**
@@ -215,18 +215,18 @@ class OrmItem
 
     /**
      *
-     * @throws Exception
+     * @param bool $extendPrimaryKey
      */
-    private function loadCollection()
+    private function loadCollection(bool $extendPrimaryKey = false)
     {
         $collection_name                                                        = $this->dbCollection ?? $this->getClassName();
 
         $this->db                                                               = new Model();
         $this->db->loadCollection($collection_name);
         $this->db->table($this->dbTable);
+        $this->informationSchema                                                = $this->db->informationSchema();
 
         if (!empty($this->dbJoins)) {
-            $informationSchema                                                  = $this->db->informationSchema();
             foreach ($this->dbJoins as $join => $fields) {
                 if (is_numeric($join)) {
                     $join                                                       = $fields;
@@ -241,36 +241,44 @@ class OrmItem
                     if (!isset($this->{$dtd->table})) {
                         $this->{$dtd->table}                                    = [];
                     }
-                    //da trovare un modo di inserire gli id per le tabelle join e poi rimuoverlo se non era gia dichiarato nel toDataResponse
-                    $dtd->dataResponse[] = "id";
+
+                    //da fare procedura ricorsiva che discende nelle join dei mapclass relazionati
                     $this->db->join($dtd->table, $fields ?? $dtd->dataResponse);
 
                     $informationSchemaJoin                                      = $this->db->informationSchema($dtd->table);
                     if (isset($informationSchemaJoin->relationship[$this->dbTable])) {
                         /**
-                         * ManyToOne
+                         * OneToOne
                          */
-                        $rel                                                    = new stdClass();
-                        $rel->mapClass                                          = $join;
-                        $rel->informationSchema                                 = $informationSchemaJoin;
-
-                        $this->manyToOne[$dtd->table]                           = $rel;
-                    } elseif (isset($informationSchema->relationship[$dtd->table])) {
+                        $this->oneToOne[$dtd->table]                           = $this->setRelationship($join, $dtd, $informationSchemaJoin);
+                    } elseif (isset($this->informationSchema->relationship[$dtd->table])) {
                         /**
                          * OneToMany
                          */
-                        $rel                                                    = new stdClass();
-                        $rel->mapClass                                          = $join;
-                        $rel->primaryKey                                        = $dtd->key;
-                        $rel->informationSchema                                 = $informationSchema;
+                        $this->oneToMany[$dtd->table]                           = $this->setRelationship($join, $dtd, $this->informationSchema);
 
-                        $this->oneToMany[$dtd->table]                           = $rel;
+                        if ($extendPrimaryKey) {
+                            $dtd->dataResponse[]                                = $informationSchemaJoin->key;
+                        }
                     }
+
+                    $this->db->join($dtd->table, $fields ?? $dtd->dataResponse);
                 } else {
                     $this->db->join($join, $fields);
                 }
             }
         }
+    }
+
+    private function setRelationship(string $mapClass, stdClass $dtd, stdClass $informationSchema) : stdClass
+    {
+        $rel                                                    = new stdClass();
+        $rel->mapClass                                          = $mapClass;
+        $rel->primaryKey                                        = $dtd->primaryKey;
+        $rel->informationSchema                                 = $informationSchema;
+        $rel->dataResponse                                      = array_fill_keys($dtd->dataResponse, true);
+
+        return $rel;
     }
 
     /**
@@ -293,7 +301,7 @@ class OrmItem
     public function fill(array $fields = null) : self
     {
         if ($fields) {
-            $this->fillManyToOne($fields);
+            $this->fillOneToOne($fields);
             $this->fillOneToMany($fields);
 
             $this->autoMapping($fields);
@@ -306,10 +314,10 @@ class OrmItem
      * @param array $fields
      * @throws Exception
      */
-    private function fillManyToOne(array &$fields) : void
+    private function fillOneToOne(array &$fields) : void
     {
-        foreach (array_intersect_key($this->manyToOne, $fields) as $table => $manyToOne) {
-            if (!is_array($fields[$table])) {
+        foreach (array_intersect_key($this->oneToOne, $fields) as $table => $oneToOne) {
+            if (!is_array($fields[$table]) || isset($fields[$table][0])) {
                 $this->error([$table . " must be object"]);
             }
 
@@ -369,23 +377,20 @@ class OrmItem
      */
     public function apply() : string
     {
-        $vars                                                                   = array_merge(array_diff_key($this->fieldSetPurged(), $this->oneToMany, $this->manyToOne), $this->indexes);
-        $informationSchema                                                      = $this->db->informationSchema();
-        $storedData                                                             = array_diff_key($this->storedData, $this->oneToMany, $this->manyToOne);
+        $vars                                                                   = array_intersect_key($this->fieldSetPurged(), $this->informationSchema->dtd);
 
-        $this->applyManyToOne($vars);
+        $this->applyOneToOne($vars);
 
         //$vars = $this->fieldConvert($vars); //@todo da finire
         $this->verifyRequire($vars);
         $this->verifyValidator($vars);
 
-        $vars = array_intersect_key($vars, $informationSchema->dtd);
         if ($this->recordKey) {
-            if ($storedData != $vars) {
-                $this->db->update($vars, [$this->primaryKey => $this->recordKey]);
+            if (($storedVars = array_intersect_key($this->storedData, $vars)) != $vars) {
+                $this->db->update(array_diff_assoc($vars, $storedVars), [$this->primaryKey => $this->recordKey]);
             }
         } else {
-            $item                                                               = $this->db->insert($vars);
+            $item                                                               = $this->db->insert(array_merge($vars, $this->indexes));
             $this->recordKey                                                    = $item->key(0);
             $this->primaryKey                                                   = $item->getPrimaryKey();
             if (!$this->recordKey) {
@@ -402,33 +407,38 @@ class OrmItem
      * @param array $vars
      * @throws Exception
      */
-    private function applyManyToOne(array &$vars) : void
+    private function applyOneToOne(array &$vars) : void
     {
         /**
          * @var OrmItem $obj
          */
-        foreach ($this->manyToOne as $table => $manyToOne) {
-            $relDataDB                                                          = $this->storedData[$table] ?? null;
-            $relData                                                            = array_intersect_key($this->{$table}, $manyToOne->informationSchema->dtd);
+        foreach ($this->oneToOne as $table => $oneToOne) {
+            $relDataDB                                                          = $this->storedData[$table] ?? [];
+            $relData                                                            = array_intersect_key($this->{$table}, $oneToOne->informationSchema->dtd);
 
             /**
              * Skip update if DataStored = DataProperty
              */
-            if ($relDataDB == $relData) {
+            if (array_intersect_key($relDataDB, $relData) == $relData) {
+                $this->{$table}                                                 = array_intersect_key($this->{$table}, $oneToOne->dataResponse);
                 continue;
             }
 
             /**
              * Many to One
              */
-            $relationship                                                       = (object) $manyToOne->informationSchema->relationship[$this->dbTable];
+            $relationship                                                       = (object) $oneToOne->informationSchema->relationship[$this->dbTable];
             $external_key                                                       = $relationship->external;
 
-            $obj                                                                = $manyToOne->mapClass::load($relData, null, $this->indexes[$relationship->external] ?? null);
+            $obj = (
+                !isset($this->indexes[$relationship->external]) && isset($this->{$table}[$oneToOne->primaryKey])
+                ? (new $oneToOne->mapClass([$oneToOne->primaryKey => $this->{$table}[$oneToOne->primaryKey]], $relData))
+                : $oneToOne->mapClass::load($relDataDB, $this->indexes[$relationship->external] ?? null)
+            );
+
             $obj->fill($this->rawData[$table] ?? null);
             $vars[$external_key]                                                = $obj->apply();
             $this->{$table}                                                     = $obj->toArray();
-
         }
     }
 
@@ -445,15 +455,17 @@ class OrmItem
             $relData                                                            = $this->{$table};
 
             $relationship                                                       = (object) $oneToMany->informationSchema->relationship[$table];
-            $where                                                              = [$relationship->external => $this->recordKey];
+            $indexes                                                            = [$relationship->external => $this->recordKey];
             $primaryKey                                                         = $oneToMany->primaryKey ?? $relationship->primary;
 
             $keys                                                               = array_flip(array_column($this->{$table} ?? [], $primaryKey));
             foreach ($relData as $index => $var) {
+                $var                                                            = array_intersect_key($var, $oneToMany->informationSchema->dtd);
                 /**
                  * Skip update if DataStored = DataProperty
                  */
-                if (isset($relDataDB[$index]) && $relDataDB[$index] == $var) {
+                if (isset($relDataDB[$index]) && array_intersect_key($relDataDB[$index], $var)  == $var) {
+                    $this->{$table}[$index]                                     = array_intersect_key($this->{$table}[$index], $oneToMany->dataResponse);
                     continue;
                 }
 
@@ -461,7 +473,8 @@ class OrmItem
                     /**
                      * Update
                      */
-                    $obj                                                        = $oneToMany->mapClass::load($var, $where, $this->{$table}[$keys[$var[$primaryKey]]][$relationship->primary]);
+                    $obj                                                        = $oneToMany->mapClass::load($relDataDB[$index], $this->{$table}[$keys[$var[$primaryKey]]][$relationship->primary])
+                                                                                    ->setIndexes($indexes);
                     $obj->fill($this->rawData[$table][$keys[$var[$primaryKey]]] ?? null);
                     $obj->apply();
                     $this->{$table}[$keys[$var[$primaryKey]]]                   = $obj->toArray();
@@ -469,7 +482,8 @@ class OrmItem
                     /**
                      * Insert
                      */
-                    $obj                                                        = $oneToMany->mapClass::load($var, $where);
+                    $obj                                                        = $oneToMany->mapClass::load($var)
+                                                                                    ->setIndexes($indexes);
                     $obj->fill($this->rawData[$table][$index] ?? null);
                     $obj->apply();
                     $this->{$table}[$index]                                     = $obj->toArray();
@@ -543,7 +557,14 @@ class OrmItem
     {
         return !empty($this->recordKey);
     }
-
+    /**
+     * @return bool
+     */
+    public function isChanged() : bool
+    {
+        $vars = array_intersect_key($this->fieldSetPurged(), $this->informationSchema->dtd);
+        return array_intersect_key($this->storedData, $vars) != $vars;
+    }
     /**
      * @return string|null
      */
@@ -564,7 +585,7 @@ class OrmItem
         );
     }
 
-    private function setRecordKey(string $key = null) : self
+    protected function setRecordKey(string $key = null) : self
     {
         if ($key) {
             $this->recordKey = $key;
@@ -574,7 +595,7 @@ class OrmItem
         return $this;
     }
 
-    private function setIndexes(array $indexes = null) : self
+    protected function setIndexes(array $indexes = null) : self
     {
         $this->indexes      = $indexes ?? [];
 

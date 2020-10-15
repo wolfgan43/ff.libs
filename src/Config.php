@@ -264,10 +264,8 @@ class Config implements Dumpable
         if (!$bucket) {
             return self::$dirstruct;
         }
-        return (isset(self::$dirstruct[$bucket])
-            ? self::$dirstruct[$bucket]
-            : null
-        );
+
+        return self::$dirstruct[$bucket] ?? null;
     }
 
     /**

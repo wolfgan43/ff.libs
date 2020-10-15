@@ -78,13 +78,13 @@ class FilemanagerScan implements Dumpable
         switch ($opt->flag) {
             case self::SCAN_DIR:
                 if (self::$callback) {
-                    self::globDirCallback($pattern);
+                    self::globDirCallback($pattern, $opt);
                 } else {
-                    self::globDir($pattern);
+                    self::globDir($pattern, $opt);
                 }
                 break;
             case self::SCAN_DIR_RECURSIVE:
-                self::globDirRecursive($pattern);
+                self::globDirRecursive($pattern, $opt);
                 break;
             case self::SCAN_ALL:
                 $opt->dir = true;
@@ -110,29 +110,32 @@ class FilemanagerScan implements Dumpable
 
     /**
      * @param string $pattern
+     * @param stdClass|null $opt
      */
-    private static function globDir(string $pattern) : void
+    private static function globDir(string $pattern, stdClass $opt = null) : void
     {
-        self::$storage[self::STORAGE_RAWDATA] = glob($pattern, GLOB_ONLYDIR);
+        self::$storage[$opt->type ?? self::STORAGE_RAWDATA] = glob($pattern, GLOB_ONLYDIR);
     }
 
     /**
      * @param string $pattern
+     * @param stdClass|null $opt
      */
-    private static function globDirCallback(string $pattern) : void
+    private static function globDirCallback(string $pattern, stdClass $opt = null) : void
     {
         foreach (glob($pattern, GLOB_ONLYDIR) as $file) {
-            self::scanAddItem($file);
+            self::scanAddItem($file, $opt);
         }
     }
 
     /**
      * @param string $pattern
+     * @param stdClass|null $opt
      */
-    private static function globDirRecursive(string $pattern) : void
+    private static function globDirRecursive(string $pattern, stdClass $opt = null) : void
     {
         foreach (glob($pattern, GLOB_ONLYDIR) as $file) {
-            self::scanAddItem($file);
+            self::scanAddItem($file, $opt);
             self::globDirRecursive($file . '/*');
         }
     }

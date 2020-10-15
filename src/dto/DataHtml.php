@@ -93,10 +93,7 @@ class DataHtml extends DataAdapter
      */
     public function find(string $type, string $key) : ?string
     {
-        return (isset($this->$type[$key])
-            ? $this->$type[$key]
-            : null
-        );
+        return $this->$type[$key] ?? null;
     }
 
     /**

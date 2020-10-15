@@ -11,7 +11,6 @@
         <media source="(.*)" obj="phpformsframework\libs\storage\Media" method="get" params="$1" accept_path_info="true" />
     </engine>
     <dirs>
-        <dir type="app" path="/app/conf/packages" />
         <dir type="app" path="/uploads"  writable="true" />
 
         <dir type="gui" path="[LIBS_PATH]/phpformsframework/libs/themes/*/assets/dist/audio/*" scan="audio" />

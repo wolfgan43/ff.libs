@@ -19,6 +19,7 @@ class Gateway
     public function discover()
     {
         $client_type                    = null;
+        $alias                          = [];
         $register_scopes                = [];
         $required_scopes                = [];
         $grant_types                    = [];
@@ -28,11 +29,14 @@ class Gateway
             "client_secret"             => Kernel::$Environment::APPID,
         ];
         $dirs                           = FilemanagerScan::scan([Kernel::$Environment::VENDOR_LIBS_DIR => ["flag" => FilemanagerScan::SCAN_DIR]]);
+
         foreach ($dirs["rawdata"] as $module_path) {
             $module_name                = basename($module_path);
             if (!Env::get(strtoupper($module_name) . "_CLIENT_TYPE")) {
                 continue;
             }
+            $alias[]                    = $module_name;
+
             $module = [
                 "client_type"           => str_replace(" ", "", Env::get(strtoupper($module_name) . "_CLIENT_TYPE")),
                 "register_scopes"       => str_replace(" ", "", Env::get(strtoupper($module_name) . "_REGISTER_SCOPES")),
@@ -51,12 +55,15 @@ class Gateway
             $modules[Env::get(strtoupper($module_name) . "_CLIENT_TYPE")][$module_name] = $module;
         }
 
+        $discover["alias"]              = ucwords(implode(", ", $alias));
         $discover["client_type"]        = "hcore";
         $discover["register_scopes"]    = implode(",", $register_scopes);
         $discover["required_scopes"]    = implode(",", array_diff_key($required_scopes, $register_scopes));
         $discover["grant_types"]        = implode(",", $grant_types);
-        $discover["domain"]             = "myapp";
-        $discover["secret_uri"]        = Request::protocolHost() . "/api/secreturi";
+        $discover["secret_uri"]         = Request::protocolHost() . "/api/secreturi";
+        $discover["site_url"]           = null;
+        $discover["redirect_uri"]       = null;
+        $discover["privacy_url"]        = null;
 
 
 

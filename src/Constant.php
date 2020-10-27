@@ -44,7 +44,13 @@ class Constant
     const SITE_PATH                         = SITE_PATH;
 
     const APPNAME                           = null;
-    const APPID                             = null;
+    const APPID                             = null; //secret
+
+    const API_SIGNATURE                     = null;
+    const API_ISSUER                        = null; //usata forse non serve
+    const API_APIKEY                        = null; //non usata
+    const API_SCOPE_OP                      = "/*";
+    const API_SERVER                        = [];
 
     const PROJECT_DOCUMENT_ROOT             = DIRECTORY_SEPARATOR . "app";
     const PROJECT_DISK_PATH                 = self::DISK_PATH . self::PROJECT_DOCUMENT_ROOT;
@@ -120,7 +126,7 @@ class Constant
     const SESSION_PERMANENT                 = true;
     const SESSION_SHARE                     = true;
 
-    const API_SERVER                        = [];
+
 
     /**
      * Adapters

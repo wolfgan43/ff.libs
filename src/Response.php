@@ -30,6 +30,7 @@ use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\gui\controllers\ErrorController;
 use phpformsframework\libs\storage\drivers\Array2XML;
 use Exception;
+use phpformsframework\libs\util\Normalize;
 
 /**
  * Class Response
@@ -144,7 +145,7 @@ class Response
 
         $response->error($status, $msg);
 
-        self::send($response);
+        self::send($response, ["cache" => "no-cache"]);
     }
 
 
@@ -413,7 +414,7 @@ class Response
         if ($compress) {
             $accept_encoding = (
                 isset($_SERVER["HTTP_ACCEPT_ENCODING"])
-                ? explode(",", str_replace(" ", "", $_SERVER["HTTP_ACCEPT_ENCODING"]))
+                ? Normalize::string2array($_SERVER["HTTP_ACCEPT_ENCODING"])
                 : null
             );
             if ($accept_encoding) {

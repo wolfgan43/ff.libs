@@ -133,7 +133,7 @@ class OrmModel
     {
         if ($where) {
             $item                                                               = $this->db
-                ->read($where, null, 1);
+                ->readOne($where);
 
             if ($item->countRecordset()) {
                 $this->recordKey                                                = $item->key(0);

@@ -72,8 +72,9 @@ class OrmItem
      * @param int|null $draw
      * @return DataTableResponse
      * @throws Exception
+     * @todo da tipizzare
      */
-    public static function search(array $query = null, array $order = null, int $limit = null, int $offset = null, int $draw = null) : DataTableResponse
+    public static function search(array $query = null, array $order = null, int $limit = null, int $offset = null, int $draw = null)
     {
         $dataTableResponse                                                      = new DataTableResponse();
         $item                                                                   = new static();

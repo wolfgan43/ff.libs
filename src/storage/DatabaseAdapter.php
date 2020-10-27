@@ -1215,7 +1215,7 @@ abstract class DatabaseAdapter implements Constant
                 $res                                                        = $this->decrypt($source, $params[0], $func);
                 break;
             default:
-                if (!$params) {
+                if (!$params && is_callable($func)) {
                     $res                                                    = $func($source);
                 } else {
                     Error::register("ConversionTo not Managed: " . $func . " for " . $source, static::ERROR_BUCKET);

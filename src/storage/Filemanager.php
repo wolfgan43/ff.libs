@@ -142,9 +142,7 @@ class Filemanager implements Dumpable
     public static function makeDir(string $path, int $chmod = 0775, string $base_path = null) : bool
     {
         $res                                                            = false;
-        if (!$base_path) {
-            $base_path = Constant::DISK_PATH;
-        }
+        $base_path                                                      = $base_path ?? Constant::DISK_PATH;
         $path                                                           = str_replace($base_path, "", $path);
 
         if ($path && $path != DIRECTORY_SEPARATOR) {
@@ -293,7 +291,7 @@ class Filemanager implements Dumpable
             if ($res) {
                 $res = ftp_get($conn_id, Constant::UPLOAD_DISK_PATH . "/tmp/" . basename($dest), $ftp_disk_path . $source, FTP_BINARY);
                 if ($res) {
-                    $res = $res && ftp_put($conn_id, $ftp_disk_path . $dest, Constant::UPLOAD_DISK_PATH . "/tmp/" . basename($dest), FTP_BINARY);
+                    $res = ftp_put($conn_id, $ftp_disk_path . $dest, Constant::UPLOAD_DISK_PATH . "/tmp/" . basename($dest), FTP_BINARY);
 
                     $res = $res && @ftp_chmod($conn_id, 0644, $ftp_disk_path . $dest);
 
@@ -456,9 +454,6 @@ class Filemanager implements Dumpable
 
 
 
-
-
-
     /**
      * @param string $filepath
      * @return bool
@@ -470,16 +465,6 @@ class Filemanager implements Dumpable
             $result                                     = @unlink($filepath);
         }
         return $result;
-    }
-
-    /**
-     * @param string $file
-     * @param string|null $default
-     * @return string
-     */
-    public static function getMimeType(string $file, string $default = null) : string
-    {
-        return Media::getMimeByFilename($file, $default);
     }
 
     /**

@@ -3,6 +3,7 @@ namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\security\Validator;
 use Exception;
+use phpformsframework\libs\util\Normalize;
 
 /**
  * Trait OrmUtil
@@ -78,7 +79,7 @@ trait OrmUtil
         foreach ($validators as $field => $value) {
             if (is_array($this->dbValidator[$field])) {
                 if ($dtd->$field == Database::FTYPE_ARRAY || $dtd->$field == Database::FTYPE_ARRAY_OF_NUMBER) {
-                    $arrField                                                   = explode(",", str_replace(", ", ",", $value));
+                    $arrField                                                   = Normalize::string2array($value);
                     if (count(array_diff($arrField, $this->dbValidator[$field]))) {
                         $errors[]                                               = $field . " must be: [" . implode(", ", $this->dbValidator[$field]) . "]";
                     }

@@ -108,7 +108,7 @@ class Validator
                                                                     "flags"         => FILTER_FLAG_NO_ENCODE_QUOTES | FILTER_FLAG_STRIP_LOW, //| FILTER_FLAG_STRIP_HIGH
                                                                     "options"       => null,
                                                                     "callback"      => "\phpformsframework\libs\security\Validator::checkSpecialChars",
-                                                                    "length"        => 128
+                                                                    "length"        => 256
                                                                 ),
                                                                 "array"             => array(
                                                                     "filter"        => FILTER_SANITIZE_STRING,

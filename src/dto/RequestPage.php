@@ -24,9 +24,11 @@ class RequestPage extends Mappable
     public const REQUEST_RAWDATA            = "rawdata";
     public const REQUEST_VALID              = "valid";
     public const REQUEST_UNKNOWN            = "unknown";
+
     private const SECURITY_HEADERS          = [
                                                 "csrf" => "HTTP_CSRF"
                                             ];
+
     public $path_info                       = null;
     public $script_path                     = null;
 
@@ -43,7 +45,7 @@ class RequestPage extends Mappable
 
     public $isAjax                          = null;     //gestito in self (impostato nel costruttore)
     public $layout                          = null;     //non gestito
-    public $auth                            = null;     //non gestito
+    public $access                          = null;     //gestito in api
     public $vpn                             = null;     //non gestito
 
     /**
@@ -51,11 +53,11 @@ class RequestPage extends Mappable
      */
     public $rules                           = null;
 
-    private $path2params                    = array();
+    public $path2params                     = array();
 
+    private $authorization                  = null;
     private $headers                        = array();
     private $body                           = null;
-
 
 
     /**
@@ -189,6 +191,14 @@ class RequestPage extends Mappable
     }
 
     /**
+     * @return string
+     */
+    public function getAuthorization() : ?string
+    {
+        return $this->authorization;
+    }
+
+    /**
      * @param string $name
      * @param mixed|null $value
      * @return RequestPage
@@ -243,7 +253,7 @@ class RequestPage extends Mappable
         $mapRequest = $this->map ?? $namespace . self::NAMESPACE_MAP_REQUEST . ucfirst($method);
         if (class_exists($mapRequest)) {
             $obj = new $mapRequest();
-            $this->autoMapping($this->getRequest(self::REQUEST_RAWDATA) + $this->getHeaders(), $obj);
+            $this->autoMapping($this->getRequest(self::REQUEST_RAWDATA), $obj);
         } else {
             $obj = (object) $this->getRequest(self::REQUEST_RAWDATA);
         }
@@ -298,6 +308,15 @@ class RequestPage extends Mappable
     }
 
     /**
+     * @param string|null $authorization
+     * @return void
+     */
+    public function loadAuthorization(string $authorization = null) : void
+    {
+        $this->authorization = $authorization;
+    }
+
+    /**
      * @param array|null $server
      * @param bool $isCli
      * @return bool
@@ -344,8 +363,6 @@ class RequestPage extends Mappable
                     $header_key                                                             = $rule->name;
                     if ($isCli) {
                         $header_name                                                        = $header_key;
-                    } elseif ($rule->name == "Authorization") {
-                        $header_name                                                        = "Authorization";
                     } else {
                         $header_name                                                        = "HTTP_" . strtoupper($header_key);
                     }
@@ -365,10 +382,6 @@ class RequestPage extends Mappable
                         );
                         $this->setHeader($header_key, $headers[$header_name]);
                     }
-                }
-            } else {
-                foreach (self::SECURITY_HEADERS as $header_key => $header_name) {
-                    $this->setHeader($header_key, $headers[$header_name] ?? null);
                 }
             }
         } else {

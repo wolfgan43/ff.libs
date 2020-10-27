@@ -134,7 +134,7 @@ class DataResponse extends DataAdapter
             : null
         );
 
-        return (is_array($res)
+        return (is_array($res) && !isset($res[0])
             ? (object) $res
             : $res
         );

@@ -8,6 +8,16 @@ namespace phpformsframework\libs\util;
 class Normalize
 {
     /**
+     * @param string $string
+     * @param string $delimiter
+     * @return array
+     */
+    public static function string2array(string $string, string $delimiter = ",") : array
+    {
+        return explode($delimiter, str_replace($delimiter . " ", $delimiter, $string));
+    }
+
+    /**
      * @param string $res
      */
     public static function removeBom(string &$res) : void

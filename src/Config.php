@@ -28,6 +28,7 @@ namespace phpformsframework\libs;
 use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\dto\ConfigRules;
 use phpformsframework\libs\international\Locale;
+use phpformsframework\libs\microservice\Gateway;
 use phpformsframework\libs\security\Buckler;
 use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\storage\FilemanagerScan;
@@ -61,11 +62,12 @@ class Config implements Dumpable
     private const SCHEMA_MODEL                                              = "model";
     private const SCHEMA_BUCKLER                                            = "buckler";
     private const SCHEMA_MEDIA                                              = "media";
+    private const SCHEMA_GATEWAY                                            = "gateway";
 
 
     private const RAWDATA_XML_REPLACE                                       = Configurable::METHOD_REPLACE;
-    private const RAWDATA_XML_MERGE                                         = 2;
-    private const RAWDATA_XML_MERGE_RECOURSIVE                              = Configurable::METHOD_MERGE;
+    private const RAWDATA_XML_APPEND                                        = Configurable::METHOD_APPEND;
+    private const RAWDATA_XML_MERGE                                         = Configurable::METHOD_MERGE;
 
     /**
      * @var null
@@ -128,16 +130,17 @@ class Config implements Dumpable
                                                                                 self::SCHEMA_LOCALE     => Locale::class,
                                                                                 self::SCHEMA_MODEL      => Model::class,
                                                                                 self::SCHEMA_BUCKLER    => Buckler::class,
-                                                                                self::SCHEMA_MEDIA      => Media::class
+                                                                                self::SCHEMA_MEDIA      => Media::class,
+                                                                                self::SCHEMA_GATEWAY    => Gateway::class
                                                                             );
     //@todo: da sistemare togliendo il configurable e il dumpable e farlo fisso con 1 unica variabile
     /**
      * @var array
      */
     private static $config_rules                                            = array(
-        self::SCHEMA_DIRSTRUCT      => ["method" => self::RAWDATA_XML_MERGE_RECOURSIVE,   "context"   => self::SCHEMA_DIRSTRUCT],
-        self::SCHEMA_PAGES          => ["method" => self::RAWDATA_XML_MERGE_RECOURSIVE,   "context"   => self::SCHEMA_PAGES],
-        self::SCHEMA_ENGINE         => ["method" => self::RAWDATA_XML_REPLACE,            "context"   => self::SCHEMA_ENGINE],
+        self::SCHEMA_DIRSTRUCT      => ["method" => self::RAWDATA_XML_MERGE,   "context"   => self::SCHEMA_DIRSTRUCT],
+        self::SCHEMA_PAGES          => ["method" => self::RAWDATA_XML_MERGE,   "context"   => self::SCHEMA_PAGES],
+        self::SCHEMA_ENGINE         => ["method" => self::RAWDATA_XML_REPLACE, "context"   => self::SCHEMA_ENGINE],
     );
 
     /**
@@ -497,15 +500,15 @@ class Config implements Dumpable
                         case self::RAWDATA_XML_REPLACE:
                             self::loadFileXmlReplace($context, $config);
                             break;
-                        case self::RAWDATA_XML_MERGE:
+                        case self::RAWDATA_XML_APPEND:
                             self::loadFileXmlMerge($context, $config);
                             break;
-                        case self::RAWDATA_XML_MERGE_RECOURSIVE:
+                        case self::RAWDATA_XML_MERGE:
                         default:
                             self::loadFileXmlMergeSub($context, $config);
                     }
                 } else {
-                    self::$config_unknown[$key]                             = $config;
+                    self::$config_unknown[$key][]                           = $config;
                 }
             }
         } elseif ($configs === false) {

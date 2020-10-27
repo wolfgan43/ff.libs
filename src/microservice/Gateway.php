@@ -1,71 +1,134 @@
 <?php
 namespace phpformsframework\libs\microservice;
 
-use phpformsframework\libs\Env;
+use phpformsframework\libs\Configurable;
+use phpformsframework\libs\Dir;
+use phpformsframework\libs\dto\ConfigRules;
+use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Request;
-use phpformsframework\libs\storage\FilemanagerScan;
+use phpformsframework\libs\util\Normalize;
 
 /**
  * Class Gateway
  * @package phpformsframework\libs\microservice
  */
-class Gateway
+class Gateway implements Configurable, Dumpable
 {
+    private static $clients                                 = null;
     /**
-     * @param array $discover
+     * @access private
+     * @param ConfigRules $configRules
+     * @return ConfigRules
+     */
+    public static function loadConfigRules(ConfigRules $configRules) : ConfigRules
+    {
+        return $configRules
+            ->add("client", self::METHOD_APPEND);
+    }
+
+    /**
+     * @access private
+     * @param array $config
+     */
+    public static function loadConfig(array $config)
+    {
+        self::$clients                                      = $config["gateway"];
+    }
+
+    /**
+     * @access private
+     * @param array $rawdata
+     * @return array
+     */
+    public static function loadSchema(array $rawdata) : array
+    {
+        foreach ($rawdata as $client) {
+            $attr                                           = (object) Dir::getXmlAttr($client);
+            if (!isset($attr->name)) {
+                continue;
+            }
+            self::$clients[$attr->name]["type"]             = $attr->type;
+            if (isset($client["scopes"])) {
+                foreach (Dir::getXmlAttr($client["scopes"]) as $name => $scope) {
+                    self::$clients[$attr->name]["scopes"][$name] = Normalize::string2array($scope);
+                }
+            }
+        }
+
+        return array(
+            "gateway"     => self::$clients
+        );
+    }
+
+    /**
+     * @return array
+     */
+    public static function dump() : array
+    {
+        return array(
+            "gateway"    => self::$clients
+        );
+    }
+
+    /**
      * @return array
      */
     public function discover()
     {
         $client_type                    = null;
-        $alias                          = [];
-        $register_scopes                = [];
-        $required_scopes                = [];
+        $aud                            = [];
+        $scopes_register                = [];
+        $scopes_require_client          = [];
+        $scopes_require_user            = [];
         $grant_types                    = [];
         $modules                        = [];
         $discover                       = [
             "client_id"                 => Kernel::$Environment::APPNAME,
             "client_secret"             => Kernel::$Environment::APPID,
         ];
-        $dirs                           = FilemanagerScan::scan([Kernel::$Environment::VENDOR_LIBS_DIR => ["flag" => FilemanagerScan::SCAN_DIR]]);
 
-        foreach ($dirs["rawdata"] as $module_path) {
-            $module_name                = basename($module_path);
-            if (!Env::get(strtoupper($module_name) . "_CLIENT_TYPE")) {
+        foreach (self::$clients as $name => $client) {
+            if (empty($client["type"])) {
                 continue;
             }
-            $alias[]                    = $module_name;
 
-            $module = [
-                "client_type"           => str_replace(" ", "", Env::get(strtoupper($module_name) . "_CLIENT_TYPE")),
-                "register_scopes"       => str_replace(" ", "", Env::get(strtoupper($module_name) . "_REGISTER_SCOPES")),
-                "required_scopes"       => str_replace(" ", "", Env::get(strtoupper($module_name) . "_REQUIRED_SCOPES")),
-                "grant_types"           => str_replace(" ", "", Env::get(strtoupper($module_name) . "_DISCOVER_GRANT_TYPES")),
-            ];
-            $scopes                     = explode(",", $module["register_scopes"]);
-            $register_scopes            = array_replace($register_scopes, array_combine($scopes, $scopes));
+            $aud[]                      = $name;
 
-            $scopes                     = explode(",", $module["required_scopes"]);
-            $required_scopes            = array_replace($required_scopes, array_combine($scopes, $scopes));
+            $scopes                     = $client["scopes"]["register"];
+            $scopes_register            = array_replace($scopes_register, array_combine($scopes, $scopes));
 
-            $grants                     = explode(",", $module["grant_types"]);
+            $scopes                     = $client["scopes"]["require_client"];
+            $scopes_require_client      = array_replace($scopes_require_client, array_combine($scopes, $scopes));
+
+            $scopes                     = $client["scopes"]["require_user"];
+            $scopes_require_user        = array_replace($scopes_require_user, array_combine($scopes, $scopes));
+
+            $grants                     = explode(",", "client,password");
             $grant_types                = array_replace($grant_types, array_combine($grants, $grants));
 
-            $modules[Env::get(strtoupper($module_name) . "_CLIENT_TYPE")][$module_name] = $module;
+
+            $module = [
+                "client_type"                   => $client["type"],
+                "scopes_register"               => implode(",", $client["scopes"]["register"]),
+                "scopes_require_client"         => implode(",", $client["scopes"]["require_client"]),
+                "scopes_require_user"           => implode(",", $client["scopes"]["require_user"]),
+                "grant_types"                   => "client,password",
+            ];
+
+            $modules[$client["type"]][$name]    = $module;
         }
 
-        $discover["alias"]              = ucwords(implode(", ", $alias));
-        $discover["client_type"]        = "hcore";
-        $discover["register_scopes"]    = implode(",", $register_scopes);
-        $discover["required_scopes"]    = implode(",", array_diff_key($required_scopes, $register_scopes));
-        $discover["grant_types"]        = implode(",", $grant_types);
-        $discover["secret_uri"]         = Request::protocolHost() . "/api/secreturi";
-        $discover["site_url"]           = null;
-        $discover["redirect_uri"]       = null;
-        $discover["privacy_url"]        = null;
-
-
+        $discover["aud"]                        = ucwords(implode(", ", $aud));
+        $discover["client_type"]                = "hcore";
+        $discover["scopes_register"]            = implode(",", $scopes_register);
+        $discover["scopes_require_client"]      = implode(",", $scopes_require_client);
+        $discover["scopes_require_user"]        = implode(",", $scopes_require_user);
+        $discover["grant_types"]                = implode(",", $grant_types);
+        $discover["secret_uri"]                 = Request::protocolHost() . "/api/secreturi";
+        $discover["site_url"]                   = null;
+        $discover["redirect_uri"]               = null;
+        $discover["privacy_url"]                = null;
 
         return $discover + $modules;
     }

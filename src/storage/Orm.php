@@ -329,6 +329,7 @@ class Orm extends Mappable
     {
         if ($this->cacheRequest(self::ACTION_READONE, [$select, $where, $sort, $offset], $this->result)) {
             $this->get($select, $where, $sort, 1, $offset);
+
             $this->cacheStore($this->result);
         }
 

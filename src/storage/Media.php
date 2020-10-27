@@ -1241,7 +1241,7 @@ class Media implements Configurable
     {
         $this->headers["cache"]                                     = "must-revalidate";
         $this->headers["filename"]                                  = $this->pathinfo->basename;
-        $this->headers["mimetype"]                                  = $this::getMimeByFilename($final_file);
+        $this->headers["mimetype"]                                  = $this->getMimeByFilename($final_file);
 
         if ($code) {
             Response::httpCode($code);

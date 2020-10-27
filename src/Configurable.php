@@ -34,6 +34,7 @@ namespace phpformsframework\libs;
 interface Configurable
 {
     const METHOD_REPLACE    = 1;
+    const METHOD_APPEND     = 2;
     const METHOD_MERGE      = 3;
 
     /**

@@ -464,7 +464,7 @@ class Request implements Configurable, Dumpable
     /**
      * @return string|null
      */
-    public static function getAuthorizationHeader(): ?string
+    private static function getAuthorizationHeader(): ?string
     {
         $headers = null;
         if (isset($_SERVER['Authorization'])) {
@@ -1057,6 +1057,7 @@ class Request implements Configurable, Dumpable
 
         self::$page->loadRequest($app->request);
         self::$page->loadHeaders($app->headers, true);
+        self::$page->loadAuthorization($app->authorization);
 
         return self::$page;
     }
@@ -1065,9 +1066,10 @@ class Request implements Configurable, Dumpable
     {
         if (!isset(self::$pageLoaded[$path_info])) {
             self::$pageLoaded[$path_info]                                                       = [
-                "page"      => new RequestPage($path_info, self::$pages, self::$path2params, self::$patterns),
-                "request"   => $request,
-                "headers"   => $headers
+                "page"              => new RequestPage($path_info, self::$pages, self::$path2params, self::$patterns),
+                "request"           => $request,
+                "headers"           => $headers,
+                "authorization"     => $headers["Authorization"] ?? self::getAuthorizationHeader()
             ];
         }
 

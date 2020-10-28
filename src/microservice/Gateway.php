@@ -15,7 +15,7 @@ use phpformsframework\libs\util\Normalize;
  */
 class Gateway implements Configurable, Dumpable
 {
-    private static $clients                                 = null;
+    private static $clients                                 = [];
     /**
      * @access private
      * @param ConfigRules $configRules

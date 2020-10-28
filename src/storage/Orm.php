@@ -308,10 +308,10 @@ class Orm extends Mappable
      */
     public function read(array $select = null, array $where = null, array $sort = null, int $limit = null, int $offset = null, bool $calc_found_rows = true) : ?OrmResults
     {
-        if ($this->cacheRequest(self::ACTION_READ, [$select, $where, $sort, $limit, $offset], $this->result)) {
+        if ($this->cacheRequest(self::ACTION_READ, [$select, $where, $sort, $limit, $offset], $this->result, $this->main->def->mainTable)) {
             $this->get($select, $where, $sort, $limit, $offset, $calc_found_rows);
 
-            $this->cacheStore($this->result);
+            $this->cacheStore($this->result, $this->main->def->mainTable);
         }
 
         return $this->getResult();
@@ -327,10 +327,10 @@ class Orm extends Mappable
      */
     public function readOne(array $select = null, array $where = null, array $sort = null, int $offset = null) : ?object
     {
-        if ($this->cacheRequest(self::ACTION_READONE, [$select, $where, $sort, $offset], $this->result)) {
+        if ($this->cacheRequest(self::ACTION_READONE, [$select, $where, $sort, $offset], $this->result, $this->main->def->mainTable)) {
             $this->get($select, $where, $sort, 1, $offset);
 
-            $this->cacheStore($this->result);
+            $this->cacheStore($this->result, $this->main->def->mainTable);
         }
 
         return $this->getResult()->first();
@@ -431,7 +431,7 @@ class Orm extends Mappable
      */
     public function cmd(string $action, array $where = null) : ?object
     {
-        if ($this->cacheRequest(self::ACTION_CMD, [$action, $where], $this->result[self::ACTION_CMD])) {
+        if ($this->cacheRequest(self::ACTION_CMD, [$action, $where], $this->result, $this->main->def->mainTable)) {
             $this->clearResult();
 
             $this->resolveFieldsByScopes(array(
@@ -440,6 +440,8 @@ class Orm extends Mappable
 
             $this->execSub($action);
             $this->cmdData($action);
+
+            $this->cacheStore($this->result, $this->main->def->mainTable);
         }
 
         return $this->getResult()->first();
@@ -851,10 +853,16 @@ class Orm extends Mappable
      * @param OrmQuery $data
      * @param string|null $key
      */
-    private function setResultKeys(OrmQuery $data, string $key = null) : void
+    private function setResultKeys(OrmQuery $data, $key = null) : void
     {
-        if ($key !== null) {
-            $this->result_keys[$data->table][]                                              = [$data->def->key_primary => $key];
+        if (!empty($key)) {
+            if (is_array($key)) {
+                foreach ($key as $k) {
+                    $this->result_keys[$data->table][]                                      = [$data->def->key_primary => $k];
+                }
+            } else {
+                $this->result_keys[$data->table][]                                          = [$data->def->key_primary => $key];
+            }
         }
     }
 

@@ -11,12 +11,13 @@ trait Cashable
      * @param string $action
      * @param array|null $params
      * @param null $res
+     * @param null $cnf
      * @return bool
      * @todo da tipizzare
      */
-    public static function cacheRequest(string $action, array $params = null, &$res = null) : bool
+    public static function cacheRequest(string $action, array $params = null, &$res = null, &$cnf = null) : bool
     {
-        return Buffer::request(static::ERROR_BUCKET, $action, $params, $res);
+        return Buffer::request(static::ERROR_BUCKET, $action, $params, $res, $cnf);
     }
 
     /**
@@ -29,10 +30,11 @@ trait Cashable
 
     /**
      * @param $response
+     * @param $config
      */
-    public static function cacheStore($response)
+    public static function cacheStore($response, $config = null)
     {
-        Buffer::store($response);
+        Buffer::store($response, $config);
     }
 
 

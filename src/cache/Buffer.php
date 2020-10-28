@@ -70,15 +70,17 @@ class Buffer implements Dumpable
     {
         return self::$stats;
     }
+
     /**
      * @param string $bucket
      * @param string $action
      * @param array|null $params
-     * @param null $ref
+     * @param $res
+     * @param $cnf
      * @return bool
      * @todo da tipizzare
      */
-    public static function request(string $bucket, string $action, array $params = null, &$ref = null) : bool
+    public static function request(string $bucket, string $action, array $params = null, &$res = null, &$cnf = null) : bool
     {
         self::watchStart($bucket, $action);
 
@@ -87,22 +89,24 @@ class Buffer implements Dumpable
         }
         $pid                                            = self::hash($bucket, $action, $params);
 
-        return ($ref && self::isCached($pid)
-            ? self::initRef($pid, $ref)
+        return ($res && self::isCached($pid)
+            ? self::initRef($pid, $res, $cnf)
             : self::init($pid, $bucket, $action, $params)
         );
     }
 
     /**
      * @param $response
+     * @param $config
      */
-    public static function store($response) : void
+    public static function store($response, $config = null) : void
     {
         $exTime                                             = self::watchStop();
         if (self::cacheEnabled()) {
             $cache                                          =& self::$cache[self::$pid];
 
             $cache->response                                = $response;
+            $cache->config                                  = $config;
             $cache->exTime                                  = $exTime;
 
             self::clear();
@@ -162,7 +166,12 @@ class Buffer implements Dumpable
      */
     private static function hash(string $bucket, string $action, array $params = null) : string
     {
-        return $bucket . self::SEP . $action. "-" . crc32(json_encode($params));
+        $query                                              = null;
+        if (!empty($params)) {
+            array_walk($params, 'ksort');
+            $query                                          = "-" . crc32(json_encode($params));
+        }
+        return $bucket . self::SEP . $action . $query;
     }
 
     /**
@@ -176,14 +185,16 @@ class Buffer implements Dumpable
 
     /**
      * @param string $pid
-     * @param null $ref
+     * @param $res
+     * @param $cnf
      * @return bool
      */
-    private static function initRef(string $pid, &$ref = null) : bool
+    private static function initRef(string $pid, &$res = null, &$cnf = null) : bool
     {
         self::setPid($pid);
 
-        $ref                                                = self::$cache[self::$pid]->response;
+        $res                                                = self::$cache[self::$pid]->response;
+        $cnf                                                = self::$cache[self::$pid]->config;
         foreach (self::$cache[self::$pid]->process as $process) {
             self::setProcess($process, true);
         }

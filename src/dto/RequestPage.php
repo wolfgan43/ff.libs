@@ -180,7 +180,7 @@ class RequestPage extends Mappable
 
     public function isPathParams(): bool
     {
-        return !empty($page->path2params);
+        return !empty($this->path2params);
     }
 
     /**
@@ -316,10 +316,11 @@ class RequestPage extends Mappable
     /**
      * @param string|null $authorization
      * @return void
+     * @todo da mettere il base64
      */
     public function loadAuthorization(string $authorization = null) : void
     {
-        $this->authorization = $authorization;
+        $this->authorization = urldecode($authorization);
     }
 
     /**

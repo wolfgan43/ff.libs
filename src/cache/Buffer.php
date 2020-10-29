@@ -166,12 +166,7 @@ class Buffer implements Dumpable
      */
     private static function hash(string $bucket, string $action, array $params = null) : string
     {
-        $query                                              = null;
-        if (!empty($params)) {
-            array_walk($params, 'ksort');
-            $query                                          = "-" . crc32(json_encode($params));
-        }
-        return $bucket . self::SEP . $action . $query;
+        return $bucket . self::SEP . $action . "-" . crc32(json_encode($params));
     }
 
     /**

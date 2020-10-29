@@ -53,7 +53,8 @@ class RequestPage extends Mappable
      */
     public $rules                           = null;
 
-    public $path2params                     = array();
+    private $path2params                    = array();
+    private $file2params                    = array();
 
     private $authorization                  = null;
     private $headers                        = array();
@@ -175,6 +176,11 @@ class RequestPage extends Mappable
     {
         $query = http_build_query($this->getRequestValid());
         return Request::protocolHostPathinfo() . ($query ? "?" . $query : "");
+    }
+
+    public function isPathParams(): bool
+    {
+        return !empty($page->path2params);
     }
 
     /**
@@ -336,7 +342,7 @@ class RequestPage extends Mappable
     public function loadRequest(array $request = null) : bool
     {
         return (is_array($request)
-            ? $this->securityParams($this->path2params + $request, $this->method)
+            ? $this->securityParams($this->path2params + $this->file2params + $request, $this->method)
             : false
         );
     }
@@ -478,7 +484,7 @@ class RequestPage extends Mappable
         if (!empty($_FILES)) {
             $errors                                                                         = array();
             foreach ($_FILES as $file_name => $file) {
-                $this->path2params[$file_name]                                              = $file["name"];
+                $this->file2params[$file_name]                                              = $file["name"];
 
                 $rule                                                                       = (object) ($this->rules->body[$file_name] ?? null); //@todo necessario per design pattern
 

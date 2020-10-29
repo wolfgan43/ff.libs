@@ -10,8 +10,8 @@ trait Cashable
     /**
      * @param string $action
      * @param array|null $params
-     * @param null $res
-     * @param null $cnf
+     * @param $res
+     * @param $cnf
      * @return bool
      * @todo da tipizzare
      */

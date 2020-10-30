@@ -263,6 +263,14 @@ class MongoDB extends DatabaseDriver
      */
     private function processQueryParams(DatabaseQuery $query) : bool
     {
+        if (!$this->link_id && !$this->connect()) {
+            return false;
+        }
+
+        $this->cacheSetProcess($query->toJson());
+
+        $this->freeResult();
+
         if (!$this->query_params) {
             if (empty($query->from)) {
                 $this->errorHandler("table not set");
@@ -324,16 +332,8 @@ class MongoDB extends DatabaseDriver
      * @param DatabaseQuery $query
      * @return bool
      */
-    public function query($query) : bool
+    private function query(DatabaseQuery $query) : bool
     {
-        if (!$this->link_id && !$this->connect()) {
-            return false;
-        }
-
-        $this->cacheSetProcess($query->toJson());
-
-        $this->freeResult();
-
         $this->processQueryParams($query);
         switch ($this->query_params->action) {
             case self::ACTION_READ:

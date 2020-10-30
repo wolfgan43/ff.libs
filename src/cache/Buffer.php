@@ -211,6 +211,7 @@ class Buffer implements Dumpable
         self::setPid($pid);
 
         self::$cache[self::$pid]                            = new stdClass();
+        self::$cache[self::$pid]->process                   = [];
         self::$cache[self::$pid]->request                   = $params;
         self::$cache[self::$pid]->bucket                    = $bucket;
         self::$cache[self::$pid]->action                    = $action;

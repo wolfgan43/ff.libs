@@ -1033,12 +1033,17 @@ class Orm extends Mappable
         }
         $is_single_service                                                                  = (count($this->services_by_data->services) == 1);
         if (empty($this->main->where) && empty($this->main->select) && empty($this->main->insert) && $is_single_service) {
-            $subService                                                                     = key($this->services_by_data->services);
+            $subService                                                                     = $this->services_by_data->last; //key($this->services_by_data->services);
+            $is_single_table                                                                = (count($this->services_by_data->services[$subService]) == 1);
             $Orm                                                                            = $this->getModel($subService);
-            $subTable                                                                       = $Orm->getMainTable();
+            $subTable                                                                       = ($is_single_table
+                                                                                                ? $this->services_by_data->last_table
+                                                                                                : $Orm->getMainTable()
+                                                                                            );
 
             if (isset($this->subs[$subService]) && isset($this->subs[$subService][$subTable])) {
                 $this->main                                                                 = $this->subs[$subService][$subTable];
+                $this->main->def->mainTable                                                 = $subTable;
             } else {
                 $this->main->def                                                            = $Orm->getStruct($subTable);
                 $this->main->table                                                          = $subTable;
@@ -1097,7 +1102,7 @@ class Orm extends Mappable
         if (!empty($fields)) {
             $mainService                                                                    = $this->getCollection();
             $mainTable                                                                      = $this->getMainTable();
-            if ($scope == self::SCOPE_SELECT || $scope == self::SCOPE_WHERE || $scope == self::SCOPE_SORT) {
+            if ($scope == self::SCOPE_SELECT || $scope == self::SCOPE_WHERE || $scope == self::SCOPE_SORT || $scope == self::SCOPE_INSERT) {
                 $this->services_by_data->last                                               = $mainService;
                 $this->services_by_data->last_table                                         = $mainTable;
             }
@@ -1156,10 +1161,10 @@ class Orm extends Mappable
                     default:
                 }
 
-                $this->services_by_data->services[$service]                                 = true;
+                $this->services_by_data->services[$service][$table]                         = true;
                 $this->services_by_data->tables[$service . "." . $table]                    = true;
                 $this->services_by_data->scopes[$scope][$service]                           = true;
-                if ($scope == self::SCOPE_SELECT || $scope == self::SCOPE_WHERE || $scope == self::SCOPE_SORT) {
+                if ($scope == self::SCOPE_SELECT || $scope == self::SCOPE_WHERE || $scope == self::SCOPE_SORT || $scope == self::SCOPE_INSERT) {
                     $this->services_by_data->last                                           = $service;
                     $this->services_by_data->last_table                                     = $table;
                 }

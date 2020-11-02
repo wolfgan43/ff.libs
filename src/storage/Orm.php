@@ -702,8 +702,8 @@ class Orm extends Mappable
                                                                                                     $calc_found_rows
                                                                                                 );
             if (is_array($regs) && $regs[self::RESULT]) {
-                $this->result[$this->getMainTable()]                                        = $regs[self::RESULT];
-                $this->result_keys[$this->getMainTable()]                                   = $regs[self::INDEX]    ?? null;
+                $this->result[$data->def->mainTable]                                        = $regs[self::RESULT];
+                $this->result_keys[$data->def->mainTable]                                   = $regs[self::INDEX]    ?? null;
                 $count                                                                      = $regs[self::COUNT];
             }
         } else {
@@ -1046,7 +1046,6 @@ class Orm extends Mappable
                 $this->main->def->mainTable                                                 = $subTable;
             } else {
                 $this->main->def                                                            = $Orm->getStruct($subTable);
-                $this->main->table                                                          = $subTable;
             }
             $this->main->service                                                            = $subService;
 

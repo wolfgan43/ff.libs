@@ -26,4 +26,13 @@ class DataTableResponse extends DataResponse
             "status"            => $this->status
         ];
     }
+
+    /**
+     * @param string $name
+     * @return array
+     */
+    public function getColumn(string $name) : array
+    {
+        return array_column($this->data ?? [], $name);
+    }
 }

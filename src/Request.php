@@ -467,10 +467,10 @@ class Request implements Configurable, Dumpable
     private static function getAuthorizationHeader(): ?string
     {
         $headers = null;
-        if (isset($_SERVER['Authorization'])) {
-            $headers = trim($_SERVER["Authorization"]);
-        } elseif (isset($_SERVER['HTTP_AUTHORIZATION'])) { //Nginx or fast CGI
+        if (isset($_SERVER['HTTP_AUTHORIZATION'])) { //Nginx or fast CGI
             $headers = trim($_SERVER["HTTP_AUTHORIZATION"]);
+        } elseif (isset($_SERVER['Authorization'])) {
+            $headers = trim($_SERVER["Authorization"]);
         } elseif (function_exists('apache_request_headers')) {
             $requestHeaders = apache_request_headers();
             // Server-side fix for bug in old Android versions (a nice side-effect of this fix means we don't care about capitalization for Authorization)

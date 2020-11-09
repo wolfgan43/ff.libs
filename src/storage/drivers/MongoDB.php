@@ -545,10 +545,11 @@ class MongoDB extends DatabaseDriver
     }
 
     /**
-     * @param string|null $DataValue
-     * @return string|null
+     * @param string|int|float|null $DataValue
+     * @return string|int|float|null
+     * @todo da tipizzare
      */
-    protected function toSqlEscape(string $DataValue = null) : ?string
+    protected function toSqlEscape($DataValue = null)
     {
         return $DataValue;
     }

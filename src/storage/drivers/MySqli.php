@@ -519,10 +519,11 @@ class MySqli extends DatabaseDriver
     }
 
     /**
-     * @param string|null $DataValue
+     * @param string|int|float|null $DataValue
      * @return string|null
+     * @todo da tipizzare
      */
-    protected function toSqlEscape(string $DataValue = null) : ?string
+    protected function toSqlEscape($DataValue = null) : ?string
     {
         return mysqli_real_escape_string($this->link_id, str_replace("`", "", $DataValue));
     }

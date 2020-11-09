@@ -140,10 +140,11 @@ abstract class DatabaseDriver implements Constant
     abstract public function getInsertID() : ?string;
 
     /**
-     * @param string $DataValue
+     * @param string|int|float|null $DataValue
      * @return string|null
+     * @todo da tipizzare
      */
-    abstract protected function toSqlEscape(string $DataValue) : ?string;
+    abstract protected function toSqlEscape($DataValue = null);
 
     /**
      * @param string $msg

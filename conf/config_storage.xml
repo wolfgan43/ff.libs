@@ -36,7 +36,7 @@
         <dir    type="app"          name="conf"         path="[PROJECT_DOCUMENT_ROOT]/conf"  />
         <dir    type="app"          name="public"       path="[PROJECT_DOCUMENT_ROOT]/public" webroot="true" />
         <dir    type="app"          name="models"       path="[PROJECT_DOCUMENT_ROOT]/models" autoload="true" />
-        <dir    type="app"          name="helpers"      path="[PROJECT_DOCUMENT_ROOT]/helpers" autoload="true" namespace="hcore\app\helpers" />
+        <dir    type="app"          name="helpers"      path="[PROJECT_DOCUMENT_ROOT]/helpers" autoload="true" />
         <dir    type="app"          name="controllers"  path="[PROJECT_DOCUMENT_ROOT]/controllers" autoload="true" />
         <dir    type="app"          name="themes"       path="[PROJECT_DOCUMENT_ROOT]/themes" />
 

@@ -253,14 +253,14 @@ abstract class DatabaseDriver implements Constant
     }
 
     /**
-     * @param string|null $value
      * @param string $type
-     * @return string|null
+     * @param string|int|float|null $value
+     * @return string|int|float|null
      * @throws Exception
      * @todo da tipizzare
      * @todo i cast int e fload danno problemi con numeri enormi.
      */
-    protected function toSqlString(string $type, string $value = null)
+    protected function toSqlString(string $type, $value = null)
     {
         if ($value !== null) {
             switch ($type) {

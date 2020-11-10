@@ -81,18 +81,16 @@ class Autoloader
 
             $classes                                                        = array_diff(get_declared_classes(), $classes);
             try {
-                $lib_namespace                                              = substr(static::class, 0, strrpos(static::class, '\\'));
                 foreach ($classes as $class_name) {
                     $class                                                  = new ReflectionClass($class_name);
-                    if (strpos($class->getNamespaceName(), $lib_namespace) === false
-                        && strpos($class->getNamespaceName(), Constant::NAME_SPACE) === false
-                    ) {
+                    if (strpos($class->getFileName(), Constant::LIBS_DISK_PATH) === false) {
                         self::$classes[$class_name]                         = $class->getFileName();
                     }
                 }
             } catch (ReflectionException $e) {
                 App::throwError($e->getCode(), $e->getMessage());
             }
+
             $cache->set("autoloader", self::$classes, $config_dirs);
         }
     }

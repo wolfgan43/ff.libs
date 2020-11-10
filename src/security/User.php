@@ -77,18 +77,31 @@ class User extends App
     /**
      * @param string $username
      * @param string $secret
+     * @return UserData
+     * @throws Exception
+     * @todo da tipizzare con UserData
+     */
+    protected static function check(string $username, string $secret)
+    {
+        $user                                                   = new UserData(["username" => $username, "password" => $secret]);
+        if (!$user->isStored()) {
+            self::throwError(401, self::ERROR_USER_NOT_FOUND);
+        }
+        return $user;
+    }
+
+    /**
+     * @param string $username
+     * @param string $secret
      * @param bool|null $permanent
      * @return DataResponse
      * @throws Exception
      */
     public static function login(string $username, string $secret, bool $permanent = null) : DataResponse
     {
-        $user                                                   = new UserData(["username" => $username, "password" => $secret]);
-        if (!$user->isStored()) {
-            self::throwError(401, self::ERROR_USER_NOT_FOUND);
-        }
-
+        $user                                                   = static::check($username, $secret);
         $response                                               = self::session()->create($permanent, $user->acl);
+
         self::set($user);
 
         return $response;

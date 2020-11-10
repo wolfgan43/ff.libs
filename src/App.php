@@ -80,7 +80,7 @@ abstract class App implements Dumpable
         return array(
             "isRunnedAs"    => Router::getRunner(),
             "Configuration" => self::$configuration,
-            "Vars"          => Env::get(),
+            "Vars"          => Env::getAll(),
             "userVars"      => $userVars,
             "Environment"   => '*protected*'
         );

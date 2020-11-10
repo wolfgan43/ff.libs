@@ -64,7 +64,7 @@ class Resource extends Mappable implements Dumpable
             self::$singleton = new Resource();
         }
 
-        return (array) self::$singleton->resources;
+        return self::$singleton->resources;
     }
 
     /**

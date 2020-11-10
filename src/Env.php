@@ -42,20 +42,21 @@ class Env implements Configurable
     private static $packages                                        = null;
     private static $permanent                                       = array();
 
+
     /**
-     * @param null|string $key
+     * @return array
+     */
+    public static function &getAll() : array
+    {
+        return self::$vars;
+    }
+    /**
+     * @param string $key
      * @return mixed|null
      */
-    public static function get(string $key = null)
+    public static function get(string $key)
     {
-        if ($key && !isset(self::$vars[$key])) {
-            self::$vars[$key]                                       = null;
-        }
-
-        return ($key
-            ? self::$vars[$key]
-            : self::$vars
-        );
+        return self::$vars[$key] ?? null;
     }
 
     /**

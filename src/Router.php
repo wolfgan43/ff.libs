@@ -37,8 +37,6 @@ class Router implements Configurable, Dumpable
 {
     use TypesConverter;
 
-    const ERROR_BUCKET                                      = "routing";
-
     const PRIORITY_TOP 			                            = 0;
     const PRIORITY_VERY_HIGH	                            = 1;
     const PRIORITY_HIGH			                            = 2;
@@ -47,6 +45,10 @@ class Router implements Configurable, Dumpable
     const PRIORITY_VERY_LOW		                            = 5;
     const PRIORITY_BOTTOM 		                            = 6;
     const PRIORITY_DEFAULT 		                            = Router::PRIORITY_NORMAL;
+
+    private const ERROR_RESPONSE_NO_INSTANCEOF              = "Response must be an instance of dto\DataAdapter";
+    private const ERROR_RESPONSE_IS_NULL                    = "Response is null";
+
 
     private static $cache                                   = array();
 
@@ -399,17 +401,15 @@ class Router implements Configurable, Dumpable
      * @param string $class_name
      * @param string $method
      * @param array $params
-     * @return mixed|null
+     * @return dto\DataAdapter
      * @throws Exception
-     * @todo da tipizzare
      */
-    public static function caller(string $class_name, string $method, array $params)
+    private static function caller(string $class_name, string $method, array $params) : dto\DataAdapter
     {
         $output                                                     = null;
         if ($class_name) {
             try {
                 self::setRunner($class_name);
-
                 if ($method && !is_array($method)) {
                     $output                                         = (new $class_name)->$method(...$params);
                 }
@@ -418,6 +418,12 @@ class Router implements Configurable, Dumpable
             }
         } elseif (is_callable($method)) {
             $output                                                 = $method(...$params);
+        }
+
+        if (!$output) {
+            Response::sendError(501, self::ERROR_RESPONSE_IS_NULL);
+        } elseif (!($output instanceof dto\DataAdapter)) {
+            Response::sendError(500, self::ERROR_RESPONSE_NO_INSTANCEOF);
         }
         return $output;
     }

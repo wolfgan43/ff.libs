@@ -43,19 +43,4 @@ trait AdapterManager
 
         return $this->adapter;
     }
-
-    /**
-     * @param string|null $adapterName
-     * @return object|null
-     */
-    public function getAdapter(string $adapterName = null) : ?object
-    {
-        if ($adapterName && !isset($this->adapters[$adapterName])) {
-            return null;
-        }
-        return ($adapterName
-            ? $this->adapters[$adapterName]
-            : $this->adapter
-        );
-    }
 }

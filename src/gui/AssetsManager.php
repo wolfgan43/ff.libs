@@ -43,7 +43,7 @@ trait AssetsManager
      */
     private function mask(string $url = null) : string
     {
-        $env                                    = Env::get();
+        $env                                    = Env::getAll();
         $env["{"]                               = "";
         $env["}"]                               = "";
 

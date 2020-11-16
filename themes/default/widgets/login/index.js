@@ -20,7 +20,7 @@ hcore.Auth.login = function (url, redirect, selector) {
             "refresh": stayConnect
         },
         method: "POST",
-        dataType: "medreq.json",
+        dataType: "json",
         data: {
             "username": username,
             "password": password

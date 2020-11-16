@@ -31,6 +31,8 @@ namespace phpformsframework\libs;
  */
 class Dir
 {
+    private const ERROR_PATH_NOT_FOUND      = "path not found: ";
+
     /**
      * @param string $what
      * @param bool $relative
@@ -38,7 +40,7 @@ class Dir
      */
     public static function findAssetPath(string $what, $relative = false) : ?string
     {
-        return self::getDiskPath($what, "assets", $relative);
+        return self::getDiskPath($what, Constant::RESOURCE_ASSETS, $relative);
     }
     /**
      * @param string $what
@@ -47,7 +49,7 @@ class Dir
      */
     public static function findAppPath(string $what, $relative = false) : ?string
     {
-        return self::getDiskPath($what, Config::APP_BASE_NAME, $relative);
+        return self::getDiskPath($what, Constant::RESOURCE_APP, $relative);
     }
 
     /**
@@ -57,7 +59,7 @@ class Dir
      */
     public static function findCachePath(string $what, $relative = false) : ?string
     {
-        return self::getDiskPath($what, "cache", $relative);
+        return self::getDiskPath($what, Constant::RESOURCE_CACHE, $relative);
     }
 
     /**
@@ -66,7 +68,7 @@ class Dir
      */
     public static function findViewPath($relative = false) : ?string
     {
-        return self::getDiskPath("views", Config::APP_BASE_NAME, $relative);
+        return self::getDiskPath(Constant::RESOURCE_VIEWS, Constant::RESOURCE_APP, $relative);
     }
 
     /**
@@ -77,24 +79,24 @@ class Dir
      */
     private static function getDiskPath(string $what, string $bucket, $relative = false) : ?string
     {
-        $path                                                       = Config::getDir($what, $bucket);
+        $path                               = Config::getDir($what, $bucket);
         if ($path) {
             return ($relative
                 ? $path
                 : realpath(Constant::DISK_PATH . $path)
             );
         } else {
-            Error::registerWarning("path not found: " . $what);
+            Error::registerWarning(self::ERROR_PATH_NOT_FOUND . $what);
 
             return false;
         }
     }
 
     /**
-     * @param string $abs_path
+     * @param string|null $abs_path
      * @return bool
      */
-    public static function checkDiskPath($abs_path)
+    public static function checkDiskPath(string $abs_path = null) : bool
     {
         return strpos(realpath($abs_path), Constant::DISK_PATH) === 0;
     }

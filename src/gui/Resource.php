@@ -46,7 +46,17 @@ class Resource extends Mappable implements Dumpable
 {
     const ERROR_BUCKET                          = "resource";
 
-    private const WIDGET_LABEL                  = "widgets";
+    public const TYPE_ASSET_CSS                 = Constant::RESOURCE_ASSET_CSS;
+    public const TYPE_ASSET_JS                  = Constant::RESOURCE_ASSET_JS;
+    public const TYPE_ASSET_FONTS               = Constant::RESOURCE_ASSET_FONTS;
+    public const TYPE_ASSET_IMAGES              = Constant::RESOURCE_ASSET_IMAGES;
+
+    public const TYPE_EMAIL                     = Constant::RESOURCE_EMAIL;
+    public const TYPE_LAYOUTS                   = Constant::RESOURCE_LAYOUTS;
+    public const TYPE_VIEWS                     = Constant::RESOURCE_VIEWS;
+    public const TYPE_CONTROLLERS               = Constant::RESOURCE_CONTROLLERS;
+    public const TYPE_WIDGETS                   = Constant::RESOURCE_WIDGETS;
+
     /**
      * @var Resource
      */
@@ -86,9 +96,10 @@ class Resource extends Mappable implements Dumpable
     /**
      * @param string $name
      * @param string $type
-     * @return string|null
+     * @return string|array|null
+     * @todo da tipizzare
      */
-    public static function get(string $name, string $type) : ?string
+    public static function get(string $name, string $type)
     {
         if (!self::$singleton) {
             self::$singleton                    = new Resource();
@@ -121,7 +132,7 @@ class Resource extends Mappable implements Dumpable
         if (!self::$singleton) {
             self::$singleton = new Resource();
         }
-        return self::$singleton->resources[self::WIDGET_LABEL][$name] ?? [];
+        return self::$singleton->resources[self::TYPE_WIDGETS][$name] ?? [];
     }
 
     /**

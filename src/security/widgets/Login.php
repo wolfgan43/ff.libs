@@ -45,11 +45,11 @@ class Login extends Widget
     /**
      * @throws Exception
      */
-    public function get(): void
+    protected function get(): void
     {
         if (User::isLogged()) {
             $config                 = $this->getConfig();
-            Logout::displayHtml([
+            $this->load(Logout::class, [
                 "error"             => $config->error,
                 "redirect"          => $config->redirect
             ]);
@@ -112,13 +112,13 @@ class Login extends Widget
     /**
      * @throws Exception
      */
-    public function post(): void
+    protected function post(): void
     {
         $config                                 = $this->getConfig();
         $responseData                           = User::login($this->request->username, $this->request->password, $this->request->permanent);
         if (!$responseData->isError()) {
             if ($this->aclVerify()) {
-                $responseData->set("welcome", Welcome::displayJson());
+                $responseData->set("welcome", Welcome::toJson());
             } else {
                 $this->api($config->api->logout);
                 $responseData->clear();
@@ -130,17 +130,17 @@ class Login extends Widget
         $this->send($responseData);
     }
 
-    public function put(): void
+    protected function put(): void
     {
         // TODO: Implement put() method.
     }
 
-    public function delete(): void
+    protected function delete(): void
     {
         // TODO: Implement delete() method.
     }
 
-    public function patch(): void
+    protected function patch(): void
     {
         // TODO: Implement patch() method.
     }

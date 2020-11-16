@@ -13,7 +13,7 @@ class MaintenanceController extends Controller
     /**
      * @throws Exception
      */
-    public function get(): void
+    protected function get(): void
     {
         $this->layout()
             ->addContent("site under maintenance")
@@ -23,7 +23,7 @@ class MaintenanceController extends Controller
     /**
      *
      */
-    public function post(): void
+    protected function post(): void
     {
         // TODO: Implement post() method.
     }
@@ -31,7 +31,7 @@ class MaintenanceController extends Controller
     /**
      *
      */
-    public function put(): void
+    protected function put(): void
     {
         // TODO: Implement put() method.
     }
@@ -39,7 +39,7 @@ class MaintenanceController extends Controller
     /**
      *
      */
-    public function delete(): void
+    protected function delete(): void
     {
         // TODO: Implement delete() method.
     }
@@ -47,7 +47,7 @@ class MaintenanceController extends Controller
     /**
      *
      */
-    public function patch(): void
+    protected function patch(): void
     {
         // TODO: Implement patch() method.
     }

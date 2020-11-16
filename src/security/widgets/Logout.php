@@ -19,10 +19,10 @@ class Logout extends Widget
     /**
      * @throws Exception
      */
-    public function get(): void
+    protected function get(): void
     {
         if (User::isLogged()) {
-            $view = $this->view("index");
+            $view = $this->view();
             $config = $view->getConfig();
 
             $this->displayUser($view, $config);
@@ -37,22 +37,22 @@ class Logout extends Widget
         }
     }
 
-    public function post(): void
+    protected function post(): void
     {
-        User::logout();
+        $this->send(User::logout());
     }
 
-    public function put(): void
+    protected function put(): void
     {
         // TODO: Implement put() method.
     }
 
-    public function delete(): void
+    protected function delete(): void
     {
         // TODO: Implement delete() method.
     }
 
-    public function patch(): void
+    protected function patch(): void
     {
         // TODO: Implement patch() method.
     }

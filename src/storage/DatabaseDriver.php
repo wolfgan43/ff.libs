@@ -200,7 +200,7 @@ abstract class DatabaseDriver implements Constant
      * todo da tipizzare
      * @param array $Array
      * @param string $type
-     * @return string|null
+     * @return string|array|null
      */
     protected function toSqlArray(string $type, array $Array)
     {

@@ -19,7 +19,7 @@ class Registration extends Widget
     /**
      * @throws Exception
      */
-    public function get(): void
+    protected function get(): void
     {
         $view                       = $this->view("index");
         $config                     = $view->getConfig();
@@ -44,7 +44,7 @@ class Registration extends Widget
     /**
      * @throws Exception
      */
-    public function post(): void
+    protected function post(): void
     {
         $config                     = $this->getConfig();
         $response                   = $this->api($config->api->registration, (array) $this->request);
@@ -57,17 +57,17 @@ class Registration extends Widget
         }
     }
 
-    public function put(): void
+    protected function put(): void
     {
         // TODO: Implement put() method.
     }
 
-    public function delete(): void
+    protected function delete(): void
     {
         // TODO: Implement delete() method.
     }
 
-    public function patch(): void
+    protected function patch(): void
     {
         // TODO: Implement patch() method.
     }

@@ -10,7 +10,7 @@
     },
     "views": {
       "flag": 8,
-      "type": "common",
+      "type": "views",
       "filter": [
         "html",
         "tpl"

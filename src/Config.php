@@ -44,11 +44,11 @@ class Config implements Dumpable
 {
     public const ERROR_BUCKET                                               = "config";
 
-    public const APP_BASE_NAME                                              = "app";
+    private const APP_BASE_NAME                                             = Constant::RESOURCE_APP;
     private const LIBS_BASE_NAME                                            = "libs-base";
     private const LIBS_NAME                                                 = "libs";
 
-    private const SCHEMA_CONF                                               = self::ERROR_BUCKET;
+    private const SCHEMA_CONF                                               = "config";
     private const SCHEMA_DIRSTRUCT                                          = "dirs";
     private const SCHEMA_PAGES                                              = "pages";
     private const SCHEMA_ENGINE                                             = "engine";

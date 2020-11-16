@@ -30,6 +30,7 @@ use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dir;
 use phpformsframework\libs\dto\DataHtml;
+use phpformsframework\libs\gui\Controller;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Mappable;
 use phpformsframework\libs\international\Locale;
@@ -50,7 +51,6 @@ class ControllerHtml extends Mappable
 {
     use AssetsManager;
 
-    private const TEMPLATE_TYPE                 = "responsive";
     private const FRAMEWORK_CSS                 = "frameworkcss_";
     private const FONT_ICON                     = "fonticon_";
 
@@ -96,13 +96,13 @@ class ControllerHtml extends Mappable
      * PageHtml constructor.
      * @param string $path_info
      * @param int $http_status_code
-     * @param string|null $map_name
+     * @param string $template_type
      */
-    public function __construct(string $path_info, int $http_status_code, string $map_name = null)
+    public function __construct(string $path_info, int $http_status_code, string $template_type)
     {
         Debug::stopWatch("gui/controller/html");
 
-        parent::__construct($map_name, self::class);
+        parent::__construct($template_type, self::class);
 
         $this->loadMaps($this->libs, self::class);
 
@@ -149,7 +149,7 @@ class ControllerHtml extends Mappable
     public function setLayout(string $name = null, string $theme = null) : self
     {
         if ($name) {
-            $this->layout                       = Resource::load($name, "layouts");
+            $this->layout                       = Resource::load($name, Resource::TYPE_LAYOUTS);
         }
 
         return $this;
@@ -169,7 +169,7 @@ class ControllerHtml extends Mappable
     }
 
     /**
-     * @param string|DataHtml|View $content
+     * @param string|DataHtml|View|Controller $content
      * @return false|string|null
      * @throws Exception
      */
@@ -190,15 +190,16 @@ class ControllerHtml extends Mappable
     /**
      * @param View|DataHtml $obj
      * @return string|null
+     * @throws Exception
      */
     private function getHtmlByObject($obj) : ?string
     {
         $html                                   = null;
-        if ($obj instanceof View) {
+        if ($obj instanceof View || $obj instanceof Controller) {
             $html                               = $obj->display();
         } elseif ($obj instanceof DataHtml) {
             $this->injectAssets($obj);
-            $html                               = $obj->html;
+            $html                               = $obj->output();
         }
 
         return $html;
@@ -214,7 +215,7 @@ class ControllerHtml extends Mappable
         $html                                   = null;
         if (strpos($string, DIRECTORY_SEPARATOR) === 0) {
             if (strpos($string, Constant::DISK_PATH) !== 0) {
-                $string                         = Dir::findAppPath("views") . $string;
+                $string                         = Dir::findViewPath() . $string;
             }
             if (pathinfo($string, PATHINFO_EXTENSION) == "php") {
                 ob_start();
@@ -316,7 +317,7 @@ class ControllerHtml extends Mappable
     private function parseFavicons() : string
     {
         $res                                    = "";
-        $favicon                                = $this->getAsset("favicon", "images");
+        $favicon                                = Resource::get("favicon", Resource::TYPE_ASSET_IMAGES);
         if ($favicon) {
             foreach ($this->favicons as $properties) {
                 $res                            .= $this::NEWLINE . '<link rel="' . $properties["rel"] . '" sizes="' . $properties["sizes"] . '" href="' . Media::getUrl($favicon, $properties["sizes"], "url") . '">';
@@ -398,8 +399,9 @@ class ControllerHtml extends Mappable
             array_values($this->contents),
             $this->layout
         );
+
         $commons = array();
-        $resources = Resource::type("common");
+        $resources = Resource::type(Resource::TYPE_VIEWS);
         foreach ($resources as $key => $content) {
             $tpl_key = "{" . $key . "}";
             if (strpos($res, $tpl_key) !== false) {
@@ -529,15 +531,5 @@ class ControllerHtml extends Mappable
         $this->error = $error;
 
         return $this;
-    }
-
-    /**
-     * @param string $what
-     * @param string $type
-     * @return string
-     */
-    public function getAsset(string $what, string $type) : string
-    {
-        return Resource::get($what, $type);
     }
 }

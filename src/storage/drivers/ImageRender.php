@@ -36,7 +36,11 @@ use stdClass;
 abstract class ImageRender
 {
     const ERROR_BUCKET                          = "storage";
-    const FONTS_DISK_PATH                       = Constant::LIBS_FF_DISK_PATH . DIRECTORY_SEPARATOR ."assets" . DIRECTORY_SEPARATOR . "fonts";
+
+    protected const RENDER_ASSETS_PATH          = DIRECTORY_SEPARATOR . Constant::RESOURCE_ASSETS;
+
+    private const FONTS_DISK_PATH               = Constant::LIBS_FF_DISK_PATH . self::RENDER_ASSETS_PATH . DIRECTORY_SEPARATOR . Constant::RESOURCE_ASSET_FONTS;
+
     // PUBLIC
     public $new_res_max_x						= null;
     public $new_res_max_y						= null;
@@ -425,7 +429,7 @@ abstract class ImageRender
         $real_h = $src_res_print_y_end - $src_res_print_y_start;
 
         do {
-            $bbox = imagettfbbox($this->new_res_font["size"], 0, $this::FONTS_DISK_PATH . DIRECTORY_SEPARATOR . $this->new_res_font["type"], $this->new_res_font["caption"]);
+            $bbox = imagettfbbox($this->new_res_font["size"], 0, self::FONTS_DISK_PATH . DIRECTORY_SEPARATOR . $this->new_res_font["type"], $this->new_res_font["caption"]);
 
             $text_width_top = abs($bbox[6]) + abs($bbox[4]);
             $text_width_bottom = abs($bbox[0]) + abs($bbox[2]);
@@ -486,7 +490,7 @@ abstract class ImageRender
             $src_res_font_x_start,
             $src_res_font_y_start,
             $color_font,
-            $this::FONTS_DISK_PATH . DIRECTORY_SEPARATOR . $this->new_res_font["type"],
+            self::FONTS_DISK_PATH . DIRECTORY_SEPARATOR . $this->new_res_font["type"],
             $this->new_res_font["caption"]
         );
     }

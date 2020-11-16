@@ -18,14 +18,15 @@ trait CommonTemplate
     /**
      * @param View $view
      * @param stdClass $config
+     * @throws Exception
      */
-    private function setLogo($view, stdClass $config)
+    private function setLogo(View $view, stdClass $config)
     {
         if (!empty($config->logo)) {
             $logo = $config->logo_path ?? "nobrand";
 
             $view->assign("logo_url", $this->script_path);
-            $view->assign("logo_path", $this->getWebUrlAsset($logo, $config->logo));
+            $view->assign("logo_path", $this->media->imageUrl($logo, $config->logo));
             $view->parse("SezLogo", false);
         }
     }
@@ -34,7 +35,7 @@ trait CommonTemplate
      * @param View $view
      * @param stdClass $config
      */
-    private function setError($view, stdClass $config)
+    private function setError(View $view, stdClass $config)
     {
         if (!empty($config->error)) {
             $view->assign(
@@ -49,7 +50,7 @@ trait CommonTemplate
      * @param View $view
      * @param stdClass $config
      */
-    private function setHeader($view, stdClass $config)
+    private function setHeader(View $view, stdClass $config)
     {
         if (!empty($config->title)) {
             $view->assign("title", $this->translate($config->title));
@@ -65,7 +66,7 @@ trait CommonTemplate
      * @param View $view
      * @param stdClass $config
      */
-    private function setDomain($view, stdClass $config)
+    private function setDomain(View $view, stdClass $config)
     {
         if (!empty($config->domain)) {
             $view->parse("SezDomain", false);
@@ -78,7 +79,7 @@ trait CommonTemplate
      * @param View $view
      * @param stdClass $config
      */
-    private function setDefault($view, stdClass $config)
+    private function setDefault(View $view, stdClass $config)
     {
         $view->assign("csrf_token", Hash::csrf());
         if (!empty($config->redirect)) {
@@ -91,7 +92,7 @@ trait CommonTemplate
      * @param stdClass $config
      * @throws Exception
      */
-    private function displayUser($view, stdClass $config)
+    private function displayUser(View $view, stdClass $config)
     {
         $user = User::get();
         if ($user) {

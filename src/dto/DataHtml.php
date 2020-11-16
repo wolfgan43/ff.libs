@@ -44,10 +44,7 @@ class DataHtml extends DataAdapter
      */
     public function getJs(string $key): ?string
     {
-        return (isset($this->js[$key])
-            ? $this->js[$key]
-            : null
-        );
+        return $this->js[$key] ?? null;
     }
 
     /**
@@ -56,22 +53,7 @@ class DataHtml extends DataAdapter
      */
     public function getCss(string $key): ?string
     {
-        return (isset($this->css[$key])
-            ? $this->css[$key]
-            : null
-        );
-    }
-
-    /**
-     * @param string $key
-     * @return string|null
-     */
-    public function getImage(string $key): ?string
-    {
-        return (isset($this->images[$key])
-            ? $this->images[$key]
-            : null
-        );
+        return $this->css[$key] ?? null;
     }
 
     /**
@@ -80,10 +62,7 @@ class DataHtml extends DataAdapter
      */
     public function getFont(string $key): ?string
     {
-        return (isset($this->fonts[$key])
-            ? $this->fonts[$key]
-            : null
-        );
+        return $this->fonts[$key] ?? null;
     }
 
     /**
@@ -93,7 +72,7 @@ class DataHtml extends DataAdapter
      */
     public function find(string $type, string $key) : ?string
     {
-        return $this->$type[$key] ?? null;
+        return $this->{$type}[$key] ?? null;
     }
 
     /**

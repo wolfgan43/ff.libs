@@ -50,7 +50,7 @@ class ErrorController extends Controller
      * @return mixed
      * @throws Exception
      */
-    public function get() : void
+    protected function get() : void
     {
         $error = Translator::getWordByCode($this->error);
 
@@ -63,17 +63,17 @@ class ErrorController extends Controller
             $errorView->assign("email_support", $this->email_support);
             $errorView->parse("SezButtonSupport", false);
         }
-
+        
         $this->layout()
             ->addContent($errorView)
-            ->debug($error)
-            ->display();
+            ->debug($error);
+
     }
 
     /**
      * @return mixed
      */
-    public function post() : void
+    protected function post() : void
     {
         // TODO: Implement post() method.
     }
@@ -81,7 +81,7 @@ class ErrorController extends Controller
     /**
      * @return mixed
      */
-    public function put() : void
+    protected function put() : void
     {
         // TODO: Implement put() method.
     }
@@ -89,7 +89,7 @@ class ErrorController extends Controller
     /**
      * @return mixed
      */
-    public function delete() : void
+    protected function delete() : void
     {
         // TODO: Implement delete() method.
     }
@@ -97,7 +97,7 @@ class ErrorController extends Controller
     /**
      * @return mixed
      */
-    public function patch() : void
+    protected function patch() : void
     {
         // TODO: Implement patch() method.
     }

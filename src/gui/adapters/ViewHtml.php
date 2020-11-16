@@ -380,7 +380,6 @@ class ViewHtml implements ViewAdapter
      */
     public function assign($data, $value = null) : ViewAdapter
     {
-
         if (is_array($data)) {
             $this->ParsedBlocks             = array_replace($this->ParsedBlocks, $data);
         } else {

@@ -257,7 +257,7 @@ class RequestPage extends Mappable
     public function mapRequest(string $namespace, string $method) : object
     {
         $mapRequest = $this->map ?? $namespace . self::NAMESPACE_MAP_REQUEST . ucfirst($method);
-        if (class_exists($mapRequest)) {
+        if ($mapRequest != stdClass::class && class_exists($mapRequest)) {
             $obj = new $mapRequest();
             $this->autoMapping($this->getRequest(self::REQUEST_RAWDATA), $obj);
         } else {

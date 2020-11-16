@@ -7,7 +7,6 @@ use phpformsframework\libs\dto\DataAdapter;
 use phpformsframework\libs\dto\DataHtml;
 use phpformsframework\libs\Response;
 use phpformsframework\libs\storage\Filemanager;
-use phpformsframework\libs\util\ResourceConverter;
 use Exception;
 
 /**
@@ -17,17 +16,10 @@ use Exception;
 abstract class Widget extends Controller
 {
     use AssetsManager;
-    use ResourceConverter;
 
-    private const RENDER_SNIPPET                    = "snippet";
-    private const RENDER_PAGE                       = "page";
-    private const RENDER_JSON                       = "json";
+    private const VIEW_DEFAULT                      = "index";
 
     protected const ERROR_BUCKET                    = "widget";
-
-    private static $render                          = null;
-
-    private const NAME_SPACE_BASIC                  = "widgets\\";
 
     protected $requiredJs                           = [];
     protected $requiredCss                          = [];
@@ -41,73 +33,39 @@ abstract class Widget extends Controller
      * @var View[]
      */
     private $views                                  = [];
-    /**
-     * @var array
-     */
-    private $view                                   = "index";
 
     /**
-     * @param array|null $config
-     * @return DataHtml
-     * @throws Exception
+     * @var View
      */
-    public static function snippet(array $config = null) : DataHtml
-    {
-        self::$render                               = self::RENDER_SNIPPET;
-        return self::widget($config)->toDataHtml();
-    }
-
-    /**
-     * @param array|null $config
-     * @throws Exception
-     */
-    public static function page(array $config = null) : void
-    {
-        self::$render                               = self::RENDER_PAGE;
-
-        $widget = self::widget($config);
-        $widget->layout()
-            ->injectAssets($widget)
-            ->addContent($widget->html)
-            ->display();
-    }
-
-    /**
-     * @param array|null $config
-     */
-    protected static function displayHtml(array $config = null) : void
-    {
-        static::{self::$render}($config);
-    }
+    private $view                                   = null;
+    private $template                               = null;
 
     /**
      * @param array|null $config
      * @return array
      * @throws Exception
      */
-    protected static function displayJson(array $config = null) : array
+    public static function toJson(array $config = null) : array
     {
-        return self::widget($config, "get")->toArray();
+        $controller = new static($config);
+        $controller->render("get");
+
+        return $controller->toArray();
     }
 
     /**
      * @param array|null $config
-     * @param string|null $method
-     * @return static
+     * @return DataHtml
      * @throws Exception
      */
-    private static function widget(array $config = null, string $method = null) : self
+    public static function toHtml(array $config = null) : DataHtml
     {
-        Debug::stopWatch(static::ERROR_BUCKET . "/" . self::getClassName());
+        $controller = new static($config);
+        $controller->render("get");
 
-        $widget = new static($config);
-
-        $widget->display($method);
-
-        Debug::stopWatch(static::ERROR_BUCKET . "/" . self::getClassName());
-
-        return $widget;
+        return $controller->toDataHtml();
     }
+
 
     /**
      * Widget constructor.
@@ -125,18 +83,54 @@ abstract class Widget extends Controller
      * @param string|null $method
      * @throws Exception
      */
-    public function display(string $method = null): void
+    private function render(string $method = null): void
     {
-        if ($method) {
-            $this->$method();
-        } else {
-            parent::display();
-        }
-
+        $this->{$method ?? $this->method}();
         $this->parseAssets();
 
         $this->html                                 = $this->getView()->display();
     }
+
+    public function display(): void
+    {
+        $this->render();
+
+        $this->layout()
+            ->injectAssets($this)
+            ->addContent($this->html)
+            ->display();
+    }
+
+    /**
+     * @param array|null $config
+     * @return DataHtml
+     * @throws Exception
+     */
+    public function snippet(array $config = null) : DataHtml
+    {
+        $this->config                               = $config ?? [];
+        $this->render();
+
+        return $this->toDataHtml();
+    }
+
+    /**
+     * @param string $widgetName
+     * @param array|null $config
+     * @throws Exception
+     */
+    protected function load(string $widgetName, array $config = null) : void
+    {
+        /**
+         * @var Widget $controller
+         */
+        $controller = new $widgetName($config);
+        $controller->render($this->method);
+
+        $this->injectAssets($controller);
+        $this->view = $controller->view;
+    }
+
 
     /**
      * @param DataAdapter $data
@@ -166,7 +160,6 @@ abstract class Widget extends Controller
             "js"        => $this->js,
             "css"       => $this->css,
             "fonts"     => $this->fonts,
-            "images"    => $this->images,
             "html"      => $this->html
         ]);
     }
@@ -178,10 +171,10 @@ abstract class Widget extends Controller
     private function getView() : View
     {
         if (!$this->view) {
-            throw new Exception("View missing for " . $this->name, 400);
+            throw new Exception("View missing for " . $this->name, 403);
         }
 
-        return $this->views[$this->view];
+        return $this->view;
     }
 
     /**
@@ -189,21 +182,21 @@ abstract class Widget extends Controller
      * @param string|null $theme_name
      * @return View
      * @throws Exception
+     * @todo da gestire il tema
      */
     protected function view(string $template_name = null, string $theme_name = null) : View
     {
-        $this->view                                 = $template_name ?? $this->view;
-        if (!isset($this->views[$this->view])) {
-            $resources                              = $this->getResources();
-            if (empty($resources->html[$this->view])) {
-                throw new Exception("Template not found for Widget " . $this->name, 404);
-            }
-
-            $this->views[$this->view]               = (new View($this->config($resources->cfg[$this->view] ?? null)))
-                                                        ->fetch($resources->html[$this->view]);
+        $this->template                             = $template_name ?? self::VIEW_DEFAULT;
+        $resources                                  = $this->getResources();
+        if (empty($resources->html[$this->template])) {
+            throw new Exception("Template not found for Widget " . $this->name, 404);
         }
 
-        return $this->views[$this->view];
+        if (!isset($this->views[$this->template])) {
+            $this->views[$this->template]           = (new View($this->config($resources->cfg[$this->template] ?? null)))->fetch($resources->html[$this->template]);
+        }
+
+        return $this->view                          =& $this->views[$this->template];
     }
 
     /**
@@ -212,7 +205,7 @@ abstract class Widget extends Controller
      */
     protected function getConfig(string $template_name = null) : object
     {
-        return json_decode(json_encode($this->config($this->getResources()->cfg[$template_name ?? $this->view] ?? null)));
+        return json_decode(json_encode($this->config($this->getResources()->cfg[$template_name ?? self::VIEW_DEFAULT] ?? null)));
     }
 
     /**
@@ -250,15 +243,15 @@ abstract class Widget extends Controller
     {
         $widget_name                            = $this->getSkin();
         $resources                              = $this->getResources();
-
+        $template                               = $this->template;
         $this->parseRequiredAssets();
-        if (!empty($resources->js[$this->view])) {
-            $this->addJs($widget_name, $resources->js[$this->view]);
-        }
-        if (!empty($resources->css[$this->view])) {
-            $this->addCss($widget_name, $resources->css[$this->view]);
-        }
 
+        if (!empty($resources->js[$template])) {
+            $this->addJs($widget_name, $resources->js[$template]);
+        }
+        if (!empty($resources->css[$template])) {
+            $this->addCss($widget_name, $resources->css[$template]);
+        }
     }
 
     /**

@@ -19,7 +19,7 @@ class Recover extends Widget
     /**
      * @throws Exception
      */
-    public function get(): void
+    protected function get(): void
     {
         $view                       = $this->view("index");
         $config                     = $view->getConfig();
@@ -34,7 +34,7 @@ class Recover extends Widget
         $this->setHeader($view, $config);
     }
 
-    public function post(): void
+    protected function post(): void
     {
         $config                     = $this->getConfig();
         if ($this->path_info == "/confirm") {
@@ -50,6 +50,8 @@ class Recover extends Widget
     private function confirm()
     {
         $view                       = $this->view("confirm");
+        $config                     = $view->getConfig();
+
         $view->assign("recover_url", $this->getWebUrl($this->script_path . $this->path_info));
 
         $this->setDefault($view, $config);
@@ -58,17 +60,17 @@ class Recover extends Widget
         $this->setHeader($view, $config);
     }
 
-    public function put(): void
+    protected function put(): void
     {
         // TODO: Implement put() method.
     }
 
-    public function delete(): void
+    protected function delete(): void
     {
         // TODO: Implement delete() method.
     }
 
-    public function patch(): void
+    protected function patch(): void
     {
         // TODO: Implement patch() method.
     }

@@ -78,9 +78,9 @@ class Media implements Configurable
     protected const ERROR_BUCKET                                            = "storage";
 
     private const RENDER_MEDIA_PATH                                         = DIRECTORY_SEPARATOR . "media";
-    private const RENDER_ASSETS_PATH                                        = DIRECTORY_SEPARATOR . "assets";
-    private const RENDER_WIDGET_PATH                                        = DIRECTORY_SEPARATOR . "widgets";
-    private const RENDER_IMAGE_PATH                                         = DIRECTORY_SEPARATOR . "images";
+    private const RENDER_ASSETS_PATH                                        = DIRECTORY_SEPARATOR . Constant::RESOURCE_ASSETS;
+    private const RENDER_WIDGET_PATH                                        = DIRECTORY_SEPARATOR . Constant::RESOURCE_WIDGETS;
+    private const RENDER_IMAGE_PATH                                         = DIRECTORY_SEPARATOR . Constant::RESOURCE_ASSET_IMAGES;
     private const MIMETYPE                                                  = ValidatorFile::MIMETYPE;
 
     private const MIMETYPE_DEFAULT                                          = "text/plain";
@@ -177,6 +177,18 @@ class Media implements Configurable
     /**
      * @param string $file
      * @param string|null $mode
+     * @param string $key
+     * @return string
+     * @throws Exception
+     */
+    public static function getUrl(string $file, string $mode = null, string $key = "url") : string
+    {
+        return self::getInfo($file, $mode)->$key ?? "";
+    }
+
+    /**
+     * @param string $file
+     * @param string|null $mode
      * @return stdClass
      * @throws Exception
      */
@@ -194,11 +206,19 @@ class Media implements Configurable
 
         $query                                                      = null;
         if (strpos($file, "/") === false) {
-            $file                                                   = Resource::get($file, "images");
+            $file                                                   = Resource::get($file, Resource::TYPE_ASSET_IMAGES);
         }
         if (empty($file)) {
             return self::returnInfo();
         }
+
+        if (strpos($file, "..") !== false) {
+            $file                                                   = realpath($file);
+            if (strpos($file, Constant::DISK_PATH) !== 0) {
+                return self::returnInfo();
+            }
+        }
+
         $arrFile                                                    = (object) pathinfo($file);
         if ($arrFile->extension == "svg") {
             return self::returnInfo(
@@ -215,7 +235,7 @@ class Media implements Configurable
             $fileAsset                                              = explode(static::RENDER_WIDGET_PATH, $arrFile->dirname, 2);
             $arrFile->dirname                                       = $fileAsset[1] . DIRECTORY_SEPARATOR . $arrFile->extension;
         } else {
-            foreach (Config::getDirBucket("assets") as $type => $asset) {
+            foreach (Config::getDirBucket(Constant::RESOURCE_ASSETS) as $type => $asset) {
                 $fileAsset = explode($asset["path"], $arrFile->dirname, 2);
                 if (count($fileAsset) == 2) {
                     $showfiles                                      = Constant::SITE_PATH . static::RENDER_ASSETS_PATH;
@@ -229,7 +249,7 @@ class Media implements Configurable
 
         $dirfilename                                                = $showfiles . ($arrFile->dirname == DIRECTORY_SEPARATOR ? "" : $arrFile->dirname) . DIRECTORY_SEPARATOR . $arrFile->filename;
         $diskfile                                                   = $dirfilename . ($arrFile->filename && $mode ? "-" : "") . $mode . ($arrFile->extension ? "." . $arrFile->extension : "") . $query;
-        
+
         return self::returnInfo(
             $diskfile,
             $arrFile->extension,
@@ -248,18 +268,6 @@ class Media implements Configurable
             "mode"                  => $mode,
             "url"                   => $url
         );
-    }
-
-    /**
-     * @param string $file
-     * @param string|null $mode
-     * @param string $key
-     * @return string
-     * @throws Exception
-     */
-    public static function getUrl(string $file, string $mode = null, string $key = "url") : ?string
-    {
-        return self::getInfo($file, $mode)->$key;
     }
 
     /**
@@ -452,9 +460,9 @@ class Media implements Configurable
                 default:
             }
 
-            $abs_path                                               = Resource::get($filename, "images");
+            $abs_path                                               = Resource::get($filename, Resource::TYPE_ASSET_IMAGES);
             if (!$abs_path) {
-                $abs_path = Resource::get("error", "images");
+                $abs_path = Resource::get("error", Resource::TYPE_ASSET_IMAGES);
             }
             if (!$abs_path) {
                 Error::register("Icon " . $filename . " not found", static::ERROR_BUCKET);
@@ -468,7 +476,7 @@ class Media implements Configurable
                 $res                                                = $abs . $basename;
             }
         } else {
-            $abs_path = Resource::get("unknown", "images");
+            $abs_path = Resource::get("unknown", Resource::TYPE_ASSET_IMAGES);
             if (!$abs_path) {
                 Error::register("Icon unknown not found", static::ERROR_BUCKET);
             }
@@ -778,7 +786,7 @@ class Media implements Configurable
      */
     private function basepathAsset() : string
     {
-        return str_replace($this->filesource, "", Resource::get($this->source->filename, "images"));
+        return str_replace($this->filesource, "", Resource::get($this->source->filename, Resource::TYPE_ASSET_IMAGES));
     }
 
     /**
@@ -1053,8 +1061,8 @@ class Media implements Configurable
     private function basepathCache() : string
     {
         return ($this->pathinfo->render == static::RENDER_ASSETS_PATH
-            ? Dir::findCachePath("assets")
-            : Dir::findCachePath("thumbs")
+            ? Dir::findCachePath(Constant::RESOURCE_CACHE_ASSETS)
+            : Dir::findCachePath(Constant::RESOURCE_CACHE_THUMBS)
         );
     }
 

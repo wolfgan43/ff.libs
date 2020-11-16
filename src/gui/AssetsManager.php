@@ -13,24 +13,22 @@ use Exception;
  */
 trait AssetsManager
 {
-    public $js                               = array();
-    public $css                              = array();
-    public $images                           = array();
-    public $fonts                            = array();
+    public $js                                  = array();
+    public $css                                 = array();
+    public $fonts                               = array();
 
     public $html                                = null;
 
 
     /**
-     * @param self $assets
+     * @param object $assets
      * @return self
      */
-    public function injectAssets($assets) : self
+    public function injectAssets(object $assets) : self
     {
         $this->js                               = $this->js     + $assets->js;
         $this->css                              = $this->css    + $assets->css;
         $this->fonts                            = $this->fonts  + $assets->fonts;
-        $this->images                           = $this->images + $assets->images;
         $this->html                             = $assets->html;
 
         return $this;
@@ -133,7 +131,7 @@ trait AssetsManager
      */
     public function addJs(string $key, string $url = null) : self
     {
-        return $this->addAsset($this->js, "js", $key, $url);
+        return $this->addAsset($this->js, Resource::TYPE_ASSET_JS, $key, $url);
     }
 
     /**
@@ -144,7 +142,7 @@ trait AssetsManager
      */
     public function addCss(string $key, string $url = null) : self
     {
-        return $this->addAsset($this->css, "css", $key, $url);
+        return $this->addAsset($this->css, Resource::TYPE_ASSET_CSS, $key, $url);
     }
 
     /**
@@ -155,18 +153,7 @@ trait AssetsManager
      */
     public function addFont(string $key, string $url = null) : self
     {
-        return $this->addAsset($this->fonts, "fonts", $key, $url);
-    }
-
-    /**
-     * @param string $key
-     * @param string|null $url
-     * @return self
-     * @throws Exception
-     */
-    public function addImage(string $key, string $url = null) : self
-    {
-        return $this->addAsset($this->images, "images", $key, $url);
+        return $this->addAsset($this->fonts, Resource::TYPE_ASSET_FONTS, $key, $url);
     }
 
     public function addJavascript(string $key, string $location = null, bool $async = false) : self
@@ -190,7 +177,6 @@ trait AssetsManager
             "js"        => $this->js,
             "css"       => $this->css,
             "fonts"     => $this->fonts,
-            "images"    => $this->images,
             "html"      => $this->html
         ];
     }

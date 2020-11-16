@@ -52,7 +52,39 @@ class Constant
     const API_SCOPE_OP                      = "/*";
     const API_SERVER                        = [];
 
-    const PROJECT_DOCUMENT_ROOT             = DIRECTORY_SEPARATOR . "app";
+    /**
+     * Reference struct folder Assets
+     */
+    const RESOURCE_ASSETS                   = "assets";
+    const RESOURCE_ASSET_CSS                    = "css";
+    const RESOURCE_ASSET_JS                     = "js";
+    const RESOURCE_ASSET_IMAGES                 = "images";
+    const RESOURCE_ASSET_FONTS                  = "fonts";
+
+    /**
+     * Reference struct folder MVC
+     */
+    const RESOURCE_EMAIL                    = "email";
+    const RESOURCE_LAYOUTS                  = "layouts";
+    const RESOURCE_VIEWS                    = "views";
+    const RESOURCE_CONTROLLERS              = "controllers";
+    const RESOURCE_WIDGETS                  = "widgets";
+
+    /**
+     * Reference struct folder Framework
+     */
+    const RESOURCE_APP                      = "app";
+    const RESOURCE_API                      = "api";
+    const RESOURCE_CACHE                    = "cache";
+    const RESOURCE_CACHE_ASSETS                 = self::RESOURCE_ASSETS;
+    const RESOURCE_CACHE_THUMBS                 = "thumbs";
+    const RESOURCE_CONF                     = "conf";
+    const RESOURCE_LIBS                     = "vendor";
+    const RESOURCE_UPLOADS                  = "uploads";
+    const RESOURCE_THEMES                   = "themes";     //@todo da gestire
+
+
+    const PROJECT_DOCUMENT_ROOT             = DIRECTORY_SEPARATOR . self::RESOURCE_APP;
     const PROJECT_DISK_PATH                 = self::DISK_PATH . self::PROJECT_DOCUMENT_ROOT;
 
     const LOCALE_LANG_CODE                  = null; //IT, EN
@@ -64,16 +96,17 @@ class Constant
     /**
      * Disk Settings
      */
-    const LIBS_PATH                         = DIRECTORY_SEPARATOR . "vendor";
-    const CACHE_PATH                        = DIRECTORY_SEPARATOR . "cache";
-    const UPLOAD_PATH                       = DIRECTORY_SEPARATOR . "uploads";
+    const LIBS_PATH                         = DIRECTORY_SEPARATOR . self::RESOURCE_LIBS;
+    const CACHE_PATH                        = DIRECTORY_SEPARATOR . self::RESOURCE_CACHE;
+    const UPLOAD_PATH                       = DIRECTORY_SEPARATOR . self::RESOURCE_UPLOADS;
+
     const VENDOR_LIBS_DIR                   = self::LIBS_PATH . DIRECTORY_SEPARATOR . "phpformsframework" . DIRECTORY_SEPARATOR . "libs";
 
     const DISK_PATH                         = self::DOCUMENT_ROOT;
     const LIBS_DISK_PATH                    = self::DOCUMENT_ROOT . self::LIBS_PATH;
     const LIBS_FF_PATH                      = DIRECTORY_SEPARATOR . "phpformsframework" . DIRECTORY_SEPARATOR . "libs";
     const LIBS_FF_DISK_PATH                 = self::LIBS_DISK_PATH . self::LIBS_FF_PATH;
-    const CONFIG_FF_PATH                    = self::VENDOR_LIBS_DIR . DIRECTORY_SEPARATOR . 'conf';
+    const CONFIG_FF_PATH                    = self::VENDOR_LIBS_DIR . DIRECTORY_SEPARATOR . self::RESOURCE_CONF;
     const CACHE_DISK_PATH                   = self::DISK_PATH . self::CACHE_PATH;
     const UPLOAD_DISK_PATH                  = self::DISK_PATH . self::UPLOAD_PATH;
 

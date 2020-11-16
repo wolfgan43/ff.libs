@@ -36,7 +36,8 @@ use phpformsframework\libs\storage\Media;
  */
 class ImageThumb extends ImageRender
 {
-    const IMAGES_DISK_PATH                      = Constant::LIBS_FF_DISK_PATH . DIRECTORY_SEPARATOR . "assets" . DIRECTORY_SEPARATOR . "images";
+    private const IMAGES_DISK_PATH              = Constant::LIBS_FF_DISK_PATH . self::RENDER_ASSETS_PATH . DIRECTORY_SEPARATOR . Constant::RESOURCE_ASSET_IMAGES;
+
     public $icon_path 			                = null;
     private $icons = array(
                 "text/plain" 					=> "txt.png",
@@ -170,8 +171,8 @@ class ImageThumb extends ImageRender
     {
         if ($this->icon_path && is_file($this->icon_path . DIRECTORY_SEPARATOR . $file)) {
             return $this->icon_path . DIRECTORY_SEPARATOR . $file;
-        } elseif (is_file($this::IMAGES_DISK_PATH . DIRECTORY_SEPARATOR . $file)) {
-            return $this::IMAGES_DISK_PATH . DIRECTORY_SEPARATOR . $file;
+        } elseif (is_file(self::IMAGES_DISK_PATH . DIRECTORY_SEPARATOR . $file)) {
+            return self::IMAGES_DISK_PATH . DIRECTORY_SEPARATOR . $file;
         } else {
             return false;
         }

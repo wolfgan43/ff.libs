@@ -93,7 +93,7 @@ class NoticeEmail extends NoticeAdapter
 
         $this->template = (
             strpos($template, "/") === false
-            ? Resource::get($template, "email")
+            ? Resource::get($template, Resource::TYPE_EMAIL)
             : $template
         );
         if (!$this->template) {

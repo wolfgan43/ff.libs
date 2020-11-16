@@ -40,16 +40,16 @@ class View
     }
 
     /**
-     * @param string $file_path
+     * @param string $template_path
      * @param bool $is_relative
      * @return $this
      */
-    public function fetch(string $file_path, bool $is_relative = false) : View
+    public function fetch(string $template_path, bool $is_relative = false) : View
     {
         $this->adapter->fetch(
             $is_relative
-            ? $this->getViewDiskPath() . $file_path
-            : $file_path
+            ? $this->getViewDiskPath() . $template_path
+            : $template_path
         );
 
         return $this;

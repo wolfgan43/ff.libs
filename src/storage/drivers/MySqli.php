@@ -543,7 +543,7 @@ class MySqli extends DatabaseDriver
      * @return string|null
      * @throws Exception
      */
-    protected function toSqlString(string $type, string $value = null): ?string
+    protected function toSqlString(string $type, $value = null): ?string
     {
         if ($type == self::FTYPE_BOOLEAN || $type == self::FTYPE_BOOL) {
             return $this->tpSqlEscaper((int) (bool) $value);

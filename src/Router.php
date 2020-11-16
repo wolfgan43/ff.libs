@@ -46,6 +46,8 @@ class Router implements Configurable, Dumpable
     const PRIORITY_BOTTOM 		                            = 6;
     const PRIORITY_DEFAULT 		                            = Router::PRIORITY_NORMAL;
 
+    private const CALLER_DEFAULT                            = "display";
+
     private const ERROR_RESPONSE_NO_INSTANCEOF              = "Response must be an instance of dto\DataAdapter";
     private const ERROR_RESPONSE_IS_NULL                    = "Response is null";
 
@@ -170,7 +172,7 @@ class Router implements Configurable, Dumpable
 
             if ($destination) {
                 if (is_array($destination)) {
-                    Response::send(self::caller($destination["obj"], $destination["method"] ?? Request::method(true), self::replaceMatches($rule["matches"], $destination["params"] ?? [])));
+                    Response::send(self::caller($destination["obj"], $destination["method"] ?? self::CALLER_DEFAULT, self::replaceMatches($rule["matches"], $destination["params"] ?? [])));
                 } elseif ($rule["redirect"]) {
                     Response::redirect(self::replaceMatches($rule["matches"], $destination), $rule["redirect"]);
                 } elseif (is_numeric($destination) || ctype_digit($destination)) {
@@ -411,7 +413,7 @@ class Router implements Configurable, Dumpable
             try {
                 self::setRunner($class_name);
                 if ($method && !is_array($method)) {
-                    $output                                         = (new $class_name)->$method(...$params);
+                    $output                                         = (new $class_name())->$method(...$params);
                 }
             } catch (Exception $e) {
                 Response::sendError($e->getCode(), $e->getMessage());

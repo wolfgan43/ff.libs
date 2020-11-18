@@ -3,6 +3,7 @@ namespace phpformsframework\libs\gui;
 
 use phpformsframework\libs\App;
 use phpformsframework\libs\ClassDetector;
+use phpformsframework\libs\Dir;
 use phpformsframework\libs\dto\DataAdapter;
 use phpformsframework\libs\Env;
 use phpformsframework\libs\Error;
@@ -10,6 +11,7 @@ use phpformsframework\libs\gui\adapters\ControllerHtml;
 use phpformsframework\libs\international\InternationalManager;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Response;
+use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\storage\Media;
 use phpformsframework\libs\util\AdapterManager;
 use Exception;
@@ -145,7 +147,186 @@ abstract class Controller
     }
 
 
+    /**
+     * Assets Method
+     * ------------------------------------------------------------------------
+     */
+    protected const ASSET_LOCATION_HEAD         = "head";
+    protected const ASSET_LOCATION_BODY_TOP     = "body_top";
+    protected const ASSET_LOCATION_BODY_BOTTOM  = "body_bottom";
+    protected const ASSET_LOCATION_DEFAULT      = self::ASSET_LOCATION_HEAD;
 
+    private $title              = null; //da gestire
+    private $description        = null; //da gestire
+    private $hreflang           = null; //da gestire
+    private $canonical          = null; //da gestire
+    private $next               = null; //da gestire
+    private $prev               = null; //da gestire
+    private $author             = null; //da gestire
+    private $manifest           = null; //da gestire
+    private $amp                = null; //da gestire
+    private $rss                = null; //da gestire
+
+    private $meta               = [];
+    private $css                = [];
+    private $style              = [];
+    private $font               = [];
+    private $js                 = [];
+    private $js_async           = [];
+    private $js_embed           = [];
+    private $js_template        = [];
+    private $structured_data    = [];
+
+    /**
+     * @param array $ref
+     * @param string $type
+     * @param string $key
+     * @throws Exception
+     */
+    private function addAssetDeps(array &$ref, string $type, string $key) : void
+    {
+        $asset_name                             = "";
+        $assets                                 = explode(".", $key);
+        foreach ($assets as $asset) {
+            $asset_name                         .= $asset;
+            $asset_url                          = Resource::get($asset_name, $type);
+            if ($asset_url) {
+                $ref[]                          = $asset_url;
+            }
+            $asset_name                         .= ".";
+        }
+    }
+
+    /**
+     * @param array $ref
+     * @param string $type
+     * @param string $filename_or_url
+     * @return self
+     * @throws Exception
+     */
+    private function addAsset(array &$ref, string $type, string $filename_or_url) : self
+    {
+        if (Validator::is($filename_or_url, $filename_or_url, "url")) {
+            $ref[]                              = $this->maskEnv($filename_or_url);
+        } elseif (Validator::isFile($filename_or_url)) {
+            if (Dir::checkDiskPath($filename_or_url)) {
+                $ref[]                          = $filename_or_url;
+            } else {
+                $this->addAssetDeps($ref, $type, $filename_or_url);
+            }
+        } else {
+            throw new Exception("Invalid Asset Path: " . $filename_or_url, 500);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param string $key
+     * @param string $content
+     * @param string $type
+     * @return $this
+     */
+    public function addMeta(string $key, string $content, string $type = "name") : self
+    {
+        $this->meta[$key]                       = array(
+            $type       => $key,
+            "content"   => $content
+        );
+
+        return $this;
+    }
+
+    /**
+     * @param string $filename_or_url
+     * @param string|null $device
+     * @param string|null $media_query
+     * @return $this
+     * @throws Exception
+     */
+    protected function addStylesheet(string $filename_or_url, string $device = null, string $media_query = null) : self
+    {
+        $this->addAsset($this->css[$this->attrMedia($device, $media_query)], Resource::TYPE_ASSET_CSS, $filename_or_url);
+
+        return $this;
+    }
+
+    /**
+     * @param string $content
+     * @param string|null $device
+     * @param string|null $media_query
+     * @return $this
+     */
+    protected function addStylesheetEmbed(string $content, string $device = null, string $media_query = null) : self
+    {
+        $this->style[$this->attrMedia($device, $media_query)] = $content;
+
+        return $this;
+    }
+
+    /**
+     * @param string $filename_or_url
+     * @param string|null $device
+     * @param string|null $media_query
+     * @return $this
+     * @throws Exception
+     */
+    protected function addFont(string $filename_or_url, string $device = null, string $media_query = null) : self
+    {
+        $this->addAsset($this->font[$this->attrMedia($device, $media_query)], Resource::TYPE_ASSET_FONTS, $filename_or_url);
+
+        return $this;
+    }
+
+    protected function addJavascript(string $filename_or_url, string $location = null) : self
+    {
+        $this->addAsset($this->js[$location ?? self::ASSET_LOCATION_DEFAULT], Resource::TYPE_ASSET_JS, $filename_or_url);
+
+        return $this;
+    }
+
+    protected function addJavascriptAsync(string $filename_or_url) : self
+    {
+        $this->addAsset($this->js_async[], Resource::TYPE_ASSET_JS, $filename_or_url);
+
+        return $this;
+    }
+
+    protected function addJavascriptEmbed(string $content, string $location = null) : self
+    {
+        $this->js_embed[$location ?? self::ASSET_LOCATION_DEFAULT] = $content;
+
+        return $this;
+    }
+
+    protected function addStructuredData(array $data) : self
+    {
+        $this->structured_data = array_replace($this->structured_data, $data);
+
+        return $this;
+    }
+
+    protected function addJsTemplate(string $key, string $content) : self
+    {
+        $this->js_template[$key] = $content;
+
+        return $this;
+    }
+
+    private function attrMedia(string $device = null, string $media_query = null) : string
+    {
+        return $device .
+            (
+                $device && $media_query
+                ? " and "
+                : null
+            ) .
+            (
+                $media_query
+                ? "(" . $media_query . ")"
+                : null
+            );
+    }
 
     /**
      * Standard Method

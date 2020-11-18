@@ -101,6 +101,45 @@ abstract class Widget extends Controller
     }
 
     /**
+     * Assets Method
+     * ------------------------------------------------------------------------
+     */
+
+    /**
+     * @param string $filename_or_url
+     * @param string|null $device
+     * @param string|null $media_query
+     * @return Controller
+     * @throws Exception
+     */
+    protected function addStylesheet(string $filename_or_url, string $device = null, string $media_query = null) : Controller
+    {
+        $resources = $this->getResources();
+        if (!empty($resources->css[$filename_or_url])) {
+            $filename_or_url = $resources->css[$filename_or_url];
+        }
+
+        return parent::addStylesheet($filename_or_url, $device, $media_query);
+    }
+
+    /**
+     * @param string $filename_or_url
+     * @param string|null $device
+     * @param string|null $media_query
+     * @return Controller
+     * @throws Exception
+     */
+    protected function addFont(string $filename_or_url, string $device = null, string $media_query = null) : Controller
+    {
+        $resources = $this->getResources();
+        if (!empty($resources->font[$filename_or_url])) {
+            $filename_or_url = $resources->font[$filename_or_url];
+        }
+
+        return parent::addFont($filename_or_url, $device, $media_query);
+    }
+
+    /**
      * Standard Method
      * ------------------------------------------------------------------------
      */

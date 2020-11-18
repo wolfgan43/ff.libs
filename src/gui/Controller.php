@@ -123,7 +123,7 @@ abstract class Controller
      */
     public function getImageUrl(string $filename_or_url, string $mode = null) : string
     {
-        return Media::getUrl(Resource::get($filename_or_url, Resource::TYPE_ASSET_IMAGES) ?? $this->maskEnv($image_name_or_url), $mode);
+        return Media::getUrl(Resource::get($filename_or_url, Resource::TYPE_ASSET_IMAGES) ?? $this->maskEnv($filename_or_url), $mode);
     }
 
     /**

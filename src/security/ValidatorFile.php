@@ -644,4 +644,9 @@ class ValidatorFile
         }
         return $res;
     }
+
+    public static function isInvalid(string $value) : bool
+    {
+        return !Validator::isFile($value);
+    }
 }

@@ -63,11 +63,11 @@ class DatabaseMongodb extends DatabaseAdapter
 
     /**
      * @param string $value
-     * @return string
+     * @return int
      */
-    protected function convertFieldSort(string $value): string
+    protected function convertFieldSort(string $value) : int
     {
-        return ($value == "DESC"
+        return ($value === "-1" || $value === "DESC" || $value === "desc"
             ? -1
             : 1
         );

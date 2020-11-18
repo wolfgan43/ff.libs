@@ -26,7 +26,7 @@ trait CommonTemplate
             $logo = $config->logo_path ?? "nobrand";
 
             $view->assign("logo_url", $this->script_path);
-            $view->assign("logo_path", $this->media->imageUrl($logo, $config->logo));
+            $view->assign("logo_path", $this->getImageUrl($logo, $config->logo));
             $view->parse("SezLogo", false);
         }
     }

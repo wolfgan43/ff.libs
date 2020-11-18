@@ -143,12 +143,14 @@ class Media implements Configurable
     public function get(string $pathinfo)
     {
         $this->setPathInfo($pathinfo);
+        $headers                                                    = null;
         $status                                                     = null;
         $content_type                                               = $this->getMimeByExtension($this->pathinfo->extension);
 
         $res                                                        = $content_type != static::MIMETYPE_DEFAULT && $this->process();
         if (!$res) {
             //todo: non renderizza bene l'output. forse per colpa degli headers
+            $headers                                                = ["cache" => "no-cache"];
             $status                                                 = 404;
             if ($this->isImage()) {
                 $res                                                = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII=');
@@ -156,7 +158,7 @@ class Media implements Configurable
             }
         }
 
-        Response::sendRawData($res, $content_type, $status);
+        Response::sendRawData($res, $content_type, $headers, $status);
     }
 
     /**
@@ -212,12 +214,10 @@ class Media implements Configurable
             return self::returnInfo();
         }
 
-        if (strpos($file, "..") !== false) {
-            $file                                                   = realpath($file);
-            if (strpos($file, Constant::DISK_PATH) !== 0) {
-                return self::returnInfo();
-            }
+        if (ValidatorFile::isInvalid($file)) {
+            return self::returnInfo();
         }
+
 
         $arrFile                                                    = (object) pathinfo($file);
         if ($arrFile->extension == "svg") {

@@ -152,15 +152,16 @@ class Response
     /**
      * @param mixed $data
      * @param string $content_type
+     * @param array|null $headers
      * @param null|int $status
      * @return void
      * @throws Exception
      * @todo da tipizzare
      */
-    public static function sendRawData($data, string $content_type, $status = null)
+    public static function sendRawData($data, string $content_type, array $headers = null, $status = null)
     {
         if (self::isValidContentType($content_type)) {
-            self::sendHeadersByMimeType($content_type);
+            self::sendHeadersByMimeType($content_type, $headers);
             if ($status) {
                 self::httpCode($status);
             }
@@ -286,22 +287,24 @@ class Response
 
     /**
      * @param string $response
+     * @param array|null $headers
      * @return void
      * @throws Exception
      */
-    public function sendHtml(string $response) : void
+    public static function sendHtml(string $response, array $headers = null) : void
     {
-        self::sendRawData($response, "text/html");
+        self::sendRawData($response, "text/html", $headers);
     }
 
     /**
      * @param array $response
+     * @param array|null $headers
      * @return void
      * @throws Exception
      */
-    public function sendJson(array $response) : void
+    public static function sendJson(array $response, array $headers = null) : void
     {
-        self::sendRawData($response, "application/json");
+        self::sendRawData($response, "application/json", $headers);
     }
 
     /**

@@ -206,9 +206,10 @@ abstract class DatabaseAdapter implements Constant
 
     /**
      * @param string $value
-     * @return string
+     * @return string|int
+     * @todo da tipizzare
      */
-    abstract protected function convertFieldSort(string $value) : string;
+    abstract protected function convertFieldSort(string $value);
 
     /**
      * @param array $res

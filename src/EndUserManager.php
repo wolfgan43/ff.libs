@@ -8,21 +8,31 @@ namespace phpformsframework\libs;
 trait EndUserManager
 {
     /**
-     * @todo da tipizzare
      * @return Request
      */
-    public static function &request()
+    public static function request() : Request
     {
-        return Kernel::load()->Request;
+        static $request     = null;
+
+        if (!$request) {
+            $request        = new Request();
+        }
+
+        return $request;
     }
 
     /**
-     * @todo da tipizzare
      * @return Response
      */
-    public static function &response()
+    public static function response() : Response
     {
-        return Kernel::load()->Response;
+        static $response    = null;
+
+        if (!$response) {
+            $response       = new Response();
+        }
+
+        return $response;
     }
     /**
      * @todo da tipizzare

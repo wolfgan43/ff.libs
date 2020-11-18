@@ -68,6 +68,15 @@ class Locale implements Configurable
     {
         return Kernel::$Environment::LOCALE_TIME_ZONE;
     }
+
+    /**
+     * @return string|null
+     */
+    public static function getTimeZoneLoc() : string
+    {
+        return Kernel::$Environment::LOCALE_TIME_LOC;
+    }
+
     /**
      * @param string $key
      * @return string|null

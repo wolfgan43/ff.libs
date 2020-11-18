@@ -22,15 +22,6 @@ class Kernel
     public static $Environment      = null;
 
     /**
-     * @var Request
-     */
-    public $Request                 = Request::class;
-    /**
-     * @var Response
-     */
-    public $Response                = Response::class;
-
-    /**
      * @var Debug
      */
     private $Debug                   = null;
@@ -85,9 +76,6 @@ class Kernel
         if (self::$Environment::DEBUG) {
             $this->Debug            = new Debug();
         }
-
-        $this->Request              = new $this->Request();
-        $this->Response             = new $this->Response();
 
         $this->useCache(!self::$Environment::DISABLE_CACHE && !isset($_GET["__nocache__"]));
 

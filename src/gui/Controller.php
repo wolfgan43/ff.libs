@@ -3,10 +3,14 @@ namespace phpformsframework\libs\gui;
 
 use phpformsframework\libs\App;
 use phpformsframework\libs\ClassDetector;
+use phpformsframework\libs\dto\DataAdapter;
+use phpformsframework\libs\Env;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\gui\adapters\ControllerHtml;
 use phpformsframework\libs\international\InternationalManager;
 use phpformsframework\libs\Kernel;
+use phpformsframework\libs\Response;
+use phpformsframework\libs\storage\Media;
 use phpformsframework\libs\util\AdapterManager;
 use Exception;
 
@@ -40,11 +44,6 @@ abstract class Controller
     protected $script_path                      = null;
     protected $path_info                        = null;
     protected $isXhr                            = null;
-
-    /**
-     * @var ControllerMedia|null
-     */
-    protected $media                            = null;
 
     protected $controllerType                   = null;
     protected $templateType                     = self::TEMPLATE_DEFAULT;
@@ -86,8 +85,25 @@ abstract class Controller
         $this->path_info            = $page->path_info;
         $this->isXhr                = $page->isAjax;
 
-        $this->media                = new ControllerMedia();
         $this->setAdapter($controllerAdapter ?? $this->controllerType ?? Kernel::$Environment::CONTROLLER_ADAPTER ?? self::CONTROLLER_TYPE_DEFAULT, [$this->path_info, $this->http_status_code, $templateType ?? $this->templateType]);
+    }
+
+    /**
+     * Utility Builder
+     * ------------------------------------------------------------------------
+     */
+
+    /**
+     * @param string $url
+     * @return string
+     */
+    private function maskEnv(string $url) : string
+    {
+        $env                                    = Env::getAll();
+        $env["{"]                               = "";
+        $env["}"]                               = "";
+
+        return str_ireplace(array_keys($env), array_values($env), $url);
     }
 
     /**
@@ -96,8 +112,45 @@ abstract class Controller
      */
     public function getWebUrl(string $relative_path) : string
     {
-        return Kernel::$Environment::SITE_PATH . $relative_path;
+        return Kernel::$Environment::SITE_PATH . $this->maskEnv($relative_path);
     }
+
+    /**
+     * @param string $filename_or_url
+     * @param string|null $mode
+     * @return string
+     * @throws Exception
+     */
+    public function getImageUrl(string $filename_or_url, string $mode = null) : string
+    {
+        return Media::getUrl(Resource::get($filename_or_url, Resource::TYPE_ASSET_IMAGES) ?? $this->maskEnv($image_name_or_url), $mode);
+    }
+
+    /**
+     * @param string $filename_or_url
+     * @param string|null $mode
+     * @param string|null $alt
+     * @return string
+     * @throws Exception
+     */
+    public function getImageTag(string $filename_or_url, string $mode = null, string $alt = null) : string
+    {
+        $altTag = (
+            $alt
+            ? ' alt="' . $alt . '"'
+            : null
+        );
+
+        return '<img src="' . ($this->getImageUrl($filename_or_url, $mode) ?? Media::getIcon("spacer", $mode)) . '"' . $altTag . ' />';
+    }
+
+
+
+
+    /**
+     * Standard Method
+     * ------------------------------------------------------------------------
+     */
 
     /**
      * @param int $status
@@ -117,11 +170,36 @@ abstract class Controller
      */
     public function display() : void
     {
-        $this->{$this->method}();
+        $this->render();
 
-        $this->adapter
+        $this->page()
             ->addContent($this->view)
             ->display();
+    }
+
+    /**
+     * @param DataAdapter|array $data
+     * @param array $headers
+     * @throws Exception
+     * @todo da tipizzare
+     */
+    protected function send($data, array $headers = []) : void
+    {
+        if (is_array($data)) {
+            Response::sendJson($data, $headers);
+        } else {
+            Response::send($data, $headers);
+        }
+    }
+
+    /**
+     * @param string|null $destination
+     * @param int|null $http_response_code
+     * @param array|null $headers
+     */
+    protected function redirect(string $destination = null, int $http_response_code = null, array $headers = null)
+    {
+        Response::redirect($destination, $http_response_code, $headers);
     }
 
     /**
@@ -149,12 +227,12 @@ abstract class Controller
      */
     protected function layout(string $layout_name = null, bool $include_default_assets = false, string $theme_name = null)
     {
-        $this->adapter->setLayout($this->getLayout($layout_name), $this->getTheme($theme_name));
+        $this->page()->setLayout($this->getLayout($layout_name), $this->getTheme($theme_name));
         if ($layout_name && $include_default_assets) {
-            $this->adapter->addCss($layout_name);
-            $this->adapter->addJs($layout_name);
+            $this->page()->addCss($layout_name);
+            $this->page()->addJs($layout_name);
         }
-        return $this->adapter;
+        return $this->page();
     }
 
     /**
@@ -177,6 +255,12 @@ abstract class Controller
 
         return $this->view              =& $this->views[$file_path];
     }
+
+    /**
+     * Private Method
+     * ------------------------------------------------------------------------
+     */
+
 
     /**
      * @param string|null $layout_name
@@ -203,5 +287,18 @@ abstract class Controller
     private function getTemplate(string $template_name = null) : string
     {
         return strtolower($template_name ?? str_replace("Controller", "", $this->getClassName()));
+    }
+
+    private function render(string $method = null) : void
+    {
+        $this->{$method ?? $this->method}();
+    }
+
+    /**
+     * @return ControllerHtml
+     */
+    private function page()
+    {
+        return $this->adapter;
     }
 }

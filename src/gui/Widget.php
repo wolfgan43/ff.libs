@@ -3,11 +3,11 @@ namespace phpformsframework\libs\gui;
 
 use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\Debug;
-use phpformsframework\libs\dto\DataAdapter;
 use phpformsframework\libs\dto\DataHtml;
-use phpformsframework\libs\Response;
 use phpformsframework\libs\storage\Filemanager;
 use Exception;
+use phpformsframework\libs\storage\Media;
+use stdClass;
 
 /**
  * Class Widget
@@ -80,6 +80,32 @@ abstract class Widget extends Controller
     }
 
     /**
+     * Utility Builder
+     * ------------------------------------------------------------------------
+     */
+
+    /**
+     * @param string $filename_or_url
+     * @param string|null $mode
+     * @return string
+     * @throws Exception
+     */
+    public function getImageUrl(string $filename_or_url, string $mode = null): string
+    {
+        $resources = $this->getResources();
+        if (!empty($resources->images[$filename_or_url])) {
+            return Media::getUrl($resources->images[$filename_or_url], $mode);
+        }
+
+        return  parent::getImageUrl($filename_or_url, $mode);
+    }
+
+    /**
+     * Standard Method
+     * ------------------------------------------------------------------------
+     */
+
+    /**
      * @param string|null $method
      * @throws Exception
      */
@@ -129,26 +155,6 @@ abstract class Widget extends Controller
 
         $this->injectAssets($controller);
         $this->view = $controller->view;
-    }
-
-
-    /**
-     * @param DataAdapter $data
-     * @param array $headers
-     */
-    protected function send(DataAdapter $data, array $headers = []) : void
-    {
-        Response::send($data, $headers);
-    }
-
-    /**
-     * @param string|null $destination
-     * @param int|null $http_response_code
-     * @param array|null $headers
-     */
-    protected function redirect(string $destination = null, int $http_response_code = null, array $headers = null)
-    {
-        Response::redirect($destination, $http_response_code, $headers);
     }
 
     /**
@@ -224,9 +230,9 @@ abstract class Widget extends Controller
     }
 
     /**
-     * @return DataHtml
+     * @return stdClass
      */
-    private function getResources() : object
+    private function getResources() : stdClass
     {
         $skin                                       = $this->getSkin();
         if (!isset($this->resources[$skin])) {

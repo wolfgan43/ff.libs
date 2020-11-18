@@ -447,7 +447,7 @@ class Validator
      */
     public static function isFile(string $value) : bool
     {
-        return !ValidatorFile::check($value);
+        return !((bool) self::checkSpecialChars($value));
     }
 
     /**
@@ -457,7 +457,7 @@ class Validator
      */
     public static function isBase64(string $value) : bool
     {
-        return (bool) self::checkBase64($value);
+        return !((bool) self::checkBase64($value));
     }
 
 
@@ -589,7 +589,7 @@ class Validator
      */
     public static function isPassword(string $value, string $rule = null) : bool
     {
-        return !(bool) self::checkPassword($value, $rule);
+        return !((bool) self::checkPassword($value, $rule));
     }
 
     /**
@@ -622,7 +622,7 @@ class Validator
      * @param string $value
      * @return bool
      */
-    public static function checkUsername(string $value) : bool
+    private static function checkUsername(string $value) : bool
     {
         $dataError = self::is($value, "username");
 
@@ -650,7 +650,7 @@ class Validator
      * @param string|null $rule
      * @return array|null
      */
-    public static function checkPassword(string $value, string $rule = null) : ?string
+    private static function checkPassword(string $value, string $rule = null) : ?string
     {
         $error                                                              = array();
         if ($value) {

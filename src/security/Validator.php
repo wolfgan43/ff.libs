@@ -618,6 +618,15 @@ class Validator
     {
         return substr_count($token, ".") === 2 || substr_count($token, "-") === 0;
     }
+
+    /**
+     * @param string $url
+     * @return bool
+     */
+    public static function isUrl(string $url) : bool
+    {
+        return (bool) filter_var($url, FILTER_VALIDATE_URL);
+    }
     /**
      * @param string $value
      * @return bool

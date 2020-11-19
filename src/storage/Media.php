@@ -179,15 +179,24 @@ class Media implements Configurable
     /**
      * @param string $file
      * @param string|null $mode
-     * @param string $key
      * @return string
      * @throws Exception
      */
-    public static function getUrl(string $file, string $mode = null, string $key = "url") : string
+    public static function getUrl(string $file, string $mode = null) : string
     {
-        return self::getInfo($file, $mode)->$key ?? "";
+        return self::getInfo($file, $mode)->url ?? "";
     }
 
+    /**
+     * @param string $file
+     * @param string|null $mode
+     * @return string
+     * @throws Exception
+     */
+    public static function getUrlRelative(string $file, string $mode = null) : string
+    {
+        return self::getInfo($file, $mode)->relative ?? "";
+    }
     /**
      * @param string $file
      * @param string|null $mode
@@ -198,7 +207,7 @@ class Media implements Configurable
     {
         if (strpos($file, "://") !== false) {
             return self::returnInfo(
-                $file,
+                null,
                 null,
                 null,
                 null,
@@ -222,18 +231,29 @@ class Media implements Configurable
         $arrFile                                                    = (object) pathinfo($file);
         if ($arrFile->extension == "svg") {
             return self::returnInfo(
-                self::image2base64($file, $arrFile->extension),
+                null, //@todo da ricavare il percorso svg web renderizzabile
                 $arrFile->extension,
-                $file,
-                $mode
+                null,
+                $mode,
+                self::image2base64($file, $arrFile->extension)
             );
         }
 
         $showfiles                                                  = Constant::SITE_PATH . static::RENDER_MEDIA_PATH;
         if (strpos($arrFile->dirname, static::RENDER_WIDGET_PATH) !== false) {
             $showfiles                                              = Constant::SITE_PATH . static::RENDER_ASSETS_PATH . static::RENDER_WIDGET_PATH;
-            $fileAsset                                              = explode(static::RENDER_WIDGET_PATH, $arrFile->dirname, 2);
-            $arrFile->dirname                                       = $fileAsset[1] . DIRECTORY_SEPARATOR . $arrFile->extension;
+            if (preg_match('#' . static::RENDER_WIDGET_PATH . DIRECTORY_SEPARATOR . '([^' . DIRECTORY_SEPARATOR . ']*)' . DIRECTORY_SEPARATOR . '?' .  '([^' . DIRECTORY_SEPARATOR . ']*)(.*)#i', $arrFile->dirname, $subdir)) {
+                if (empty($subdir[2])) {
+                    $arrFile->dirname                               = DIRECTORY_SEPARATOR . $subdir[1] . DIRECTORY_SEPARATOR . $arrFile->extension;
+                } else {
+                    foreach (Config::getDirBucket(Constant::RESOURCE_WIDGETS) as $type => $asset) {
+                        if ($asset["path"] == DIRECTORY_SEPARATOR . $subdir[2]) {
+                            $arrFile->dirname = DIRECTORY_SEPARATOR . $subdir[1] . DIRECTORY_SEPARATOR . $type . $subdir[3];
+                            break;
+                        }
+                    }
+                }
+            }
         } else {
             foreach (Config::getDirBucket(Constant::RESOURCE_ASSETS) as $type => $asset) {
                 $fileAsset = explode($asset["path"], $arrFile->dirname, 2);
@@ -259,11 +279,11 @@ class Media implements Configurable
         );
     }
 
-    private static function returnInfo(string $diskfile = null, string $extension = null, string $webfile = null, string $mode = null, string $url = null) : stdClass
+    private static function returnInfo(string $relative = null, string $extension = null, string $pathfilename = null, string $mode = null, string $url = null) : stdClass
     {
         return (object) array(
-            "disk"                  => $diskfile,
-            "web"                   => $webfile,
+            "relative"              => $relative,
+            "pathfilename"          => $pathfilename,
             "ext"                   => $extension,
             "mode"                  => $mode,
             "url"                   => $url

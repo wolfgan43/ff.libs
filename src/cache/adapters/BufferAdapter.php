@@ -301,7 +301,7 @@ abstract class BufferAdapter implements Dumpable
                 /**
                  * @todo da verificare. Messo a causa delle widget che vengono caricate in differita
                  */
-                touch($file_index, $last_update);
+                //@touch($file_index, $last_update);
                 return false;
             }
         }

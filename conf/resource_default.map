@@ -68,6 +68,26 @@
         "json"
       ]
     },
+    "widgets/css": {
+      "flag": 4,
+      "type": "widgets",
+      "prototype" : "filename",
+      "rootpath": "../",
+      "groupby": "rootname/css",
+      "filter": [
+        "css"
+      ]
+    },
+    "widgets/js": {
+      "flag": 4,
+      "type": "widgets",
+      "prototype" : "filename",
+      "rootpath": "../",
+      "groupby": "rootname/js",
+      "filter": [
+        "js"
+      ]
+    },
     "widgets/images": {
       "flag": 4,
       "type": "widgets",

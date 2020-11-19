@@ -320,7 +320,7 @@ class ControllerHtml extends Mappable
         $favicon                                = Resource::get("favicon", Resource::TYPE_ASSET_IMAGES);
         if ($favicon) {
             foreach ($this->favicons as $properties) {
-                $res                            .= $this::NEWLINE . '<link rel="' . $properties["rel"] . '" sizes="' . $properties["sizes"] . '" href="' . Media::getUrl($favicon, $properties["sizes"], "url") . '">';
+                $res                            .= $this::NEWLINE . '<link rel="' . $properties["rel"] . '" sizes="' . $properties["sizes"] . '" href="' . Media::getUrl($favicon, $properties["sizes"]) . '">';
             }
         }
 

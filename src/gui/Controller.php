@@ -191,7 +191,7 @@ abstract class Controller
             $asset_name                         .= $asset;
             $asset_url                          = Resource::get($asset_name, $type);
             if ($asset_url) {
-                $ref[]                          = $asset_url;
+                $ref[]                          = Media::getUrlRelative($asset_url);
             }
             $asset_name                         .= ".";
         }
@@ -206,11 +206,11 @@ abstract class Controller
      */
     private function addAsset(array &$ref, string $type, string $filename_or_url) : self
     {
-        if (Validator::is($filename_or_url, $filename_or_url, "url")) {
+        if (Validator::isUrl($filename_or_url)) {
             $ref[]                              = $this->maskEnv($filename_or_url);
         } elseif (Validator::isFile($filename_or_url)) {
             if (Dir::checkDiskPath($filename_or_url)) {
-                $ref[]                          = $filename_or_url;
+                $ref[]                          = Media::getUrlRelative($filename_or_url);
             } else {
                 $this->addAssetDeps($ref, $type, $filename_or_url);
             }
@@ -238,6 +238,19 @@ abstract class Controller
     }
 
     /**
+     * @param string $type
+     * @param string|null $media
+     * @return array
+     */
+    private function &getAssetRef(string $type, string $media = null) : array
+    {
+        if (!isset($this->{$type}[$media])) {
+            $this->{$type}[$media] = [];
+        }
+        return $this->{$type}[$media];
+    }
+
+    /**
      * @param string $filename_or_url
      * @param string|null $device
      * @param string|null $media_query
@@ -246,7 +259,7 @@ abstract class Controller
      */
     protected function addStylesheet(string $filename_or_url, string $device = null, string $media_query = null) : self
     {
-        $this->addAsset($this->css[$this->attrMedia($device, $media_query)], Resource::TYPE_ASSET_CSS, $filename_or_url);
+        $this->addAsset($this->getAssetRef(Resource::TYPE_ASSET_CSS, $this->attrMedia($device, $media_query)), Resource::TYPE_ASSET_CSS, $filename_or_url);
 
         return $this;
     }
@@ -273,21 +286,21 @@ abstract class Controller
      */
     protected function addFont(string $filename_or_url, string $device = null, string $media_query = null) : self
     {
-        $this->addAsset($this->font[$this->attrMedia($device, $media_query)], Resource::TYPE_ASSET_FONTS, $filename_or_url);
+        $this->addAsset($this->getAssetRef(Resource::TYPE_ASSET_FONTS, $this->attrMedia($device, $media_query)), Resource::TYPE_ASSET_FONTS, $filename_or_url);
 
         return $this;
     }
 
     protected function addJavascript(string $filename_or_url, string $location = null) : self
     {
-        $this->addAsset($this->js[$location ?? self::ASSET_LOCATION_DEFAULT], Resource::TYPE_ASSET_JS, $filename_or_url);
+        $this->addAsset($this->getAssetRef(Resource::TYPE_ASSET_JS, $location ?? self::ASSET_LOCATION_DEFAULT), Resource::TYPE_ASSET_JS, $filename_or_url);
 
         return $this;
     }
 
     protected function addJavascriptAsync(string $filename_or_url) : self
     {
-        $this->addAsset($this->js_async[], Resource::TYPE_ASSET_JS, $filename_or_url);
+        $this->addAsset($this->js_async, Resource::TYPE_ASSET_JS, $filename_or_url);
 
         return $this;
     }

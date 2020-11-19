@@ -81,7 +81,7 @@ class Constant
     const RESOURCE_CONF                     = "conf";
     const RESOURCE_LIBS                     = "vendor";
     const RESOURCE_UPLOADS                  = "uploads";
-    const RESOURCE_THEMES                   = "themes";     //@todo da gestire
+    const RESOURCE_THEMES                   = "themes";
 
 
     const PROJECT_DOCUMENT_ROOT             = DIRECTORY_SEPARATOR . self::RESOURCE_APP;
@@ -100,6 +100,7 @@ class Constant
     const LIBS_PATH                         = DIRECTORY_SEPARATOR . self::RESOURCE_LIBS;
     const CACHE_PATH                        = DIRECTORY_SEPARATOR . self::RESOURCE_CACHE;
     const UPLOAD_PATH                       = DIRECTORY_SEPARATOR . self::RESOURCE_UPLOADS;
+    const THEME_PATH                        = DIRECTORY_SEPARATOR . self::RESOURCE_THEMES;
 
     const VENDOR_LIBS_DIR                   = self::LIBS_PATH . DIRECTORY_SEPARATOR . "phpformsframework" . DIRECTORY_SEPARATOR . "libs";
 
@@ -110,6 +111,7 @@ class Constant
     const CONFIG_FF_PATH                    = self::VENDOR_LIBS_DIR . DIRECTORY_SEPARATOR . self::RESOURCE_CONF;
     const CACHE_DISK_PATH                   = self::DISK_PATH . self::CACHE_PATH;
     const UPLOAD_DISK_PATH                  = self::DISK_PATH . self::UPLOAD_PATH;
+    const THEME_DISK_PATH                   = self::DISK_PATH . self::THEME_PATH;
 
     /**
      * App Settings

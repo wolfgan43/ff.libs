@@ -27,6 +27,8 @@
         <dir type="gui" path="[LIBS_PATH]/phpformsframework/libs/themes/*/views/*" scan="views" />
 
         <dir type="gui" path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/*" scan="widgets" />
+        <dir type="gui" path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/css/*" scan="widgets/css" />
+        <dir type="gui" path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/js/*" scan="widgets/js" />
         <dir type="gui" path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/img/*" scan="widgets/images" />
         <dir type="gui" path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/fonts/*/*" scan="widgets/fonts" />
         <dir type="gui" path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/audio/*" scan="widgets/audio" />
@@ -50,5 +52,12 @@
         <dir    type="assets"       name="images"       path="/assets/dist/img" />
         <dir    type="assets"       name="js"           path="/assets/dist/js"  />
         <dir    type="assets"       name="video"        path="/assets/dist/video" />
+
+        <dir    type="widgets"       name="audio"        path="/audio" />
+        <dir    type="widgets"       name="css"          path="/css" />
+        <dir    type="widgets"       name="fonts"        path="/fonts" />
+        <dir    type="widgets"       name="images"       path="/img" />
+        <dir    type="widgets"       name="js"           path="/js"  />
+        <dir    type="widgets"       name="video"        path="/video" />
     </dirs>
 </configdata>

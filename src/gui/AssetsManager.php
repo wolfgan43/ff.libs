@@ -156,18 +156,6 @@ trait AssetsManager
         return $this->addAsset($this->fonts, Resource::TYPE_ASSET_FONTS, $key, $url);
     }
 
-    public function addJavascript(string $key, string $location = null, bool $async = false) : self
-    {
-    }
-    public function addJavascriptEmbed(string $content, string $location = null, bool $async = false) : self
-    {
-    }
-    public function addStyleSheet(string $key_or_path_or_url, string $media = null) : self
-    {
-    }
-    public function addStyleSheetEmbed(string $content, string $media = null) : self
-    {
-    }
     /**
      * @return array
      */

@@ -36,7 +36,7 @@ class User extends App
     public static function get() : ?UserData
     {
         if (!self::$user && self::session()->verify()) {
-            self::$user                                         = UserData::load(self::session()->get(self::USER_LABEL));
+            self::$user                                         = UserData::load(self::session()->get(self::USER_LABEL) ?? []);
         }
 
         return self::$user;

@@ -83,7 +83,7 @@
             <field name="username"          db="users.username"                     source="$username"              fake="nobody" />
             <field name="email"             db="users.email"                        source="$email"                 fake="john.doe@nobody.it" />
             <field name="tel"               db="users.tel"                          source="$tel"                   fake="3498844546" />
-            <field name="displayname"       db="users.username"                     source="$username"              fake="nobody" />
+            <field name="display_name"      db="users.username"                     source="$username"              fake="nobody" />
             <field name="avatar"            db="users.avatar"                       source="$avatar"                fake="noavatar" />
             <field name="status"            db="users.status"                       source="$status"                fake="1" />
             <field name="acl"               db="users.acl"                          source="$acl"                   fake="" />

@@ -53,7 +53,7 @@ class UserData extends OrmItem
 
     public $slug                    = null;
     public $avatar                  = null;
-    public $displayname             = null;
+    public $display_name            = null;
     public $email                   = null;
     public $tel                     = null;
     public $locale                  = null;

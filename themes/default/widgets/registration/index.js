@@ -27,7 +27,7 @@ hcore.Auth.registration = function (url, redirect, selector) {
             "csrf": csrf
         },
         method: "POST",
-        dataType: "medreq.json",
+        dataType: "json",
         data: {
             "username": username,
             "password": password,

@@ -49,7 +49,7 @@ hcore.Auth.recover = function (url, redirect, selector, resendCode) {
         url: (url || window.location.pathname),
         headers: headers,
         method: 'POST',
-        dataType: 'medreq.json',
+        dataType: 'json',
         data: data
 
     })
@@ -116,7 +116,7 @@ hcore.Auth.recover_confirm = function (url, redirect, selector) {
             url: (url || window.location.pathname),
             headers: headers,
             method: 'POST',
-            dataType: 'medreq.json',
+            dataType: 'json',
             data: data
         })
         .done(function (response) {

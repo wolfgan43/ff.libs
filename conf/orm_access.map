@@ -45,6 +45,7 @@
       "status": "number",
       "username": "string",
       "username_slug": "string:inSlug",
+      "display_name": "string",
       "email": "string",
       "tel": "string",
       "password": "string:inPassword",

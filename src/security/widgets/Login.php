@@ -115,7 +115,7 @@ class Login extends Widget
     protected function post(): void
     {
         $config                                 = $this->getConfig();
-        $responseData                           = User::login($this->request->username, $this->request->password, $this->request->permanent);
+        $responseData                           = User::login($this->request->username, $this->request->password, $this->request->permanent ?? null);
         if (!$responseData->isError()) {
             if ($this->aclVerify()) {
                 $responseData->set("welcome", Welcome::toJson());

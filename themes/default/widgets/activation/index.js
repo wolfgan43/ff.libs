@@ -44,7 +44,7 @@ hcore.Auth.activation = function (url, redirect, selector, resendCode) {
         url: (url || window.location.pathname),
         headers: headers,
         method: 'POST',
-        dataType: 'medreq.json',
+        dataType: 'json',
         data: data
 
     })

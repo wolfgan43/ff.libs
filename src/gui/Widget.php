@@ -61,7 +61,7 @@ abstract class Widget extends Controller
     public static function toHtml(array $config = null) : DataHtml
     {
         $controller = new static($config);
-        $controller->render("get");
+        $controller->render();
 
         return $controller->toDataHtml();
     }

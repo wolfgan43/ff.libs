@@ -4,15 +4,15 @@
         <get name="__nocache__"     scope="system"  hide="true" />
     </request>
     <dirs>
-        <dir type="cache" name="thumbs"     path="/cache/.thumbs" writable="true" />
-        <dir type="cache" name="assets"     path="/cache/assets" writable="false" />
-        <dir type="cache" name="images"     path="/cache/assets/images" writable="true" />
-        <dir type="cache" name="css"        path="/cache/assets/css" writable="true" />
-        <dir type="cache" name="js"         path="/cache/assets/js" writable="true" />
-        <dir type="cache" name="fonts"      path="/cache/assets/fonts" writable="true" />
-        <dir type="cache" name="widgets"    path="/cache/assets/widgets" writable="true" />
-        <dir type="cache" name="logs"       path="/cache/logs" writable="true" />
-        <dir type="cache" name="error"      path="/cache/error" writable="true" />
-        <dir type="cache" name="data"       path="/cache/data" writable="true" />
+        <dir type="cache" name="thumbs"     path="/cache/.thumbs"           writable="true" />
+        <dir type="cache" name="assets"     path="/cache/assets"            writable="false" />
+        <dir type="cache" name="images"     path="/cache/assets/images"     writable="true" />
+        <dir type="cache" name="css"        path="/cache/assets/css"        writable="true" />
+        <dir type="cache" name="js"         path="/cache/assets/js"         writable="true" />
+        <dir type="cache" name="fonts"      path="/cache/assets/fonts"      writable="true" />
+        <dir type="cache" name="widgets"    path="/cache/assets/widgets"    writable="true" />
+        <dir type="cache" name="logs"       path="/cache/logs"              writable="true" />
+        <dir type="cache" name="error"      path="/cache/errors"            writable="true" />
+        <dir type="cache" name="data"       path="/cache/buffer"            writable="true" />
     </dirs>
 </configdata>

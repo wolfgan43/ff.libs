@@ -408,6 +408,10 @@ class Debug
         if (!empty($dirstruct)) {
             foreach ($dirstruct as $dirBucket) {
                 foreach ($dirBucket as $dir) {
+                    if (!empty($dir["virtual"])) {
+                        continue;
+                    }
+
                     if (isset($dir["path"]) && !is_dir(Constant::DISK_PATH . $dir["path"]) && !Filemanager::makeDir($dir["path"])) {
                         $errors["dirstruct"][] = "Failed to Write " . $dir["path"] . " Check permission";
                     } elseif (isset($dir["writable"]) && $dir["writable"] && !is_writable(Constant::DISK_PATH . $dir["path"])) {

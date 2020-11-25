@@ -78,6 +78,7 @@ class Constant
     const RESOURCE_CACHE                    = "cache";
     const RESOURCE_CACHE_ASSETS                 = self::RESOURCE_ASSETS;
     const RESOURCE_CACHE_THUMBS                 = "thumbs";
+    const RESOURCE_CACHE_LOGS                   = "logs";
     const RESOURCE_CONF                     = "conf";
     const RESOURCE_LIBS                     = "vendor";
     const RESOURCE_UPLOADS                  = "uploads";
@@ -113,6 +114,7 @@ class Constant
     const UPLOAD_DISK_PATH                  = self::DISK_PATH . self::UPLOAD_PATH;
     const THEME_DISK_PATH                   = self::DISK_PATH . self::THEME_PATH;
 
+    const LOG_DISK_PATH                     = self::CACHE_DISK_PATH . DIRECTORY_SEPARATOR . self::RESOURCE_CACHE_LOGS;
     /**
      * App Settings
      */

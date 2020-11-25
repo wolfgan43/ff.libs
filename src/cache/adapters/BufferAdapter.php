@@ -297,7 +297,7 @@ abstract class BufferAdapter implements Dumpable
 
         $indexes = $this->getIndex($name);
         foreach ($indexes as $file_index => $last_update) {
-            if (filemtime($file_index) > $last_update) {
+            if (@filemtime($file_index) > $last_update) {
                 /**
                  * @todo da verificare. Messo a causa delle widget che vengono caricate in differita
                  */

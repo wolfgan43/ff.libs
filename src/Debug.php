@@ -495,10 +495,9 @@ class Debug
                     . 'DB: '        . (!Kernel::useCache() ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_DATABASE_ADAPTER      . '</span>, '
                     . 'Media: '     . (!Kernel::useCache() ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_MEDIA_ADAPTER     . '</span>'
                 . ')</span><br />'
-            . '<span style="padding:15px;">ExTime ' . (self::exTime("autoload") + self::exTimeApp()) . ' (Autoloader: ' . self::exTime("autoload") . " + App: " . self::exTimeApp() . ' + Debugger: {debug_extime})</span>'
+            . '<span style="padding:15px;">ExTime ' . (self::exTime("autoload") + self::exTimeApp()) . ' (Autoloader: ' . self::exTime("autoload") . " + App: " . self::exTimeApp() . " (UserCode: " . (self::exTimeApp() - Config::exTime() - array_sum(Buffer::exTime()) - Notice::exTime()) . ') + Debugger: {debug_extime})</span>'
             . $html_benchmark
             . '</div>';
-
 
 
         $html   .= '<table>';

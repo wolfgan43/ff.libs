@@ -128,6 +128,6 @@ class OrmQuery
      */
     public function uniqueIndex() : bool
     {
-        return !empty($this->def->indexes) && array_search("unique", $this->def->indexes) !== false;
+        return !empty($this->def->indexes) && !empty($this->where) && !empty(array_intersect_key($this->def->indexes, $this->where));
     }
 }

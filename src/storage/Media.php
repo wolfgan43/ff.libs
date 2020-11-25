@@ -692,6 +692,12 @@ class Media implements Configurable
                 }
             } elseif ($this->isImage()) {
                 Response::redirect($this->getIconPath("noimg"), 302);
+            } elseif (file_exists(Constant::DISK_PATH . "/app/themes/default/assets/dist" . $this->pathinfo->orig)) {
+                //@todo da sistemare i path rendendoli dinamici
+                $this->saveFromOriginal(Constant::DISK_PATH . "/app/themes/default/assets/dist" . $this->pathinfo->orig, $this->basepathCache() . $this->pathinfo->orig);
+                $this->sendHeaders(Constant::DISK_PATH . "/app/themes/default/assets/dist" . $this->pathinfo->orig, $this->headers);
+                readfile(Constant::DISK_PATH . "/app/themes/default/assets/dist" . $this->pathinfo->orig);
+                exit;
             }
         } else {
             return $this->renderProcess($mode);

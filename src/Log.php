@@ -39,6 +39,7 @@ class Log
 
     public const CLASS_SEP                                      = "->";
 
+    private const LOG_DISK_PATH                                 = Constant::CACHE_DISK_PATH . DIRECTORY_SEPARATOR . "logs";
     private const ENCODE_JSON                                   = "json";
     private const ENCODE_SERIALIZE                              = "serialize";
     private const PROTECTED_MESSAGE                             = "*protected*";
@@ -453,7 +454,7 @@ class Log
      */
     public static function getLogDir(): ?string
     {
-        return Dir::findCachePath("logs");
+        return Kernel::$Environment::LOG_DISK_PATH;
     }
 
     /**

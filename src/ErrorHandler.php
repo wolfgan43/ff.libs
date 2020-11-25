@@ -35,7 +35,7 @@ class ErrorHandler
     private static $custom_tpl	    = null;
     private static $max_recursion   = null;
 
-    private static $log_path		= Constant::CACHE_DISK_PATH . DIRECTORY_SEPARATOR . "errors";
+    private static $log_path		= Constant::ERROR_DISK_PATH;
     private static $log_fp          = null;
     private static $error_types		= E_USER_ERROR | E_USER_WARNING | E_USER_NOTICE;
 

@@ -35,8 +35,8 @@ use phpformsframework\libs\storage\Filemanager;
  */
 class BufferFs extends BufferAdapter
 {
-    private const CACHE_PATH        = Constant::CACHE_PATH . DIRECTORY_SEPARATOR . "data";
-    private const CACHE_DISK_PATH   = Constant::CACHE_DISK_PATH;
+    private const CACHE_PATH        = Constant::CACHE_PATH . DIRECTORY_SEPARATOR . Constant::RESOURCE_CACHE_BUFFER;
+    private const CACHE_DISK_PATH   = Constant::BUFFER_DISK_PATH;
     private const FILE_TYPE         = Constant::PHP_EXT;
 
 

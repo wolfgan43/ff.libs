@@ -323,6 +323,20 @@ class Debug
     }
 
     /**
+     * @param bool $backtrace
+     * @return string
+     */
+    private static function dumpLogHtml(bool $backtrace = true) : string
+    {
+        $log = self::get();
+        if (!$backtrace) {
+            unset($log["backtrace"]);
+        }
+
+        return '<hr /><h5>rawLogs</h5>' . '<pre>' . print_r($log, true) . '</pre>';
+    }
+
+    /**
      * @param string|null $error_message
      * @param bool $return
      * @return string|null
@@ -509,7 +523,7 @@ class Debug
         $html   .= '<tr>'         . '<th>BACKTRACE</th>'      . '<th>VARIABLES</th>'           . '</tr>';
         $html   .= '</thead>';
         $html   .= '<tbody>';
-        $html   .= '<tr>'         . '<td style="vertical-align: text-top">' . self::dumpBackTraceHtml($debug_backtrace, $collapse) . '</td>'  . '<td style="vertical-align: text-top">' . $html_dumpable . '</td>'  . '</tr>';
+        $html   .= '<tr>'         . '<td style="vertical-align: text-top">' . self::dumpBackTraceHtml($debug_backtrace, $collapse) . self::dumpLogHtml(false) . '</td>'  . '<td style="vertical-align: text-top">' . $html_dumpable . '</td>'  . '</tr>';
         $html   .= '</tr>';
         $html   .= '</tbody>';
         $html   .= '</table>';

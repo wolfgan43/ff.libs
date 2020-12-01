@@ -84,7 +84,7 @@ class OrmItem
             $dtd                                                                = $item->db->dtdStore();
             foreach ($query as $key => $value) {
                 if (!isset($dtd->$key)) {
-                    continue;
+                    throw new Exception("Field " . $key . " not found in table " . $item->dbTable . " (" . $item->dbCollection . ")", "400");
                 }
 
                 if (is_array($value)) {

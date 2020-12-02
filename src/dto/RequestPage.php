@@ -109,7 +109,11 @@ class RequestPage extends Mappable
 
         $this->rules                = $rules;
         $this->script_path          = $script_path;
-        $this->path_info            = str_replace($script_path, "", $orig_path_info);
+        $this->path_info            = (
+            $this->script_path == DIRECTORY_SEPARATOR
+            ? $orig_path_info
+            : preg_replace('#^' . $script_path . '#i', "", $orig_path_info, 1)
+        );
 
         $this->setPattern($config, $patterns);
 

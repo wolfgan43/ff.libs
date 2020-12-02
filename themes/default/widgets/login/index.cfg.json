@@ -20,7 +20,8 @@
    "logout_path": "\/logout",
    "registration_path": "\/registration",
    "activation_path": "\/activation",
-   "recover_path": "\/recover",
+   "recover_account_path": "\/recover\/email",
+   "recover_password_path": "\/recover\/password",
    "social":{
       "facebook":{
          "enable":false,

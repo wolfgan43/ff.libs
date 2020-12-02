@@ -1,8 +1,10 @@
 {
    "api": {
       "login": "\/api\/auth2\/user\/signin",
-      "recover": "\/api\/auth2\/user\/recover",
-      "change": "\/api\/auth2\/user\/change"
+      "recover_password": "\/api\/auth2\/user\/password\/recover",
+      "change_password": "\/api\/auth2\/user\/password\/change",
+      "recover_email": "\/api\/auth2\/user\/email\/recover",
+      "change_email": "\/api\/auth2\/user\/email\/change"
    },
    "title":"Sign In",
    "description":"Enter your email address and password to access admin panel.",

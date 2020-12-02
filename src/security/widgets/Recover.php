@@ -1,6 +1,7 @@
 <?php
 namespace phpformsframework\libs\security\widgets;
 
+use hcore\util\MicroServices;
 use phpformsframework\libs\gui\Widget;
 use phpformsframework\libs\security\User;
 use phpformsframework\libs\security\widgets\helpers\CommonTemplate;
@@ -13,6 +14,7 @@ use Exception;
 class Recover extends Widget
 {
     use CommonTemplate;
+    use MicroServices;
 
     protected $requiredJs           = ["hcore.auth"];
 
@@ -36,13 +38,17 @@ class Recover extends Widget
 
     protected function post(): void
     {
+        $action = basename($this->path_info);
+        if (!$action) {
+            throw new Exception("Action not found", 404);
+        }
         $config                     = $this->getConfig();
         if ($this->path_info == "/confirm") {
             if (!empty($this->request->code)) {
                 $response = $this->api($config->api->change . $this->path_info, ["code" => $this->request->code, "value" => $this->request->value], ["Bearer" => User::request()->getBearerToken()]);
             }
         } else {
-            $response = $this->api($config->api->recover . $this->path_info, ["identity" => $this->request->identity]);
+            $response = $this->api($config->api->{"recover_" . $action}, ["identifier" => $this->request->identity]);
             $this->confirm();
         }
     }

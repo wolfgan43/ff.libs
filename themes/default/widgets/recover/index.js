@@ -55,10 +55,10 @@ hcore.Auth.recover = function (url, redirect, selector, resendCode) {
     })
     .done(function (response) {
         if (response.status === 0) {
-            if (response.data.recover_confirm) {
-                hcore.inject(response.data.recover_confirm, selectorID);
+            if (response.data.confirm) {
+                hcore.inject(response.data.confirm, selectorID);
                 hcore.Auth.throwSuccess('Check your ' + response.data.sender);
-                hcore.Auth.setBearer(response.data.bearer);
+                hcore.Auth.setBearer(response.data.token);
             } else if (response.data["redirect"] !== undefined) {
                 hcore.Auth.throwSuccess('Check your ' + response.data.sender);
                 hcore.Auth.redirect(1000, response.data.redirect);
@@ -73,7 +73,7 @@ hcore.Auth.recover = function (url, redirect, selector, resendCode) {
     return false;
 };
 
-hcore.Auth.recover_confirm = function (url, redirect, selector) {
+hcore.Auth.recoverConfirm = function (url, redirect, selector) {
     let selectorID = (selector
             ? "#" + selector
             : "#recover-box"
@@ -97,6 +97,7 @@ hcore.Auth.recover_confirm = function (url, redirect, selector) {
 
     if (bearer) {
         if(confirmPassword !== password) {
+            hcore.Auth.unblockAction();
             hcore.Auth.throwWarning('I campi "password" e "conferma password" non coincidono');
             return false;
         }

@@ -19,7 +19,7 @@
                         <!--EndSezDescription-->
                     </div>
 
-                    <form action="javascript:void(0);" onsubmit="hcore.Auth.recover_confirm('{recover_url}', '{redirect_url}');" >
+                    <form action="javascript:void(0);" onsubmit="hcore.Auth.recoverConfirm('{recover_url}', '{redirect_url}');" >
                         <div class="error-container">{error}</div>
                         <input type="hidden" name="csrf" value="{csrf_token}">
                         <!--BeginSezDomainHidden-->
@@ -47,13 +47,6 @@
                         </div>
                     </form>
                 </div> <!-- end card-body -->
-                <!--BeginSezRegistration-->
-                <div class="card-footer">
-                    <div class="col-12 text-center mt-2">
-                        <p class="text-muted">{_Don't have an account?}<a href="{registration_path}" class="text-dark ml-1"><strong>{_Sign Up}</strong></a></p>
-                    </div>
-                </div>
-                <!--EndSezRegistration-->
             </div>
         </div>
     </div>

@@ -3,7 +3,6 @@ namespace phpformsframework\libs\security\widgets;
 
 use hcore\util\MicroServices;
 use phpformsframework\libs\gui\Widget;
-use phpformsframework\libs\security\User;
 use phpformsframework\libs\security\widgets\helpers\CommonTemplate;
 use Exception;
 
@@ -36,27 +35,31 @@ class Recover extends Widget
         $this->setHeader($view, $config);
     }
 
+    /**
+     * @throws Exception
+     */
     protected function post(): void
     {
-        $action = basename($this->path_info);
-        if (!$action) {
-            throw new Exception("Action not found", 404);
-        }
+        $action                     = basename($this->path_info);
         $config                     = $this->getConfig();
-        if ($this->path_info == "/confirm") {
-            if (!empty($this->request->code)) {
-                $response = $this->api($config->api->change . $this->path_info, ["code" => $this->request->code, "value" => $this->request->value], ["Bearer" => User::request()->getBearerToken()]);
-            }
+        if (!empty($this->request->code)) {
+            $response = $this->api($config->api->{"change_" . $action}, ["code" => $this->request->code, $action => $this->request->value]);
         } else {
             $response = $this->api($config->api->{"recover_" . $action}, ["identifier" => $this->request->identity]);
-            $this->confirm();
+            $response->set("confirm", $this->confirm());
         }
+
+        $this->send($response);
     }
 
-    private function confirm()
+    /**
+     * @return array
+     * @throws Exception
+     */
+    private function confirm() : array
     {
         $view                       = $this->view("confirm");
-        $config                     = $view->getConfig();
+        $config                     = $this->getConfig();
 
         $view->assign("recover_url", $this->getWebUrl($this->script_path . $this->path_info));
 
@@ -64,6 +67,12 @@ class Recover extends Widget
         $this->setError($view, $config);
         $this->setLogo($view, $config);
         $this->setHeader($view, $config);
+
+        return [
+            "html"  => $view->display(),
+            "css"   => null,
+            "js"    => null
+        ];
     }
 
     protected function put(): void

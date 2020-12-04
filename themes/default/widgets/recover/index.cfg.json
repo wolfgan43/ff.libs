@@ -9,7 +9,7 @@
    "title":"Reset Password",
    "description":"Enter your email address and we'll send you a code to reset your password",
    "error": null,
-   "redirect": "\/",
+   "redirect": "\/login",
    "logo": "100x50",
    "logo_path": null,
    "login_path": "\/login",

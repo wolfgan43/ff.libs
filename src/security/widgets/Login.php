@@ -120,8 +120,7 @@ class Login extends Widget
             if ($this->aclVerify()) {
                 $responseData->set("welcome", Welcome::toJson());
             } else {
-                $this->api($config->api->logout);
-                $responseData->clear();
+                $responseData = User::logout();
                 $responseData->error(401, "Permission Denied.");
             }
         } elseif ($responseData->isError(409) && !empty($config->activation_path)) {

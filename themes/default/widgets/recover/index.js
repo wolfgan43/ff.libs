@@ -103,9 +103,8 @@ hcore.Auth.recoverConfirm = function (url, redirect, selector) {
         }
 
         headers = {
-            "Bearer": bearer
-            , "domain": domain
-            , "csrf": token
+            "Authorization": bearer,
+            "csrf": token
         };
         data = {
             "code": $.trim(verifyCode),

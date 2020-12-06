@@ -26,6 +26,7 @@
 namespace phpformsframework\libs\delivery\drivers;
 
 use Exception;
+use phpformsframework\libs\Constant;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Kernel;
@@ -130,14 +131,17 @@ final class MailerTemplate extends Mailer
     {
         if ($template && is_file($template)) {
             $this->tpl_html_path                = $template;
-
         }
 
         if ($this->tpl_html_path) {
-            if (is_dir(dirname($this->tpl_html_path) . "/images")) {
-                FilemanagerScan::scan(array(dirname($this->tpl_html_path) . "/images" => array("jpg", "png", "svg", "gif")), function ($image) {
-                    $this->addImage($image);
-                });
+            $email_images_path = dirname($this->tpl_html_path) . DIRECTORY_SEPARATOR . Constant::RESOURCE_EMAIL_IMAGES;
+            if (is_dir($email_images_path)) {
+                FilemanagerScan::scan([
+                    str_replace(Constant::DISK_PATH, "", $email_images_path) => [
+                        "flag" => FilemanagerScan::SCAN_FILE, "filter" => ["jpg", "png", "svg", "gif"]
+                    ]], function ($image) {
+                        $this->addImage($image);
+                    });
             }
 
             $this->tpl_html = new View();

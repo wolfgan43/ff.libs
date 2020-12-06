@@ -48,7 +48,6 @@ class Constant
 
     const API_SIGNATURE                     = null;
     const API_ISSUER                        = null; //usata forse non serve
-    const API_APIKEY                        = null; //non usata
     const API_SCOPE_OP                      = "/*";
     const API_SERVER                        = [];
 
@@ -65,6 +64,7 @@ class Constant
      * Reference struct folder MVC
      */
     const RESOURCE_EMAIL                    = "email";
+    const RESOURCE_EMAIL_IMAGES                 = "images";
     const RESOURCE_LAYOUTS                  = "layouts";
     const RESOURCE_VIEWS                    = "views";
     const RESOURCE_CONTROLLERS              = "controllers";

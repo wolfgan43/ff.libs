@@ -1,9 +1,9 @@
 {
   "css": {
-    "https:\/\/cdnjs.cloudflare.com\/ajax\/libs\/twitter-bootstrap\/3.4.1\/css\/bootstrap.min.css" : "all"
+    "bootstrap": "https:\/\/cdnjs.cloudflare.com\/ajax\/libs\/twitter-bootstrap\/3.4.1\/css\/bootstrap.min.css"
   },
   "js": {
-    "https:\/\/cdnjs.cloudflare.com\/ajax\/libs\/jquery\/3.4.0\/jquery.min.js" : "async",
-    "https:\/\/cdnjs.cloudflare.com\/ajax\/libs\/twitter-bootstrap\/3.4.1\/js\/bootstrap.min.js" : "async"
+    "jquery": "https:\/\/cdnjs.cloudflare.com\/ajax\/libs\/jquery\/3.4.0\/jquery.min.js",
+    "bootstrap": "https:\/\/cdnjs.cloudflare.com\/ajax\/libs\/twitter-bootstrap\/3.4.1\/js\/bootstrap.min.js"
   }
 }

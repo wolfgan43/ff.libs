@@ -86,15 +86,13 @@ class Constant
     const RESOURCE_UPLOADS                  = "uploads";
     const RESOURCE_THEMES                   = "themes";
 
-
-    const PROJECT_DOCUMENT_ROOT             = DIRECTORY_SEPARATOR . self::RESOURCE_APP;
-    const PROJECT_DISK_PATH                 = self::DISK_PATH . self::PROJECT_DOCUMENT_ROOT;
+    const THEME_NAME                        = "default";
 
     const LOCALE_LANG_CODE                  = null; //IT, EN
     const LOCALE_COUNTRY_CODE               = null; //IT, US
     const LOCALE_TIME_ZONE                  = "UTC";
-    const LOCALE_TIME_LOC                   = "+0000";
 
+    const LOCALE_TIME_LOC                   = "+0000";
     const MEMORY_LIMIT                      = '128M';
 
     /**
@@ -104,6 +102,13 @@ class Constant
     const CACHE_PATH                        = DIRECTORY_SEPARATOR . self::RESOURCE_CACHE;
     const UPLOAD_PATH                       = DIRECTORY_SEPARATOR . self::RESOURCE_UPLOADS;
     const THEME_PATH                        = DIRECTORY_SEPARATOR . self::RESOURCE_THEMES;
+
+    /**
+     * Project settings
+     */
+    const PROJECT_DOCUMENT_ROOT             = DIRECTORY_SEPARATOR . self::RESOURCE_APP;
+    const PROJECT_DISK_PATH                 = self::DISK_PATH . self::PROJECT_DOCUMENT_ROOT;
+    const PROJECT_ASSETS_DISK_PATH          = self::PROJECT_DISK_PATH . self::THEME_PATH . DIRECTORY_SEPARATOR . self::THEME_NAME . DIRECTORY_SEPARATOR . self::RESOURCE_ASSETS . DIRECTORY_SEPARATOR . "dist";
 
     const VENDOR_LIBS_DIR                   = self::LIBS_PATH . DIRECTORY_SEPARATOR . "phpformsframework" . DIRECTORY_SEPARATOR . "libs";
 

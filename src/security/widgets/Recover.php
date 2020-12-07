@@ -26,8 +26,6 @@ class Recover extends Widget
         $config                     = $view->getConfig();
 
         $view->assign("recover_url", $this->getWebUrl($this->script_path . $this->path_info));
-        $view->assign("email_class", "hide-code-string");
-        $view->assign("recover_conferma_title", "Forgot your password?");
 
         $this->setDefault($view, $config);
         $this->setError($view, $config);

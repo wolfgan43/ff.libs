@@ -81,6 +81,7 @@ class Media implements Configurable
     private const RENDER_ASSETS_PATH                                        = DIRECTORY_SEPARATOR . Constant::RESOURCE_ASSETS;
     private const RENDER_WIDGET_PATH                                        = DIRECTORY_SEPARATOR . Constant::RESOURCE_WIDGETS;
     private const RENDER_IMAGE_PATH                                         = DIRECTORY_SEPARATOR . Constant::RESOURCE_ASSET_IMAGES;
+    private const PROJECT_ASSETS_DISK_PATH                                  = Constant::PROJECT_ASSETS_DISK_PATH;
     private const MIMETYPE                                                  = ValidatorFile::MIMETYPE;
 
     private const MIMETYPE_DEFAULT                                          = "text/plain";
@@ -692,11 +693,10 @@ class Media implements Configurable
                 }
             } elseif ($this->isImage()) {
                 Response::redirect($this->getIconPath("noimg"), 302);
-            } elseif (file_exists(Constant::DISK_PATH . "/app/themes/default/assets/dist" . $this->pathinfo->orig)) {
-                //@todo da sistemare i path rendendoli dinamici
-                $this->saveFromOriginal(Constant::DISK_PATH . "/app/themes/default/assets/dist" . $this->pathinfo->orig, $this->basepathCache() . $this->pathinfo->orig);
-                $this->sendHeaders(Constant::DISK_PATH . "/app/themes/default/assets/dist" . $this->pathinfo->orig, $this->headers);
-                readfile(Constant::DISK_PATH . "/app/themes/default/assets/dist" . $this->pathinfo->orig);
+            } elseif (file_exists(self::PROJECT_ASSETS_DISK_PATH . $this->pathinfo->orig)) {
+                $this->saveFromOriginal(self::PROJECT_ASSETS_DISK_PATH . $this->pathinfo->orig, $this->basepathCache() . $this->pathinfo->orig);
+                $this->sendHeaders(self::PROJECT_ASSETS_DISK_PATH . $this->pathinfo->orig, $this->headers);
+                readfile(self::PROJECT_ASSETS_DISK_PATH . $this->pathinfo->orig);
                 exit;
             }
         } else {
@@ -1187,7 +1187,6 @@ class Media implements Configurable
             if (!$this->final) {
                 $this->makeFinalFile($filename);
             }
-
             if ($this->final) {
                 $final_file_stored                                  = null;
                 $final_file                                         = $this->getFinalFile($final_file_stored);
@@ -1202,12 +1201,13 @@ class Media implements Configurable
                     if (!Buffer::cacheIsValid($this->basepath . $this->filesource, $final_file_stored)) {
                         $this->saveFromOriginal($this->basepath . $this->filesource, $final_file);
                     }
-                } else {
+                } elseif ($this->isImage()) {
                     $icon                                           = $this->getIconPath(basename($this->filesource), true);
-
                     if (!Buffer::cacheIsValid($this->basepath . $this->filesource, $final_file_stored) && $icon) {
                         $this->saveFromOriginal($icon, $final_file);
                     }
+                } else {
+                    $final_file                                     = null;
                 }
             }
         }

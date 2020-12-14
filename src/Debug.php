@@ -115,7 +115,7 @@ class Debug
             $res["exTime - App"]            = self::exTime("autoload") + self::exTimeApp();
             $res["App - Cache"]             = (!Kernel::useCache() ? "off" : "on (" . Kernel::$Environment::CACHE_BUFFER_ADAPTER . ", " . Kernel::$Environment::CACHE_DATABASE_ADAPTER . ", " . Kernel::$Environment::CACHE_MEDIA_ADAPTER . ")");
             $res["query"]                   = Buffer::dump()["process"];
-            $res["backtrace"]               = self::dumpBackTrace();
+            //$res["backtrace"]               = self::dumpBackTrace();
         }
         return $res;
     }
@@ -388,9 +388,11 @@ class Debug
                                 $files_count = $files_count + count($file_index);
                             }
                         }
-                        if (strtolower($interface) == "database") {
+                    }
+                    if (strtolower($interface) == "buffer" && !empty($dump["process"])) {
+                        foreach ($dump["process"] as $key => $process) {
                             $db_query_count++;
-                            if ($value === true) {
+                            if (strpos($key, "cache") !== false) {
                                 $db_query_cache_count++;
                             }
                         }
@@ -480,50 +482,108 @@ class Debug
             $html_dumpable .= '</ul></pre>';
         }
 
-        $html   = (
-            $error_message
-                    ? "<hr /><b>" . $error_message . "</b>"
-                    : ""
-                );
 
-        $html_benchmark = "";
+
+        $html = '<style type="text/css">
+    .x-debugger {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: calc(100vh - 30px);
+        background: rgba(255,255, 255, 0.94);
+        -webkit-transform: translate3d(0, 100%, 0);
+        z-index: 999999;
+        will-change: transform;
+        -webkit-transition: -webkit-transform .35s ease;
+        transition: transform .35s ease, -webkit-transform .35s ease;
+    }
+    .x-debugger.active {
+        -webkit-transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0);
+    }
+    .x-debugger .head {
+        text-align: right;
+        cursor: pointer;
+        position: absolute;
+        margin-top: -30px;
+        background: #f3f3f3;
+        border-top: 1px solid #cacaca;
+        border-bottom: 1px solid #cacaca;
+        width: 100%;
+        font-size: 0.8rem;
+        color: #5a5a5a;
+        padding: 5px 10px;
+    }
+    .x-debugger .head > b {
+        float: left;
+    }
+    .x-debugger .head > span {
+        padding: 0 10px;
+        white-space: nowrap;
+    }
+    .x-debugger .body {
+        overflow-x: hidden;
+        overflow-y: scroll;
+        height: 100%;
+        padding: 30px 10px;
+    }
+    .x-debugger .body table {
+        width: 100%;
+    }
+    .x-debugger .body pre {
+        white-space: pre-wrap;
+    }   
+    .x-debugger .body tbody td {
+        vertical-align: text-top;
+        max-width: 50vw;
+    }
+    </style>';
+        $html .= '<div class="x-debugger">';
+        $html .= '<div class="head" onclick=" if(document.getElementsByClassName(\'x-debugger\')[0].className.indexOf(\' active\') === -1) { document.getElementsByClassName(\'x-debugger\')[0].className = document.getElementsByClassName(\'x-debugger\')[0].className + \' active\'; } else { document.getElementsByClassName(\'x-debugger\')[0].className = document.getElementsByClassName(\'x-debugger\')[0].className.replace(\' active\', \'\'); } ">';
+        $html .= (
+            $error_message
+            ? "<b>" . $error_message . "</b>"
+            : ""
+        );
+        $html .= '<span>ExTime ' . (self::exTime("autoload") + self::exTimeApp()) . '</span>'
+        . '<span>BackTrace: ' . count($debug_backtrace) . '</span>'
+        . '<span>Errors: ' . $errors_count . '</span>'
+        . '<span>Includes: ' . $included_files_count . ' (' . $included_files_autoload_count . ' autoloads)' . '</span>'
+        . '<span>Constants: ' . count($constants_user) . '</span>'
+        . '<span>Files: ' . $files_count . '</span>'
+        . '<span>DB Query: ' . $db_query_count . ' (' . $db_query_cache_count . ' cached)'. '</span>'
+        . '<span>Adapters ('
+        . 'Template: '  . '<em>' . Kernel::$Environment::TEMPLATE_ADAPTER   . '</em>, '
+        . 'DB: '        . '<em>' . Kernel::$Environment::DATABASE_ADAPTER   . '</em>, '
+        . 'Sms: '       . '<em>' . Kernel::$Environment::MESSENGER_ADAPTER  . '</em>, '
+        . 'Translate: ' . '<em>' . Kernel::$Environment::TRANSLATOR_ADAPTER . '</em>'
+        . ')</span>'
+        . '<span>Cache ('
+        . 'Mem: '       . (!Kernel::useCache() ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_BUFFER_ADAPTER      . '</span>, '
+        . 'DB: '        . (!Kernel::useCache() ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_DATABASE_ADAPTER      . '</span>, '
+        . 'Media: '     . (!Kernel::useCache() ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_MEDIA_ADAPTER     . '</span>'
+        . ')</span>';
+
+        $html .= '<br /><span>Autoloader: ' . self::exTime("autoload") . '</span>'
+            . '<span>App: ' . self::exTimeApp() . '</span>'
+            . '<span>( UserCode: ' . (self::exTimeApp() - Config::exTime() - array_sum(Buffer::exTime()) - Notice::exTime()) . '</span>'
+            . '<span>Debugger: {debug_extime}) </span>';
         if (Kernel::$Environment::PROFILING) {
             $benchmark = self::benchmark(true);
-            $html_benchmark = '<span style="padding:15px;">Mem: ' . $benchmark["mem"] . '</span>'
-                . '<span style="padding:15px;">MemPeak: ' . $benchmark["mem_peak"] . '</span>'
-                . '<span style="padding:15px;">CPU: ' . $benchmark["cpu"] . '</span>';
+            $html .= '<span>Mem: ' . $benchmark["mem"] . '</span>'
+                . '<span>MemPeak: ' . $benchmark["mem_peak"] . '</span>'
+                . '<span>CPU: ' . $benchmark["cpu"] . '</span>';
         }
+        $html .= '</div>';
 
-        $html .= '<div class="x-debug-profiler" ><a href="javascript:void(0);" onclick=" if(document.getElementsByClassName(\'x-debug-profiler\')[0].className.indexOf(\' active\') === -1) { document.getElementsByClassName(\'x-debug-profiler\')[0].className = document.getElementsByClassName(\'x-debug-profiler\')[0].className + \' active\'; } else { document.getElementsByClassName(\'x-debug-profiler\')[0].className = document.getElementsByClassName(\'x-debug-profiler\')[0].className.replace(\' active\', \'\'); } " class="x-debug-profiler--btn" ></a><div class="wrapper">';
-        $html .= '<hr />' . '<div style="text-align: center;">'
-            . '<span style="padding:15px;">BackTrace: ' . count($debug_backtrace) . '</span>'
-            . '<span style="padding:15px;">Errors: ' . $errors_count . '</span>'
-            . '<span style="padding:15px;">Includes: ' . $included_files_count . ' (' . $included_files_autoload_count . ' autoloads)' . '</span>'
-            . '<span style="padding:15px;">Constants: ' . count($constants_user) . '</span>'
-            . '<span style="padding:15px;">Files: ' . $files_count . '</span>'
-            . '<span style="padding:15px;">DB Query: ' . $db_query_count . ' (' . $db_query_cache_count . ' cached)'. '</span>'
-            . '<span style="padding:15px;">Adapters ('
-                    . 'Template: '  . '<em>' . Kernel::$Environment::TEMPLATE_ADAPTER   . '</em>, '
-                    . 'DB: '        . '<em>' . Kernel::$Environment::DATABASE_ADAPTER   . '</em>, '
-                    . 'Sms: '       . '<em>' . Kernel::$Environment::MESSENGER_ADAPTER  . '</em>, '
-                    . 'Translate: ' . '<em>' . Kernel::$Environment::TRANSLATOR_ADAPTER . '</em>'
-                . ')</span>'
-                        . '<span style="padding:15px;">Cache ('
-                    . 'Mem: '       . (!Kernel::useCache() ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_BUFFER_ADAPTER      . '</span>, '
-                    . 'DB: '        . (!Kernel::useCache() ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_DATABASE_ADAPTER      . '</span>, '
-                    . 'Media: '     . (!Kernel::useCache() ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_MEDIA_ADAPTER     . '</span>'
-                . ')</span><br />'
-            . '<span style="padding:15px;">ExTime ' . (self::exTime("autoload") + self::exTimeApp()) . ' (Autoloader: ' . self::exTime("autoload") . " + App: " . self::exTimeApp() . " (UserCode: " . (self::exTimeApp() - Config::exTime() - array_sum(Buffer::exTime()) - Notice::exTime()) . ') + Debugger: {debug_extime})</span>'
-            . $html_benchmark
-            . '</div>';
-
-
+        $html .= '<div class="body">';
         $html   .= '<table>';
         $html   .= '<thead>';
         $html   .= '<tr>'         . '<th>BACKTRACE</th>'      . '<th>VARIABLES</th>'           . '</tr>';
         $html   .= '</thead>';
         $html   .= '<tbody>';
-        $html   .= '<tr>'         . '<td style="vertical-align: text-top">' . self::dumpBackTraceHtml($debug_backtrace, $collapse) . self::dumpLogHtml(false) . '</td>'  . '<td style="vertical-align: text-top">' . $html_dumpable . '</td>'  . '</tr>';
+        $html   .= '<tr>'         . '<td>' . self::dumpBackTraceHtml($debug_backtrace, $collapse) . self::dumpLogHtml(false) . '</td>'  . '<td>' . $html_dumpable . '</td>'  . '</tr>';
         $html   .= '</tr>';
         $html   .= '</tbody>';
         $html   .= '</table>';

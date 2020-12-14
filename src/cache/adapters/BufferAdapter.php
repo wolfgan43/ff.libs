@@ -296,18 +296,21 @@ abstract class BufferAdapter implements Dumpable
         Debug::stopWatch("CacheIndex" . DIRECTORY_SEPARATOR . $this->bucket . DIRECTORY_SEPARATOR . $name);
 
         $indexes = $this->getIndex($name);
-        foreach ($indexes as $file_index => $last_update) {
-            if (@filemtime($file_index) > $last_update) {
-                /**
-                 * @todo da verificare. Messo a causa delle widget che vengono caricate in differita
-                 */
-                //@touch($file_index, $last_update);
-                return false;
+        $cached = !empty($indexes);
+        foreach ($indexes as $file_index => &$last_update) {
+            $file_mtime = @filemtime($file_index);
+            if ($file_mtime > $last_update) {
+                $last_update = $file_mtime;
+                $cached = false;
             }
+        }
+
+        if (!$cached) {
+            $this->write("index", $indexes);
         }
 
         Debug::stopWatch("CacheIndex" . DIRECTORY_SEPARATOR . $this->bucket . DIRECTORY_SEPARATOR . $name);
 
-        return !empty($indexes);
+        return $cached;
     }
 }

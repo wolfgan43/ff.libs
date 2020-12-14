@@ -549,6 +549,7 @@ abstract class Mailer
      * @param null $message
      * @return mixed
      * @throws Exception
+     * @todo da fare
      */
     public function preview($subject = null, $message = null)
     {

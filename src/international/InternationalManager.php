@@ -20,10 +20,10 @@ trait InternationalManager
     /**
      * @param string $code
      * @param null|string $language
-     * @return string
+     * @return string|null
      * @throws Exception
      */
-    protected function translate(string $code, string $language = null) : string
+    protected function translate(string $code, string $language = null) : ?string
     {
         return Translator::getWordByCode($code, $language);
     }

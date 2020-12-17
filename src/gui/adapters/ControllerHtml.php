@@ -31,14 +31,13 @@ use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dir;
 use phpformsframework\libs\dto\DataHtml;
 use phpformsframework\libs\gui\Controller;
+use phpformsframework\libs\gui\ControllerAdapter;
 use phpformsframework\libs\Kernel;
-use phpformsframework\libs\Mappable;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\Response;
 use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\storage\Media;
-use phpformsframework\libs\gui\AssetsManager;
 use phpformsframework\libs\gui\Resource;
 use phpformsframework\libs\gui\View;
 use Exception;
@@ -47,16 +46,19 @@ use Exception;
  * Class PageHtml
  * @package phpformsframework\libs\gui\adapters
  */
-class ControllerHtml extends Mappable
+class ControllerHtml extends ControllerAdapter
 {
-    use AssetsManager;
+    private const MEDIA_DEVICE_DEFAULT          = self::MEDIA_DEVICE_ALL;
+    private const JS_TEMPLATE_DEFAULT           = "text/x-template";
 
-    private const FRAMEWORK_CSS                 = "frameworkcss_";
-    private const FONT_ICON                     = "fonticon_";
+    private const DOC_TYPE                      = '<!DOCTYPE html>';
+    private const PAGE_TAG                      = 'html';
+    private const HEAD_TAG                      = 'head';
+    private const BODY_TAG                      = 'body';
 
-    protected const NEWLINE                     = "\n";
-    protected const MAIN_CONTENT                = "content";
-    protected const TITLE_DEFAULT               = "Home";
+    private const NEWLINE                       = "\n";
+    private const MAIN_CONTENT                  = "content";
+    private const TITLE_DEFAULT                 = "Home";
 
     private $http_status_code                   = null;
 
@@ -79,17 +81,17 @@ class ControllerHtml extends Mappable
      * private $rss                                 = null;
      */
 
-    protected $libs                             = [];
-    protected $fonticon                         = null;
+    protected $favicons                         = array();
 
-    public $meta                                = array();
-    public $favicons                            = array();
-
-    public $doctype                             = '<!DOCTYPE html>';
-    public $body                                = '<body>';
-
-    private $layout                             = "<main>{content}</main>";
+    private $layout                             = "{content}";
     private $contents                           = array();
+    private $scripts                            = [
+                                                    self::ASSET_LOCATION_HEAD           => null,
+                                                    self::ASSET_LOCATION_BODY_TOP       => null,
+                                                    self::ASSET_LOCATION_BODY_BOTTOM    => null,
+                                                    self::ASSET_LOCATION_ASYNC          => null
+                                                ];
+
     private $error                              = null;
 
     /**
@@ -103,8 +105,6 @@ class ControllerHtml extends Mappable
         Debug::stopWatch("gui/controller/html");
 
         parent::__construct($template_type, self::class);
-
-        $this->loadMaps($this->libs, self::class);
 
         $this->http_status_code                 = $http_status_code;
         $this->lang                             = Locale::getLang("tiny_code");
@@ -140,30 +140,34 @@ class ControllerHtml extends Mappable
     }
 
     /**
-     * @param string|null $name
+     * @param string|null $template_or_html
      * @param string|null $theme
      * @return $this
      * @throws Exception
      * @todo da gestire il tema
      */
-    public function setLayout(string $name = null, string $theme = null) : self
+    public function setLayout(string $template_or_html = null, string $theme = null) : ControllerAdapter
     {
-        if ($name) {
-            $this->layout                       = Resource::load($name, Resource::TYPE_LAYOUTS);
+        if ($template_or_html) {
+            $this->layout                       = (
+                strpos($template_or_html, "<") === 0
+                ? $template_or_html
+                : Resource::load($template_or_html, Resource::TYPE_LAYOUTS)
+            );
         }
 
         return $this;
     }
 
     /**
-     * @param null $content
-     * @param string $where
+     * @param string|View|Controller $content
+     * @param string|null $where
      * @return $this
      * @throws Exception
      */
-    public function addContent($content = null, string $where = self::MAIN_CONTENT) : self
+    public function addContent($content, string $where = null) : ControllerAdapter
     {
-        $this->setContent($where, $this->getHtml($content));
+        $this->setContent($where ?? self::MAIN_CONTENT, $this->getHtml($content));
 
         return $this;
     }
@@ -175,13 +179,14 @@ class ControllerHtml extends Mappable
      */
     private function getHtml($content) : ?string
     {
-        $html                                   = null;
         if (is_object($content)) {
             $html                               = $this->getHtmlByObject($content);
         } elseif (is_array($content)) {
             $html                               = null;
         } elseif (!empty($content)) {
             $html                               = $this->getHtmlByString($content);
+        } else {
+            $html                               = null;
         }
 
         return $html;
@@ -266,7 +271,7 @@ class ControllerHtml extends Mappable
      */
     private function parseTitle() : string
     {
-        return $this::NEWLINE . '<title>' . $this->getTitle() . '</title>';
+        return self::NEWLINE . '<title>' . $this->getTitle() . '</title>';
     }
 
     /**
@@ -281,7 +286,7 @@ class ControllerHtml extends Mappable
                                                 );
 
 
-        return $this::NEWLINE .'<meta name="description" content="' . $res . '" />';
+        return self::NEWLINE . '<meta name="description" content="' . $res . '" />';
     }
 
     /**
@@ -289,7 +294,7 @@ class ControllerHtml extends Mappable
      */
     private function parseEncoding() : string
     {
-        return '<meta http-equiv="Content-Type" content="text/html; charset=' . $this->encoding . '"/>';
+        return self::NEWLINE . '<meta http-equiv="Content-Type" content="text/html; charset=' . $this->encoding . '"/>';
     }
 
     /**
@@ -301,9 +306,9 @@ class ControllerHtml extends Mappable
         if (!empty($this->meta)) {
             foreach ($this->meta as $meta) {
                 if (isset($meta["name"])) {
-                    $res                        .= $this::NEWLINE . '<meta name="' . $meta["name"] . '" content="' . $meta["content"] . '">';
+                    $res                        .= self::NEWLINE . '<meta name="' . $meta["name"] . '" content="' . $meta["content"] . '">';
                 } elseif (isset($meta["property"])) {
-                    $res                        .= $this::NEWLINE . '<meta property="' . $meta["property"] . '" content="' . $meta["content"] . '">';
+                    $res                        .= self::NEWLINE . '<meta property="' . $meta["property"] . '" content="' . $meta["content"] . '">';
                 }
             }
         }
@@ -320,7 +325,7 @@ class ControllerHtml extends Mappable
         $favicon                                = Resource::get("favicon", Resource::TYPE_ASSET_IMAGES);
         if ($favicon) {
             foreach ($this->favicons as $properties) {
-                $res                            .= $this::NEWLINE . '<link rel="' . $properties["rel"] . '" sizes="' . $properties["sizes"] . '" href="' . Media::getUrl($favicon, $properties["sizes"]) . '">';
+                $res                            .= self::NEWLINE . '<link rel="' . $properties["rel"] . '" sizes="' . $properties["sizes"] . '" href="' . Media::getUrl($favicon, $properties["sizes"]) . '">';
             }
         }
 
@@ -330,13 +335,11 @@ class ControllerHtml extends Mappable
     /**
      * @return string
      */
-    private function parseFonts() : string
+    private function parseFonts() : ?string
     {
-        $res                                    = "";
-        if (!empty($this->fonts)) {
-            foreach (array_unique($this->fonts) as $font) {
-                $res                            .= $this::NEWLINE .'<link rel="preload" as="font" type="font/' . pathinfo($font, PATHINFO_EXTENSION) . '" crossorigin="anonymous" href="' . $font . '" />';
-            }
+        $res                                    = null;
+        foreach ($this->fonts as $font => $media) {
+            $res                                .= self::NEWLINE . '<link rel="preload" as="font"' . $this->attrMedia($media) . ' type="font/' . pathinfo($font, PATHINFO_EXTENSION) . '"' . $this->attrCors($font) . ' href="' . $font . '" />';
         }
 
         return $res;
@@ -345,36 +348,81 @@ class ControllerHtml extends Mappable
     /**
      * @return string
      */
-    private function parseCss() : string
+    private function parseCss() : ?string
     {
-        $css_tag                                = $this::NEWLINE . '<link rel="stylesheet" type="text/css" crossorigin="anonymous" href="';
+        $res                                    = null;
+        foreach ($this->css as $css => $media) {
+            $res                                .= self::NEWLINE . '<link' . $this->attrMedia($media) . ' type="text/css" rel="stylesheet"' . $this->attrCors($css) . ' href="' . $css . '" />';
+        }
 
-        return $css_tag . implode('" />' . $css_tag, array_unique($this->css)) . '" />';
+
+        return $res;
+    }
+
+    private function parseStyle() : ?string
+    {
+        $res                                    = null;
+        foreach ($this->style as $media => $styles) {
+            $res                                .= self::NEWLINE .'<style' . $this->attrMedia($media) . ' type="text/css">' . implode(self::NEWLINE, $styles) . '</style>';
+        }
+
+        return $res;
+    }
+
+    private function renderJs(array $scripts, bool $embed = false) : void
+    {
+        foreach ($scripts as $js => $type) {
+            $media                              = ucfirst($type);
+            switch ($media) {
+                case self::ASSET_LOCATION_HEAD:
+                case self::ASSET_LOCATION_BODY_TOP:
+                case self::ASSET_LOCATION_BODY_BOTTOM:
+                    $script                     = self::NEWLINE . '<script';
+                    break;
+                case self::ASSET_LOCATION_ASYNC:
+                default:
+                    $media                      = self::ASSET_LOCATION_ASYNC;
+                    $script                     = self::NEWLINE . '<script defer';
+            }
+
+            $this->scripts[$media]              .= $script . ' type="application/javascript"' . (
+                $embed
+                ? '>' . $js . '</script>'
+                : $this->attrCors($js) . ' src="' . $js . '"></script>'
+            );
+        }
     }
 
     /**
-     * @param bool $async
-     * @param bool $defer
+     * @param string $location
      * @return string
      */
-    private function parseJs(bool $async = false, bool $defer = true) : string
+    private function parseJs(string $location) : ?string
     {
-        $async_attr                             = (
-            $async
-                                                    ? "async "
-                                                    : ""
-                                                );
-
-        $defer_attr                             = (
-            $defer
-                                                    ? "defer "
-                                                    : ""
-                                                );
-
-        $script_tag                             = $this::NEWLINE . '<script ' . $async_attr . $defer_attr . 'crossorigin="anonymous" src="';
-
-        return $script_tag . implode('"></script>' . $script_tag, array_unique($this->js)) . '"></script>';
+        return $this->scripts[$location];
     }
+
+
+    private function parseStructuredData() : ?string
+    {
+        return (!empty($this->structured_data)
+            ? self::NEWLINE . '<script type="application/ld+json">' . json_encode($this->structured_data). '</script>'
+            : null
+        );
+    }
+
+    private function parseJsTemplate() : ?string
+    {
+        $res                                    = null;
+        $i                                      = 0;
+        foreach ($this->js_template as $template => $type) {
+            $res                                .= self::NEWLINE . '<script type="'. ($type ?? self::JS_TEMPLATE_DEFAULT) . '" id="xtpl' . ++$i . '">' . $template . '</script>';
+        }
+
+        return $res;
+    }
+
+
 
     /**
      * @param string $key
@@ -413,8 +461,21 @@ class ControllerHtml extends Mappable
                 $commons[$tpl_key] = $this->getHtml($content);
             }
         }
+        /*
+        $controllers = Resource::type(Resource::TYPE_CONTROLLERS);
+        foreach ($controllers as $key => $controller) {
+            $tpl_key = "{" . $key . "}";
+            if (strpos($res, $tpl_key) !== false) {
+                if (class_exists($class_name)) {
+                    $content = new $class_name();
+                }
 
-        return str_replace(
+                $commons[$tpl_key] = $this->getHtml($content);
+            }
+        }*/
+
+
+        return self::NEWLINE . str_replace(
             array_keys($commons),
             array_values($commons),
             $res
@@ -427,7 +488,7 @@ class ControllerHtml extends Mappable
      */
     private function parseHead() : string
     {
-        return /** @lang text */ '<head>'
+        return /** @lang text */ '<' . self::HEAD_TAG . '>'
             . $this->parseEncoding()
             . $this->parseTitle()
             . $this->parseDescription()
@@ -435,9 +496,13 @@ class ControllerHtml extends Mappable
             . $this->parseFavicons()
             . $this->parseFonts()
             . $this->parseCss()
-            . $this->parseJs()
-            . $this::NEWLINE
-        . '</head>';
+            . $this->parseStyle()
+            . $this->parseStructuredData()
+            . $this->parseJsTemplate()
+            . $this->parseJs(self::ASSET_LOCATION_ASYNC)
+            . $this->parseJs(self::ASSET_LOCATION_HEAD)
+            . self::NEWLINE
+        . '</' . self::HEAD_TAG . '>';
     }
 
     /**
@@ -447,7 +512,7 @@ class ControllerHtml extends Mappable
     private function parseDebug() : string
     {
         return (Kernel::$Environment::DEBUG
-            ? Debug::dump($this->error, true) . $this::NEWLINE
+            ? self::NEWLINE . Debug::dump($this->error, true)
             : ""
         );
     }
@@ -458,11 +523,13 @@ class ControllerHtml extends Mappable
      */
     private function parseBody() : string
     {
-        return $this->body
+        return '<' . self::BODY_TAG . ($this->body_class ? ' class="'  . $this->body_class. '"' : null) . '>'
+            . $this->parseJs(self::ASSET_LOCATION_BODY_TOP)
             . $this->parseLayout()
-            . $this::NEWLINE
             . $this->parseDebug()
-            . '</body>';
+            . $this->parseJs(self::ASSET_LOCATION_BODY_BOTTOM)
+            . self::NEWLINE
+            . '</' . self::BODY_TAG . '>';
     }
 
     /**
@@ -493,22 +560,51 @@ class ControllerHtml extends Mappable
      */
     private function parseHtml() : string
     {
-        return /** @lang text */ $this->doctype
-            . $this::NEWLINE . '<html ' . $this->parseHtmlLang() . $this->parseHtmlRegion() . '>'
-            . $this::NEWLINE . $this->parseHead()
-            . $this::NEWLINE . $this->parseBody()
-            . $this::NEWLINE . '</html>';
+        $this->renderJs($this->js);
+        $this->renderJs($this->js_embed, true);
+
+        return /** @lang text */ $this->doc_type ?? self::DOC_TYPE
+            . self::NEWLINE . '<' . self::PAGE_TAG . $this->parseHtmlLang() . $this->parseHtmlRegion() . '>'
+            . self::NEWLINE . $this->parseHead()
+            . self::NEWLINE . $this->parseBody()
+            . self::NEWLINE . '</' . self::PAGE_TAG .'>';
     }
 
     /**
-     * @return DataHtml
+     * @param string|null $media
+     * @return string|null
+     */
+    private function attrMedia(string $media = null) : ?string
+    {
+        return (
+            $media && $media != self::MEDIA_DEVICE_DEFAULT
+            ? ' media="' . $media . '"'
+            : null
+        );
+    }
+
+    /**
+     * @param string $path
+     * @return string|null
+     */
+    private function attrCors(string $path) : ?string
+    {
+        return (
+        strpos($path, "http") === 0
+            ? ' crossorigin="anonymous"'
+            : null
+        );
+    }
+
+    /**
+     * @return string
      * @throws Exception
      */
-    public function toDataHtml() : DataHtml
+    public function toHtml() : string
     {
         Debug::stopWatch("gui/controller/html");
 
-        return new DataHtml(["html" => $this->parseHtml()]);
+        return $this->parseHtml();
     }
 
     /**
@@ -519,14 +615,14 @@ class ControllerHtml extends Mappable
     {
         Response::httpCode($http_status_code ?? $this->http_status_code);
 
-        Response::send($this->toDataHtml());
+        Response::send(new DataHtml(["html" => $this->toHtml()]));
     }
 
     /**
-     * @param string $error
+     * @param string|null $error
      * @return $this
      */
-    public function debug(string $error) : self
+    public function debug(string $error = null) : self
     {
         $this->error = $error;
 

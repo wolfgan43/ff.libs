@@ -49,7 +49,7 @@ class Login extends Widget
     {
         if (User::isLogged()) {
             $config                 = $this->getConfig();
-            $this->load(Logout::class, [
+            $this->replaceWith(Logout::class, [
                 "error"             => $config->error,
                 "redirect"          => $config->redirect
             ]);
@@ -118,7 +118,7 @@ class Login extends Widget
         $responseData                           = User::login($this->request->username, $this->request->password, $this->request->permanent ?? null);
         if (!$responseData->isError()) {
             if ($this->aclVerify()) {
-                $responseData->set("welcome", Welcome::toJson());
+                $responseData->set("welcome", Welcome::toArray());
             } else {
                 $responseData = User::logout();
                 $responseData->error(401, "Permission Denied.");

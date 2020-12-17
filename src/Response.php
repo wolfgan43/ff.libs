@@ -133,7 +133,7 @@ class Response
                 Log::registerProcedure("Router", "page" . Log::CLASS_SEP . "error");
 
                 (new ErrorController())
-                    ->error($status, $msg ?? "Oops!")
+                    ->error($status, $msg)
                     ->display();
                 break;
             case "php/cli":

@@ -16,6 +16,7 @@ class WelcomeController extends Controller
      */
     protected function get(): void
     {
+        $this->addStylesheet("main");
 
         /*
         $this->layout(null, true)

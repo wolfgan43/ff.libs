@@ -136,10 +136,10 @@ class Translator
      * @return string
      * @throws Exception
      */
-    public static function getWordByCode(string $code = null, string $language = null) : string
+    public static function getWordByCode(string $code = null, string $language = null) : ?string
     {
         if (!$code || !Locale::isMultiLang()) {
-            return (string) $code;
+            return $code;
         }
         $lang_code                                      = self::getLang($language);
         if (array_search($lang_code, Kernel::$Environment::ACCEPTED_LANG) === false) {

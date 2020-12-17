@@ -99,7 +99,7 @@ class Resource extends Mappable implements Dumpable
      * @return string|array|null
      * @todo da tipizzare
      */
-    public static function get(string $name, string $type)
+    public static function cascading(string $name, string $type)
     {
         if (!self::$singleton) {
             self::$singleton                    = new Resource();
@@ -122,6 +122,21 @@ class Resource extends Mappable implements Dumpable
 
         return $file;
     }
+
+    /**
+     * @param string $name
+     * @param string $type
+     * @return string|null
+     */
+    public static function get(string $name, string $type) : ?string
+    {
+        if (!self::$singleton) {
+            self::$singleton = new Resource();
+        }
+
+        return self::$singleton->resources[$type][$name] ?? null;
+    }
+
 
     /**
      * @param string $name

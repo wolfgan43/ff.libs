@@ -631,7 +631,7 @@ class Orm extends Mappable
                                         unset($this->result[$relTable][$keyParent][$aliasTable]);
 
                                         if (!$oneToMany && !$manyToMany) {
-                                            $this->result[$thisTable][$keyCounter][$Orm->getTableAlias($relTable)][]        =& $this->result[$relTable][$keyParent];
+                                            $this->result[$thisTable][$keyCounter][$relTable][]                             =& $this->result[$relTable][$keyParent];
                                         } else {
                                             $this->result[$thisTable][$keyCounter][$Orm->getTableAlias($relTable)]          =& $this->result[$relTable][$keyParent];
                                         }
@@ -656,7 +656,7 @@ class Orm extends Mappable
 
                                     foreach ($keyParents as $keyParent) {
                                         if ($oneToMany || $manyToMany) {
-                                            $this->result[$relTable][$keyParent][$aliasTable][]                             =& $this->result[$thisTable][$keyCounter];
+                                            $this->result[$relTable][$keyParent][$thisTable][]                              =& $this->result[$thisTable][$keyCounter];
                                         } else {
                                             $this->result[$relTable][$keyParent][$aliasTable]                               =& $this->result[$thisTable][$keyCounter];
                                         }
@@ -842,6 +842,13 @@ class Orm extends Mappable
             }
         }
 
+        /**
+         * necessario quando il campo non è autoincrement
+         */
+        if ($insert_key === "0") {
+            $insert_key                                                                     = $data->insert[$data->def->key_primary] ?? null;
+        }
+
         $this->setKeyRelationship($data, $key_name, $insert_key, $controller);
 
         $this->setResultKeys($data, $insert_key);
@@ -855,7 +862,7 @@ class Orm extends Mappable
      */
     private function setResultKeys(OrmQuery $data, $key = null) : void
     {
-        if (!empty($key)) {
+        if ($key) {
             if (is_array($key)) {
                 foreach ($key as $k) {
                     $this->result_keys[$data->table][]                                      = [$data->def->key_primary => $k];
@@ -1036,7 +1043,8 @@ class Orm extends Mappable
             $subService                                                                     = $this->services_by_data->last; //key($this->services_by_data->services);
             $is_single_table                                                                = (count($this->services_by_data->services[$subService]) == 1);
             $Orm                                                                            = $this->getModel($subService);
-            $subTable                                                                       = ($is_single_table
+            $subTable                                                                       = (
+                $is_single_table
                                                                                                 ? $this->services_by_data->last_table
                                                                                                 : $Orm->getMainTable()
                                                                                             );
@@ -1096,7 +1104,7 @@ class Orm extends Mappable
      * @param array|null $fields
      * @throws Exception
      */
-    private function resolveFields($scope, array $fields = null) : void
+    private function resolveFields(string $scope, array $fields = null) : void
     {
         if (!empty($fields)) {
             $mainService                                                                    = $this->getCollection();

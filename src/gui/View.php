@@ -1,7 +1,6 @@
 <?php
 namespace phpformsframework\libs\gui;
 
-use phpformsframework\libs\Dir;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\util\AdapterManager;
 use stdClass;
@@ -31,26 +30,14 @@ class View
         }
         $this->setAdapter($templateAdapter ?? Kernel::$Environment::TEMPLATE_ADAPTER);
     }
-    /**
-     * @return string
-     */
-    private function getViewDiskPath() : string
-    {
-        return Dir::findViewPath();
-    }
 
     /**
-     * @param string $template_path
-     * @param bool $is_relative
+     * @param string $template_disk_path
      * @return $this
      */
-    public function fetch(string $template_path, bool $is_relative = false) : View
+    public function fetch(string $template_disk_path) : View
     {
-        $this->adapter->fetch(
-            $is_relative
-            ? $this->getViewDiskPath() . $template_path
-            : $template_path
-        );
+        $this->adapter->fetch($template_disk_path);
 
         return $this;
     }

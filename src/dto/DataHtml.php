@@ -26,54 +26,19 @@
 
 namespace phpformsframework\libs\dto;
 
-use phpformsframework\libs\gui\AssetsManager;
-
 /**
  * Class DataHtml
  * @package phpformsframework\libs\dto
  */
 class DataHtml extends DataAdapter
 {
-    use AssetsManager;
-
     const CONTENT_TYPE = "text/html";
 
-    /**
-     * @param string $key
-     * @return string|null
-     */
-    public function getJs(string $key): ?string
-    {
-        return $this->js[$key] ?? null;
-    }
+    public $js                                  = array();
+    public $css                                 = array();
+    public $fonts                               = array();
 
-    /**
-     * @param string $key
-     * @return string|null
-     */
-    public function getCss(string $key): ?string
-    {
-        return $this->css[$key] ?? null;
-    }
-
-    /**
-     * @param string $key
-     * @return string|null
-     */
-    public function getFont(string $key): ?string
-    {
-        return $this->fonts[$key] ?? null;
-    }
-
-    /**
-     * @param string $type
-     * @param string $key
-     * @return string|null
-     */
-    public function find(string $type, string $key) : ?string
-    {
-        return $this->{$type}[$key] ?? null;
-    }
+    public $html                                = null;
 
     /**
      * @return null|string

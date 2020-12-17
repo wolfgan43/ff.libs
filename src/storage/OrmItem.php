@@ -13,11 +13,13 @@ use stdClass;
  * Class OrmItem
  * @package phpformsframework\libs\storage
  */
-class OrmItem
+abstract class OrmItem
 {
     use ClassDetector;
     use Mapping;
     use OrmUtil;
+
+    private static $buffer                                                      = null;
 
     private const SEARCH_OPERATORS                                              = [
         'gt'            => '$gt',
@@ -49,6 +51,10 @@ class OrmItem
     private $oneToOne                                                           = [];
     private $oneToMany                                                          = [];
     private $informationSchema                                                  = null;
+
+
+    abstract protected function default() : void;
+
     /**
      * @return stdClass
      */
@@ -194,6 +200,10 @@ class OrmItem
         $this->setRecordKey($record_key);
 
         $this->storedData = array_replace($this->storedData, $fill ?? []);
+
+        if (!$this->isStored()) {
+            $this->default();
+        }
     }
 
     /**
@@ -217,6 +227,7 @@ class OrmItem
     /**
      *
      * @param bool $extendPrimaryKey
+     * @throws Exception
      */
     private function loadCollection(bool $extendPrimaryKey = false)
     {
@@ -228,20 +239,22 @@ class OrmItem
         $this->informationSchema                                                = $this->db->informationSchema();
 
         if (!empty($this->dbJoins)) {
+            if (!isset(self::$buffer["current"])) {
+                self::$buffer["current"]                                        = static::class;
+            }
+            self::$buffer["items"][static::class]                               = true;
             foreach ($this->dbJoins as $join => $fields) {
                 if (is_numeric($join)) {
                     $join                                                       = $fields;
                     $fields                                                     = null;
                 }
 
-                if (method_exists($join, 'dtd')) {
+                if (!isset(self::$buffer["items"][$join]) && method_exists($join, 'dtd')) {
+                    $table                                                      = null;
                     /**
                      * @var OrmItem $join
                      */
                     $dtd                                                        = $join::dtd();
-                    if (!isset($this->{$dtd->table})) {
-                        $this->{$dtd->table}                                    = [];
-                    }
 
                     //da fare procedura ricorsiva che discende nelle join dei mapclass relazionati
                     $this->db->join($dtd->table, $fields ?? $dtd->dataResponse);
@@ -251,22 +264,31 @@ class OrmItem
                         /**
                          * OneToOne
                          */
-                        $this->oneToOne[$dtd->table]                           = $this->setRelationship($join, $dtd, $informationSchemaJoin);
+                        $table                                                  = $informationSchemaJoin->schema["alias"];
+                        $this->oneToOne[$table]                                 = $this->setRelationship($join, $dtd, $informationSchemaJoin);
                     } elseif (isset($this->informationSchema->relationship[$dtd->table])) {
                         /**
                          * OneToMany
                          */
-                        $this->oneToMany[$dtd->table]                           = $this->setRelationship($join, $dtd, $this->informationSchema);
-
+                        $table                                                  = $informationSchemaJoin->schema["name"];
+                        $this->oneToMany[$table]                                = $this->setRelationship($join, $dtd, $this->informationSchema);
                         if ($extendPrimaryKey) {
                             $dtd->dataResponse[]                                = $informationSchemaJoin->key;
                         }
+                    }
+
+                    if ($table && !property_exists($this, $table)) {
+                        throw new Exception("Missing property " . $table . " on " . $this->getClassName(), 500);
                     }
 
                     $this->db->join($dtd->table, $fields ?? $dtd->dataResponse);
                 } else {
                     $this->db->join($join, $fields);
                 }
+            }
+
+            if (self::$buffer["current"] == static::class) {
+                self::$buffer                                                   = null;
             }
         }
     }
@@ -394,7 +416,7 @@ class OrmItem
             $item                                                               = $this->db->insert(array_merge($vars, $this->indexes));
             $this->recordKey                                                    = $item->key(0);
             $this->primaryKey                                                   = $item->getPrimaryKey();
-            if (!$this->recordKey) {
+            if ($this->recordKey === null) {
                 throw new Exception($this->db->getName() .  "::db->insert Missing primary " . $this->primaryKey, 500);
             }
         }
@@ -453,7 +475,7 @@ class OrmItem
          */
         foreach ($this->oneToMany as $table => $oneToMany) {
             $relDataDB                                                          = $this->storedData[$table] ?? null;
-            $relData                                                            = $this->{$table};
+            $relData                                                            = $this->{$table} ?? [];
 
             $relationship                                                       = (object) $oneToMany->informationSchema->relationship[$table];
             $indexes                                                            = [$relationship->external => $this->recordKey];
@@ -461,6 +483,10 @@ class OrmItem
 
             $keys                                                               = array_flip(array_column($this->{$table} ?? [], $primaryKey));
             foreach ($relData as $index => $var) {
+                if (!is_array($var)) {
+                    throw new Exception("Relationship is oneToMany (" . $oneToMany->informationSchema->table . " => " . $table . "). Property '" . $table . "' must be an array of items in parent class.", "400");
+                }
+
                 $var                                                            = array_intersect_key($var, $oneToMany->informationSchema->dtd);
                 /**
                  * Skip update if DataStored = DataProperty

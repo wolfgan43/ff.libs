@@ -41,7 +41,7 @@ class Recover extends Widget
         $action                     = basename($this->path_info);
         $config                     = $this->getConfig();
         if (!empty($this->request->code)) {
-            $response = $this->api($config->api->{"change_" . $action}, ["code" => $this->request->code, $action => $this->request->value]);
+            $response = $this->api($config->api->{"change_" . $action}, [$action => $this->request->value], ["Authorization" => $this->authorization . ":" . $this->request->code]);
         } else {
             $response = $this->api($config->api->{"recover_" . $action}, ["identifier" => $this->request->identity]);
             $response->set("confirm", $this->confirm());

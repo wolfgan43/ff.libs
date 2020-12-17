@@ -1,8 +1,14 @@
 {
-  "libs": [
-    "frameworkcss_bootstrap4",
-    "fonticon_fontawesome6"
-  ],
+  "css": {
+    "https:\/\/cdnjs.cloudflare.com\/ajax\/libs\/twitter-bootstrap\/4.3.1\/css\/bootstrap.min.css" : "all",
+    "https:\/\/cdnjs.cloudflare.com\/ajax\/libs\/font-awesome\/5.8.1\/css\/all.min.css" : "all"
+  },
+  "fonts": {},
+  "js": {
+    "https:\/\/cdnjs.cloudflare.com\/ajax\/libs\/jquery\/3.4.0\/jquery.min.js" : "async",
+    "https:\/\/cdnjs.cloudflare.com\/ajax\/libs\/popper.js\/1.14.7\/umd\/popper.min.js" : "async",
+    "https:\/\/cdnjs.cloudflare.com\/ajax\/libs\/twitter-bootstrap\/4.3.1\/js\/bootstrap.min.js" : "async"
+  },
   "meta": {
     "viewport": {
       "name": "viewport",

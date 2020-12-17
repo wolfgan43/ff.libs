@@ -59,6 +59,10 @@ class UserData extends OrmItem
     public $locale                  = null;
     public $lang                    = null;
 
+    protected function default(): void
+    {
+    }
+
     /**
      * @param string|null $mode
      * @param string $noavatar

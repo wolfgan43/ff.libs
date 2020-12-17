@@ -13,28 +13,9 @@ use Exception;
  */
 class ErrorController extends Controller
 {
-    private $description        = null;
     private $email_support      = null;
 
     protected $http_status_code = 404;
-
-    public function error(int $status, string $msg = null, string $description = null): Controller
-    {
-        $this->description      = $description;
-
-        return parent::error($status, $msg);
-    }
-
-    /**
-     * @param string $description
-     * @return $this
-     */
-    public function setDescription(string $description) : self
-    {
-        $this->description      = $description;
-
-        return $this;
-    }
 
     /**
      * @param string $email
@@ -52,12 +33,15 @@ class ErrorController extends Controller
      */
     protected function get() : void
     {
+        $this->addStylesheet("main");
+        $this->addStylesheet("error");
+
         $error = Translator::getWordByCode($this->error);
 
         $errorView = $this->view()
             ->assign("site_path", Constant::SITE_PATH)
-            ->assign("title", $error)
-            ->assign("description", Translator::getWordByCode($this->description ?? Error::getErrorMessage($this->http_status_code)));
+            ->assign("title", $error ?? Translator::getWordByCode(Error::getErrorMessage($this->http_status_code)))
+            ->assign("error_code", $this->http_status_code);
 
         if ($this->email_support) {
             $errorView->assign("email_support", $this->email_support);

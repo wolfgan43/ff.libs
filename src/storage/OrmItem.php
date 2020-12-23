@@ -270,15 +270,19 @@ abstract class OrmItem
                         /**
                          * OneToMany
                          */
-                        $table                                                  = $informationSchemaJoin->schema["name"];
+                        $table                                                  = $dtd->table;
                         $this->oneToMany[$table]                                = $this->setRelationship($join, $dtd, $this->informationSchema);
                         if ($extendPrimaryKey) {
                             $dtd->dataResponse[]                                = $informationSchemaJoin->key;
                         }
                     }
 
-                    if ($table && !property_exists($this, $table)) {
-                        throw new Exception("Missing property " . $table . " on " . $this->getClassName(), 500);
+                    if ($table) {
+                        if (!property_exists($this, $table)) {
+                            throw new Exception("Missing property " . $table . " on " . $this->getClassName(), 500);
+                        } elseif (!is_array($this->{$table})) {
+                            $this->{$table}                                     = [];
+                        }
                     }
 
                     $this->db->join($dtd->table, $fields ?? $dtd->dataResponse);

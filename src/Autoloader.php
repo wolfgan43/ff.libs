@@ -39,6 +39,7 @@ class Autoloader
 {
     protected const ERROR_BUCKET                                            = "config";
 
+    private static $includes                                                = null;
     private static $classes                                                 = null;
 
     /**
@@ -48,11 +49,14 @@ class Autoloader
     public static function register(array $paths)
     {
         $cache                                                              = Buffer::cache(static::ERROR_BUCKET);
-        self::$classes                                                      = $cache->get("autoloader");
-        if (self::$classes) {
+        $autoloader                                                         = $cache->get("autoloader");
+        self::$includes                                                     = $autoloader["includes"];
+        if (self::$includes) {
+            self::$classes                                                  = $autoloader["classes"];
+
             spl_autoload_register(function ($class_name) {
-                if (isset(self::$classes[$class_name])) {
-                    include self::$classes[$class_name];
+                if (isset(self::$includes[$class_name])) {
+                    include self::$includes[$class_name];
                 }
             });
         } else {
@@ -72,27 +76,46 @@ class Autoloader
             });
 
             self::spl($paths);
-
+            $includes = null;
             $classes                                                        = get_declared_classes();
-            $patterns                                                       = array_fill_keys($paths, ["flag" => FilemanagerScan::SCAN_FILE_RECURSIVE, "filter" => [Constant::PHP_EXT]]);
-            FilemanagerScan::scan($patterns, function ($path) {
-                include_once($path);
-            });
+            $patterns                                                       = array_fill_keys($paths, [
+                "flag"      => FilemanagerScan::SCAN_FILE_RECURSIVE,
+                "filter"    => [Constant::PHP_EXT],
+                "callback"  => function ($fileinfo, $opt) use (&$includes) {
+                    include_once($fileinfo->dirname . DIRECTORY_SEPARATOR . $fileinfo->basename);
+                    $includes[$fileinfo->dirname . DIRECTORY_SEPARATOR . $fileinfo->basename] = $opt->pattername;
+                }
+            ]);
+
+            FilemanagerScan::scan($patterns);
 
             $classes                                                        = array_diff(get_declared_classes(), $classes);
             try {
                 foreach ($classes as $class_name) {
                     $class                                                  = new ReflectionClass($class_name);
-                    if (strpos($class->getFileName(), Constant::LIBS_DISK_PATH) === false) {
-                        self::$classes[$class_name]                         = $class->getFileName();
+                    $class_path                                             = $class->getFileName();
+
+                    if (strpos($class_path, Constant::LIBS_DISK_PATH) === false) {
+                        self::$includes[$class_name]                         = $class_path;
+                        self::$classes[$includes[$class_path]][strtolower(pathinfo($class_path, PATHINFO_FILENAME))] = $class->getName();
                     }
                 }
             } catch (ReflectionException $e) {
                 App::throwError($e->getCode(), $e->getMessage());
             }
 
-            $cache->set("autoloader", self::$classes, $config_dirs);
+            $cache->set("autoloader", ["includes" => self::$includes, "classes" => self::$classes], $config_dirs);
         }
+    }
+
+    /**
+     * @param string $name
+     * @param string $bucket
+     * @return string|null
+     */
+    public static function getClass(string $name, string $bucket) : ?string
+    {
+        return self::$classes[$bucket][strtolower($name)] ?? null;
     }
 
     /**
@@ -108,8 +131,8 @@ class Autoloader
         if (Dir::checkDiskPath($abs_path)) {
             $rc                                                             = (
                 $once
-                ? require_once($abs_path)
-                : include($abs_path)
+                ? @require_once($abs_path)
+                : @include($abs_path)
             );
         }
 

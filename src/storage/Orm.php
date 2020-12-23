@@ -845,7 +845,7 @@ class Orm extends Mappable
         /**
          * necessario quando il campo non è autoincrement
          */
-        if ($insert_key === "0") {
+        if (!empty($data->def->key_primary) && $insert_key === "0") {
             $insert_key                                                                     = $data->insert[$data->def->key_primary] ?? null;
         }
 
@@ -862,7 +862,7 @@ class Orm extends Mappable
      */
     private function setResultKeys(OrmQuery $data, $key = null) : void
     {
-        if ($key) {
+        if (!empty($key)) {
             if (is_array($key)) {
                 foreach ($key as $k) {
                     $this->result_keys[$data->table][]                                      = [$data->def->key_primary => $k];

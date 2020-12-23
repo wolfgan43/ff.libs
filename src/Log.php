@@ -39,6 +39,7 @@ class Log
 
     public const CLASS_SEP                                      = "->";
 
+    private const LOG_EXT                                       = "log";
     private const ENCODE_JSON                                   = "json";
     private const ENCODE_SERIALIZE                              = "serialize";
     private const PROTECTED_MESSAGE                             = "*protected*";
@@ -508,7 +509,7 @@ class Log
     {
         $log_path = self::getLogDir();
         if ($log_path) {
-            $file = $log_path . DIRECTORY_SEPARATOR . str_replace(DIRECTORY_SEPARATOR, "", Kernel::$Environment::APPNAME) . "_" . date("Y-m-d") . "_" . $filename . '.txt';
+            $file = $log_path . DIRECTORY_SEPARATOR . str_replace(DIRECTORY_SEPARATOR, "", Kernel::$Environment::APPNAME) . "_" . date("Y-m-d") . "_" . $filename . '.' . self::LOG_EXT;
 
             if ($override) {
                 Filemanager::fsave($data, $file);

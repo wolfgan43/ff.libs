@@ -55,7 +55,7 @@ class Request implements Configurable, Dumpable
 
     private static $params          = null;
     private static $access_control  = null;
-    private static $pages           = array();
+    private static $pages           = [];
     private static $alias           = null;
     private static $gateway         = null;
     private static $patterns        = null;
@@ -66,10 +66,6 @@ class Request implements Configurable, Dumpable
      * @var RequestPage $page
      */
     private static $page            = null;
-    /**
-     * @var RequestPage $page[]
-     */
-    private static $pageLoaded      = [];
 
     private static $orig_path_info  = null;
     private static $root_path       = null;
@@ -1064,16 +1060,12 @@ class Request implements Configurable, Dumpable
 
     private static function loadApp(string $path_info, array $request = null, array $headers = null) : stdClass
     {
-        if (!isset(self::$pageLoaded[$path_info])) {
-            self::$pageLoaded[$path_info]                                                       = [
-                "page"              => new RequestPage($path_info, self::$pages, self::$path2params, self::$patterns),
-                "request"           => $request,
-                "headers"           => $headers,
-                "authorization"     => $headers["Authorization"] ?? self::getAuthorizationHeader()
-            ];
-        }
-
-        return (object) self::$pageLoaded[$path_info];
+        return (object) [
+            "page"              => new RequestPage($path_info, self::$pages, self::$path2params, self::$patterns),
+            "request"           => $request,
+            "headers"           => $headers,
+            "authorization"     => $headers["Authorization"] ?? self::getAuthorizationHeader()
+        ];
     }
 
     /**

@@ -16,7 +16,6 @@ class FilemanagerScan implements Dumpable
     private const STORAGE_RAWDATA                                       = "rawdata";
 
     private static $storage                                             = null;
-    private static $scanExclude                                         = null;
 
     /**
      * @var null|callable $callback
@@ -67,13 +66,15 @@ class FilemanagerScan implements Dumpable
      */
     private static function scanRun(string $path, stdClass $opt = null) : void
     {
-        $pattern = Constant::DISK_PATH
-            . $path
-            . (
+        $pattern            = Constant::DISK_PATH . $path .
+            (
                 strpos($path, "*") === false
                 ? '/*'
                 : ''
             );
+
+        $opt->pattern       = dirname($pattern);
+        $opt->pattername    = basename($opt->pattern);
 
         switch ($opt->flag) {
             case self::SCAN_DIR:
@@ -181,10 +182,6 @@ class FilemanagerScan implements Dumpable
      */
     private static function globFilterRecursive(string $pattern, stdClass $opt = null) : void
     {
-        $final_dir = basename(dirname($pattern)); //todo:: da togliere
-        if (isset(self::$scanExclude[$final_dir])) {
-            return;
-        }
         foreach (glob($pattern) as $file) {
             if (is_file($file)) {
                 self::scanAddItem($file, $opt);
@@ -237,6 +234,9 @@ class FilemanagerScan implements Dumpable
             if (isset($opt->type)) {
                 self::setStorage($file_info, $opt);
             } else {
+                if (isset($opt->callback) && is_callable($opt->callback)) {
+                    ($opt->callback)($file_info, $opt);
+                }
                 self::$storage[self::STORAGE_RAWDATA][] = $file;
             }
         }
@@ -255,6 +255,9 @@ class FilemanagerScan implements Dumpable
         if (isset($opt->rootpath)) {
             $file_info->rootpath                        = realpath($file_info->dirname . DIRECTORY_SEPARATOR . $opt->rootpath);
             $file_info->rootname                        = basename($file_info->rootpath);
+        } else {
+            $file_info->rootpath                        = $opt->pattern;
+            $file_info->rootname                        = $opt->pattername;
         }
 
         if (isset($opt->replace[$file_info->extension])) {
@@ -275,6 +278,10 @@ class FilemanagerScan implements Dumpable
             eval('self::$storage[$type]["' . $group . '"][$key]   = $file;');
         } else {
             self::$storage[$type][$key]                 = $file;
+        }
+
+        if (isset($opt->callback) && is_callable($opt->callback)) {
+            ($opt->callback)($file_info, $opt);
         }
     }
 }

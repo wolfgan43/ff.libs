@@ -27,7 +27,7 @@ namespace phpformsframework\libs;
 
 use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\delivery\Notice;
-use phpformsframework\libs\storage\Filemanager;
+use phpformsframework\libs\storage\FilemanagerFs;
 use ReflectionClass;
 use Exception;
 
@@ -38,6 +38,7 @@ use Exception;
 class Debug
 {
     const ERROR_BUCKET                      = "exception";
+
     private const MAX_PAD                   = 40;
     private const RUNNER_EXCLUDE            = array(
                                                 "index"     => true,
@@ -46,19 +47,22 @@ class Debug
                                                 "Error"     => true,
                                                 "Log"       => true
                                             );
-    private static $app_start               = null;
-    private static $startWatch              = array();
 
-    private static $exTime                  = array();
+    private static $disabled                = true;
+    private static $app_start               = null;
+    private static $startWatch              = [];
+
+    private static $exTime                  = [];
+    private static $exTimeCache             = 0;
 
     private static $debug                   = [];
-    private static $exTimeLog               = [];
 
     /**
      * Debug constructor.
      */
     public function __construct()
     {
+        self::$disabled                     = false;
         self::$app_start                    = microtime(true);
         if (isset($_SERVER["REQUEST_TIME"])) {
             self::$exTime["autoload"]       = self::$app_start - $_SERVER["REQUEST_TIME"];
@@ -113,10 +117,12 @@ class Debug
             $res["exTime - Delivery"]       = Notice::exTime();
             $res["exTime - UserCode"]       = self::exTimeApp() - Config::exTime() - array_sum(Buffer::exTime()) - Notice::exTime();
             $res["exTime - App"]            = self::exTime("autoload") + self::exTimeApp();
+            $res["exTime - Cache"]          = self::$exTimeCache;
             $res["App - Cache"]             = (!Kernel::useCache() ? "off" : "on (" . Kernel::$Environment::CACHE_BUFFER_ADAPTER . ", " . Kernel::$Environment::CACHE_DATABASE_ADAPTER . ", " . Kernel::$Environment::CACHE_MEDIA_ADAPTER . ")");
             $res["query"]                   = Buffer::dump()["process"];
             //$res["backtrace"]               = self::dumpBackTrace();
         }
+
         return $res;
     }
     /**
@@ -127,6 +133,10 @@ class Debug
     {
         static $count                       = null;
 
+        if (!Kernel::$Environment::DEBUG) {
+            return null;
+        }
+
         if (isset(self::$startWatch[$bucket])) {
             $key                            = $bucket;
             if (isset(self::$exTime[$bucket])) {
@@ -135,12 +145,14 @@ class Debug
                 $key                        .= "#" . $count[$bucket];
             }
             self::$exTime[$key]             = number_format(microtime(true) - self::$startWatch[$bucket], 4, '.', '');
-            self::$exTimeLog[$bucket . " #" . microtime(true)] = self::$exTime[$key];
+
+            if (strpos($bucket, "Cache") === 0) {
+                self::$exTimeCache          += (float) self::$exTime[$key];
+            }
             unset(self::$startWatch[$bucket]);
             return (float) self::$exTime[$key];
         } else {
             self::$startWatch[$bucket]      = microtime(true);
-            self::$exTimeLog[$bucket . " #" . microtime(true)] = self::$startWatch[$bucket];
             return null;
         }
     }
@@ -346,6 +358,10 @@ class Debug
     {
         self::stopWatch("debugger");
 
+        if (self::$disabled) {
+            return null;
+        }
+
         if (Request::isCli() || Request::accept() != "text/html") {
             echo self::dumpCommandLine($error_message);
             exit;
@@ -428,7 +444,7 @@ class Debug
                         continue;
                     }
 
-                    if (isset($dir["path"]) && !is_dir(Constant::DISK_PATH . $dir["path"]) && !Filemanager::makeDir($dir["path"])) {
+                    if (isset($dir["path"]) && !is_dir(Constant::DISK_PATH . $dir["path"]) && !FilemanagerFs::makeDir($dir["path"])) {
                         $errors["dirstruct"][] = "Failed to Write " . $dir["path"] . " Check permission";
                     } elseif (isset($dir["writable"]) && $dir["writable"] && !is_writable(Constant::DISK_PATH . $dir["path"])) {
                         $errors["dirstruct"][] = "Dir " . $dir["path"] . " is not Writable";
@@ -485,6 +501,9 @@ class Debug
 
 
         $html = '<style type="text/css">
+    BODY {
+        padding-bottom: 30px;
+    }
     .x-debugger {
         position: fixed;
         bottom: 0;
@@ -568,6 +587,7 @@ class Debug
         $html .= '<br /><span>Autoloader: ' . self::exTime("autoload") . '</span>'
             . '<span>App: ' . self::exTimeApp() . '</span>'
             . '<span>( UserCode: ' . (self::exTimeApp() - Config::exTime() - array_sum(Buffer::exTime()) - Notice::exTime()) . '</span>'
+            . '<span>Cache: ' . self::$exTimeCache. ' </span>'
             . '<span>Debugger: {debug_extime}) </span>';
         if (Kernel::$Environment::PROFILING) {
             $benchmark = self::benchmark(true);
@@ -649,17 +669,6 @@ class Debug
         }
 
         return $res;
-    }
-
-    /**
-     * @param string $filename
-     * @param string|null $data
-     */
-    public static function dumpLog(string $filename, string $data = null) : void
-    {
-        $trace                                  = self::dumpCommandLine($data);
-
-        Log::warning($trace, $filename);
     }
 
     /**

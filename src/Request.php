@@ -28,6 +28,7 @@ namespace phpformsframework\libs;
 
 use phpformsframework\libs\dto\RequestPage;
 use phpformsframework\libs\international\Locale;
+use phpformsframework\libs\util\TypesConverter;
 use stdClass;
 use Exception;
 
@@ -37,6 +38,8 @@ use Exception;
  */
 class Request implements Configurable, Dumpable
 {
+    use TypesConverter;
+
     public const UPLOAD_PARAM_NAME  = "files";
 
     public const METHOD_GET         = "GET";
@@ -66,6 +69,10 @@ class Request implements Configurable, Dumpable
      * @var RequestPage $page
      */
     private static $page            = null;
+    /**
+     * @var RequestPage $page[]
+     */
+    private static $pageLoaded      = [];
 
     private static $orig_path_info  = null;
     private static $root_path       = null;
@@ -164,6 +171,16 @@ class Request implements Configurable, Dumpable
         if (!empty($rawdata["post"])) {
             foreach ($rawdata["post"] as $post) {
                 self::loadRequestMapping($obj, Dir::getXmlAttr($post), "body");
+            }
+        }
+        if (!empty($rawdata["put"])) {
+            foreach ($rawdata["put"] as $put) {
+                self::loadRequestMapping($obj, Dir::getXmlAttr($put), "query");
+            }
+        }
+        if (!empty($rawdata["delete"])) {
+            foreach ($rawdata["delete"] as $delete) {
+                self::loadRequestMapping($obj, Dir::getXmlAttr($delete), "query");
             }
         }
     }
@@ -1060,12 +1077,16 @@ class Request implements Configurable, Dumpable
 
     private static function loadApp(string $path_info, array $request = null, array $headers = null) : stdClass
     {
-        return (object) [
-            "page"              => new RequestPage($path_info, self::$pages, self::$path2params, self::$patterns),
-            "request"           => $request,
-            "headers"           => $headers,
-            "authorization"     => $headers["Authorization"] ?? self::getAuthorizationHeader()
-        ];
+        if (!isset(self::$pageLoaded[$path_info . self::checkSumArray($request)])) {
+            self::$pageLoaded[$path_info]                                                       = [
+                "page"              => new RequestPage($path_info, self::$pages, self::$path2params, self::$patterns),
+                "request"           => $request,
+                "headers"           => $headers,
+                "authorization"     => $headers["Authorization"] ?? self::getAuthorizationHeader()
+            ];
+        }
+
+        return (object) self::$pageLoaded[$path_info];
     }
 
     /**

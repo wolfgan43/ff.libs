@@ -330,15 +330,4 @@ class Error
     {
         return self::$errors;
     }
-
-    /**
-     * @param string $errdes
-     * @param int $errno
-     * @param object|null $context
-     * @param array|null $variables
-     */
-    public static function dumpHandler(string $errdes, int $errno = E_USER_ERROR, object $context = null, array $variables = null) : void
-    {
-        ErrorHandler::raise($errdes, $errno, $context, $variables);
-    }
 }

@@ -150,7 +150,7 @@ class Hook implements Configurable, Dumpable
     {
         $res                                                                        = null;
 
-        if (isset(self::$events[$name]) && is_array(self::$events[$name])) {
+        if (!empty(self::$events[$name])) {
             krsort(self::$events[$name], SORT_NUMERIC);
             foreach (self::$events[$name] as $func) {
                 $res[]                                                              = $func($ref, $params);

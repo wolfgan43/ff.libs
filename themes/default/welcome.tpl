@@ -3,9 +3,8 @@
     <div class="container">
         <div class="row">
             <div class="col-xl-9 mx-auto">
-                <h1 class="mb-5">{content}</h1>
+                <h1 class="mb-5">{$content}</h1>
             </div>
-            {ErrorController}
         </div>
     </div>
 </header>

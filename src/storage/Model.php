@@ -24,6 +24,7 @@ class Model implements Configurable, Dumpable
     private const COLLECTION                                                            = "collection";
     private const TABLE                                                                 = "table";
     private const MAPCLASS                                                              = "mapclass";
+    private const RAWDATA                                                               = "rawdata";
     private const READ                                                                  = "read";
     private const INSERT                                                                = "insert";
     private const FAKE                                                                  = "fake";
@@ -57,15 +58,9 @@ class Model implements Configurable, Dumpable
         );
     }
 
-    /**
-     * @param string|null $collection
-     * @param string|null $mainTable
-     * @param string|null $mapClass
-     * @return Orm
-     */
-    public static function orm(string $collection = null, string $mainTable = null, string $mapClass = null) : Orm
+    public static function get(string $model_name) : ?array
     {
-        return Orm::getInstance($collection, $mainTable, $mapClass);
+        return self::$models[$model_name][self::RAWDATA] ?? null;
     }
 
 
@@ -442,7 +437,7 @@ class Model implements Configurable, Dumpable
                             continue;
                         }
                         $key                                                            = $attr->name;
-
+                        $schema[$model_name][self::RAWDATA][]                           = $key;
                         $schema[$model_name][self::DTD][$key]                           = $attr->validator ?? null;
 
                         if (isset($attr->fake)) {

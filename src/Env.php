@@ -26,8 +26,6 @@
 namespace phpformsframework\libs;
 
 use phpformsframework\libs\cache\Buffer;
-use phpformsframework\libs\storage\Filemanager;
-use DirectoryIterator;
 
 /**
  * Class Env
@@ -87,39 +85,6 @@ class Env implements Configurable
         self::$vars                                                  = array_replace(self::$vars, $values);
 
         return self::$vars;
-    }
-
-    /**
-     * @param string|null $key
-     * @return array
-     */
-    public static function getPackage(string $key = null) : array
-    {
-        $package_disk_path                                          = Dir::findAppPath("packages");
-        if (!self::$packages && $key === null) {
-            $fs                                                     = Filemanager::getInstance("xml");
-            $packages                                               = new DirectoryIterator($package_disk_path);
-
-            foreach ($packages as $package) {
-                if ($package->isDot()) {
-                    continue;
-                }
-
-                $name                                               = $package->getBasename(".xml");
-                $xml                                                = $fs->read($package->getPathname());
-                self::loadSchema($xml, $name);
-            }
-        } elseif ($key && self::$packages[$key] === null) {
-            self::$packages[$key]                                   = false;
-
-            $xml                                                    = Filemanager::getInstance("xml")->read($package_disk_path . DIRECTORY_SEPARATOR . $key . ".xml");
-            self::loadSchema($xml, $key);
-        }
-
-        return ($key
-            ? self::$vars["packages"][$key]
-            : self::$packages
-        );
     }
 
     /**

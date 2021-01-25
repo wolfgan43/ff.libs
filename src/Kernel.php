@@ -29,7 +29,7 @@ class Kernel
     /**
      * @return Kernel
      */
-    public static function &load()
+    public static function &load(): ?Kernel
     {
         return self::$singleton;
     }
@@ -98,9 +98,6 @@ class Kernel
             Hook::handle("on_app_run", $this);
         }
 
-        if ($page->onerror == "redirect" && $page->isInvalidURL()) {
-            $this->Response->redirect($page->canonicalUrl());
-        }
         self::useCache(!$page->nocache);
 
         Config::autoloadRegister(static::NAMESPACE);

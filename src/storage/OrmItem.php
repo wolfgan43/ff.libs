@@ -19,6 +19,8 @@ abstract class OrmItem
     use Mapping;
     use OrmUtil;
 
+    private const ERROR_RECORDSET_EMPTY                                         = "recordset empty";
+
     private static $buffer                                                      = null;
 
     private const SEARCH_OPERATORS                                              = [
@@ -76,11 +78,12 @@ abstract class OrmItem
      * @param int|null $limit
      * @param int|null $offset
      * @param int|null $draw
+     * @param string|array|null $toDataResponse
      * @return DataTableResponse
      * @throws Exception
      * @todo da tipizzare
      */
-    public static function search(array $query = null, array $order = null, int $limit = null, int $offset = null, int $draw = null)
+    public static function search(array $query = null, array $order = null, int $limit = null, int $offset = null, int $draw = null, $toDataResponse = null)
     {
         $dataTableResponse                                                      = new DataTableResponse();
         $item                                                                   = new static();
@@ -90,7 +93,7 @@ abstract class OrmItem
             $dtd                                                                = $item->db->dtdStore();
             foreach ($query as $key => $value) {
                 if (!isset($dtd->$key)) {
-                    throw new Exception("Field " . $key . " not found in table " . $item->dbTable . " (" . $item->dbCollection . ")", "400");
+                    throw new Exception("Field " . $key . " not found in table " . $item->dbTable . " (" . $item->dbCollection . ")", 500);
                 }
 
                 if (is_array($value)) {
@@ -119,10 +122,10 @@ abstract class OrmItem
             foreach ($order as $key => $value) {
                 if (isset($value["column"])) {
                     if (is_array($value["column"])) {
-                        throw new Exception("Multi array not supported in order: " . $key, 400);
+                        throw new Exception("Multi array not supported in order: " . $key, 500);
                     }
                     if (!isset($fields[$value["column"]]) && is_numeric($value["column"])) {
-                        throw new Exception("Order Column value not found: " . $key, 404);
+                        throw new Exception("Order Column value not found: " . $key, 500);
                     }
 
                     $sort[$fields[$value["column"]] ?? $value["column"]]        = $value["dir"] ?? "asc";
@@ -132,8 +135,13 @@ abstract class OrmItem
             }
         }
 
+        $toDataResponse                                                         = $toDataResponse ?? $item->toDataResponse;
+        if (!empty($toDataResponse) && !is_array($toDataResponse)) {
+            $toDataResponse                                                     = Model::get($toDataResponse);
+        }
+
         $recordset                                                              = $item->db
-            ->table($item->dbTable, $item->toDataResponse)
+            ->table($item->dbTable, $toDataResponse)
             ->read($where, $sort, $limit, $offset);
 
         if ($recordset->countRecordset()) {
@@ -142,7 +150,7 @@ abstract class OrmItem
             $dataTableResponse->recordsTotal                                    = $recordset->countTotal();
             $dataTableResponse->draw                                            = $draw + 1;
         } else {
-            //$dataTableResponse->error(404, "not Found");
+            $dataTableResponse->error(204, self::ERROR_RECORDSET_EMPTY);
         }
         return $dataTableResponse;
     }
@@ -257,7 +265,7 @@ abstract class OrmItem
                     $dtd                                                        = $join::dtd();
 
                     //da fare procedura ricorsiva che discende nelle join dei mapclass relazionati
-                    $this->db->join($dtd->table, $fields ?? $dtd->dataResponse);
+                    //$this->db->join($dtd->table, $fields ?? $dtd->dataResponse);
 
                     $informationSchemaJoin                                      = $this->db->informationSchema($dtd->table);
                     if (isset($informationSchemaJoin->relationship[$this->dbTable])) {
@@ -286,8 +294,6 @@ abstract class OrmItem
                     }
 
                     $this->db->join($dtd->table, $fields ?? $dtd->dataResponse);
-                } else {
-                    $this->db->join($join, $fields);
                 }
             }
 
@@ -488,7 +494,7 @@ abstract class OrmItem
             $keys                                                               = array_flip(array_column($this->{$table} ?? [], $primaryKey));
             foreach ($relData as $index => $var) {
                 if (!is_array($var)) {
-                    throw new Exception("Relationship is oneToMany (" . $oneToMany->informationSchema->table . " => " . $table . "). Property '" . $table . "' must be an array of items in parent class.", "400");
+                    throw new Exception("Relationship is oneToMany (" . $oneToMany->informationSchema->table . " => " . $table . "). Property '" . $table . "' must be an array of items in parent class.", 500);
                 }
 
                 $var                                                            = array_intersect_key($var, $oneToMany->informationSchema->dtd);

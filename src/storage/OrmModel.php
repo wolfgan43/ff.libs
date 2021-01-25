@@ -32,11 +32,11 @@ class OrmModel
 
         $informationSchema                                                      = $this->db->informationSchema();
         if (!$informationSchema) {
-            throw new Exception("information schema not found in Class " . get_class($ref) . " for Model: " . $model_name);
+            throw new Exception("information schema not found in Class " . get_class($ref) . " for Model: " . $model_name, 500);
         }
 
         if (!property_exists($ref, $informationSchema->table)) {
-            throw new Exception("missing relation Field: " . $informationSchema->table . " in Class " . get_class($ref) . " for Model: " . $model_name);
+            throw new Exception("missing relation Field: " . $informationSchema->table . " in Class " . get_class($ref) . " for Model: " . $model_name, 500);
         }
 
         if ($rawdata) {

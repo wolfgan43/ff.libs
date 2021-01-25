@@ -28,9 +28,6 @@ namespace phpformsframework\libs\storage;
 
 use Exception;
 use phpformsframework\libs\cache\Cashable;
-use phpformsframework\libs\Debug;
-use phpformsframework\libs\Error;
-use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Mappable;
 use phpformsframework\libs\storage\dto\OrmControllers;
 use phpformsframework\libs\storage\dto\OrmDef;
@@ -203,7 +200,7 @@ class Orm extends Mappable
     private function extractData(array $def, string $key, $error = null) : ?array
     {
         if ($error && !isset($def[$key])) {
-            Error::register("missing Table: `" . $key . "` on Map: " . $error . " Model: " . $this->collection, static::ERROR_BUCKET);
+            throw new Exception("missing Table: `" . $key . "` on Map: " . $error . " Model: " . $this->collection, 500);
         }
 
         return $def[$key] ?? null;
@@ -567,7 +564,7 @@ class Orm extends Mappable
                     $manyToMany                                                                 = false;
                     $oneToMany                                                                  = isset($relation[self::FREL_TABLE_NAME]) && isset($data->def->struct[$ref]);
                     if (!$oneToMany && !isset($relation[self::FREL_EXTERNAL])) {
-                        Error::register("Relation malformed: " . $thisTable . " => " . $ref  . " => " . print_r($relation, true));
+                        throw new Exception("Relation malformed: " . $thisTable . " => " . $ref  . " => " . print_r($relation, true), 500);
                     }
                     if ($oneToMany) {
                         $thisKey                                                                = $ref;
@@ -606,14 +603,14 @@ class Orm extends Mappable
                     } elseif (isset($this->subs[$controller][$relTable])) {
                         $whereRef                                                               =& $this->subs[$controller][$relTable];
                     } elseif (isset($this->services_by_data->tables[$controller . "." . $relTable])) {
-                        Error::register("Relationship not found: " . $thisTable . "." . $thisKey . " => " . $relTable . "." . $relKey);
+                        throw new Exception("Relationship not found: " . $thisTable . "." . $thisKey . " => " . $relTable . "." . $relKey, 500);
                     }
 
                     $keyValue = array_column($regs[self::INDEX] ?? [], $thisKey);
                     if (isset($whereRef) && count($keyValue)) {
                         $this->whereBuilder($whereRef, $keyValue, $relKey);
                     } elseif (isset($this->services_by_data->tables[$controller . "." . $relTable])) {
-                        Error::register("Relationship found but missing keyValue in result. Check in configuration indexes: " . $thisTable . " => " . $thisKey . " (" . $relTable . "." . $relKey . ")");
+                        throw new Exception("Relationship found but missing keyValue in result. Check in configuration indexes: " . $thisTable . " => " . $thisKey . " (" . $relTable . "." . $relKey . ")", 500);
                     }
 
                     $this->rel[$relTable][$thisTable] = $keyValue;
@@ -707,7 +704,7 @@ class Orm extends Mappable
                 $count                                                                      = $regs[self::COUNT];
             }
         } else {
-            Error::register("normalize data is empty", static::ERROR_BUCKET);
+            throw new Exception("normalize data is empty", 500);
         }
 
         return $count;
@@ -915,7 +912,7 @@ class Orm extends Mappable
                     if ($key && $field_ext && $field_ext != $key_name) {
                         if (isset($this->subs[$controller][$tbl])) {
                             if (!isset($this->rev[$tbl])) {
-                                Error::register("relationship missing Controller for table: " . $tbl . " from controller " . $controller, static::ERROR_BUCKET);
+                                throw new Exception("relationship missing Controller for table: " . $tbl . " from controller " . $controller, 500);
                             }
                             $rev_controller                                                 = $this->rev[$tbl];
                             $sub                                                            = $this->getSubs($rev_controller, $tbl);
@@ -1036,7 +1033,7 @@ class Orm extends Mappable
         }
 
         if (!isset($this->services_by_data->services)) {
-            Error::register("Query is empty", static::ERROR_BUCKET);
+            throw new Exception("Query is empty", 500);
         }
         $is_single_service                                                                  = (count($this->services_by_data->services) == 1);
         if (empty($this->main->where) && empty($this->main->select) && empty($this->main->insert) && $is_single_service) {
@@ -1139,11 +1136,7 @@ class Orm extends Mappable
                 $parts                                                                      = explode(".", $key);
                 switch (count($parts)) {
                     case "4":
-                        if (Kernel::$Environment::DEBUG) {
-                            Debug::dump("Wrong Format: " . $key);
-                            exit;
-                        }
-                        break;
+                        throw new Exception("Orm Wrong Format: " . $key, 500);
                     case "3":
                         $service                                                            = $parts[0];
                         $table                                                              = $parts[1];
@@ -1196,7 +1189,7 @@ class Orm extends Mappable
                         if (is_array($subs->def->struct)) {
                             $subs->getAllFields(true);
                         } else {
-                            Error::register("Undefined Struct on Table: `" . $table . "` Model: `" . $service . "`", static::ERROR_BUCKET);
+                            throw new Exception("Undefined Struct on Table: `" . $table . "` Model: `" . $service . "`", 500);
                         }
                     }
                     continue;
@@ -1279,7 +1272,5 @@ class Orm extends Mappable
         $this->result_keys                                                  = null;
         $this->count                                                        = null;
         $this->services_by_data                                             = null;
-
-        Error::clear(static::ERROR_BUCKET);
     }
 }

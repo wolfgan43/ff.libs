@@ -26,7 +26,7 @@
 namespace phpformsframework\libs;
 
 use phpformsframework\libs\security\SecureManager;
-use phpformsframework\libs\storage\Filemanager;
+use phpformsframework\libs\storage\FilemanagerFs;
 use Exception;
 
 /**
@@ -512,9 +512,9 @@ class Log
             $file = $log_path . DIRECTORY_SEPARATOR . str_replace(DIRECTORY_SEPARATOR, "", Kernel::$Environment::APPNAME) . "_" . date("Y-m-d") . "_" . $filename . '.' . self::LOG_EXT;
 
             if ($override) {
-                Filemanager::fsave($data, $file);
+                FilemanagerFs::fsave($data, $file);
             } else {
-                Filemanager::fappend($data, $file);
+                FilemanagerFs::fappend($data, $file);
             }
         }
     }

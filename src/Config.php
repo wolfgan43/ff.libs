@@ -30,7 +30,7 @@ use phpformsframework\libs\dto\ConfigRules;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\microservice\Gateway;
 use phpformsframework\libs\security\Buckler;
-use phpformsframework\libs\storage\Filemanager;
+use phpformsframework\libs\storage\FilemanagerFs;
 use phpformsframework\libs\storage\FilemanagerScan;
 use phpformsframework\libs\storage\Media;
 use Exception;
@@ -231,7 +231,7 @@ class Config implements Dumpable
     /**
      * @return string|null
      */
-    public static function webRoot()
+    public static function webRoot(): ?string
     {
         return self::$webroot;
     }
@@ -324,7 +324,7 @@ class Config implements Dumpable
             self::$mapping_data[$bucket][$name]                             = array();
 
             if (isset(self::$mapping_files[$bucket][$name])) {
-                self::$mapping_data[$bucket][$name]                         = Filemanager::getInstance("json")->read(self::$mapping_files[$bucket][$name]);
+                self::$mapping_data[$bucket][$name]                         = FilemanagerFs::loadFile("json")->read(self::$mapping_files[$bucket][$name]);
 
                 $cache->set($map_name, self::$mapping_data[$bucket][$name], [self::$mapping_files[$bucket][$name] => filemtime(self::$mapping_files[$bucket][$name])]);
             }
@@ -486,7 +486,7 @@ class Config implements Dumpable
      */
     private static function loadFileXml(string $file) : void
     {
-        $configs                                                            = Filemanager::getInstance("xml")->read($file);
+        $configs                                                            = FilemanagerFs::loadFile("xml")->read($file);
         if (is_array($configs)) {
             foreach ($configs as $key => $config) {
                 if (isset(self::$config_rules[$key])) {
@@ -610,17 +610,21 @@ class Config implements Dumpable
                 if ($key == "/") {
                     $key = "*";
                 } elseif (preg_match_all('#/{([^/]*)}#i', $key, $params)) {
-                    $regexp                                                             = '#' . str_replace($params[0], "/([^/]*)", $key) . '#i';
+                    $regexp                                                             = '#^' . str_replace($params[0], "/?([^/]*)", $key) . '$#i';
                     $key                                                                = str_replace($params[0], "", $key);
                     $path2params[$key]                                                  = array(
                                                                                             "matches"   => $params[1],
                                                                                             "regexp"    => $regexp
                                                                                         );
                 }
-
-                if (isset($attr["source"]) && isset($attr["destination"])) {
-                    $router[$key]                                                       = $attr;
-                    unset($attr["destination"]);
+                if (isset($attr["controller"])) {
+                    $router[$key]                                                       = [
+                                                                                            "destination"   => [
+                                                                                                "obj"       => $attr["controller"],
+                                                                                                "method"    => null,
+                                                                                                "params"    => []
+                                                                                            ]
+                                                                                        ];
                 } elseif (isset($attr[self::SCHEMA_ENGINE]) && isset(self::$engine[$attr[self::SCHEMA_ENGINE]])) {
                     $router[$key]                                                       = self::$engine[$attr[self::SCHEMA_ENGINE]][self::SCHEMA_ROUTER];
                 } elseif (!isset($router[$key])) {

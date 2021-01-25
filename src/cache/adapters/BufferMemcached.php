@@ -77,13 +77,13 @@ class BufferMemcached extends BufferAdapter
 
     /**
      * @param string $name
-     * @param mixed $value
+     * @param mixed $data
      * @param string|null $bucket
      * @return bool
      */
-    protected function write(string $name, $value, string $bucket = null): bool
+    protected function write(string $name, $data, string $bucket = null): bool
     {
-        return $this->conn->set($bucket . DIRECTORY_SEPARATOR . $name, $this->setValue($value), $this->getTTL());
+        return $this->conn->set($bucket . DIRECTORY_SEPARATOR . $name, $this->setValue($data), $this->getTTL());
     }
 
     /**
@@ -108,5 +108,14 @@ class BufferMemcached extends BufferAdapter
         parent::clear();
 
         $this->conn->flush();
+    }
+
+    /**
+     * @param string $name
+     * @return string|null
+     */
+    public function getInfo(string $name): ?string
+    {
+        return null;
     }
 }

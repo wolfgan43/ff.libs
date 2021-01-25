@@ -26,6 +26,7 @@
 namespace phpformsframework\libs\gui\adapters;
 
 use phpformsframework\libs\Autoloader;
+use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dir;
@@ -36,7 +37,7 @@ use phpformsframework\libs\Kernel;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\Response;
 use phpformsframework\libs\security\Validator;
-use phpformsframework\libs\storage\Filemanager;
+use phpformsframework\libs\storage\FilemanagerWeb;
 use phpformsframework\libs\storage\Media;
 use phpformsframework\libs\gui\Resource;
 use phpformsframework\libs\gui\View;
@@ -48,6 +49,9 @@ use Exception;
  */
 class ControllerHtml extends ControllerAdapter
 {
+    private const TPL_VAR_PREFIX                = '$';
+    private const TPL_VAR_DEFAULT               = "content";
+
     private const MEDIA_DEVICE_DEFAULT          = self::MEDIA_DEVICE_ALL;
     private const JS_TEMPLATE_DEFAULT           = "text/x-template";
 
@@ -83,7 +87,7 @@ class ControllerHtml extends ControllerAdapter
 
     protected $favicons                         = array();
 
-    private $layout                             = "{content}";
+    private $layout                             = null;
     private $contents                           = array();
     private $scripts                            = [
                                                     self::ASSET_LOCATION_HEAD           => null,
@@ -107,8 +111,8 @@ class ControllerHtml extends ControllerAdapter
         parent::__construct($template_type, self::class);
 
         $this->http_status_code                 = $http_status_code;
-        $this->lang                             = Locale::getLang("tiny_code");
-        $this->region                           = Locale::getCountry("tiny_code");
+        $this->lang                             = Locale::getCodeLang();
+        $this->region                           = Locale::getCodeCountry();
         $this->path_info                        = $path_info;
     }
 
@@ -149,29 +153,25 @@ class ControllerHtml extends ControllerAdapter
     public function setLayout(string $template_or_html = null, string $theme = null) : ControllerAdapter
     {
         if ($template_or_html) {
-            $this->layout                       = (
-                strpos($template_or_html, "<") === 0
-                ? $template_or_html
-                : Resource::load($template_or_html, Resource::TYPE_LAYOUTS)
-            );
+            $this->layout = $template_or_html;
         }
 
         return $this;
     }
 
     /**
-     * @param string|View|Controller $content
-     * @param string|null $where
-     * @return $this
+     * @param array|string $tpl_var
+     * @param string|DataHtml|View|Controller|null $content
+     * @return ControllerAdapter
      * @throws Exception
+     * @todo da tipizzare
      */
-    public function addContent($content, string $where = null) : ControllerAdapter
+    public function assign($tpl_var, $content = null) : ControllerAdapter
     {
-        $this->setContent($where ?? self::MAIN_CONTENT, $this->getHtml($content));
+        $this->setContent($tpl_var, $this->getHtml($content));
 
         return $this;
     }
-
     /**
      * @param string|DataHtml|View|Controller $content
      * @return false|string|null
@@ -200,11 +200,16 @@ class ControllerHtml extends ControllerAdapter
     private function getHtmlByObject($obj) : ?string
     {
         $html                                   = null;
-        if ($obj instanceof View || $obj instanceof Controller) {
+        if ($obj instanceof View) {
             $html                               = $obj->display();
+        } elseif ($obj instanceof Controller) {
+            $html                               = $obj->html();
         } elseif ($obj instanceof DataHtml) {
-            $this->injectAssets($obj);
-            $html                               = $obj->output();
+            $this->css                          = $this->css    + $obj->css;
+            $this->js                           = $this->js     + $obj->js;
+            $this->fonts                        = $this->fonts  + $obj->fonts;
+
+            $html = $obj->output();
         }
 
         return $html;
@@ -228,10 +233,10 @@ class ControllerHtml extends ControllerAdapter
                 $html                           = ob_get_contents();
                 ob_end_clean();
             } else {
-                $html                           = Filemanager::fileGetContent($string);
+                $html                           = FilemanagerWeb::fileGetContents($string);
             }
         } elseif (!Validator::is($string, $string, "url")->isError()) {
-            $html                               = Filemanager::fileGetContent($string);
+            $html                               = FilemanagerWeb::fileGetContents($string);
         } else {
             $html                               = $string;
         }
@@ -241,7 +246,7 @@ class ControllerHtml extends ControllerAdapter
     /**
      * @return string
      */
-    private function getTileDefault()
+    private function getTileDefault(): string
     {
         return ($this->path_info && $this->path_info != DIRECTORY_SEPARATOR
             ? ucfirst(basename($this->path_info))
@@ -322,7 +327,7 @@ class ControllerHtml extends ControllerAdapter
     private function parseFavicons() : string
     {
         $res                                    = "";
-        $favicon                                = Resource::get("favicon", Resource::TYPE_ASSET_IMAGES);
+        $favicon                                = Resource::image("favicon");
         if ($favicon) {
             foreach ($this->favicons as $properties) {
                 $res                            .= self::NEWLINE . '<link rel="' . $properties["rel"] . '" sizes="' . $properties["sizes"] . '" href="' . Media::getUrl($favicon, $properties["sizes"]) . '">';
@@ -431,7 +436,7 @@ class ControllerHtml extends ControllerAdapter
      */
     private function setContent(string $key, string $content = null) : self
     {
-        $this->contents["{" . $key . "}"]      = $content;
+        $this->contents['{' . self::TPL_VAR_PREFIX . $key . '}']      = $content;
 
         return $this;
     }
@@ -442,44 +447,104 @@ class ControllerHtml extends ControllerAdapter
      */
     private function parseLayout() : string
     {
-        $res = str_replace(
+        if (!$this->layout || strpos($this->layout, "<") === 0) {
+            return self::parseLayoutVars($this->layout ?? "{" . self::TPL_VAR_PREFIX . self::TPL_VAR_DEFAULT . "}");
+        }
+
+        Debug::stopWatch("layout/" . $this->layout);
+
+        $cache = Buffer::cache("layout");
+        $res = $cache->get($this->layout);
+        if (!$res) {
+            $views = [];
+            $layout_file = Resource::get($this->layout, Resource::TYPE_LAYOUTS);
+            if (!$layout_file || !($layout = FilemanagerWeb::fileGetContents($layout_file))) {
+                throw new Exception("Layout not Found: " . $this->layout, 500);
+            }
+
+            $tpl_vars = [];
+            if (preg_match_all('/{include file="\$theme_path(.+)"}/i', $layout, $tpl_vars)) {
+                if (!empty($tpl_vars[1])) {
+                    foreach ($tpl_vars[1] as $i => $tpl_var) {
+                        $content_file = Kernel::$Environment::PROJECT_THEME_DISK_PATH . $tpl_var;
+                        if ($content = FilemanagerWeb::fileGetContents($content_file)) {
+                            $layout_files[$content_file] = filemtime($content_file);
+                            $layout = str_replace($tpl_vars[0][$i], $content, $layout);
+                        } else {
+                            throw new Exception("Layout include not Found: " . $tpl_var, 500);
+                        }
+                    }
+                }
+            }
+
+            $layout = preg_replace(
+                '/{include file="[.\/]*([\w\/]+).*"}/i',
+                '{' . self::TPL_VAR_PREFIX . '$1}',
+                $layout
+            );
+
+            foreach (Resource::views() as $key => $view) {
+                $tpl_key = '{' . self::TPL_VAR_PREFIX . $key . '}';
+
+                if (strpos($layout, $tpl_key) !== false) {
+                    if ($content = $this->getHtml($view)) {
+                        $layout_files[$view] = filemtime($view);
+                        $views[$tpl_key] = $content;
+                        $layout = str_replace($tpl_key, $content, $layout);
+                    } else {
+                        throw new Exception("Layout include not Found: " . $key, 500);
+                    }
+                }
+            }
+
+            $layout_files[$layout_file] = filemtime($layout_file);
+
+            $cache->set($this->layout, [
+                "layout"    => $layout,
+                "views"     => $views
+            ], $layout_files);
+        } else {
+            $layout         = $res["layout"];
+            $views          = $res["views"];
+        }
+
+
+        if (!empty($override = array_intersect_key($views, $this->contents))) {
+            $layout = str_replace(
+                $override,
+                array_intersect_key($this->contents, $views),
+                $layout
+            );
+        }
+
+        Debug::stopWatch("layout/" . $this->layout);
+
+        return self::parseLayoutVars($layout);
+    }
+
+    /**
+     * @param string $layout
+     * @return string
+     * @throws Exception
+     */
+    private function parseLayoutVars(string $layout) : string
+    {
+        $this->setAssignDefault();
+        $layout = str_replace(
             array_keys($this->contents),
             array_values($this->contents),
-            $this->layout
+            $layout
         );
 
-        $commons = array();
-        $resources = Resource::type(Resource::TYPE_VIEWS);
-        foreach ($resources as $key => $content) {
-            $tpl_key = "{" . $key . "}";
-            if (strpos($res, $tpl_key) !== false) {
-                $class_name = ucfirst($key);
-                if (class_exists($class_name)) {
-                    $content = new $class_name();
-                }
 
-                $commons[$tpl_key] = $this->getHtml($content);
+        foreach (Resource::components() as $key => $component) {
+            $tpl_key = "{" . $key . "}";
+            if (strpos($layout, $tpl_key) !== false) {
+                $layout = str_replace($tpl_key, $component::html(), $layout);
             }
         }
-        /*
-        $controllers = Resource::type(Resource::TYPE_CONTROLLERS);
-        foreach ($controllers as $key => $controller) {
-            $tpl_key = "{" . $key . "}";
-            if (strpos($res, $tpl_key) !== false) {
-                if (class_exists($class_name)) {
-                    $content = new $class_name();
-                }
 
-                $commons[$tpl_key] = $this->getHtml($content);
-            }
-        }*/
-
-
-        return self::NEWLINE . str_replace(
-            array_keys($commons),
-            array_values($commons),
-            $res
-        );
+        return self::NEWLINE . $layout;
     }
 
     /**
@@ -511,10 +576,7 @@ class ControllerHtml extends ControllerAdapter
      */
     private function parseDebug() : string
     {
-        return (Kernel::$Environment::DEBUG
-            ? self::NEWLINE . Debug::dump($this->error, true)
-            : ""
-        );
+        return self::NEWLINE . Debug::dump($this->error, true);
     }
 
     /**
@@ -627,5 +689,13 @@ class ControllerHtml extends ControllerAdapter
         $this->error = $error;
 
         return $this;
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function setAssignDefault() : void
+    {
+        $this->assign("site_path", Kernel::$Environment::SITE_PATH);
     }
 }

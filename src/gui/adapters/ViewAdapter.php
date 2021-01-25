@@ -1,5 +1,5 @@
 <?php
-namespace phpformsframework\libs\gui;
+namespace phpformsframework\libs\gui\adapters;
 
 /**
  * Interface ViewAdapter
@@ -9,18 +9,20 @@ interface ViewAdapter
 {
     const ERROR_BUCKET = "template";
 
-    /**
-     * @param string $file_disk_path
-     * @return $this
-     */
-    public function fetch(string $file_disk_path) : ViewAdapter;
+    public function __construct();
 
     /**
-     * @param array|string|callable $data
+     * @param string $template_disk_path
+     * @return $this
+     */
+    public function fetch(string $template_disk_path) : ViewAdapter;
+
+    /**
+     * @param array|string|callable $tpl_var
      * @param mixed|null $value
      * @return $this
      */
-    public function assign($data, $value = null) : ViewAdapter;
+    public function assign($tpl_var, $value = null) : ViewAdapter;
 
     /**
      * @return string

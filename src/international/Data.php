@@ -175,7 +175,7 @@ class Data
         }
 
         if (!isset(self::$singleton[$locale])) {
-            self::$singleton[$locale] = new DataAdapter(strtolower($locale));
+            self::$singleton[$locale] = new DataAdapter($locale);
         }
 
         return self::$singleton[$locale];
@@ -187,11 +187,7 @@ class Data
      */
     private static function getLocale(string $locale = null) : ?string
     {
-        return (
-            $locale
-            ? $locale
-            : Locale::getLang("code")
-        );
+        return $locale ?? Locale::getCodeLang();
     }
 
     /**

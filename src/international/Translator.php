@@ -28,30 +28,33 @@ namespace phpformsframework\libs\international;
 
 use Exception;
 use phpformsframework\libs\cache\Buffer;
-use phpformsframework\libs\Error;
+use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Kernel;
-use phpformsframework\libs\storage\Model;
+use phpformsframework\libs\Response;
+use phpformsframework\libs\storage\DatabaseManager;
+use phpformsframework\libs\storage\FilemanagerFs;
 use phpformsframework\libs\util\AdapterManager;
 
 /**
  * Class Translator
  * @package phpformsframework\libs\international
  */
-class Translator
+class Translator implements Dumpable
 {
     use AdapterManager;
+    use DatabaseManager;
 
     const ERROR_BUCKET                                  = "translator";
 
-    const REGEXP                                        = '/\{_([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)\}/U';
+    protected const REGEXP                              = '/\{_([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)\}/U';
 
-    const INSERT_EMPTY                                  = true;
-    const CACHE_BUCKET                                  = "translations/";
+    const CACHE_BUCKET                                  = "translations";
 
 
     private static $singletons                          = null;
 
     private static $cache                               = null;
+    private static $cache_updated                       = null;
 
     /**
      * @param string|null $translatorAdapter
@@ -71,14 +74,31 @@ class Translator
     }
 
     /**
-     * @param string|null $language
-     * @return array|null
+     * @return array
      */
-    public static function dump(string $language = null) : ?array
+    public static function dump() : array
     {
-        $lang_code                                      = self::getLang($language);
+        return self::$cache;
+    }
 
-        return self::$cache[$lang_code];
+    /**
+     * @param string $lang_tiny_code
+     */
+    public static function loadLib(string $lang_tiny_code) : void
+    {
+        self::$cache[$lang_tiny_code]                   = Buffer::cache(static::CACHE_BUCKET)->get($lang_tiny_code) ?? [];
+
+        Response::onBeforeSend(Translator::class . "::saveLib");
+    }
+
+    public static function saveLib() : void
+    {
+        if (!empty(self::$cache_updated)) {
+            $cache = Buffer::cache(static::CACHE_BUCKET);
+            foreach (self::$cache_updated as $lang_tiny_code => $translations) {
+                $cache->set($lang_tiny_code, $translations);
+            }
+        }
     }
 
     /**
@@ -89,7 +109,7 @@ class Translator
         $lang_code                                      = self::getLang($language);
 
         self::$cache[$lang_code]                        = null;
-        Buffer::cache(static::CACHE_BUCKET . $lang_code)->clear();
+        Buffer::cache(static::CACHE_BUCKET)->clear();
     }
 
     /**
@@ -112,7 +132,7 @@ class Translator
             }
 
             if ($replace) {
-                $content = str_replace($replace["keys"], $replace["values"], $content);
+                $content                                = str_replace($replace["keys"], $replace["values"], $content);
             }
         }
 
@@ -122,12 +142,19 @@ class Translator
     /**
      * @return string
      */
-    public static function checkLang() : string
+    public static function infoLangCode() : string
     {
-        return (Locale::isMultiLang()
-            ? self::getLang()
-            : "nolang"
-        );
+        return self::getLang();
+    }
+
+    /**
+     * @return string
+     */
+    public static function infoCacheFile() : string
+    {
+        $cache = Buffer::cache(static::CACHE_BUCKET)->getInfo(self::getLang());
+        FilemanagerFs::touch($cache);
+        return $cache;
     }
 
     /**
@@ -138,74 +165,48 @@ class Translator
      */
     public static function getWordByCode(string $code = null, string $language = null) : ?string
     {
-        if (!$code || !Locale::isMultiLang()) {
+        if (!$code || Locale::isDefaultLang()) {
             return $code;
         }
-        $lang_code                                      = self::getLang($language);
-        if (array_search($lang_code, Kernel::$Environment::ACCEPTED_LANG) === false) {
-            Error::register("Lang not accepted: " . $lang_code . " Lang allowed: " . implode(", ", Kernel::$Environment::ACCEPTED_LANG), static::ERROR_BUCKET);
-        }
-        if (!isset(self::$cache[$lang_code][$code])) {
-            $cache                                      = Buffer::cache(static::CACHE_BUCKET . $lang_code);
-            self::$cache[$lang_code][$code]             = $cache->get($code);
-            if (!self::$cache[$lang_code][$code]) {
-                self::$cache[$lang_code][$code]         = self::getWordByCodeFromDB($code, $lang_code);
 
-                $cache->set($code, self::$cache[$lang_code][$code]);
+        $lang_tiny_code                                 = self::getLang($language);
+        if (self::$cache && !array_key_exists($code, self::$cache[$lang_tiny_code])) {
+            self::$cache[$lang_tiny_code][$code]        = self::getWordByCodeFromDB($code, $lang_tiny_code);
+            if (!isset(self::$cache_updated[$lang_tiny_code])) {
+                self::$cache_updated[$lang_tiny_code]   =& self::$cache[$lang_tiny_code];
             }
         }
 
-        return (self::$cache[$lang_code][$code]["cache"]
-            ? self::$cache[$lang_code][$code]["word"]
-            : self::getCode(self::$cache[$lang_code][$code]["code"])
-        );
-    }
-
-    /**
-     * @param string $code
-     * @return string
-     */
-    private static function getCode(string $code) : string
-    {
-        return (Kernel::$Environment::DEBUG
-            ? "{" . $code . "}"
-            : $code
-        );
+        return self::$cache[$lang_tiny_code][$code] ?? $code;
     }
 
     /**
      * @param string $code
      * @param string|null $language
-     * @return array
+     * @return string|null
      * @throws Exception
      */
-    private static function getWordByCodeFromDB(string $code, string $language = null) : array
+    private static function getWordByCodeFromDB(string $code, string $language = null) : ?string
     {
+        $i18n                                           = null;
         $lang                                           = self::getLang($language);
-        $i18n                                           = array(
-                                                            "code"      => $code
-                                                            , "lang"    => $lang
-                                                            , "cache"   => false
-                                                            , "word"    => $code
-                                                        );
         if ($lang) {
-            $orm                                        = Model::orm("international");
-            $res                                        = $orm->readOne(array(
-                                                            "translation.description"
-                                                            , "translation.is_new"
-                                                        ), array(
-                                                            "lang.code" => $i18n["lang"]
-                                                            , "translation.word_code" => substr($i18n["code"], 0, 254)
-                                                        ));
+            $orm                                        = self::orm("international");
+            $res                                        = $orm->readOne([
+                                                            "translations.text"
+                                                        ], [
+                                                            "translations.lang" => $lang
+                                                            , "translations.code" => substr($code, 0, 254)
+                                                        ]);
+
             if ($res) {
-                $i18n["word"]                           = $res->description;
-                $i18n["cache"]                          = !$res->is_new;
-            } elseif (self::INSERT_EMPTY) {
-                $orm->insert(array(
-                    "lang.code"                         =>  $i18n["lang"]
-                    , "translation.word_code"           =>  substr($i18n["code"], 0, 254)
-                    , "translation.is_new"              => true
-                ));
+                $i18n                                   = $res->text;
+            } elseif (Kernel::$Environment::DEBUG) {
+                $orm->insert([
+                    "translations.lang"                 => $lang,
+                    "translations.code"                 => substr($code, 0, 254),
+                    "translations.created_at"           => time()
+                ]);
             }
         }
 
@@ -218,11 +219,7 @@ class Translator
      */
     public static function getLang(string $lang_code = null) : string
     {
-        return strtolower(
-            $lang_code
-            ? $lang_code
-            : Locale::getLang("code")
-        );
+        return strtolower($lang_code ?? Locale::getCodeLang());
     }
 
     /**
@@ -231,10 +228,6 @@ class Translator
      */
     public static function getLangDefault(string $lang_code = null) : string
     {
-        return strtolower(
-            $lang_code
-            ? $lang_code
-            : Locale::getLangDefault("code")
-        );
+        return strtolower($lang_code ?? Locale::getCodeLangDefault());
     }
 }

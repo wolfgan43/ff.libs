@@ -36,6 +36,7 @@ use Exception;
  */
 class DataAdapter extends Mappable
 {
+    private $locale     = null;
     protected $datetime = array(
         "prototype"     => "DAY/MONTH/YEAR HOUR:MINUTE:SECOND"
     );
@@ -96,7 +97,7 @@ class DataAdapter extends Mappable
     public function __construct(string $map)
     {
         $this->locale = $map;
-        parent::__construct($map);
+        parent::__construct(strtolower($map));
     }
 
     /**
@@ -462,7 +463,7 @@ class DataAdapter extends Mappable
      */
     private function sendError(string $value, string $type) : void
     {
-        throw new Exception($value . " is not valid " .  "currency" . " for locale " . $this->locale . ": " . $this->getFormat($type));
+        throw new Exception($value . " is not valid " .  "currency" . " for locale " . $this->locale . ": " . $this->getFormat($type), 500);
     }
 
     /**

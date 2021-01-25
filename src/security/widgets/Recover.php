@@ -2,6 +2,7 @@
 namespace phpformsframework\libs\security\widgets;
 
 use hcore\util\MicroServices;
+use phpformsframework\libs\Env;
 use phpformsframework\libs\gui\Widget;
 use phpformsframework\libs\security\widgets\helpers\CommonTemplate;
 use Exception;
@@ -15,7 +16,9 @@ class Recover extends Widget
     use CommonTemplate;
     use MicroServices;
 
-    protected $requiredJs           = ["hcore.auth"];
+    protected const OTP_SENDER      = "AUTH_SENDER_RECOVER";
+
+    protected $requiredJs           = ["hcore.security"];
 
     /**
      * @throws Exception
@@ -43,7 +46,7 @@ class Recover extends Widget
         if (!empty($this->request->code)) {
             $response = $this->api($config->api->{"change_" . $action}, [$action => $this->request->value], ["Authorization" => $this->authorization . ":" . $this->request->code]);
         } else {
-            $response = $this->api($config->api->{"recover_" . $action}, ["identifier" => $this->request->identity]);
+            $response = $this->api($config->api->{"recover_" . $action}, ["identifier" => $this->request->identity, "sender" => Env::get(static::OTP_SENDER)]);
             $response->set("confirm", $this->confirm());
         }
 

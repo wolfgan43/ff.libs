@@ -27,7 +27,7 @@ namespace phpformsframework\libs\cache\adapters;
 
 use phpformsframework\libs\Autoloader;
 use phpformsframework\libs\Constant;
-use phpformsframework\libs\storage\Filemanager;
+use phpformsframework\libs\storage\FilemanagerFs;
 
 /**
  * Class MemFs
@@ -59,7 +59,7 @@ class BufferFs extends BufferAdapter
      */
     protected function write(string $name, $data, string $bucket = null) : bool
     {
-        return Filemanager::getInstance(self::FILE_TYPE)->write(
+        return FilemanagerFs::loadFile(self::FILE_TYPE)->write(
             $data,
             self::getCacheDiskPath($bucket . DIRECTORY_SEPARATOR . $name)
         );
@@ -73,9 +73,7 @@ class BufferFs extends BufferAdapter
     {
         parent::del($name);
 
-        return Filemanager::xPurgeDir(
-            self::getCacheDiskPath($this->getBucket() . DIRECTORY_SEPARATOR . $name)
-        );
+        return FilemanagerFs::delete($this->getBucket() . DIRECTORY_SEPARATOR . $name);
     }
 
     /**
@@ -85,8 +83,18 @@ class BufferFs extends BufferAdapter
     {
         parent::clear();
 
-        Filemanager::xPurgeDir(self::CACHE_PATH . $this->getBucket());
+        FilemanagerFs::deleteDir(self::CACHE_PATH . $this->getBucket());
     }
+
+    /**
+     * @param string $name
+     * @return string|null
+     */
+    public function getInfo(string $name): ?string
+    {
+        return self::getCacheDiskPath($this->getBucket() . DIRECTORY_SEPARATOR . $name);
+    }
+
 
     /**
      * @param string $path

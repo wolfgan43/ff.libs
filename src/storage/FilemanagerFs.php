@@ -27,42 +27,25 @@ namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Error;
+use phpformsframework\libs\util\AdapterManager;
 
 /**
- * Class FilemanagerDir
+ * Class FilemanagerFs
  * @package phpformsframework\libs\storage
  */
-class FilemanagerDir
+class FilemanagerFs
 {
+    use AdapterManager;
+
     /**
-     * @param string $path
-     * @param int $chmod
-     * @param string|null $base_path
-     * @return bool
+     * @param string $fileType
+     * @return FilemanagerAdapter
      */
-    public static function makeDir(string $path, int $chmod = 0775, string $base_path = null) : bool
+    public static function loadFile(string $fileType) : FilemanagerAdapter
     {
-        $res                                                            = false;
-        if (!$base_path) {
-            $base_path = Constant::DISK_PATH;
-        }
-        $path                                                           = str_replace($base_path, "", $path);
-
-        if ($path && $path != DIRECTORY_SEPARATOR) {
-            if (!is_dir($base_path . $path)) {
-                $path = dirname($path);
-            }
-
-            if (!is_dir($base_path . $path)) {
-                if (@mkdir($base_path . $path, $chmod, true)) {
-                    $res                                                    = true;
-                } else {
-                    Error::registerWarning("MakeDir Permission Denied: " . $base_path . $path);
-                }
-            }
-        }
-        return $res;
+        return self::loadAdapter($fileType);
     }
+
 
     /**
      * @param string $content
@@ -95,23 +78,107 @@ class FilemanagerDir
     }
 
     /**
+     * @param string $path
+     * @param int $chmod
+     * @param string|null $base_path
+     * @return bool
+     */
+    public static function makeDir(string $path, int $chmod = 0775, string $base_path = null) : bool
+    {
+        $res                                                            = false;
+        if (!$base_path) {
+            $base_path = Constant::DISK_PATH;
+        }
+        $path                                                           = str_replace($base_path, "", $path);
+
+        if ($path && $path != DIRECTORY_SEPARATOR) {
+            if (!is_dir($base_path . $path)) {
+                $path = dirname($path);
+            }
+
+            if (!is_dir($base_path . $path)) {
+                if (@mkdir($base_path . $path, $chmod, true)) {
+                    $res                                                    = true;
+                } else {
+                    Error::registerWarning("MakeDir Permission Denied: " . $base_path . $path);
+                }
+            }
+        }
+        return $res;
+    }
+
+    /**
+     * @param string $file_disk_path
+     * @return bool
+     */
+    public static function touch(string $file_disk_path) : bool
+    {
+        if (!file_exists($file_disk_path)) {
+            self::makeDir($file_disk_path);
+
+            return touch($file_disk_path);
+        }
+
+        return true;
+    }
+
+    /**
      * @param string $source
      * @param string $destination
      * @return bool
      */
     public static function copy(string $source, string $destination) : bool
     {
-        return self::fullCopy($source, $destination, false);
+        return self::fullCopy($source, $destination);
     }
 
     /**
      * @param string $filepath
+     * @return bool
+     */
+    public static function delete(string $filepath) : bool
+    {
+        $result                                         = false;
+        if (file_exists($filepath)) {
+            $result                                     = @unlink($filepath);
+        }
+        return $result;
+    }
+
+    /**
+     * @param string $relative_path
      * @param bool $only_file
      * @return bool
      */
-    public static function delete(string $filepath, bool $only_file = false) : bool
+    public static function deleteDir(string $relative_path, bool $only_file = false) : bool
     {
-        return self::purgeDir($filepath, str_replace(Constant::DISK_PATH, "", $filepath), $only_file);
+        $res = true;
+        $absolute_path = Constant::DISK_PATH . $relative_path;
+        if (is_dir($absolute_path)) {
+            $handle = opendir($absolute_path);
+            if ($handle !== false) {
+                while (false !== ($file = readdir($handle))) {
+                    if ($file != "." && $file != "..") {
+                        if (is_dir($absolute_path . DIRECTORY_SEPARATOR . $file)) {
+                            $res = ($res && self::deleteDir($relative_path . DIRECTORY_SEPARATOR . $file));
+                        } else {
+                            if (is_file($absolute_path . DIRECTORY_SEPARATOR . $file)) {
+                                $res = ($res && @unlink($absolute_path . DIRECTORY_SEPARATOR . $file));
+                            }
+                        }
+                    }
+                }
+                if (!$only_file) {
+                    $res = ($res && @rmdir($absolute_path));
+                }
+            }
+        } else {
+            if (file_exists($absolute_path) && is_file($absolute_path)) {
+                $res = ($res && @unlink($absolute_path));
+            }
+        }
+
+        return $res;
     }
 
     /**
@@ -164,42 +231,6 @@ class FilemanagerDir
             }
         }
         return $res ?? false;
-    }
-
-    /**
-     * @param string $absolute_path
-     * @param string $relative_path
-     * @param bool $only_file
-     * @return bool
-     */
-    private static function purgeDir(string $absolute_path, string $relative_path, bool $only_file = false) : bool
-    {
-        $res = true;
-        if (is_dir($absolute_path)) {
-            $handle = opendir($absolute_path);
-            if ($handle !== false) {
-                while (false !== ($file = readdir($handle))) {
-                    if ($file != "." && $file != "..") {
-                        if (is_dir($absolute_path . DIRECTORY_SEPARATOR . $file)) {
-                            $res = ($res && self::purgeDir($absolute_path . DIRECTORY_SEPARATOR . $file, $relative_path . DIRECTORY_SEPARATOR . $file));
-                        } else {
-                            if (is_file($absolute_path . DIRECTORY_SEPARATOR . $file)) {
-                                $res = ($res && @unlink($absolute_path . DIRECTORY_SEPARATOR . $file));
-                            }
-                        }
-                    }
-                }
-                if (!$only_file) {
-                    $res = ($res && @rmdir($absolute_path));
-                }
-            }
-        } else {
-            if (file_exists($absolute_path) && is_file($absolute_path)) {
-                $res = ($res && @unlink($absolute_path));
-            }
-        }
-
-        return $res;
     }
 
     /**

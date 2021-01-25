@@ -26,6 +26,7 @@
 
 namespace phpformsframework\libs\dto;
 
+use Exception;
 use phpformsframework\libs\Debug;
 use stdClass;
 
@@ -74,6 +75,7 @@ abstract class DataAdapter
     /**
      * @param bool $diableDebug
      * @return string
+     * @throws Exception
      */
     public function toJson(bool $diableDebug = false) : string
     {
@@ -82,7 +84,11 @@ abstract class DataAdapter
             $this->setDebugger($vars);
         }
 
-        return (string) json_encode($vars);
+        if (($res = json_encode($vars)) === false) {
+            throw new Exception("dataAdapter: json encode Failed", 500);
+        }
+
+        return $res;
     }
 
 

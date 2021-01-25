@@ -83,15 +83,15 @@ class BufferRedis extends BufferAdapter
 
     /**
      * @param string $name
-     * @param mixed $value
+     * @param mixed $data
      * @param string|null $bucket
      * @return bool
      */
-    protected function write(string $name, $value, string $bucket = null): bool
+    protected function write(string $name, $data, string $bucket = null): bool
     {
         return ($bucket
-            ? $this->conn->hSet($bucket, $name, $value)
-            : $this->conn->set($name, $value)
+            ? $this->conn->hSet($bucket, $name, $data)
+            : $this->conn->set($name, $data)
         );
     }
 
@@ -129,5 +129,14 @@ class BufferRedis extends BufferAdapter
         } else {
             $this->conn->flushDb();
         }
+    }
+
+    /**
+     * @param string $name
+     * @return string|null
+     */
+    public function getInfo(string $name): ?string
+    {
+        return null;
     }
 }

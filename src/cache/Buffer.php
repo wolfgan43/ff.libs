@@ -8,6 +8,7 @@ use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\Router;
 use phpformsframework\libs\util\AdapterManager;
+use phpformsframework\libs\util\TypesConverter;
 use stdClass;
 
 /**
@@ -17,6 +18,7 @@ use stdClass;
 class Buffer implements Dumpable
 {
     use AdapterManager;
+    use TypesConverter;
 
     private const SEP                                   = "/";
     private const SEP_EXTIME                            = "exTime - ";
@@ -166,7 +168,7 @@ class Buffer implements Dumpable
      */
     private static function hash(string $bucket, string $action, array $params = null) : string
     {
-        return $bucket . self::SEP . $action . "-" . crc32(json_encode($params));
+        return $bucket . self::SEP . $action . "-" . self::checkSumArray($params);
     }
 
     /**

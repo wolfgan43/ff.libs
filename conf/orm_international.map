@@ -1,6 +1,6 @@
 {
   "collection": "international",
-  "main_table": "lang",
+  "main_table": "translations",
   "adapters": {
     "mysqli": null
   },
@@ -12,8 +12,8 @@
       "name": null,
       "prefix": "INTERNATIONAL_DATABASE_",
       "table": null,
-      "key": "ID",
-      "key_rel" : "ID_"
+      "key": "id",
+      "key_rel" : "_id"
     },
     "mongodb": {
       "host": null,
@@ -22,66 +22,34 @@
       "name": null,
       "prefix": "INTERNATIONAL_MONGO_DATABASE_",
       "table": null,
-      "key": "ID",
-      "key_rel" : "ID_"
+      "key": "id",
+      "key_rel" : "_id"
     },
     "fs": {
       "service": "php",
-      "path": "\/cache\/international",
+      "path": "\/cache\/translation",
       "name": [
-        "tiny_code"
+        "lang"
       ]
     }
   },
   "struct": {
-    "lang": {
-      "ID": "primary",
-      "name": "string",
-      "description": "string",
+    "translations": {
+      "id": "primary",
+      "lang": "string",
       "code": "string",
-      "tiny_code": "string",
-      "stopwords": "text"
-    },
-    "translation": {
-      "ID": "primary",
-      "ID_lang": "number",
-      "word_code": "string",
-      "description": "string",
-      "is_new": "boolean",
-      "last_update": "number"
+      "text": "string",
+      "created_at": "number",
+      "updated_at": "number"
     }
   },
   "relationship": {
-    "lang": {
-      "translation": {
-        "external": "ID_lang",
-        "primary": "ID"
-      }
-    },
-    "translation": {
-      "lang": {
-        "external": "ID_lang",
-        "primary": "ID"
-      }
-    }
   },
   "indexes": {
-    "translation": {
-      "ID_lang": "hardindex"
-    }
   },
   "tables": {
-    "lang": {
-      "name": "lang",
-      "alias": "lang",
-      "engine": "InnoDB",
-      "crypt": false,
-      "pairing": false,
-      "transfert": false,
-      "charset": "utf8"
-    },
-    "translation": {
-      "name": "lang_international",
+    "translations": {
+      "name": "support_translations",
       "alias": "translation",
       "engine": "InnoDB",
       "crypt": false,

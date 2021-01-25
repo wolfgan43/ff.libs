@@ -39,8 +39,6 @@ if (!class_exists("BladeOne")) {
 use Exception;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Dir;
-use phpformsframework\libs\Error;
-use phpformsframework\libs\gui\ViewAdapter;
 use eftec\bladeone\BladeOne;
 
 /**
@@ -71,28 +69,28 @@ class ViewBlade extends BladeOne implements ViewAdapter
     }
 
     /**
-     * @param array|callable|string $data
+     * @param array|callable|string $tpl_var
      * @param mixed|null $value
      * @return ViewAdapter
      */
-    public function assign($data, $value = null) : ViewAdapter
+    public function assign($tpl_var, $value = null) : ViewAdapter
     {
         if ($value) {
-            $this->data[$data]          = $value;
+            $this->data[$tpl_var]       = $value;
         } else {
-            $this->data                 = array_replace($this->data, $data);
+            $this->data                 = array_replace($this->data, $tpl_var);
         }
 
         return $this;
     }
 
     /**
-     * @param string $file_disk_path
+     * @param string $template_disk_path
      * @return ViewAdapter
      */
-    public function fetch(string $file_disk_path) : ViewAdapter
+    public function fetch(string $template_disk_path) : ViewAdapter
     {
-        $this->tpl_file                 = $file_disk_path;
+        $this->tpl_file                 = $template_disk_path;
 
         return $this;
     }
@@ -103,15 +101,8 @@ class ViewBlade extends BladeOne implements ViewAdapter
      */
     public function display() : string
     {
-        $tpl                            = null;
-        try {
-            $filename                   = pathinfo($this->tpl_file, PATHINFO_FILENAME);
-            $tpl                        = $this->run($filename, $this->data);
-        } catch (Exception $e) {
-            Error::register("Blade: " . $e->getMessage(), static::ERROR_BUCKET);
-        }
-
-        return $tpl;
+        $filename                   = pathinfo($this->tpl_file, PATHINFO_FILENAME);
+        return $this->run($filename, $this->data);
     }
 
     /**

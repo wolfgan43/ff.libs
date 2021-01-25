@@ -29,7 +29,7 @@ use Exception;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\international\TranslatorAdapter;
 use phpformsframework\libs\security\Validator;
-use phpformsframework\libs\storage\Filemanager;
+use phpformsframework\libs\storage\FilemanagerWeb;
 
 /**
  * Class TranslatorTranslated
@@ -53,7 +53,7 @@ class TranslatorTranslated extends TranslatorAdapter
         } else {
             $res                                        = parent::translate($words, $toLang, $fromLang);
             if (!$res) {
-                $transalted                             = Filemanager::fileGetContent("http://api.mymemory.translated.net/get?q=" . urlencode($words) . "&langpair=" . $fromLang . "|" . $toLang . ($this->code ? "&key=" . $this->code : ""));
+                $transalted                             = FilemanagerWeb::fileGetContents("http://api.mymemory.translated.net/get?q=" . urlencode($words) . "&langpair=" . $fromLang . "|" . $toLang . ($this->code ? "&key=" . $this->code : ""));
                 if ($transalted) {
                     $buffer                             = Validator::jsonDecode($transalted);
                     if ($buffer["responseStatus"] == 200 && $buffer["responseData"]["translatedText"]) {

@@ -367,7 +367,7 @@ abstract class Mailer
             $this->fromName   = $this->adapter->from_name;
         }
         if (!$this->lang) {
-            $this->lang       = Locale::getLang("tiny_code");
+            $this->lang       = Locale::getCodeLang();
         }
         if ($subject) {
             $this->setSubject($subject);
@@ -588,7 +588,7 @@ abstract class Mailer
             $this->fromName   = $this->adapter->from_name;
         }
         if (!$this->lang) {
-            $this->lang       = Locale::getLang("tiny_code");
+            $this->lang       = Locale::getCodeLang();
         }
         if (Kernel::$Environment::DEBUG) {
             $this->addBCC($this->adapter->debug_email);

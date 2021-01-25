@@ -30,10 +30,10 @@ use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\FilemanagerAdapter;
 
 /**
- * Class FilemanagerPhp
+ * Class FilemanagerFsPhp
  * @package phpformsframework\libs\storage\adapters
  */
-class FilemanagerPhp extends FilemanagerAdapter
+class FilemanagerFsPhp extends FilemanagerAdapter
 {
     const EXT                                                   = "php";
 

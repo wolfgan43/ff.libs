@@ -39,7 +39,7 @@ class DatabaseMysqli extends DatabaseAdapter
     private const OPERATOR_COMPARISON_NULL = [
         null            => 'NULL',
         '$eq'           => '`NAME` IS NULL',
-        '$ne'           => '`NAME` NOT IS NULL',
+        '$ne'           => '`NAME` IS NOT NULL',
         '$set'          => '`NAME` = NULL'
     ];
 

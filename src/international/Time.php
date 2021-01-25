@@ -20,9 +20,9 @@ class Time
     private const SEP           = ":";
 
     private const FORMAT        = [
-        "ENG"   => "m-d-Y",
-        "ITA"   => "d-m-Y",
-        "FAL"   => "Y-d-m",
+        "en"        => "m-d-Y",
+        "it"        => "d-m-Y",
+        "unknown"   => "Y-d-m"
     ];
     private const FORMAT_DEFAULT = "Y-m-d";
 
@@ -113,7 +113,7 @@ class Time
 
     private function getFormat(string $locale = null) : string
     {
-        return (self::FORMAT[$locale ?? Locale::getLang("code")] ?? self::FORMAT_DEFAULT);
+        return (self::FORMAT[$locale ?? Locale::getCodeLang()] ?? self::FORMAT_DEFAULT);
     }
 
     /**

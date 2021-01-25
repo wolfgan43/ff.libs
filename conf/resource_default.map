@@ -14,6 +14,13 @@
       "filter": [
         "html",
         "tpl"
+      ],
+      "prototype" : "defaultname",
+      "exclude" : [
+        "layouts",
+        "email",
+        "assets",
+        "widgets"
       ]
     },
     "css": {
@@ -63,6 +70,7 @@
       },
       "filter": [
         "html",
+        "tpl",
         "css",
         "js",
         "json"
@@ -151,7 +159,7 @@
         "html"
       ]
     },
-    "controller" : {
+    "controllers" : {
       "flag" : 8,
       "filter": [
         "php"

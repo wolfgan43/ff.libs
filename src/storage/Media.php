@@ -126,7 +126,7 @@ class Media implements Configurable
      * @param null $pathinfo
      * @return Media
      */
-    public static function getInstance($pathinfo = null)
+    public static function getInstance($pathinfo = null): Media
     {
         if (self::$singleton === null) {
             self::$singleton                                        = new Media($pathinfo);
@@ -218,7 +218,7 @@ class Media implements Configurable
 
         $query                                                      = null;
         if (strpos($file, "/") === false) {
-            $file                                                   = Resource::get($file, Resource::TYPE_ASSET_IMAGES);
+            $file                                                   = Resource::image($file);
         }
         if (empty($file)) {
             return self::returnInfo();
@@ -299,7 +299,7 @@ class Media implements Configurable
      */
     private static function image2base64(string $path, string $ext = "svg") : string
     {
-        $data = Filemanager::fileGetContent($path);
+        $data = FilemanagerWeb::fileGetContents($path);
 
         return 'data:' . self::MIMETYPE[$ext] . ';base64,' . base64_encode($data);
     }
@@ -481,9 +481,9 @@ class Media implements Configurable
                 default:
             }
 
-            $abs_path                                               = Resource::get($filename, Resource::TYPE_ASSET_IMAGES);
+            $abs_path                                               = Resource::image($filename);
             if (!$abs_path) {
-                $abs_path = Resource::get("error", Resource::TYPE_ASSET_IMAGES);
+                $abs_path = Resource::image("error");
             }
             if (!$abs_path) {
                 Error::register("Icon " . $filename . " not found", static::ERROR_BUCKET);
@@ -497,7 +497,7 @@ class Media implements Configurable
                 $res                                                = $abs . $basename;
             }
         } else {
-            $abs_path = Resource::get("unknown", Resource::TYPE_ASSET_IMAGES);
+            $abs_path = Resource::image("unknown");
             if (!$abs_path) {
                 Error::register("Icon unknown not found", static::ERROR_BUCKET);
             }
@@ -812,7 +812,7 @@ class Media implements Configurable
      */
     private function basepathAsset() : string
     {
-        return str_replace($this->filesource, "", Resource::get($this->source->filename, Resource::TYPE_ASSET_IMAGES));
+        return str_replace($this->filesource, "", Resource::image($this->source->filename));
     }
 
     /**
@@ -1076,7 +1076,7 @@ class Media implements Configurable
 
         $final_file                                                 = $this->getFinalFile();
 
-        Filemanager::makeDir(dirname($final_file), 0775, $this->basepathCache());
+        FilemanagerFs::makeDir(dirname($final_file), 0775, $this->basepathCache());
 
         $cCanvas->process($final_file);
     }
@@ -1222,7 +1222,7 @@ class Media implements Configurable
      */
     private function saveFromOriginal(string $source, string $destination) : void
     {
-        Filemanager::makeDir($destination, 0775, $this->basepathCache());
+        FilemanagerFs::makeDir($destination, 0775, $this->basepathCache());
 
         if ($this->pathinfo->render == static::RENDER_ASSETS_PATH) {
             if (!@copy($source, $destination)) {

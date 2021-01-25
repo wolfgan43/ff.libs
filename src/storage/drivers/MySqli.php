@@ -27,7 +27,6 @@ namespace phpformsframework\libs\storage\drivers;
 
 use Exception;
 use phpformsframework\libs\cache\Cashable;
-use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\DatabaseDriver;
 use phpformsframework\libs\storage\DatabaseQuery;
 use mysqli_result;
@@ -349,7 +348,7 @@ class MySqli extends DatabaseDriver
      * @return bool
      * @throws Exception
      */
-    private function query($query_string) : bool
+    private function query(string $query_string) : bool
     {
         if (!$query_string) {
             $this->errorHandler("Query invoked With blank Query String");
@@ -599,6 +598,6 @@ class MySqli extends DatabaseDriver
     {
         $this->checkError(); // this is needed due to params order
 
-        Error::register("MySQL(" . $this->database . ") - " . $msg . " #" . $this->errno . ": " . $this->error, static::ERROR_BUCKET);
+        throw new Exception("MySQL(" . $this->database . ") - " . $msg . " #" . $this->errno . ": " . $this->error, 500);
     }
 }

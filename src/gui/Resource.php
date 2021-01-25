@@ -26,16 +26,14 @@
 
 namespace phpformsframework\libs\gui;
 
+use phpformsframework\libs\Autoloader;
 use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\Config;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dumpable;
-use phpformsframework\libs\Error;
 use phpformsframework\libs\Mappable;
 use phpformsframework\libs\Request;
-use phpformsframework\libs\storage\Filemanager;
-use Exception;
 use phpformsframework\libs\storage\FilemanagerScan;
 
 /**
@@ -56,6 +54,7 @@ class Resource extends Mappable implements Dumpable
     public const TYPE_VIEWS                     = Constant::RESOURCE_VIEWS;
     public const TYPE_CONTROLLERS               = Constant::RESOURCE_CONTROLLERS;
     public const TYPE_WIDGETS                   = Constant::RESOURCE_WIDGETS;
+    public const TYPE_COMPONENTS                = "components";
 
     /**
      * @var Resource
@@ -75,6 +74,30 @@ class Resource extends Mappable implements Dumpable
         }
 
         return self::$singleton->resources;
+    }
+
+    /**
+     * @return array
+     */
+    public static function &views() : array
+    {
+        if (!self::$singleton) {
+            self::$singleton = new Resource();
+        }
+
+        return self::$singleton->resources[self::TYPE_VIEWS];
+    }
+
+    /**
+     * @return Controller[]
+     */
+    public static function &components() : array
+    {
+        if (!self::$singleton) {
+            self::$singleton = new Resource();
+        }
+
+        return self::$singleton->resources[self::TYPE_COMPONENTS];
     }
 
     /**
@@ -137,6 +160,14 @@ class Resource extends Mappable implements Dumpable
         return self::$singleton->resources[$type][$name] ?? null;
     }
 
+    public static function image(string $name) : ?string
+    {
+        if (!self::$singleton) {
+            self::$singleton = new Resource();
+        }
+
+        return self::$singleton->resources[self::TYPE_ASSET_IMAGES][$name] ?? null;
+    }
 
     /**
      * @param string $name
@@ -148,24 +179,6 @@ class Resource extends Mappable implements Dumpable
             self::$singleton = new Resource();
         }
         return self::$singleton->resources[self::TYPE_WIDGETS][$name] ?? [];
-    }
-
-    /**
-     * @param string $name
-     * @param string $type
-     * @return string|null
-     * @throws Exception
-     */
-    public static function load(string $name, string $type) : ?string
-    {
-        $path                                   = self::get($name, $type);
-        if ($path) {
-            return Filemanager::fileGetContent($path);
-        } else {
-            Error::register("Layout not Found: " . $name, static::ERROR_BUCKET);
-        }
-
-        return null;
     }
 
     /**
@@ -182,7 +195,19 @@ class Resource extends Mappable implements Dumpable
             parent::__construct($map_name);
 
             $patterns                           = Config::getScans($this->rules);
-            $this->resources                    = FilemanagerScan::scan($patterns);
+
+            $this->resources                    = array_replace([
+                                                    self::TYPE_ASSET_CSS        => [],
+                                                    self::TYPE_ASSET_JS         => [],
+                                                    self::TYPE_ASSET_FONTS      => [],
+                                                    self::TYPE_ASSET_IMAGES     => [],
+                                                    self::TYPE_EMAIL            => [],
+                                                    self::TYPE_LAYOUTS          => [],
+                                                    self::TYPE_VIEWS            => [],
+                                                    self::TYPE_CONTROLLERS      => [],
+                                                    self::TYPE_WIDGETS          => [],
+                                                    self::TYPE_COMPONENTS       => []
+                                                ], FilemanagerScan::scan($patterns));
 
             $map_file                           = Config::getFilesMap(self::ERROR_BUCKET)[$map_name];
 
@@ -210,6 +235,10 @@ class Resource extends Mappable implements Dumpable
             FilemanagerScan::scan($dirs, function ($path) use (&$config_dirs) {
                 $config_dirs[$path]             = filemtime($path);
             });
+
+            if (!empty($this->resources[self::TYPE_CONTROLLERS])) {
+                $this->resources[self::TYPE_COMPONENTS] = Autoloader::includes2Classes($this->resources[self::TYPE_CONTROLLERS]);
+            }
 
             $cache->set("rawdata", $this->resources, $config_dirs);
         }

@@ -55,13 +55,13 @@ class BufferApc extends BufferAdapter
 
     /**
      * @param string $name
-     * @param mixed $value
+     * @param mixed $data
      * @param string|null $bucket
      * @return bool
      */
-    protected function write(string $name, $value, string $bucket = null): bool
+    protected function write(string $name, $data, string $bucket = null): bool
     {
-        return @apc_store($bucket . DIRECTORY_SEPARATOR . $name, $this->setValue($value), $this->getTTL());
+        return @apc_store($bucket . DIRECTORY_SEPARATOR . $name, $this->setValue($data), $this->getTTL());
     }
 
     /**
@@ -86,5 +86,14 @@ class BufferApc extends BufferAdapter
         parent::clear();
 
         apc_clear_cache($this->getBucket());
+    }
+
+    /**
+     * @param string $name
+     * @return string|null
+     */
+    public function getInfo(string $name): ?string
+    {
+        return null;
     }
 }

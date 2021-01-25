@@ -27,15 +27,13 @@ namespace phpformsframework\libs;
 
 use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\storage\FilemanagerScan;
-use ReflectionClass;
-use ReflectionException;
 use Exception;
 
 /**
  * Class Autoloader
  * @package phpformsframework\libs
  */
-class Autoloader
+class Autoloader implements Dumpable
 {
     protected const ERROR_BUCKET                                            = "config";
 
@@ -54,11 +52,7 @@ class Autoloader
         if (self::$includes) {
             self::$classes                                                  = $autoloader["classes"];
 
-            spl_autoload_register(function ($class_name) {
-                if (isset(self::$includes[$class_name])) {
-                    include self::$includes[$class_name];
-                }
-            });
+
         } else {
             $config_dirs                                                    = [];
             foreach ($paths as $i => $path) {
@@ -75,37 +69,106 @@ class Autoloader
                 $config_dirs[$path]                                         = filemtime($path);
             });
 
-            self::spl($paths);
-            $includes = null;
-            $classes                                                        = get_declared_classes();
-            $patterns                                                       = array_fill_keys($paths, [
+            $includes_paths = null;
+            FilemanagerScan::scan(array_fill_keys($paths, [
                 "flag"      => FilemanagerScan::SCAN_FILE_RECURSIVE,
                 "filter"    => [Constant::PHP_EXT],
-                "callback"  => function ($fileinfo, $opt) use (&$includes) {
-                    include_once($fileinfo->dirname . DIRECTORY_SEPARATOR . $fileinfo->basename);
-                    $includes[$fileinfo->dirname . DIRECTORY_SEPARATOR . $fileinfo->basename] = $opt->pattername;
+                "callback"  => function ($fileinfo, $opt) use (&$includes_paths) {
+                    $includes_paths[$fileinfo->dirname . DIRECTORY_SEPARATOR . $fileinfo->basename] = $opt->pattername;
                 }
-            ]);
-
-            FilemanagerScan::scan($patterns);
-
-            $classes                                                        = array_diff(get_declared_classes(), $classes);
-            try {
-                foreach ($classes as $class_name) {
-                    $class                                                  = new ReflectionClass($class_name);
-                    $class_path                                             = $class->getFileName();
-
-                    if (strpos($class_path, Constant::LIBS_DISK_PATH) === false) {
-                        self::$includes[$class_name]                         = $class_path;
-                        self::$classes[$includes[$class_path]][strtolower(pathinfo($class_path, PATHINFO_FILENAME))] = $class->getName();
-                    }
-                }
-            } catch (ReflectionException $e) {
-                App::throwError($e->getCode(), $e->getMessage());
-            }
+            ]));
+            self::tokenize($includes_paths, true);
 
             $cache->set("autoloader", ["includes" => self::$includes, "classes" => self::$classes], $config_dirs);
         }
+
+        spl_autoload_register(function ($class_name) {
+            if (isset(self::$includes[$class_name])) {
+                include self::$includes[$class_name];
+            }
+        });
+    }
+
+    /**
+     * @param array $include_paths
+     * @return array
+     */
+    public static function includes2Classes(array $include_paths) : array
+    {
+        return self::tokenize(array_fill_keys($include_paths, null));
+    }
+
+    /**
+     * @param array $include_paths
+     * @param bool $store
+     * @return array
+     */
+    private static function tokenize(array $include_paths, bool $store = false) : array
+    {
+        $classes = [];
+        foreach ($include_paths as $include_path => $group) {
+            $class = '';
+            $namespace = '';
+
+            if ($fp = fopen($include_path, 'r')) {
+                $buffer = '';
+                while (!$class) {
+                    if (feof($fp)) {
+                        break;
+                    }
+
+                    $buffer .= fread($fp, 512);
+                    $tokens = @token_get_all($buffer);
+                    if (strpos($buffer, '{') === false) {
+                        continue;
+                    }
+
+                    for ($i = 0; $i < count($tokens); $i++) {
+                        if (!$store && $tokens[$i][0] === T_ABSTRACT) {
+                            break;
+                        }
+
+                        if ($tokens[$i][0] === T_NAMESPACE) {
+                            for ($j = $i + 1; $j < count($tokens); $j++) {
+                                if ($tokens[$j][0] === T_STRING) {
+                                    $namespace .= '\\' . $tokens[$j][1];
+                                } elseif ($tokens[$j] === '{' || $tokens[$j] === ';') {
+                                    break;
+                                }
+                            }
+                        }
+
+                        if ($tokens[$i][0] === T_CLASS) {
+                            for ($j = $i + 1; $j < count($tokens); $j++) {
+                                if ($tokens[$j][0] === T_STRING) {
+                                    $class = $tokens[$j][1];
+                                    break;
+                                }
+                                if ($tokens[$j] === '{') {
+                                    $class = $tokens[$i + 2][1];
+                                    break;
+                                }
+                            }
+                        }
+
+                        if ($class) {
+                            break;
+                        }
+                    }
+                }
+                fclose($fp);
+            }
+
+            if ($class) {
+                $classes[$class] = ltrim($namespace . "\\" . $class, "\\");
+                if ($store) {
+                    self::$includes[$classes[$class]] = $include_path;
+                    self::$classes[$group][$class] = $classes[$class];
+                }
+            }
+        }
+
+        return  $classes;
     }
 
     /**
@@ -138,29 +201,14 @@ class Autoloader
 
         Debug::stopWatch("loadscript" . $abs_path);
 
-        return $rc;
+        return ($rc === 1 ? null : $rc);
     }
 
-    /**
-     * @param array $paths
-     */
-    private static function spl(array $paths) : void
+    public static function dump(): array
     {
-        spl_autoload_register(function ($class_name) use ($paths) {
-            foreach ($paths as $autoload) {
-                if (self::loadScript(Constant::DISK_PATH . $autoload . DIRECTORY_SEPARATOR . self::getClassPath($class_name) . "." . Constant::PHP_EXT)) {
-                    break;
-                }
-            }
-        });
-    }
-
-    /**
-     * @param string $class_name
-     * @return string
-     */
-    private static function getClassPath(string $class_name) : string
-    {
-        return str_replace(array('\\'), array('/'), $class_name);
+        return [
+            "includes" => self::$includes,
+            "classes" => self::$classes
+        ];
     }
 }

@@ -1158,11 +1158,11 @@ abstract class DatabaseAdapter implements Constant
                 }
                 break;
             case "DATETIME":
-                $lang                                                       = Locale::getLang("code");
+                $lang                                                       = Locale::getCodeLang();
                 $oData                                                      = new Data($source, "Timestamp");
                 $res                                                        = $oData->getValue("Date", $lang);
 
-                if ($lang == "ENG") {
+                if ($lang == "en") {
                     $prefix                                                 = "+";
                     $res                                                    = "+" . $res;
                 } else {
@@ -1187,16 +1187,16 @@ abstract class DatabaseAdapter implements Constant
                 if ($prefix) {
                     $res                                                    = str_replace("/", ", ", $res);
                 }
-                $res                                                        .= " " . Translator::getWordByCode("at") . " " . Translator::getWordByCode("hours") . " " . $oData->getValue("Time", Locale::getLang("code"));
+                $res                                                        .= " " . Translator::getWordByCode("at") . " " . Translator::getWordByCode("hours") . " " . $oData->getValue("Time", Locale::getCodeLang());
 
                 break;
             case "DATE":
                 $oData                                                      = new Data($source, "Timestamp");
-                $res                                                        = $oData->getValue("Date", Locale::getLang("code"));
+                $res                                                        = $oData->getValue("Date", Locale::getCodeLang());
                 break;
             case "TIME":
                 $oData                                                      = new Data($source, "Timestamp");
-                $res                                                        = $oData->getValue("Time", Locale::getLang("code"));
+                $res                                                        = $oData->getValue("Time", Locale::getCodeLang());
                 break;
             case "STRING":
                 $res                                                        = $source;

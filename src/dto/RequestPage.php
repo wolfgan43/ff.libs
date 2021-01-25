@@ -33,7 +33,6 @@ class RequestPage extends Mappable
     public $script_path                     = null;
 
     public $log                             = null;     //gestito in request
-    public $onerror                         = null;     //gestito in kernel (valori gestiti "redirect")
     public $nocache                         = false;    //gestito in kernel
     public $https                           = null;     //gestito in request
     public $method                          = null;     //gestito in request
@@ -127,17 +126,17 @@ class RequestPage extends Mappable
      */
     private function findEnvByPathInfo(string $path_info, array $path2params = null): string
     {
-        $path_info                  = rtrim($path_info, "/");
+        $path_info                      = rtrim($path_info, "/");
         if (!$path_info) {
-            $path_info              = DIRECTORY_SEPARATOR;
+            $path_info                  = DIRECTORY_SEPARATOR;
         }
 
         if ($path2params) {
             foreach ($path2params as $page_path => $params) {
-                if (preg_match_all($params["regexp"], $path_info, $matches)) {
-                    $this->path2params = array_combine($params["matches"], $matches[1]);
-
-                    $path_info = $page_path;
+                if (preg_match($params["regexp"], $path_info, $matches)) {
+                    unset($matches[0]);
+                    $this->path2params  = array_filter(array_combine($params["matches"], $matches));
+                    $path_info          = $page_path;
                     break;
                 }
             }
@@ -163,23 +162,6 @@ class RequestPage extends Mappable
                 }
             }
         }
-    }
-
-    /**
-     *
-     */
-    public function isInvalidURL() : bool
-    {
-        return $this->method == Request::METHOD_GET && !$this->isAjax && count($this->getRequestUnknown());
-    }
-
-    /**
-     * @return string
-     */
-    public function canonicalURL() : string
-    {
-        $query = http_build_query($this->getRequestValid());
-        return Request::protocolHostPathinfo() . ($query ? "?" . $query : "");
     }
 
     public function isPathParams(): bool
@@ -263,9 +245,9 @@ class RequestPage extends Mappable
         $mapRequest = $this->map ?? $namespace . self::NAMESPACE_MAP_REQUEST . ucfirst($method);
         if ($mapRequest != stdClass::class && class_exists($mapRequest)) {
             $obj = new $mapRequest();
-            $this->autoMapping($this->getRequest(self::REQUEST_RAWDATA), $obj);
+            $this->autoMapping($this->getRequest(), $obj);
         } else {
-            $obj = (object) $this->getRequest(self::REQUEST_RAWDATA);
+            $obj = (object) $this->getRequest();
         }
         return $obj;
     }

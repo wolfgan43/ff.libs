@@ -3,7 +3,7 @@ namespace phpformsframework\libs\gui;
 
 use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\Debug;
-use phpformsframework\libs\storage\Filemanager;
+use phpformsframework\libs\storage\FilemanagerFs;
 use Exception;
 use phpformsframework\libs\storage\Media;
 use stdClass;
@@ -18,13 +18,8 @@ abstract class Widget extends Controller
 
     protected const ERROR_BUCKET                    = "widget";
 
-    protected $requiredJs                           = [];
-    protected $requiredCss                          = [];
-
     private $config                                 = [];
     private $resources                              = null;
-
-    private $template                               = null;
 
     /**
      * Widget constructor.
@@ -115,23 +110,33 @@ abstract class Widget extends Controller
 
     /**
      * @param string|null $template_name
-     * @param string|null $theme_name
+     * @param bool $include_template_assets
      * @return View
      * @throws Exception
      */
-    protected function view(string $template_name = null, string $theme_name = null) : View
+    protected function view(string $template_name = null, bool $include_template_assets = true) : View
     {
         if (!empty($this->view)) {
             return $this->view;
         }
 
-        $this->template                             = $template_name ?? self::VIEW_DEFAULT;
+        $template                                   = $template_name ?? self::VIEW_DEFAULT;
         $resources                                  = $this->getResources();
-        if (empty($resources->html[$this->template])) {
+
+        if (empty($resources->tpl[$template])) {
             throw new Exception("Template not found for Widget " . $this->class_name, 404);
         }
 
-        return $this->view = (new View($this->config($resources->cfg[$this->template] ?? null)))->fetch($resources->html[$this->template]);
+        if ($include_template_assets) {
+            if (!empty($resources->js[$template])) {
+                $this->requiredJs[]                 = $resources->js[$template];
+            }
+            if (!empty($resources->css[$template])) {
+                $this->requiredCss[]                = $resources->css[$template];
+            }
+        }
+
+        return $this->view = (new View($this->config($resources->cfg[$template] ?? null)))->fetch($resources->tpl[$template]);
     }
 
     /**
@@ -171,36 +176,6 @@ abstract class Widget extends Controller
     }
 
     /**
-     * @throws Exception
-     */
-    protected function parseAssets() : void
-    {
-        $resources                                  = $this->getResources();
-        $template                                   = $this->template;
-        $this->parseRequiredAssets();
-
-        if (!empty($resources->js[$template])) {
-            $this->addJavascriptAsync($resources->js[$template]);
-        }
-        if (!empty($resources->css[$template])) {
-            $this->addStylesheet($resources->css[$template]);
-        }
-    }
-
-    /**
-     * @throws Exception
-     */
-    private function parseRequiredAssets() : void
-    {
-        foreach ($this->requiredJs as $js) {
-            $this->addJavascriptAsync($js);
-        }
-        foreach ($this->requiredCss as $css) {
-            $this->addStylesheet($css);
-        }
-    }
-
-    /**
      * @param string $file_path
      * @return array
      */
@@ -211,7 +186,7 @@ abstract class Widget extends Controller
         $cache                                      = Buffer::cache("widget");
         $config                                     = $cache->get($this->class_name);
         if (!$config) {
-            $config                                 = Filemanager::getInstance("json")->read($file_path);
+            $config                                 = FilemanagerFs::loadFile("json")->read($file_path);
 
             $cache->set($this->class_name, $config, [$file_path => filemtime($file_path)]);
         }

@@ -33,7 +33,6 @@ use MongoDB\BSON\ObjectID;
 use MongoDB\Driver\Exception\Exception;
 use IteratorIterator;
 use phpformsframework\libs\cache\Cashable;
-use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\DatabaseDriver;
 use phpformsframework\libs\storage\DatabaseQuery;
 
@@ -556,10 +555,11 @@ class MongoDB extends DatabaseDriver
 
     /**
      * @param string $msg
+     * @throws \Exception
      */
     protected function errorHandler(string $msg) : void
     {
-        Error::register("MongoDB(" . $this->database . ") - " . $msg . " #" . $this->errno . ": " . $this->error, static::ERROR_BUCKET);
+        throw new \Exception("MongoDB(" . $this->database . ") - " . $msg . " #" . $this->errno . ": " . $this->error, 500);
     }
 
     /**

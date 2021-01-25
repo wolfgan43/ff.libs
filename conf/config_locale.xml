@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configdata>
+    <locale>
+        <lang>
+            <it id="1" description="Italiano" code="ita" country="IT" />
+            <en id="2" description="English" code="eng" country="IT" />
+            <de id="5" description="Deutch" code="deu" country="DE" />
+            <fr id="3" description="French" code="fra" country="FR" />
+            <es id="4" description="Espanol" code="esp" country="SP" />
+        </lang>
+        <country>
+            <IT id="102" description="Italia" code="IT" lang="it" currency="eur" />
+            <UK id="30" description="United Kingdom" code="UK" lang="en" currency="gbp" />
+            <DE id="5" description="Deutschland" code="DE" lang="de" currency="eur" />
+            <FR id="5" description="French" code="FR" lang="fr" currency="eur" />
+            <SP id="4" description="Spain" code="SP" lang="es" currency="eur" />
+        </country>
+    </locale>
+</configdata>

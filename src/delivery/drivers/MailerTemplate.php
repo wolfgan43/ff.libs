@@ -28,7 +28,6 @@ namespace phpformsframework\libs\delivery\drivers;
 use Exception;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Error;
-use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\storage\FilemanagerScan;
@@ -95,7 +94,7 @@ final class MailerTemplate extends Mailer
         return str_replace(
             array_keys($this->fields),
             array_values($this->fields),
-            Translator::getWordByCode($this->subject)
+            $this->subject
         );
     }
 
@@ -418,7 +417,7 @@ final class MailerTemplate extends Mailer
             );
 
             if ($old_description != $description) {
-                $description = str_replace("[--alias--]", Translator::getWordByCode($alias), $description);
+                $description = str_replace("[--alias--]", $alias, $description);
             }
         } else {
             $description = preg_replace(
@@ -435,7 +434,7 @@ final class MailerTemplate extends Mailer
 
             $description = preg_replace('/([.0-9a-z_-]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,4})/i', '<a href="mailto:$1@$2">[--mailalias--]</a>', $description);
             if ($old_description != $description) {
-                $description = str_replace("[--mailalias--]", Translator::getWordByCode($email_alias), $description);
+                $description = str_replace("[--mailalias--]", $email_alias, $description);
             }
         } else {
             $description = preg_replace('/([.0-9a-z_-]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,4})/i', '<a href="mailto:$1@$2">$1@$2</a>', $description);

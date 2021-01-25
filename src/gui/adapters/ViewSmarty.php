@@ -36,8 +36,9 @@ if (!class_exists("Smarty")) {
     return null;
 }
 
-use phpformsframework\libs\Constant;
-use phpformsframework\libs\gui\ViewAdapter;
+use phpformsframework\libs\gui\Controller;
+use phpformsframework\libs\gui\Resource;
+use phpformsframework\libs\Kernel;
 use Smarty;
 use SmartyException;
 
@@ -47,28 +48,28 @@ use SmartyException;
  */
 class ViewSmarty extends Smarty implements ViewAdapter
 {
-    const VIEW_PATH             = DIRECTORY_SEPARATOR . "smarty" . DIRECTORY_SEPARATOR;
+    private const CACHE_LIFETIME        = 30;
+    private const VIEW_PATH             = DIRECTORY_SEPARATOR . "smarty" . DIRECTORY_SEPARATOR;
 
-    private $tpl_file;
+    private static $components          = [];
+
+    private $tpl_file                   = null;
 
     /**
      * ViewSmarty constructor.
-     * @param null $file
      */
-    public function __construct($file = null)
+    public function __construct()
     {
         parent::__construct();
 
-        $this->tpl_file         = $file;
+        $this->template_dir             = Kernel::$Environment::PROJECT_THEME_DISK_PATH;
+        $this->compile_dir              = Kernel::$Environment::CACHE_DISK_PATH . static::VIEW_PATH . 'templates_c';
+        $this->config_dir               = Kernel::$Environment::CACHE_DISK_PATH . static::VIEW_PATH . 'configs';
+        $this->cache_dir                = Kernel::$Environment::CACHE_DISK_PATH . static::VIEW_PATH . 'cache';
 
-        $this->template_dir     = Constant::CACHE_DISK_PATH . $this::VIEW_PATH . 'templates';
-        $this->compile_dir      = Constant::CACHE_DISK_PATH . $this::VIEW_PATH . 'templates_c';
-        $this->config_dir       = Constant::CACHE_DISK_PATH . $this::VIEW_PATH . 'configs';
-        $this->cache_dir        = Constant::CACHE_DISK_PATH . $this::VIEW_PATH . 'cache';
+        $this->caching                  = !Kernel::$Environment::DISABLE_CACHE;
 
-        $this->caching          = false;
-
-        $this->cache_lifetime   = 10;
+        $this->cache_lifetime           = static::CACHE_LIFETIME;
     }
 
     /**
@@ -86,16 +87,16 @@ class ViewSmarty extends Smarty implements ViewAdapter
     }
 
     /**
-     * @param string|null $file_disk_path
+     * @param string|null $template_disk_path
      * @param null $cache_id
      * @param null $compile_id
      * @param null $parent
      * @return ViewAdapter
-     * @throws SmartyException
      */
-    public function fetch($file_disk_path = null, $cache_id = null, $compile_id = null, $parent = null): ViewAdapter
+    public function fetch($template_disk_path = null, $cache_id = null, $compile_id = null, $parent = null): ViewAdapter
     {
-        parent::fetch($file_disk_path);
+        $this->tpl_file                 = $template_disk_path;
+        $this->template_dir             = dirname($template_disk_path);
 
         return $this;
     }
@@ -110,20 +111,14 @@ class ViewSmarty extends Smarty implements ViewAdapter
      */
     public function display($template = null, $cache_id = null, $compile_id = null, $parent = null) : string
     {
-        return parent::display();
-    }
+        $this->registered_plugins       = $this->getComponents();
 
-    /**
-     * @param null $template
-     * @param null $cache_id
-     * @param null $compile_id
-     * @param null $parent
-     * @return bool
-     * @throws SmartyException
-     */
-    public function isCached($template = null, $cache_id = null, $compile_id = null, $parent = null)
-    {
-        return parent::isCached($this->tpl_file);
+        $this->assign("theme_path", Kernel::$Environment::PROJECT_THEME_DISK_PATH);
+
+        $this->setAssignDefault();
+        $this->assign(Resource::views());
+
+        return parent::fetch($this->tpl_file);
     }
 
     /**
@@ -146,5 +141,33 @@ class ViewSmarty extends Smarty implements ViewAdapter
     {
         // TODO: Implement parse() method.
         return false;
+    }
+
+    private function getComponents() : array
+    {
+        if (empty(self::$components)) {
+            /**
+             * @var Controller $controller
+             */
+            foreach (Resource::components() as $key => $controller) {
+                self::$components["function"][$key] = [
+                    function () use ($controller) {
+                        return $controller::html();
+                    },
+                    false,
+                    []
+                ];
+            }
+        }
+
+        return self::$components;
+    }
+
+    /**
+     *
+     */
+    private function setAssignDefault() : void
+    {
+        $this->assign("site_path", Kernel::$Environment::SITE_PATH);
     }
 }

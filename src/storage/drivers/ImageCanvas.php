@@ -29,7 +29,7 @@ namespace phpformsframework\libs\storage\drivers;
 use Exception;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Log;
-use phpformsframework\libs\storage\Filemanager;
+use phpformsframework\libs\storage\FilemanagerFs;
 
 /**
  * Class ImageCanvas
@@ -105,7 +105,7 @@ class ImageCanvas
      * @param array $ref
      * @return ImageRender
      */
-    private function getRender($ref)
+    private function getRender(array $ref): ImageRender
     {
         return $ref["obj"];
     }
@@ -253,7 +253,7 @@ class ImageCanvas
             reset($this->tmb_res);
         }
 
-        Filemanager::makeDir($filename, 0775);
+        FilemanagerFs::makeDir($filename, 0775);
         switch ($this->format) {
             case "jpg":
                 if ($filename === null) {

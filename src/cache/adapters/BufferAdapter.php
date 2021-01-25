@@ -68,13 +68,19 @@ abstract class BufferAdapter implements Dumpable
     abstract protected function load(string $name, string $bucket = null);
 
     /**
-     * @param string $path
+     * @param string $name
      * @param mixed $data
      * @param string|null $bucket
      * @return bool
      */
-    abstract protected function write(string $path, $data, string $bucket = null) : bool;
+    abstract protected function write(string $name, $data, string $bucket = null) : bool;
 
+
+    /**
+     * @param string $name
+     * @return string|null
+     */
+    abstract public function getInfo(string $name) : ?string;
 
     /**
      * BufferAdapter constructor.
@@ -93,12 +99,14 @@ abstract class BufferAdapter implements Dumpable
     /**
      * @param String $name
      * @param Mixed|null $value
-     * @param null $files_expire
+     * @param array|null $files_expire
      * @return bool
      * @todo da tipizzare
      */
-    public function set(string $name, $value = null, $files_expire = null) : bool
+    public function set(string $name, $value = null, array $files_expire = null) : bool
     {
+        Debug::stopWatch("CacheSet" . DIRECTORY_SEPARATOR . $this->bucket . DIRECTORY_SEPARATOR . $name);
+
         $res = false;
         if ($value === null) {
             $res = $this->del($name);
@@ -112,7 +120,7 @@ abstract class BufferAdapter implements Dumpable
             $this->clear();
         }
 
-        Debug::stopWatch("Cache" . DIRECTORY_SEPARATOR . $this->bucket . DIRECTORY_SEPARATOR . $name);
+        Debug::stopWatch("CacheSet" . DIRECTORY_SEPARATOR . $this->bucket . DIRECTORY_SEPARATOR . $name);
 
         return $res;
     }
@@ -278,13 +286,15 @@ abstract class BufferAdapter implements Dumpable
      * @param string $name
      * @return array
      */
-    private function getIndex(string $name) : array
+    private function &getIndex(string $name) : ?array
     {
         if (!self::$indexes) {
-            self::$indexes = $this->load("index");
+            self::$indexes          = $this->load("index");
         }
 
-        return self::$indexes[$this->key($name)] ?? [];
+        $key                        = $this->key($name);
+
+        return self::$indexes[$key];
     }
 
     /**
@@ -295,20 +305,25 @@ abstract class BufferAdapter implements Dumpable
     {
         Debug::stopWatch("CacheIndex" . DIRECTORY_SEPARATOR . $this->bucket . DIRECTORY_SEPARATOR . $name);
 
-        $indexes = $this->getIndex($name);
-        $cached = !empty($indexes);
-        foreach ($indexes as $file_index => &$last_update) {
-            $file_mtime = @filemtime($file_index);
-            if ($file_mtime > $last_update) {
-                $last_update = $file_mtime;
-                $cached = false;
+        $cached                     = true;
+        $indexes                    =& $this->getIndex($name);
+        if (!empty($indexes)) {
+            foreach ($indexes as $file_index => &$last_update) {
+                if (!file_exists($file_index)) {
+                    $cached         = false;
+                    continue;
+                }
+                $file_mtime         = @filemtime($file_index);
+                if ($file_mtime > $last_update) {
+                    $last_update    = $file_mtime;
+                    $cached         = false;
+                }
+            }
+
+            if (!$cached) {
+                $this->write("index", self::$indexes);
             }
         }
-
-        if (!$cached) {
-            $this->write("index", $indexes);
-        }
-
         Debug::stopWatch("CacheIndex" . DIRECTORY_SEPARATOR . $this->bucket . DIRECTORY_SEPARATOR . $name);
 
         return $cached;

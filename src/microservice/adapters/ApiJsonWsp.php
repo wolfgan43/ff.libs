@@ -2,7 +2,7 @@
 namespace phpformsframework\libs\microservice\adapters;
 
 use phpformsframework\libs\Request;
-use phpformsframework\libs\storage\Filemanager;
+use phpformsframework\libs\storage\FilemanagerWeb;
 use stdClass;
 use Exception;
 
@@ -53,7 +53,7 @@ class ApiJsonWsp extends ApiAdapter
     public function preflight() : ?array
     {
         if (!isset(self::$preflight[$this->endpoint])) {
-            self::$preflight[$this->endpoint]   = Filemanager::fileGetContentWithHeaders(
+            self::$preflight[$this->endpoint]   = FilemanagerWeb::fileGetContentsWithHeaders(
                 $this->endpoint,
                 null,
                 Request::METHOD_HEAD
@@ -73,7 +73,7 @@ class ApiJsonWsp extends ApiAdapter
      */
     protected function get(string $method, array $params = null, array $headers = null)
     {
-        return Filemanager::fileGetContentJson(
+        return FilemanagerWeb::fileGetContentsJson(
             $this->endpoint,
             $params,
             $method,

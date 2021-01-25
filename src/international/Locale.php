@@ -26,6 +26,7 @@
 namespace phpformsframework\libs\international;
 
 use phpformsframework\libs\Configurable;
+use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dir;
 use phpformsframework\libs\Kernel;
 
@@ -35,30 +36,23 @@ use phpformsframework\libs\Kernel;
  */
 class Locale implements Configurable
 {
-    private static $lang                                            = null;
-    private static $country                                         = null;
-    private static $langDefault                                     = null;
-    private static $countryDefault                                  = null;
-    private static $locale                                          = null;
+    private const ERROR_BUCKET                                          = "locale";
+    private const LANG_                                                 = "lang";
+    private const COUNTRY_                                              = "country";
+    private const CODE_                                                 = "tiny_code";
+
+    private static $lang                                                = null;
+    private static $country                                             = null;
+    private static $locale                                              = null;
+    private static $default                                             = null;
+    private static $accepted_langs                                      = [];
 
     /**
      * @return bool
      */
-    public static function isMultiLang() : bool
+    public static function isDefaultLang() : bool
     {
-        return count(Kernel::$Environment::ACCEPTED_LANG) > 1;
-    }
-
-    /**
-     * @param string $key
-     * @return string
-     */
-    public static function getLangDefault(string $key) : ?string
-    {
-        return (isset(self::$langDefault[$key])
-            ? self::$langDefault[$key]
-            : null
-        );
+        return self::$lang[self::CODE_] == self::$default[self::LANG_][self::CODE_];
     }
 
     /**
@@ -78,63 +72,51 @@ class Locale implements Configurable
     }
 
     /**
-     * @param string $key
      * @return string|null
      */
-    public static function getLang(string $key) : ?string
+    public static function getCodeLang() : ?string
     {
-        return (isset(self::$lang[$key])
-            ? self::$lang[$key]
-            : null
-        );
+        return self::$lang[self::CODE_] ?? null;
     }
 
     /**
-     * @param string $key
      * @return string|null
      */
-    public static function getCountryDefault(string $key) : ?string
+    public static function getCodeCountry() : ?string
     {
-        return (isset(self::$countryDefault[$key])
-            ? self::$countryDefault[$key]
-            : null
-        );
+        return self::$country[self::CODE_] ?? null;
     }
 
     /**
-     * @param string $key
-     * @return string|null
+     * @return string
      */
-    public static function getCountry(string $key) : ?string
+    public static function getCodeLangDefault() : ?string
     {
-        return (isset(self::$country[$key])
-            ? self::$country[$key]
-            : null
-        );
+        return self::$default[self::LANG_][self::CODE_] ?? null;
     }
 
     /**
-     * @param string|null $key
+     * @return string|null
+     */
+    public static function getCodeCountryDefault() : ?string
+    {
+        return self::$default[self::COUNTRY_][self::CODE_] ?? null;
+    }
+
+    /**
      * @return array
      */
-    public static function getLangs(string $key = null) : array
+    public static function getLangs() : array
     {
-        return ($key
-            ? self::$locale["lang"][$key]
-            : self::$locale["lang"]
-        );
+        return self::$locale[self::LANG_];
     }
 
     /**
-     * @param string|null $key
      * @return array
      */
-    public static function getCountries(string $key = null) : array
+    public static function getCountries() : array
     {
-        return ($key
-            ? self::$locale["country"][$key]
-            : self::$locale["country"]
-        );
+        return self::$locale[self::COUNTRY_];
     }
 
     /**
@@ -142,10 +124,7 @@ class Locale implements Configurable
      */
     public static function get() : ?string
     {
-        return (self::$lang["tiny_code"] == self::$country["code"]
-            ? self::$lang["tiny_code"]
-            : self::$lang["tiny_code"] . "-" . strtoupper(self::$country["code"])
-        );
+        return self::$lang[self::CODE_] . "-" . self::$country[self::CODE_];
     }
 
     /**
@@ -154,41 +133,62 @@ class Locale implements Configurable
      */
     public static function setByPath(string $path) : string
     {
-        $arrPathInfo                                                = explode(DIRECTORY_SEPARATOR, trim($path, DIRECTORY_SEPARATOR), "2");
-        $lang_tiny_code                                             = $arrPathInfo[0];
-        if (isset(self::$locale["lang"][$lang_tiny_code])) {
-            $path                                                   = DIRECTORY_SEPARATOR . $arrPathInfo[1];
+        $arrPathInfo                                                    = explode(DIRECTORY_SEPARATOR, trim($path, DIRECTORY_SEPARATOR), "2");
+        $lang_tiny_code                                                 = $arrPathInfo[0];
+        if (isset(self::$locale[self::LANG_][$lang_tiny_code])) {
+            $path                                                       = DIRECTORY_SEPARATOR . $arrPathInfo[1];
+            self::set($lang_tiny_code);
+        } else {
+            self::set();
         }
-        self::set($lang_tiny_code);
-
         return $path;
     }
 
     /**
-     * @param string $locale
+     * @param string|null $locale
      */
-    public static function set(string $locale) : void
+    public static function set(string $locale = null) : void
     {
-        $locale                                                     = str_replace("_", "-", $locale);
-        $arrLocale                                                  = explode("-", $locale, 2);
-
-
-        if (isset(self::$locale["lang"][$arrLocale[0]])) {
-            $lang_tiny_code                                         = $arrLocale[0];
-            $country_tiny_code                                      = (
-                isset($arrLocale[1]) && isset(self::$locale["lang"][$arrLocale[1]])
-                                                                        ? $arrLocale[1]
-                                                                        : null
-                                                                    );
-        } else {
-            $acceptLanguage                                         = self::acceptLanguage();
-
-            $lang_tiny_code                                         = $acceptLanguage["lang"];
-            $country_tiny_code                                      = $acceptLanguage["country"];
+        $lang                                                           = null;
+        $country                                                        = null;
+        if ($locale) {
+            $locale                                                     = str_replace("_", "-", $locale);
+            $arrLocale                                                  = explode("-", $locale, 2);
+            if (isset(self::$locale[self::LANG_][$arrLocale[0]])) {
+                $lang                                                   = $arrLocale[0];
+                $country                                                = (
+                    isset($arrLocale[1]) && isset(self::$locale[self::COUNTRY_][$arrLocale[1]])
+                    ? $arrLocale[1]
+                    : null
+                );
+            }
         }
 
-        self::setLang($lang_tiny_code);
-        self::setCountry($country_tiny_code);
+        if (!empty(Kernel::$Environment::LOCALE_ACCEPTED_LANGS)) {
+            self::$accepted_langs                                       = array_intersect(self::$accepted_langs, Kernel::$Environment::LOCALE_ACCEPTED_LANGS);
+        }
+
+        $acceptLanguage                                                 = self::acceptLanguage($lang, $country);
+        $lang_tiny_code                                                 = $acceptLanguage[self::LANG_];
+        $country_tiny_code                                              = $acceptLanguage[self::COUNTRY_];
+
+        if ($lang_tiny_code != self::$default[self::LANG_][self::CODE_] && array_search($lang_tiny_code, self::$accepted_langs) === false) {
+            Debug::set("Lang not accepted: " . $lang_tiny_code . " Lang allowed: " . implode(", ", self::$accepted_langs) . ". Lang will be set to default: " . self::$default[self::LANG_][self::CODE_], self::ERROR_BUCKET);
+
+            self::$lang                                                 = self::$default[self::LANG_];
+            self::$country                                              = self::$default[self::COUNTRY_];
+        } else {
+            self::$lang                                                 = self::$locale[self::LANG_][$lang_tiny_code];
+            self::$country                                              = (
+                isset(self::$locale[self::COUNTRY_][$country_tiny_code])
+                ? self::$locale[self::COUNTRY_][$country_tiny_code]
+                : self::$locale[self::COUNTRY_][self::$lang[self::COUNTRY_]]
+            );
+        }
+
+        if (!self::isDefaultLang()) {
+            Translator::loadLib(self::$lang[self::CODE_]);
+        }
     }
 
     /**
@@ -208,9 +208,9 @@ class Locale implements Configurable
      */
     public static function loadConfig(array $config)
     {
-        self::$locale                                               = $config["locale"];
-        self::$langDefault                                          = $config["langDefault"];
-        self::$countryDefault                                       = $config["countryDefault"];
+        self::$locale                                                   = $config["locale"];
+        self::$default                                                  = $config["default"];
+        self::$accepted_langs                                           = $config["accepted_langs"];
     }
 
     /**
@@ -220,102 +220,113 @@ class Locale implements Configurable
     public static function loadSchema(array $rawdata) : array
     {
         if (!empty($rawdata)) {
-            $lang_tiny_code                                         = strtolower(Kernel::$Environment::LOCALE_LANG_CODE);
-            $country_tiny_code                                      = strtoupper(Kernel::$Environment::LOCALE_COUNTRY_CODE);
-
-            /**
-             * Lang
-             */
-            if (!empty($rawdata["lang"])) {
-                foreach ($rawdata["lang"] as $code => $lang) {
-                    $attr                                           = Dir::getXmlAttr($lang);
-                    self::$locale["lang"][$code]                    = $attr;
-                    self::$locale["lang"][$code]["tiny_code"]       = $code;
-                }
-
-                if (isset(self::$locale["lang"][$lang_tiny_code])) {
-                    self::$langDefault                              = self::$locale["lang"][$lang_tiny_code];
-                }
-            }
+            $lang_tiny_code                                             = strtolower(Kernel::$Environment::LOCALE_LANG_CODE);
+            $country_tiny_code                                          = strtoupper(Kernel::$Environment::LOCALE_COUNTRY_CODE);
 
             /**
              * Country
              */
-            if (!empty($rawdata["country"])) {
-                foreach ($rawdata["country"] as $code => $country) {
-                    $attr                                           = Dir::getXmlAttr($country);
-                    self::$locale["country"][$code]                 = $attr;
-                    self::$locale["country"][$code]["tiny_code"]    = strtolower($code);
+            if (!empty($rawdata[self::COUNTRY_])) {
+                foreach ($rawdata[self::COUNTRY_] as $code => $country) {
+                    $code                                               = strtoupper($code);
+
+                    $attr                                               = Dir::getXmlAttr($country);
+                    self::$locale[self::COUNTRY_][$code]                = $attr;
+                    self::$locale[self::COUNTRY_][$code][self::CODE_]   = $code;
+                    self::$locale[self::COUNTRY_][$code][self::LANG_]   = (
+                        isset($attr[self::LANG_])
+                        ? strtolower($attr[self::LANG_])
+                        : null
+                    );
                 }
 
-                if (isset(self::$locale["country"][$country_tiny_code])) {
-                    self::$countryDefault                           = self::$locale["country"][$country_tiny_code];
+                if (isset(self::$locale[self::COUNTRY_][$country_tiny_code])) {
+                    self::$default[self::COUNTRY_]                      = self::$locale[self::COUNTRY_][$country_tiny_code];
                 }
             }
+
+            /**
+             * Lang
+             */
+            if (!empty($rawdata[self::LANG_])) {
+                foreach ($rawdata[self::LANG_] as $code => $lang) {
+                    $code                                               = strtolower($code);
+
+                    $attr                                               = Dir::getXmlAttr($lang);
+                    self::$locale[self::LANG_][$code]                   = $attr;
+                    self::$locale[self::LANG_][$code][self::CODE_]      = $code;
+                    self::$locale[self::LANG_][$code][self::COUNTRY_]   = (
+                        isset($attr[self::COUNTRY_])
+                        ? strtoupper($attr[self::COUNTRY_])
+                        : null
+                    );
+                }
+
+                if (isset(self::$locale[self::LANG_][$lang_tiny_code])) {
+                    self::$default[self::LANG_]                     = self::$locale[self::LANG_][$lang_tiny_code];
+
+                    if (!isset(self::$locale[self::COUNTRY_][$country_tiny_code])) {
+                        self::$default[self::COUNTRY_]              = self::$locale[self::COUNTRY_][self::$default[self::LANG_][self::COUNTRY_]];
+                    }
+                }
+            }
+
+            self::$accepted_langs                                   = array_keys(self::$locale[self::LANG_]);
         }
 
         return array(
             "locale"            => self::$locale,
-            "langDefault"       => self::$langDefault,
-            "countryDefault"    => self::$countryDefault
+            "default"           => self::$default,
+            "accepted_langs"    => self::$accepted_langs
         );
     }
 
     /**
+     * @param string|null $lang
+     * @param string|null $country
      * @return array|null
      */
-    private static function acceptLanguage() : ?array
+    private static function acceptLanguage(string $lang = null, string $country = null) : ?array
     {
-        static $res                                                 = null;
-
-        if (!$res && isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+        $res                                                        = null;
+        if ($lang && in_array($lang, self::$accepted_langs)) {
+            $res                                                    = [
+                                                                        self::LANG_     => strtolower($lang),
+                                                                        self::COUNTRY_  => (
+                                                                            $country
+                                                                            ? strtoupper($country)
+                                                                            : self::$lang[$lang][self::COUNTRY_]
+                                                                        )
+                                                                    ];
+        } elseif (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
             foreach (explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE']) as $locale) {
                 $pattern                                            = '/^(?P<primarytag>[a-zA-Z]{2,8})'.
                     '(?:-(?P<subtag>[a-zA-Z]{2,8}))?(?:(?:;q=)'.
                     '(?P<quantifier>\d\.\d))?$/';
 
-                $splits                                             = array();
+                $splits                                             = [];
                 if (preg_match($pattern, $locale, $splits)) {
-                    $res                                            = array(
-                                                                        "lang"      => strtolower($splits["primarytag"])
-                                                                        , "country" => (
+                    $lang                                           = strtolower($splits["primarytag"]);
+                    if (!in_array($lang, self::$accepted_langs)) {
+                        continue;
+                    }
+
+                    $res                                            = [
+                                                                        self::LANG_     => $lang,
+                                                                        self::COUNTRY_  => (
                                                                             isset($splits["subtag"])
-                                                                                        ? strtoupper($splits["subtag"])
-                                                                                        : null
-                                                                                    )
-                                                                    );
+                                                                                ? strtoupper($splits["subtag"])
+                                                                                : self::$lang[$lang][self::COUNTRY_]
+                                                                            )
+                                                                    ];
+                    break;
                 }
             }
         }
 
-        return $res;
-    }
-
-    /**
-     * @param string|null $lang_tiny_code
-     */
-    private static function setLang(string $lang_tiny_code = null) : void
-    {
-        self::$lang                                                 = (
-            isset(self::$locale["lang"][$lang_tiny_code])
-                                                                        ? self::$locale["lang"][$lang_tiny_code]
-                                                                        : self::$langDefault
-                                                                    );
-    }
-
-    /**
-     * @param string|null $country_tiny_code
-     */
-    private static function setCountry(string $country_tiny_code = null) : void
-    {
-        if (!isset(self::$locale["country"][$country_tiny_code]) && isset(self::$lang["country"])) {
-            $country_tiny_code                                      = self::$lang["country"];
-        }
-
-        self::$country                                              = (
-            isset(self::$locale["country"][$country_tiny_code])
-                                                                        ? self::$locale["country"][$country_tiny_code]
-                                                                        : self::$countryDefault
-                                                                    );
+        return $res ?? [
+            self::LANG_     => strtolower(Kernel::$Environment::LOCALE_LANG_CODE),
+            self::COUNTRY_  => strtoupper(Kernel::$Environment::LOCALE_COUNTRY_CODE)
+        ];
     }
 }

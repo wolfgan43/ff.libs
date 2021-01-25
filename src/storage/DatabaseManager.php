@@ -14,6 +14,6 @@ trait DatabaseManager
      */
     public static function orm(string $collection = null, string $mainTable = null) : Orm
     {
-        return Model::orm($collection, $mainTable);
+        return Orm::getInstance($collection, $mainTable);
     }
 }

@@ -13,7 +13,7 @@ class Activation extends Widget
 {
     use CommonTemplate;
 
-    protected $requiredJs           = ["hcore.auth"];
+    protected $requiredJs           = ["hcore.security"];
 
     /**
      * @throws Exception

@@ -40,7 +40,7 @@ class Login extends Widget
     use CommonTemplate;
     use SecureManager;
 
-    protected $requiredJs           = ["hcore.auth"];
+    protected $requiredJs           = ["hcore.security"];
 
     /**
      * @throws Exception
@@ -118,7 +118,7 @@ class Login extends Widget
         $responseData                           = User::login($this->request->username, $this->request->password, $this->request->permanent ?? null);
         if (!$responseData->isError()) {
             if ($this->aclVerify()) {
-                $responseData->set("welcome", Welcome::toArray());
+                $responseData->set("welcome", Welcome::resources());
             } else {
                 $responseData = User::logout();
                 $responseData->error(401, "Permission Denied.");

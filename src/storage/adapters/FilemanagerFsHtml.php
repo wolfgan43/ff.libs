@@ -25,52 +25,35 @@
  */
 namespace phpformsframework\libs\storage\adapters;
 
-use phpformsframework\libs\Error;
-use phpformsframework\libs\storage\drivers\Array2XML;
-use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\storage\FilemanagerAdapter;
-use Exception;
 
 /**
- * Class FilemanagerXml
+ * Class FilemanagerFsHtml
  * @package phpformsframework\libs\storage\adapters
  */
-class FilemanagerXml extends FilemanagerAdapter
+class FilemanagerFsHtml extends FilemanagerAdapter //todo: da finire
 {
-    const EXT                                                   = "xml";
+    const EXT                                                   = "html";
 
     /**
      * @param string $file_path
      * @param string|null $var
      * @return array|null
-     * @throws Exception
      */
     protected function loadFile(string $file_path, string $var = null) : ?array
     {
-        return Array2XML::xml2Array(Filemanager::fileGetContent($file_path));
+        // TODO: Implement load_file() method.
+        return [];
     }
 
     /**
      * @param array $data
      * @param string|null $var
      * @return string
-     * @throws Exception
      */
     protected function output(array $data, string $var = null) : string
     {
-        $xml                                                    = null;
-        $root_node                                              = (
-            $var
-            ? $var
-            : "root"
-        );
-
-        try {
-            $xml                                                = Array2XML::createXML($root_node, $data);
-        } catch (Exception $e) {
-            Error::register($e->getMessage(), static::ERROR_BUCKET);
-        }
-
-        return $xml->saveXML();
+        // TODO: Implement output() method.
+        return "";
     }
 }

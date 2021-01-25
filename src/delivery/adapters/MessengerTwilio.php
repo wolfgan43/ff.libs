@@ -58,7 +58,7 @@ class MessengerTwilio extends MessengerAdapter
                     }
 
                     if ($from) {
-                        $locale = Locale::getLang("tiny_code");
+                        $locale = Locale::getCodeLang();
                         foreach ($to as $tel => $name) {
                             try {
                                 $number = (

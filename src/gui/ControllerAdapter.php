@@ -37,11 +37,11 @@ abstract class ControllerAdapter extends Mappable
     public $body_class                          = null;
 
     /**
+     * @param string $tpl_var
      * @param string|DataHtml|View|Controller $content
-     * @param string|null $where
      * @return $this
      */
-    abstract public function addContent($content, string $where = null) : self;
+    abstract public function assign($tpl_var, $content = null) : self;
 
     /**
      * @param string|null $template_or_html
@@ -59,43 +59,4 @@ abstract class ControllerAdapter extends Mappable
      * @return string
      */
     abstract public function toHtml() : string;
-
-
-    /**
-     * @param array|null $css
-     * @param array|null $style
-     * @param array|null $fonts
-     * @param array|null $js
-     * @param array|null $js_embed
-     * @param array|null $js_template
-     * @param array|null $structured_data
-     * @param array|null $meta
-     * @param string|null $body_class
-     * @param string|null $doc_type
-     * @return self
-     */
-    public function includeAssets(
-        array   $css                = null,
-        array   $style              = null,
-        array   $fonts              = null,
-        array   $js                 = null,
-        array   $js_embed           = null,
-        array   $js_template        = null,
-        array   $structured_data    = null,
-        array   $meta               = null,
-        string  $body_class         = null,
-        string  $doc_type           = null
-    ) : void {
-        $this->css                  = $this->css                + $css;
-        $this->style                = $this->style              + $style;
-        $this->fonts                = $this->fonts              + $fonts;
-        $this->js                   = $this->js                 + $js;
-        $this->js_embed             = $this->js_embed           + $js_embed;
-        $this->js_template          = $this->js_template        + $js_template;
-        $this->structured_data      = $this->structured_data    + $structured_data;
-
-        $this->meta                 = array_replace($this->meta, $meta);
-        $this->body_class           = $body_class;
-        $this->doc_type             = $doc_type;
-    }
 }

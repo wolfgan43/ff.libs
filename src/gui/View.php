@@ -8,13 +8,13 @@ use stdClass;
 /**
  * Class View
  * @package phpformsframework\libs\gui
- * @property ViewAdapter adapter
+ * @property adapters\ViewAdapter adapter
  */
 class View
 {
     use AdapterManager;
 
-    const ERROR_BUCKET                              = "view";
+    private const ERROR_BUCKET                      = "view";
 
     private $config                                 = null;
 

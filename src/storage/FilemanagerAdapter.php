@@ -148,7 +148,7 @@ abstract class FilemanagerAdapter
             $file_path = $this->getFilePath();
         }
         $rc                                                         = $this->isValid($file_path) && $this->makeDir(dirname($file_path));
-        if ($rc && Filemanager::fsave($buffer, $file_path) && $expire !== null) {
+        if ($rc && FilemanagerFs::fsave($buffer, $file_path) && $expire !== null) {
             $this->touch($expire, $file_path);
         }
         return $rc;
@@ -166,7 +166,7 @@ abstract class FilemanagerAdapter
             $file_path = $this->getFilePath();
         }
         $rc                                                             = $this->isValid($file_path) && $this->makeDir(dirname($file_path));
-        if ($rc && Filemanager::fappend($buffer, $file_path) && $expires !== null) {
+        if ($rc && FilemanagerFs::fappend($buffer, $file_path) && $expires !== null) {
             $this->touch($expires, $file_path);
         }
 

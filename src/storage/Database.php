@@ -28,6 +28,7 @@ namespace phpformsframework\libs\storage;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\util\AdapterManager;
 use Exception;
+use phpformsframework\libs\util\TypesConverter;
 
 /**
  * Class Database
@@ -37,6 +38,7 @@ use Exception;
 class Database implements Constant
 {
     use AdapterManager;
+    use TypesConverter;
 
     public const RESULT                                                     = "result";
     public const INDEX                                                      = "index";
@@ -55,26 +57,12 @@ class Database implements Constant
      */
     public static function getInstance(array $databaseAdapters, array $struct = null) : Database
     {
-        $key                                                                = crc32(
-            serialize($databaseAdapters + $struct["table"])
-                                                                            );
+        $key                                                                = self::checkSumArray($databaseAdapters + $struct["table"]);
         if (!isset(self::$singletons[$key])) {
             self::$singletons[$key]                                         = new Database($databaseAdapters, $struct);
         }
 
         return self::$singletons[$key];
-    }
-
-    /**
-     * @param array $arr
-     * @return bool
-     */
-    public static function isAssocArray(array $arr) : bool
-    {
-        if (array() === $arr) {
-            return false;
-        }
-        return array_keys($arr) !== range(0, count($arr) - 1);
     }
 
     /**

@@ -29,7 +29,6 @@ use phpformsframework\libs\dto\RequestPage;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\security\Discover;
 use phpformsframework\libs\security\Validator;
-use phpformsframework\libs\storage\Filemanager;
 use phpformsframework\libs\util\Normalize;
 use Exception;
 
@@ -39,8 +38,6 @@ use Exception;
  */
 abstract class App implements Dumpable
 {
-    use EndUserManager;
-
     const NAME_SPACE                                                = __NAMESPACE__ . '\\';
     const ERROR_BUCKET                                              = 'app';
 
@@ -79,10 +76,10 @@ abstract class App implements Dumpable
     {
         return array(
             "isRunnedAs"    => Router::getRunner(),
-            "Configuration" => self::$configuration,
-            "Vars"          => Env::getAll(),
+            "Config"        => self::$configuration,
+            "Env"           => Env::getAll(),
             "userVars"      => $userVars,
-            "Environment"   => '*protected*'
+            "Constant"      => '*protected*'
         );
     }
 
@@ -103,6 +100,49 @@ abstract class App implements Dumpable
     public static function debug($data, string $bucket = null) : void
     {
         Debug::set($data, $bucket ?? static::ERROR_BUCKET);
+    }
+
+    /**
+     * @todo da tipizzare
+     * @param string $name
+     * @param mixed|null $value
+     * @param bool $permanent
+     * @return mixed|null
+     */
+    public static function env(string $name, $value = null, bool $permanent = false)
+    {
+        return ($value === null
+            ? Env::get($name)
+            : Env::set($name, $value, $permanent)
+        );
+    }
+
+    /**
+     * @return Request
+     */
+    public static function request() : Request
+    {
+        static $request     = null;
+
+        if (!$request) {
+            $request        = new Request();
+        }
+
+        return $request;
+    }
+
+    /**
+     * @return Response
+     */
+    public static function response() : Response
+    {
+        static $response    = null;
+
+        if (!$response) {
+            $response       = new Response();
+        }
+
+        return $response;
     }
 
     /**
@@ -130,19 +170,6 @@ abstract class App implements Dumpable
         }
 
         return $validator;
-    }
-
-    /**
-     * @return Filemanager
-     */
-    public static function filemanager() : storage\Filemanager
-    {
-        static $filemanager     = null;
-        if (!$filemanager) {
-            $filemanager        = new Filemanager();
-        }
-
-        return $filemanager;
     }
 
     /**

@@ -13,9 +13,8 @@ use stdClass;
  */
 class FilemanagerScan implements Dumpable
 {
-    private const STORAGE_RAWDATA                                       = "rawdata";
-
     private static $storage                                             = null;
+    private static $rawdata                                             = [];
 
     /**
      * @var null|callable $callback
@@ -35,16 +34,17 @@ class FilemanagerScan implements Dumpable
     {
         return [
             "patterns"  => self::$patterns,
-            "storage"   => self::$storage
+            "storage"   => self::$storage,
+            "rawdata"   => self::$rawdata
         ];
     }
 
     /**
      * @param array $patterns
      * @param callable|null $callback
-     * @return array|null
+     * @return array
      */
-    public static function scan(array $patterns, callable $callback = null) : ?array
+    public static function scan(array $patterns, callable $callback = null) : array
     {
         Debug::stopWatch("filemanager/scan");
 
@@ -57,7 +57,7 @@ class FilemanagerScan implements Dumpable
 
         Debug::stopWatch("filemanager/scan");
 
-        return self::$storage;
+        return self::$storage ?? self::$rawdata;
     }
 
     /**
@@ -73,7 +73,7 @@ class FilemanagerScan implements Dumpable
                 : ''
             );
 
-        $opt->pattern       = dirname($pattern);
+        $opt->pattern       = $pattern;
         $opt->pattername    = basename($opt->pattern);
 
         switch ($opt->flag) {
@@ -115,7 +115,11 @@ class FilemanagerScan implements Dumpable
      */
     private static function globDir(string $pattern, stdClass $opt = null) : void
     {
-        self::$storage[$opt->type ?? self::STORAGE_RAWDATA] = glob($pattern, GLOB_ONLYDIR);
+        if ($opt->type) {
+            self::$storage[$opt->type] = glob($pattern, GLOB_ONLYDIR);
+        } else {
+            self::$rawdata = glob($pattern, GLOB_ONLYDIR);
+        }
     }
 
     /**
@@ -125,6 +129,10 @@ class FilemanagerScan implements Dumpable
     private static function globDirCallback(string $pattern, stdClass $opt = null) : void
     {
         foreach (glob($pattern, GLOB_ONLYDIR) as $file) {
+            if (isset($opt->exclude) && in_array(basename($file), $opt->exclude)) {
+                continue;
+            }
+
             self::scanAddItem($file, $opt);
         }
     }
@@ -136,6 +144,10 @@ class FilemanagerScan implements Dumpable
     private static function globDirRecursive(string $pattern, stdClass $opt = null) : void
     {
         foreach (glob($pattern, GLOB_ONLYDIR) as $file) {
+            if (isset($opt->exclude) && in_array(basename($file), $opt->exclude)) {
+                continue;
+            }
+
             self::scanAddItem($file, $opt);
             self::globDirRecursive($file . '/*');
         }
@@ -156,6 +168,10 @@ class FilemanagerScan implements Dumpable
         }
 
         foreach (glob($pattern . $limit, $flags) as $file) {
+            if (isset($opt->exclude) && in_array(basename($file), $opt->exclude)) {
+                continue;
+            }
+
             if (!empty($opt->dir) || is_file($file)) {
                 self::scanAddItem($file, $opt);
             }
@@ -183,6 +199,10 @@ class FilemanagerScan implements Dumpable
     private static function globFilterRecursive(string $pattern, stdClass $opt = null) : void
     {
         foreach (glob($pattern) as $file) {
+            if (isset($opt->exclude) && in_array(basename($file), $opt->exclude)) {
+                continue;
+            }
+
             if (is_file($file)) {
                 self::scanAddItem($file, $opt);
             } else {
@@ -225,7 +245,7 @@ class FilemanagerScan implements Dumpable
 
             (self::$callback)($file, self::$storage);
         } elseif (!$opt) {
-            self::$storage[self::STORAGE_RAWDATA][] = $file;
+            self::$rawdata[] = $file;
         } else {
             if (self::scanIsInvalidItem($file_info, $opt)) {
                 return;
@@ -237,7 +257,7 @@ class FilemanagerScan implements Dumpable
                 if (isset($opt->callback) && is_callable($opt->callback)) {
                     ($opt->callback)($file_info, $opt);
                 }
-                self::$storage[self::STORAGE_RAWDATA][] = $file;
+                self::$rawdata[] = $file;
             }
         }
     }
@@ -254,11 +274,23 @@ class FilemanagerScan implements Dumpable
         $file_info->parentname                          = basename($file_info->dirname);
         if (isset($opt->rootpath)) {
             $file_info->rootpath                        = realpath($file_info->dirname . DIRECTORY_SEPARATOR . $opt->rootpath);
+            $file_info->rootpathname                    = basename($file_info->rootpath);
             $file_info->rootname                        = basename($file_info->rootpath);
         } else {
-            $file_info->rootpath                        = $opt->pattern;
-            $file_info->rootname                        = $opt->pattername;
+            $subdir_count                               = substr_count($opt->pattern, DIRECTORY_SEPARATOR);
+            $arrDir                                     = explode(DIRECTORY_SEPARATOR, $file_info->dirname, $subdir_count + 2);
+
+            $file_info->rootpathname                    = $arrDir[$subdir_count + 1] ?? null;
+            $file_info->rootpath                        = DIRECTORY_SEPARATOR . $file_info->rootpathname;
+            $file_info->rootname                        = $arrDir[$subdir_count] ?? null;
         }
+
+        $file_info->defaultname                         = (
+            $file_info->rootpathname
+            ? $file_info->rootpathname . DIRECTORY_SEPARATOR
+            : null
+        ) . $file_info->filename;
+
 
         if (isset($opt->replace[$file_info->extension])) {
             $file_info->filename                        = str_replace("." . $opt->replace[$file_info->extension], "", $file_info->filename);

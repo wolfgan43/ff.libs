@@ -31,11 +31,13 @@ namespace phpformsframework\libs\dto;
  */
 class DataError extends DataAdapter
 {
+    const CONTENT_TYPE              = "application/json";
+
     /**
-     * @return array
+     * @return string
      */
-    public function output() : array
+    public function output() : string
     {
-        return $this->toArray();
+        return $this->toJson();
     }
 }

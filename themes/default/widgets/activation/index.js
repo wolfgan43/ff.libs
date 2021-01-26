@@ -1,4 +1,4 @@
-hcore.Auth.activation = function (url, redirect, selector, resendCode) {
+hcore.security.activation = function (url, redirect, selector, resendCode) {
     let selectorID = (selector
             ? "#" + selector
             : "#activation-box"
@@ -9,13 +9,13 @@ hcore.Auth.activation = function (url, redirect, selector, resendCode) {
     let token = $(selectorID).find("INPUT[name='csrf']").val() || "";
     let verifyCode = $(selectorID).find("INPUT[name='codice-conferma']").val() || "";
 
-    hcore.Auth.initInterface(selectorID, redirect);
+    hcore.security.initInterface(selectorID, redirect);
 
-    if(resendCode || hcore.Auth.getBearerExpire() <= new Date().getTime()) {
-        hcore.Auth.setBearer();
+    if(resendCode || hcore.security.getBearerExpire() <= new Date().getTime()) {
+        hcore.security.setBearer();
     }
 
-    let bearer = hcore.Auth.getBearer();
+    let bearer = hcore.security.getBearer();
     let headers = {};
     let data = {};
 
@@ -51,29 +51,29 @@ hcore.Auth.activation = function (url, redirect, selector, resendCode) {
     .done(function (response) {
         if(response.status === 0) {
             if(bearer) {
-                hcore.Auth.throwSuccess('Your Account has been Activated!');
-                hcore.Auth.redirect(1000, redirect)
+                hcore.security.throwSuccess('Your Account has been Activated!');
+                hcore.security.redirect(1000, redirect)
             } else {
-                hcore.Auth.unblockAction();
-                hcore.Auth.setBearer(response.data.bearer);
+                hcore.security.unblockAction();
+                hcore.security.setBearer(response.data.bearer);
                 if(!response.data.sender) {
                     response.data.sender = "email";
                 }
 
                 if(response.data.sender) {
-                    hcore.Auth.throwSuccess('Check your ' + response.data.sender);
+                    hcore.security.throwSuccess('Check your ' + response.data.sender);
 
                     $(selectorID).find("INPUT[name='username']").prop('disabled', true);
                     $(selectorID + " .verify-code").removeClass("d-none");
                 }
             }
         } else {
-            hcore.Auth.unblockAction();
-            hcore.Auth.throwWarning(response.error);
+            hcore.security.unblockAction();
+            hcore.security.throwWarning(response.error);
         }
 
     })
-    .fail(hcore.Auth.responseFail);
+    .fail(hcore.security.responseFail);
 
 
     return false;

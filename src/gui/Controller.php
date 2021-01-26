@@ -6,6 +6,7 @@ use phpformsframework\libs\ClassDetector;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dir;
 use phpformsframework\libs\dto\DataAdapter;
+use phpformsframework\libs\dto\DataError;
 use phpformsframework\libs\dto\DataHtml;
 use phpformsframework\libs\Env;
 use phpformsframework\libs\international\InternationalManager;
@@ -19,13 +20,19 @@ use Exception;
 /**
  * Class Controller
  * @package phpformsframework\libs\gui
- * @property ControllerAdapter $adapter
  */
 abstract class Controller
 {
     use AdapterManager;
     use InternationalManager;
     use ClassDetector;
+
+    protected const LAYOUT                      = self::LAYOUT_DEFAULT;
+    protected const TEMPLATE_ENGINE             = null;
+    protected const CONTROLLER_ENGINE           = "html";
+    protected const CONTROLLER_TYPE             = "responsive";
+    protected const THEME                       = "default";
+
 
     protected const ERROR_BUCKET                = "controller";
 
@@ -34,12 +41,8 @@ abstract class Controller
     protected const TPL_ENGINE_BLADE            = "Blade";
 
     protected const TPL_VAR_DEFAULT             = "content";
-
     private const TPL_VAR_PREFIX                = '$';
 
-    private const CONTROLLER_ENGINE_DEFAULT     = "html";
-    private const TEMPLATE_DEFAULT              = "responsive";
-    private const THEME_DEFAULT                 = "default";
     private const METHOD_DEFAULT                = "get";
     private const LAYOUT_DEFAULT                = '<main>{' . self::TPL_VAR_PREFIX . 'content}</main>';
 
@@ -57,23 +60,20 @@ abstract class Controller
     protected $path_info                        = null;
     protected $isXhr                            = null;
 
-    protected $controllerEngine                 = null;
-    protected $templateEngine                   = null;
-    protected $templateType                     = self::TEMPLATE_DEFAULT;
-    protected $theme                            = self::THEME_DEFAULT;
-    protected $layout                           = self::LAYOUT_DEFAULT;
-
-    protected $http_status_code                 = 200;
     protected $error                            = null;
 
     protected $class_name                       = null;
 
     protected $requiredJs                       = [];
     protected $requiredCss                      = [];
+    protected $requiredFonts                    = [];
     protected $assigns                          = [];
+
+    private $http_status_code                   = 200;
 
     private $config                             = null;
     private $cache_time                         = null;
+    private $layout_empty                       = false;
 
     /**
      * @var View
@@ -104,7 +104,17 @@ abstract class Controller
      */
     public static function html(array $config = null) : ?string
     {
-        return (new static($config))->renderDefault();
+        return (new static($config))->displayView();
+    }
+
+    /**
+     * @param array|null $config
+     * @return DataAdapter
+     * @throws Exception
+     */
+    public static function json(array $config = null) : DataAdapter
+    {
+        return (new static($config))->display();
     }
 
     /**
@@ -127,10 +137,10 @@ abstract class Controller
         $this->config                           = $config;
         $this->cache_time                       = Kernel::useCache() ? null : "?" . time();
 
-        $adapter                                = $this->controllerEngine ?? Kernel::$Environment::CONTROLLER_ADAPTER ?? self::CONTROLLER_ENGINE_DEFAULT;
+        $adapter                                = static::CONTROLLER_ENGINE ?? Kernel::$Environment::CONTROLLER_ADAPTER;
 
         if (!isset(self::$controllers[$adapter])) {
-            self::$controllers[$adapter]        = $this->setAdapter($adapter, [$this->path_info, $this->http_status_code, $this->templateType]);
+            self::$controllers[$adapter]        = $this->setAdapter($adapter, [$this->path_info, $this->http_status_code, static::CONTROLLER_TYPE]);
         }
 
         $this->adapter                          =& self::$controllers[$adapter];
@@ -234,7 +244,7 @@ abstract class Controller
     private function addAssetDeps(array &$ref, string $type, string $media, string $key) : void
     {
         $asset_name                                                             = "";
-        $assets                                                                 = explode(".", str_replace(".min", "", $key));
+        $assets                                                                 = explode(".", $key);
         foreach ($assets as $asset) {
             $asset_name                                                         .= $asset;
             if (($asset_url = Resource::get($asset_name, $type)) && filesize($asset_url)) {
@@ -257,7 +267,7 @@ abstract class Controller
         if (Validator::isUrl($filename_or_url)) {
             $ref[$this->maskEnv($filename_or_url)]                                      = $media;
         } elseif (Validator::isFile($filename_or_url)) {
-            if (Dir::checkDiskPath($filename_or_url)) {
+            if (strpos($filename_or_url, DIRECTORY_SEPARATOR) === 0 && Dir::checkDiskPath($filename_or_url)) {
                 if (filesize($filename_or_url)) {
                     $ref[Media::getUrlRelative($filename_or_url) . $this->cache_time]   = $media;
                 }
@@ -267,6 +277,17 @@ abstract class Controller
         } else {
             throw new Exception("Invalid Asset Path: " . $filename_or_url, 500);
         }
+
+        return $this;
+    }
+
+    /**
+     * @param string $encoding
+     * @return $this
+     */
+    public function setEncoding(string $encoding) : self
+    {
+        $this->adapter->encoding                = $encoding;
 
         return $this;
     }
@@ -430,12 +451,16 @@ abstract class Controller
     /**
      * @throws Exception
      */
-    public function display() : void
+    public function display() : DataAdapter
     {
         $this->render();
 
-        $this->adapter
-            ->assign(self::TPL_VAR_DEFAULT, $this->view)
+        if ($this->isXhr) {
+            return (new DataError())->error(404);
+        }
+
+        return $this->adapter
+            ->default($this->view, ($this->layout_empty ? null : static::LAYOUT))
             ->display();
     }
 
@@ -443,11 +468,11 @@ abstract class Controller
      * @return string|null
      * @throws Exception
      */
-    private function renderDefault() : ?string
+    private function displayView() : ?string
     {
         $this->render(self::METHOD_DEFAULT);
         return ($this->view
-            ? $this->view->display()
+            ? $this->view->html()
             : null
         );
     }
@@ -466,7 +491,7 @@ abstract class Controller
             "js_embed"          => $this->adapter->js_embed,
             "js_template"       => $this->adapter->js_template,
             "structured_data"   => $this->adapter->structured_data,
-            "html"              => $this->renderDefault()
+            "html"              => $this->displayView()
         ];
     }
 
@@ -487,8 +512,7 @@ abstract class Controller
      */
     protected function replaceWith(string $widgetName, array $config = null) : void
     {
-        $this->requiredJs       = [];
-        $this->requiredCss      = [];
+        $this->clearAssets();
         /**
          * @var Controller $controller
          */
@@ -499,18 +523,28 @@ abstract class Controller
 
 
     /**
-     * @param DataAdapter|array $data
+     * @param DataAdapter|string $data
      * @param array $headers
      * @throws Exception
      * @todo da tipizzare
      */
     protected function send($data, array $headers = []) : void
     {
-        if (is_array($data)) {
-            Response::sendJson($data, $headers);
-        } else {
-            Response::send($data, $headers);
+        $response = null;
+        if ($data instanceof DataAdapter) {
+            $response = $data;
+        } elseif (class_exists($data)) {
+            $obj = new $data();
+            if ($obj instanceof Controller) {
+                $response = $obj->display();
+            }
         }
+
+        if (!$response) {
+            throw new Exception(static::class . "::" . $this->method . ": response must be instanceOf DataAdapter", 500);
+        }
+
+        Response::send($data, $headers);
     }
 
     /**
@@ -530,7 +564,7 @@ abstract class Controller
     protected function default(array $assign = null) : void
     {
         $this
-            ->layout($this->layout, true)
+            ->layout(static::LAYOUT, true)
                 ->assign(
                     self::TPL_VAR_DEFAULT,
                     $this->view()
@@ -547,13 +581,21 @@ abstract class Controller
      */
     protected function layout(string $layout_name = null, bool $include_layout_assets = false, string $theme_name = null) : ControllerAdapter
     {
-        $this->adapter->setLayout($this->getLayout($layout_name), $this->getTheme($theme_name));
         if ($layout_name && $include_layout_assets) {
             $this->addStylesheet($layout_name);
             $this->addJavascriptAsync($layout_name);
         }
 
         return $this->adapter;
+    }
+
+    /**
+     * @param string|DataHtml|View|Controller|null $content
+     */
+    protected function layoutEmpty($content = null) : void
+    {
+        $this->layout_empty = true;
+        $this->adapter->assign(self::TPL_VAR_DEFAULT, $content);
     }
 
     /**
@@ -584,7 +626,7 @@ abstract class Controller
             $this->addJavascriptAsync($template);
         }
 
-        return $this->view              = (new View(null, $this->templateEngine))
+        return $this->view              = (new View(null, static::TEMPLATE_ENGINE))
                                             ->fetch($file_path)
                                             ->assign($this->assigns);
     }
@@ -612,7 +654,7 @@ abstract class Controller
      */
     private function getLayout(string $layout_name = null) : ?string
     {
-        return $layout_name ?? $this->layout;
+        return $layout_name ?? static::LAYOUT;
     }
 
     /**
@@ -621,7 +663,7 @@ abstract class Controller
      */
     private function getTheme(string $theme_name = null) : ?string
     {
-        return $theme_name ?? $this->theme;
+        return $theme_name ?? static::THEME;
     }
 
 
@@ -652,5 +694,18 @@ abstract class Controller
         foreach ($this->requiredCss as $css) {
             $this->addStylesheet($css);
         }
+        foreach ($this->requiredFonts as $font) {
+            $this->addFont($font);
+        }
+    }
+
+    /**
+     *
+     */
+    private function clearAssets() : void
+    {
+        $this->requiredJs       = [];
+        $this->requiredCss      = [];
+        $this->requiredFonts    = [];
     }
 }

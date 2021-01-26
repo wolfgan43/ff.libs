@@ -19,7 +19,7 @@
                         <!--EndSezDescription-->
                     </div>
 
-                    <form action="javascript:void(0);" onsubmit="hcore.Auth.activation('{activation_url}', '{redirect_url}');" >
+                    <form action="javascript:void(0);" onsubmit="hcore.security.activation('{activation_url}', '{redirect_url}');" >
                         <div class="error-container">{error}</div>
                         <input type="hidden" name="csrf" value="{csrf_token}">
                         <!--BeginSezDomainHidden-->
@@ -45,7 +45,7 @@
                             <label>{_Code}</label>
                             <input class="form-control" name="codice-conferma" type="number"  placeholder="{_Insert your code}">
 
-                            <a class="resend-code" href="javascript:void(0);" onclick="hcore.Auth.activation('{activation_url}','{redirect_url}', true);">{_Resend code}</a>
+                            <a class="resend-code" href="javascript:void(0);" onclick="hcore.security.activation('{activation_url}','{redirect_url}', true);">{_Resend code}</a>
 
                         </div>
 

@@ -75,6 +75,7 @@ class FilemanagerScan implements Dumpable
 
         $opt->pattern       = $pattern;
         $opt->pattername    = basename($opt->pattern);
+        $opt->rootname      = basename(dirname($pattern));
 
         switch ($opt->flag) {
             case self::SCAN_DIR:

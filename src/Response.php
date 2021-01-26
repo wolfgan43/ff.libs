@@ -145,9 +145,9 @@ class Response
             case "text/html":
                 Log::registerProcedure("Router", "page" . Log::CLASS_SEP . "error");
                 try {
-                    (new ErrorController())
+                    self::send((new ErrorController())
                         ->error(self::errorStatus($code), $msg)
-                        ->display();
+                        ->display());
                 } catch (Exception $e) {
                     $status = $e->getCode();
                     $status_message = Error::getErrorMessage($status);

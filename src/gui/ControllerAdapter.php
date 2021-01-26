@@ -23,40 +23,15 @@ abstract class ControllerAdapter extends Mappable
     public const MEDIA_DEVICE_SCREEN            = "screen";
     public const MEDIA_DEVICE_SPEECH            = "speech";
 
-    public $css                                 = [];
-    public $style                               = [];
-    public $fonts                               = [];
-    public $js                                  = [];
-    public $js_embed                            = [];
-    public $js_template                         = [];
-    public $structured_data                     = [];
-
-    public $meta                                = [];
-
-    public $doc_type                            = null;
-    public $body_class                          = null;
-
     /**
      * @param string $tpl_var
      * @param string|DataHtml|View|Controller $content
      * @return $this
      */
-    abstract public function assign($tpl_var, $content = null) : self;
-
-    /**
-     * @param string|null $template_or_html
-     * @param string|null $theme
-     * @return $this
-     */
-    abstract public function setLayout(string $template_or_html = null, string $theme = null) : self;
-
-    /**
-     * @param int|null $http_status_code
-     */
-    abstract public function display(int $http_status_code = null) : void;
+    abstract public function assign(string $tpl_var, $content = null) : self;
 
     /**
      * @return string
      */
-    abstract public function toHtml() : string;
+    abstract public function html() : string;
 }

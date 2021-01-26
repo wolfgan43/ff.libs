@@ -16,8 +16,7 @@ class MaintenanceController extends Controller
     protected function get(): void
     {
         $this->layout()
-            ->assign(self::TPL_VAR_DEFAULT, "site under maintenance")
-            ->display();
+            ->assign(self::TPL_VAR_DEFAULT, "site under maintenance");
     }
 
     /**

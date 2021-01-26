@@ -35,7 +35,6 @@ use phpformsframework\libs\gui\Controller;
 use phpformsframework\libs\gui\ControllerAdapter;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\international\Locale;
-use phpformsframework\libs\Response;
 use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\storage\FilemanagerWeb;
 use phpformsframework\libs\storage\Media;
@@ -66,12 +65,26 @@ class ControllerHtml extends ControllerAdapter
 
     private $http_status_code                   = null;
 
-    private $encoding                           = Constant::ENCODING;
     private $path_info                          = null;
     private $title                              = null;
     private $description                        = null;
     private $lang                               = null;
     private $region                             = null;
+
+    public $css                                 = [];
+    public $style                               = [];
+    public $fonts                               = [];
+    public $js                                  = [];
+    public $js_embed                            = [];
+    public $js_template                         = [];
+    public $structured_data                     = [];
+
+    public $meta                                = [];
+
+    public $encoding                            = Constant::ENCODING;
+    public $doc_type                            = null;
+    public $body_class                          = null;
+
     /**
      * @todo da finire
      *
@@ -117,56 +130,31 @@ class ControllerHtml extends ControllerAdapter
     }
 
     /**
-     * @param string $encoding
-     * @return $this
-     */
-    public function setEncoding(string $encoding) : self
-    {
-        $this->encoding                         = $encoding;
-
-        return $this;
-    }
-
-    /**
-     * @param string $key
-     * @param string $content
-     * @param string $type
-     * @return $this
-     */
-    public function addMeta(string $key, string $content, string $type = "name") : self
-    {
-        $this->meta[$key]                       = array(
-                                                    $type       => $key,
-                                                    "content"   => $content
-                                                );
-
-        return $this;
-    }
-
-    /**
-     * @param string|null $template_or_html
-     * @param string|null $theme
-     * @return $this
+     * @param string|DataHtml|View|Controller|null $content
+     * @param string|null $layout
+     * @return ControllerAdapter
      * @throws Exception
-     * @todo da gestire il tema
      */
-    public function setLayout(string $template_or_html = null, string $theme = null) : ControllerAdapter
+    public function default($content, string $layout = null) : ControllerAdapter
     {
-        if ($template_or_html) {
-            $this->layout = $template_or_html;
+        $this->layout = $layout;
+
+        if (!isset($this->contents["{" . self::TPL_VAR_PREFIX . self::MAIN_CONTENT . "}"])) {
+            $this->contents["{" . self::TPL_VAR_PREFIX . self::MAIN_CONTENT . "}"] = $this->getHtml($content);
         }
 
         return $this;
     }
 
+
     /**
-     * @param array|string $tpl_var
+     * @param string $tpl_var
      * @param string|DataHtml|View|Controller|null $content
      * @return ControllerAdapter
      * @throws Exception
      * @todo da tipizzare
      */
-    public function assign($tpl_var, $content = null) : ControllerAdapter
+    public function assign(string $tpl_var, $content = null) : ControllerAdapter
     {
         $this->setContent($tpl_var, $this->getHtml($content));
 
@@ -200,16 +188,14 @@ class ControllerHtml extends ControllerAdapter
     private function getHtmlByObject($obj) : ?string
     {
         $html                                   = null;
-        if ($obj instanceof View) {
-            $html                               = $obj->display();
-        } elseif ($obj instanceof Controller) {
+        if ($obj instanceof View || $obj instanceof Controller) {
             $html                               = $obj->html();
         } elseif ($obj instanceof DataHtml) {
             $this->css                          = $this->css    + $obj->css;
             $this->js                           = $this->js     + $obj->js;
             $this->fonts                        = $this->fonts  + $obj->fonts;
 
-            $html = $obj->output();
+            $html                               = $obj->output();
         }
 
         return $html;
@@ -447,6 +433,10 @@ class ControllerHtml extends ControllerAdapter
      */
     private function parseLayout() : string
     {
+        if (empty($this->contents['{' . self::TPL_VAR_PREFIX . self::TPL_VAR_DEFAULT . '}'])) {
+            $this->http_status_code = 404;
+        }
+
         if (!$this->layout || strpos($this->layout, "<") === 0) {
             return self::parseLayoutVars($this->layout ?? "{" . self::TPL_VAR_PREFIX . self::TPL_VAR_DEFAULT . "}");
         }
@@ -662,7 +652,7 @@ class ControllerHtml extends ControllerAdapter
      * @return string
      * @throws Exception
      */
-    public function toHtml() : string
+    public function html() : string
     {
         Debug::stopWatch("gui/controller/html");
 
@@ -671,13 +661,13 @@ class ControllerHtml extends ControllerAdapter
 
     /**
      * @param int|null $http_status_code
+     * @return DataHtml
      * @throws Exception
      */
-    public function display(int $http_status_code = null) : void
+    public function display(int $http_status_code = null) : DataHtml
     {
-        Response::httpCode($http_status_code ?? $this->http_status_code);
-
-        Response::send(new DataHtml(["html" => $this->toHtml()]));
+        return (new DataHtml(["html" => $this->html()]))
+                    ->error($http_status_code ?? $this->http_status_code);
     }
 
     /**

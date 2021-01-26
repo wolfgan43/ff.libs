@@ -1,4 +1,4 @@
-hcore.Auth.logout = function (url, redirect, selector) {
+hcore.security.logout = function (url, redirect, selector) {
     var selectorID = (selector
             ? "#" + selector
             : "#logout-box"
@@ -6,7 +6,7 @@ hcore.Auth.logout = function (url, redirect, selector) {
 
     let csrf = jQuery(selectorID).find("INPUT[name='csrf']").val() || "";
 
-    hcore.Auth.initInterface(selectorID, redirect);
+    hcore.security.initInterface(selectorID, redirect);
 
     $.ajax({
         url: (url || window.location.pathname),
@@ -19,13 +19,13 @@ hcore.Auth.logout = function (url, redirect, selector) {
     })
     .done(function (response) {
         if (response.status === 0) {
-            hcore.Auth.redirect();
+            hcore.security.redirect();
         } else {
-            hcore.Auth.unblockAction();
-            hcore.Auth.throwException(response.error);
+            hcore.security.unblockAction();
+            hcore.security.throwException(response.error);
         }
     })
-    .fail(hcore.Auth.responseFail);
+    .fail(hcore.security.responseFail);
 
     return false;
 };

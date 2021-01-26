@@ -19,7 +19,7 @@
                         <!--EndSezDescription-->
                     </div>
 
-                    <form action="javascript:void(0);" onsubmit="hcore.Auth.recoverConfirm('{recover_url}', '{redirect_url}');" >
+                    <form action="javascript:void(0);" onsubmit="hcore.security.recoverConfirm('{recover_url}', '{redirect_url}');" >
                         <div class="error-container">{error}</div>
                         <input type="hidden" name="csrf" value="{csrf_token}">
                         <!--BeginSezDomainHidden-->
@@ -40,7 +40,7 @@
                             <input class="form-control" name="codice-conferma" type="number" required="" placeholder="{_Insert your code}">
                         </div>
 
-                        <a class="resend-code" href="javascript:void(0);" onclick="hcore.Auth.recover('{recover_url}', '{redirect_url}', '', true);">Resend code</a>
+                        <a class="resend-code" href="javascript:void(0);" onclick="hcore.security.recover('{recover_url}', '{redirect_url}', '', true);">Resend code</a>
 
                         <div class="form-group mb-0 text-center">
                             <button class="btn btn-primary" type="submit">INVIA</button>

@@ -19,7 +19,7 @@
                     <!--EndSezDescription-->
                 </div>
 
-                <form action="javascript:void(0);" onsubmit="hcore.Auth.login('{login_url}', '{redirect_url}');" enctype="multipart/form-data">
+                <form action="javascript:void(0);" onsubmit="hcore.security.login('{login_url}', '{redirect_url}');" enctype="multipart/form-data">
                     <div class="error-container">{error}</div>
                     <input type="hidden" name="csrf" value="{csrf_token}">
                     <!--BeginSezDomainHidden-->

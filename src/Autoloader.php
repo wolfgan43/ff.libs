@@ -74,7 +74,7 @@ class Autoloader implements Dumpable
                 "flag"      => FilemanagerScan::SCAN_FILE_RECURSIVE,
                 "filter"    => [Constant::PHP_EXT],
                 "callback"  => function ($fileinfo, $opt) use (&$includes_paths) {
-                    $includes_paths[$fileinfo->dirname . DIRECTORY_SEPARATOR . $fileinfo->basename] = $opt->pattername;
+                    $includes_paths[$fileinfo->dirname . DIRECTORY_SEPARATOR . $fileinfo->basename] = $opt->rootname;
                 }
             ]));
             self::tokenize($includes_paths, true);
@@ -201,7 +201,7 @@ class Autoloader implements Dumpable
 
         Debug::stopWatch("loadscript" . $abs_path);
 
-        return ($rc === 1 ? null : $rc);
+        return ($rc === false || $rc === 1 ? null : $rc);
     }
 
     public static function dump(): array

@@ -12,7 +12,6 @@
       "flag": 8,
       "type": "views",
       "filter": [
-        "html",
         "tpl"
       ],
       "prototype" : "defaultname",

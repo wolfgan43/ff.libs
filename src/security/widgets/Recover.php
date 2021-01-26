@@ -70,7 +70,7 @@ class Recover extends Widget
         $this->setHeader($view, $config);
 
         return [
-            "html"  => $view->display(),
+            "html"  => $view->html(),
             "css"   => null,
             "js"    => null
         ];

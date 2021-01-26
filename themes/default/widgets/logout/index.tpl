@@ -18,7 +18,7 @@
                         <p class="text-muted mb-4">{_Click the button to sign out.}</p>
                     </div>
 
-                    <form action="javascript:void(0);" onsubmit="hcore.Auth.logout('{logout_url}', '{redirect_url}');">
+                    <form action="javascript:void(0);" onsubmit="hcore.security.logout('{logout_url}', '{redirect_url}');">
                         <div class="error-container">{error}</div>
                         <input type="hidden" name="csrf" value="{csrf_token}">
                         <div class="form-group mb-0 text-center">

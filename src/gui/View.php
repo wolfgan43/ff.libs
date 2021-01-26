@@ -8,7 +8,6 @@ use stdClass;
 /**
  * Class View
  * @package phpformsframework\libs\gui
- * @property adapters\ViewAdapter adapter
  */
 class View
 {
@@ -82,7 +81,7 @@ class View
     /**
      * @return string
      */
-    public function display() : string
+    public function html() : string
     {
         return $this->adapter->display();
     }

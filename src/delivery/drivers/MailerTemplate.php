@@ -224,13 +224,13 @@ final class MailerTemplate extends Mailer
 
         $this->body = (
             $this->tpl_html
-            ? $this->tpl_html->display()
+            ? $this->tpl_html->html()
             : ''
         );
 
         $this->bodyAlt = (
             $this->tpl_text
-            ? $this->tpl_text->display()
+            ? $this->tpl_text->html()
             : ''
         );
     }

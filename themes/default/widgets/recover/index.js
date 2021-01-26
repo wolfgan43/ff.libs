@@ -1,27 +1,27 @@
-hcore.Auth.recover = function (url, redirect, selector, resendCode) {
+hcore.security.recover = function (url, redirect, selector, resendCode) {
     let selectorID = (selector
             ? "#" + selector
             : "#recover-box"
     );
 
-    if(hcore.Auth.identity === undefined) {
-        hcore.Auth.identity = $(selectorID).find("INPUT[name='username']").val() || undefined;
+    if(hcore.security.identity === undefined) {
+        hcore.security.identity = $(selectorID).find("INPUT[name='username']").val() || undefined;
     }
     let domain = $(selectorID).find("INPUT[name='domain']").val() || undefined;
     let password = $(selectorID).find("INPUT[name='password']").val() || undefined;
     let token = $(selectorID).find("INPUT[name='csrf']").val() || "";
 
-    hcore.Auth.initInterface(selectorID, redirect || "/user");
+    hcore.security.initInterface(selectorID, redirect || "/user");
 
-    if(resendCode || hcore.Auth.getBearerExpire() <= new Date().getTime()) {
+    if(resendCode || hcore.security.getBearerExpire() <= new Date().getTime()) {
         $(selectorID).find("INPUT[name='codice-conferma']").val('');
         //$(selectorID).find("INPUT[name='password']").val('');
         //$(selectorID).find("INPUT[name='confirm-password']").val('');
 
-        hcore.Auth.setBearer();
+        hcore.security.setBearer();
     }
 
-    let bearer = hcore.Auth.getBearer();
+    let bearer = hcore.security.getBearer();
     let headers = {};
     let data = {};
 
@@ -41,7 +41,7 @@ hcore.Auth.recover = function (url, redirect, selector, resendCode) {
             "csrf": token
         };
         data = {
-            "identity": hcore.Auth.identity
+            "identity": hcore.security.identity
         };
     }
 
@@ -57,23 +57,23 @@ hcore.Auth.recover = function (url, redirect, selector, resendCode) {
         if (response.status === 0) {
             if (response.data.confirm) {
                 hcore.inject(response.data.confirm, selectorID);
-                hcore.Auth.throwSuccess('Check your ' + response.data.sender);
-                hcore.Auth.setBearer(response.data.token);
+                hcore.security.throwSuccess('Check your ' + response.data.sender);
+                hcore.security.setBearer(response.data.token);
             } else if (response.data["redirect"] !== undefined) {
-                hcore.Auth.throwSuccess('Check your ' + response.data.sender);
-                hcore.Auth.redirect(1000, response.data.redirect);
+                hcore.security.throwSuccess('Check your ' + response.data.sender);
+                hcore.security.redirect(1000, response.data.redirect);
             }
         } else {
-            hcore.Auth.unblockAction();
-            hcore.Auth.throwException(response.error)
+            hcore.security.unblockAction();
+            hcore.security.throwException(response.error)
         }
     })
-    .fail(hcore.Auth.responseFail);
+    .fail(hcore.security.responseFail);
 
     return false;
 };
 
-hcore.Auth.recoverConfirm = function (url, redirect, selector) {
+hcore.security.recoverConfirm = function (url, redirect, selector) {
     let selectorID = (selector
             ? "#" + selector
             : "#recover-box"
@@ -85,20 +85,20 @@ hcore.Auth.recoverConfirm = function (url, redirect, selector) {
     let confirmPassword = $(selectorID).find("INPUT[name='confirm-password']").val() || "";
     let verifyCode = $(selectorID).find("INPUT[name='codice-conferma']").val() || undefined;
 
-    hcore.Auth.initInterface(selectorID, redirect);
+    hcore.security.initInterface(selectorID, redirect);
 
-    if(hcore.Auth.getBearerExpire() <= new Date().getTime()) {
-        hcore.Auth.setBearer();
+    if(hcore.security.getBearerExpire() <= new Date().getTime()) {
+        hcore.security.setBearer();
     }
 
-    let bearer = hcore.Auth.getBearer();
+    let bearer = hcore.security.getBearer();
     let headers = {};
     let data = {};
 
     if (bearer) {
         if(confirmPassword !== password) {
-            hcore.Auth.unblockAction();
-            hcore.Auth.throwWarning('I campi "password" e "conferma password" non coincidono');
+            hcore.security.unblockAction();
+            hcore.security.throwWarning('I campi "password" e "conferma password" non coincidono');
             return false;
         }
 
@@ -121,16 +121,16 @@ hcore.Auth.recoverConfirm = function (url, redirect, selector) {
         })
         .done(function (response) {
             if (response.status === 0) {
-                hcore.Auth.throwSuccess('Operation completed successfully!');
-                hcore.Auth.redirect(1000);
+                hcore.security.throwSuccess('Operation completed successfully!');
+                hcore.security.redirect(1000);
             } else {
-                hcore.Auth.unblockAction();
-                hcore.Auth.throwWarning(response.error);
+                hcore.security.unblockAction();
+                hcore.security.throwWarning(response.error);
             }
         })
-        .fail(hcore.Auth.responseFail);
+        .fail(hcore.security.responseFail);
     } else {
-        hcore.Auth.throwException("Si è verificato un errore")
+        hcore.security.throwException("Si è verificato un errore")
     }
 
     return false;

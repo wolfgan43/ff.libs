@@ -1,4 +1,4 @@
-hcore.Auth.registration = function (url, redirect, selector) {
+hcore.security.registration = function (url, redirect, selector) {
     let selectorID = (selector
             ? "#" + selector
             : "#registration-box"
@@ -12,11 +12,11 @@ hcore.Auth.registration = function (url, redirect, selector) {
     let email = $(selectorID).find("INPUT[name='email']").val() || undefined;
     let tel = $(selectorID).find("INPUT[name='tel']").val() || undefined;
 
-    hcore.Auth.initInterface(selectorID, redirect || "/user");
+    hcore.security.initInterface(selectorID, redirect || "/user");
 
 
     if(confirmPassword !== password) {
-        hcore.Auth.throwWarning('I campi "password" e "conferma password" non coincidono');
+        hcore.security.throwWarning('I campi "password" e "conferma password" non coincidono');
         return false;
     }
 
@@ -37,16 +37,16 @@ hcore.Auth.registration = function (url, redirect, selector) {
     })
         .done(function (response) {
             if (response.status === 0) {
-                hcore.Auth.redirect();
+                hcore.security.redirect();
             } else {
-                hcore.Auth.unblockAction();
-                hcore.Auth.throwWarning(response.error_link
+                hcore.security.unblockAction();
+                hcore.security.throwWarning(response.error_link
                     ? '<a href="' + response.error_link + '">' + response.error + '</a>'
                     : response.error
                 );
             }
         })
-        .fail(hcore.Auth.responseFail);
+        .fail(hcore.security.responseFail);
 
     return false;
 };

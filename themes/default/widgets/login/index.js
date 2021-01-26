@@ -1,4 +1,4 @@
-hcore.Auth.login = function (url, redirect, selector) {
+hcore.security.login = function (url, redirect, selector) {
     let selectorID = (selector
             ? "#" + selector
             : "#login-box"
@@ -10,7 +10,7 @@ hcore.Auth.login = function (url, redirect, selector) {
     let csrf = $(selectorID).find("INPUT[name='csrf']").val() || "";
     let stayConnect = $(selectorID).find("INPUT[name='stayconnected-new']").is(':checked') || false;
 
-    hcore.Auth.initInterface(selectorID, redirect);
+    hcore.security.initInterface(selectorID, redirect);
 
     $.ajax({
         url: (url || window.location.pathname),
@@ -32,16 +32,16 @@ hcore.Auth.login = function (url, redirect, selector) {
                 hcore.inject(response.data.welcome, selectorID);
             }
 
-            hcore.Auth.redirect(1000);
+            hcore.security.redirect(1000);
         } else {
-            hcore.Auth.unblockAction();
-            hcore.Auth.throwWarning(response.error_link
+            hcore.security.unblockAction();
+            hcore.security.throwWarning(response.error_link
                 ? '<a href="' + response.error_link + '">' + response.error + '</a>'
                 : response.error
             );
         }
     })
-    .fail(hcore.Auth.responseFail);
+    .fail(hcore.security.responseFail);
 
     return false;
 };

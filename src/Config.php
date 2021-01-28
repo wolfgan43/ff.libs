@@ -512,7 +512,7 @@ class Config implements Dumpable
                 }
             }
         } elseif ($configs === false) {
-            Error::register("Syntax Error in Config.xml: " . $file);
+            throw new Exception("Syntax Error in Config.xml: " . $file, 500);
         }
     }
 

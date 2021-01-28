@@ -134,7 +134,7 @@ class Debug
         static $count                       = null;
 
         if (!Kernel::$Environment::DEBUG) {
-            return null;
+            return 0;
         }
 
         if (isset(self::$startWatch[$bucket])) {

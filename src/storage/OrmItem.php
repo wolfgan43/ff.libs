@@ -5,8 +5,10 @@ use phpformsframework\libs\ClassDetector;
 use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\dto\DataTableResponse;
 use phpformsframework\libs\dto\Mapping;
+use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\storage\dto\OrmResults;
 use Exception;
+use phpformsframework\libs\util\Normalize;
 use stdClass;
 
 /**
@@ -30,15 +32,38 @@ abstract class OrmItem
         'lte'           => '$lte',
         'ne'            => '$ne',
         'nin'           => '$nin',
-        'regex'         => '$regex',
+        'in'            => '$in',
+        'regex'         => '$regex'
     ];
 
-    protected $dbCollection                                                     = null;
-    protected $dbTable                                                          = null;
-    protected $dbPrimaryKey                                                     = null;
-    protected $dbJoins                                                          = [];
+    protected const COLLECTION                                                  = null;
+    protected const TABLE                                                       = null;
+    protected const PRIMARYKEY                                                  = null;
+    protected const JOINS                                                       = [];
 
-    protected $toDataResponse                                                   = [];
+    protected const REQUIRED                                                    = [];
+
+    /**
+     * you can specify for each field witch validator you want:
+     *  - Associative array field_name => validator
+     *  - Validator can be:
+     *      - Array of value
+     *      - Callback with the value as args. The return must be boolean.
+     *        if true the value is valid.
+     *      - String you can use the validation in class Validator.
+     * @example
+     * ->dbValidator[
+     *      "field_a" => ["myOptionA", "myOptionB", "myOptionC"],
+     *      "field_b" => "Mycallback",
+     *      "field_c" => "password"
+     * ];
+     * @var array
+     *
+     */
+    protected const VALIDATOR                                                   = [];
+    protected const CONVERSION                                                  = [];
+
+    protected const DATARESPONSE                                                = [];
 
     /**
      * @var OrmModel[]|null
@@ -54,8 +79,16 @@ abstract class OrmItem
     private $oneToMany                                                          = [];
     private $informationSchema                                                  = null;
 
+    abstract protected function onLoad() : void;
+    abstract protected function onCreate() : void;
 
-    abstract protected function default() : void;
+    abstract protected function onRead(string $recordKey, string $primaryKey) : void;
+    abstract protected function onChange(string $recordKey, string $primaryKey) : void;
+
+    abstract protected function onApply() : void;
+    abstract protected function onInsert() : void;
+    abstract protected function onUpdate(string $recordKey, string $primaryKey) : void;
+    abstract protected function onDelete(string $recordKey, string $primaryKey) : void;
 
     /**
      * @return stdClass
@@ -64,11 +97,11 @@ abstract class OrmItem
     {
         $item                                                                   = new static();
         return (object) [
-                "collection"        => $item->dbCollection,
-                "table"             => $item->dbTable,
-                "dataResponse"      => $item->toDataResponse,
-                "required"          => $item->dbRequired,
-                "primaryKey"        => $item->dbPrimaryKey
+                "collection"        => $item::COLLECTION,
+                "table"             => $item::TABLE,
+                "dataResponse"      => $item::DATARESPONSE,
+                "required"          => $item::REQUIRED,
+                "primaryKey"        => $item::PRIMARYKEY
             ];
     }
 
@@ -93,7 +126,7 @@ abstract class OrmItem
             $dtd                                                                = $item->db->dtdStore();
             foreach ($query as $key => $value) {
                 if (!isset($dtd->$key)) {
-                    throw new Exception("Field " . $key . " not found in table " . $item->dbTable . " (" . $item->dbCollection . ")", 500);
+                    throw new Exception("Field " . $key . " not found in table " . $item::TABLE . " (" . $item::COLLECTION . ")", 500);
                 }
 
                 if (is_array($value)) {
@@ -103,12 +136,16 @@ abstract class OrmItem
                         }
 
                         if (isset(self::SEARCH_OPERATORS[$op])) {
-                            $value[self::SEARCH_OPERATORS[$op]]                 = $subvalue;
+                            $value[self::SEARCH_OPERATORS[$op]]                 = (
+                                (self::SEARCH_OPERATORS[$op] == '$in' || self::SEARCH_OPERATORS[$op] == '$nin') && !is_array($subvalue)
+                                ?  explode(",", $subvalue)
+                                : $subvalue
+                            );
                         } else {
                             $value['$in'][]                                     = $subvalue;
                         }
                     }
-                } elseif (stristr($value, "*")) {
+                } elseif (strpos($value, "*") !== false) {
                     $value                                                      = ['$regex' => $value];
                 }
                 $where[$key]                                                    = $value;
@@ -117,7 +154,7 @@ abstract class OrmItem
 
         $sort                                                                   = null;
         if (is_array($order)) {
-            $fields                                                             = $item->toDataResponse;
+            $fields                                                             = $item::DATARESPONSE;
             sort($fields);
             foreach ($order as $key => $value) {
                 if (isset($value["column"])) {
@@ -135,13 +172,13 @@ abstract class OrmItem
             }
         }
 
-        $toDataResponse                                                         = $toDataResponse ?? $item->toDataResponse;
+        $toDataResponse                                                         = $toDataResponse ?? $item::DATARESPONSE;
         if (!empty($toDataResponse) && !is_array($toDataResponse)) {
             $toDataResponse                                                     = Model::get($toDataResponse);
         }
 
         $recordset                                                              = $item->db
-            ->table($item->dbTable, $toDataResponse)
+            ->table($item::TABLE, $toDataResponse)
             ->read($where, $sort, $limit, $offset);
 
         if ($recordset->countRecordset()) {
@@ -164,7 +201,7 @@ abstract class OrmItem
     {
         $item                                                                   = new static();
         return $item->db
-            ->table($item->dbTable)
+            ->table($item::TABLE)
             ->delete($where);
     }
 
@@ -178,7 +215,7 @@ abstract class OrmItem
     {
         $item                                                                   = new static();
         return $item->db
-            ->table($item->dbTable)
+            ->table($item::TABLE)
             ->update($set, $where);
     }
 
@@ -209,8 +246,15 @@ abstract class OrmItem
 
         $this->storedData = array_replace($this->storedData, $fill ?? []);
 
+
+        $this->onLoad();
+
         if (!$this->isStored()) {
-            $this->default();
+            $this->onCreate();
+        } elseif ($this->isChanged()) {
+            $this->onChange($this->recordKey, $this->primaryKey);
+        } else {
+            $this->onRead($this->recordKey, $this->primaryKey);
         }
     }
 
@@ -222,6 +266,16 @@ abstract class OrmItem
      */
     public function &extend(string $model_name = null, array $fill = null) : ?OrmModel
     {
+        /*** TEST
+        $user = new UserData(["ID" => 1]);
+        print_r($user->toDataResponse());
+
+        $user = new Model("user");
+        $res = $user->read(["ID" => 1]);
+        print_r($res->get(0)->toDataResponse());
+        die();
+        */
+
         $this->model                                                            = $model_name;
         $this->models[$this->model]                                             = (
             $this->model
@@ -239,19 +293,19 @@ abstract class OrmItem
      */
     private function loadCollection(bool $extendPrimaryKey = false)
     {
-        $collection_name                                                        = $this->dbCollection ?? $this->getClassName();
+        $collection_name                                                        = static::COLLECTION ?? $this->getClassName();
 
         $this->db                                                               = new Model();
         $this->db->loadCollection($collection_name);
-        $this->db->table($this->dbTable);
+        $this->db->table(static::TABLE);
         $this->informationSchema                                                = $this->db->informationSchema();
 
-        if (!empty($this->dbJoins)) {
+        if (!empty(static::JOINS)) {
             if (!isset(self::$buffer["current"])) {
                 self::$buffer["current"]                                        = static::class;
             }
             self::$buffer["items"][static::class]                               = true;
-            foreach ($this->dbJoins as $join => $fields) {
+            foreach (static::JOINS as $join => $fields) {
                 if (is_numeric($join)) {
                     $join                                                       = $fields;
                     $fields                                                     = null;
@@ -268,7 +322,7 @@ abstract class OrmItem
                     //$this->db->join($dtd->table, $fields ?? $dtd->dataResponse);
 
                     $informationSchemaJoin                                      = $this->db->informationSchema($dtd->table);
-                    if (isset($informationSchemaJoin->relationship[$this->dbTable])) {
+                    if (isset($informationSchemaJoin->relationship[static::TABLE])) {
                         /**
                          * OneToOne
                          */
@@ -410,6 +464,14 @@ abstract class OrmItem
      */
     public function apply() : string
     {
+        $this->onApply();
+
+        if ($this->recordKey) {
+            $this->onUpdate($this->recordKey, $this->primaryKey);
+        } else {
+            $this->onInsert();
+        }
+
         $vars                                                                   = array_intersect_key($this->fieldSetPurged(), $this->informationSchema->dtd);
 
         $this->applyOneToOne($vars);
@@ -460,7 +522,7 @@ abstract class OrmItem
             /**
              * Many to One
              */
-            $relationship                                                       = (object) $oneToOne->informationSchema->relationship[$this->dbTable];
+            $relationship                                                       = (object) $oneToOne->informationSchema->relationship[static::TABLE];
             $external_key                                                       = $relationship->external;
 
             $obj = (
@@ -572,7 +634,7 @@ abstract class OrmItem
 
     public function toArray() : array
     {
-        return $this->fieldSetPurged(array_fill_keys($this->toDataResponse, true));
+        return $this->fieldSetPurged(array_fill_keys(static::DATARESPONSE, true));
     }
 
     /**
@@ -581,10 +643,13 @@ abstract class OrmItem
      */
     public function delete() : ?OrmResults
     {
-        return ($this->primaryKey && $this->recordKey
-            ? $this->db->delete([$this->primaryKey => $this->recordKey])
-            : null
-        );
+        if ($this->primaryKey && $this->recordKey) {
+            $this->onDelete($this->recordKey, $this->primaryKey);
+
+            return $this->db->delete([$this->primaryKey => $this->recordKey]);
+        }
+
+        return null;
     }
 
     /**
@@ -637,5 +702,69 @@ abstract class OrmItem
         $this->indexes      = $indexes ?? [];
 
         return $this;
+    }
+
+    /**
+     * @param array $vars
+     * @throws Exception
+     */
+    private function verifyRequire(array $vars) : void
+    {
+        $required                                                               = array_diff_key(array_fill_keys(static::REQUIRED, true), array_filter($vars));
+        if (!empty($required)) {
+            $this->error(array_keys($required), " are required");
+        }
+    }
+
+    /**
+     * @param array $vars
+     * @throws Exception
+     */
+    private function verifyValidator(array $vars) : void
+    {
+        $errors                                                                 = null;
+        $validators                                                             = array_intersect_key($vars, static::VALIDATOR);
+        $dtd                                                                    = $this->db->dtdStore();
+        foreach ($validators as $field => $value) {
+            if (is_array(static::VALIDATOR[$field])) {
+                if ($dtd->$field == Database::FTYPE_ARRAY || $dtd->$field == Database::FTYPE_ARRAY_OF_NUMBER) {
+                    $arrField                                                   = Normalize::string2array($value);
+                    if (count(array_diff($arrField, static::VALIDATOR[$field]))) {
+                        $errors[]                                               = $field . " must be: [" . implode(", ", static::VALIDATOR[$field]) . "]";
+                    }
+                } elseif (!in_array($value, static::VALIDATOR[$field])) {
+                    $errors[]                                                   = $field . " must be: [" . implode(", ", static::VALIDATOR[$field]) . "]";
+                }
+            } elseif (method_exists($this, static::VALIDATOR[$field])) {
+                if (!$this->{static::VALIDATOR[$field]}($value)) {
+                    $errors[]                                                   = $field . " not valid";
+                }
+            } else {
+                $validator                                                      = Validator::is($value, $field, static::VALIDATOR[$field]);
+                if ($validator->isError()) {
+                    $errors[]                                                   = $validator->error;
+                }
+            }
+        }
+
+        if ($errors) {
+            $this->error($errors);
+        }
+    }
+
+    /**
+     * @param array $vars
+     * @return array
+     */
+    private function fieldConvert(array $vars) : array
+    {
+        //@todo da finire con funzioni vere probabilmente
+        foreach (static::CONVERSION as $field => $convert) {
+            if (array_key_exists($field, $vars)) {
+                $vars[$convert] = $vars[$field];
+                unset($vars[$field]);
+            }
+        }
+        return $vars;
     }
 }

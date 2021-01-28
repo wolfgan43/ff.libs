@@ -11,26 +11,21 @@ use Exception;
  */
 class UserData extends OrmItem
 {
-    protected $dbCollection         = "access";
-    protected $dbTable              = "users";
-    protected $dbJoins              = [
-        "tokens"            => [
-            "token"         => "name",
-            "expire"
-        ]
-    ];
-    protected $dbRequired           = [
+    protected const COLLECTION      = "access";
+    protected const TABLE           = "users";
+    protected const JOINS           = [];
+    protected const REQUIRED        = [
         "uuid", "username", "email", "tel"
     ];
-    protected $dbValidator = [
-        "uuid"              => "uuid",
-        "anagraph"          => "uuid",
-        "username"          => "string",
-        "email"             => "email",
-        "tel"               => "number"
+    protected const VALIDATOR       = [
+        "uuid"                      => "uuid",
+        "anagraph"                  => "uuid",
+        "username"                  => "string",
+        "email"                     => "email",
+        "tel"                       => "number"
     ];
     protected $dbConversion         = [
-        "slug" => "username:toSlug"
+        "slug"              => "username:toSlug"
     ];
 
     private const MODES             = [
@@ -59,10 +54,6 @@ class UserData extends OrmItem
     public $locale                  = null;
     public $lang                    = null;
 
-    protected function default(): void
-    {
-    }
-
     /**
      * @param string|null $mode
      * @param string $noavatar
@@ -72,5 +63,45 @@ class UserData extends OrmItem
     public function getAvatar(string $mode = null, string $noavatar = "noavatar") : ?string
     {
         return Media::getUrl($this->avatar ?? $noavatar, $mode);
+    }
+
+    protected function onLoad(): void
+    {
+        // TODO: Implement onLoad() method.
+    }
+
+    protected function onCreate(): void
+    {
+        // TODO: Implement onCreate() method.
+    }
+
+    protected function onRead(string $recordKey, string $primaryKey): void
+    {
+        // TODO: Implement onRead() method.
+    }
+
+    protected function onChange(string $recordKey, string $primaryKey): void
+    {
+        // TODO: Implement onChange() method.
+    }
+
+    protected function onApply(): void
+    {
+        // TODO: Implement onApply() method.
+    }
+
+    protected function onInsert(): void
+    {
+        // TODO: Implement onInsert() method.
+    }
+
+    protected function onUpdate(string $recordKey, string $primaryKey): void
+    {
+        // TODO: Implement onUpdate() method.
+    }
+
+    protected function onDelete(string $recordKey, string $primaryKey): void
+    {
+        // TODO: Implement onDelete() method.
     }
 }

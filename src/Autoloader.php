@@ -69,7 +69,7 @@ class Autoloader implements Dumpable
                 $config_dirs[$path]                                         = filemtime($path);
             });
 
-            $includes_paths = null;
+            $includes_paths = [];
             FilemanagerScan::scan(array_fill_keys($paths, [
                 "flag"      => FilemanagerScan::SCAN_FILE_RECURSIVE,
                 "filter"    => [Constant::PHP_EXT],

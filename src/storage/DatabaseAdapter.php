@@ -25,13 +25,12 @@
  */
 namespace phpformsframework\libs\storage;
 
-use phpformsframework\libs\Error;
 use phpformsframework\libs\international\Data;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Kernel;
-use Exception;
 use phpformsframework\libs\util\Normalize;
+use Exception;
 
 /**
  * Class DatabaseAdapter
@@ -149,7 +148,7 @@ abstract class DatabaseAdapter implements Constant
                 } elseif ($op === "in" && $field_db) {
                     $this->in[$field_db][substr($cast, 2)]             = $params;
                 } else {
-                    Error::registerWarning($cast . " is not a valid function", static::ERROR_BUCKET);
+                    throw new Exception($cast . " is not a valid function", 500);
                 }
             }
         }
@@ -382,7 +381,7 @@ abstract class DatabaseAdapter implements Constant
                 if (is_array($value)) {
                     if (isset($value[self::AND])) {
                         if (count($value) > 1) {
-                            Error::register('if you define $and you cant use values outside of $and or $or', static::ERROR_BUCKET);
+                            throw new Exception('if you define $and you cant use values outside of $and or $or', 500);
                         }
                         $value          = $value[self::AND];
                     }
@@ -679,10 +678,10 @@ abstract class DatabaseAdapter implements Constant
             }
 
             if (empty($connector["name"])) {
-                Error::register(static::TYPE . " database connection failed", static::ERROR_BUCKET);
+                throw new Exception(static::TYPE . " database connection failed", 500);
             }
         } catch (Exception $e) {
-            Error::register("Connection Params Missing: " . $e->getMessage(), static::ERROR_BUCKET);
+            throw new Exception("Connection Params Missing: " . $e->getMessage(), 500);
         }
 
         return $connector;
@@ -734,13 +733,13 @@ abstract class DatabaseAdapter implements Constant
             );
 
             if (!$this->key_name) {
-                Error::register(static::TYPE . " key missing", static::ERROR_BUCKET);
+                throw new Exception(static::TYPE . " key missing", 500);
             }
             if (!$this->table_name) {
-                Error::register(static::TYPE . " table missing", static::ERROR_BUCKET);
+                throw new Exception(static::TYPE . " table missing", 500);
             }
         } else {
-            Error::register("Connection failed to database: " . static::TYPE, static::ERROR_BUCKET);
+            throw new Exception("Connection failed to database: " . static::TYPE, 500);
         }
 
         return new DatabaseQuery($action, $this->table_name, $this->key_primary, $calc_found_rows);
@@ -950,7 +949,7 @@ abstract class DatabaseAdapter implements Constant
     public function insert(array $insert, string $table_name = null) : ?array
     {
         if (empty($insert)) {
-            Error::register(self::ERROR_INSERT_IS_EMPTY);
+            throw new Exception(self::ERROR_INSERT_IS_EMPTY, 500);
         }
 
         return $this->processInsert($this->getQueryInsert($insert, $table_name));
@@ -966,7 +965,7 @@ abstract class DatabaseAdapter implements Constant
     public function update(array $set, array $where, string $table_name = null) : ?array
     {
         if (empty($set) || empty($where)) {
-            Error::register(self::ERROR_UPDATE_IS_EMPTY);
+            throw new Exception(self::ERROR_UPDATE_IS_EMPTY, 500);
         }
 
         return $this->processUpdate($this->getQueryUpdate($set, $where, $table_name));
@@ -983,7 +982,7 @@ abstract class DatabaseAdapter implements Constant
     public function write(array $insert, array $set, array $where, string $table_name = null) : ?array
     {
         if (empty($insert) || empty($set) || empty($where)) {
-            Error::register(self::ERROR_WRITE_IS_EMPTY);
+            throw new Exception(self::ERROR_WRITE_IS_EMPTY, 500);
         }
 
         return $this->processWrite($this->getQueryWrite($insert, $set, $where, $table_name));
@@ -998,7 +997,7 @@ abstract class DatabaseAdapter implements Constant
     public function delete(array $where, string $table_name = null) : ?array
     {
         if (empty($where)) {
-            Error::register(self::ERROR_DELETE_IS_EMPTY);
+            throw new Exception(self::ERROR_DELETE_IS_EMPTY, 500);
         }
 
         return $this->processDelete($this->getQueryDelete($where, $table_name));
@@ -1014,7 +1013,7 @@ abstract class DatabaseAdapter implements Constant
     public function cmd(array $where, string $action = self::CMD_COUNT, string $table_name = null) : ?array
     {
         if (empty($where)) {
-            Error::register(self::ERROR_CMD_IS_EMPTY);
+            throw new Exception(self::ERROR_CMD_IS_EMPTY, 500);
         }
 
         return $this->processCmd($this->getQueryCmd($where, $table_name), $action);
@@ -1029,7 +1028,7 @@ abstract class DatabaseAdapter implements Constant
     private function getStructField(string $key) : string
     {
         if (!isset($this->struct[$key])) {
-            Error::register("Field: '" . $key . "' not found in struct on table: " . $this->table["name"], static::ERROR_BUCKET);
+            throw new Exception("Field: '" . $key . "' not found in struct on table: " . $this->table["name"], 500);
         }
 
         return $this->struct[$key];
@@ -1219,7 +1218,7 @@ abstract class DatabaseAdapter implements Constant
                 if (!$params && is_callable($func)) {
                     $res                                                    = $func($source);
                 } else {
-                    Error::register("ConversionTo not Managed: " . $func . " for " . $source, static::ERROR_BUCKET);
+                    throw new Exception("ConversionTo not Managed: " . $func . " for " . $source, 500);
                 }
         }
 

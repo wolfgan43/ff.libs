@@ -210,7 +210,6 @@ class Router implements Configurable, Dumpable
 
             if ($file) {
                 Response::sendHeaders();
-
                 self::execute($webroot . $file);
             }
         }

@@ -111,8 +111,8 @@ class OrmModel
     public function apply() : string
     {
         //$this->fieldConvert($this->data); //@todo da finire
-        $this->verifyRequire($this->data);
-        $this->verifyValidator($this->data);
+        //$this->verifyRequire($this->data);
+        //$this->verifyValidator($this->data);
 
         if ($this->recordKey) {
             $this->db->update($this->data, [$this->primaryKey => $this->recordKey]);

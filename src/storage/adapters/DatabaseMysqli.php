@@ -156,7 +156,7 @@ class DatabaseMysqli extends DatabaseAdapter
     protected function fieldOperationNULL(string $struct_type, string $name, string $op = null) : string
     {
         if (!isset(self::OPERATOR_COMPARISON_NULL[$op])) {
-            Error::register('Mysql: Null Operation not supported: ' . $op, static::ERROR_BUCKET);
+            throw new Exception('Mysql: Null Operation not supported: ' . $op, 500);
         }
 
         return $this->replacerNULL(

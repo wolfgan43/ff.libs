@@ -287,7 +287,10 @@ class MySqli extends DatabaseDriver
 
         $this->freeResult();
 
+        $this->stopWatch(self::ERROR_BUCKET);
         $this->query_id = @mysqli_query($this->link_id, $query_string);
+        $this->stopWatch(self::ERROR_BUCKET);
+
         if ($this->checkError()) {
             $this->errorHandler("Invalid SQL: " . $query_string);
         }
@@ -362,7 +365,11 @@ class MySqli extends DatabaseDriver
         $this->freeResult();
 
         $this->use_found_rows                               = strpos($query_string, " SQL_CALC_FOUND_ROWS ") !== false;
+
+        $this->stopWatch(self::ERROR_BUCKET);
         $this->query_id = @mysqli_query($this->link_id, $query_string);
+        $this->stopWatch(self::ERROR_BUCKET);
+
         if (!$this->query_id || $this->checkError()) {
             $this->errorHandler("Invalid SQL: " . $query_string);
         }

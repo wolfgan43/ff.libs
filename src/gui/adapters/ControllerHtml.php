@@ -63,13 +63,13 @@ class ControllerHtml extends ControllerAdapter
     private const MAIN_CONTENT                  = "content";
     private const TITLE_DEFAULT                 = "Home";
 
-    private $http_status_code                   = null;
-
     private $path_info                          = null;
     private $title                              = null;
     private $description                        = null;
     private $lang                               = null;
     private $region                             = null;
+
+    private $preconnect                         = [];
 
     public $css                                 = [];
     public $style                               = [];
@@ -100,7 +100,7 @@ class ControllerHtml extends ControllerAdapter
 
     protected $favicons                         = array();
 
-    private $layout                             = null;
+    public $layout                             = null;
     private $contents                           = array();
     private $scripts                            = [
                                                     self::ASSET_LOCATION_HEAD           => null,
@@ -114,38 +114,20 @@ class ControllerHtml extends ControllerAdapter
     /**
      * PageHtml constructor.
      * @param string $path_info
-     * @param int $http_status_code
      * @param string $template_type
+     * @param string|null $layout
      */
-    public function __construct(string $path_info, int $http_status_code, string $template_type)
+    public function __construct(string $path_info, string $template_type, string $layout = null)
     {
         Debug::stopWatch("gui/controller/html");
 
         parent::__construct($template_type, self::class);
 
-        $this->http_status_code                 = $http_status_code;
         $this->lang                             = Locale::getCodeLang();
         $this->region                           = Locale::getCodeCountry();
         $this->path_info                        = $path_info;
+        $this->layout                           = $layout;
     }
-
-    /**
-     * @param string|DataHtml|View|Controller|null $content
-     * @param string|null $layout
-     * @return ControllerAdapter
-     * @throws Exception
-     */
-    public function default($content, string $layout = null) : ControllerAdapter
-    {
-        $this->layout = $layout;
-
-        if (!isset($this->contents["{" . self::TPL_VAR_PREFIX . self::MAIN_CONTENT . "}"])) {
-            $this->contents["{" . self::TPL_VAR_PREFIX . self::MAIN_CONTENT . "}"] = $this->getHtml($content);
-        }
-
-        return $this;
-    }
-
 
     /**
      * @param string $tpl_var
@@ -221,7 +203,7 @@ class ControllerHtml extends ControllerAdapter
             } else {
                 $html                           = FilemanagerWeb::fileGetContents($string);
             }
-        } elseif (!Validator::is($string, $string, "url")->isError()) {
+        } elseif (Validator::isUrl($string)) {
             $html                               = FilemanagerWeb::fileGetContents($string);
         } else {
             $html                               = $string;
@@ -330,10 +312,31 @@ class ControllerHtml extends ControllerAdapter
     {
         $res                                    = null;
         foreach ($this->fonts as $font => $media) {
-            $res                                .= self::NEWLINE . '<link rel="preload" as="font"' . $this->attrMedia($media) . ' type="font/' . pathinfo($font, PATHINFO_EXTENSION) . '"' . $this->attrCors($font) . ' href="' . $font . '" />';
+            if (Validator::isUrl($font)) {
+                $this->preconnect($font);
+
+                $res                            .= self::NEWLINE . '<link rel="stylesheet"' . $this->attrCors($font) . ' href="' . $font . '" />';
+            } else {
+                $res                            .= self::NEWLINE . '<link rel="preload" as="font"' . $this->attrMedia($media) . ' type="font/' . pathinfo($font, PATHINFO_EXTENSION) . '"' . ' href="' . $font . '" />';
+            }
         }
 
         return $res;
+    }
+
+    /**
+     * @param string $url
+     */
+    private function preconnect(string $url) : void
+    {
+        $webUrl                                 = parse_url($url);
+        $host                                   = $webUrl["scheme"] . "://" .  $webUrl["host"];
+        $this->preconnect[$host]                = self::NEWLINE . '<link rel="preconnect" href="' . $host . '" />';
+    }
+
+    private function parsePreconnect()
+    {
+        return implode(null, $this->preconnect);
     }
 
     /**
@@ -343,6 +346,10 @@ class ControllerHtml extends ControllerAdapter
     {
         $res                                    = null;
         foreach ($this->css as $css => $media) {
+            if (Validator::isUrl($css)) {
+                $this->preconnect($css);
+            }
+
             $res                                .= self::NEWLINE . '<link' . $this->attrMedia($media) . ' type="text/css" rel="stylesheet"' . $this->attrCors($css) . ' href="' . $css . '" />';
         }
 
@@ -433,10 +440,6 @@ class ControllerHtml extends ControllerAdapter
      */
     private function parseLayout() : string
     {
-        if (empty($this->contents['{' . self::TPL_VAR_PREFIX . self::TPL_VAR_DEFAULT . '}'])) {
-            $this->http_status_code = 404;
-        }
-
         if (!$this->layout || strpos($this->layout, "<") === 0) {
             return self::parseLayoutVars($this->layout ?? "{" . self::TPL_VAR_PREFIX . self::TPL_VAR_DEFAULT . "}");
         }
@@ -551,6 +554,7 @@ class ControllerHtml extends ControllerAdapter
             . $this->parseFavicons()
             . $this->parseFonts()
             . $this->parseCss()
+            . $this->parsePreconnect() //@todo da spostare sopra i fonts
             . $this->parseStyle()
             . $this->parseStructuredData()
             . $this->parseJsTemplate()
@@ -652,7 +656,7 @@ class ControllerHtml extends ControllerAdapter
      * @return string
      * @throws Exception
      */
-    public function html() : string
+    private function html() : string
     {
         Debug::stopWatch("gui/controller/html");
 
@@ -664,10 +668,29 @@ class ControllerHtml extends ControllerAdapter
      * @return DataHtml
      * @throws Exception
      */
-    public function display(int $http_status_code = null) : DataHtml
+    public function display(int $http_status_code) : DataHtml
     {
-        return (new DataHtml(["html" => $this->html()]))
-                    ->error($http_status_code ?? $this->http_status_code);
+        return (new DataHtml($this->toArray()))
+                    ->error($http_status_code);
+    }
+
+    /**
+     * @param string|null $html
+     * @return array
+     * @throws Exception
+     */
+    public function toArray(string $html = null) : array
+    {
+        return [
+            "css"               => $this->css,
+            "style"             => $this->style,
+            "fonts"             => $this->fonts,
+            "js"                => $this->js,
+            "js_embed"          => $this->js_embed,
+            "js_template"       => $this->js_template,
+            "structured_data"   => $this->structured_data,
+            "html"              => $html ?? $this->html()
+        ];
     }
 
     /**

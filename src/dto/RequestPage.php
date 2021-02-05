@@ -52,13 +52,14 @@ class RequestPage extends Mappable
      */
     public $rules                           = null;
 
-    private $path2params                    = array();
-    private $file2params                    = array();
+    private $path2params                    = [];
+    private $file2params                    = [];
 
     private $authorization                  = null;
-    private $headers                        = array();
+    private $headers                        = [];
     private $body                           = null;
 
+    private $su                             = [];
 
     /**
      * RequestPage constructor.
@@ -164,9 +165,9 @@ class RequestPage extends Mappable
         }
     }
 
-    public function isPathParams(): bool
+    public function suRequired(): bool
     {
-        return !empty($this->path2params);
+        return !empty($this->su);
     }
 
     /**
@@ -398,6 +399,7 @@ class RequestPage extends Mappable
 
         if ($this->isAllowedSize($request, $method) && $this->isAllowedSize($this->getRequestHeaders(), Request::METHOD_HEAD)) {
             $rawdata                                                                        = $this->normalizeRawData($request);
+
             if (!empty($this->rules->$bucket)) {
                 $this->body[self::REQUEST_VALID]                                            = [];
                 foreach ($this->rules->$bucket as $key => $rule) {
@@ -430,6 +432,10 @@ class RequestPage extends Mappable
                             $this->setRequest($rule->scope, $request[$key], $rule->name);
                         }
                     }
+
+                    if (!empty($rule->isOwner) && isset($this->path2params[$key])) {
+                        $this->su[$key]                                                   = true;
+                    }
                 }
 
                 $this->setUnknown($rawdata);
@@ -438,6 +444,9 @@ class RequestPage extends Mappable
                 }
                 $this->setRequest(self::REQUEST_RAWDATA, $this->body[self::REQUEST_VALID] + $this->body[self::REQUEST_UNKNOWN]);
             } else {
+                foreach ($rawdata as $rawdata_key => $rawdata_value) {
+                    $this->securityValidation($errors, $rawdata_value, $rawdata_key);
+                }
                 $this->setRequest(self::REQUEST_RAWDATA, $rawdata);
             }
         } else {

@@ -69,8 +69,10 @@ class ErrorController extends Controller
             $errorView->assign("email_support", $this->email_support);
             $errorView->parse("SezButtonSupport", false);
         }
-        
-        $this->layout()
+
+        $this->setLayout();
+
+        $this
             ->assign(self::TPL_VAR_DEFAULT, $errorView)
             ->debug($error);
     }

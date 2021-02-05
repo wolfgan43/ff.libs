@@ -38,7 +38,7 @@ abstract class OrmItem
 
     protected const COLLECTION                                                  = null;
     protected const TABLE                                                       = null;
-    protected const PRIMARYKEY                                                  = null;
+    protected const PRIMARY_KEY                                                 = null;
     protected const JOINS                                                       = [];
 
     protected const REQUIRED                                                    = [];
@@ -77,18 +77,56 @@ abstract class OrmItem
 
     private $oneToOne                                                           = [];
     private $oneToMany                                                          = [];
+    /**
+     * @var stdClass|null
+     */
     private $informationSchema                                                  = null;
 
-    abstract protected function onLoad() : void;
-    abstract protected function onCreate() : void;
+    /**
+     * @param Model $db
+     * @param string|null $recordKey
+     */
+    abstract protected function onLoad($db, string $recordKey = null)           : void;
 
-    abstract protected function onRead(string $recordKey, string $primaryKey) : void;
-    abstract protected function onChange(string $recordKey, string $primaryKey) : void;
+    /**
+     * @param Model $db
+     */
+    abstract protected function onCreate($db)                                   : void;
 
-    abstract protected function onApply() : void;
-    abstract protected function onInsert() : void;
-    abstract protected function onUpdate(string $recordKey, string $primaryKey) : void;
-    abstract protected function onDelete(string $recordKey, string $primaryKey) : void;
+    /**
+     * @param Model $db
+     * @param string $recordKey
+     */
+    abstract protected function onRead($db, string $recordKey)                  : void;
+
+    /**
+     * @param Model $db
+     * @param string $recordKey
+     */
+    abstract protected function onChange($db, string $recordKey)                : void;
+
+    /**
+     * @param Model $db
+     * @param string|null $recordKey
+     */
+    abstract protected function onApply($db, string $recordKey = null)          : void;
+
+    /**
+     * @param Model $db
+     */
+    abstract protected function onInsert($db)                                   : void;
+
+    /**
+     * @param Model $db
+     * @param string $recordKey
+     */
+    abstract protected function onUpdate($db, string $recordKey)                : void;
+
+    /**
+     * @param Model $db
+     * @param string $recordKey
+     */
+    abstract protected function onDelete($db, string $recordKey)                : void;
 
     /**
      * @return stdClass
@@ -101,7 +139,7 @@ abstract class OrmItem
                 "table"             => $item::TABLE,
                 "dataResponse"      => $item::DATARESPONSE,
                 "required"          => $item::REQUIRED,
-                "primaryKey"        => $item::PRIMARYKEY
+                "primaryKey"        => $item::PRIMARY_KEY
             ];
     }
 
@@ -247,14 +285,14 @@ abstract class OrmItem
         $this->storedData = array_replace($this->storedData, $fill ?? []);
 
 
-        $this->onLoad();
+        $this->onLoad($this->db, $this->recordKey);
 
         if (!$this->isStored()) {
-            $this->onCreate();
+            $this->onCreate($this->db);
         } elseif ($this->isChanged()) {
-            $this->onChange($this->recordKey, $this->primaryKey);
+            $this->onChange($this->db, $this->recordKey);
         } else {
-            $this->onRead($this->recordKey, $this->primaryKey);
+            $this->onRead($this->db, $this->recordKey);
         }
     }
 
@@ -317,9 +355,6 @@ abstract class OrmItem
                      * @var OrmItem $join
                      */
                     $dtd                                                        = $join::dtd();
-
-                    //da fare procedura ricorsiva che discende nelle join dei mapclass relazionati
-                    //$this->db->join($dtd->table, $fields ?? $dtd->dataResponse);
 
                     $informationSchemaJoin                                      = $this->db->informationSchema($dtd->table);
                     if (isset($informationSchemaJoin->relationship[static::TABLE])) {
@@ -464,12 +499,12 @@ abstract class OrmItem
      */
     public function apply() : string
     {
-        $this->onApply();
+        $this->onApply($this->db, $this->recordKey);
 
         if ($this->recordKey) {
-            $this->onUpdate($this->recordKey, $this->primaryKey);
+            $this->onUpdate($this->db, $this->recordKey);
         } else {
-            $this->onInsert();
+            $this->onInsert($this->db);
         }
 
         $vars                                                                   = array_intersect_key($this->fieldSetPurged(), $this->informationSchema->dtd);
@@ -559,7 +594,7 @@ abstract class OrmItem
                     throw new Exception("Relationship is oneToMany (" . $oneToMany->informationSchema->table . " => " . $table . "). Property '" . $table . "' must be an array of items in parent class.", 500);
                 }
 
-                $var                                                            = array_intersect_key($var, $oneToMany->informationSchema->dtd);
+                $var                                                            = array_intersect_key($var, $oneToMany->dataResponse);
                 /**
                  * Skip update if DataStored = DataProperty
                  */
@@ -643,8 +678,8 @@ abstract class OrmItem
      */
     public function delete() : ?OrmResults
     {
-        if ($this->primaryKey && $this->recordKey) {
-            $this->onDelete($this->recordKey, $this->primaryKey);
+        if ($this->recordKey) {
+            $this->onDelete($this->db, $this->recordKey);
 
             return $this->db->delete([$this->primaryKey => $this->recordKey]);
         }
@@ -690,8 +725,8 @@ abstract class OrmItem
     protected function setRecordKey(string $key = null) : self
     {
         if ($key) {
-            $this->recordKey = $key;
-            $this->primaryKey = $this->db->informationSchema()->key;
+            $this->recordKey    = $key;
+            $this->primaryKey   = $this->db->informationSchema()->key;
         }
 
         return $this;

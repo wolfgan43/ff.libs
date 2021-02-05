@@ -27,6 +27,7 @@ namespace phpformsframework\libs;
 
 use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\delivery\Notice;
+use phpformsframework\libs\gui\Resource;
 use phpformsframework\libs\storage\FilemanagerFs;
 use ReflectionClass;
 use Exception;
@@ -49,13 +50,17 @@ class Debug
                                             );
 
     private static $disabled                = true;
-    private static $app_start               = null;
+    private static $app_start               = 0;
     private static $startWatch              = [];
 
     private static $exTime                  = [];
     private static $exTimeCache             = 0;
+    private static $exTimeCacheIndex        = 0;
+    private static $exTimeCacheResource     = 0;
+    private static $exTimeCacheDelivery     = 0;
 
     private static $debug                   = [];
+    private static $backtrace               = [];
 
     /**
      * Debug constructor.
@@ -104,6 +109,17 @@ class Debug
         }
     }
 
+    public static function setBackTrace(array $backtrace) : void
+    {
+        if (Kernel::$Environment::PROFILING) {
+            self::$backtrace = $backtrace;
+        }
+    }
+
+    private static function numberFormat(float $exTime) : string
+    {
+        return number_format($exTime, 4, '.', '');
+    }
     /**
      * @return array|null
      */
@@ -111,16 +127,18 @@ class Debug
     {
         $res                                = null;
         if (Kernel::$Environment::DEBUG) {
-            $res                            = self::$debug + Buffer::exTime();
-            $res["exTime - Autoload"]       = self::exTime("autoload");
-            $res["exTime - Conf"]           = Config::exTime();
-            $res["exTime - Delivery"]       = Notice::exTime();
-            $res["exTime - UserCode"]       = self::exTimeApp() - Config::exTime() - array_sum(Buffer::exTime()) - Notice::exTime();
-            $res["exTime - App"]            = self::exTime("autoload") + self::exTimeApp();
-            $res["exTime - Cache"]          = self::$exTimeCache;
+            $res                            = self::$debug;
+            $res["exTime - Autoload"]       = self::numberFormat(self::exTime("autoload"));
+            $res["exTime - App"]            = self::numberFormat(self::exTime("autoload") + self::exTimeApp());
+            $res["exTime - UserCode"]       = self::numberFormat(self::exTimeApp() - Config::exTime() - Resource::exTime() - Notice::exTime() - self::$exTimeCache - Buffer::exTime("orm") + self::$exTimeCacheResource + self::$exTimeCacheDelivery);
+            $res["exTime - Cache"]          = self::numberFormat(self::$exTimeCache) . " (" . self::numberFormat(self::$exTimeCacheIndex) . " indexing)";
+            $res["exTime - Conf"]           = self::numberFormat(Config::exTime());
+            $res["exTime - Orm"]            = self::numberFormat(Buffer::exTime("orm")) . (Buffer::exTime("orm") ? " (" . self::numberFormat(Buffer::exTime("database")) . " db)" : null);
+            $res["exTime - Resource"]       = self::numberFormat(Resource::exTime() - self::$exTimeCacheResource);
+            $res["exTime - Delivery"]       = self::numberFormat(Notice::exTime() - self::$exTimeCacheDelivery);
             $res["App - Cache"]             = (!Kernel::useCache() ? "off" : "on (" . Kernel::$Environment::CACHE_BUFFER_ADAPTER . ", " . Kernel::$Environment::CACHE_DATABASE_ADAPTER . ", " . Kernel::$Environment::CACHE_MEDIA_ADAPTER . ")");
             $res["query"]                   = Buffer::dump()["process"];
-            //$res["backtrace"]               = self::dumpBackTrace();
+            $res["backtrace"]               = self::dumpBackTrace();
         }
 
         return $res;
@@ -147,7 +165,16 @@ class Debug
             self::$exTime[$key]             = number_format(microtime(true) - self::$startWatch[$bucket], 4, '.', '');
 
             if (strpos($bucket, "Cache") === 0) {
-                self::$exTimeCache          += (float) self::$exTime[$key];
+                if (strpos($bucket, "Cache/resource") === 0) {
+                    self::$exTimeCacheResource  += (float) self::$exTime[$key];
+                }
+                if (strpos($bucket, "Cache/delivery") === 0) {
+                    self::$exTimeCacheDelivery  += (float) self::$exTime[$key];
+                }
+                self::$exTimeCache              += (float) self::$exTime[$key];
+            }
+            if (strpos($bucket, "CacheIndex") === 0) {
+                self::$exTimeCacheIndex         += (float) self::$exTime[$key];
             }
             unset(self::$startWatch[$bucket]);
             return (float) self::$exTime[$key];
@@ -185,8 +212,8 @@ class Debug
      */
     private static function getBacktrace() : ?array
     {
-        $res                                = null;
-        $debug_backtrace                    = debug_backtrace();
+        $res                                = [];
+        $debug_backtrace                    = self::$backtrace;
         foreach ($debug_backtrace as $i => $trace) {
             if (isset($trace["file"])) {
                 $res[$i]["file"] = $trace["file"];
@@ -565,7 +592,7 @@ class Debug
             ? "<b>" . $error_message . "</b>"
             : ""
         );
-        $html .= '<span>ExTime ' . (self::exTime("autoload") + self::exTimeApp()) . '</span>'
+        $html .= '<span>ExTime ' . self::numberFormat(self::exTime("autoload") + self::exTimeApp()) . '</span>'
         . '<span>BackTrace: ' . count($debug_backtrace) . '</span>'
         . '<span>Errors: ' . $errors_count . '</span>'
         . '<span>Includes: ' . $included_files_count . ' (' . $included_files_autoload_count . ' autoloads)' . '</span>'
@@ -584,10 +611,15 @@ class Debug
         . 'Media: '     . (!Kernel::useCache() ? "<span style='color:red;'>" : "<span style='color:green;'>") . Kernel::$Environment::CACHE_MEDIA_ADAPTER     . '</span>'
         . ')</span>';
 
-        $html .= '<br /><span>Autoloader: ' . self::exTime("autoload") . '</span>'
-            . '<span>App: ' . self::exTimeApp() . '</span>'
-            . '<span>( UserCode: ' . (self::exTimeApp() - Config::exTime() - array_sum(Buffer::exTime()) - Notice::exTime()) . '</span>'
-            . '<span>Cache: ' . self::$exTimeCache. ' </span>'
+        $html .= '<br />'
+            . '<span>Autoloader: ' . self::numberFormat(self::exTime("autoload")) . '</span>'
+            . '<span>App: ' . self::numberFormat(self::exTimeApp()) . '</span>'
+            . '<span>( UserCode: ' . self::numberFormat(self::exTimeApp() - Config::exTime() - Resource::exTime() - Notice::exTime() - self::$exTimeCache - Buffer::exTime("orm") + self::$exTimeCacheResource + self::$exTimeCacheDelivery) . '</span>'
+            . '<span>Cache: ' . self::numberFormat(self::$exTimeCache) . " (" . self::numberFormat(self::$exTimeCacheIndex) . " indexing)" . ' </span>'
+            . '<span>Conf: ' . self::numberFormat(Config::exTime()) . ' </span>'
+            . '<span>Orm: ' . self::numberFormat(Buffer::exTime("orm")) . (Buffer::exTime("orm") ? " (" . self::numberFormat(Buffer::exTime("database"))  . " db)" : null) . ' </span>'
+            . '<span>Resource: ' . self::numberFormat(Resource::exTime() - self::$exTimeCacheResource) . ' </span>'
+            . '<span>Delivery: ' . self::numberFormat(Notice::exTime() - self::$exTimeCacheDelivery) . ' </span>'
             . '<span>Debugger: {debug_extime}) </span>';
         if (Kernel::$Environment::PROFILING) {
             $benchmark = self::benchmark(true);
@@ -609,7 +641,7 @@ class Debug
         $html   .= '</table>';
         $html   .= '</div></div>';
 
-        $html = str_replace("{debug_extime}", self::stopWatch("debugger"), $html);
+        $html = str_replace("{debug_extime}", self::numberFormat(self::stopWatch("debugger")), $html);
 
         if ($return) {
             return $html;

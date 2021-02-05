@@ -72,7 +72,7 @@ class Config implements Dumpable
     /**
      * @var null
      */
-    private static $exTime                                                  = null;
+    private static $exTime                                                  = 0;
     /**
      * @var null
      */
@@ -168,7 +168,7 @@ class Config implements Dumpable
     /**
      * @return float
      */
-    public static function exTime() : ?float
+    public static function exTime() : float
     {
         return self::$exTime;
     }
@@ -603,6 +603,7 @@ class Config implements Dumpable
                 if (!$key) {
                     continue;
                 }
+
                 unset($page["@attributes"]);
                 unset($attr["source"]);
                 unset($attr["path"]);
@@ -610,12 +611,13 @@ class Config implements Dumpable
                 if ($key == "/") {
                     $key = "*";
                 } elseif (preg_match_all('#/{([^/]*)}#i', $key, $params)) {
-                    $regexp                                                             = '#^' . str_replace($params[0], "/?([^/]*)", $key) . '$#i';
+                    $regexp                                                             = '#^' . str_replace($params[0], "/([^/]*)", $key) . '$#i';
+                    $regexp                                                             = str_replace('/([^/]*)$#i', '/?([^/]*)$#i', $regexp);
                     $key                                                                = str_replace($params[0], "", $key);
-                    $path2params[$key]                                                  = array(
+                    $path2params[$key]                                                  = [
                                                                                             "matches"   => $params[1],
                                                                                             "regexp"    => $regexp
-                                                                                        );
+                                                                                        ];
                 }
                 if (isset($attr["controller"])) {
                     $router[$key]                                                       = [

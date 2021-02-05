@@ -26,7 +26,6 @@
 namespace phpformsframework\libs\storage\adapters;
 
 use Exception;
-use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\DatabaseAdapter;
 use phpformsframework\libs\storage\drivers\MySqli as sql;
 
@@ -134,15 +133,25 @@ class DatabaseMysqli extends DatabaseAdapter
             if ($name == $this->key_name) {
                 $struct_type = self::FTYPE_PRIMARY;
             }
-
-            $res = $this->replacer(
-                $name,
-                $op,
-                $struct_type,
-                $value
-            );
+            if (is_array($value) && in_array(null, $value, true)) {
+                $value = array_filter($value, function ($v) {
+                    return !is_null($v);
+                });
+                $res = "(" . $this->replacerNULL($name, '$eq') . " OR " . $this->replacer(
+                    $name,
+                    $op,
+                    $struct_type,
+                    $value
+                    ) . ")";
+            } else {
+                $res = $this->replacer(
+                    $name,
+                    $op,
+                    $struct_type,
+                    $value
+                );
+            }
         }
-
         return $res;
     }
 

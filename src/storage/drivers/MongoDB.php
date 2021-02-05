@@ -339,7 +339,9 @@ class MongoDB extends DatabaseDriver
                 if (class_exists("\MongoDB\Driver\Query")) {
                     $cursor = null;
                     try {
+                        $this->stopWatch(self::ERROR_BUCKET);
                         $cursor = $this->link_id->executeQuery($this->database . "." . $this->query_params->from, new Query($this->query_params->where, $this->query_params->options));
+                        $this->stopWatch(self::ERROR_BUCKET);
                     } catch (Exception $e) {
                         $this->errorHandler("Query failed: " . $e->getMessage());
                     }
@@ -358,7 +360,11 @@ class MongoDB extends DatabaseDriver
             case self::ACTION_INSERT:
                 if (class_exists("MongoDB\Driver\BulkWrite")) {
                     $bulk = new BulkWrite();
+
+                    $this->stopWatch(self::ERROR_BUCKET);
                     $bulk->insert($this->query_params->insert);
+                    $this->stopWatch(self::ERROR_BUCKET);
+
                     if (!$this->link_id->executeBulkWrite($this->database . "." . $this->query_params->from, $bulk)) {
                         $this->errorHandler("MongoDB Insert: " . $this->error);
                     }
@@ -370,7 +376,11 @@ class MongoDB extends DatabaseDriver
             case self::ACTION_UPDATE:
                 if (class_exists("MongoDB\Driver\BulkWrite")) {
                     $bulk = new BulkWrite();
+
+                    $this->stopWatch(self::ERROR_BUCKET);
                     $bulk->update($this->query_params->where, $this->query_params->update, $this->query_params->options);
+                    $this->stopWatch(self::ERROR_BUCKET);
+
                     if (!$this->link_id->executeBulkWrite($this->database . "." . $this->query_params->from, $bulk)) {
                         $this->errorHandler("MongoDB Update: " . $this->error);
                     }
@@ -381,7 +391,11 @@ class MongoDB extends DatabaseDriver
             case self::ACTION_DELETE:
                 if (class_exists("MongoDB\Driver\BulkWrite")) {
                     $bulk = new BulkWrite();
+
+                    $this->stopWatch(self::ERROR_BUCKET);
                     $bulk->delete($this->query_params->where, $this->query_params->options);
+                    $this->stopWatch(self::ERROR_BUCKET);
+
                     if (!$this->link_id->executeBulkWrite($this->database . "." . $this->query_params->from, $bulk)) {
                         $this->errorHandler("MongoDB Delete: " . $this->error);
                     }

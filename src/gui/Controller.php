@@ -75,6 +75,8 @@ abstract class Controller
     private $cache_time                         = null;
     private $layout_empty                       = false;
 
+    private $contentEmpty                       = true;
+
     /**
      * @var View
      * @todo da trovare un modo per renderla private
@@ -94,7 +96,7 @@ abstract class Controller
      */
     public static function resources(array $config = null) : array
     {
-        return (new static($config))->toArray();
+        return (new static($config))->adapter->toArray();
     }
 
     /**
@@ -105,16 +107,6 @@ abstract class Controller
     public static function html(array $config = null) : ?string
     {
         return (new static($config))->displayView();
-    }
-
-    /**
-     * @param array|null $config
-     * @return DataAdapter
-     * @throws Exception
-     */
-    public static function json(array $config = null) : DataAdapter
-    {
-        return (new static($config))->display();
     }
 
     /**
@@ -140,7 +132,7 @@ abstract class Controller
         $adapter                                = static::CONTROLLER_ENGINE ?? Kernel::$Environment::CONTROLLER_ADAPTER;
 
         if (!isset(self::$controllers[$adapter])) {
-            self::$controllers[$adapter]        = $this->setAdapter($adapter, [$this->path_info, $this->http_status_code, static::CONTROLLER_TYPE]);
+            self::$controllers[$adapter]        = $this->setAdapter($adapter, [$this->path_info, static::CONTROLLER_TYPE, static::LAYOUT]);
         }
 
         $this->adapter                          =& self::$controllers[$adapter];
@@ -456,12 +448,19 @@ abstract class Controller
         $this->render();
 
         if ($this->isXhr) {
-            return (new DataError())->error(404);
+            return (new DataError())->error(500, "Not Implemented");
+        }
+
+        if ($this->contentEmpty) {
+            $this->assign(self::TPL_VAR_DEFAULT, $this->view);
+
+            if (!$this->view) {
+                $this->http_status_code = 404;
+            }
         }
 
         return $this->adapter
-            ->default($this->view, ($this->layout_empty ? null : static::LAYOUT))
-            ->display();
+            ->display($this->http_status_code);
     }
 
     /**
@@ -478,31 +477,58 @@ abstract class Controller
     }
 
     /**
-     * @return array
-     * @throws Exception
-     */
-    private function toArray() : array
-    {
-        return [
-            "css"               => $this->adapter->css,
-            "style"             => $this->adapter->style,
-            "fonts"             => $this->adapter->fonts,
-            "js"                => $this->adapter->js,
-            "js_embed"          => $this->adapter->js_embed,
-            "js_template"       => $this->adapter->js_template,
-            "structured_data"   => $this->adapter->structured_data,
-            "html"              => $this->displayView()
-        ];
-    }
-
-
-    /**
      * @return DataHtml
      * @throws Exception
      */
     public function snippet() : DataHtml
     {
-        return new DataHtml($this->toArray());
+        return new DataHtml($this->adapter->toArray($this->displayView()));
+    }
+
+
+    /**
+     * @param string|null $layout_name
+     * @param bool $include_layout_assets
+     * @return Controller
+     * @throws Exception
+     */
+    protected function setLayout(string $layout_name = null, bool $include_layout_assets = false) : self
+    {
+        if ($layout_name && $include_layout_assets) {
+            $this->addStylesheet($layout_name);
+            $this->addJavascriptAsync($layout_name);
+        }
+
+        $this->adapter->layout  = (
+            $layout_name === ''
+                ? null
+                : $layout_name
+        );
+
+        return $this;
+    }
+
+    /**
+     * @param string $tpl_var
+     * @param string|DataHtml|View|Controller|null $value
+     * @return $this
+     */
+    protected function assign(string $tpl_var, $value = null) : self
+    {
+        $this->adapter->assign($tpl_var, $value);
+
+        if ($tpl_var == self::TPL_VAR_DEFAULT && !empty($value)) {
+            $this->contentEmpty = false;
+        }
+
+        return $this;
+    }
+
+    protected function debug(string $msg = null) : self
+    {
+        $this->adapter->debug($msg);
+
+        return $this;
     }
 
     /**
@@ -564,108 +590,14 @@ abstract class Controller
     protected function default(array $assign = null) : void
     {
         $this
-            ->layout(static::LAYOUT, true)
-                ->assign(
-                    self::TPL_VAR_DEFAULT,
-                    $this->view()
-                        ->assign($assign)
-                );
+            ->addStylesheet(static::LAYOUT)
+            ->addJavascriptAsync(static::LAYOUT)
+            ->assign(
+                self::TPL_VAR_DEFAULT,
+                $this->view()
+                    ->assign($assign)
+            );
     }
-
-    /**
-     * @param string|null $layout_name
-     * @param bool $include_layout_assets
-     * @param string|null $theme_name
-     * @return ControllerAdapter
-     * @throws Exception
-     */
-    protected function layout(string $layout_name = null, bool $include_layout_assets = false, string $theme_name = null) : ControllerAdapter
-    {
-        if ($layout_name && $include_layout_assets) {
-            $this->addStylesheet($layout_name);
-            $this->addJavascriptAsync($layout_name);
-        }
-
-        return $this->adapter;
-    }
-
-    /**
-     * @param string|DataHtml|View|Controller|null $content
-     */
-    protected function layoutEmpty($content = null) : void
-    {
-        $this->layout_empty = true;
-        $this->adapter->assign(self::TPL_VAR_DEFAULT, $content);
-    }
-
-    /**
-     * @param string|null $template_name
-     * @return string
-     */
-    private function getTemplate(string $template_name = null) : string
-    {
-        return $template_name ?? $this->class_name;
-    }
-
-    /**
-     * @param string|null $template_name
-     * @param bool $include_assets
-     * @return View
-     * @throws Exception
-     * @todo da gestire il tema
-     */
-    private function loadView(string $template_name = null, bool $include_assets = true) : View
-    {
-        $template                       = $this->getTemplate($template_name);
-        if (!($file_path = Resource::get(str_replace(['.tpl', '.html'], '', $template), Resource::TYPE_VIEWS))) {
-            throw new Exception("View not Found: " . $template . " in " . static::class, 500);
-        }
-
-        if ($include_assets) {
-            $this->addStylesheet($template);
-            $this->addJavascriptAsync($template);
-        }
-
-        return $this->view              = (new View(null, static::TEMPLATE_ENGINE))
-                                            ->fetch($file_path)
-                                            ->assign($this->assigns);
-    }
-
-    /**
-     * @param string|null $template_name
-     * @param bool $include_template_assets
-     * @return View
-     * @throws Exception
-     */
-    protected function view(string $template_name = null, bool $include_template_assets = true) : View
-    {
-        return $this->view ?? $this->loadView($template_name, $include_template_assets);
-    }
-
-    /**
-     * Private Method
-     * ------------------------------------------------------------------------
-     */
-
-
-    /**
-     * @param string|null $layout_name
-     * @return string|null
-     */
-    private function getLayout(string $layout_name = null) : ?string
-    {
-        return $layout_name ?? static::LAYOUT;
-    }
-
-    /**
-     * @param string|null $theme_name
-     * @return string|null
-     */
-    private function getTheme(string $theme_name = null) : ?string
-    {
-        return $theme_name ?? static::THEME;
-    }
-
 
     /**
      * @param string|null $method

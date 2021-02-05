@@ -70,7 +70,7 @@ class Request implements Configurable, Dumpable
      */
     private static $page            = null;
     /**
-     * @var RequestPage $page[]
+     * @var RequestPage[]
      */
     private static $pageLoaded      = [];
 
@@ -288,15 +288,18 @@ class Request implements Configurable, Dumpable
      * @return void
      * @throws Exception
      */
-    public static function pageConfiguration(&$page) : void
+    public static function &pageConfiguration() : RequestPage
     {
         self::rewritePathInfo();
+        self::$path_info                    = self::$orig_path_info;
+        self::$pageLoaded[self::$path_info] = new RequestPage(self::$orig_path_info, self::$pages, self::$path2params, self::$patterns);
+        self::$page                         =& self::$pageLoaded[self::$path_info];
 
-        $page                           = self::getPage(self::$orig_path_info);
+        self::capture();
 
         Log::setRoutine(self::$page->log);
 
-        self::capture();
+        return self::$page;
     }
 
     /**
@@ -524,6 +527,7 @@ class Request implements Configurable, Dumpable
 
             self::security();
 
+            self::captureAuthorization();
             self::captureHeaders();
             self::captureBody();
 
@@ -998,20 +1002,19 @@ class Request implements Configurable, Dumpable
             ));
     }
 
+    private static function captureAuthorization() : void
+    {
+        self::$page->loadAuthorization(self::getAuthorizationHeader());
+    }
+
     /**
      * @return array
      * @throws Exception
      */
     private static function captureHeaders() : array
     {
-        static $last_update                                                                     = 0;
-
-        if ($last_update < self::$page->rules->last_update) {
-            $last_update                                                                        = self::$page->rules->last_update;
-
-            if (self::$page->loadHeaders($_SERVER)) {
-                self::sendError(self::$page->status, self::$page->error);
-            }
+        if (self::$page->loadHeaders($_SERVER)) {
+            self::sendError(self::$page->status, self::$page->error);
         }
 
         return self::$page->getHeaders();
@@ -1033,21 +1036,16 @@ class Request implements Configurable, Dumpable
      */
     private static function captureBody(string $scope = null, string $method = null) : ?array
     {
-        static $last_update                                                                     = 0;
-
-        if ($last_update < self::$page->rules->last_update) {
-            $last_update                                                                        = self::$page->rules->last_update;
-
-            if (!$method) {
-                $method                                                                         = self::getRequestMethod();
-            }
-
-            $request                                                                            = self::getReq($method);
-
-            if (self::$page->loadRequestFile() || self::$page->loadRequest($request)) {
-                self::sendError(self::$page->status, self::$page->error);
-            }
+        if (!$method) {
+            $method                                                                             = self::getRequestMethod();
         }
+
+        $request                                                                                = self::getReq($method);
+
+        if (self::$page->loadRequestFile() || self::$page->loadRequest($request)) {
+            self::sendError(self::$page->status, self::$page->error);
+        }
+
 
         return ($scope
             ? self::$page->getRequest($scope)
@@ -1063,30 +1061,24 @@ class Request implements Configurable, Dumpable
      */
     public static function &getPage(string $path_info, array $request = null, array $headers = null) : RequestPage
     {
-        $app                                                                                    = self::loadApp($path_info, $request, $headers);
-
         self::$path_info                                                                        = $path_info;
-        self::$page                                                                             = $app->page;
-
-        self::$page->loadRequest($app->request);
-        self::$page->loadHeaders($app->headers, true);
-        self::$page->loadAuthorization($app->authorization);
+        self::$page                                                                             =& self::loadApp($path_info, $request, $headers);
 
         return self::$page;
     }
 
-    private static function loadApp(string $path_info, array $request = null, array $headers = null) : stdClass
+    private static function &loadApp(string $path_info, array $request = null, array $headers = null) : RequestPage
     {
         if (!isset(self::$pageLoaded[$path_info . self::checkSumArray($request)])) {
-            self::$pageLoaded[$path_info]                                                       = [
-                "page"              => new RequestPage($path_info, self::$pages, self::$path2params, self::$patterns),
-                "request"           => $request,
-                "headers"           => $headers,
-                "authorization"     => $headers["Authorization"] ?? self::getAuthorizationHeader()
-            ];
+            $page = new RequestPage($path_info, self::$pages, self::$path2params, self::$patterns);
+            $page->loadRequest($request);
+            $page->loadHeaders($headers, true);
+            $page->loadAuthorization($headers["Authorization"] ?? self::getAuthorizationHeader());
+
+            self::$pageLoaded[$path_info] = $page;
         }
 
-        return (object) self::$pageLoaded[$path_info];
+        return self::$pageLoaded[$path_info];
     }
 
     /**

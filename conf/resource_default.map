@@ -23,14 +23,14 @@
       ]
     },
     "css": {
-      "flag": 4,
+      "flag": 8,
       "type": "css",
       "filter": [
         "css"
       ]
     },
     "js": {
-      "flag": 4,
+      "flag": 8,
       "type": "js",
       "filter": [
         "js"

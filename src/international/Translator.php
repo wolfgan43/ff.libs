@@ -28,6 +28,7 @@ namespace phpformsframework\libs\international;
 
 use Exception;
 use phpformsframework\libs\cache\Buffer;
+use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Response;
@@ -53,8 +54,8 @@ class Translator implements Dumpable
 
     private static $singletons                          = null;
 
-    private static $cache                               = null;
-    private static $cache_updated                       = null;
+    private static $cache                               = [];
+    private static $cache_updated                       = [];
 
     /**
      * @param string|null $translatorAdapter
@@ -168,6 +169,7 @@ class Translator implements Dumpable
         if (!$code || Locale::isDefaultLang()) {
             return $code;
         }
+        Debug::stopWatch("translator/" . $code);
 
         $lang_tiny_code                                 = self::getLang($language);
         if (self::$cache && !array_key_exists($code, self::$cache[$lang_tiny_code])) {
@@ -176,6 +178,8 @@ class Translator implements Dumpable
                 self::$cache_updated[$lang_tiny_code]   =& self::$cache[$lang_tiny_code];
             }
         }
+
+        Debug::stopWatch("translator/" . $code);
 
         return self::$cache[$lang_tiny_code][$code] ?? $code;
     }

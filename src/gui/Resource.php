@@ -60,9 +60,10 @@ class Resource extends Mappable implements Dumpable
      * @var Resource
      */
     private static $singleton                   = null;
+    private static $exTime                      = 0;
 
     protected $rules                            = null;
-    private $resources                          = null;
+    private $resources                          = [];
 
     /**
      * @return array
@@ -74,6 +75,14 @@ class Resource extends Mappable implements Dumpable
         }
 
         return self::$singleton->resources;
+    }
+
+    /**
+     * @return float
+     */
+    public static function exTime() : float
+    {
+        return self::$exTime;
     }
 
     /**
@@ -243,6 +252,6 @@ class Resource extends Mappable implements Dumpable
             $cache->set("rawdata", $this->resources, $config_dirs);
         }
 
-        Debug::stopWatch("resource/loadResources");
+        self::$exTime = Debug::stopWatch("resource/loadResources");
     }
 }

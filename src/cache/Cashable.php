@@ -15,7 +15,7 @@ trait Cashable
      * @return bool
      * @todo da tipizzare
      */
-    public static function cacheRequest(string $action, array $params = null, &$res = null, &$cnf = null) : bool
+    private function cacheRequest(string $action, array $params = null, &$res = null, &$cnf = null) : bool
     {
         return Buffer::request(static::ERROR_BUCKET, $action, $params, $res, $cnf);
     }
@@ -23,7 +23,7 @@ trait Cashable
     /**
      * @param string $value
      */
-    public static function cacheSetProcess(string $value) : void
+    private function cacheSetProcess(string $value) : void
     {
         Buffer::set($value);
     }
@@ -32,14 +32,28 @@ trait Cashable
      * @param $response
      * @param $config
      */
-    public static function cacheStore($response, $config = null)
+    private function cacheStore($response, $config = null)
     {
         Buffer::store($response, $config);
     }
 
 
-    public static function cacheUpdate() : void
+    private function cacheUpdate() : void
     {
         Buffer::update();
+    }
+
+    private function stopWatch(string $bucket) : void
+    {
+        static $exTime = null;
+
+        if (!$exTime) {
+            $exTime = microtime(true);
+        } else {
+            Buffer::setExTime(microtime(true) - $exTime, $bucket);
+            $exTime = null;
+        }
+
+
     }
 }

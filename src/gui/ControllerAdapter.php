@@ -30,8 +30,4 @@ abstract class ControllerAdapter extends Mappable
      */
     abstract public function assign(string $tpl_var, $content = null) : self;
 
-    /**
-     * @return string
-     */
-    abstract public function html() : string;
 }

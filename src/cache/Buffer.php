@@ -21,7 +21,6 @@ class Buffer implements Dumpable
     use TypesConverter;
 
     private const SEP                                   = "/";
-    private const SEP_EXTIME                            = "exTime - ";
     private const SYMBOL                                = " (from cache)";
 
     private static $cache                               = [];
@@ -58,12 +57,14 @@ class Buffer implements Dumpable
         return $cache_file
             && (Kernel::useCache() || filemtime($cache_file) >= filemtime($source_file));
     }
+
     /**
-     * @return array|null
+     * @param string $bucket
+     * @return float
      */
-    public static function exTime() : array
+    public static function exTime(string $bucket) : float
     {
-        return self::$stats->extime ?? [];
+        return self::$stats->extime[$bucket] ?? 0;
     }
     /**
      * @return array|null
@@ -258,7 +259,7 @@ class Buffer implements Dumpable
      */
     private static function setStats(float $time, string $bucket, string $pkey) : void
     {
-        self::$stats->extime[self::SEP_EXTIME . $bucket]    = $time + (self::$stats->extime[self::SEP_EXTIME . $bucket] ?? 0);
+        self::$stats->extime[$bucket]                       = $time + (self::$stats->extime[$bucket] ?? 0);
         self::$stats->extime_action[$pkey]                  = $time + (self::$stats->extime_action[$pkey] ?? 0);
         self::$stats->count[$pkey]                          = 1 + (self::$stats->count[$pkey] ?? 0);
     }
@@ -289,5 +290,14 @@ class Buffer implements Dumpable
             "cache"     => self::$cache,
             "process"   => self::$process
         ];
+    }
+
+    /**
+     * @param float $time
+     * @param string $bucket
+     */
+    public static function setExTime(float $time, string $bucket) : void
+    {
+        self::$stats->extime[$bucket] = $time + (self::$stats->extime[$bucket] ?? 0);
     }
 }

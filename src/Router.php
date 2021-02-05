@@ -415,6 +415,7 @@ class Router implements Configurable, Dumpable
                     $output                                         = (new $class_name())->$method(...$params);
                 }
             } catch (Exception $e) {
+                Debug::setBackTrace($e->getTrace());
                 Response::sendError($e->getCode(), $e->getMessage());
             }
         } elseif (is_callable($method)) {

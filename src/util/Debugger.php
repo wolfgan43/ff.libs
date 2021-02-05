@@ -52,4 +52,13 @@ trait Debugger
     {
         return Debug::stopWatch($bucket);
     }
+
+    /**
+     * @param array $backtrace
+     * @return void
+     */
+    private static function setBackTrace(array $backtrace) : void
+    {
+        Debug::setBackTrace($backtrace);
+    }
 }

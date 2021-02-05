@@ -54,7 +54,7 @@ abstract class App implements Dumpable
     public static function &construct(string $environment) : RequestPage
     {
         self::$configuration                                        = new $environment();
-        Request::pageConfiguration(self::$configuration->page);
+        self::$configuration->page                                  =& Request::pageConfiguration();
 
         return self::$configuration->page;
     }

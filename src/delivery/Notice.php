@@ -41,12 +41,12 @@ class Notice
     protected const ERROR_BUCKET                            = "delivery";
 
     private static $singleton                               = null;
-    private static $exTime                                  = null;
+    private static $exTime                                  = 0;
 
     /**
      * @return float
      */
-    public static function exTime() : ?float
+    public static function exTime() : float
     {
         return self::$exTime;
     }

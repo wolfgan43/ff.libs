@@ -23,12 +23,6 @@ class RequestPageRules
     public $header          = array();
     public $query           = array();
     public $body            = array();
-    public $last_update     = null;
-
-    public function __construct()
-    {
-        $this->last_update  = microtime(true);
-    }
 
     /**
      * @param array $pageRules

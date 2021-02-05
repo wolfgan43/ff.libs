@@ -2,6 +2,7 @@
 namespace phpformsframework\libs\security;
 
 use phpformsframework\libs\storage\Media;
+use phpformsframework\libs\storage\Model;
 use phpformsframework\libs\storage\OrmItem;
 use Exception;
 
@@ -65,42 +66,72 @@ class UserData extends OrmItem
         return Media::getUrl($this->avatar ?? $noavatar, $mode);
     }
 
-    protected function onLoad(): void
+    /**
+     * @param Model $db
+     * @param string|null $recordKey
+     */
+    protected function onLoad($db, string $recordKey = null): void
     {
         // TODO: Implement onLoad() method.
     }
 
-    protected function onCreate(): void
+    /**
+     * @param Model $db
+     */
+    protected function onCreate($db): void
     {
         // TODO: Implement onCreate() method.
     }
 
-    protected function onRead(string $recordKey, string $primaryKey): void
+    /**
+     * @param Model $db
+     * @param string $recordKey
+     */
+    protected function onRead($db, string $recordKey): void
     {
         // TODO: Implement onRead() method.
     }
 
-    protected function onChange(string $recordKey, string $primaryKey): void
+    /**
+     * @param Model $db
+     * @param string $recordKey
+     */
+    protected function onChange($db, string $recordKey): void
     {
         // TODO: Implement onChange() method.
     }
 
-    protected function onApply(): void
+    /**
+     * @param Model $db
+     * @param string|null $recordKey
+     */
+    protected function onApply($db, string $recordKey = null): void
     {
         // TODO: Implement onApply() method.
     }
 
-    protected function onInsert(): void
+    /**
+     * @param Model $db
+     */
+    protected function onInsert($db): void
     {
         // TODO: Implement onInsert() method.
     }
 
-    protected function onUpdate(string $recordKey, string $primaryKey): void
+    /**
+     * @param Model $db
+     * @param string $recordKey
+     */
+    protected function onUpdate($db, string $recordKey): void
     {
         // TODO: Implement onUpdate() method.
     }
 
-    protected function onDelete(string $recordKey, string $primaryKey): void
+    /**
+     * @param Model $db
+     * @param string $recordKey
+     */
+    protected function onDelete($db, string $recordKey): void
     {
         // TODO: Implement onDelete() method.
     }

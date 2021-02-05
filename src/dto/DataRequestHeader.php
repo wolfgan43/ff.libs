@@ -36,8 +36,6 @@ use Exception;
  */
 class DataRequestHeader extends Mappable
 {
-    use Manipulation;
-
     /**
      * DataRequestHeader constructor.
      * @throws Exception

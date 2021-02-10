@@ -600,6 +600,56 @@ abstract class Controller
     }
 
     /**
+     * @param string|null $template_name
+     * @return string
+     */
+    private function getTemplate(string $template_name = null) : string
+    {
+        return $template_name ?? $this->class_name;
+    }
+
+    /**
+     * @param string|null $template_name
+     * @param bool $include_assets
+     * @return View
+     * @throws Exception
+     * @todo da gestire il tema
+     */
+    private function loadView(string $template_name = null, bool $include_assets = true) : View
+    {
+        $template                       = $this->getTemplate($template_name);
+        if (!($file_path = Resource::get(str_replace(['.tpl', '.html'], '', $template), Resource::TYPE_VIEWS))) {
+            throw new Exception("View not Found: " . $template . " in " . static::class, 500);
+        }
+
+        if ($include_assets) {
+            $this->addStylesheet($template);
+            $this->addJavascriptAsync($template);
+        }
+
+        return $this->view              = (new View(null, static::TEMPLATE_ENGINE))
+                                            ->fetch($file_path)
+                                            ->assign($this->assigns);
+    }
+
+    /**
+     * @param string|null $template_name
+     * @param bool $include_template_assets
+     * @return View
+     * @throws Exception
+     */
+    protected function view(string $template_name = null, bool $include_template_assets = true) : View
+    {
+        return $this->view ?? $this->loadView($template_name, $include_template_assets);
+    }
+
+
+    /**
+     * Private Method
+     * ------------------------------------------------------------------------
+     */
+
+    /**
      * @param string|null $method
      * @throws Exception
      */

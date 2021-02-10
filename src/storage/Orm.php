@@ -1016,7 +1016,7 @@ class Orm extends Mappable
      */
     private function getResult() : OrmResults
     {
-        return new OrmResults($this->result[$this->main->def->mainTable] ?? null, $this->count, $this->result_keys[$this->main->def->mainTable] ?? null, $this->main->def->key_primary, $this->map_class);
+        return new OrmResults($this->result[$this->main->def->mainTable] ?? null, $this->count, $this->result_keys, $this->main->def->mainTable, $this->main->def->key_primary, $this->map_class);
     }
 
     /**

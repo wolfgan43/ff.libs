@@ -40,6 +40,8 @@ abstract class OrmItem
     protected const TABLE                                                       = null;
     protected const PRIMARY_KEY                                                 = null;
     protected const JOINS                                                       = [];
+    protected const DELETE_JOINS                                                = [];
+    protected const DELETE_LOGICAL_FIELD                                        = null;
 
     protected const REQUIRED                                                    = [];
 
@@ -71,8 +73,8 @@ abstract class OrmItem
     private $models                                                             = [];
     private $model                                                              = null;
 
+    private $tables                                                             = [];
     private $indexes                                                            = [];
-    private $rawData                                                            = [];
     private $storedData                                                         = [];
 
     private $oneToOne                                                           = [];
@@ -181,6 +183,7 @@ abstract class OrmItem
                             );
                         } else {
                             $value['$in'][]                                     = $subvalue;
+                            unset($value[$op]);
                         }
                     }
                 } elseif (strpos($value, "*") !== false) {
@@ -215,6 +218,13 @@ abstract class OrmItem
             $toDataResponse                                                     = Model::get($toDataResponse);
         }
 
+        if ($item::DELETE_LOGICAL_FIELD) {
+            $where[$item::DELETE_LOGICAL_FIELD]                                 = false;
+            foreach ($item->tables as $table) {
+                $where[$table . "." . $item::DELETE_LOGICAL_FIELD]              = false;
+            }
+        }
+
         $recordset                                                              = $item->db
             ->table($item::TABLE, $toDataResponse)
             ->read($where, $sort, $limit, $offset);
@@ -238,9 +248,13 @@ abstract class OrmItem
     public static function deleteAll(array $where) : OrmResults
     {
         $item                                                                   = new static();
-        return $item->db
-            ->table($item::TABLE)
-            ->delete($where);
+        $db                                                                     = $item
+                                                                                    ->db
+                                                                                    ->table(static::TABLE);
+        return ($item::DELETE_LOGICAL_FIELD
+            ? $db->update([$item::DELETE_LOGICAL_FIELD => true], $where)
+            : $db->delete($where)
+        );
     }
 
     /**
@@ -277,7 +291,7 @@ abstract class OrmItem
      */
     public function __construct(array $where = null, array $fill = null, string $record_key = null)
     {
-        $this->loadCollection(($where || $fill));
+        $this->loadCollection();
         $this->read($where);
         $this->fill($fill);
         $this->setRecordKey($record_key);
@@ -326,10 +340,9 @@ abstract class OrmItem
 
     /**
      *
-     * @param bool $extendPrimaryKey
      * @throws Exception
      */
-    private function loadCollection(bool $extendPrimaryKey = false)
+    private function loadCollection()
     {
         $collection_name                                                        = static::COLLECTION ?? $this->getClassName();
 
@@ -362,16 +375,13 @@ abstract class OrmItem
                          * OneToOne
                          */
                         $table                                                  = $informationSchemaJoin->schema["alias"];
-                        $this->oneToOne[$table]                                 = $this->setRelationship($join, $dtd, $informationSchemaJoin);
+                        $this->oneToOne[$table]                                 = $this->setRelationship($join, $dtd, $informationSchemaJoin, (object) $informationSchemaJoin->relationship[static::TABLE]);
                     } elseif (isset($this->informationSchema->relationship[$dtd->table])) {
                         /**
                          * OneToMany
                          */
                         $table                                                  = $dtd->table;
-                        $this->oneToMany[$table]                                = $this->setRelationship($join, $dtd, $this->informationSchema);
-                        if ($extendPrimaryKey) {
-                            $dtd->dataResponse[]                                = $informationSchemaJoin->key;
-                        }
+                        $this->oneToMany[$table]                                = $this->setRelationship($join, $dtd, $informationSchemaJoin, (object) $this->informationSchema->relationship[$table]);
                     }
 
                     if ($table) {
@@ -382,6 +392,7 @@ abstract class OrmItem
                         }
                     }
 
+                    $this->tables[]                                             = $dtd->table;
                     $this->db->join($dtd->table, $fields ?? $dtd->dataResponse);
                 }
             }
@@ -392,13 +403,18 @@ abstract class OrmItem
         }
     }
 
-    private function setRelationship(string $mapClass, stdClass $dtd, stdClass $informationSchema) : stdClass
+    private function setRelationship(string $mapClass, stdClass $dtd, stdClass $informationSchema, stdClass $relationship) : stdClass
     {
         $rel                                                    = new stdClass();
         $rel->mapClass                                          = $mapClass;
         $rel->primaryKey                                        = $dtd->primaryKey;
+        $rel->dbExternal                                        = $relationship->external;
+        $rel->dbPrimary                                         = $relationship->primary;
         $rel->informationSchema                                 = $informationSchema;
         $rel->dataResponse                                      = array_fill_keys($dtd->dataResponse, true);
+
+        $rel->indexes                                           = null;
+        $rel->indexes_primary                                   = null;
 
         return $rel;
     }
@@ -444,7 +460,7 @@ abstract class OrmItem
             }
 
             $this->{$table}                                                     = array_replace($this->{$table} ?? [], $fields[$table]);
-            $this->rawData[$table]                                              = $fields[$table];
+            $this->oneToOne[$table]->indexes                                    = $this->indexes[$oneToOne->informationSchema->table][0];
 
             unset($fields[$table]);
         }
@@ -461,31 +477,33 @@ abstract class OrmItem
                 $this->error([$table . " must be array of object"]);
             }
 
-            $relationship                                                       = (object) $oneToMany->informationSchema->relationship[$table];
-            $primaryKey                                                         = $oneToMany->primaryKey ?? $relationship->primary;
             if (empty($this->{$table})) {
                 $this->{$table}                                                 = $fields[$table];
-                $this->rawData[$table]                                          = $fields[$table];
             } else {
-                $keys                                                           = array_flip(array_column($this->{$table} ?? [], $primaryKey));
+                $keys                                                           = array_flip(array_column($this->{$table} ?? [], $oneToMany->primaryKey));
                 $data                                                           = [];
+                $count_update                                                   = 0;
                 foreach ($fields[$table] as $vars) {
-                    if (!empty($vars[$primaryKey]) && isset($keys[$vars[$primaryKey]])) {
+                    if (!empty($vars[$oneToMany->primaryKey]) && isset($keys[$vars[$oneToMany->primaryKey]])) {
+                        $primaryValue                                           = $vars[$oneToMany->primaryKey];
+                        $index                                                  = $keys[$primaryValue];
                         /**
                          * Update
                          */
-                        $data[$keys[$vars[$primaryKey]]]                        = array_replace($this->{$table}[$keys[$vars[$primaryKey]]], $vars);
-                        $this->rawData[$table][$keys[$vars[$primaryKey]]]       = $vars;
+                        $data[$index]                                           = array_replace($this->{$table}[$index], $vars);
+
+                        $this->oneToMany[$table]->indexes_primary[$primaryValue]=& $this->indexes[$table][$index];
+                        $count_update++;
                     } else {
                         /**
                          * Insert
                          */
-                        $index                                                  = count($this->{$table}) + count($data);
+                        $index                                                  = count($this->{$table}) + count($data) - $count_update;
                         $data[$index]                                           = $vars;
-                        $this->rawData[$table][$index]                          = $vars;
                     }
                 }
 
+                $this->oneToMany[$table]->indexes                               = $keys;
                 $this->{$table}                                                 = array_replace($this->{$table}, $data);
             }
 
@@ -520,7 +538,7 @@ abstract class OrmItem
                 $this->db->update(array_diff_assoc($vars, $storedVars), [$this->primaryKey => $this->recordKey]);
             }
         } else {
-            $item                                                               = $this->db->insert(array_merge($vars, $this->indexes));
+            $item                                                               = $this->db->insert(array_merge($vars, $this->primaryIndexes));
             $this->recordKey                                                    = $item->key(0);
             $this->primaryKey                                                   = $item->getPrimaryKey();
             if ($this->recordKey === null) {
@@ -549,25 +567,26 @@ abstract class OrmItem
             /**
              * Skip update if DataStored = DataProperty
              */
-            if (array_intersect_key($relDataDB, $relData) == $relData) {
+            if ($relDataDB == $relData) {
                 $this->{$table}                                                 = array_intersect_key($this->{$table}, $oneToOne->dataResponse);
                 continue;
             }
 
             /**
-             * Many to One
+             * One to One
              */
-            $relationship                                                       = (object) $oneToOne->informationSchema->relationship[static::TABLE];
-            $external_key                                                       = $relationship->external;
+            if (isset($this->{$table}[$oneToOne->primaryKey]) && $relDataDB[$oneToOne->primaryKey] != $this->{$table}[$oneToOne->primaryKey]) {
+                $obj = new $oneToOne->mapClass([$oneToOne->primaryKey => $this->{$table}[$oneToOne->primaryKey]]);
+                $obj->fill($relData);
+            } elseif (isset($this->primaryIndexes[$oneToOne->dbExternal])) {
+                $obj = $oneToOne->mapClass::load($relDataDB, $this->primaryIndexes[$oneToOne->dbExternal])
+                        ->setIndexes($oneToOne->indexes);
+                $obj->fill($relData);
+            } else {
+                $obj = $oneToOne->mapClass::load($relData);
+            }
 
-            $obj = (
-                !isset($this->indexes[$relationship->external]) && isset($this->{$table}[$oneToOne->primaryKey])
-                ? (new $oneToOne->mapClass([$oneToOne->primaryKey => $this->{$table}[$oneToOne->primaryKey]], $relData))
-                : $oneToOne->mapClass::load($relDataDB, $this->indexes[$relationship->external] ?? null)
-            );
-
-            $obj->fill($this->rawData[$table] ?? null);
-            $vars[$external_key]                                                = $obj->apply();
+            $vars[$oneToOne->dbExternal]                                        = $obj->apply();
             $this->{$table}                                                     = $obj->toArray();
         }
     }
@@ -581,46 +600,45 @@ abstract class OrmItem
          * @var OrmItem $obj
          */
         foreach ($this->oneToMany as $table => $oneToMany) {
-            $relDataDB                                                          = $this->storedData[$table] ?? null;
-            $relData                                                            = $this->{$table} ?? [];
+            $relDataDBs                                                         = $this->storedData[$table] ?? [];
+            $relDatas                                                           = $this->{$table};
 
-            $relationship                                                       = (object) $oneToMany->informationSchema->relationship[$table];
-            $indexes                                                            = [$relationship->external => $this->recordKey];
-            $primaryKey                                                         = $oneToMany->primaryKey ?? $relationship->primary;
-
-            $keys                                                               = array_flip(array_column($this->{$table} ?? [], $primaryKey));
-            foreach ($relData as $index => $var) {
+            foreach ($relDatas as $index => $var) {
                 if (!is_array($var)) {
-                    throw new Exception("Relationship is oneToMany (" . $oneToMany->informationSchema->table . " => " . $table . "). Property '" . $table . "' must be an array of items in parent class.", 500);
+                    throw new Exception("Relationship is oneToMany (" . static::TABLE . " => " . $table . "). Property '" . $table . "' must be an array of items in parent class.", 500);
                 }
+                $relData                                                        = array_intersect_key($var, $oneToMany->informationSchema->dtd);
+                if (($primaryValue = ($relData[$oneToMany->primaryKey] ?? null)) && ($indexes = ($oneToMany->indexes_primary[$primaryValue] ?? null))) {
+                    $key                                                        = $indexes[$oneToMany->dbPrimary];
 
-                $var                                                            = array_intersect_key($var, $oneToMany->dataResponse);
-                /**
-                 * Skip update if DataStored = DataProperty
-                 */
-                if (isset($relDataDB[$index]) && array_intersect_key($relDataDB[$index], $var)  == $var) {
-                    $this->{$table}[$index]                                     = array_intersect_key($this->{$table}[$index], $oneToMany->dataResponse);
-                    continue;
-                }
+                    /**
+                     * Skip update if DataStored = DataProperty
+                     */
+                    $relDataDB                                                  = $relDataDBs[$oneToMany->indexes[$primaryValue]];
+                    if ($relDataDB == $relData) {
+                        $this->{$table}[$index]                                 = array_intersect_key($this->{$table}[$index], $oneToMany->dataResponse);
+                        continue;
+                    }
 
-                if (!empty($var[$primaryKey]) && isset($keys[$var[$primaryKey]]) && isset($this->{$table}[$keys[$var[$primaryKey]]][$relationship->primary])) {
                     /**
                      * Update
                      */
-                    $obj                                                        = $oneToMany->mapClass::load($relDataDB[$index], $this->{$table}[$keys[$var[$primaryKey]]][$relationship->primary])
+                    $obj                                                        = $oneToMany->mapClass::load($relDataDB, $key)
                                                                                     ->setIndexes($indexes);
-                    $obj->fill($this->rawData[$table][$keys[$var[$primaryKey]]] ?? null);
+                    $obj->fill($relData);
                     $obj->apply();
-                    $this->{$table}[$keys[$var[$primaryKey]]]                   = $obj->toArray();
-                } else {
+
+                    $this->{$table}[$index]                                     = $obj->toArray();
+                } elseif (!isset($relDataDBs[$index])) {
                     /**
                      * Insert
                      */
-                    $obj                                                        = $oneToMany->mapClass::load($var)
-                                                                                    ->setIndexes($indexes);
-                    $obj->fill($this->rawData[$table][$index] ?? null);
+                    $obj                                                        = $oneToMany->mapClass::load($relData)
+                                                                                    ->setIndexes([$oneToMany->dbExternal => $this->recordKey]);
                     $obj->apply();
                     $this->{$table}[$index]                                     = $obj->toArray();
+                } else {
+                    $this->{$table}[$index]                                     = array_intersect_key($this->{$table}[$index], $oneToMany->dataResponse);
                 }
             }
         }
@@ -633,13 +651,21 @@ abstract class OrmItem
     private function read(array $where = null) : void
     {
         if (!empty($where)) {
+            if (static::DELETE_LOGICAL_FIELD) {
+                $where[static::DELETE_LOGICAL_FIELD]                            = false;
+                foreach ($this->tables as $table) {
+                    $where[$table . "." . static::DELETE_LOGICAL_FIELD]         = false;
+                }
+            }
+
             $item                                                               = $this->db
                 ->readOne($where);
 
             if ($item->countRecordset()) {
                 $this->recordKey                                                = $item->key(0);
                 $this->primaryKey                                               = $item->getPrimaryKey();
-                $this->indexes                                                  = $item->indexes(0);
+                $this->primaryIndexes                                           = $item->getPrimaryIndexes(0);
+                $this->indexes                                                  = $item->indexes();
 
                 if ($record = $item->getArray(0)) {
                     $this->storedData = $record;
@@ -673,18 +699,48 @@ abstract class OrmItem
     }
 
     /**
-     * @return OrmResults|null
+     * @return void
      * @throws Exception
      */
-    public function delete() : ?OrmResults
+    public function delete() : void
     {
+        //@todo da raffinare facendolo scendere nelle relazioni nested. (come l'update)
         if ($this->recordKey) {
             $this->onDelete($this->db, $this->recordKey);
 
-            return $this->db->delete([$this->primaryKey => $this->recordKey]);
-        }
+            if (!empty(static::DELETE_JOINS)) {
+                foreach (static::DELETE_JOINS as $join) {
+                    if (method_exists($join, 'dtd')) {
+                        /**
+                         * @var OrmItem $join
+                         */
+                        $dtd                                                        = $join::dtd();
 
-        return null;
+                        $informationSchemaJoin                                      = $this->db->informationSchema($dtd->table);
+                        if (isset($informationSchemaJoin->relationship[static::TABLE])) {
+                            /**
+                             * OneToOne
+                             */
+                            $relationship                                           = (object) $informationSchemaJoin->relationship[static::TABLE];
+
+                            $join::deleteAll([$relationship->primary => $this->primaryIndexes[$relationship->external]]);
+                        } elseif (isset($this->informationSchema->relationship[$dtd->table])) {
+                            /**
+                             * OneToMany
+                             */
+                            $relationship                                           = (object) $this->informationSchema->relationship[$dtd->table];
+
+                            $join::deleteAll([$relationship->external => $this->recordKey]);
+                        }
+                    }
+                }
+            }
+            if (static::DELETE_LOGICAL_FIELD) {
+                $this->db->update([static::DELETE_LOGICAL_FIELD => true], [$this->primaryKey => $this->recordKey]);
+            } else {
+                $this->db->delete([$this->primaryKey => $this->recordKey]);
+            }
+        }
     }
 
     /**
@@ -732,9 +788,13 @@ abstract class OrmItem
         return $this;
     }
 
-    protected function setIndexes(array $indexes = null) : self
+    /**
+     * @param array|null $indexes
+     * @return $this
+     */
+    private function setIndexes(array $indexes = null) : self
     {
-        $this->indexes      = $indexes ?? [];
+        $this->primaryIndexes   = $indexes ?? [];
 
         return $this;
     }

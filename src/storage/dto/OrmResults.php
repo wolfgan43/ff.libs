@@ -45,20 +45,27 @@ class OrmResults
     private $recordset_keys         = null;
 
     private $filter                 = null;
+    private $table                  = null;
+    private $indexes                = null;
 
     /**
      * OrmResult constructor.
      * @param array|null $recordset
      * @param int|null $count
-     * @param array|null $recordset_keys
+     * @param array|null $indexes
+     * @param string|null $primary_table
      * @param string|null $primary_key
      * @param string|null $record_map_class
      */
-    public function __construct(array $recordset = null, int $count = null, array $recordset_keys = null, string $primary_key = null, string $record_map_class = null)
+    public function __construct(array $recordset = null, int $count = null, array $indexes = null, string $primary_table = null, string $primary_key = null, string $record_map_class = null)
     {
         $this->key_name             = $primary_key;
         $this->countTotal           = $count;
         $this->record_map_class     = $record_map_class;
+        $this->table                = $primary_table;
+        $this->indexes              = $indexes;
+
+        $recordset_keys             = $indexes[$primary_table] ?? null;
 
         $counter                    = $recordset ?? $recordset_keys;
         $this->countRecordset       = (
@@ -78,6 +85,16 @@ class OrmResults
     {
         return $this->key_name;
     }
+
+    /**
+     * @param int $offset
+     * @return array
+     */
+    public function getPrimaryIndexes(int $offset) : array
+    {
+        return $this->recordset_keys[$offset] ?? [];
+    }
+
     /**
      * @return int|null
      */
@@ -148,12 +165,11 @@ class OrmResults
     }
 
     /**
-     * @param int $offset
      * @return array
      */
-    public function indexes(int $offset) : array
+    public function indexes() : array
     {
-        return $this->recordset_keys[$offset] ?? [];
+        return $this->indexes;
     }
 
     /**

@@ -587,7 +587,7 @@ class Request implements Configurable, Dumpable
      */
     public static function isHTTPS(): bool
     {
-        return (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || self::referer(PHP_URL_SCHEME, "origin") == "https";
+        return (isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) === 'on') || self::referer(PHP_URL_SCHEME, "origin") == "https";
     }
 
     /**

@@ -14,6 +14,7 @@ trait OrmUtil
      */
     private $db                                                                 = null;
     private $primaryKey                                                         = null;
+    private $primaryIndexes                                                     = [];
     private $recordKey                                                          = null;
 
 

@@ -210,7 +210,7 @@ class Model implements Configurable, Dumpable
      */
     public function readByMock() : OrmResults
     {
-        return new OrmResults(array($this->schema->fake), 1, null, null, $this->schema->mapclass);
+        return new OrmResults(array($this->schema->fake), 1, null, null, null, $this->schema->mapclass);
     }
 
     /**
@@ -282,6 +282,7 @@ class Model implements Configurable, Dumpable
                 $this->where[$key]                                                      = $value;
             }
         }
+
         return $this->where;
     }
 

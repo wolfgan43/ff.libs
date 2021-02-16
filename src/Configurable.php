@@ -41,7 +41,7 @@ interface Configurable
      * @param dto\ConfigRules $configRules
      * @return dto\ConfigRules
      */
-    public static function loadConfigRules(dto\ConfigRules $configRules);
+    public static function loadConfigRules(dto\ConfigRules $configRules) : dto\ConfigRules;
 
     /**
      * @param array $config

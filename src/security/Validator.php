@@ -288,7 +288,7 @@ class Validator
                 $dataError->error(400, $error);
             } elseif (isset($rule->normalize)) {
                 $what                                   = $validation;
-            } else {
+            } elseif (!is_array($validation)) {
                 $dataError->error(
                     400,
                     $context . " is not a valid " . $type
@@ -411,22 +411,28 @@ class Validator
         return $res;
     }
 
-
     /**
-     * @param mixed $value
-     * @return DataError
-     * @todo da tipizzare
+     * @param $value
+     * @return string|null
      */
     public static function checkSpecialChars($value) : ?string
     {
         $error                                          = null;
-        foreach ((array) $value as $item) {
+        foreach ((array) $value as $key => $item) {
             if ($item != str_replace(self::SPELL_CHECK, "", $item)) {
-                $error                                  = self::getContextName() . " is not a valid. " . "You can't use [" . implode(" ", self::SPELL_CHECK) . "]";
+                $label = (
+                    is_numeric($key)
+                    ? self::getContextName()
+                    : $key
+                );
+                $error                                  = $label . (
+                    is_float($item)
+                        ? " is not a valid float. Max precision must be: " . ini_get("precision")
+                        : " is not a valid. " . "You can't use [" . implode(" ", self::SPELL_CHECK) . "]"
+                    );
                 break;
             }
         }
-
         return $error;
     }
 

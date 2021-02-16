@@ -379,7 +379,7 @@ class Model implements Configurable, Dumpable
      * @param ConfigRules $configRules
      * @return ConfigRules
      */
-    public static function loadConfigRules($configRules)
+    public static function loadConfigRules(ConfigRules $configRules) : ConfigRules
     {
         return $configRules
             ->add("models");

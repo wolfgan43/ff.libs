@@ -110,6 +110,16 @@ abstract class Controller
     }
 
     /**
+     * @param string|null $destination
+     * @param int|null $http_response_code
+     * @param array|null $headers
+     */
+    protected static function redirect(string $destination = null, int $http_response_code = null, array $headers = null)
+    {
+        Response::redirect($destination, $http_response_code, $headers);
+    }
+
+    /**
      * Controller constructor.
      * @param array|null $config
      */
@@ -571,16 +581,6 @@ abstract class Controller
         }
 
         Response::send($data, $headers);
-    }
-
-    /**
-     * @param string|null $destination
-     * @param int|null $http_response_code
-     * @param array|null $headers
-     */
-    protected function redirect(string $destination = null, int $http_response_code = null, array $headers = null)
-    {
-        Response::redirect($destination, $http_response_code, $headers);
     }
 
     /**

@@ -121,7 +121,7 @@ class Constant
     /**
      * App Settings
      */
-    const PROFILING                         = false;
+    const PROFILING                         = true;
     const DEBUG                             = true;
     const DISABLE_CACHE                     = false;
     const CACHE_BUFFER                      = true;

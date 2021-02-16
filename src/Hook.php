@@ -45,7 +45,7 @@ class Hook implements Configurable, Dumpable
      * @param dto\ConfigRules $configRules
      * @return dto\ConfigRules
      */
-    public static function loadConfigRules($configRules)
+    public static function loadConfigRules(dto\ConfigRules $configRules) : dto\ConfigRules
     {
         return $configRules
             ->add("hooks");
@@ -99,7 +99,7 @@ class Hook implements Configurable, Dumpable
      * @param callable $func
      * @param int $priority
      */
-    public static function register($name, callable $func, int $priority = self::HOOK_PRIORITY_NORMAL) : void
+    public static function register(string $name, callable $func, int $priority = self::HOOK_PRIORITY_NORMAL) : void
     {
         self::addCallback($name, $func, $priority);
     }
@@ -110,7 +110,7 @@ class Hook implements Configurable, Dumpable
      * @param callable $func
      * @param int $priority
      */
-    public static function registerOnce($name, callable $func, int $priority = self::HOOK_PRIORITY_NORMAL) : void
+    public static function registerOnce(string $name, callable $func, int $priority = self::HOOK_PRIORITY_NORMAL) : void
     {
         self::addCallback($name, $func, $priority, true);
     }
@@ -146,7 +146,7 @@ class Hook implements Configurable, Dumpable
      * @param mixed|null $params
      * @return array|null
      */
-    public static function handle(string $name, &$ref = null, $params = null)
+    public static function handle(string $name, &$ref = null, $params = null) : ?array
     {
         $res                                                                        = null;
 

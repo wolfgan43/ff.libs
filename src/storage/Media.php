@@ -31,6 +31,7 @@ use phpformsframework\libs\Config;
 use phpformsframework\libs\Configurable;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Dir;
+use phpformsframework\libs\dto\ConfigRules;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Hook;
 use phpformsframework\libs\Request;
@@ -338,10 +339,10 @@ class Media implements Configurable
 
     /**
      * @access private
-     * @param \phpformsframework\libs\dto\ConfigRules $configRules
-     * @return \phpformsframework\libs\dto\ConfigRules
+     * @param ConfigRules $configRules
+     * @return ConfigRules
      */
-    public static function loadConfigRules($configRules)
+    public static function loadConfigRules(ConfigRules $configRules) : ConfigRules
     {
         return $configRules
             ->add("media", self::METHOD_REPLACE);

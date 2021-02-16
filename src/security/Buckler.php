@@ -31,6 +31,7 @@ use phpformsframework\libs\Dir;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\Response;
 use phpformsframework\libs\util\TypesConverter;
+use phpformsframework\libs\dto\ConfigRules;
 
 /**
  * Class Buckler
@@ -48,10 +49,10 @@ class Buckler implements Configurable
 
     /**
      * @access private
-     * @param \phpformsframework\libs\dto\ConfigRules $configRules
-     * @return \phpformsframework\libs\dto\ConfigRules
+     * @param ConfigRules $configRules
+     * @return ConfigRules
      */
-    public static function loadConfigRules($configRules)
+    public static function loadConfigRules(ConfigRules $configRules) : ConfigRules
     {
         return $configRules
             ->add("badpath");

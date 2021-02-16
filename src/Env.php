@@ -114,7 +114,7 @@ class Env implements Configurable
      * @param dto\ConfigRules $configRules
      * @return dto\ConfigRules
      */
-    public static function loadConfigRules($configRules)
+    public static function loadConfigRules(dto\ConfigRules $configRules) : dto\ConfigRules
     {
         return $configRules
             ->add("env", self::METHOD_REPLACE);

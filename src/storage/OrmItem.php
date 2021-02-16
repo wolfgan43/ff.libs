@@ -460,8 +460,12 @@ abstract class OrmItem
             }
 
             $this->{$table}                                                     = array_replace($this->{$table} ?? [], $fields[$table]);
-            $this->oneToOne[$table]->indexes                                    = $this->indexes[$oneToOne->informationSchema->table][0];
-
+            if (!empty($this->{$table}[$oneToOne->primaryKey])) {
+                /**
+                 * Update
+                 */
+                $this->oneToOne[$table]->indexes                                = $this->indexes[$oneToOne->informationSchema->table][0];
+            }
             unset($fields[$table]);
         }
     }

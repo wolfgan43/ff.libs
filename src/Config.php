@@ -595,11 +595,8 @@ class Config implements Dumpable
             foreach ($config["page"] as $page) {
                 $params                                                                 = array();
                 $attr                                                                   = Dir::getXmlAttr($page);
-                $key                                                                    = (
-                    isset($attr["path"])
-                    ? $attr["path"]
-                    : $attr["source"]
-                );
+                $key                                                                    = $attr["path"] ?? $attr["source"];
+
                 if (!$key) {
                     continue;
                 }

@@ -128,7 +128,6 @@ class Response
      * @param int $code
      * @param string|null $msg
      * @return void
-     * @throws Exception
      * @todo da tipizzare
      */
     public static function sendError(int $code = 404, string $msg = null) : void
@@ -151,6 +150,7 @@ class Response
                 } catch (Exception $e) {
                     $status = $e->getCode();
                     $status_message = Error::getErrorMessage($status);
+                    Debug::setBackTrace($e->getTrace());
                     self::httpCode($status);
                     echo '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
 <html><head>

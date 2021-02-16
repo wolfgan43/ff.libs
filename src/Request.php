@@ -77,6 +77,7 @@ class Request implements Configurable, Dumpable
     private static $orig_path_info  = null;
     private static $root_path       = null;
     private static $path_info       = null;
+
     /**
      * @return array
      */
@@ -98,7 +99,7 @@ class Request implements Configurable, Dumpable
      * @param dto\ConfigRules $configRules
      * @return dto\ConfigRules
      */
-    public static function loadConfigRules($configRules)
+    public static function loadConfigRules(dto\ConfigRules $configRules) : dto\ConfigRules
     {
         return $configRules
             ->add("request")
@@ -225,7 +226,10 @@ class Request implements Configurable, Dumpable
         foreach ($config as $key => $page) {
             self::$pages[$key] = null;
             self::loadParams($page, self::$pages[$key]);
-            self::$pages[$key]["config"] = $page["config"];
+            self::$pages[$key]["config"] = $page["config"] ?? [];
+            if (isset($page["events"])) {
+                self::$pages[$key]["events"] = $page["events"];
+            }
         }
     }
 
@@ -284,8 +288,7 @@ class Request implements Configurable, Dumpable
 
     /**
      * @access private
-     * @param $page
-     * @return void
+     * @return RequestPage
      * @throws Exception
      */
     public static function &pageConfiguration() : RequestPage
@@ -514,6 +517,7 @@ class Request implements Configurable, Dumpable
         }
         return null;
     }
+
     /**
      * @throws Exception
      */
@@ -561,10 +565,8 @@ class Request implements Configurable, Dumpable
         if (!$hostname) {
             $hostname = self::hostname();
         }
-        return (isset(self::$gateway[$hostname])
-            ? self::$gateway[$hostname]
-            : $hostname
-        );
+
+        return self::$gateway[$hostname] ?? $hostname;
     }
 
     /**
@@ -573,13 +575,7 @@ class Request implements Configurable, Dumpable
      */
     public static function alias(string $hostname = null): ?string
     {
-        if (!$hostname) {
-            $hostname = self::hostname();
-        }
-        return (isset(self::$alias[$hostname])
-            ? self::$alias[$hostname]
-            : null
-        );
+        return self::$alias[$hostname ?? self::hostname()] ?? null;
     }
 
     /**
@@ -603,10 +599,7 @@ class Request implements Configurable, Dumpable
      */
     public static function hostname(): ?string
     {
-        return (isset($_SERVER["HTTP_HOST"])
-            ? $_SERVER["HTTP_HOST"]
-            : null
-        );
+        return $_SERVER["HTTP_HOST"] ?? null;
     }
 
     /**
@@ -625,10 +618,7 @@ class Request implements Configurable, Dumpable
      */
     public static function pathinfo(): string
     {
-        return (isset($_SERVER["PATH_INFO"])
-            ? $_SERVER["PATH_INFO"]
-            : DIRECTORY_SEPARATOR
-        );
+        return $_SERVER["PATH_INFO"] ?? DIRECTORY_SEPARATOR;
     }
 
     /**
@@ -636,10 +626,7 @@ class Request implements Configurable, Dumpable
      */
     public static function requestURI(): ?string
     {
-        return (isset($_SERVER["REQUEST_URI"])
-            ? $_SERVER["REQUEST_URI"]
-            : null
-        );
+        return $_SERVER["REQUEST_URI"] ?? null;
     }
 
     /**
@@ -683,11 +670,7 @@ class Request implements Configurable, Dumpable
      */
     public static function referer(string $phpurl_part = null, string $key = "referer"): ?string
     {
-        $referer = (
-            isset($_SERVER["HTTP_" . strtoupper($key)])
-            ? $_SERVER["HTTP_" . strtoupper($key)]
-            : null
-        );
+        $referer = $_SERVER["HTTP_" . strtoupper($key)] ?? null;
 
         return ($phpurl_part && $referer
             ? parse_url($referer, $phpurl_part)
@@ -700,10 +683,7 @@ class Request implements Configurable, Dumpable
      */
     public static function userAgent(): ?string
     {
-        return (isset($_SERVER["HTTP_USER_AGENT"])
-            ? $_SERVER["HTTP_USER_AGENT"]
-            : null
-        );
+        return $_SERVER["HTTP_USER_AGENT"] ?? null;
     }
 
     /**
@@ -711,30 +691,21 @@ class Request implements Configurable, Dumpable
      */
     public static function remoteAddr(): ?string
     {
-        return (isset($_SERVER["REMOTE_ADDR"])
-            ? $_SERVER["REMOTE_ADDR"]
-            : null
-        );
+        return $_SERVER["REMOTE_ADDR"] ?? null;
     }
     /**
      * @return string|null
      */
     public static function remotePort(): ?string
     {
-        return (isset($_SERVER["REMOTE_PORT"])
-            ? $_SERVER["REMOTE_PORT"]
-            : null
-        );
+        return $_SERVER["REMOTE_PORT"] ?? null;
     }
     /**
      * @return string|null
      */
     public static function serverAddr(): ?string
     {
-        return (isset($_SERVER["SERVER_ADDR"])
-            ? $_SERVER["SERVER_ADDR"]
-            : null
-        );
+        return $_SERVER["SERVER_ADDR"] ?? null;
     }
 
     /**
@@ -742,10 +713,7 @@ class Request implements Configurable, Dumpable
      */
     public static function serverProtocol(): ?string
     {
-        return (isset($_SERVER["SERVER_PROTOCOL"])
-            ? $_SERVER["SERVER_PROTOCOL"]
-            : null
-        );
+        return $_SERVER["SERVER_PROTOCOL"] ?? null;
     }
     /**
      * @return string|null
@@ -1002,6 +970,9 @@ class Request implements Configurable, Dumpable
             ));
     }
 
+    /**
+     *
+     */
     private static function captureAuthorization() : void
     {
         self::$page->loadAuthorization(self::getAuthorizationHeader());

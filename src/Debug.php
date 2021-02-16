@@ -255,7 +255,6 @@ class Debug
 
     /**
      * @return array
-     * @throws Exception
      */
     private static function dumpInterface() : array
     {
@@ -275,7 +274,8 @@ class Debug
                     }
                 }
             } catch (Exception $e) {
-                Error::register($e->getMessage(), static::ERROR_BUCKET);
+                Response::httpCode(500);
+                die($e->getMessage());
             }
         }
         return $implements;
@@ -379,7 +379,6 @@ class Debug
      * @param string|null $error_message
      * @param bool $return
      * @return string|null
-     * @throws Exception
      */
     public static function dump(string $error_message = null, bool $return = false) : ?string
     {
@@ -401,12 +400,6 @@ class Debug
             ? ''
             : 'display:none;'
         );
-
-        if (isset($debug_backtrace[0]["file"]) && basename($debug_backtrace[0]["file"]) == "Error.php") {
-            unset($debug_backtrace[0]);
-        }
-
-
 
         $dumpable = self::dumpInterface();
         $files_count = 0;

@@ -1,0 +1,25 @@
+<IfModule mod_rewrite.c>
+	RewriteCond %{REQUEST_METHOD} !^(GET|HEAD|OPTIONS|POST|PROPFIND|PUT|DELETE) [NC]
+	RewriteRule .* - [F]
+</IfModule>
+
+# 6G:[QUERY STRINGS]
+<IfModule mod_rewrite.c>
+  RewriteCond %{QUERY_STRING} (eval\() [NC,OR]
+  RewriteCond %{QUERY_STRING} (127\.0\.0\.1) [NC,OR]
+  RewriteCond %{QUERY_STRING} ([a-z0-9]{2000,}) [NC,OR]
+  RewriteCond %{QUERY_STRING} (javascript:)(.*)(;) [NC,OR]
+  RewriteCond %{QUERY_STRING} (base64_encode)(.*)(\() [NC,OR]
+  RewriteCond %{QUERY_STRING} (GLOBALS|REQUEST)(=|\[|%) [NC,OR]
+  RewriteCond %{QUERY_STRING} (<|%3C)(.*)script(.*)(>|%3) [NC,OR]
+  RewriteCond %{QUERY_STRING} (\\|\.\.\.|\.\./|~|`|<|>|\|) [NC,OR]
+  RewriteCond %{QUERY_STRING} (boot\.ini|etc/passwd|self/environ) [NC,OR]
+  RewriteCond %{QUERY_STRING} (thumbs?(_editor|open)?|tim(thumb)?)\.php [NC,OR]
+  RewriteCond %{QUERY_STRING} (\'|\")(.*)(drop|insert|md5|select|union) [NC]
+  RewriteRule .* - [F]
+</IfModule>
+
+# Block Greasy Uploads Scanner (non-WP sites)
+<IfModule mod_alias.c>
+  RedirectMatch 403 ^/uploads/
+</IfModule>

@@ -10,11 +10,7 @@ use Exception;
 class Kernel
 {
     const NAMESPACE                 = null;
-    /**
-     * @var Kernel
-     * @access private
-     */
-    private static $singleton       = null;
+
     private static $use_cache       = true;
     /**
      * @var Constant
@@ -25,14 +21,6 @@ class Kernel
      * @var Debug
      */
     private $Debug                   = null;
-
-    /**
-     * @return Kernel
-     */
-    public static function &load(): ?Kernel
-    {
-        return self::$singleton;
-    }
 
     /**
      * @param bool|null $cache
@@ -64,12 +52,11 @@ class Kernel
     }
     /**
      * Kernel constructor.
-     * @param string $environment
+     * @param string|null $environment
      */
-    public function __construct(string $environment)
+    public function __construct(string $environment = null)
     {
-        self::$singleton            = $this;
-        self::$Environment          = $environment;
+        self::$Environment          = $environment ?? Constant::class;
 
         ini_set('memory_limit', self::$Environment::MEMORY_LIMIT);
 

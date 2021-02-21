@@ -1,0 +1,6 @@
+# Block Greasy Uploads Scanner
+<IfModule mod_rewrite.c>
+  RewriteCond %{HTTP_REFERER} todaperfeita [NC,OR]
+  RewriteCond %{HTTP_REFERER} trikaladay   [NC]
+  RewriteRule (.*) - [F,L]
+</IfModule>

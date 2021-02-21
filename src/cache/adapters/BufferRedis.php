@@ -125,7 +125,7 @@ class BufferRedis extends BufferAdapter
         $bucket = $this->getBucket();
 
         if ($bucket) {
-            $this->conn->delete($bucket);
+            $this->conn->del($bucket);
         } else {
             $this->conn->flushDb();
         }

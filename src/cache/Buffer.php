@@ -36,6 +36,12 @@ class Buffer implements Dumpable
      */
     private static $tid                                 = null;
 
+
+    public static function clear(string $bufferAdapter = null) : void
+    {
+        self::loadAdapter($bufferAdapter ?? Kernel::$Environment::CACHE_BUFFER_ADAPTER, ["", $force ?? Kernel::useCache()])->clear();
+    }
+
     /**
      * @param string $bucket
      * @param bool|null $force
@@ -112,7 +118,7 @@ class Buffer implements Dumpable
             $cache->config                                  = $config;
             $cache->exTime                                  = $exTime;
 
-            self::clear();
+            self::reset();
 
             Log::debugging($cache->request, $cache->bucket, $cache->bucket, $cache->action);
         }
@@ -128,7 +134,7 @@ class Buffer implements Dumpable
 
             $cache->exTime                                  = $exTime;
 
-            self::clear();
+            self::reset();
 
             Log::debugging($cache->request, $cache->bucket, $cache->bucket, $cache->action);
         }
@@ -247,7 +253,7 @@ class Buffer implements Dumpable
         return self::$process[$label];
     }
 
-    private static function clear() : void
+    private static function reset() : void
     {
         self::$pid                                          = null;
     }

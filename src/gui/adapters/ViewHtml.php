@@ -123,11 +123,12 @@ class ViewHtml implements ViewAdapter
 
         $res = $cache->get($tpl_name);
         if (!$res) {
-            $cache_file         = Translator::infoCacheFile();
             $this->cache = [
-                $template_path  => filemtime($template_path),
-                $cache_file     => filemtime($cache_file)
+                $template_path  => filemtime($template_path)
             ];
+            if ($cache_file = Translator::infoCacheFile()) {
+                $this->cache[$cache_file] = filemtime($cache_file);
+            }
 
             $this->DBlocks[$this->root_element] = $this->include($template_path);
 

@@ -151,11 +151,13 @@ class Translator implements Dumpable
     /**
      * @return string
      */
-    public static function infoCacheFile() : string
+    public static function infoCacheFile() : ?string
     {
-        $cache = Buffer::cache(static::CACHE_BUCKET)->getInfo(self::getLang());
-        FilemanagerFs::touch($cache);
-        return $cache;
+        if ($cache_file = Buffer::cache(static::CACHE_BUCKET)->getInfo(self::getLang())) {
+            FilemanagerFs::touch($cache_file);
+        }
+
+        return $cache_file;
     }
 
     /**

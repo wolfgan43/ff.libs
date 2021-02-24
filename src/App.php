@@ -42,31 +42,28 @@ abstract class App implements Dumpable
     const ERROR_BUCKET                                              = 'app';
 
     /**
-     * @var Constant
-     */
-    private static $configuration                                   = null;
-
-    /**
-     * @param string $environment
-     * @return RequestPage
-     * @throws Exception
-     */
-    public static function &construct(string $environment) : RequestPage
-    {
-        self::$configuration                                        = new $environment();
-        self::$configuration->page                                  =& Request::pageConfiguration();
-
-        return self::$configuration->page;
-    }
-
-
-    /**
      * @return Constant
      */
-    public static function &configuration()
+    public static function &configuration() : string
     {
-        return self::$configuration;
+        return Kernel::$Environment;
     }
+
+    /**
+     * @param string|null $path_info
+     * @param array|null $request
+     * @param array|null $headers
+     * @return RequestPage
+     */
+    public static function &page(string $path_info = null, array $request = null, array $headers = null) : RequestPage
+    {
+        if ($path_info) {
+            return Request::load($path_info, $request, $headers);
+        } else {
+            return Kernel::$Page;
+        }
+    }
+
 
     /**
      * @param array|null $userVars
@@ -76,7 +73,7 @@ abstract class App implements Dumpable
     {
         return array(
             "isRunnedAs"    => Router::getRunner(),
-            "Config"        => self::$configuration,
+            "Config"        => self::configuration(),
             "Env"           => Env::getAll(),
             "userVars"      => $userVars,
             "Constant"      => '*protected*'
@@ -115,20 +112,6 @@ abstract class App implements Dumpable
             ? Env::get($name)
             : Env::set($name, $value, $permanent)
         );
-    }
-
-    /**
-     * @return Request
-     */
-    public static function request() : Request
-    {
-        static $request     = null;
-
-        if (!$request) {
-            $request        = new Request();
-        }
-
-        return $request;
     }
 
     /**

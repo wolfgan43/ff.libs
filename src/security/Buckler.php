@@ -150,7 +150,7 @@ class Buckler implements Configurable
         if (function_exists("sys_getloadavg")) {
             $load = sys_getloadavg();
             if ($load[0] > 80) {
-                Response::sendError(503);
+                Response::httpCode(503);
                 Log::emergency(self::SERVER_BUSY);
                 exit;
             }

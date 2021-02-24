@@ -34,13 +34,13 @@ use phpformsframework\libs\Dir;
 use phpformsframework\libs\dto\ConfigRules;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Hook;
-use phpformsframework\libs\Request;
 use phpformsframework\libs\Response;
 use phpformsframework\libs\security\ValidatorFile;
 use phpformsframework\libs\storage\drivers\ImageCanvas;
 use phpformsframework\libs\storage\drivers\ImageThumb;
 use phpformsframework\libs\gui\Resource;
 use Exception;
+use phpformsframework\libs\util\ServerManager;
 use stdClass;
 
 /**
@@ -76,6 +76,8 @@ use stdClass;
  */
 class Media implements Configurable
 {
+    use ServerManager;
+
     protected const ERROR_BUCKET                                            = "storage";
 
     private const RENDER_MEDIA_PATH                                         = DIRECTORY_SEPARATOR . "media";
@@ -277,7 +279,7 @@ class Media implements Configurable
             $arrFile->extension,
             $dirfilename,
             $mode,
-            Request::protocolHost() . $diskfile
+            self::protocolHost() . $diskfile
         );
     }
 

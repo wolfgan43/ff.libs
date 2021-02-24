@@ -3,7 +3,6 @@ namespace phpformsframework\libs\util;
 
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dir;
-use phpformsframework\libs\Request;
 use phpformsframework\libs\Router;
 
 /**
@@ -12,6 +11,7 @@ use phpformsframework\libs\Router;
  */
 trait Debugger
 {
+    use ServerManager;
     /**
      * @return string
      */
@@ -39,7 +39,7 @@ trait Debugger
             $res                                                    = $script == ucfirst($what);
         } else {
             $path                                                   = Dir::findAppPath($what, true);
-            $res                                                    = $path && strpos(Request::pathinfo(), $path) === 0;
+            $res                                                    = $path && strpos(self::pathinfo(), $path) === 0;
         }
         return $res;
     }

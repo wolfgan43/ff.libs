@@ -26,8 +26,8 @@
 namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\Kernel;
-use phpformsframework\libs\Request;
 use phpformsframework\libs\Constant;
+use phpformsframework\libs\util\ServerManager;
 
 /**
  * Class FilemanagerFtp
@@ -35,6 +35,8 @@ use phpformsframework\libs\Constant;
  */
 class FilemanagerFtp
 {
+    use ServerManager;
+
     /**
      * @param string $source
      * @param string $destination
@@ -82,7 +84,7 @@ class FilemanagerFtp
                 $conn_id = @ftp_connect("127.0.0.1");
             }
             if ($conn_id === false) {
-                $conn_id = @ftp_connect(Request::serverAddr());
+                $conn_id = @ftp_connect(self::serverAddr());
             }
 
             if ($conn_id !== false && @ftp_login($conn_id, Constant::FTP_USERNAME, Constant::FTP_USERNAME)) {

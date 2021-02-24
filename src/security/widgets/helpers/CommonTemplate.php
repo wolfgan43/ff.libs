@@ -7,6 +7,7 @@ use phpformsframework\libs\gui\View;
 use phpformsframework\libs\security\User;
 
 use Exception;
+use phpformsframework\libs\util\ServerManager;
 use stdClass;
 
 /**
@@ -15,6 +16,7 @@ use stdClass;
  */
 trait CommonTemplate
 {
+    use ServerManager;
     /**
      * @param View $view
      * @param stdClass $config
@@ -71,7 +73,7 @@ trait CommonTemplate
         if (!empty($config->domain)) {
             $view->parse("SezDomain", false);
         } else {
-            $view->assign("domain_name", $this->request->domain ?? App::request()->hostname());
+            $view->assign("domain_name", $this->request->domain ?? $this->hostname());
             $view->parse("SezDomainHidden", false);
         }
     }

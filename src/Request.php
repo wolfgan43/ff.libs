@@ -26,21 +26,20 @@
 
 namespace phpformsframework\libs;
 
+use Exception;
 use phpformsframework\libs\dto\RequestPage;
 use phpformsframework\libs\international\Locale;
+use phpformsframework\libs\util\ServerManager;
 use phpformsframework\libs\util\TypesConverter;
-use stdClass;
-use Exception;
 
 /**
- * Class Request
+ * Class Page
  * @package phpformsframework\libs
  */
 class Request implements Configurable, Dumpable
 {
     use TypesConverter;
-
-    public const UPLOAD_PARAM_NAME  = "files";
+    use ServerManager;
 
     public const METHOD_GET         = "GET";
     public const METHOD_POST        = "POST";
@@ -54,52 +53,97 @@ class Request implements Configurable, Dumpable
     public const METHOD_TRACE       = "TRACE";
     public const METHOD_OPTIONS     = "OPTIONS";
 
-    private const REQUEST_VALID     = "valid";
-
     private static $params          = null;
     private static $access_control  = null;
     private static $pages           = [];
     private static $alias           = null;
     private static $gateway         = null;
     private static $patterns        = null;
-    private static $server          = null;
     private static $path2params     = null;
 
-    /**
-     * @var RequestPage $page
-     */
-    private static $page            = null;
     /**
      * @var RequestPage[]
      */
     private static $pageLoaded      = [];
 
-    private static $orig_path_info  = null;
-    private static $root_path       = null;
-    private static $path_info       = null;
+    /**
+     * @var RequestPage
+     */
+    private $page                   = null;
+    private $path_info              = null;
+
+    private $orig_path_info         = null;
+    private $root_path              = null;
+
 
     /**
-     * @return array
+     * @return RequestPage
      */
-    public static function dump(): array
+    public static function set(&$page) : self
     {
-        return array(
-            "params"            => self::$params,
-            "access_control"    => self::$access_control,
-            "pages"             => self::$pages,
-            "alias"             => self::$alias,
-            "gateway"           => self::$gateway,
-            "patterns"          => self::$patterns,
-            "path2params"       => self::$path2params,
+        return new static($page);
+    }
+
+    public static function &load(string $path_info, array $request = null, array $headers = null) : RequestPage
+    {
+        if (!isset(self::$pageLoaded[$path_info . self::checkSumArray($request)])) {
+            $page = new RequestPage($path_info, self::$pages, self::$path2params, self::$patterns);
+            $page->loadRequest($request);
+            $page->loadHeaders($headers, true);
+            $page->loadAuthorization($headers["Authorization"] ?? self::getAuthorizationHeader());
+
+            self::$pageLoaded[$path_info] = $page;
+        }
+
+        return self::$pageLoaded[$path_info];
+    }
+
+    /**
+     * @return string|null
+     */
+    private static function getAuthorizationHeader(): ?string
+    {
+        $headers = null;
+        if (isset($_SERVER['HTTP_AUTHORIZATION'])) { //Nginx or fast CGI
+            $headers = trim($_SERVER["HTTP_AUTHORIZATION"]);
+        } elseif (isset($_SERVER['Authorization'])) {
+            $headers = trim($_SERVER["Authorization"]);
+        } elseif (function_exists('apache_request_headers')) {
+            $requestHeaders = apache_request_headers();
+            // Server-side fix for bug in old Android versions (a nice side-effect of this fix means we don't care about capitalization for Authorization)
+            $requestHeaders = array_combine(array_map('ucwords', array_keys($requestHeaders)), array_values($requestHeaders));
+
+            if (isset($requestHeaders['Authorization'])) {
+                $headers = trim($requestHeaders['Authorization']);
+            }
+        }
+        return $headers;
+    }
+
+    /**
+     * @param string|null $method
+     * @param array $exclude
+     * @return string|null
+     */
+    public static function methodValid(string $method, array $exclude = array()) : ?string
+    {
+        return (in_array($method, array_diff([
+            self::METHOD_GET,
+            self::METHOD_POST,
+            self::METHOD_PUT,
+            self::METHOD_PATCH,
+            self::METHOD_DELETE
+        ], $exclude))
+            ? $method
+            : null
         );
     }
 
     /**
-     * @access private
      * @param dto\ConfigRules $configRules
      * @return dto\ConfigRules
      */
-    public static function loadConfigRules(dto\ConfigRules $configRules) : dto\ConfigRules
+    public static function loadConfigRules(dto\ConfigRules $configRules): dto\ConfigRules
     {
         return $configRules
             ->add("request")
@@ -108,7 +152,6 @@ class Request implements Configurable, Dumpable
     }
 
     /**
-     * @access private
      * @param array $config
      */
     public static function loadConfig(array $config)
@@ -123,7 +166,6 @@ class Request implements Configurable, Dumpable
     }
 
     /**
-     * @access private
      * @param array $rawdata
      * @return array
      */
@@ -287,81 +329,93 @@ class Request implements Configurable, Dumpable
     }
 
     /**
-     * @access private
-     * @return RequestPage
-     * @throws Exception
+     * @return array
      */
-    public static function &pageConfiguration() : RequestPage
+    public static function dump(): array
     {
-        self::rewritePathInfo();
-        self::$path_info                    = self::$orig_path_info;
-        self::$pageLoaded[self::$path_info] = new RequestPage(self::$orig_path_info, self::$pages, self::$path2params, self::$patterns);
-        self::$page                         =& self::$pageLoaded[self::$path_info];
-
-        self::capture();
-
-        Log::setRoutine(self::$page->log);
-
-        return self::$page;
+        return array(
+            "params"            => self::$params,
+            "access_control"    => self::$access_control,
+            "pages"             => self::$pages,
+            "alias"             => self::$alias,
+            "gateway"           => self::$gateway,
+            "patterns"          => self::$patterns,
+            "path2params"       => self::$path2params,
+        );
     }
 
     /**
-     *
+     * Page constructor.
+     * @param $page
      */
-    private static function rewritePathInfo()
+    public function __construct(&$page)
     {
-        $hostname                       = self::hostname();
+        $this->path_info                    = $this->rewritePathInfo();
+        self::$pageLoaded[$this->path_info] = new RequestPage($this->orig_path_info, self::$pages, self::$path2params, self::$patterns);
+        $this->page                         =& self::$pageLoaded[$this->path_info];
+
+        Log::setRoutine($this->page->log);
+
+        $page                               = $this->page;
+    }
+
+    /**
+     * @return string
+     */
+    private function rewritePathInfo() : string
+    {
+        $hostname                       = $this->hostname();
         $aliasname                      = (
             $hostname && isset(self::$alias[$hostname])
             ? self::$alias[$hostname]
             : null
         );
-        $requestURI                     = self::requestURI();
+        $requestURI                     = $this->requestURI();
         if ($requestURI) {
-            self::$orig_path_info       = rtrim(explode("?", $requestURI)[0], "/");
+            $this->orig_path_info       = rtrim(explode("?", $requestURI)[0], "/");
             if (Constant::SITE_PATH) {
-                self::$orig_path_info   = str_replace(Constant::SITE_PATH, "", self::$orig_path_info);
+                $this->orig_path_info   = str_replace(Constant::SITE_PATH, "", $this->orig_path_info);
             }
         }
-        if (!self::$orig_path_info) {
-            self::$orig_path_info       = "/";
+        if (!$this->orig_path_info) {
+            $this->orig_path_info       = "/";
         } else {
-            self::$orig_path_info       = str_replace("/index." . Constant::PHP_EXT, "", self::$orig_path_info);
+            $this->orig_path_info       = str_replace("/index." . Constant::PHP_EXT, "", $this->orig_path_info);
         }
 
-        self::$orig_path_info           = Locale::setByPath(self::$orig_path_info);
+        $this->orig_path_info           = Locale::setByPath($this->orig_path_info);
 
         if ($aliasname) {
-            if (strpos(self::$orig_path_info, $aliasname . "/") === 0
-                || self::$orig_path_info == $aliasname
+            if (strpos($this->orig_path_info, $aliasname . "/") === 0
+                || $this->orig_path_info == $aliasname
             ) {
                 $query = (
                     !empty($_GET)
                     ? "?" . http_build_query($_GET)
                     : ""
                 );
-                Response::redirect($hostname . substr(self::$orig_path_info, strlen($aliasname)) . $query);
+                Response::redirect($hostname . substr($this->orig_path_info, strlen($aliasname)) . $query);
             }
 
-            self::$root_path            = $aliasname;
+            $this->root_path            = $aliasname;
         }
 
 
-        $path_info = rtrim(self::$root_path . self::$orig_path_info, "/");
+        $path_info = rtrim($this->root_path . $this->orig_path_info, "/");
         if (!$path_info) {
             $path_info = "/";
         }
 
         $_SERVER["XHR_PATH_INFO"] = null;
-        $_SERVER["ORIG_PATH_INFO"] = self::$orig_path_info;
+        $_SERVER["ORIG_PATH_INFO"] = $this->orig_path_info;
         $_SERVER["PATH_INFO"] = $path_info;
 
 
-        if (self::isAjax()) {
-            $_SERVER["XHR_PATH_INFO"] = rtrim(self::$root_path . self::referer(PHP_URL_PATH), "/");
+        if ($this->isAjax()) {
+            $_SERVER["XHR_PATH_INFO"] = rtrim($this->root_path . $this->referer(PHP_URL_PATH), "/");
         }
 
-        if (!self::isCli() && self::remoteAddr() == self::serverAddr()) {
+        if (!$this->isCli() && $this->remoteAddr() == $this->serverAddr()) {
             if (isset($_POST["pathinfo"])) {
                 $_SERVER["PATH_INFO"] = rtrim($_POST["pathinfo"], "/");
                 if (!$_SERVER["PATH_INFO"]) {
@@ -384,156 +438,23 @@ class Request implements Configurable, Dumpable
             }
         }
 
-        self::$path_info = $path_info;
-    }
-
-    /**
-     * @param bool $toArray
-     * @return stdClass|array
-     * @throws Exception
-     * @todo da tipizzare
-     */
-    public static function headers(bool $toArray = false)
-    {
-        $headers = (
-            self::$page->issetHeaders()
-            ? self::$page->getHeaders()
-            : self::captureHeaders()
-        );
-
-        return ($toArray
-            ? $headers
-            : (object) $headers
-        );
-    }
-
-    /**
-     * @param bool $toArray
-     * @return stdClass|array
-     * @throws Exception
-     * @todo da tipizzare
-     */
-    public static function rawdata(bool $toArray = false)
-    {
-        return ($toArray
-            ? self::body(RequestPage::REQUEST_RAWDATA)
-            : (object) self::body(RequestPage::REQUEST_RAWDATA)
-        );
-    }
-
-    /**
-     * @return array
-     * @throws Exception
-     */
-    public static function valid(): array
-    {
-        return self::body(RequestPage::REQUEST_VALID);
-    }
-
-    /**
-     * @param string $scope
-     * @return stdClass
-     * @throws Exception
-     */
-    public static function getModel(string $scope) : stdClass
-    {
-        return (object) self::body($scope);
-    }
-    /**
-     * @return stdClass
-     * @throws Exception
-     */
-    public static function cookie() : stdClass
-    {
-        return (object) ($_COOKIE ?? []);
-    }
-
-    /**
-     * @return stdClass
-     * @throws Exception
-     */
-    public static function session() : stdClass
-    {
-        return (object) ($_SESSION ?? []);
-    }
-
-    /**
-     * @param bool $with_unknown
-     * @return string
-     * @throws Exception
-     */
-    public static function getQuery(bool $with_unknown = false): string
-    {
-        if (!self::$page->issetRequest()) {
-            self::captureBody();
-        }
-
-        $res = array_filter(
-            $with_unknown
-                ? self::$page->getRequest()
-                : self::$page->getRequestValid()
-        );
-
-        return (empty($res)
-            ? ""
-            : "?" . http_build_query($res)
-        );
-    }
-
-    /**
-     * @return string|null
-     */
-    private static function getAuthorizationHeader(): ?string
-    {
-        $headers = null;
-        if (isset($_SERVER['HTTP_AUTHORIZATION'])) { //Nginx or fast CGI
-            $headers = trim($_SERVER["HTTP_AUTHORIZATION"]);
-        } elseif (isset($_SERVER['Authorization'])) {
-            $headers = trim($_SERVER["Authorization"]);
-        } elseif (function_exists('apache_request_headers')) {
-            $requestHeaders = apache_request_headers();
-            // Server-side fix for bug in old Android versions (a nice side-effect of this fix means we don't care about capitalization for Authorization)
-            $requestHeaders = array_combine(array_map('ucwords', array_keys($requestHeaders)), array_values($requestHeaders));
-
-            if (isset($requestHeaders['Authorization'])) {
-                $headers = trim($requestHeaders['Authorization']);
-            }
-        }
-        return $headers;
-    }
-
-    /**
-     * @return string|null
-     */
-    public static function getBearerToken() : ?string
-    {
-        $headers                                                    = self::getAuthorizationHeader();
-        // HEADER: Get the access token from the header
-        if (!empty($headers) && preg_match('/Bearer\s(\S+)/', $headers, $matches)) {
-            return $matches[1];
-        }
-        if (isset($_SERVER["HTTP_BEARER"])) {
-            return $_SERVER["HTTP_BEARER"];
-        }
-        return null;
+        return $path_info;
     }
 
     /**
      * @throws Exception
      */
-    private static function capture()
+    public function capture()
     {
         $error = error_get_last();
         if ($error) {
-            self::sendError(500, $error["message"]);
+            $this->sendError(500, $error["message"]);
         } else {
-            self::captureServer();
+            $this->security();
 
-            self::security();
-
-            self::captureAuthorization();
-            self::captureHeaders();
-            self::captureBody();
+            $this->captureAuthorization();
+            $this->captureHeaders();
+            $this->captureBody();
 
             unset($_REQUEST);
             unset($_GET);
@@ -542,286 +463,76 @@ class Request implements Configurable, Dumpable
     }
 
     /**
-     * @param string $scope
-     * @param null|string $method
-     * @return array
+     * @param int $status
+     * @param string|null $msg
      * @throws Exception
      */
-    private static function body(string $scope = RequestPage::REQUEST_RAWDATA, string $method = null) : array
+    private function sendError(int $status, string $msg = null) : void
     {
-        return (
-            self::$page->issetRequest()
-            ? self::$page->getRequest($scope)
-            : self::captureBody($scope, $method)
-        );
-    }
-
-    /**
-     * @param string|null $hostname
-     * @return string|null
-     */
-    public static function proxy(string $hostname = null): ?string
-    {
-        if (!$hostname) {
-            $hostname = self::hostname();
-        }
-
-        return self::$gateway[$hostname] ?? $hostname;
-    }
-
-    /**
-     * @param string|null $hostname
-     * @return string|null
-     */
-    public static function alias(string $hostname = null): ?string
-    {
-        return self::$alias[$hostname ?? self::hostname()] ?? null;
+        Response::sendError($status, $msg);
     }
 
     /**
      * @return bool
-     */
-    public static function isHTTPS(): bool
-    {
-        return (isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) === 'on') || self::referer(PHP_URL_SCHEME, "origin") == "https";
-    }
-
-    /**
-     * @return string
-     */
-    public static function protocol(): string
-    {
-        return (self::isHTTPS() ? "https" : "http") . "://";
-    }
-
-    /**
-     * @return string|null
-     */
-    public static function hostname(): ?string
-    {
-        return $_SERVER["HTTP_HOST"] ?? null;
-    }
-
-    /**
-     * @return string|null
-     */
-    public static function protocolHost(): ?string
-    {
-        return (self::hostname()
-            ? self::protocol() . self::hostname()
-            : null
-        );
-    }
-
-    /**
-     * @return string
-     */
-    public static function pathinfo(): string
-    {
-        return $_SERVER["PATH_INFO"] ?? DIRECTORY_SEPARATOR;
-    }
-
-    /**
-     * @return string|null
-     */
-    public static function requestURI(): ?string
-    {
-        return $_SERVER["REQUEST_URI"] ?? null;
-    }
-
-    /**
-     * @return string|null
-     */
-    public static function queryString(): ?string
-    {
-        return (empty($_SERVER["QUERY_STRING"])
-            ? null
-            : $_SERVER["QUERY_STRING"]
-        );
-    }
-
-    /**
-     * @return string
-     */
-    public static function protocolHostPathinfo(): string
-    {
-        return self::protocolHost() . Constant::SITE_PATH . self::pathinfo();
-    }
-
-    /**
-     * @param string|null $phpurl_part
-     * @return string
      * @throws Exception
      */
-    public static function url(string $phpurl_part = null): string
+    private function security() : bool
     {
-        $url = self::protocolHostPathinfo() . self::getQuery(false);
-
-        return ($phpurl_part && $url
-            ? parse_url($url, $phpurl_part)
-            : $url
-        );
-    }
-
-    /**
-     * @param string|null $phpurl_part
-     * @param string $key
-     * @return string|null
-     */
-    public static function referer(string $phpurl_part = null, string $key = "referer"): ?string
-    {
-        $referer = $_SERVER["HTTP_" . strtoupper($key)] ?? null;
-
-        return ($phpurl_part && $referer
-            ? parse_url($referer, $phpurl_part)
-            : $referer
-        );
-    }
-
-    /**
-     * @return string|null
-     */
-    public static function userAgent(): ?string
-    {
-        return $_SERVER["HTTP_USER_AGENT"] ?? null;
-    }
-
-    /**
-     * @return string|null
-     */
-    public static function remoteAddr(): ?string
-    {
-        return $_SERVER["REMOTE_ADDR"] ?? null;
-    }
-    /**
-     * @return string|null
-     */
-    public static function remotePort(): ?string
-    {
-        return $_SERVER["REMOTE_PORT"] ?? null;
-    }
-    /**
-     * @return string|null
-     */
-    public static function serverAddr(): ?string
-    {
-        return $_SERVER["SERVER_ADDR"] ?? null;
-    }
-
-    /**
-     * @return string|null
-     */
-    public static function serverProtocol(): ?string
-    {
-        return $_SERVER["SERVER_PROTOCOL"] ?? null;
-    }
-    /**
-     * @return string|null
-     */
-    public static function rawAccept() : ?string
-    {
-        return (isset($_SERVER["HTTP_ACCEPT"]) && $_SERVER["HTTP_ACCEPT"] != '*/*'
-            ? $_SERVER["HTTP_ACCEPT"]
-            : null
-        );
-    }
-
-    /**
-     * @param bool $toLower
-     * @return string|null
-     */
-    public static function method(bool $toLower = false) : ?string
-    {
-        return (isset($_SERVER["REQUEST_METHOD"])
-            ? ($toLower ? strtolower($_SERVER["REQUEST_METHOD"]) : strtoupper($_SERVER["REQUEST_METHOD"]))
-            : null
-        );
-    }
-
-    /**
-     * @param string|null $method
-     * @param array $exclude
-     * @return string|null
-     */
-    public static function methodValid(string $method, array $exclude = array()) : ?string
-    {
-        return (in_array($method, array_diff([
-                self::METHOD_GET,
-                self::METHOD_POST,
-                self::METHOD_PUT,
-                self::METHOD_PATCH,
-                self::METHOD_DELETE
-            ], $exclude))
-            ? $method
-            : null
-        );
-    }
-
-    /**
-     * @return bool
-     */
-    public static function isAjax() : bool
-    {
-        return isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
-    }
-
-    /**
-     * @return bool
-     */
-    public static function isCli() : bool
-    {
-        return (php_sapi_name() === 'cli');
-    }
-
-    /**
-     *
-     */
-    private static function captureServer()
-    {
-        self::$server = (
-            self::isCli()
-            ? null
-            : $_SERVER
-        );
-    }
-
-    /**
-     * @param string $key
-     * @return string|null
-     */
-    private static function server(string $key) : ?string
-    {
-        return (isset(self::$server[$key])
-            ? self::$server[$key]
-            : null
-        );
-    }
-
-    /**
-     * @param string $origin
-     * @return array|null
-     */
-    private static function getAccessControl(string $origin) : ?array
-    {
-        $access_control                                         = null;
-        if (isset(self::$access_control)) {
-            $key                                                = parse_url($origin, PHP_URL_HOST);
-            if (isset(self::$access_control[$key])) {
-                $access_control                                 = self::$access_control[$key];
-            }
+        if (headers_sent()) {
+            return false;
+        }
+        $origin = $this->referer(null, "origin");
+        if (!$origin) {
+            $origin = $this->referer();
         }
 
-        return $access_control;
+        //todo: remove TRACE request method
+        //todo: remove serverSignature
+        header_remove("X-Powered-By");
+        header("Vary: Accept-Encoding" . ($origin ? ", Origin" : ""));
+
+
+        header('X-Content-Type-Options: nosniff');
+        header('X-XSS-Protection: 1; mode=block');
+        header('Access-Control-Allow-Headers: DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,content-type');
+
+        if ($this->isHTTPS()) {
+            header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
+        }
+
+        switch ($this->requestMethod()) {
+            case self::METHOD_OPTIONS:
+            case self::METHOD_HEAD: //todo: to manage
+                header('Access-Control-Allow-Methods: ' . $this->page->method);
+
+                $this->corsPreflight($origin);
+                exit;
+
+            case self::METHOD_GET:
+            case self::METHOD_POST:
+            case self::METHOD_PUT:
+            case self::METHOD_PATCH:
+            case self::METHOD_DELETE:
+                $this->securityHeaders($origin);
+                break;
+            case self::METHOD_TRACE: //todo: to manage
+            case self::METHOD_CONNECT: //todo: to manage
+            case self::METHOD_PROPFIND: //todo: to manage
+            default:
+                $this->sendError(405);
+        }
+
+        return true;
     }
 
     /**
      * return only the headers and not the content
      * @param string|null $origin
      */
-    private static function corsPreflight(string $origin = null) : void
+    private function corsPreflight(string $origin = null) : void
     {
         if ($origin) {
-            $access_control = self::getAccessControl($origin);
+            $access_control = $this->getAccessControl($origin);
             if ($access_control) {
                 if (isset($access_control["allow-credentials"]) && $access_control["origin"] != "*") {
                     header('Access-Control-Allow-Credentials: true');
@@ -835,12 +546,12 @@ class Request implements Configurable, Dumpable
                 }
                 header('Access-Control-Max-Age: ' . (
                     isset($access_control["max-age"])
-                    ? $access_control["max-age"]
-                    : 3600
-                ));
+                        ? $access_control["max-age"]
+                        : 3600
+                    ));
                 header("Content-Type: text/plain");
             } elseif (!isset(self::$access_control)) {
-                self::corsFree($origin);
+                $this->corsFree($origin);
             }
         }
     }
@@ -848,9 +559,9 @@ class Request implements Configurable, Dumpable
     /**
      * @param string $origin
      */
-    private static function corsFree(string $origin) : void
+    private function corsFree(string $origin) : void
     {
-        if (strpos($origin, self::protocol()) !== 0) {
+        if (strpos($origin, $this->protocol()) !== 0) {
             $origin = "*";
         }
 
@@ -866,82 +577,130 @@ class Request implements Configurable, Dumpable
     }
 
     /**
-     * @return bool
-     * @throws Exception
+     * @param string $origin
+     * @return array|null
      */
-    private static function security() : bool
+    private function getAccessControl(string $origin) : ?array
     {
-        if (headers_sent()) {
-            return false;
-        }
-        $origin = self::referer(null, "origin");
-        if (!$origin) {
-            $origin = self::referer();
-        }
-
-        //todo: remove TRACE request method
-        //todo: remove serverSignature
-        header_remove("X-Powered-By");
-        header("Vary: Accept-Encoding" . ($origin ? ", Origin" : ""));
-
-
-        header('X-Content-Type-Options: nosniff');
-        header('X-XSS-Protection: 1; mode=block');
-        header('Access-Control-Allow-Headers: DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,content-type');
-
-        if (self::isHTTPS()) {
-            header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
+        $access_control                                         = null;
+        if (isset(self::$access_control)) {
+            $key                                                = parse_url($origin, PHP_URL_HOST);
+            if (isset(self::$access_control[$key])) {
+                $access_control                                 = self::$access_control[$key];
+            }
         }
 
-        switch (self::method()) {
-            case self::METHOD_OPTIONS:
-            case self::METHOD_HEAD: //todo: to manage
-                header('Access-Control-Allow-Methods: ' . self::$page->method);
-
-                self::corsPreflight($origin);
-                exit;
-
-            case self::METHOD_GET:
-            case self::METHOD_POST:
-            case self::METHOD_PUT:
-            case self::METHOD_PATCH:
-            case self::METHOD_DELETE:
-                self::securityHeaders($origin);
-                break;
-            case self::METHOD_TRACE: //todo: to manage
-            case self::METHOD_CONNECT: //todo: to manage
-            case self::METHOD_PROPFIND: //todo: to manage
-            default:
-                self::sendError(405);
-        }
-
-        return true;
+        return $access_control;
     }
 
     /**
      * @param string|null $origin
      * @throws Exception
      */
-    private static function securityHeaders(string $origin = null) : void
+    private function securityHeaders(string $origin = null) : void
     {
-        header('Access-Control-Allow-Methods: ' . self::$page->method . ',' . self::METHOD_OPTIONS . ',' . self::METHOD_HEAD);
+        header('Access-Control-Allow-Methods: ' . $this->page->method . ',' . self::METHOD_OPTIONS . ',' . self::METHOD_HEAD);
 
-        self::corsPreflight($origin);
+        $this->corsPreflight($origin);
 
 
-        self::verifyInvalidRequest();
+        $this->verifyInvalidRequest();
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function verifyInvalidRequest()
+    {
+        $error                                                                                  = $this->verifyInvalidHTTPS();
+        if (!$error && $this->requestMethod() != $this->page->method) {
+            $error                                                                              = "Request Method Must Be " . $this->page->method
+                . (
+                    $this->page->https && $this->referer(PHP_URL_HOST) == $this->hostname()
+                    ? " (Redirect Https may Change Request Method)"
+                    : ""
+                );
+        }
+
+        if ($error) {
+            $this->sendError(405, $error);
+        }
+    }
+
+    /**
+     * @return string|null
+     */
+    private function verifyInvalidHTTPS() : ?string
+    {
+        return ($this->page->https && !isset($_SERVER["HTTPS"])
+            ? "Request Method Must Be In HTTPS"
+            : null
+        );
+    }
+
+    /**
+     *
+     */
+    private function captureAuthorization() : void
+    {
+        $this->page->loadAuthorization($this->getAuthorizationHeader());
+    }
+
+    /**
+     * @return array
+     * @throws Exception
+     */
+    private function captureHeaders() : array
+    {
+        if ($this->page->loadHeaders($_SERVER)) {
+            $this->sendError($this->page->status, $this->page->error);
+        }
+
+        return $this->page->getHeaders();
+    }
+
+    /**
+     * @param null|string $scope
+     * @param null|string $method
+     * @return null|array
+     * @throws Exception
+     */
+    private function captureBody(string $scope = null, string $method = null) : ?array
+    {
+        if (!$method) {
+            $method                                                                             = $this->getRequestMethod();
+        }
+
+        $request                                                                                = $this->getReq($method);
+
+        if ($this->page->loadRequestFile() || $this->page->loadRequest($request)) {
+            $this->sendError($this->page->status, $this->page->error);
+        }
+
+        return ($scope
+            ? $this->page->getRequest($scope)
+            : null
+        );
+    }
+
+    /**
+     * @return string|null
+     */
+    private function getRequestMethod() : ?string
+    {
+        return $this->page->method;
     }
 
     /**
      * @param string|null $method
      * @return array
      */
-    private static function getReq(string $method = null) : array
+    private function getReq(string $method = null) : array
     {
         switch ($method) {
             case self::METHOD_POST:
                 $req                                                                            = (
-                    self::isFormData()
+                    $this->isFormData()
                     ? $_POST
                     : json_decode(file_get_contents('php://input'), true)
                 );
@@ -955,167 +714,18 @@ class Request implements Configurable, Dumpable
             default:
                 $req                                                                            = $_REQUEST;
         }
-        return array_filter((array)$req);
+        return (array) $req;
     }
 
     /**
      * @return bool
      */
-    private static function isFormData() : bool
+    private function isFormData() : bool
     {
         return (isset($_SERVER["CONTENT_TYPE"])
             && (
                 stripos($_SERVER["CONTENT_TYPE"], "/x-www-form-urlencoded") !== false
                 || stripos($_SERVER["CONTENT_TYPE"], "/form-data") !== false
             ));
-    }
-
-    /**
-     *
-     */
-    private static function captureAuthorization() : void
-    {
-        self::$page->loadAuthorization(self::getAuthorizationHeader());
-    }
-
-    /**
-     * @return array
-     * @throws Exception
-     */
-    private static function captureHeaders() : array
-    {
-        if (self::$page->loadHeaders($_SERVER)) {
-            self::sendError(self::$page->status, self::$page->error);
-        }
-
-        return self::$page->getHeaders();
-    }
-
-    /**
-     * @return string|null
-     */
-    private static function getRequestMethod() : ?string
-    {
-        return self::$page->method;
-    }
-
-    /**
-     * @param null|string $scope
-     * @param null|string $method
-     * @return null|array
-     * @throws Exception
-     */
-    private static function captureBody(string $scope = null, string $method = null) : ?array
-    {
-        if (!$method) {
-            $method                                                                             = self::getRequestMethod();
-        }
-
-        $request                                                                                = self::getReq($method);
-
-        if (self::$page->loadRequestFile() || self::$page->loadRequest($request)) {
-            self::sendError(self::$page->status, self::$page->error);
-        }
-
-
-        return ($scope
-            ? self::$page->getRequest($scope)
-            : null
-        );
-    }
-
-    /**
-     * @param string $path_info
-     * @param array|null $request
-     * @param array|null $headers
-     * @return RequestPage
-     */
-    public static function &getPage(string $path_info, array $request = null, array $headers = null) : RequestPage
-    {
-        self::$path_info                                                                        = $path_info;
-        self::$page                                                                             =& self::loadApp($path_info, $request, $headers);
-
-        return self::$page;
-    }
-
-    private static function &loadApp(string $path_info, array $request = null, array $headers = null) : RequestPage
-    {
-        if (!isset(self::$pageLoaded[$path_info . self::checkSumArray($request)])) {
-            $page = new RequestPage($path_info, self::$pages, self::$path2params, self::$patterns);
-            $page->loadRequest($request);
-            $page->loadHeaders($headers, true);
-            $page->loadAuthorization($headers["Authorization"] ?? self::getAuthorizationHeader());
-
-            self::$pageLoaded[$path_info] = $page;
-        }
-
-        return self::$pageLoaded[$path_info];
-    }
-
-    /**
-     * @return string|null
-     */
-    private static function verifyInvalidHTTPS() : ?string
-    {
-        return (self::$page->https && !isset($_SERVER["HTTPS"])
-            ? "Request Method Must Be In HTTPS"
-            : null
-        );
-    }
-
-    /**
-     * @throws Exception
-     */
-    private static function verifyInvalidRequest()
-    {
-        $error                                                                                  = self::verifyInvalidHTTPS();
-        if (!$error && self::method() != self::$page->method) {
-            $error                                                                              = "Request Method Must Be " . self::$page->method
-                                                                                                    . (
-                                                                                                        self::$page->https && self::referer(PHP_URL_HOST) == self::hostname()
-                                                                                                        ? " (Redirect Https may Change Request Method)"
-                                                                                                        : ""
-                                                                                                    );
-        }
-
-        if ($error) {
-            self::sendError(405, $error);
-        }
-    }
-
-    /**
-     * @param int $status
-     * @param string|null $msg
-     * @throws Exception
-     */
-    private static function sendError(int $status, string $msg = null) : void
-    {
-        Response::sendError($status, $msg);
-    }
-
-    /**
-     * @return string
-     */
-    private static function pageAccept() : string
-    {
-        if (self::isCli()) {
-            return "php/cli";
-        }
-
-        return (self::isAjax() && self::$page->accept == "*/*"
-            ? "application/json"
-            : self::$page->accept
-        );
-    }
-    /**
-     * @return string
-     */
-    public static function accept() : string
-    {
-        $accept = self::rawAccept();
-        return ($accept
-            ? explode(",", $accept)[0]
-            : self::pageAccept()
-        );
     }
 }

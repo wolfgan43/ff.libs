@@ -5,7 +5,7 @@ use Exception;
 use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\Hook;
 use phpformsframework\libs\Kernel;
-use phpformsframework\libs\Request;
+use phpformsframework\libs\util\ServerManager;
 
 /**
  * Class Session
@@ -13,6 +13,8 @@ use phpformsframework\libs\Request;
  */
 class Session
 {
+    use ServerManager;
+
     private const ERROR_SESSION_INVALID                         = "Invalid Session";
     private const ERROR_SESSION_PATH_NOT_WRITABLE               = "Session path not writable or header already sent";
 
@@ -272,7 +274,7 @@ class Session
             : $sessionCookie->lifetime
         );
 
-        setcookie($name, $value, $lifetime, $sessionCookie->path, $sessionCookie->domain, Request::isHTTPS(), true);
+        setcookie($name, $value, $lifetime, $sessionCookie->path, $sessionCookie->domain, $this->isHTTPS(), true);
         $_COOKIE[$name]                                         = $value;
     }
 
@@ -281,11 +283,11 @@ class Session
      */
     private function cookieDestroy(string $name) : void
     {
-        $secure                                                 = Request::isHTTPS();
+        $secure                                                 = $this->isHTTPS();
         $sessionCookie                                          = (object) session_get_cookie_params();
 
         setcookie($name, false, $sessionCookie->lifetime, $sessionCookie->path, $sessionCookie->domain, $secure, true);
-        setcookie($name, false, $sessionCookie->lifetime, $sessionCookie->path, Request::hostname(), $secure, true);
+        setcookie($name, false, $sessionCookie->lifetime, $sessionCookie->path, $this->hostname(), $secure, true);
         setcookie($name, false, $sessionCookie->lifetime, $sessionCookie->path, '.' . $this->getPrimaryDomain(), $secure, true);
 
         unset($_COOKIE[$name]);
@@ -297,10 +299,10 @@ class Session
     private function getPrimaryDomain() : ?string
     {
         $regs                                               = array();
-        if (preg_match('/(?P<domain>[a-z0-9][a-z0-9\-]{1,63}\.[a-z.]{2,6})$/i', Request::hostname(), $regs)) {
+        if (preg_match('/(?P<domain>[a-z0-9][a-z0-9\-]{1,63}\.[a-z.]{2,6})$/i', $this->hostname(), $regs)) {
             $domain_name                                    = $regs['domain'];
         } else {
-            $domain_name                                    = Request::hostname();
+            $domain_name                                    = $this->hostname();
         }
 
         return $domain_name;

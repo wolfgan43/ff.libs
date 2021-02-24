@@ -40,7 +40,7 @@ use stdClass;
  */
 class Validator
 {
-    public const REQUEST_UPLOAD_PARAM_NAME                  = Request::UPLOAD_PARAM_NAME;
+    public const REQUEST_UPLOAD_PARAM_NAME                  = "files";
     private const ERROR_NO_BASE64                           = ' is not a valid base64.';
 
     private const MEMORY_LIMIT_REQUEST                      = 11;

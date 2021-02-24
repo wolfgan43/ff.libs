@@ -1,6 +1,7 @@
 <?php
 namespace phpformsframework\libs\microservice\adapters;
 
+use hcore\util\ServerManager;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\storage\FilemanagerWeb;
 use stdClass;
@@ -12,6 +13,8 @@ use Exception;
  */
 class ApiJsonWsp extends ApiAdapter
 {
+    use ServerManager;
+
     protected const ERROR_RESPONSE_INVALID_FORMAT = "Response is not a valid Json";
 
     protected $method                           = Request::METHOD_POST;
@@ -43,7 +46,7 @@ class ApiJsonWsp extends ApiAdapter
     {
         parent::__construct($url, $username, $secret);
 
-        $this->user_agent                       = Request::userAgent();
+        $this->user_agent                       = $this->userAgent();
     }
 
     /**

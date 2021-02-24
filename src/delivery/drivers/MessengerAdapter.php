@@ -27,7 +27,7 @@ namespace phpformsframework\libs\delivery\drivers;
 
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
-use phpformsframework\libs\Request;
+use phpformsframework\libs\util\ServerManager;
 use Exception;
 
 /**
@@ -36,6 +36,8 @@ use Exception;
  */
 abstract class MessengerAdapter
 {
+    use ServerManager;
+
     const ERROR_BUCKET                                      = "messenger";
     const PREFIX                                            = null;
     protected $appname                                      = null;
@@ -83,7 +85,7 @@ abstract class MessengerAdapter
         return substr((
             $this->appname
             ? $this->appname
-            : str_replace(" ", "", ucwords(str_replace(array(".", "-"), " ", Request::hostname())))
+            : str_replace(" ", "", ucwords(str_replace(array(".", "-"), " ", $this->hostname())))
         ), 0, 11);
     }
 }

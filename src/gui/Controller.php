@@ -96,7 +96,9 @@ abstract class Controller
      */
     public static function resources(array $config = null) : array
     {
-        return (new static($config))->adapter->toArray();
+        $controller = new static($config);
+
+        return $controller->adapter->toArray($controller->displayView());
     }
 
     /**
@@ -125,7 +127,7 @@ abstract class Controller
      */
     public function __construct(array $config = null)
     {
-        $page                                   = App::configuration()->page;
+        $page                                   = Kernel::$Page;
 
         $this->class_name                       = str_replace(self::ERROR_BUCKET, "", strtolower($this->getClassName()));
         $this->method                           = $page->method;

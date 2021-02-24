@@ -29,10 +29,10 @@ use Exception;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Error;
 use phpformsframework\libs\Kernel;
-use phpformsframework\libs\Request;
 use phpformsframework\libs\storage\FilemanagerScan;
 use phpformsframework\libs\gui\View;
 use phpformsframework\libs\util\Normalize;
+use phpformsframework\libs\util\ServerManager;
 
 /**
  * Class MailerTemplate
@@ -40,6 +40,8 @@ use phpformsframework\libs\util\Normalize;
  */
 final class MailerTemplate extends Mailer
 {
+    use ServerManager;
+
     //body
     private $fields                                         = array();
 
@@ -384,7 +386,7 @@ final class MailerTemplate extends Mailer
             case "link":
                 $link = $value;
                 if (strpos($value, "http") === 0) {
-                    $link = Request::protocolHost() . substr($link, 4);
+                    $link = $this->protocolHost() . substr($link, 4);
                 }
 
                 $res = $this->link2TagA($link, $value);

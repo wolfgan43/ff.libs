@@ -15,7 +15,7 @@ trait SecureManager
      */
     private static function aclVerify()
     {
-        if (($page_acl = User::configuration()->page->acl)  && ($user = self::getUser())) {
+        if (($page_acl = User::page()->acl)  && ($user = self::getUser())) {
             $user_acl   = explode(",", $user->acl);
             $acls       = explode(",", $page_acl);
 

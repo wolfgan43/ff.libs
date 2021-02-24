@@ -29,6 +29,7 @@ use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\delivery\Notice;
 use phpformsframework\libs\gui\Resource;
 use phpformsframework\libs\storage\FilemanagerFs;
+use phpformsframework\libs\util\ServerManager;
 use ReflectionClass;
 use Exception;
 
@@ -38,6 +39,8 @@ use Exception;
  */
 class Debug
 {
+    use ServerManager;
+
     const ERROR_BUCKET                      = "exception";
 
     private const MAX_PAD                   = 40;
@@ -388,7 +391,7 @@ class Debug
             return null;
         }
 
-        if (Request::isCli() || Request::accept() != "text/html") {
+        if (self::isCli()) {
             echo self::dumpCommandLine($error_message);
             exit;
         }
@@ -396,7 +399,7 @@ class Debug
         $html_dumpable                      = "";
         $debug_backtrace                    = self::getBacktrace();
         $collapse = (
-            Request::isAjax() && Request::method() != "GET"
+            self::isAjax() && self::requestMethod() != Request::METHOD_GET
             ? ''
             : 'display:none;'
         );
@@ -578,6 +581,37 @@ class Debug
         max-width: 50vw;
     }
     </style>';
+
+    $js = '<script type="text/javascript">' . "
+    (function () {
+        'use strict';
+        
+        const threshold = 160;
+    
+        const main = () => {
+            const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+            const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+            const orientation = widthThreshold ? 'vertical' : 'horizontal';
+    
+            if (
+                !(heightThreshold && widthThreshold) &&
+                ((window.Firebug && window.Firebug.chrome && window.Firebug.chrome.isInitialized) || widthThreshold || heightThreshold)
+            ) {
+                if(document.getElementsByClassName('x-debugger')[0].style.display != 'block') {
+                    document.getElementsByClassName('x-debugger')[0].style.display = 'block';
+                }
+            } else {
+                if(document.getElementsByClassName('x-debugger')[0].style.display != 'none') {
+                    document.getElementsByClassName('x-debugger')[0].style.display = 'none';
+                }
+            }
+        };
+    
+        main();
+        setInterval(main, 500);
+    })();
+</script>";
+
         $html .= '<div class="x-debugger">';
         $html .= '<div class="head" onclick=" if(document.getElementsByClassName(\'x-debugger\')[0].className.indexOf(\' active\') === -1) { document.getElementsByClassName(\'x-debugger\')[0].className = document.getElementsByClassName(\'x-debugger\')[0].className + \' active\'; } else { document.getElementsByClassName(\'x-debugger\')[0].className = document.getElementsByClassName(\'x-debugger\')[0].className.replace(\' active\', \'\'); } ">';
         $html .= (
@@ -634,7 +668,7 @@ class Debug
         $html   .= '</table>';
         $html   .= '</div></div>';
 
-        $html = str_replace("{debug_extime}", self::numberFormat(self::stopWatch("debugger")), $html);
+        $html = str_replace("{debug_extime}", self::numberFormat(self::stopWatch("debugger")), $html) . $js;
 
         if ($return) {
             return $html;

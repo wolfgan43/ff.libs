@@ -143,7 +143,10 @@ abstract class BufferAdapter implements Dumpable
             Debug::stopWatch("Cache" . DIRECTORY_SEPARATOR . $this->bucket . DIRECTORY_SEPARATOR . $name);
         }
 
-        return $res;
+        return (empty($res)
+            ? null
+            : $res
+        );
     }
 
     /**

@@ -3,8 +3,11 @@ namespace phpformsframework\libs\dto;
 
 use phpformsframework\libs\Mappable;
 use phpformsframework\libs\Request;
+use phpformsframework\libs\Response;
+use phpformsframework\libs\security\User;
 use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\security\ValidatorFile;
+use phpformsframework\libs\util\ServerManager;
 use phpformsframework\libs\util\TypesConverter;
 use stdClass;
 
@@ -16,10 +19,11 @@ class RequestPage extends Mappable
 {
     use TypesConverter;
     use Exceptionable { error as private setErrorDefault; }
-
-    private const NAMESPACE_MAP_REQUEST     = '\\dto\\Request';
+    use ServerManager;
 
     private const ERROR_IS_REQUIRED         = " is required";
+
+    private const ACCESS_PRIVATE            = "private";
 
     public const REQUEST_RAWDATA            = "rawdata";
     public const REQUEST_VALID              = "valid";
@@ -44,8 +48,10 @@ class RequestPage extends Mappable
 
     public $isAjax                          = null;     //gestito in self (impostato nel costruttore)
     public $layout                          = null;     //non gestito
-    public $access                          = null;     //gestito in api
-    public $vpn                             = null;     //non gestito
+    public $access                          = null;     //gestito in self && api
+    public $vpn                             = null;     //gestito in self
+
+    public $onLoad                          = null;     //gestito in self
 
     /**
      * @var RequestPageRules $rules
@@ -61,6 +67,7 @@ class RequestPage extends Mappable
 
     private $su                             = [];
 
+    private $rawdata                        = [];
     /**
      * RequestPage constructor.
      * @param string $path_info
@@ -72,12 +79,28 @@ class RequestPage extends Mappable
     {
         parent::__construct($this->setRules($this->findEnvByPathInfo($path_info, $path2params), $pages, $patterns));
 
-        $this->isAjax               = Request::isAjax();
+        $this->isAjax               = self::isAjax();
         $this->method               = (
             $this->method
             ? strtoupper($this->method)
-            : Request::method()
+            : self::requestMethod()
         );
+    }
+
+    public function onLoad() : void
+    {
+        //@todo da spostare la logica nel router. Aggiungere maintenance come tipo di access.
+        if ($this->vpn && $this->vpn != $this->remoteAddr()) {
+            Response::sendError(401, "Access denied for ip: " . $this->remoteAddr());
+        }
+
+        if ($this->access == self::ACCESS_PRIVATE && !User::isLogged()) {
+            Response::sendError(401, "Access denied");
+        }
+
+        if (is_callable($this->onLoad)) {
+            ($this->onLoad)();
+        }
     }
 
     /**
@@ -103,6 +126,7 @@ class RequestPage extends Mappable
                         : $path_info
                     );
                 }
+
                 $rules->set($pages[$path_info]);
             }
         } while ($path_info != DIRECTORY_SEPARATOR && $path_info = dirname($path_info));
@@ -227,6 +251,11 @@ class RequestPage extends Mappable
         return (!empty($this->body));
     }
 
+    public function getRawData() : array
+    {
+        return $this->rawdata;
+    }
+
     /**
      * @param string $scope
      * @return array
@@ -237,19 +266,22 @@ class RequestPage extends Mappable
     }
 
     /**
-     * @param string $namespace
-     * @param string $method
      * @return object
      */
-    public function mapRequest(string $namespace, string $method) : object
+    public function mapRequest() : object
     {
-        $mapRequest = $this->map ?? $namespace . self::NAMESPACE_MAP_REQUEST . ucfirst($method);
-        if ($mapRequest != stdClass::class && class_exists($mapRequest)) {
+        $mapRequest = $this->map ?? stdClass::class;
+        if (is_subclass_of($mapRequest, Dto::class)) {
+            $obj = new $mapRequest($this);
+        } elseif ($mapRequest == stdClass::class || !class_exists($mapRequest)) {
+            //@todo da sistemare una volta propagata l'extend del dto
+            //$obj = new Dto($this, true);
+            $obj = (object)$this->getRequest();
+        } else {
             $obj = new $mapRequest();
             $this->autoMapping($this->getRequest(), $obj);
-        } else {
-            $obj = (object) $this->getRequest();
         }
+
         return $obj;
     }
 
@@ -329,6 +361,8 @@ class RequestPage extends Mappable
      */
     public function loadRequest(array $request = null) : bool
     {
+        $this->rawdata = $request;
+
         return (is_array($request)
             ? $this->securityParams($this->path2params + $this->file2params + $request, $this->method)
             : false
@@ -362,7 +396,7 @@ class RequestPage extends Mappable
                     }
 
                     $this->setHeader($header_key);
-                    if (isset($rule->required) && $rule->required === true && !isset($headers[$header_name])) {
+                    if (isset($rule->required) && $rule->required === true && (!isset($headers[$header_name]) || $headers[$header_name] === "")) {
                         $errors[400][]                                                      = $rule->name . self::ERROR_IS_REQUIRED;
                     } elseif (isset($rule->required_ifnot) && !isset($headers["HTTP_" . strtoupper($rule->required_ifnot)]) && !isset($headers[$header_name])) {
                         $errors[400][]                                                      = $rule->name . self::ERROR_IS_REQUIRED;
@@ -404,7 +438,7 @@ class RequestPage extends Mappable
                 $this->body[self::REQUEST_VALID]                                            = [];
                 foreach ($this->rules->$bucket as $key => $rule) {
                     $rule                                                                   = (object) $rule; //@todo necessario per design pattern
-                    if (isset($rule->required) && $rule->required === true && !isset($request[$key])) {
+                    if (isset($rule->required) && $rule->required === true && (!isset($request[$key]) || $request[$key] === "")) {
                         $errors[400][]                                                      = $key . self::ERROR_IS_REQUIRED;
                     } elseif (isset($rule->required_ifnot) && !isset($_SERVER[$rule->required_ifnot]) && !isset($request[$key])) {
                         $errors[400][]                                                      = $key . self::ERROR_IS_REQUIRED;
@@ -575,5 +609,31 @@ class RequestPage extends Mappable
             }
         }
         return $headers;
+    }
+
+    /**
+     * @return string
+     */
+    private function pageAccept() : string
+    {
+        if ($this->isCli()) {
+            return "php/cli";
+        }
+
+        return ($this->isAjax() && $this->accept == "*/*"
+            ? "application/json"
+            : $this->accept
+        );
+    }
+    /**
+     * @return string
+     */
+    public function accept() : string
+    {
+        $accept = $this->rawAccept();
+        return ($accept
+            ? explode(",", $accept)[0]
+            : $this->pageAccept()
+        );
     }
 }

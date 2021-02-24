@@ -19,7 +19,8 @@
         "layouts",
         "email",
         "assets",
-        "widgets"
+        "widgets",
+        "node_modules"
       ]
     },
     "css": {

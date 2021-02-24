@@ -8,7 +8,6 @@ use phpformsframework\libs\Dir;
 use phpformsframework\libs\dto\ConfigRules;
 use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Error;
-use phpformsframework\libs\Request;
 use phpformsframework\libs\storage\dto\OrmResults;
 use stdClass;
 
@@ -211,17 +210,6 @@ class Model implements Configurable, Dumpable
     public function readByMock() : OrmResults
     {
         return new OrmResults(array($this->schema->fake), 1, null, null, null, $this->schema->mapclass);
-    }
-
-    /**
-     * @return array
-     * @throws Exception
-     * @todo da eliminare una volta dismesso auth
-     */
-    public function readByRequest() : array
-    {
-        $request = Request::rawdata(true);
-        return $this->fill($this->schema->insert, $request);
     }
 
     /**

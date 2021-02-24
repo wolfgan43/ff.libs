@@ -6,8 +6,8 @@ use phpformsframework\libs\Dir;
 use phpformsframework\libs\dto\ConfigRules;
 use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Kernel;
-use phpformsframework\libs\Request;
 use phpformsframework\libs\util\Normalize;
+use phpformsframework\libs\util\ServerManager;
 
 /**
  * Class Gateway
@@ -15,6 +15,8 @@ use phpformsframework\libs\util\Normalize;
  */
 class Gateway implements Configurable, Dumpable
 {
+    use ServerManager;
+
     private static $clients                                 = [];
     /**
      * @access private
@@ -125,7 +127,7 @@ class Gateway implements Configurable, Dumpable
         $discover["scopes_require_client"]      = implode(",", $scopes_require_client);
         $discover["scopes_require_user"]        = implode(",", $scopes_require_user);
         $discover["grant_types"]                = implode(",", $grant_types);
-        $discover["secret_uri"]                 = Request::protocolHost() . "/api/secreturi";
+        $discover["secret_uri"]                 = $this->protocolHost() . "/api/secreturi";
         $discover["site_url"]                   = null;
         $discover["redirect_uri"]               = null;
         $discover["privacy_url"]                = null;

@@ -38,7 +38,7 @@
 
                         <div class="form-group">
                             <label>{_Email}</label>
-                            <input class="form-control" name="username" value="{email_conferma}" type="email" required="" placeholder="{_Email}" {email_attr}>
+                            <input class="form-control" name="email" value="{email_confirm}" type="email" required="" placeholder="{_Email}" {email_attr}>
                         </div>
 
                         <div class="form-group d-none verify-code">
@@ -57,7 +57,8 @@
                 </div> <!-- end card-body -->
                 <div class="card-footer">
                     <div class="col-12 text-center mt-2">
-                        <span>{_Check your Junk Mail folder if yuou don't find our mail. If you need help contact us: } <a href='{help_mail}'>{help_mail}</a></span>
+                        <span>{_Check your Junk Mail folder if yuou don't find our mail. If you need help contact us: }<a href='mailto:{help_mail}'>{help_mail}</a>
+                        </span>
                     </div>
                 </div>
             </div>

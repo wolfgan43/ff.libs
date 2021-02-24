@@ -28,6 +28,7 @@ namespace phpformsframework\libs;
 use phpformsframework\libs\security\SecureManager;
 use phpformsframework\libs\storage\FilemanagerFs;
 use Exception;
+use phpformsframework\libs\util\ServerManager;
 
 /**
  * Class Log
@@ -36,6 +37,7 @@ use Exception;
 class Log
 {
     use SecureManager;
+    use ServerManager;
 
     public const CLASS_SEP                                      = "->";
 
@@ -736,13 +738,13 @@ class Log
                 Response::httpCode($status),
                 self::$current_size,
                 implode(",", self::$current_tags),
-                Request::remoteAddr(),
-                Request::remotePort(),
-                Request::referer(),
-                (Request::isAjax() ? "ajax" : ""),
-                Request::pathinfo(),
-                Request::method(),
-                Request::serverProtocol()
+                self::remoteAddr(),
+                self::remotePort(),
+                self::referer(),
+                (self::isAjax() ? "ajax" : ""),
+                self::pathinfo(),
+                self::requestMethod(),
+                self::serverProtocol()
             ],
             $content
         );

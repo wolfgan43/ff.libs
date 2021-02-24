@@ -26,6 +26,7 @@
 
 namespace phpformsframework\libs;
 
+use phpformsframework\libs\util\ServerManager;
 use phpformsframework\libs\util\TypesConverter;
 use Exception;
 
@@ -36,6 +37,7 @@ use Exception;
 class Router implements Configurable, Dumpable
 {
     use TypesConverter;
+    use ServerManager;
 
     const PRIORITY_TOP 			                            = 0;
     const PRIORITY_VERY_HIGH	                            = 1;
@@ -182,7 +184,7 @@ class Router implements Configurable, Dumpable
                 }
             }
         } else {
-            self::runWebRoot(Request::pathinfo());
+            self::runWebRoot(self::pathinfo());
         }
 
         Response::sendError(404);
@@ -282,7 +284,7 @@ class Router implements Configurable, Dumpable
          * Anti injection, prevent error fs
          */
         if (!Autoloader::loadScript($script)) {
-            Error::run(Request::pathinfo());
+            Error::run(self::pathinfo());
         }
         exit;
     }

@@ -25,7 +25,7 @@
  */
 namespace phpformsframework\libs\security;
 
-use phpformsframework\libs\Request;
+use phpformsframework\libs\util\ServerManager;
 
 /**
  * Class Discover
@@ -33,6 +33,8 @@ use phpformsframework\libs\Request;
  */
 class Discover
 {
+    use ServerManager;
+
     public static function device() : array
     { //todo: da scrivere bene
         $device 										= new mobileDetect();
@@ -89,7 +91,7 @@ class Discover
     public static function parseUserAgent(string $u_agent = null) : array
     {
         if (!$u_agent) {
-            $u_agent = Request::userAgent();
+            $u_agent = self::userAgent();
         }
         $platform = null;
         $browser  = null;
@@ -240,7 +242,7 @@ class Discover
     {
         $visitor                        = null;
         if (!$user_agent) {
-            $user_agent                 = Request::userAgent();
+            $user_agent                 = self::userAgent();
         }
 
         if (!self::isCrawler($user_agent)) {
@@ -277,8 +279,8 @@ class Discover
                 }
             } else {
                 $access = explode("E", hexdec(md5(
-                    Request::remoteAddr()
-                    . Request::userAgent()
+                    self::remoteAddr()
+                    . self::userAgent()
                 )));
 
                 $offset = (strlen($access[0]) - 9);
@@ -329,7 +331,7 @@ class Discover
         );
 
         if (!$user_agent) {
-            $user_agent = Request::userAgent();
+            $user_agent = self::userAgent();
         }
         if ($user_agent) {
             $crawlers_agents = implode("|", $crawlers);

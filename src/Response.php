@@ -31,6 +31,7 @@ use phpformsframework\libs\gui\controllers\ErrorController;
 use phpformsframework\libs\storage\drivers\Array2XML;
 use Exception;
 use phpformsframework\libs\util\Normalize;
+use phpformsframework\libs\util\ServerManager;
 
 /**
  * Class Response
@@ -38,6 +39,8 @@ use phpformsframework\libs\util\Normalize;
  */
 class Response
 {
+    use ServerManager;
+
     public const CONTINUE                           = 100;
     public const SWITCHING_PROTOCOLS                = 101;
     public const PROCESSING                         = 102;
@@ -132,7 +135,7 @@ class Response
      */
     public static function sendError(int $code = 404, string $msg = null) : void
     {
-        switch (Request::accept()) {
+        switch (Kernel::$Page->accept()) {
             case "application/json":
             case "text/json":
                 Log::registerProcedure("Request", "validator" . Log::CLASS_SEP . "error");
@@ -157,7 +160,7 @@ class Response
 <title>' . $status_message . '</title>
 </head><body>
 <h1>' . $e->getMessage() . '</h1>
-<p>The requested URL ' . Request::pathinfo() . ' was not found on this server.</p>
+<p>The requested URL ' . self::pathinfo() . ' was not found on this server.</p>
 <p>Additionally, a ' . $status_message . '
 error was encountered while trying to use an ErrorDocument to handle the request.</p>
 ' . Debug::dump($e->getMessage(), true) . '
@@ -286,7 +289,7 @@ error was encountered while trying to use an ErrorDocument to handle the request
              * @todo da gestire i tipi accepted self::sendHeadersByMimeType(...)
              */
             self::httpCode(501);
-            $message = "content type " . $content_type . " is different to http_accept: " . Request::rawAccept();
+            $message = "content type " . $content_type . " is different to http_accept: " . self::rawAccept();
             echo $message;
             self::endScript($message);
         }
@@ -362,9 +365,9 @@ error was encountered while trying to use an ErrorDocument to handle the request
         ));
 
         if (strpos($destination, DIRECTORY_SEPARATOR) !== 0 && strpos($destination, "http") !== 0) {
-            $destination                            = Request::protocol() . $destination;
+            $destination                            = self::protocol() . $destination;
         }
-        if (Request::protocolHost() . $_SERVER["REQUEST_URI"] != $destination) {
+        if (self::protocolHost() . $_SERVER["REQUEST_URI"] != $destination) {
             header("Location: " . $destination, true, $http_response_code);
             if (!empty($headers)) {
                 foreach ($headers as $key => $value) {
@@ -375,7 +378,7 @@ error was encountered while trying to use an ErrorDocument to handle the request
             self::httpCode(400);
         }
 
-        self::endScript("Redirect: " . Request::referer() . " => " . $destination);
+        self::endScript("Redirect: " . self::referer() . " => " . $destination);
     }
 
     /**
@@ -428,7 +431,7 @@ error was encountered while trying to use an ErrorDocument to handle the request
         }
 
         if (!$mimetype) {
-            $mimetype = Request::accept();
+            $mimetype = Kernel::$Page->accept();
         }
 
         if ($mimetype) {
@@ -525,7 +528,7 @@ error was encountered while trying to use an ErrorDocument to handle the request
      */
     private static function invalidAccept(string $content_type) : bool
     {
-        $accept = Request::rawAccept();
+        $accept = self::rawAccept();
         return $accept != "" && strpos($accept, $content_type) === false && strpos($accept, "*/*") === false;
     }
 }

@@ -3,7 +3,7 @@ namespace phpformsframework\libs\gui\controllers;
 
 use Exception;
 use phpformsframework\libs\gui\Controller;
-use phpformsframework\libs\Request;
+use phpformsframework\libs\util\ServerManager;
 
 /**
  * Class Welcome
@@ -11,6 +11,7 @@ use phpformsframework\libs\Request;
  */
 class WelcomeController extends Controller
 {
+    use ServerManager;
     /**
      * @throws Exception
      */

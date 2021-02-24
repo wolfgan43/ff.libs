@@ -33,8 +33,8 @@ use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Mappable;
-use phpformsframework\libs\Request;
 use phpformsframework\libs\storage\FilemanagerScan;
+use phpformsframework\libs\util\ServerManager;
 
 /**
  * Class Resource
@@ -42,6 +42,8 @@ use phpformsframework\libs\storage\FilemanagerScan;
  */
 class Resource extends Mappable implements Dumpable
 {
+    use ServerManager;
+
     const ERROR_BUCKET                          = "resource";
 
     public const TYPE_ASSET_CSS                 = Constant::RESOURCE_ASSET_CSS;
@@ -138,7 +140,7 @@ class Resource extends Mappable implements Dumpable
         }
 
         $file                                   = null;
-        $pathinfo                               = Request::pathinfo();
+        $pathinfo                               = self::pathinfo();
         while ($pathinfo != DIRECTORY_SEPARATOR) {
             if (isset(self::$singleton->resources[$type][$name . str_replace(DIRECTORY_SEPARATOR, "_", $pathinfo)])) {
                 $file                           = self::$singleton->resources[$type][$name . str_replace(DIRECTORY_SEPARATOR, "_", $pathinfo)];

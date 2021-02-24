@@ -26,12 +26,16 @@
 namespace phpformsframework\libs;
 
 use Exception;
+use phpformsframework\libs\util\ServerManager;
+
 /**
  * Class Error
  * @package phpformsframework\libs
  */
 class Error
 {
+    use ServerManager;
+
     private const ERROR_UNKNOWN                                 = "Unknown";
     const STATUS_CODE                                           = array(
                                                                       100 => "100 Continue"
@@ -183,7 +187,7 @@ class Error
             $arrHost                                    = explode(".", (
                 $host_name
                                                             ? $host_name
-                                                            : Request::hostname()
+                                                            : self::hostname()
                                                         ));
             if (isset(self::$rules["host"][$arrHost[0]])) {
                 $res                                    = self::$rules["host"][$arrHost[0]];

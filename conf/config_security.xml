@@ -8,64 +8,62 @@
         <hook name="on_app_run" obj="\phpformsframework\libs\security\Buckler" method="antiVulnerabilityScanner" />
     </hooks>
     <badpath>
-        <rule source="^/cache*"                         destination="404" />
-        <rule source="^/uploads*"                       destination="404" />
-        <rule source="^/vendor*"                        destination="404" />
-        <rule source="*/index*"                         destination="$1" />
-        <rule source="wp-login*"                        destination="401" />
-        <rule source="wp-*"                             destination="403" />
-        <rule source="*.shtml"                          destination="403" />
-        <rule source="[^a-z\-0-9/\+\.\_\\@]+"            destination="400" />
+        <rule source="^/cache*"                         destination="404"       />
+        <rule source="^/uploads*"                       destination="404"       />
+        <rule source="^/vendor*"                        destination="404"       />
+        <rule source="*/index*"                         destination="$1"        />
+        <rule source="wp-login*"                        destination="401"       />
+        <rule source="wp-*"                             destination="403"       />
+        <rule source="*.shtml"                          destination="403"       />
+        <rule source="[^a-z\-0-9/\+\.\_\\@]+"           destination="400"       />
 
-        <rule source="^/autodiscover/*"                 destination="404" />
+        <rule source="^/autodiscover/*"                 destination="404"       />
     </badpath>
     <pages>
         <!-- Widgets -->
         <page path="/login" engine="auth-login">
-            <header name="csrf"     />
-            <header name="refresh"  />
-            <header name="domain"            />
+            <header name="csrf"                                                 />
+            <header name="refresh"                                              />
+            <header name="domain"                                               />
 
-            <get name="domain"                  scope="auth" />
+            <get name="domain"                                                  />
 
-            <post name="domain"              scope="auth" />
-            <post name="username"            scope="auth" required="true" validator="username" />
-            <post name="password"            scope="auth" required="true" validator="password" />
-            <post name="permanent"           scope="auth" validator="bool" />
+            <post name="domain"                                                 />
+            <post name="username"   required="true"     validator="username"    />
+            <post name="password"   required="true"     validator="password"    />
+            <post name="permanent"                      validator="bool"        />
         </page>
         <page path="/logout" engine="auth-logout">
-            <header name="csrf"     />
+            <header name="csrf"                 />
         </page>
         <page path="/activation" engine="auth-activation">
-            <header name="csrf"     />
-            <header name="domain"     />
+            <header name="csrf"                 />
 
-            <get name="code"            scope="auth" validator="totp"/>
-            <get name="identity"        scope="auth" validator="email"/>
-            <get name="error"           scope="auth"/>
+            <get name="identity"        validator="email"  />
+            <get name="error"                   />
 
-            <post name="code"           scope="auth" validator="totp"/>
-            <post name="identity"       scope="auth" validator="email" />
-            <post name="answer"         scope="auth"/>
+            <post name="code"            validator="totp"/>
+            <post name="identity"        validator="email" />
+            <post name="answer"                 />
         </page>
 
         <page path="/recover" engine="auth-recover">
-            <header name="csrf"     />
-            <post name="code"           scope="auth" validator="totp" />
-            <post name="identity"       scope="auth" validator="email" />
-            <post name="value"          scope="auth" validator="password" />
-            <post name="answer"         scope="auth" />
+            <header name="csrf"                 />
+            <post name="code"            validator="totp" />
+            <post name="identity"        validator="email" />
+            <post name="value"           validator="password" />
+            <post name="answer"                 />
         </page>
         <page path="/registration" engine="auth-registration">
-            <header name="csrf"     />
+            <header name="csrf"                 />
 
-            <get name="domain"             scope="auth"  />
+            <get name="domain"                  />
 
-            <post name="username"           scope="auth" required="true" validator="username" />
-            <post name="password"           scope="auth" required="true" validator="password" />
-            <post name="email"              scope="auth" validator="email" />
-            <post name="tel"                scope="auth" validator="tel" />
-            <post name="avatar"             scope="auth"  />
+            <post name="username"            required="true" validator="username" />
+            <post name="password"            required="true" validator="password" />
+            <post name="email"               validator="email" />
+            <post name="tel"                 validator="tel" />
+            <post name="avatar"                 />
         </page>
     </pages>
 

@@ -232,9 +232,4 @@ class Constant
      */
     const PHP_EXT                           = "php";
     const ENCODING                          = "utf-8";
-
-    /**
-     * @var RequestPage
-     */
-    public $page                            = null;
 }

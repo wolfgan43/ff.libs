@@ -26,8 +26,8 @@
 
 namespace phpformsframework\libs\dto;
 
+use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Mappable;
-use phpformsframework\libs\Request;
 use Exception;
 
 /**
@@ -38,10 +38,11 @@ class DataRequest extends Mappable
 {
     /**
      * DataRequest constructor.
+     * @param array|null $request
      * @throws Exception
      */
-    public function __construct()
+    public function __construct(array $request = null)
     {
-        parent::__construct(Request::rawdata(true));
+        parent::__construct($request ?? Kernel::$Page->getRawData());
     }
 }

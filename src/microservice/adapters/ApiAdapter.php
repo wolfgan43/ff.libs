@@ -3,7 +3,9 @@ namespace phpformsframework\libs\microservice\adapters;
 
 use phpformsframework\libs\App;
 use phpformsframework\libs\Debug;
+use phpformsframework\libs\dto\DataAdapter;
 use phpformsframework\libs\dto\DataResponse;
+use phpformsframework\libs\dto\DataTableResponse;
 use phpformsframework\libs\international\Data;
 use phpformsframework\libs\mock\Mockable;
 use stdClass;
@@ -107,17 +109,24 @@ abstract class ApiAdapter
      */
     private function dataResponse() : DataResponse
     {
-        $class_name                                                     = static::NAMESPACE_DATARESPONSE . "DataResponse";
-        return new $class_name();
+        return new ${static::NAMESPACE_DATARESPONSE . "DataResponse"}();
+    }
+
+    /**
+     * @return DataTableResponse
+     */
+    private function dataTableResponse() : DataTableResponse
+    {
+        return new ${static::NAMESPACE_DATARESPONSE . "DataTableResponse"}();
     }
     /**
      * @param string $method
      * @param array|null $params
      * @param array|null $headers
-     * @return DataResponse
+     * @return DataAdapter
      * @throws Exception
      */
-    public function send(string $method, array $params = null, array $headers = null) : DataResponse
+    public function send(string $method, array $params = null, array $headers = null) : DataAdapter
     {
         Debug::stopWatch("api/remote");
 
@@ -145,6 +154,15 @@ abstract class ApiAdapter
                 } else {
                     App::debug(empty($response->data) ? self::ERROR_RESPONSE_EMPTY : $response->data, $method . self::ERROR_RESPONSE_LABEL . $this->endpoint);
                 }
+
+                if (isset($response->draw, $response->recordsTotal, $response->recordsFiltered)) {
+                    $DataResponse                   = $this->dataTableResponse();
+                    $DataResponse->draw             = $response->draw;
+                    $DataResponse->recordsTotal     = $response->recordsTotal;
+                    $DataResponse->recordsFiltered  = $response->recordsFiltered;
+                    unset($response->draw, $response->recordsTotal, $response->recordsFiltered);
+                }
+
                 $DataResponse->fillObject($response->data);
                 unset($response->data, $response->error, $response->status, $response->debug);
                 foreach (get_object_vars($response) as $property => $value) {

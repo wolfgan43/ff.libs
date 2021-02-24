@@ -2,6 +2,8 @@
 namespace phpformsframework\libs;
 
 use Exception;
+use phpformsframework\libs\dto\RequestPage;
+
 /**
  * Class Kernel
  * @package phpformsframework\libs
@@ -16,6 +18,11 @@ class Kernel
      * @var Constant
      */
     public static $Environment      = null;
+
+    /**
+     * @var RequestPage
+     */
+    public static $Page             = null;
 
     /**
      * @var Debug
@@ -75,21 +82,19 @@ class Kernel
      */
     public function run()
     {
-        /**
-         * @var App $app
-         */
-        $app                        = static::NAMESPACE . "App";
-        $page                       = $app::construct(self::$Environment);
+        Request::set(self::$Page)->capture();
 
         if (Env::get("REQUEST_SECURITY_LEVEL")) {
             Hook::handle("on_app_run", $this);
         }
 
-        self::useCache(!$page->nocache);
+        self::useCache(!self::$Page->nocache);
 
         Config::autoloadRegister(static::NAMESPACE);
 
-        Router::run($page->script_path);
+        self::$Page->onLoad();
+
+        Router::run(self::$Page->script_path);
     }
 
     /**

@@ -39,7 +39,7 @@ class Buffer implements Dumpable
 
     public static function clear(string $bufferAdapter = null) : void
     {
-        self::loadAdapter($bufferAdapter ?? Kernel::$Environment::CACHE_BUFFER_ADAPTER, ["", $force ?? Kernel::useCache()])->clear();
+        self::loadAdapter($bufferAdapter ?? Kernel::$Environment::CACHE_BUFFER_ADAPTER, ["", Kernel::useCache()])->clear();
     }
 
     /**

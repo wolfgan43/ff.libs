@@ -59,10 +59,10 @@ class Activation extends Widget
         } elseif ($this->request->code) {
             $response               = $this->api($config->api->activate, ["code" => $this->request->code]);
         } else {
-            $response               = $this->api($config->api->requestActivation . $this->path_info, ["identity" => $this->request->identity]);
+            $response               = $this->api($config->api->requestActivation . $this->path_info, ["identifier" => $this->request->identity]);
         }
 
-
+        $this->send($response);
     }
 
     protected function put(): void

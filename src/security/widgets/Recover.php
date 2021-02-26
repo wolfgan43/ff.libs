@@ -45,9 +45,11 @@ class Recover extends Widget
         $config                     = $this->getConfig();
         if (!empty($this->request->code)) {
             $response = $this->api($config->api->{"change_" . $action}, [$action => $this->request->value], ["Authorization" => $this->authorization . ":" . $this->request->code]);
-        } else {
+        } elseif (isset($config->api->{"recover_" . $action})) {
             $response = $this->api($config->api->{"recover_" . $action}, ["identifier" => $this->request->identity, "sender" => Env::get(static::OTP_SENDER)]);
             $response->set("confirm", $this->confirm());
+        } else {
+            throw new Exception("Recover not supported: " . $action, 501);
         }
 
         $this->send($response);

@@ -109,7 +109,8 @@ abstract class ApiAdapter
      */
     private function dataResponse() : DataResponse
     {
-        return new ${static::NAMESPACE_DATARESPONSE . "DataResponse"}();
+        $class_name                                                     = static::NAMESPACE_DATARESPONSE . "DataResponse";
+        return new $class_name();
     }
 
     /**
@@ -117,7 +118,8 @@ abstract class ApiAdapter
      */
     private function dataTableResponse() : DataTableResponse
     {
-        return new ${static::NAMESPACE_DATARESPONSE . "DataTableResponse"}();
+        $class_name                                                     = static::NAMESPACE_DATARESPONSE . "DataTableResponse";
+        return new $class_name();
     }
     /**
      * @param string $method

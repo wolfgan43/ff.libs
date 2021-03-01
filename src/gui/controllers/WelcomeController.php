@@ -45,7 +45,8 @@ class WelcomeController extends Controller
 
 
 
-        $this->default(["content" => Request::hostname()]);
+
+        $this->default(["content" => $this->hostname()]);
     }
 
     /**

@@ -1,8 +1,0 @@
-#css | js
-RewriteCond   %{REQUEST_URI}                ^/assets
-RewriteCond   %{QUERY_STRING}               ^$
-RewriteRule   ^assets/(.*)                   /cache/assets/$1 [L]
-
-#media
-RewriteCond   %{REQUEST_URI}                ^/media
-RewriteRule   ^media/(.*)                   /cache/.thumbs/$1 [L]

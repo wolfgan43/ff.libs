@@ -1,5 +1,0 @@
-#disable script execution
-#Deny from all
-AddHandler cgi-script .php .pl .jsp .asp .sh .cgi
-Options -ExecCGI
-Options -Indexes

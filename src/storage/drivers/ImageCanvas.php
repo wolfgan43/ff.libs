@@ -253,7 +253,7 @@ class ImageCanvas
             reset($this->tmb_res);
         }
 
-        FilemanagerFs::makeDir($filename, 0775);
+        FilemanagerFs::makeDir($filename);
         switch ($this->format) {
             case "jpg":
                 if ($filename === null) {

@@ -1079,7 +1079,7 @@ class Media implements Configurable
 
         $final_file                                                 = $this->getFinalFile();
 
-        FilemanagerFs::makeDir(dirname($final_file), 0775, $this->basepathCache());
+        FilemanagerFs::makeDir(dirname($final_file), $this->basepathCache());
 
         $cCanvas->process($final_file);
     }
@@ -1225,7 +1225,7 @@ class Media implements Configurable
      */
     private function saveFromOriginal(string $source, string $destination) : void
     {
-        FilemanagerFs::makeDir($destination, 0775, $this->basepathCache());
+        FilemanagerFs::makeDir($destination, $this->basepathCache());
 
         if ($this->pathinfo->render == static::RENDER_ASSETS_PATH) {
             if (!@copy($source, $destination)) {

@@ -11,7 +11,7 @@ use phpformsframework\libs\dto\RequestPage;
  */
 class Kernel
 {
-    const NAMESPACE                 = null;
+    const NAMESPACE                 = "phpformsframework\\libs\\";
 
     private static $use_cache       = true;
     /**

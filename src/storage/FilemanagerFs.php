@@ -79,27 +79,26 @@ class FilemanagerFs
 
     /**
      * @param string $path
-     * @param int $chmod
+     * @param string $chmod
      * @param string|null $base_path
      * @return bool
      */
-    public static function makeDir(string $path, int $chmod = 0775, string $base_path = null) : bool
+    public static function makeDir(string $path, string $base_path = null, string $chmod = "0775") : bool
     {
-        $res                                                            = false;
+        $res                                                            = true;
         if (!$base_path) {
             $base_path = Constant::DISK_PATH;
         }
         $path                                                           = str_replace($base_path, "", $path);
 
         if ($path && $path != DIRECTORY_SEPARATOR) {
-            if (!is_dir($base_path . $path)) {
+            if (pathinfo($base_path . $path, PATHINFO_FILENAME) && pathinfo($base_path . $path, PATHINFO_EXTENSION)) {
                 $path = dirname($path);
             }
 
             if (!is_dir($base_path . $path)) {
-                if (@mkdir($base_path . $path, $chmod, true)) {
-                    $res                                                    = true;
-                } else {
+                if (!@mkdir($base_path . $path, $chmod, true)) {
+                    $res                                                    = false;
                     Error::registerWarning("MakeDir Permission Denied: " . $base_path . $path);
                 }
             }
@@ -185,9 +184,10 @@ class FilemanagerFs
      * @param string $source
      * @param string $target
      * @param bool $delete_source
+     * @param string $chmod
      * @return bool
      */
-    private static function fullCopy(string $source, string $target, bool $delete_source = false) : bool
+    private static function fullCopy(string $source, string $target, bool $delete_source = false, string $chmod = "0775") : bool
     {
         if ($source && $target && $source != $target && file_exists($source) && is_dir($source)) {
             $disable_rmdir = false;
@@ -210,7 +210,7 @@ class FilemanagerFs
                 }
 
                 $res = ($res && @copy($source . DIRECTORY_SEPARATOR . $entry, $target . DIRECTORY_SEPARATOR . $entry));
-                $res = ($res && @chmod($target . DIRECTORY_SEPARATOR . $entry, 0777));
+                $res = ($res && @chmod($target . DIRECTORY_SEPARATOR . $entry, $chmod));
                 if ($delete_source) {
                     $res = ($res && @unlink($source . DIRECTORY_SEPARATOR . $entry));
                 }
@@ -222,10 +222,10 @@ class FilemanagerFs
         } elseif (file_exists($source) && is_file($source)) {
             $res = true;
 
-            $res = ($res && @mkdir(dirname($target), 0777, true));
+            $res = ($res && self::makeDir(dirname($target)));
 
             $res = ($res && @copy($source, $target));
-            $res = ($res && @chmod($target, 0777));
+            $res = ($res && @chmod($target, $chmod));
             if ($delete_source) {
                 $res = ($res && @unlink($source));
             }

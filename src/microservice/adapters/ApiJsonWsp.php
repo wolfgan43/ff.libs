@@ -1,7 +1,7 @@
 <?php
 namespace phpformsframework\libs\microservice\adapters;
 
-use hcore\util\ServerManager;
+use phpformsframework\libs\util\ServerManager;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\storage\FilemanagerWeb;
 use stdClass;

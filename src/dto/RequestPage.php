@@ -271,8 +271,10 @@ class RequestPage extends Mappable
     public function mapRequest() : object
     {
         $mapRequest = $this->map ?? stdClass::class;
+
         if (is_subclass_of($mapRequest, Dto::class)) {
-            $obj = new $mapRequest($this);
+            //@todo da utilizzare il namespace per differenziare i progetti estesi. al momento il true non è corretto
+            $obj = new $mapRequest($this, true);
         } elseif ($mapRequest == stdClass::class || !class_exists($mapRequest)) {
             //@todo da sistemare una volta propagata l'extend del dto
             //$obj = new Dto($this, true);
@@ -281,7 +283,6 @@ class RequestPage extends Mappable
             $obj = new $mapRequest();
             $this->autoMapping($this->getRequest(), $obj);
         }
-
         return $obj;
     }
 

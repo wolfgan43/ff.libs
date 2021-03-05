@@ -2,7 +2,6 @@
 <configdata>
     <env>
         <REQUEST_SECURITY_LEVEL value="1" />
-        <RESPONSE_SECURITY_LEVEL value="1" />
     </env>
     <hooks>
         <hook name="on_app_run" obj="\phpformsframework\libs\security\Buckler" method="antiVulnerabilityScanner" />
@@ -21,7 +20,7 @@
     </badpath>
     <pages>
         <!-- Widgets -->
-        <page path="/login" engine="auth-login">
+        <page path="/login" controller="phpformsframework\libs\security\widgets\Login">
             <header name="csrf"                                                 />
             <header name="refresh"                                              />
             <header name="domain"                                               />
@@ -33,47 +32,49 @@
             <post name="password"   required="true"     validator="password"    />
             <post name="permanent"                      validator="bool"        />
         </page>
-        <page path="/logout" engine="auth-logout">
-            <header name="csrf"                 />
+        <page path="/logout" controller="phpformsframework\libs\security\widgets\Logout">
+            <header name="csrf"                                                 />
         </page>
-        <page path="/activation" engine="auth-activation">
-            <header name="csrf"                 />
+        <page path="/activation" controller="phpformsframework\libs\security\widgets\Activation">
+            <header name="csrf"                                                 />
 
-            <get name="identity"        validator="email"  />
-            <get name="error"                   />
+            <get name="identity"                        validator="email"       />
+            <get name="error"                                                   />
 
-            <post name="code"            validator="totp"/>
-            <post name="identity"        validator="email" />
-            <post name="answer"                 />
+            <post name="code"                           validator="totp"        />
+            <post name="identity"                       validator="email"       />
         </page>
 
-        <page path="/recover" engine="auth-recover">
-            <header name="csrf"                 />
-            <post name="code"            validator="totp" />
-            <post name="identity"        validator="email" />
-            <post name="value"           validator="password" />
-            <post name="answer"                 />
+        <page path="/recover" controller="phpformsframework\libs\security\widgets\Recover">
+            <header name="csrf"                                                 />
+
+            <get name="identity"                        validator="email"       />
+            <get name="error"                                                   />
+
+            <post name="code"                           validator="totp"        />
+            <post name="identity"                       validator="email"       />
+            <post name="value"                          validator="password"    />
         </page>
-        <page path="/registration" engine="auth-registration">
-            <header name="csrf"                 />
 
-            <get name="domain"                  />
+        <page path="/registration" controller="phpformsframework\libs\security\widgets\Registration">
+            <header name="csrf"                                                 />
 
-            <post name="username"            required="true" validator="username" />
-            <post name="password"            required="true" validator="password" />
-            <post name="email"               validator="email" />
-            <post name="tel"                 validator="tel" />
-            <post name="avatar"                 />
+            <get name="domain"                                                  />
+
+            <post name="username"   required="true"     validator="username"    />
+            <post name="password"   required="true"     validator="password"    />
+            <post name="email"                          validator="email"       />
+            <post name="tel"                            validator="tel"         />
+            <post name="avatar"                                                 />
+        </page>
+        <page path="/otp" controller="phpformsframework\libs\security\widgets\Otp">
+            <header name="csrf"                                                 />
+
+            <get name="error"                                                   />
+
+            <post name="code"                           validator="totp"        />
         </page>
     </pages>
-
-    <engine>
-        <auth-login             obj="phpformsframework\libs\security\widgets\Login"             method="page"       log="notice.auth"           />
-        <auth-logout            obj="phpformsframework\libs\security\widgets\Logout"            method="page"       log="notice.auth"           />
-        <auth-activation        obj="phpformsframework\libs\security\widgets\Activation"        method="page"       log="notice.auth"           />
-        <auth-recover           obj="phpformsframework\libs\security\widgets\Recover"           method="page"       log="notice.auth"           />
-        <auth-registration      obj="phpformsframework\libs\security\widgets\Registration"      method="page"       log="notice.auth"           />
-    </engine>
 
     <models>
         <model name="user" collection="access" table="users" mapclass="\phpformsframework\libs\security\UserData">

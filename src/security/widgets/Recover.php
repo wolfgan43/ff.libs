@@ -27,7 +27,10 @@ class Recover extends Widget
     {
         $view                       = $this->view("index");
         $config                     = $view->getConfig();
+        $config->error              = $this->request->error;
 
+        $view->assign("identity", $this->request->identity);
+        $view->assign("help_mail", $config->help_mail ?? "support@" . $_SERVER['HTTP_HOST']);
         $view->assign("recover_url", $this->getWebUrl($this->script_path . $this->path_info));
 
         $this->setDefault($view, $config);

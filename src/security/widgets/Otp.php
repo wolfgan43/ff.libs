@@ -1,72 +1,79 @@
 <?php
 namespace phpformsframework\libs\security\widgets;
 
+use hcore\util\MicroServices;
 use phpformsframework\libs\gui\Widget;
-use phpformsframework\libs\security\User;
 use phpformsframework\libs\security\widgets\helpers\CommonTemplate;
-use Exception;
+use phpformsframework\libs\util\ServerManager;
 
 /**
- * Class Registration
+ * Class Otp
  * @package phpformsframework\libs\security\widgets
  */
-class Registration extends Widget
+class Otp extends Widget
 {
     use CommonTemplate;
+    use MicroServices;
+
+    private const API_AUTH2_OTP_CREATE = "auth2/otp/create";
 
     protected $requiredJs           = ["hcore.security"];
 
     /**
-     * @throws Exception
+     *
      */
     protected function get(): void
     {
         $view                       = $this->view("index");
         $config                     = $view->getConfig();
+        //$config->error              = $this->request->error;
 
-        $view->assign("registration_url", $this->getWebUrl($config->registration_path));
-
-        if (!empty($config->email)) {
-            $view->parse("SezEmail", true);
+        if (0 && $this->request->identity) {
+            $this->api(
+                self::API_AUTH2_OTP_CREATE,
+                [
+                    "uuid" => $this->request->identity,
+                    "sender" => false,
+                ]
+            );
         }
 
-        if (!empty($config->phone)) {
-            $view->parse("SezPhone", false);
-        }
+        $view->assign("help_mail", $config->help_mail ?? "support@" . $_SERVER['HTTP_HOST']);
+        $view->assign("otp_url", $this->getWebUrl($this->script_path));
 
         $this->setDefault($view, $config);
         $this->setError($view, $config);
         $this->setLogo($view, $config);
         $this->setHeader($view, $config);
-        $this->setDomain($view, $config);
     }
 
     /**
-     * @throws Exception
+     *
      */
     protected function post(): void
     {
-        $config                     = $this->getConfig();
-        $response                   = $this->api($config->api->registration, (array) $this->request);
-        if (User::isLogged()) {
-            $response->set("welcome", Welcome::resources([
-                "redirect" => $config->redirect
-            ]));
-        } else {
-            $this->redirect($this->getWebUrl($config->activation_path));
-        }
+        // TODO: Implement post() method.
     }
 
+    /**
+     *
+     */
     protected function put(): void
     {
         // TODO: Implement put() method.
     }
 
+    /**
+     *
+     */
     protected function delete(): void
     {
         // TODO: Implement delete() method.
     }
 
+    /**
+     *
+     */
     protected function patch(): void
     {
         // TODO: Implement patch() method.

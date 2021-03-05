@@ -1,7 +1,7 @@
-hcore.security.recover = function (url, redirect, resendCode, selector) {
+hcore.security.otp = function (url, redirect, resendCode, selector) {
     let selectorID = (selector
             ? "#" + selector
-            : "#recover-box"
+            : "#otp-box"
     );
     let token = $(selectorID).find("INPUT[name='csrf']").val() || "";
 
@@ -9,7 +9,7 @@ hcore.security.recover = function (url, redirect, resendCode, selector) {
         hcore.security.identity = $(selectorID).find("INPUT[name='username']").val() || undefined;
     }
 
-    hcore.security.initInterface(selectorID, redirect || "/user");
+    hcore.security.initInterface(selectorID, redirect || "/login");
 
     if(resendCode || hcore.security.getBearerExpire() <= new Date().getTime()) {
         hcore.security.setBearer();
@@ -30,7 +30,7 @@ hcore.security.recover = function (url, redirect, resendCode, selector) {
         data: data
     })
     .done(function (response) {
-        if (response.status === 0) {
+        if(response.status === 0) {
             if (response.data.confirm) {
                 hcore.inject(response.data.confirm, selectorID);
                 hcore.security.throwSuccess('Check your ' + response.data.sender);
@@ -41,23 +41,22 @@ hcore.security.recover = function (url, redirect, resendCode, selector) {
             }
         } else {
             hcore.security.unblockAction();
-            hcore.security.throwException(response.error)
+            hcore.security.throwWarning(response.error);
         }
+
     })
     .fail(hcore.security.responseFail);
 
     return false;
 };
 
-hcore.security.recoverConfirm = function (url, redirect, selector) {
+hcore.security.otpConfirm = function (url, redirect, selector) {
     let selectorID = (selector
             ? "#" + selector
-            : "#recover-box"
+            : "#otp-box"
     );
 
     let token = $(selectorID).find("INPUT[name='csrf']").val() || "";
-    let password = $(selectorID).find("INPUT[name='password']").val() || "";
-    let confirmPassword = $(selectorID).find("INPUT[name='confirm-password']").val() || "";
     let verifyCode = $(selectorID).find("INPUT[name='code-confirm']").val() || undefined;
 
     hcore.security.initInterface(selectorID, redirect);
@@ -69,19 +68,12 @@ hcore.security.recoverConfirm = function (url, redirect, selector) {
     let bearer = hcore.security.getBearer();
 
     if (bearer) {
-        if(confirmPassword !== password) {
-            hcore.security.unblockAction();
-            hcore.security.throwWarning('I campi "password" e "conferma password" non coincidono');
-            return false;
-        }
-
         let headers = {
             "Authorization": bearer,
             "csrf": token
         };
         let data = {
-            "code": $.trim(verifyCode),
-            "value": password
+            "code": $.trim(verifyCode)
         };
 
         $.ajax({
@@ -91,16 +83,16 @@ hcore.security.recoverConfirm = function (url, redirect, selector) {
             dataType: 'json',
             data: data
         })
-        .done(function (response) {
-            if (response.status === 0) {
-                hcore.security.throwSuccess('Operation completed successfully!');
-                hcore.security.redirect(1000);
-            } else {
-                hcore.security.unblockAction();
-                hcore.security.throwWarning(response.error);
-            }
-        })
-        .fail(hcore.security.responseFail);
+            .done(function (response) {
+                if (response.status === 0) {
+                    hcore.security.throwSuccess('Your account has been activated!');
+                    hcore.security.redirect(1000);
+                } else {
+                    hcore.security.unblockAction();
+                    hcore.security.throwWarning(response.error);
+                }
+            })
+            .fail(hcore.security.responseFail);
     } else {
         hcore.security.throwException("Si è verificato un errore")
     }

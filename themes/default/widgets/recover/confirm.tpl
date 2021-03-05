@@ -26,21 +26,21 @@
                         <input type="hidden" name="domain" value="{domain_name}">
                         <!--EndSezDomainHidden-->
                         <div class="form-group" >
-                            <label>{_New password}</label>
-                            <input class="form-control" type="password" placeholder="{_Insert a new password}*" name='password' required=""/>
+                            <label for="password">{_New password}</label>
+                            <input id="password" class="form-control" type="password" placeholder="{_Insert a new password}*" name='password' required="required"/>
                         </div>
 
                         <div class="form-group" >
-                            <label>{_New password confirm}</label>
-                            <input class="form-control" type="password" placeholder="{_Confirm new password}*" name='confirm-password' required=""/>
+                            <label for="confirm-password">{_New password confirm}</label>
+                            <input id="confirm-password" class="form-control" type="password" placeholder="{_Confirm new password}*" name='confirm-password' required="required"/>
                         </div>
 
                         <div class="form-group">
-                            <label>{_Code}</label>
-                            <input class="form-control" name="codice-conferma" type="number" required="" placeholder="{_Insert your code}">
-                        </div>
+                            <label for="code-confirm">{_Code}</label>
+                            <input id="code-confirm" class="form-control" name="code-confirm" type="number" required="required" placeholder="{_Insert your code}">
 
-                        <a class="resend-code" href="javascript:void(0);" onclick="hcore.security.recover('{recover_url}', '{redirect_url}', '', true);">Resend code</a>
+                            <a class="resend-code" href="javascript:void(0);" onclick="hcore.security.recover('{recover_url}', '{redirect_url}', true);">Resend code</a>
+                        </div>
 
                         <div class="form-group mb-0 text-center">
                             <button class="btn btn-primary" type="submit">INVIA</button>

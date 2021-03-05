@@ -22,31 +22,10 @@
                     <form action="javascript:void(0);" onsubmit="hcore.security.activation('{activation_url}', '{redirect_url}');" >
                         <div class="error-container">{error}</div>
                         <input type="hidden" name="csrf" value="{csrf_token}">
-                        <!--BeginSezDomainHidden-->
-                        <input type="hidden" name="domain" value="{domain_name}">
-                        <!--EndSezDomainHidden-->
-
-                        <!--BeginSezDomain-->
-                        <div class="form-group">
-                            <label>{_domain_field_label}</label>
-                            <input class="form-control" name="domain" type="text" required="" placeholder="{_domain_field_placeholder}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" required>
-                        </div>
-                        <!--EndSezDomain-->
-                        <!--BeginSezBoxType-->
-                        <input type='text' class='hidden' name="box-type" value='{box_type}' />
-                        <!--EndSezBoxType-->
 
                         <div class="form-group">
-                            <label>{_Email}</label>
-                            <input class="form-control" name="email" value="{email_confirm}" type="email" required="" placeholder="{_Email}" {email_attr}>
-                        </div>
-
-                        <div class="form-group d-none verify-code">
-                            <label>{_Code}</label>
-                            <input class="form-control" name="codice-conferma" type="number"  placeholder="{_Insert your code}">
-
-                            <a class="resend-code" href="javascript:void(0);" onclick="hcore.security.activation('{activation_url}','{redirect_url}', true);">{_Resend code}</a>
-
+                            <label for="username">{_Email}</label>
+                            <input id="username" class="form-control" name="username" value="{identity}" type="email" required="required" placeholder="{_Email}">
                         </div>
 
                         <div class="form-group mb-0 text-center">

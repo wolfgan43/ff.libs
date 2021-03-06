@@ -20,14 +20,14 @@
         <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/assets/dist/audio/*"      scan="audio" />
         <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/assets/dist/css/*"        scan="css" />
         <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/assets/dist/fonts/*"      scan="fonts" />
-        <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/assets/dist/images/*"        scan="images" />
+        <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/assets/dist/images/*"     scan="images" />
         <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/assets/dist/js/*"         scan="js" />
         <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/assets/dist/video/*"      scan="video" />
 
         <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/*"              scan="widgets" />
         <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/css/*"          scan="widgets/css" />
         <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/js/*"           scan="widgets/js" />
-        <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/images/*"          scan="widgets/images" />
+        <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/images/*"       scan="widgets/images" />
         <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/fonts/*/*"      scan="widgets/fonts" />
         <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/audio/*"        scan="widgets/audio" />
         <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/video/*"        scan="widgets/video" />
@@ -48,7 +48,7 @@
         <dir    type="assets"   name="audio"        path="/assets/dist/audio"                               virtual="true" />
         <dir    type="assets"   name="css"          path="/assets/dist/css"                                 virtual="true" />
         <dir    type="assets"   name="fonts"        path="/assets/dist/fonts"                               virtual="true" />
-        <dir    type="assets"   name="images"       path="/assets/dist/images"                                 virtual="true" />
+        <dir    type="assets"   name="images"       path="/assets/dist/images"                              virtual="true" />
         <dir    type="assets"   name="js"           path="/assets/dist/js"                                  virtual="true" />
         <dir    type="assets"   name="video"        path="/assets/dist/video"                               virtual="true" />
 

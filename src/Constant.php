@@ -40,6 +40,9 @@ class Constant
     const CONFIG_PATHS                      = array(
         self::CONFIG_FF_PATH                => array("flag" => 8, "filter" => array("xml", "map"))
     );
+    const CONFIG_APP_PATHS                  = array(
+        self::PROJECT_DOCUMENT_ROOT . DIRECTORY_SEPARATOR . self::RESOURCE_CONF => array("flag" => 4, "filter" => array("xml", "map"))
+    );
     const DOCUMENT_ROOT                     = DOCUMENT_ROOT;
     const SITE_PATH                         = SITE_PATH;
 

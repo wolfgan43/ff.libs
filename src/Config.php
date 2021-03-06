@@ -429,7 +429,8 @@ class Config implements Dumpable
          */
         $paths = array_replace(
             Constant::CONFIG_PATHS,
-            $paths
+            $paths,
+            Constant::CONFIG_APP_PATHS
         );
 
         FilemanagerScan::scan($paths, function ($file) {

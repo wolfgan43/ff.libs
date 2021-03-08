@@ -49,7 +49,7 @@ class Registration extends Widget
         $config                     = $this->getConfig();
         $response                   = $this->api($config->api->registration, (array) $this->request);
         if (User::isLogged()) {
-            $response->set("welcome", Welcome::resources([
+            $response->set("welcome", Welcome::toArray([
                 "redirect" => $config->redirect
             ]));
         } else {

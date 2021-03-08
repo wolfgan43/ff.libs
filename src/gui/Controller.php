@@ -1,7 +1,6 @@
 <?php
 namespace phpformsframework\libs\gui;
 
-use phpformsframework\libs\App;
 use phpformsframework\libs\ClassDetector;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dir;
@@ -94,21 +93,11 @@ abstract class Controller
      * @return array
      * @throws Exception
      */
-    public static function resources(array $config = null) : array
+    public static function toArray(array $config = null) : array
     {
         $controller = new static($config);
 
-        return $controller->adapter->toArray($controller->displayView());
-    }
-
-    /**
-     * @param array|null $config
-     * @return string|null
-     * @throws Exception
-     */
-    public static function html(array $config = null) : ?string
-    {
-        return (new static($config))->displayView();
+        return $controller->adapter->toArray($controller->html());
     }
 
     /**
@@ -148,6 +137,15 @@ abstract class Controller
         }
 
         $this->adapter                          =& self::$controllers[$adapter];
+    }
+
+    /**
+     * @param string $key
+     * @return mixed|null
+     */
+    protected function env(string $key)
+    {
+        return Env::get($key);
     }
 
     /**
@@ -479,7 +477,7 @@ abstract class Controller
      * @return string|null
      * @throws Exception
      */
-    private function displayView() : ?string
+    public function html() : ?string
     {
         $this->render(self::METHOD_DEFAULT);
         return ($this->view
@@ -494,7 +492,7 @@ abstract class Controller
      */
     public function snippet() : DataHtml
     {
-        return new DataHtml($this->adapter->toArray($this->displayView()));
+        return new DataHtml($this->adapter->toArray($this->html()));
     }
 
 

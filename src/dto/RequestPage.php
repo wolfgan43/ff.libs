@@ -158,9 +158,13 @@ class RequestPage extends Mappable
 
         if ($path2params) {
             foreach ($path2params as $page_path => $params) {
-                if (preg_match($params["regexp"], $path_info, $matches)) {
+                if (preg_match($params["regexp"], $path_info, $matches, PREG_PATTERN_ORDER)) {
                     unset($matches[0]);
-                    $this->path2params  = array_filter(array_combine($params["matches"], $matches));
+                    $i = 0;
+                    foreach ($matches as $value) {
+                        $this->path2params[$params["matches"][$i]] = $value;
+                        $i++;
+                    }
                     $path_info          = $page_path;
                     break;
                 }

@@ -609,12 +609,7 @@ class Config implements Dumpable
                 if ($key == "/") {
                     $key = "*";
                 } elseif (preg_match_all('#/{([^/]*)}#i', $key, $params)) {
-                    $regexp                                                             = '#^' . str_replace($params[0], "/([^/]*)", $key) . '$#i';
-                    $regexp                                                             = str_replace(
-                        ['([^/]*)/([^/]*)', '/([^/]*)$#i'],
-                        ['([^/]*)/?([^/]*)', '/?([^/]*)$#i'],
-                        $regexp
-                    );
+                    $regexp                                                             = '#^' . str_replace($params[0], "(?:/([^/]+))?", $key) . '$#i';
                     $key                                                                = str_replace($params[0], "", $key);
                     $path2params[$key]                                                  = [
                                                                                             "matches"   => $params[1],

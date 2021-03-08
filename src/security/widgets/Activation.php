@@ -77,6 +77,6 @@ class Activation extends Widget
      */
     private function confirm() : array
     {
-        return Otp::resources();
+        return Otp::toArray();
     }
 }

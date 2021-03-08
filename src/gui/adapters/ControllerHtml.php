@@ -533,7 +533,12 @@ class ControllerHtml extends ControllerAdapter
         foreach (Resource::components() as $key => $component) {
             $tpl_key = "{" . $key . "}";
             if (strpos($layout, $tpl_key) !== false) {
-                $layout = str_replace($tpl_key, $component::html(), $layout);
+                /**
+                 * @var Controller $controller
+                 */
+                $controller = (new $component());
+
+                $layout = str_replace($tpl_key, $controller->html(), $layout);
             }
         }
 

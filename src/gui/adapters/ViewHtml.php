@@ -29,6 +29,7 @@ use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Error;
+use phpformsframework\libs\gui\Controller;
 use phpformsframework\libs\gui\Resource;
 use phpformsframework\libs\gui\View;
 use phpformsframework\libs\Hook;
@@ -377,7 +378,12 @@ class ViewHtml implements ViewAdapter
         $this->setAssignDefault();
 
         foreach (array_intersect_key(Resource::components(), $this->DVars)  as $key => $component) {
-            $this->assign($key, $component::html());
+            /**
+             * @var Controller $controller
+             */
+            $controller = (new $component());
+
+            $this->assign($key, $controller->html());
         }
 
         $this->parse($this->root_element);
@@ -483,7 +489,7 @@ class ViewHtml implements ViewAdapter
                 if (isset($this->ParsedBlocks[$value])) {
                     if (is_object($this->ParsedBlocks[$value])) {
                         if ($this->ParsedBlocks[$value] instanceof View) {
-                            $replace_with[] = $this->ParsedBlocks[$value]->display();
+                            $replace_with[] = $this->ParsedBlocks[$value]->html();
                         } else {
                             Error::register("bad value into template", static::ERROR_BUCKET);
                         }

@@ -146,13 +146,15 @@ class ViewSmarty extends Smarty implements ViewAdapter
     private function getComponents() : array
     {
         if (empty(self::$components)) {
-            /**
-             * @var Controller $controller
-             */
-            foreach (Resource::components() as $key => $controller) {
+            foreach (Resource::components() as $key => $component) {
                 self::$components["function"][$key] = [
-                    function () use ($controller) {
-                        return $controller::html();
+                    function () use ($component) {
+                        /**
+                         * @var Controller $controller
+                         */
+                        $controller = (new $component());
+
+                        return $controller->html();
                     },
                     false,
                     []

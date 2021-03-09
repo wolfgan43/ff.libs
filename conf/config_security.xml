@@ -61,11 +61,13 @@
 
             <get name="domain"                                                  />
 
-            <post name="username"   required="true"     validator="username"    />
-            <post name="password"   required="true"     validator="password"    />
+            <post name="username"                       validator="username"    />
+            <post name="password"                       validator="password"    />
             <post name="email"                          validator="email"       />
             <post name="tel"                            validator="tel"         />
             <post name="avatar"                                                 />
+
+            <post name="code"                           validator="totp"        />
         </page>
         <page path="/otp" controller="phpformsframework\libs\security\widgets\Otp">
             <header name="csrf"                                                 />

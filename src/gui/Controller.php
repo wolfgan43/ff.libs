@@ -458,7 +458,7 @@ abstract class Controller
         $this->render();
 
         if ($this->isXhr) {
-            return (new DataError())->error(500, "Not Implemented");
+            return (new DataError())->error(500, "Display Xhr Not Implemented");
         }
 
         if ($this->contentEmpty) {

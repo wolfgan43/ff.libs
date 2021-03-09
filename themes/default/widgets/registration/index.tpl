@@ -28,12 +28,12 @@
 
                         <div class="form-group">
                             <label for="emailaddress">{_Username}</label>
-                            <input class="form-control" name="username" type="text" id="emailaddress" required="" placeholder="{_Enter your email or username or tel}">
+                            <input class="form-control" name="username" type="text" id="emailaddress" required="required" placeholder="{_Enter your email or username or tel}">
                         </div>
 
                         <div class="form-group">
                             <label for="password">{_Password}</label>
-                            <input class="form-control" name="password" type="password" required="" id="password" placeholder="{_Enter your password}">
+                            <input class="form-control" name="password" type="password" required="required" id="password" placeholder="{_Enter your password}">
                         </div>
 
                         <div class="form-group" >

@@ -24,9 +24,9 @@ class Activation extends Widget
     {
         $view                       = $this->view("index");
         $config                     = $view->getConfig();
-        $config->error              = $this->request->error;
+        $config->error              = $this->request->error ?? null;
 
-        $view->assign("identity", $this->request->identity);
+        $view->assign("identity", $this->request->identity ?? null);
         $view->assign("help_mail", $config->help_mail ?? "support@" . $_SERVER['HTTP_HOST']);
         $view->assign("activation_url", $this->getWebUrl($config->activation_path));
 

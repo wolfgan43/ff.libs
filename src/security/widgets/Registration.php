@@ -1,6 +1,7 @@
 <?php
 namespace phpformsframework\libs\security\widgets;
 
+use hcore\util\MicroServices;
 use phpformsframework\libs\gui\Widget;
 use phpformsframework\libs\security\User;
 use phpformsframework\libs\security\widgets\helpers\CommonTemplate;
@@ -13,6 +14,7 @@ use Exception;
 class Registration extends Widget
 {
     use CommonTemplate;
+    use MicroServices;
 
     protected $requiredJs           = ["hcore.security"];
 
@@ -47,14 +49,22 @@ class Registration extends Widget
     protected function post(): void
     {
         $config                     = $this->getConfig();
-        $response                   = $this->api($config->api->registration, (array) $this->request);
-        if (User::isLogged()) {
-            $response->set("welcome", Welcome::toArray([
-                "redirect" => $config->redirect
-            ]));
+
+        if ($this->request->code) {
+            $response               = $this->api($config->api->activate, null, ["Authorization" => $this->authorization . ":" . $this->request->code]);
         } else {
-            $this->redirect($this->getWebUrl($config->activation_path));
+            $response               = $this->api($config->api->registration, (array)$this->request);
+            if (User::isLogged()) {
+                $response->set("welcome", Welcome::toArray([
+                    "redirect" => $config->redirect
+                ]));
+            } elseif ($response->get("activation")) {
+                $response->set("confirm", Otp::toArray([
+                    "redirect" => $config->redirect
+                ]));
+            }
         }
+        $this->send($response);
     }
 
     protected function put(): void

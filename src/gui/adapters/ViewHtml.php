@@ -488,7 +488,7 @@ class ViewHtml implements ViewAdapter
                 $search_for[] = "{" . $value . "}";
                 if (isset($this->ParsedBlocks[$value])) {
                     if (is_object($this->ParsedBlocks[$value])) {
-                        if ($this->ParsedBlocks[$value] instanceof View) {
+                        if ($this->ParsedBlocks[$value] instanceof View || $this->ParsedBlocks[$value] instanceof Controller) {
                             $replace_with[] = $this->ParsedBlocks[$value]->html();
                         } else {
                             Error::register("bad value into template", static::ERROR_BUCKET);

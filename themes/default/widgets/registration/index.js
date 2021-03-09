@@ -16,6 +16,7 @@ hcore.security.registration = function (url, redirect, selector) {
 
 
     if(confirmPassword !== password) {
+        hcore.security.unblockAction();
         hcore.security.throwWarning('I campi "password" e "conferma password" non coincidono');
         return false;
     }
@@ -37,13 +38,16 @@ hcore.security.registration = function (url, redirect, selector) {
     })
         .done(function (response) {
             if (response.status === 0) {
-                hcore.security.redirect();
+                if (response.data.welcome) {
+                    hcore.inject(response.data.welcome, selectorID);
+                } else if (response.data.confirm) {
+                    hcore.inject(response.data.confirm, selectorID);
+                    hcore.security.throwSuccess('Check your ' + response.data.activation.sender);
+                    hcore.security.setBearer(response.data.activation.token);
+                }
             } else {
                 hcore.security.unblockAction();
-                hcore.security.throwWarning(response.error_link
-                    ? '<a href="' + response.error_link + '">' + response.error + '</a>'
-                    : response.error
-                );
+                hcore.security.throwWarning(response.error);
             }
         })
         .fail(hcore.security.responseFail);

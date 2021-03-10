@@ -234,7 +234,7 @@ class Resource extends Mappable implements Dumpable
             foreach ($paths as $path) {
                 if (!$last_path || strpos($path, $last_path) === false) {
                     $path                       = rtrim($path, DIRECTORY_SEPARATOR . "*") . "*";
-                    $dirs[$path]                = ["flag" => FilemanagerScan::SCAN_DIR_RECURSIVE];
+                    $dirs[$path]                = ["flag" => FilemanagerScan::SCAN_DIR_RECURSIVE, "exclude" => ["node_modules"]];
                     $last_path                  = $path;
 
                     if (is_dir(Constant::DISK_PATH . $path)) {

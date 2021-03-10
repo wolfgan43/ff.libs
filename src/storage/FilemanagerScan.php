@@ -150,7 +150,7 @@ class FilemanagerScan implements Dumpable
             }
 
             self::scanAddItem($file, $opt);
-            self::globDirRecursive($file . '/*');
+            self::globDirRecursive($file . '/*', $opt);
         }
     }
 
@@ -181,14 +181,19 @@ class FilemanagerScan implements Dumpable
 
     /**
      * @param string $pattern
+     * @param stdClass|null $opt
      */
-    private static function globRecursive(string $pattern) : void
+    private static function globRecursive(string $pattern, stdClass $opt = null) : void
     {
         foreach (glob($pattern) as $file) {
+            if (isset($opt->exclude) && in_array(basename($file), $opt->exclude)) {
+                continue;
+            }
+
             if (is_file($file)) {
-                self::scanAddItem($file);
+                self::scanAddItem($file, $opt);
             } else {
-                self::globRecursive($file . '/*');
+                self::globRecursive($file . '/*', $opt);
             }
         }
     }

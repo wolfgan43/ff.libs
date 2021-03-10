@@ -1,0 +1,9 @@
+{
+   "title":"Activation",
+   "description":"Check your mailbox and insert your code.",
+   "redirect": "\/login",
+   "logo": "100x50",
+   "logo_path": null,
+   "login_path": "\/login",
+   "help_mail": null
+}

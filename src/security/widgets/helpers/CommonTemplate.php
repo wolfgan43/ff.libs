@@ -68,19 +68,6 @@ trait CommonTemplate
      * @param View $view
      * @param stdClass $config
      */
-    private function setDomain(View $view, stdClass $config)
-    {
-        if (!empty($config->domain)) {
-            $view->parse("SezDomain", false);
-        } else {
-            $view->assign("domain_name", $this->request->domain ?? $this->hostname());
-            $view->parse("SezDomainHidden", false);
-        }
-    }
-    /**
-     * @param View $view
-     * @param stdClass $config
-     */
     private function setDefault(View $view, stdClass $config)
     {
         $view->assign("csrf_token", Hash::csrf());

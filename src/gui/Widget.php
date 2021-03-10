@@ -145,24 +145,51 @@ abstract class Widget extends Controller
      */
     protected function getConfig(string $template_name = null) : object
     {
-        return json_decode(json_encode($this->config($this->getResources()->cfg[$template_name ?? self::VIEW_DEFAULT] ?? null)));
+        return $this->config($this->getResources()->cfg[$template_name ?? self::VIEW_DEFAULT] ?? null);
     }
 
     /**
      * @param string|null $file_path
-     * @return array|null
+     * @return stdClass|null
      */
-    private function config(string $file_path = null) : ?array
+    private function config(string $file_path = null) : ?stdClass
     {
         static $configs                             = null;
 
         if ($file_path && !isset($configs[$file_path])) {
-            $configs[$file_path]                    = array_replace_recursive($this->loadConfig($file_path), $this->config);
+            $configs[$file_path]                    = $this->loadConfig($file_path);
+            foreach ($this->config as $key => $config) {
+                $configs[$file_path]->$key = $config;
+            }
         }
 
         return $configs[$file_path] ?? null;
     }
 
+    /**
+     * @param string $file_path
+     * @return stdClass
+     */
+    private function loadConfig(string $file_path) : stdClass
+    {
+        //@todo da finire inserendo in FilemanagerFS una chiamata semplice senza controlli
+        return json_decode(file_get_contents($file_path));
+
+        $bucket                                     = $this->class_name . "/" . basename($file_path);
+
+        Debug::stopWatch(static::ERROR_BUCKET . "/map/" . $bucket);
+        $cache                                      = Buffer::cache("widget");
+        $config                                     = $cache->get($bucket);
+        if (!$config) {
+            $config                                 = json_decode(file_get_contents($file_path));
+
+            $cache->set($bucket, $config, [$file_path => filemtime($file_path)]);
+        }
+
+        Debug::stopWatch(static::ERROR_BUCKET . "/map/". $bucket);
+
+        return $config;
+    }
     /**
      * @return stdClass
      */
@@ -173,26 +200,5 @@ abstract class Widget extends Controller
         }
 
         return (object) ($this->resources[$this->class_name] ?? null);
-    }
-
-    /**
-     * @param string $file_path
-     * @return array
-     */
-    private function loadConfig(string $file_path) : array
-    {
-        Debug::stopWatch(static::ERROR_BUCKET . "/map/" . $this->class_name);
-
-        $cache                                      = Buffer::cache("widget");
-        $config                                     = $cache->get($this->class_name);
-        if (!$config) {
-            $config                                 = FilemanagerFs::loadFile("json")->read($file_path);
-
-            $cache->set($this->class_name, $config, [$file_path => filemtime($file_path)]);
-        }
-
-        Debug::stopWatch(static::ERROR_BUCKET . "/map/". $this->class_name);
-
-        return (array) $config;
     }
 }

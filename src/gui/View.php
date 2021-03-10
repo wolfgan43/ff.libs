@@ -19,14 +19,12 @@ class View
 
     /**
      * View constructor.
-     * @param array|null $config
+     * @param stdClass|null $config
      * @param string|null $templateAdapter
      */
-    public function __construct(array $config = null, string $templateAdapter = null)
+    public function __construct(stdClass $config = null, string $templateAdapter = null)
     {
-        if ($config) {
-            $this->config                           = json_decode(json_encode($config));
-        }
+        $this->config                               = $config;
         $this->setAdapter($templateAdapter ?? Kernel::$Environment::TEMPLATE_ADAPTER);
     }
 

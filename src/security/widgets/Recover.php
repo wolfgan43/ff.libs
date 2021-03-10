@@ -16,8 +16,6 @@ class Recover extends Widget
     use CommonTemplate;
     use MicroServices;
 
-    protected const OTP_SENDER      = "AUTH_SENDER_RECOVER";
-
     protected $requiredJs           = ["hcore.security"];
 
     /**
@@ -29,7 +27,6 @@ class Recover extends Widget
         $config                     = $view->getConfig();
         $config->error              = $this->request->error;
 
-        $view->assign("identity", $this->request->identity);
         $view->assign("help_mail", $config->help_mail ?? "support@" . $_SERVER['HTTP_HOST']);
         $view->assign("recover_url", $this->getWebUrl($this->script_path . $this->path_info));
 
@@ -49,7 +46,7 @@ class Recover extends Widget
         if (!empty($this->request->code)) {
             $response = $this->api($config->api->{"change_" . $action}, [$action => $this->request->value], ["Authorization" => $this->authorization . ":" . $this->request->code]);
         } elseif (isset($config->api->{"recover_" . $action})) {
-            $response = $this->api($config->api->{"recover_" . $action}, ["identifier" => $this->request->identity, "sender" => Env::get(static::OTP_SENDER)]);
+            $response = $this->api($config->api->{"recover_" . $action}, ["identifier" => $this->request->identifier]);
             $response->set("confirm", $this->confirm());
         } else {
             throw new Exception("Recover not supported: " . $action, 501);

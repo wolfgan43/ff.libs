@@ -4,14 +4,14 @@ hcore.security.registration = function (url, redirect, selector) {
             : "#registration-box"
     );
 
-    let domain = $(selectorID).find("INPUT[name='domain']").val() || window.location.host;
-    let csrf = $(selectorID).find("INPUT[name='csrf']").val() || "";
-    let username = $(selectorID).find("INPUT[name='username']").val() || undefined;
+    let token = $(selectorID).find("INPUT[name='csrf']").val() || "";
+
     let password = $(selectorID).find("INPUT[name='password']").val() || undefined;
     let confirmPassword = $(selectorID).find("INPUT[name='confirm-password']").val() || "";
     let email = $(selectorID).find("INPUT[name='email']").val() || undefined;
     let tel = $(selectorID).find("INPUT[name='tel']").val() || undefined;
 
+    hcore.security.identifier = $(selectorID).find("INPUT[name='username']").val() || hcore.security.identifier || undefined;
     hcore.security.initInterface(selectorID, redirect || "/user");
 
 
@@ -21,36 +21,39 @@ hcore.security.registration = function (url, redirect, selector) {
         return false;
     }
 
+    let headers = {
+        "csrf": token
+    };
+
+    let data = {
+        "identifier": hcore.security.identifier,
+        "password": password,
+        "email": email,
+        "tel": tel
+    };
+
     $.ajax({
         url: (url || window.location.pathname),
-        headers: {
-            "domain": domain,
-            "csrf": csrf
-        },
+        headers: headers,
         method: "POST",
         dataType: "json",
-        data: {
-            "username": username,
-            "password": password,
-            "email": email,
-            "tel": tel,
+        data: data
+    })
+    .done(function (response) {
+        if (response.status === 0) {
+            if (response.data.welcome) {
+                hcore.inject(response.data.welcome, selectorID);
+            } else if (response.data.confirm) {
+                hcore.inject(response.data.confirm, selectorID);
+                hcore.security.throwSuccess('Check your ' + response.data.activation.sender);
+                hcore.security.setBearer(response.data.activation.token);
+            }
+        } else {
+            hcore.security.unblockAction();
+            hcore.security.throwWarning(response.error);
         }
     })
-        .done(function (response) {
-            if (response.status === 0) {
-                if (response.data.welcome) {
-                    hcore.inject(response.data.welcome, selectorID);
-                } else if (response.data.confirm) {
-                    hcore.inject(response.data.confirm, selectorID);
-                    hcore.security.throwSuccess('Check your ' + response.data.activation.sender);
-                    hcore.security.setBearer(response.data.activation.token);
-                }
-            } else {
-                hcore.security.unblockAction();
-                hcore.security.throwWarning(response.error);
-            }
-        })
-        .fail(hcore.security.responseFail);
+    .fail(hcore.security.responseFail);
 
     return false;
 };

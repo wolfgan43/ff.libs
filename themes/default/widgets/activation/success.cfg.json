@@ -1,0 +1,9 @@
+{
+   "title":"Activation",
+   "description":"Your account has been activated!",
+   "redirect": "\/login",
+   "logo": "100x50",
+   "logo_path": null,
+   "login_path": "\/login",
+   "help_mail": null
+}

@@ -22,13 +22,10 @@
                     <form action="javascript:void(0);" onsubmit="hcore.security.recover('{recover_url}', '{redirect_url}');" >
                         <div class="error-container">{error}</div>
                         <input type="hidden" name="csrf" value="{csrf_token}">
-                        <!--BeginSezDomainHidden-->
-                        <input type="hidden" name="domain" value="{domain_name}">
-                        <!--EndSezDomainHidden-->
 
                         <div class="form-group">
                             <label for="username">{_Email}</label>
-                            <input id="username" class="form-control" name="username" value="{identity}" type="email" required="required" placeholder="{_Email}">
+                            <input id="username" class="form-control" name="username" type="email" required="required" placeholder="{_Email}">
                         </div>
 
                         <div class="form-group mb-0 text-center">

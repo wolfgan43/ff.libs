@@ -22,18 +22,7 @@ class Activation extends Widget
      */
     protected function get(): void
     {
-        $view                       = $this->view("index");
-        $config                     = $view->getConfig();
-        $config->error              = $this->request->error ?? null;
-
-        $view->assign("identity", $this->request->identity ?? null);
-        $view->assign("help_mail", $config->help_mail ?? "support@" . $_SERVER['HTTP_HOST']);
-        $view->assign("activation_url", $this->getWebUrl($config->activation_path));
-
-        $this->setDefault($view, $config);
-        $this->setError($view, $config);
-        $this->setLogo($view, $config);
-        $this->setHeader($view, $config);
+        $this->render("index");
     }
 
     /**
@@ -42,15 +31,18 @@ class Activation extends Widget
     protected function post(): void
     {
         $config                     = $this->getConfig();
-        if (!empty($this->request->identity) && $this->request->code) {
-            //@todo da sostituire con i magic link. non funziona il link nella mail
-            // Auth::writeByUrl($request->identity, "activation", $request->code);
-            $response               = null;
-        } elseif ($this->request->code) {
+
+        if ($this->request->code) {
             $response               = $this->api($config->api->activate, null, ["Authorization" => $this->authorization . ":" . $this->request->code]);
+            $response->set("confirm", $this->snippet("success"));
         } else {
-            $response               = $this->api($config->api->requestActivation . $this->path_info, ["identifier" => $this->request->identity]);
-            $response->set("confirm", $this->confirm());
+            $response               = $config->response ?? $this->api($config->api->requestActivation . $this->path_info, ["identifier" => $this->request->identifier]);
+
+            $response->set("confirm", (
+                $this->env("AUTH2_ACTIVATION_OTP")
+                ? $this->otp()
+                : $this->snippet("wait")
+            ));
         }
 
         $this->send($response);
@@ -75,8 +67,45 @@ class Activation extends Widget
      * @return array
      * @throws Exception
      */
-    private function confirm() : array
+    private function otp() : array
     {
         return Otp::toArray();
+    }
+
+    /**
+     * @throws Exception
+     */
+    protected function wait() : void
+    {
+        $this->render("wait");
+    }
+
+    /**
+     * @throws Exception
+     */
+    protected function success() : void
+    {
+        $this->render("success");
+    }
+
+    /**
+     * @param string $method
+     * @throws Exception
+     */
+    private function render(string $method) : void
+    {
+        $view                       = $this->view($method);
+        $config                     = $view->getConfig();
+        $config->error              = $this->request->error ?? null;
+
+        $view->assign("help_mail", $config->help_mail ?? "support@" . $_SERVER['HTTP_HOST']);
+        if (isset($config->activation_path)) {
+            $view->assign("activation_url", $this->getWebUrl($config->activation_path));
+        }
+
+        $this->setDefault($view, $config);
+        $this->setError($view, $config);
+        $this->setLogo($view, $config);
+        $this->setHeader($view, $config);
     }
 }

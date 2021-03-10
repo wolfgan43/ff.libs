@@ -104,8 +104,6 @@ class Login extends Widget
             $this->setError($view, $config);
             $this->setLogo($view, $config);
             $this->setHeader($view, $config);
-            $this->setDomain($view, $config);
-
         }
     }
 
@@ -115,7 +113,7 @@ class Login extends Widget
     protected function post(): void
     {
         $config                                 = $this->getConfig();
-        $responseData                           = User::login($this->request->username, $this->request->password, $this->request->permanent ?? null);
+        $responseData                           = User::login($this->request->identifier, $this->request->password, $this->request->permanent);
         if (!$responseData->isError()) {
             if ($this->aclVerify()) {
                 $responseData->set("welcome", Welcome::toArray());

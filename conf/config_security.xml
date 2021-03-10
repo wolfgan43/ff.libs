@@ -22,13 +22,8 @@
         <!-- Widgets -->
         <page path="/login" controller="phpformsframework\libs\security\widgets\Login">
             <header name="csrf"                                                 />
-            <header name="refresh"                                              />
-            <header name="domain"                                               />
 
-            <get name="domain"                                                  />
-
-            <post name="domain"                                                 />
-            <post name="username"   required="true"     validator="username"    />
+            <post name="identifier" required="true"     validator="username"    />
             <post name="password"   required="true"     validator="password"    />
             <post name="permanent"                      validator="bool"        />
         </page>
@@ -38,30 +33,26 @@
         <page path="/activation" controller="phpformsframework\libs\security\widgets\Activation">
             <header name="csrf"                                                 />
 
-            <get name="identity"                        validator="email"       />
             <get name="error"                                                   />
 
             <post name="code"                           validator="totp"        />
-            <post name="identity"                       validator="email"       />
+            <post name="identifier"                     validator="email"       />
         </page>
 
         <page path="/recover" controller="phpformsframework\libs\security\widgets\Recover">
             <header name="csrf"                                                 />
 
-            <get name="identity"                        validator="email"       />
+            <get name="identifier"                      validator="email"       />
             <get name="error"                                                   />
 
             <post name="code"                           validator="totp"        />
-            <post name="identity"                       validator="email"       />
+            <post name="identifier"                     validator="email"       />
             <post name="value"                          validator="password"    />
         </page>
-
         <page path="/registration" controller="phpformsframework\libs\security\widgets\Registration">
             <header name="csrf"                                                 />
 
-            <get name="domain"                                                  />
-
-            <post name="username"                       validator="username"    />
+            <post name="identifier"                     validator="username"    />
             <post name="password"                       validator="password"    />
             <post name="email"                          validator="email"       />
             <post name="tel"                            validator="tel"         />

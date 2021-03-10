@@ -22,22 +22,13 @@
                 <form action="javascript:void(0);" onsubmit="hcore.security.login('{login_url}', '{redirect_url}');" enctype="multipart/form-data">
                     <div class="error-container">{error}</div>
                     <input type="hidden" name="csrf" value="{csrf_token}">
-                    <!--BeginSezDomainHidden-->
-                    <input type="hidden" name="domain" value="{domain_name}">
-                    <!--EndSezDomainHidden-->
-                    <!--BeginSezDomain-->
-                    <div class="form-group">
-                        <label for="domain">{_Domain}</label>
-                        <input class="form-control" name="domain" id="domain" value="{domain}" placeholder="{_Enter domain}">
-                    </div>
-                    <!--EndSezDomain-->
 
                     <div class="form-group">
                         <!--BeginSezRecoverAccount-->
                         <a href="{recover_account_url}" class="text-muted float-right" tabindex="-1"><small>{_Forgot your account?}</small></a>
                         <!--EndSezRecoverAccount-->
                         <label for="emailaddress">{_Account}</label>
-                        <input class="form-control" name="username" type="text" id="emailaddress" required="" placeholder="{_Enter your email or username or tel}" autocomplete="username">
+                        <input class="form-control" name="username" type="text" id="emailaddress" required="required" placeholder="{_Enter your email or username or tel}" autocomplete="username">
                     </div>
 
                     <div class="form-group">
@@ -45,13 +36,13 @@
                         <a href="{recover_password_url}" class="text-muted float-right" tabindex="-1"><small>{_Forgot your password?}</small></a>
                         <!--EndSezRecoverPassword-->
                         <label for="password">{_Password}</label>
-                        <input class="form-control" name="password" type="password" required="" id="password" placeholder="{_Enter your password}" autocomplete="current-password">
+                        <input class="form-control" name="password" type="password" required="required" id="password" placeholder="{_Enter your password}" autocomplete="current-password">
                     </div>
                     <!--BeginSezStayConnect-->
                     <div class="form-group mb-3">
                         <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="checkbox-signin" checked="">
-                            <label class="custom-control-label" for="checkbox-signin">{_Remember me}</label>
+                            <input type="checkbox" class="custom-control-input" id="stayconnected" name="stayconnected" value="1">
+                            <label class="custom-control-label" for="stayconnected">{_Remember me}</label>
                         </div>
                     </div>
                     <!--EndSezStayConnect-->

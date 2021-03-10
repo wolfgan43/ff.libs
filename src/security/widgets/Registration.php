@@ -2,6 +2,7 @@
 namespace phpformsframework\libs\security\widgets;
 
 use hcore\util\MicroServices;
+use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\gui\Widget;
 use phpformsframework\libs\security\User;
 use phpformsframework\libs\security\widgets\helpers\CommonTemplate;
@@ -40,7 +41,6 @@ class Registration extends Widget
         $this->setError($view, $config);
         $this->setLogo($view, $config);
         $this->setHeader($view, $config);
-        $this->setDomain($view, $config);
     }
 
     /**
@@ -50,20 +50,25 @@ class Registration extends Widget
     {
         $config                     = $this->getConfig();
 
-        if ($this->request->code) {
-            $response               = $this->api($config->api->activate, null, ["Authorization" => $this->authorization . ":" . $this->request->code]);
+        if (!$this->request->password) {
+            $response = new DataResponse();
+            $response->set("confirm", Activation::toArray([
+                "redirect"          => $config->redirect
+            ], $this->method));
         } else {
-            $response               = $this->api($config->api->registration, (array)$this->request);
+            $response                   = $this->api($config->api->registration, (array)$this->request);
             if (User::isLogged()) {
                 $response->set("welcome", Welcome::toArray([
-                    "redirect" => $config->redirect
+                    "redirect"          => $config->redirect
                 ]));
             } elseif ($response->get("activation")) {
-                $response->set("confirm", Otp::toArray([
-                    "redirect" => $config->redirect
-                ]));
+                $response->set("confirm", Activation::toArray([
+                    "redirect"          => $config->redirect,
+                    "response"          => $response
+                ], $this->method));
             }
         }
+
         $this->send($response);
     }
 

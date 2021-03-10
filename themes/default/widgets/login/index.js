@@ -3,28 +3,30 @@ hcore.security.login = function (url, redirect, selector) {
             ? "#" + selector
             : "#login-box"
     );
+    let token       = $(selectorID).find("INPUT[name='csrf']").val() || "";
 
-    let domain = $(selectorID).find("INPUT[name='domain']").val() || window.location.host;
-    let username = $(selectorID).find("INPUT[name='username']").val() || undefined;
-    let password = $(selectorID).find("INPUT[name='password']").val() || undefined;
-    let csrf = $(selectorID).find("INPUT[name='csrf']").val() || "";
-    let stayConnect = $(selectorID).find("INPUT[name='stayconnected-new']").is(':checked') || false;
+    let username    = $(selectorID).find("INPUT[name='username']").val() || undefined;
+    let password    = $(selectorID).find("INPUT[name='password']").val() || undefined;
+    let permanent   = $(selectorID).find("INPUT[name='stayconnected']").is(':checked') || false;
 
-    hcore.security.initInterface(selectorID, redirect);
+    hcore.security.identifier = $(selectorID).find("INPUT[name='username']").val() || hcore.security.identifier || undefined;
+    hcore.security.initInterface(selectorID, redirect || "/");
+
+    let headers = {
+        "csrf"          : token
+    };
+    let data = {
+        "identifier"    : username,
+        "password"      : password,
+        "permanent"     : permanent ? 1 : 0
+    };
 
     $.ajax({
         url: (url || window.location.pathname),
-        headers: {
-            "domain": domain,
-            "csrf": csrf,
-            "refresh": stayConnect
-        },
+        headers: headers,
         method: "POST",
         dataType: "json",
-        data: {
-            "username": username,
-            "password": password
-        }
+        data: data
     })
     .done(function (response) {
         if (response.status === 0) {

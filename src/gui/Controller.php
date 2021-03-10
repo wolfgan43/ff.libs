@@ -90,14 +90,15 @@ abstract class Controller
 
     /**
      * @param array|null $config
+     * @param string|null $method
      * @return array
      * @throws Exception
      */
-    public static function toArray(array $config = null) : array
+    public static function toArray(array $config = null, string $method = null) : array
     {
         $controller = new static($config);
 
-        return $controller->adapter->toArray($controller->html());
+        return $controller->adapter->toArray($controller->html($method));
     }
 
     /**
@@ -474,12 +475,13 @@ abstract class Controller
     }
 
     /**
+     * @param string|null $method
      * @return string|null
      * @throws Exception
      */
-    public function html() : ?string
+    public function html(string $method = null) : ?string
     {
-        $this->render(self::METHOD_DEFAULT);
+        $this->render($method ?? self::METHOD_DEFAULT);
         return ($this->view
             ? $this->view->html()
             : null
@@ -487,12 +489,13 @@ abstract class Controller
     }
 
     /**
+     * @param string|null $method
      * @return DataHtml
      * @throws Exception
      */
-    public function snippet() : DataHtml
+    public function snippet(string $method = null) : DataHtml
     {
-        return new DataHtml($this->adapter->toArray($this->html()));
+        return new DataHtml($this->adapter->toArray($this->html($method)));
     }
 
 

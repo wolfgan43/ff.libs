@@ -5,10 +5,6 @@ hcore.security.otp = function (url, redirect, resendCode, selector) {
     );
     let token = $(selectorID).find("INPUT[name='csrf']").val() || "";
 
-    if(hcore.security.identity === undefined) {
-        hcore.security.identity = $(selectorID).find("INPUT[name='username']").val() || undefined;
-    }
-
     hcore.security.initInterface(selectorID, redirect || "/login");
 
     if(resendCode || hcore.security.getBearerExpire() <= new Date().getTime()) {
@@ -19,7 +15,7 @@ hcore.security.otp = function (url, redirect, resendCode, selector) {
         "csrf": token
     };
     let data = {
-        "identity": hcore.security.identity
+        "identifier": hcore.security.identifier
     };
 
     $.ajax({
@@ -35,7 +31,7 @@ hcore.security.otp = function (url, redirect, resendCode, selector) {
                 hcore.inject(response.data.confirm, selectorID);
                 hcore.security.throwSuccess('Check your ' + response.data.sender);
                 hcore.security.setBearer(response.data.token);
-            } else if (response.data["redirect"] !== undefined) {
+            } else if (response.data.redirect !== undefined) {
                 hcore.security.throwSuccess('Check your ' + response.data.sender);
                 hcore.security.redirect(1000, response.data.redirect);
             }
@@ -57,7 +53,7 @@ hcore.security.otpConfirm = function (url, redirect, selector) {
     );
 
     let token = $(selectorID).find("INPUT[name='csrf']").val() || "";
-    let verifyCode = $(selectorID).find("INPUT[name='code-confirm']").val() || undefined;
+    let verifyCode = $(selectorID).find("INPUT[name='code']").val() || undefined;
 
     hcore.security.initInterface(selectorID, redirect);
 
@@ -83,16 +79,22 @@ hcore.security.otpConfirm = function (url, redirect, selector) {
             dataType: 'json',
             data: data
         })
-            .done(function (response) {
-                if (response.status === 0) {
+        .done(function (response) {
+            if (response.status === 0) {
+                if (response.data.confirm) {
+                    hcore.inject(response.data.confirm, selectorID);
+                    hcore.security.throwSuccess('Check your ' + response.data.sender);
+                    hcore.security.setBearer(response.data.token);
+                } else {
                     hcore.security.throwSuccess('Your account has been activated!');
                     hcore.security.redirect(1000);
-                } else {
-                    hcore.security.unblockAction();
-                    hcore.security.throwWarning(response.error);
                 }
-            })
-            .fail(hcore.security.responseFail);
+            } else {
+                hcore.security.unblockAction();
+                hcore.security.throwWarning(response.error);
+            }
+        })
+        .fail(hcore.security.responseFail);
     } else {
         hcore.security.throwException("Si è verificato un errore")
     }

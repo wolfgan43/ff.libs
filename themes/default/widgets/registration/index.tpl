@@ -22,36 +22,33 @@
                     <form action="javascript:void(0);" onsubmit="hcore.security.registration('{registration_url}', '{redirect_url}');">
                         <div class="error-container">{error}</div>
                         <input type="hidden" name="csrf" value="{csrf_token}">
-                        <!--BeginSezDomainHidden-->
-                        <input type="hidden" name="domain" value="{domain_name}">
-                        <!--EndSezDomainHidden-->
 
                         <div class="form-group">
-                            <label for="emailaddress">{_Username}</label>
-                            <input class="form-control" name="username" type="text" id="emailaddress" required="required" placeholder="{_Enter your email or username or tel}">
+                            <label for="username">{_Username}</label>
+                            <input class="form-control" name="username" type="text" id="username" required="required" placeholder="{_Enter your email or username or tel}">
                         </div>
 
                         <div class="form-group">
                             <label for="password">{_Password}</label>
-                            <input class="form-control" name="password" type="password" required="required" id="password" placeholder="{_Enter your password}">
+                            <input id="password" class="form-control" name="password" type="password" required="required" placeholder="{_Enter your password}">
                         </div>
 
                         <div class="form-group" >
-                            <label>{_Password confirm}</label>
-                            <input class="form-control" type="password" placeholder="{_Confirm password}*" name='confirm-password' required=""/>
+                            <label for="username">{_Password confirm}</label>
+                            <input id="username" class="form-control" type="password" placeholder="{_Confirm password}*" name='confirm-password' required="required"/>
                         </div>
 
                         <!--BeginSezEmail-->
                         <div class="form-group">
-                            <label>{_Email}</label>
-                            <input class="form-control" name="email" type="email" required="" placeholder="{_Email}*">
+                            <label for="email">{_Email}</label>
+                            <input id="email" class="form-control" name="email" type="email" required="required" placeholder="{_Email}*">
                         </div>
                         <!--EndSezEmail-->
 
                         <!--BeginSezPhone-->
                         <div class="form-group" >
-                            <label>{_Phone}</label>
-                            <input class="form-control" type="tel" placeholder="{_Insert your cell or phone number}*" name='tel' required=""/>
+                            <label for="tel">{_Phone}</label>
+                            <input id="tel" class="form-control" type="tel" placeholder="{_Insert your cell or phone number}*" name='tel' required="required"/>
                         </div>
                         <!--EndSezPhone-->
 

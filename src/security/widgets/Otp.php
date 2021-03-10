@@ -26,13 +26,12 @@ class Otp extends Widget
     {
         $view                       = $this->view("index");
         $config                     = $view->getConfig();
-        //$config->error              = $this->request->error;
-
-        if (0 && $this->request->identity) {
+        //@todo da finire
+        if (0 && $this->request->identifier) {
             $this->api(
                 self::API_AUTH2_OTP_CREATE,
                 [
-                    "uuid" => $this->request->identity,
+                    "uuid" => $this->request->identifier,
                     "sender" => false,
                 ]
             );

@@ -5,10 +5,7 @@ hcore.security.recover = function (url, redirect, resendCode, selector) {
     );
     let token = $(selectorID).find("INPUT[name='csrf']").val() || "";
 
-    if(hcore.security.identity === undefined) {
-        hcore.security.identity = $(selectorID).find("INPUT[name='username']").val() || undefined;
-    }
-
+    hcore.security.identifier = $(selectorID).find("INPUT[name='username']").val() || hcore.security.identifier || undefined;
     hcore.security.initInterface(selectorID, redirect || "/user");
 
     if(resendCode || hcore.security.getBearerExpire() <= new Date().getTime()) {
@@ -19,7 +16,7 @@ hcore.security.recover = function (url, redirect, resendCode, selector) {
         "csrf": token
     };
     let data = {
-        "identity": hcore.security.identity
+        "identifier": hcore.security.identifier
     };
 
     $.ajax({
@@ -35,7 +32,7 @@ hcore.security.recover = function (url, redirect, resendCode, selector) {
                 hcore.inject(response.data.confirm, selectorID);
                 hcore.security.throwSuccess('Check your ' + response.data.sender);
                 hcore.security.setBearer(response.data.token);
-            } else if (response.data["redirect"] !== undefined) {
+            } else if (response.data.redirect !== undefined) {
                 hcore.security.throwSuccess('Check your ' + response.data.sender);
                 hcore.security.redirect(1000, response.data.redirect);
             }

@@ -79,11 +79,11 @@ class FilemanagerFs
 
     /**
      * @param string $path
-     * @param string $chmod
      * @param string|null $base_path
+     * @param $chmod
      * @return bool
      */
-    public static function makeDir(string $path, string $base_path = null, string $chmod = "0775") : bool
+    public static function makeDir(string $path, string $base_path = null, $chmod = 0775) : bool
     {
         $res                                                            = true;
         if (!$base_path) {
@@ -184,10 +184,10 @@ class FilemanagerFs
      * @param string $source
      * @param string $target
      * @param bool $delete_source
-     * @param string $chmod
+     * @param $chmod
      * @return bool
      */
-    private static function fullCopy(string $source, string $target, bool $delete_source = false, string $chmod = "0775") : bool
+    private static function fullCopy(string $source, string $target, bool $delete_source = false, $chmod = 0775) : bool
     {
         if ($source && $target && $source != $target && file_exists($source) && is_dir($source)) {
             $disable_rmdir = false;

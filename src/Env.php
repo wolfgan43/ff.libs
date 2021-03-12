@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs;
 
+use Exception;
 use phpformsframework\libs\cache\Buffer;
 
 /**
@@ -141,10 +142,13 @@ class Env implements Configurable
     public static function loadSchema(array $rawdata, string $bucket = "default") : array
     {
         if (!empty($rawdata)) {
+            if (isset($rawdata[0])) {
+                throw new Exception("double tag env declared in config.xml", 500);
+            }
             foreach ($rawdata as $key => $value) {
                 self::$packages[$bucket][$key]                      = Dir::getXmlAttr($value);
 
-                self::$vars[$key]                                   = self::$packages[$bucket][$key]["value"];
+                self::$vars[$key]                                   = self::$packages[$bucket][$key]["value"] ?? null;
             }
         }
         $vars                                                       = self::$dotenv + self::$vars;

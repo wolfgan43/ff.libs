@@ -53,6 +53,7 @@ class Constant
     const API_ISSUER                        = null; //usata forse non serve
     const API_SCOPE_OP                      = "/*";
     const API_SERVER                        = [];
+    const API_KEY                           = null;
 
     /**
      * Reference struct folder Assets

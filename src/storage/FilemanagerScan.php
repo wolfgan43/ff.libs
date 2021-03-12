@@ -73,6 +73,8 @@ class FilemanagerScan implements Dumpable
                 : ''
             );
 
+        $opt->exclude[]     = "node_modules";
+
         $opt->pattern       = $pattern;
         $opt->pattername    = basename($opt->pattern);
         $opt->rootname      = basename(dirname($pattern));

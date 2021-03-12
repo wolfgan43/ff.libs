@@ -148,7 +148,7 @@ abstract class ApiAdapter
                 /** Response Invalid Format (nojson or no object) */
                 App::debug($exception->getMessage(), $method . self::ERROR_RESPONSE_LABEL . $this->endpoint);
                 throw new Exception($exception->getMessage(), $exception->getCode());
-            } elseif (isset($response->data, $response->status, $response->error)) {
+            } elseif (isset($response->status, $response->error)) {
                 if ($response->status >= 400) {
                     /** Request Wrong Params */
                     App::debug($response->error, $method . self::ERROR_RESPONSE_LABEL . $this->endpoint);
@@ -165,10 +165,12 @@ abstract class ApiAdapter
                     unset($response->draw, $response->recordsTotal, $response->recordsFiltered);
                 }
 
-                $DataResponse->fillObject($response->data);
-                unset($response->data, $response->error, $response->status, $response->debug);
-                foreach (get_object_vars($response) as $property => $value) {
-                    $DataResponse->$property                            = $value;
+                if (isset($response->data)) {
+                    $DataResponse->fillObject($response->data);
+                    unset($response->data, $response->error, $response->status, $response->debug);
+                    foreach (get_object_vars($response) as $property => $value) {
+                        $DataResponse->$property = $value;
+                    }
                 }
             } elseif (empty($response)) {
                 /** Response is empty */

@@ -47,12 +47,9 @@ class Autoloader implements Dumpable
     public static function register(array $paths)
     {
         $cache                                                              = Buffer::cache(static::ERROR_BUCKET);
-        $autoloader                                                         = $cache->get("autoloader");
-        self::$includes                                                     = $autoloader["includes"];
-        if (self::$includes) {
+        if ($autoloader = $cache->get("autoloader")) {
+            self::$includes                                                 = $autoloader["includes"];
             self::$classes                                                  = $autoloader["classes"];
-
-
         } else {
             $config_dirs                                                    = [];
             foreach ($paths as $i => $path) {

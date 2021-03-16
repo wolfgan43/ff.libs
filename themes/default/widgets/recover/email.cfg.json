@@ -1,0 +1,10 @@
+{
+   "title":"Reset Account",
+   "description":"Enter your Cell phone number and we'll send you a code to reset your account",
+   "error": null,
+   "redirect": "\/login",
+   "logo": "100x50",
+   "logo_path": null,
+   "login_path": "\/login",
+   "help_mail": null
+}

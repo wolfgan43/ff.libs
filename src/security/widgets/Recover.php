@@ -2,7 +2,6 @@
 namespace phpformsframework\libs\security\widgets;
 
 use hcore\util\MicroServices;
-use phpformsframework\libs\Env;
 use phpformsframework\libs\gui\Widget;
 use phpformsframework\libs\security\widgets\helpers\CommonTemplate;
 use Exception;
@@ -16,24 +15,16 @@ class Recover extends Widget
     use CommonTemplate;
     use MicroServices;
 
-    protected $requiredJs           = ["hcore.security"];
+    protected $requiredJs           = ["hcore.security", "recover"];
+    protected $requiredCss          = ["recover"];
 
     /**
      * @throws Exception
      */
     protected function get(): void
     {
-        $view                       = $this->view("index");
-        $config                     = $view->getConfig();
-        $config->error              = $this->request->error;
-
-        $view->assign("help_mail", $config->help_mail ?? "support@" . $_SERVER['HTTP_HOST']);
-        $view->assign("recover_url", $this->getWebUrl($this->script_path . $this->path_info));
-
-        $this->setDefault($view, $config);
-        $this->setError($view, $config);
-        $this->setLogo($view, $config);
-        $this->setHeader($view, $config);
+        $action                     = basename($this->path_info);
+        $this->render($action);
     }
 
     /**
@@ -42,12 +33,18 @@ class Recover extends Widget
     protected function post(): void
     {
         $action                     = basename($this->path_info);
-        $config                     = $this->getConfig();
+        $config                     = $this->getConfig("recover");
+
         if (!empty($this->request->code)) {
             $response = $this->api($config->api->{"change_" . $action}, [$action => $this->request->value], ["Authorization" => $this->authorization . ":" . $this->request->code]);
         } elseif (isset($config->api->{"recover_" . $action})) {
             $response = $this->api($config->api->{"recover_" . $action}, ["identifier" => $this->request->identifier]);
-            $response->set("confirm", $this->confirm());
+
+            $response->set("confirm", (
+                $response->get("token")
+                ? $this->snippet("confirm")
+                : $this->snippet("wait")
+            ));
         } else {
             throw new Exception("Recover not supported: " . $action, 501);
         }
@@ -56,26 +53,42 @@ class Recover extends Widget
     }
 
     /**
+     * @throws Exception
+     */
+    protected function confirm() : void
+    {
+        $action                     = basename($this->path_info);
+
+        $this->render($action . "_confirm");
+    }
+
+    /**
+     * @throws Exception
+     */
+    protected function wait() : void
+    {
+        $action                     = basename($this->path_info);
+
+        $this->render($action . "_wait");
+    }
+
+    /**
+     * @param string $method
      * @return array
      * @throws Exception
      */
-    private function confirm() : array
+    private function render(string $method) : void
     {
-        $view                       = $this->view("confirm");
-        $config                     = $this->getConfig();
+        $view                       = $this->view($method);
+        $config                     = $view->getConfig();
 
+        $view->assign("help_mail", $config->help_mail ?? "support@" . $_SERVER['HTTP_HOST']);
         $view->assign("recover_url", $this->getWebUrl($this->script_path . $this->path_info));
 
         $this->setDefault($view, $config);
         $this->setError($view, $config);
         $this->setLogo($view, $config);
         $this->setHeader($view, $config);
-
-        return [
-            "html"  => $view->html(),
-            "css"   => null,
-            "js"    => null
-        ];
     }
 
     protected function put(): void

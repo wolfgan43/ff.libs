@@ -11,6 +11,5 @@
    "logo": "100x50",
    "logo_path": null,
    "login_path": "\/login",
-   "help_mail": null,
-   "activation_path": "\/activation"
+   "help_mail": null
 }

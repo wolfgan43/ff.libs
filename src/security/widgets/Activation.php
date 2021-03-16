@@ -37,9 +37,8 @@ class Activation extends Widget
             $response->set("confirm", $this->snippet("success"));
         } else {
             $response               = $config->response ?? $this->api($config->api->requestActivation . $this->path_info, ["identifier" => $this->request->identifier]);
-
             $response->set("confirm", (
-                $this->env("AUTH2_ACTIVATION_OTP")
+                $response->get("token")
                 ? $this->otp()
                 : $this->snippet("wait")
             ));
@@ -96,12 +95,9 @@ class Activation extends Widget
     {
         $view                       = $this->view($method);
         $config                     = $view->getConfig();
-        $config->error              = $this->request->error ?? null;
 
         $view->assign("help_mail", $config->help_mail ?? "support@" . $_SERVER['HTTP_HOST']);
-        if (isset($config->activation_path)) {
-            $view->assign("activation_url", $this->getWebUrl($config->activation_path));
-        }
+        $view->assign("activation_url", $this->getWebUrl($this->script_path . $this->path_info));
 
         $this->setDefault($view, $config);
         $this->setError($view, $config);

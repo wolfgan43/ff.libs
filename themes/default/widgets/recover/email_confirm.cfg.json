@@ -1,0 +1,10 @@
+{
+   "title":"Email Confirmation",
+   "description":"Insert new Email",
+   "error": null,
+   "redirect": "\/login",
+   "logo": "100x50",
+   "logo_path": null,
+   "login_path": "\/login",
+   "help_mail": null
+}

@@ -33,8 +33,6 @@
         <page path="/activation" controller="phpformsframework\libs\security\widgets\Activation">
             <header name="csrf"                                                 />
 
-            <get name="error"                                                   />
-
             <post name="code"                           validator="totp"        />
             <post name="identifier"                     validator="email"       />
         </page>
@@ -42,13 +40,11 @@
         <page path="/recover" controller="phpformsframework\libs\security\widgets\Recover">
             <header name="csrf"                                                 />
 
-            <get name="identifier"                      validator="email"       />
-            <get name="error"                                                   />
-
             <post name="code"                           validator="totp"        />
-            <post name="identifier"                     validator="email"       />
+            <post name="identifier"                     validator="string"       />
             <post name="value"                          validator="password"    />
         </page>
+
         <page path="/registration" controller="phpformsframework\libs\security\widgets\Registration">
             <header name="csrf"                                                 />
 
@@ -62,8 +58,6 @@
         </page>
         <page path="/otp" controller="phpformsframework\libs\security\widgets\Otp">
             <header name="csrf"                                                 />
-
-            <get name="error"                                                   />
 
             <post name="code"                           validator="totp"        />
         </page>

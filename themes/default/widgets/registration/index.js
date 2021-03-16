@@ -45,8 +45,8 @@ hcore.security.registration = function (url, redirect, selector) {
                 hcore.inject(response.data.welcome, selectorID);
             } else if (response.data.confirm) {
                 hcore.inject(response.data.confirm, selectorID);
-                hcore.security.throwSuccess('Check your ' + response.data.activation.sender);
-                hcore.security.setBearer(response.data.activation.token);
+                hcore.security.throwSuccess('Check your ' + response.data.sender);
+                hcore.security.setBearer(response.data.token);
             }
         } else {
             hcore.security.unblockAction();

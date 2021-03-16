@@ -83,7 +83,7 @@ class Registration extends Widget
             } elseif ($response->get("activation")) {
                 $response->set("confirm", Activation::toArray([
                     "redirect"          => $config->redirect,
-                    "response"          => $response
+                    "response"          => (new DataResponse())->fillObject($response->get("activation"))
                 ], $this->method));
             }
         }

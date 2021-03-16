@@ -5,14 +5,5 @@
       "change_password": "\/api\/auth2\/user\/password\/change",
       "recover_email": "\/api\/auth2\/user\/email\/recover",
       "change_email": "\/api\/auth2\/user\/email\/change"
-   },
-   "title":"Reset Password",
-   "description":"Enter your email address and we'll send you a code to reset your password",
-   "error": null,
-   "redirect": "\/login",
-   "logo": "100x50",
-   "logo_path": null,
-   "login_path": "\/login",
-   "help_mail": null,
-   "recover_path": "\/recover"
+   }
 }

@@ -347,7 +347,7 @@ abstract class OrmItem
         $collection_name                                                        = static::COLLECTION ?? $this->getClassName();
 
         $this->db                                                               = new Model();
-        $this->db->loadCollection($collection_name);
+        $this->db->loadCollection($collection_name, static::DELETE_LOGICAL_FIELD);
         $this->db->table(static::TABLE);
         $this->informationSchema                                                = $this->db->informationSchema();
 
@@ -460,7 +460,7 @@ abstract class OrmItem
             }
 
             $this->{$table}                                                     = array_replace($this->{$table} ?? [], $fields[$table]);
-            if (!empty($this->{$table}[$oneToOne->primaryKey])) {
+            if (!empty($this->{$table}[$oneToOne->primaryKey]) && $this->isStored()) {
                 /**
                  * Update
                  */
@@ -495,8 +495,9 @@ abstract class OrmItem
                          * Update
                          */
                         $data[$index]                                           = array_replace($this->{$table}[$index], $vars);
-
-                        $this->oneToMany[$table]->indexes_primary[$primaryValue]=& $this->indexes[$table][$index];
+                        if ($this->isStored()) {
+                            $this->oneToMany[$table]->indexes_primary[$primaryValue]    =& $this->indexes[$table][$index];
+                        }
                         $count_update++;
                     } else {
                         /**
@@ -579,7 +580,7 @@ abstract class OrmItem
             /**
              * One to One
              */
-            if (isset($this->{$table}[$oneToOne->primaryKey]) && $relDataDB[$oneToOne->primaryKey] != $this->{$table}[$oneToOne->primaryKey]) {
+            if (isset($this->{$table}[$oneToOne->primaryKey]) && ($relDataDB[$oneToOne->primaryKey] ?? null) != $this->{$table}[$oneToOne->primaryKey]) {
                 $obj = new $oneToOne->mapClass([$oneToOne->primaryKey => $this->{$table}[$oneToOne->primaryKey]]);
                 $obj->fill($relData);
             } elseif (isset($this->primaryIndexes[$oneToOne->dbExternal])) {
@@ -618,7 +619,7 @@ abstract class OrmItem
                     /**
                      * Skip update if DataStored = DataProperty
                      */
-                    $relDataDB                                                  = $relDataDBs[$oneToMany->indexes[$primaryValue]];
+                    $relDataDB                                                  = $relDataDBs[$oneToMany->indexes[$primaryValue]] ?? null;
                     if ($relDataDB == $relData) {
                         $this->{$table}[$index]                                 = array_intersect_key($this->{$table}[$index], $oneToMany->dataResponse);
                         continue;
@@ -655,13 +656,6 @@ abstract class OrmItem
     private function read(array $where = null) : void
     {
         if (!empty($where)) {
-            if (static::DELETE_LOGICAL_FIELD) {
-                $where[static::DELETE_LOGICAL_FIELD]                            = false;
-                foreach ($this->tables as $table) {
-                    $where[$table . "." . static::DELETE_LOGICAL_FIELD]         = false;
-                }
-            }
-
             $item                                                               = $this->db
                 ->readOne($where);
 

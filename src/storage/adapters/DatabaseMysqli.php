@@ -241,12 +241,13 @@ class DatabaseMysqli extends DatabaseAdapter
 
     /**
      * @param array|null $fields
+     * @param string|null $delete_logical_field
      * @return string
      * @throws Exception
      */
-    protected function queryWhere(array $fields = null) : string
+    protected function queryWhere(array $fields = null, string $delete_logical_field = null) : string
     {
-        return implode(static::AND, parent::queryWhere($fields));
+        return implode(static::AND, parent::queryWhere($fields, $delete_logical_field));
     }
 
     /**

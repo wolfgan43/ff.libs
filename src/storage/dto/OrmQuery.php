@@ -116,6 +116,18 @@ class OrmQuery
     }
 
     /**
+     * @param string|null $delete_logical_field
+     * @return array|null
+     */
+    public function where(string $delete_logical_field = null) : ?array
+    {
+        return ($delete_logical_field && !empty($this->where)
+            ? ($this->where + [$delete_logical_field => false])
+            : $this->where
+        );
+    }
+
+    /**
      * @param bool $skip
      */
     public function setControl(bool $skip = false) : void

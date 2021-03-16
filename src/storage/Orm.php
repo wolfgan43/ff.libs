@@ -113,16 +113,18 @@ class Orm extends Mappable
     private $result_keys                                                                    = null;
 
     private $map_class                                                                      = null;
+    private $delete_logical_field                                                           = null;
 
     public $count                                                                           = null;
 
     /**
      * @param string|null $collection
      * @param string|null $mainTable
+     * @param string|null $delete_logical_field
      * @param string|null $mapClass
      * @return Orm
      */
-    public static function &getInstance(string $collection = null, string $mainTable = null, string $mapClass = null) : self
+    public static function &getInstance(string $collection = null, string $mainTable = null, string $delete_logical_field = null, string $mapClass = null) : self
     {
         if (!isset(self::$singleton[$collection])) {
             self::$singleton[$collection]                                                   = new Orm($collection);
@@ -130,6 +132,7 @@ class Orm extends Mappable
 
         return self::$singleton[$collection]
             ->setMainTable($mainTable)
+            ->setDeleteLogicalField($delete_logical_field)
             ->setMapClass($mapClass);
     }
 
@@ -158,6 +161,17 @@ class Orm extends Mappable
         } else {
             $this->main_table                                                               = $this->default_table;
         }
+
+        return $this;
+    }
+
+    /**
+     * @param string|null $delete_logical_field
+     * @return Orm
+     */
+    private function &setDeleteLogicalField(string $delete_logical_field = null) : self
+    {
+        $this->delete_logical_field                                                         = $delete_logical_field;
 
         return $this;
     }
@@ -539,14 +553,13 @@ class Orm extends Mappable
     private function getData(OrmQuery $data, string $controller, string $table, int $limit = null, int $offset = null, bool $calc_found_rows = false) : ?int
     {
         $count                                                                              = null;
-
         $main_table                                                                         = $data->def->mainTable;
         $Orm                                                                                = $this->getModel($controller);
         $regs                                                                               = $Orm
                                                                                                 ->setStorage($data->def)
                                                                                                 ->read(
                                                                                                     $data->select(true),
-                                                                                                    $data->where,
+                                                                                                    $data->where($this->delete_logical_field),
                                                                                                     $data->sort,
                                                                                                     $limit,
                                                                                                     $offset,
@@ -692,7 +705,7 @@ class Orm extends Mappable
                                                                                                 ->setStorage($data->def)
                                                                                                 ->read(
                                                                                                     $data->select(true),
-                                                                                                    $data->where,
+                                                                                                    $data->where($this->delete_logical_field),
                                                                                                     $data->sort,
                                                                                                     $limit,
                                                                                                     $offset,
@@ -1220,7 +1233,7 @@ class Orm extends Mappable
     private function getModel(string $model = null) : Orm
     {
         return ($model
-            ? self::getInstance($model, $this->main_table, $this->map_class)
+            ? self::getInstance($model, $this->main_table, $this->delete_logical_field, $this->map_class)
             : $this
         );
     }

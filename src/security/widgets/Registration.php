@@ -7,6 +7,7 @@ use phpformsframework\libs\gui\Widget;
 use phpformsframework\libs\security\User;
 use phpformsframework\libs\security\widgets\helpers\CommonTemplate;
 use Exception;
+use phpformsframework\libs\storage\Model;
 
 /**
  * Class Registration
@@ -29,13 +30,31 @@ class Registration extends Widget
 
         $view->assign("registration_url", $this->getWebUrl($config->registration_path));
 
-        if (!empty($config->email)) {
-            $view->parse("SezEmail", true);
+        if ($this->path_info && $model = Model::get(basename($this->path_info))) {
+            $propertires = [
+                "required",
+                "placeholder",
+                "min",
+                "max",
+            ];
+            foreach ($model as $field_name) {
+                $view->assign("field_name", $field_name);
+                $view->assign("field_label", $this->translate($field_name));
+                $view->assign("field_type", "Text");
+                $view->assign("field_class", "form-control");
+                $view->assign("field_properties", null);
+                $view->parse("SezModel", true);
+            }
+        } else {
+            if (!empty($config->email)) {
+                $view->parse("SezEmail", true);
+            }
+
+            if (!empty($config->phone)) {
+                $view->parse("SezPhone", false);
+            }
         }
 
-        if (!empty($config->phone)) {
-            $view->parse("SezPhone", false);
-        }
 
         $this->setDefault($view, $config);
         $this->setError($view, $config);
@@ -48,12 +67,12 @@ class Registration extends Widget
      */
     protected function post(): void
     {
-        $config                     = $this->getConfig();
+        $config                         = $this->getConfig();
 
         if (!$this->request->password) {
             $response = new DataResponse();
             $response->set("confirm", Activation::toArray([
-                "redirect"          => $config->redirect
+                "redirect"              => $config->redirect
             ], $this->method));
         } else {
             $response                   = $this->api($config->api->registration, (array)$this->request);

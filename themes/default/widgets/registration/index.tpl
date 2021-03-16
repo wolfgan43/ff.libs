@@ -52,6 +52,13 @@
                         </div>
                         <!--EndSezPhone-->
 
+                        <!--BeginSezModel-->
+                        <div class="form-group">
+                            <label for="{field_name}">{field_label}</label>
+                            <input class="{field_class}" name="{field_name}" type="{field_type}" id="{field_name}"{field_properties}>
+                        </div>
+                        <!--EndSezModel-->
+
                         <div class="form-group mb-0 text-center">
                             <button class="btn btn-primary" type="submit">{_Register}</button>
                         </div>

@@ -362,11 +362,12 @@ abstract class DatabaseAdapter implements Constant
 
     /**
      * @param array|null $fields
+     * @param string|null $delete_logical_field
      * @return array|string
      * @throws Exception
      * @todo da tipizzare
      */
-    protected function queryWhere(array $fields = null)
+    protected function queryWhere(array $fields = null, string $delete_logical_field = null)
     {
         $res                            = array();
         if (isset($fields[self::OR])) {
@@ -396,7 +397,12 @@ abstract class DatabaseAdapter implements Constant
 
                 unset($res[static::OR]);
             }
+
+            if ($delete_logical_field && !isset($fields[$delete_logical_field])) {
+                $this->fieldWhere($res, false, self::FTYPE_BOOLEAN, $delete_logical_field);
+            }
         }
+
         return $res;
     }
 
@@ -762,7 +768,7 @@ abstract class DatabaseAdapter implements Constant
 
         $query->select          = $this->querySelect($select, empty($this->table["skip_control"]));
         $query->sort            = $this->querySort($sort);
-        $query->where           = $this->queryWhere($where);
+        $query->where           = $this->queryWhere($where, $this->table["delete_logical_field"] ?? null);
         $query->limit           = $limit    < 0 ? null : $limit;
         $query->offset          = $offset   < 0 ? null : $offset;
 
@@ -999,7 +1005,7 @@ abstract class DatabaseAdapter implements Constant
         if (empty($where)) {
             throw new Exception(self::ERROR_DELETE_IS_EMPTY, 500);
         }
-
+        //@todo da creare lo switch per gestire la cancellazione logica
         return $this->processDelete($this->getQueryDelete($where, $table_name));
     }
 

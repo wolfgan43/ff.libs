@@ -504,7 +504,6 @@ class Request implements Configurable, Dumpable
             case self::METHOD_OPTIONS:
             case self::METHOD_HEAD: //todo: to manage
                 header('Access-Control-Allow-Methods: ' . $this->page->method);
-
                 $this->corsPreflight($origin);
                 exit;
 

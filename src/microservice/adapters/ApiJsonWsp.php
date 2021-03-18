@@ -15,12 +15,19 @@ class ApiJsonWsp extends ApiAdapter
 {
     use ServerManager;
 
-    protected const ERROR_RESPONSE_INVALID_FORMAT = "Response is not a valid Json";
+    private const METHOD_ALLOWED                    = [
+                                                        Request::METHOD_GET,
+                                                        Request::METHOD_POST,
+                                                        Request::METHOD_PUT,
+                                                        Request::METHOD_PATCH,
+                                                        Request::METHOD_DELETE
+                                                    ];
 
-    protected $method                           = Request::METHOD_POST;
+    protected const ERROR_RESPONSE_INVALID_FORMAT   = "Response is not a valid Json";
+    private const ERROR_METHOD_NOT_SUPPORTED        = "Request Method not Supported";
 
-    protected $user_agent                       = null;
-    protected $cookie                           = null;
+    protected $user_agent                           = null;
+    protected $cookie                               = null;
 
     /**
      * @param string $method
@@ -30,10 +37,9 @@ class ApiJsonWsp extends ApiAdapter
      */
     public function __call(string $method, array $arguments) : object
     {
-        $this->endpoint                         .= "/" . $method;
+        $this->endpoint                         .= DIRECTORY_SEPARATOR . $method;
 
-        $arguments["action"]                    = $method;
-        return parent::__call($this->method, $arguments);
+        return parent::__call($method, $arguments);
     }
 
     /**
@@ -55,31 +61,38 @@ class ApiJsonWsp extends ApiAdapter
      */
     public function preflight() : ?array
     {
-        if (!isset(self::$preflight[$this->endpoint])) {
-            self::$preflight[$this->endpoint]   = FilemanagerWeb::fileGetContentsWithHeaders(
-                $this->endpoint,
-                null,
-                Request::METHOD_HEAD
-            );
-        }
-
-        return self::$preflight[$this->endpoint];
+        return FilemanagerWeb::fileGetContentsWithHeaders(
+            $this->endpoint(),
+            null,
+            Request::METHOD_HEAD
+        );
     }
 
     /**
-     * @param string $method
      * @param array|null $params
      * @param array|null $headers
      * @return stdClass|array|null
      * @throws Exception
      * @todo da tipizzare
      */
-    protected function get(string $method, array $params = null, array $headers = null)
+    protected function get(array $params = null, array $headers = null)
     {
+        $this->protocol         = $this->protocol();
+
+        $discover               = $this->discover();
+        $this->request_method   = $discover["Access-Control-Allow-Methods"] ?? $this->requestMethod();
+        if (isset($discover["Strict-Transport-Security"])) {
+            $this->protocol     = "http://";
+        }
+
+        if (!in_array($this->request_method, self::METHOD_ALLOWED)) {
+            throw new Exception(self::ERROR_METHOD_NOT_SUPPORTED, 501);
+        }
+
         return FilemanagerWeb::fileGetContentsJson(
-            $this->endpoint,
+            $this->endpoint(),
             $params,
-            $method,
+            $this->request_method,
             $this->timeout,
             $this->user_agent,
             $this->cookie,

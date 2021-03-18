@@ -2,6 +2,7 @@
 namespace phpformsframework\libs\microservice\adapters;
 
 use phpformsframework\libs\App;
+use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\dto\DataAdapter;
 use phpformsframework\libs\dto\DataResponse;
@@ -19,8 +20,12 @@ abstract class ApiAdapter
 {
     use Mockable;
 
+    private const ERROR_BUCKET                                          = "api";
+    private const METHOD_HEAD                                           = "HEAD";
+
     protected const NAMESPACE_DATARESPONSE                              = App::NAME_SPACE . "dto\\";
     protected const REQUEST_TIMEOUT                                     = 10;
+    protected const PROTOCOL                                            = "https://";
 
     protected const ERROR_RESPONSE_INVALID_FORMAT                       = "Response Invalid Format";
 
@@ -36,21 +41,20 @@ abstract class ApiAdapter
     protected $endpoint                                                 = null;
     protected $http_auth_username                                       = null;
     protected $http_auth_secret                                         = null;
+    protected $request_method                                           = null;
+    protected $protocol                                                 = null;
+    protected $action                                                   = null;
 
     protected $headers                                                  = [];
     protected $requests                                                 = [];
 
-    private $action                                                     = null;
-    private $exTimePreflight                                            = null;
-
     /**
-     * @param string $method
      * @param array|null $params
      * @param array|null $headers
      * @return stdClass|array|null
      * @throws Exception
      */
-    abstract protected function get(string $method, array $params = null, array $headers = null);
+    abstract protected function get(array $params = null, array $headers = null);
 
     /**
      * @return array
@@ -71,9 +75,9 @@ abstract class ApiAdapter
      */
     public function __call(string $method, array $arguments) : object
     {
-        $this->action                                                   = $arguments["action"] ?? $method;
+        $this->action                                                   = $method;
 
-        return $this->send($method, $arguments[0], $arguments[1] ?? null);
+        return $this->send($arguments[0], $arguments[1] ?? null);
     }
 
     /**
@@ -84,22 +88,35 @@ abstract class ApiAdapter
      */
     public function __construct(string $url = null, string $username = null, string $secret = null)
     {
-        $this->endpoint                                                 = $url      ?? $this->endpoint;
-        $this->http_auth_username                                       = $username ?? $this->http_auth_username;
-        $this->http_auth_secret                                         = $secret   ?? $this->http_auth_secret;
+        $this->endpoint                                                 = $url;
+        $this->http_auth_username                                       = $username;
+        $this->http_auth_secret                                         = $secret;
     }
 
     /**
      * @return array|null
-     * @todo da cachare permanentemente
      */
     public function discover() : ?array
     {
         Debug::stopWatch("api/remote/preflight");
 
-        $discover                                                       = $this->preflight();
+        $endpoint                                                       = $this->endpoint();
 
-        $this->exTimePreflight                                          = Debug::stopWatch("api/remote/preflight");
+        if (!isset(self::$preflight)) {
+            self::$preflight                                            = Buffer::cache(self::ERROR_BUCKET)->get("preflight");
+        }
+
+        if (!isset(self::$preflight[$endpoint])) {
+            $cache                                                      = Buffer::cache(self::ERROR_BUCKET);
+            self::$preflight[$endpoint]                                 = $this->preflight();
+
+            $cache->set("preflight", self::$preflight);
+        }
+
+        $discover                                                       = self::$preflight[$endpoint];
+        $discover["exTimePreflight"]                                    = Debug::stopWatch("api/remote/preflight") . (!isset($cache) ? " cached" : null);
+
+        App::debug($discover, self::METHOD_HEAD . self::ERROR_REQUEST_LABEL . $endpoint);
 
         return $discover["headers"] ?? null;
     }
@@ -122,13 +139,12 @@ abstract class ApiAdapter
         return new $class_name();
     }
     /**
-     * @param string $method
      * @param array|null $params
      * @param array|null $headers
      * @return DataAdapter
      * @throws Exception
      */
-    public function send(string $method, array $params = null, array $headers = null) : DataAdapter
+    public function send(array $params = null, array $headers = null) : DataAdapter
     {
         Debug::stopWatch("api/remote");
 
@@ -138,23 +154,23 @@ abstract class ApiAdapter
         if ($this->endpoint) {
             $headers                                                     = $this->getHeader($headers);
             try {
-                $response                                               = $this->getMock() ?? $this->get($method, $params, $headers);
+                $response                                               = $this->getMock() ?? $this->get($params, $headers);
             } catch (Exception $e) {
                 $exception                                              = $e;
             }
 
-            self::debug($method, $params, $headers, $response->debug ?? null);
+            self::debug($this->request_method, $params, $headers, $response->debug ?? null);
             if ($exception) {
                 /** Response Invalid Format (nojson or no object) */
-                App::debug($exception->getMessage(), $method . self::ERROR_RESPONSE_LABEL . $this->endpoint);
+                App::debug($exception->getMessage(), $this->request_method . self::ERROR_RESPONSE_LABEL . $this->endpoint());
                 throw new Exception($exception->getMessage(), $exception->getCode());
             } elseif (isset($response->status, $response->error)) {
                 if ($response->status >= 400) {
                     /** Request Wrong Params */
-                    App::debug($response->error, $method . self::ERROR_RESPONSE_LABEL . $this->endpoint);
+                    App::debug($response->error, $this->request_method . self::ERROR_RESPONSE_LABEL . $this->endpoint());
                     throw new Exception($response->error, $response->status);
                 } else {
-                    App::debug(empty($response->data) ? self::ERROR_RESPONSE_EMPTY : $response->data, $method . self::ERROR_RESPONSE_LABEL . $this->endpoint);
+                    App::debug(empty($response->data) ? self::ERROR_RESPONSE_EMPTY : $response->data, $this->request_method . self::ERROR_RESPONSE_LABEL . $this->endpoint());
                 }
 
                 if (isset($response->draw, $response->recordsTotal, $response->recordsFiltered)) {
@@ -174,18 +190,23 @@ abstract class ApiAdapter
                 }
             } elseif (empty($response)) {
                 /** Response is empty */
-                App::debug(self::ERROR_RESPONSE_EMPTY, $method . self::ERROR_RESPONSE_LABEL . $this->endpoint);
+                App::debug(self::ERROR_RESPONSE_EMPTY, $this->request_method . self::ERROR_RESPONSE_LABEL . $this->endpoint());
                 throw new Exception(self::ERROR_RESPONSE_EMPTY, 404);
             } else {
                 $DataResponse->fillObject($response);
                 $DataResponse->outputMode(true);
-                App::debug($response, $method . self::ERROR_RESPONSE_LABEL . $this->endpoint);
+                App::debug($response, $this->request_method . self::ERROR_RESPONSE_LABEL . $this->endpoint());
             }
         } else {
             $DataResponse->error(500, self::ERROR_RESPONSE_EMPTY);
-            App::debug(self::ERROR_ENDPOINT_EMPTY, $method . self::ERROR_RESPONSE_LABEL);
+            App::debug(self::ERROR_ENDPOINT_EMPTY, $this->request_method . self::ERROR_RESPONSE_LABEL);
         }
         return $DataResponse;
+    }
+
+    protected function endpoint() : string
+    {
+        return $this->protocol . $this->endpoint;
     }
 
     /**
@@ -202,10 +223,9 @@ abstract class ApiAdapter
             "body"                                                      => $params,
             "isRemote"                                                  => true,
             "isMock"                                                    => $this->mockEnabled,
-            "exTimePreflight"                                           => $this->exTimePreflight,
             "exTimeRequest"                                             => Debug::stopWatch("api/remote"),
             "debug"                                                     => $debug
-        ], $method . self::ERROR_REQUEST_LABEL . $this->endpoint);
+        ], $method . self::ERROR_REQUEST_LABEL . $this->endpoint());
     }
 
     /**
@@ -217,7 +237,7 @@ abstract class ApiAdapter
         $schema                                                         = null;
         if ($this->mockEnabled) {
 
-            $method                                                     = $this->action ?? parse_url($this->endpoint, PHP_URL_PATH);
+            $method                                                     = $this->action ?? parse_url($this->endpoint(), PHP_URL_PATH);
 
             $schema                                                     = $this->getResponseSchema($method);
             if ($schema) {

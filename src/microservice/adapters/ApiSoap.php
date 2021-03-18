@@ -15,6 +15,9 @@ use Exception;
 class ApiSoap extends ApiAdapter
 {
     protected const ERROR_RESPONSE_INVALID_FORMAT                       = "Response is not a valid Object";
+
+    private const REQUEST_METHOD                                        = "Soap";
+
     /**
      * @var SoapClient|null
      */
@@ -71,7 +74,7 @@ class ApiSoap extends ApiAdapter
     {
         if (!$this->client) {
             $options                                                    = array(
-                'location'                                              => $this->endpoint,
+                'location'                                              => $this->endpoint(),
                 'uri'                                                   => $this->uri,
                 'style'                                                 => SOAP_RPC,
                 'use'                                                   => SOAP_ENCODED,
@@ -119,27 +122,29 @@ class ApiSoap extends ApiAdapter
 
 
     /**
-     * @param string $method
      * @param array|null $params
      * @param array|null $headers
      * @return stdClass
      * @throws Exception
      */
-    protected function get(string $method, array $params = null, array $headers = null) : stdClass
+    protected function get(array $params = null, array $headers = null) : stdClass
     {
         $response                                                       = new stdClass();
+        $this->protocol                                                 = self::PROTOCOL;
+        $this->request_method                                           = self::REQUEST_METHOD;
+
         $this->loadClient();
         $this->setSoapHeader($headers);
         try {
-            $this->client->__action                                     = $method;
+            $this->client->__action                                     = $this->action;
 
-            $request                                                    = $this->getRequest($method, $params);
-            $response                                                   = $this->getResponse($method, $request);
+            $request                                                    = $this->getRequest($this->action, $params);
+            $response                                                   = $this->getResponse($this->action, $request);
         } catch (SoapFault $e) {
             throw new Exception($e->faultstring, 500);
         } finally {
             App::debug([
-                "location"                                              => $this->endpoint,
+                "location"                                              => $this->endpoint(),
                 "uri"                                                   => $this->uri,
                 "header"                                                => [
                                                                             "namespace"     => $this->header_namespace,
@@ -147,7 +152,7 @@ class ApiSoap extends ApiAdapter
                                                                         ],
                 "xml"                                                   => $this->client->__getLastRequest()
 
-            ], "Soap" . "::" . $method);
+            ], $this->request_method . "::" . $this->action);
         }
 
         return $response;

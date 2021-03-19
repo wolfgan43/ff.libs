@@ -15,7 +15,16 @@ trait ServerManager
      */
     private static function isHTTPS(): bool
     {
-        return (isset($_SERVER['REQUEST_SCHEME']) && $_SERVER['REQUEST_SCHEME'] == 'https') && (isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) === 'on');
+        $isHttps =
+            $_SERVER['HTTPS']
+            ?? $_SERVER['REQUEST_SCHEME']
+            ?? $_SERVER['HTTP_X_FORWARDED_PROTO']
+            ?? null
+        ;
+        return $isHttps && (
+            strcasecmp('on', $isHttps) == 0
+                || strcasecmp('https', $isHttps) == 0
+            );
     }
 
     /**

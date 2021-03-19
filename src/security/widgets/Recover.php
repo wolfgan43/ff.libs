@@ -79,6 +79,10 @@ class Recover extends Widget
      */
     private function render(string $method) : void
     {
+        if (empty($method)) {
+            throw new Exception("Recover action is empty", 501);
+        }
+
         $view                       = $this->view($method);
         $config                     = $view->getConfig();
 

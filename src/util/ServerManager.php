@@ -15,7 +15,7 @@ trait ServerManager
      */
     private static function isHTTPS(): bool
     {
-        return (isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) === 'on') || self::referer(PHP_URL_SCHEME, "origin") == "https";
+        return (isset($_SERVER['REQUEST_SCHEME']) && $_SERVER['REQUEST_SCHEME'] == 'https') && (isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) === 'on');
     }
 
     /**

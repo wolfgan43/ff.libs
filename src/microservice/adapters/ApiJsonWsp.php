@@ -82,7 +82,7 @@ class ApiJsonWsp extends ApiAdapter
         $discover               = $this->discover();
         $this->request_method   = $discover["Access-Control-Allow-Methods"] ?? $this->requestMethod();
         if (isset($discover["Strict-Transport-Security"])) {
-            $this->protocol     = "http://";
+            $this->protocol     = self::PROTOCOL;
         }
 
         if (!in_array($this->request_method, self::METHOD_ALLOWED)) {

@@ -48,6 +48,10 @@ class MessengerTwilio extends MessengerAdapter
      */
     public function send(string $message, array $to = null) : void
     {
+        if (!class_exists(Client::class)) {
+            throw new Exception("Twilio class missing", 501);
+        }
+
         if ($message) {
             if (!empty($to)) {
                 try {

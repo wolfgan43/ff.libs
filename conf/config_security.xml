@@ -48,6 +48,8 @@
         <page path="/registration" controller="phpformsframework\libs\security\widgets\Registration">
             <header name="csrf"                                                 />
 
+            <post name="referral"                       />
+
             <post name="identifier"                     validator="username"    />
             <post name="password"                       validator="password"    />
             <post name="email"                          validator="email"       />

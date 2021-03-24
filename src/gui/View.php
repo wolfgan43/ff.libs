@@ -1,6 +1,8 @@
 <?php
 namespace phpformsframework\libs\gui;
 
+use phpformsframework\libs\dto\DataResponse;
+use phpformsframework\libs\dto\DataTableResponse;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\util\AdapterManager;
 use stdClass;
@@ -67,12 +69,14 @@ class View
      */
     public function assign($data, $value = null) : View
     {
-        if (is_callable($data)) {
-            $data($this);
+        if ($data instanceof DataTableResponse) {
+            //@todo da fare
+        } elseif ($data instanceof DataResponse) {
+            //@todo da fare
         } else {
             $this->adapter->assign($data, $value);
         }
-
+        
         return $this;
     }
 

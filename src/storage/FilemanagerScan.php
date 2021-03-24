@@ -285,7 +285,7 @@ class FilemanagerScan implements Dumpable
             $file_info->rootpathname                    = basename($file_info->rootpath);
             $file_info->rootname                        = basename($file_info->rootpath);
         } else {
-            $subdir_count                               = substr_count($opt->pattern, DIRECTORY_SEPARATOR);
+            $subdir_count                               = substr_count(preg_replace('/(\/\*){2,}$/', DIRECTORY_SEPARATOR . "*", $opt->pattern), DIRECTORY_SEPARATOR);
             $arrDir                                     = explode(DIRECTORY_SEPARATOR, $file_info->dirname, $subdir_count + 2);
 
             $file_info->rootpathname                    = $arrDir[$subdir_count + 1] ?? null;

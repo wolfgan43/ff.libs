@@ -134,7 +134,7 @@ abstract class Controller
         $adapter                                = static::CONTROLLER_ENGINE ?? Kernel::$Environment::CONTROLLER_ADAPTER;
 
         if (!isset(self::$controllers[$adapter])) {
-            self::$controllers[$adapter]        = $this->setAdapter($adapter, [$this->path_info, static::CONTROLLER_TYPE, static::LAYOUT]);
+            self::$controllers[$adapter]        = $this->setAdapter($adapter, [$this->script_path, static::CONTROLLER_TYPE, static::LAYOUT]);
         }
 
         $this->adapter                          =& self::$controllers[$adapter];
@@ -232,6 +232,7 @@ abstract class Controller
      * ------------------------------------------------------------------------
      */
     protected const ASSET_LOCATION_ASYNC        = ControllerAdapter::ASSET_LOCATION_ASYNC;
+    protected const ASSET_LOCATION_DEFER        = ControllerAdapter::ASSET_LOCATION_DEFER;
     protected const ASSET_LOCATION_HEAD         = ControllerAdapter::ASSET_LOCATION_HEAD;
     protected const ASSET_LOCATION_BODY_TOP     = ControllerAdapter::ASSET_LOCATION_BODY_TOP;
     protected const ASSET_LOCATION_BODY_BOTTOM  = ControllerAdapter::ASSET_LOCATION_BODY_BOTTOM;
@@ -368,12 +369,13 @@ abstract class Controller
 
     /**
      * @param string $filename_or_url
+     * @param bool $async
      * @return $this
      * @throws Exception
      */
-    protected function addJavascriptAsync(string $filename_or_url) : self
+    protected function addJavascriptDefer(string $filename_or_url, bool $async = false) : self
     {
-        $this->addAsset($this->adapter->js, Resource::TYPE_ASSET_JS, self::ASSET_LOCATION_ASYNC, $filename_or_url);
+        $this->addAsset($this->adapter->js, Resource::TYPE_ASSET_JS, $async ? self::ASSET_LOCATION_ASYNC : self::ASSET_LOCATION_DEFER, $filename_or_url);
 
         return $this;
     }
@@ -509,7 +511,7 @@ abstract class Controller
     {
         if ($layout_name && $include_layout_assets) {
             $this->addStylesheet($layout_name);
-            $this->addJavascriptAsync($layout_name);
+            $this->addJavascriptDefer($layout_name);
         }
 
         $this->adapter->layout  = (
@@ -594,7 +596,7 @@ abstract class Controller
     {
         $this
             ->addStylesheet(static::LAYOUT)
-            ->addJavascriptAsync(static::LAYOUT)
+            ->addJavascriptDefer(static::LAYOUT)
             ->assign(
                 self::TPL_VAR_DEFAULT,
                 $this->view()
@@ -627,7 +629,7 @@ abstract class Controller
 
         if ($include_assets) {
             $this->addStylesheet($template);
-            $this->addJavascriptAsync($template);
+            $this->addJavascriptDefer($template);
         }
 
         return $this->view              = (new View(null, static::TEMPLATE_ENGINE))
@@ -674,7 +676,7 @@ abstract class Controller
     private function parseAssets() : void
     {
         foreach ($this->requiredJs as $js) {
-            $this->addJavascriptAsync($js);
+            $this->addJavascriptDefer($js);
         }
         foreach ($this->requiredCss as $css) {
             $this->addStylesheet($css);

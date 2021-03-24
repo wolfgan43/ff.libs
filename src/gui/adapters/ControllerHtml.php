@@ -106,7 +106,8 @@ class ControllerHtml extends ControllerAdapter
                                                     self::ASSET_LOCATION_HEAD           => null,
                                                     self::ASSET_LOCATION_BODY_TOP       => null,
                                                     self::ASSET_LOCATION_BODY_BOTTOM    => null,
-                                                    self::ASSET_LOCATION_ASYNC          => null
+                                                    self::ASSET_LOCATION_ASYNC          => null,
+                                                    self::ASSET_LOCATION_DEFER          => null
                                                 ];
 
     private $error                              = null;
@@ -233,7 +234,7 @@ class ControllerHtml extends ControllerAdapter
                                                     ? $this->title
                                                     : $this->getTileDefault()
                                                 );
-        if ($include_appname) {
+        if ($include_appname && Kernel::$Environment::APPNAME) {
             $res                                .= " - " . Kernel::$Environment::APPNAME;
         }
         return $res;
@@ -378,8 +379,11 @@ class ControllerHtml extends ControllerAdapter
                     $script                     = self::NEWLINE . '<script';
                     break;
                 case self::ASSET_LOCATION_ASYNC:
+                    $script                     = self::NEWLINE . '<script async';
+                    break;
+                case self::ASSET_LOCATION_DEFER:
                 default:
-                    $media                      = self::ASSET_LOCATION_ASYNC;
+                    $media                      = self::ASSET_LOCATION_DEFER;
                     $script                     = self::NEWLINE . '<script defer';
             }
 
@@ -564,6 +568,7 @@ class ControllerHtml extends ControllerAdapter
             . $this->parseStructuredData()
             . $this->parseJsTemplate()
             . $this->parseJs(self::ASSET_LOCATION_ASYNC)
+            . $this->parseJs(self::ASSET_LOCATION_DEFER)
             . $this->parseJs(self::ASSET_LOCATION_HEAD)
             . self::NEWLINE
         . '</' . self::HEAD_TAG . '>';

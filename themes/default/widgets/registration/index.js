@@ -10,6 +10,7 @@ hcore.security.registration = function (url, redirect, selector) {
     let confirmPassword = $(selectorID).find("INPUT[name='confirm-password']").val() || "";
     let email = $(selectorID).find("INPUT[name='email']").val() || undefined;
     let tel = $(selectorID).find("INPUT[name='tel']").val() || undefined;
+    let referral = hcore.getURLParameter("referral");
 
     hcore.security.identifier = $(selectorID).find("INPUT[name='username']").val() || hcore.security.identifier || undefined;
     hcore.security.initInterface(selectorID, redirect || "/user");
@@ -29,7 +30,8 @@ hcore.security.registration = function (url, redirect, selector) {
         "identifier": hcore.security.identifier,
         "password": password,
         "email": email,
-        "tel": tel
+        "tel": tel,
+        "referral" : referral
     };
 
     $.ajax({

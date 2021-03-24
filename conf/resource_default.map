@@ -4,7 +4,6 @@
       "flag": 4,
       "type": "layouts",
       "filter": [
-        "html",
         "tpl"
       ]
     },
@@ -60,15 +59,14 @@
       ]
     },
     "widgets": {
-      "flag": 4,
+      "flag": 8,
       "type": "widgets",
-      "prototype" : "filename",
-      "groupby": "parentname/extension",
+      "prototype" : "defaultname",
+      "groupby": "rootname/extension",
       "replace": {
         "json" : "cfg"
       },
       "filter": [
-        "html",
         "tpl",
         "css",
         "js",

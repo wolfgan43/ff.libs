@@ -14,6 +14,7 @@ abstract class ControllerAdapter extends Mappable
      * Assets Method
      */
     public const ASSET_LOCATION_ASYNC           = "Async";
+    public const ASSET_LOCATION_DEFER           = "Defer";
     public const ASSET_LOCATION_HEAD            = "Head";
     public const ASSET_LOCATION_BODY_TOP        = "BodyTop";
     public const ASSET_LOCATION_BODY_BOTTOM     = "BodyBottom";

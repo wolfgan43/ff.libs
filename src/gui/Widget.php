@@ -111,17 +111,18 @@ abstract class Widget extends Controller
 
     /**
      * @param string $filename_or_url
+     * @param bool $async
      * @return Controller
      * @throws Exception
      */
-    protected function addJavascriptAsync(string $filename_or_url): Controller
+    protected function addJavascriptDefer(string $filename_or_url, bool $async = false): Controller
     {
         $resources = $this->getResources();
         if (!empty($resources->js[$filename_or_url])) {
             $filename_or_url = $resources->js[$filename_or_url];
         }
 
-        return parent::addJavascriptAsync($filename_or_url);
+        return parent::addJavascriptDefer($filename_or_url, $async);
     }
 
     /**
@@ -146,7 +147,7 @@ abstract class Widget extends Controller
         $resources                                  = $this->getResources();
 
         if (empty($resources->tpl[$template])) {
-            throw new Exception("Template not found for Widget " . $this->class_name, 404);
+            throw new Exception("Template: " . $template . " not found for Widget " . $this->class_name, 404);
         }
 
         if ($include_template_assets) {

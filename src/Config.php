@@ -617,11 +617,12 @@ class Config implements Dumpable
                                                                                         ];
                 }
                 if (isset($attr["controller"])) {
+                    $controller                                                         = explode("::", $attr["controller"]);
                     $router[$key]                                                       = [
                                                                                             "destination"   => [
-                                                                                                "obj"       => $attr["controller"],
+                                                                                                "obj"       => $controller[0],
                                                                                                 "method"    => null,
-                                                                                                "params"    => []
+                                                                                                "params"    => [$controller[1] ?? null]
                                                                                             ]
                                                                                         ];
                 } elseif (isset($attr[self::SCHEMA_ENGINE]) && isset(self::$engine[$attr[self::SCHEMA_ENGINE]])) {

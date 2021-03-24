@@ -454,11 +454,13 @@ abstract class Controller
     }
 
     /**
+     * @param string|null $method
+     * @return DataAdapter
      * @throws Exception
      */
-    public function display() : DataAdapter
+    public function display(string $method = null) : DataAdapter
     {
-        $this->render();
+        $this->render($method);
 
         if ($this->isXhr) {
             return (new DataError())->error(500, "Display Xhr Not Implemented");

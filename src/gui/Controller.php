@@ -5,8 +5,8 @@ use phpformsframework\libs\ClassDetector;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dir;
 use phpformsframework\libs\dto\DataAdapter;
-use phpformsframework\libs\dto\DataError;
 use phpformsframework\libs\dto\DataHtml;
+use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\Env;
 use phpformsframework\libs\international\InternationalManager;
 use phpformsframework\libs\Kernel;
@@ -131,6 +131,11 @@ abstract class Controller
         $this->config                           = $config;
         $this->cache_time                       = Kernel::useCache() ? null : "?" . time();
 
+        if (!empty($page->status)) {
+            $this->error                        = $page->error;
+            $this->http_status_code             = $page->status;
+        }
+
         $adapter                                = static::CONTROLLER_ENGINE ?? Kernel::$Environment::CONTROLLER_ADAPTER;
 
         if (!isset(self::$controllers[$adapter])) {
@@ -153,6 +158,29 @@ abstract class Controller
      * Utility Builder
      * ------------------------------------------------------------------------
      */
+
+
+    /**
+     * @param string $title
+     * @return $this
+     */
+    protected function setTitle(string $title) : self
+    {
+        $this->adapter->title                   = $title;
+
+        return $this;
+    }
+
+    /**
+     * @param string $abstract
+     * @return $this
+     */
+    protected function setDescription(string $abstract) : self
+    {
+        $this->adapter->description             = $abstract;
+
+        return $this;
+    }
 
     /**
      * @param string $doc_type
@@ -463,7 +491,10 @@ abstract class Controller
         $this->render($method);
 
         if ($this->isXhr) {
-            return (new DataError())->error(500, "Display Xhr Not Implemented");
+            return ($this->view
+                ? new DataResponse($this->adapter->toArray($this->view->html()))
+                : (new DataResponse())->error("404", "Page not found")
+            );
         }
 
         if ($this->contentEmpty) {

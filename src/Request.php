@@ -700,7 +700,7 @@ class Request implements Configurable, Dumpable
             case self::METHOD_POST:
                 $req                                                                            = (
                     $this->isFormData()
-                    ? $_POST
+                    ? $_GET + $_POST
                     : json_decode(file_get_contents('php://input'), true)
                 );
                 break;

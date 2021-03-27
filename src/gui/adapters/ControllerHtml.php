@@ -64,13 +64,13 @@ class ControllerHtml extends ControllerAdapter
     private const TITLE_DEFAULT                 = "Home";
 
     private $path_info                          = null;
-    private $title                              = null;
-    private $description                        = null;
     private $lang                               = null;
     private $region                             = null;
 
     private $preconnect                         = [];
 
+    public $title                               = null;
+    public $description                         = null;
     public $css                                 = [];
     public $style                               = [];
     public $fonts                               = [];
@@ -115,14 +115,14 @@ class ControllerHtml extends ControllerAdapter
     /**
      * PageHtml constructor.
      * @param string $path_info
-     * @param string $template_type
+     * @param string $controller_type
      * @param string|null $layout
      */
-    public function __construct(string $path_info, string $template_type, string $layout = null)
+    public function __construct(string $path_info, string $controller_type, string $layout = null)
     {
         Debug::stopWatch("gui/controller/html");
 
-        parent::__construct($template_type, self::class);
+        parent::__construct($controller_type, self::class);
 
         $this->lang                             = Locale::getCodeLang();
         $this->region                           = Locale::getCodeCountry();
@@ -335,7 +335,10 @@ class ControllerHtml extends ControllerAdapter
         $this->preconnect[$host]                = self::NEWLINE . '<link rel="preconnect" href="' . $host . '" />';
     }
 
-    private function parsePreconnect()
+    /**
+     * @return string
+     */
+    private function parsePreconnect() : string
     {
         return implode(null, $this->preconnect);
     }
@@ -692,6 +695,8 @@ class ControllerHtml extends ControllerAdapter
     public function toArray(string $html = null) : array
     {
         return [
+            "title"             => $this->title ?? $this->getTileDefault(),
+            "description"       => $this->description,
             "css"               => $this->css,
             "style"             => $this->style,
             "fonts"             => $this->fonts,

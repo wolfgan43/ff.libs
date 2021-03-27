@@ -484,12 +484,13 @@ abstract class OrmItem
             if (empty($this->{$table})) {
                 $this->{$table}                                                 = $fields[$table];
             } else {
-                $keys                                                           = array_flip(array_column($this->{$table} ?? [], $oneToMany->primaryKey));
+                $primaryKey                                                     = $oneToMany->primaryKey ?? $oneToMany->dbPrimary;
+                $keys                                                           = array_flip(array_column($this->{$table} ?? [], $primaryKey));
                 $data                                                           = [];
                 $count_update                                                   = 0;
                 foreach ($fields[$table] as $vars) {
-                    if (!empty($vars[$oneToMany->primaryKey]) && isset($keys[$vars[$oneToMany->primaryKey]])) {
-                        $primaryValue                                           = $vars[$oneToMany->primaryKey];
+                    if (!empty($vars[$primaryKey]) && isset($keys[$vars[$primaryKey]])) {
+                        $primaryValue                                           = $vars[$primaryKey];
                         $index                                                  = $keys[$primaryValue];
                         /**
                          * Update
@@ -613,7 +614,7 @@ abstract class OrmItem
                     throw new Exception("Relationship is oneToMany (" . static::TABLE . " => " . $table . "). Property '" . $table . "' must be an array of items in parent class.", 500);
                 }
                 $relData                                                        = array_intersect_key($var, $oneToMany->informationSchema->dtd);
-                if (($primaryValue = ($relData[$oneToMany->primaryKey] ?? null)) && ($indexes = ($oneToMany->indexes_primary[$primaryValue] ?? null))) {
+                if (($primaryValue = ($relData[$oneToMany->primaryKey ?? $oneToMany->dbPrimary] ?? null)) && ($indexes = ($oneToMany->indexes_primary[$primaryValue] ?? null))) {
                     $key                                                        = $indexes[$oneToMany->dbPrimary];
 
                     /**

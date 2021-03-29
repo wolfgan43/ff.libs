@@ -46,7 +46,7 @@ class RequestPage extends Mappable
     public $acl                             = null;     //gestito in secureManager
     public $accept                          = "*/*";    //gestito in request
 
-    public $isAjax                          = null;     //gestito in self (impostato nel costruttore)
+    public $isXhr                           = null;     //gestito in self (impostato nel costruttore)
     public $layout                          = null;     //non gestito
     public $access                          = null;     //gestito in self && api
     public $vpn                             = null;     //gestito in self
@@ -79,7 +79,7 @@ class RequestPage extends Mappable
     {
         parent::__construct($this->setRules($this->findEnvByPathInfo($path_info, $path2params), $pages, $patterns));
 
-        $this->isAjax               = self::isAjax();
+        $this->isXhr               = self::isXhr();
         $this->method               = (
             $this->method
             ? strtoupper($this->method)
@@ -625,7 +625,7 @@ class RequestPage extends Mappable
             return "php/cli";
         }
 
-        return ($this->isAjax() && $this->accept == "*/*"
+        return ($this->isXhr() && $this->accept == "*/*"
             ? "application/json"
             : $this->accept
         );

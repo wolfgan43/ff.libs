@@ -147,7 +147,7 @@ class Media implements Configurable
     public function get(string $pathinfo)
     {
         $this->setPathInfo($pathinfo);
-        $headers                                                    = null;
+        $headers                                                    = [];
         $status                                                     = null;
         $content_type                                               = $this->getMimeByExtension($this->pathinfo->extension);
 

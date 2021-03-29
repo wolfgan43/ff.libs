@@ -411,7 +411,7 @@ class Request implements Configurable, Dumpable
         $_SERVER["PATH_INFO"] = $path_info;
 
 
-        if ($this->isAjax()) {
+        if ($this->isXhr()) {
             $_SERVER["XHR_PATH_INFO"] = rtrim($this->root_path . $this->referer(PHP_URL_PATH), "/");
         }
 

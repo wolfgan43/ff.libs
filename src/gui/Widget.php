@@ -179,10 +179,14 @@ abstract class Widget extends Controller
     {
         static $configs                             = null;
 
-        if ($file_path && !isset($configs[$file_path])) {
-            $configs[$file_path]                    = $this->loadConfig($file_path);
-            foreach ($this->config as $key => $config) {
-                $configs[$file_path]->$key = $config;
+        if (!isset($configs[$file_path])) {
+            if ($file_path) {
+                $configs[$file_path]                = $this->loadConfig($file_path);
+                foreach ($this->config as $key => $config) {
+                    $configs[$file_path]->$key      = $config;
+                }
+            } else {
+                $configs[$file_path]                = (object) $this->config;
             }
         }
 

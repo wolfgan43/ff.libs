@@ -183,7 +183,7 @@ trait ServerManager
     /**
      * @return bool
      */
-    private static function isAjax() : bool
+    private static function isXhr() : bool
     {
         return isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
     }

@@ -1,16 +1,40 @@
+let settings = {
+    "modal" : {
+        "container"         : "uk-modal",
+        "header" : {
+            "container"     : "uk-modal-header",
+            "close"         : "uk-close",
+            "title"         : "uk-modal-title",
+            "description"   : "uk-modal-description"
+        },
+        "error"             : "uk-modal-error",
+        "body"              : "uk-modal-body",
+        "footer"            : {
+            "container"     : "uk-modal-footer",
+            "action"        : "uk-action"
+        },
+        "tokens"            : {
+            "open"          : "uk-open",
+            "error"         : "uk-modal-error uk-alert uk-alert-danger"
+        }
+    }
+};
+
 let cm = (function () {
-    const _CSS              = "css";
-    const _STYLE            = "style";
-    const _STRUCTURED_DATA  = "structured_data";
-    const _JS               = "js";
-    const _JS_EMBED         = "js_embed";
-    const _HTML             = "html";
-    const _DEBUG            = "debug";
-    const _ERROR            = "error";
+    const _CSS                  = "css";
+    const _STYLE                = "style";
+    const _STRUCTURED_DATA      = "structured_data";
+    const _JS                   = "js";
+    const _JS_EMBED             = "js_embed";
+    const _HTML                 = "html";
+    const _DEBUG                = "debug";
+    const _ERROR                = "error";
+    const _LOADED               = "-loaded";
 
-    const CLASS_MODAL       = "modal";
+    const CLASS_MAIN            = "cm-main";
+    const CLASS_MODAL           = "cm-modal";
 
-    let modalLoaded = false;
+    let modalLoaded             = false;
 
     let isLoadedResource = function (resource, type) {
         const ATTR = {
@@ -32,6 +56,9 @@ let cm = (function () {
             }
         },
         "inject" : function (dataResponse, querySelector) {
+            if(dataResponse === undefined) {
+                return;
+            }
             if (dataResponse[_CSS] !== undefined && dataResponse[_CSS].length) {
                 for (let key in dataResponse[_CSS]) {
                     if (!dataResponse[_CSS].hasOwnProperty(key) || isLoadedResource(key, "link")) {
@@ -80,6 +107,8 @@ let cm = (function () {
 
             if (querySelector !== undefined && dataResponse[_HTML] !== undefined && (html = document.querySelector(querySelector))) {
                 html.innerHTML = dataResponse[_HTML];
+
+                guiInit();
             }
         },
         "api" : (function () {
@@ -98,7 +127,7 @@ let cm = (function () {
                     }
                     xhr.onreadystatechange = function () {
                         if (xhr.readyState === 4) {
-                            if(resp = xhr.responseText) {
+                            if((resp = xhr.responseText)) {
                                 let respJson = JSON.parse(resp);
 
                                 if (respJson[_DEBUG] !== undefined) {
@@ -106,7 +135,11 @@ let cm = (function () {
                                 }
 
                                 if (xhr.status === 200) {
-                                    resolve(respJson["data"]);
+                                    if(respJson["redirect"] !== undefined) {
+                                        window.location.href = respJson["redirect"];
+                                    } else {
+                                        resolve(respJson["data"]);
+                                    }
                                     console.log("xhr done successfully");
                                 } else {
                                     reject(respJson[_ERROR]);
@@ -141,154 +174,179 @@ let cm = (function () {
                 }
             };
         })(),
-        "modal" : function(settings = {}) {
-            const MODAL_OPEN        = settings.open                                 || "cm-open";
-            const MODAL_ALERT       = settings.alert                                || "cm-modal-error cm-alert cm-alert-danger";
-            const MODAL             = "."           + (settings.modal               || "cm-modal");
-            const MODAL_CLOSE       = MODAL         + " ." + (settings.close        || "cm-close");
-            const MODAL_ERROR       = MODAL         + " ." + (settings.error        || "cm-modal-error");
-            const MODAL_HEADER      = MODAL         + " ." + (settings.header       || "cm-modal-header");
-            const MODAL_TITLE       = MODAL_HEADER  + " ." + (settings.title        || "cm-modal-title");
-            const MODAL_DESCRIPTION = MODAL_HEADER  + " ." + (settings.description  || "cm-modal-description");
+        "modal" : (function() {
+            let settings = {...{
+                    "modal" : {
+                        "container"         : "cm-modal",
+                        "header" : {
+                            "container"     : "cm-modal-header",
+                            "close"         : "cm-close",
+                            "title"         : "cm-modal-title",
+                            "description"   : "cm-modal-description"
+                        },
+                        "error"             : "cm-modal-error",
+                        "body"              : "cm-modal-body",
+                        "footer"            : {
+                            "container"     : "cm-modal-footer",
+                            "action"        : "cm-action"
+                        },
+                        "tokens"            : {
+                            "open"          : "cm-open",
+                            "error"         : "cm-modal-error cm-alert cm-alert-danger"
+                        }
+                    }
+                }, ...settings};
 
-            const MODAL_BODY        = MODAL         + " ." + (settings.body         || "cm-modal-body");
-            const MODAL_FORM        = MODAL_BODY    + " form";
-            const MODAL_ACTION      = MODAL_BODY    + " ." + (settings.action       || "cm-action");
-            const MODAL_FOOTER      = MODAL         + " ." + (settings.footer       || "cm-modal-footer");
+            const MODAL_OPEN            = settings.modal.tokens.open;
+            const MODAL_ALERT           = settings.modal.tokens.error;
+            const MODAL                 = "."           + settings.modal.container;
+            const MODAL_CLOSE           = MODAL         + " ." + settings.modal.header.close;
+            const MODAL_ERROR           = MODAL         + " ." + settings.modal.error;
+            const MODAL_HEADER          = MODAL         + " ." + settings.modal.header.container;
+            const MODAL_TITLE           = MODAL_HEADER  + " ." + settings.modal.header.title;
+            const MODAL_DESCRIPTION     = MODAL_HEADER  + " ." + settings.modal.header.description;
 
-            if(!modalLoaded) {
-                modalLoaded     = true;
+            const MODAL_BODY            = MODAL         + " ." + settings.modal.body;
+            const MODAL_FORM            = MODAL_BODY    + " form";
+            const MODAL_FOOTER          = MODAL         + " ." + settings.modal.footer.container;
+            const MODAL_FOOTER_ACTION   = MODAL_BODY    + " ." + settings.modal.footer.action;
 
-                document.querySelector(MODAL_CLOSE).addEventListener("click", function () {
-                    modalHide();
-                });
+            let modal = {
+                "init" : function () {
+                    if(!modalLoaded) {
+                        modalLoaded = true;
+                        document.querySelector(MODAL_CLOSE).addEventListener("click", function () {
+                            modal.hide();
+                        });
 
-                if(!document.querySelector(MODAL_ERROR)) {
-                    let body = document.querySelector(MODAL_BODY);
-                    let error = document.createElement("DIV");
+                        if (!document.querySelector(MODAL_ERROR)) {
+                            let body = document.querySelector(MODAL_BODY);
+                            let error = document.createElement("DIV");
 
-                    error.className = MODAL_ALERT;
-                    error.style.display = "none";
-                    body.parentNode.insertBefore(error, body);
+                            error.className = MODAL_ALERT;
+                            error.style.display = "none";
+                            body.parentNode.insertBefore(error, body);
+                        }
+                    }
+                },
+                "formAddListener" : function(url, headers = {}) {
+                    if((form = document.querySelector(MODAL_FORM))) {
+                        form.action = url;
+                        form.addEventListener("submit", function(e) {
+                            e.preventDefault();
+
+                            modal.error.hide();
+
+                            let that = this;
+                            that.style["opacity"] = "0.5";
+                            cm.api.post(form.action, new FormData(form), headers)
+                                .then(function(dataResponse) {
+                                    if(dataResponse["pathname"] !== undefined && window.location.pathname === dataResponse["pathname"]) {
+                                        cm.inject(dataResponse, dataResponse["component"] || ("." + CLASS_MAIN));
+                                        modal.hide();
+                                    } else {
+                                        cm.inject(dataResponse, MODAL_BODY);
+                                        modal.formAddListener(form.action, headers);
+                                    }
+                                })
+                                .catch(function (message) {
+                                    modal.error.show(message);
+                                }).finally(function () {
+                                that.style["opacity"] = null;
+                            });
+
+                            /*cm.api.head(this.href)
+                                .then(function (response) {
+                                    cm.api.head(this.href)
+                                });*/
+                        });
+                    }
+                },
+                "error" : {
+                    "show" : function(message) {
+                        let error = document.querySelector(MODAL_ERROR);
+                        error.innerHTML = message;
+                        error.style.display = "block";
+                    },
+                    "hide" : function() {
+                        let error = document.querySelector(MODAL_ERROR);
+                        error.innerHTML = "";
+                        error.style.display = "none";
+                    }
+                },
+                "show" : function show() {
+                    let modal = document.querySelector(MODAL);
+                    modal.classList.add(MODAL_OPEN);
+                    modal.style["display"] = "block";
+                },
+                "hide" : function () {
+                    let modal = document.querySelector(MODAL);
+                    modal.classList.remove(MODAL_OPEN);
+                    modal.style["display"] = "none";
+
+                    this.error.hide();
                 }
-
             }
-            let that = {
-                "open" : function(url, headers) {
+
+
+            return {
+                "open" : function(url, headers = {}) {
+                    modal.init();
+
                     return new Promise(function (resolve, reject) {
                         cm.api.get(url, headers)
-                        .then(function (dataResponse) {
-                            cm.inject(dataResponse, MODAL_BODY);
-                            if(dataResponse["title"] !== undefined && (title = document.querySelector(MODAL_TITLE))) {
-                                title.innerHTML = dataResponse["title"];
-                            }
-                            if(dataResponse["description"] !== undefined && (description = document.querySelector(MODAL_DESCRIPTION))) {
-                                description.innerHTML = dataResponse["description"];
-                            }
-
-                            if(footer = document.querySelector(MODAL_FOOTER)) {
-                                footer.style.display = 'none';
-                                if (action = document.querySelector(MODAL_ACTION)) {
-                                    footer.appendChild(action);
-                                    footer.style.display = 'block';
-                                }
-                            }
-
-                            formAddListener(url);
-
-                            modalShow();
-                            resolve(document.querySelector(MODAL));
-                        })
-                        .catch(function (status, message) {
-                            let error = document.querySelector(MODAL_ERROR);
-                            error.innerHTML = message;
-                            error.style.display = "block";
-
-                            console.log(status, message);
-
-                            modalShow();
-                            reject(message);
-                        });
-                    });
-                }
-            }
-
-            function formAddListener(url) {
-                if(form = document.querySelector(MODAL_FORM)) {
-                    form.action = url;
-                    form.addEventListener("submit", function(e) {
-                        e.preventDefault();
-
-                        errorHide();
-                        let that = this;
-                        that.style["opacity"] = "0.5";
-                        cm.api.post(form.action, new FormData(form))
-                            .then(function(dataResponse) {
+                            .then(function (dataResponse) {
                                 cm.inject(dataResponse, MODAL_BODY);
-                                formAddListener(form.action);
+                                if(dataResponse["title"] !== undefined && (title = document.querySelector(MODAL_TITLE))) {
+                                    title.innerHTML = dataResponse["title"];
+                                }
+                                if(dataResponse["description"] !== undefined && (description = document.querySelector(MODAL_DESCRIPTION))) {
+                                    description.innerHTML = dataResponse["description"];
+                                }
+
+                                if((footer = document.querySelector(MODAL_FOOTER))) {
+                                    footer.style.display = 'none';
+                                    if ((action = document.querySelector(MODAL_FOOTER_ACTION))) {
+                                        footer.appendChild(action);
+                                        footer.style.display = 'block';
+                                    }
+                                }
+
+                                modal.formAddListener(url, headers);
+                                modal.show();
+
+                                resolve(document.querySelector(MODAL));
                             })
                             .catch(function (message) {
-                                errorShow(message);
-                            }).finally(function () {
-                            that.style["opacity"] = null;
-                        });
+                                let error = document.querySelector(MODAL_ERROR);
+                                error.innerHTML = message;
+                                error.style.display = "block";
 
-                        /*cm.api.head(this.href)
-                            .then(function (response) {
-                                cm.api.head(this.href)
-                            });*/
+                                console.log(message);
+
+                                modal.show();
+
+                                reject(message);
+                            });
                     });
                 }
             }
-
-            function modalShow() {
-                let modal = document.querySelector(MODAL);
-                modal.classList.add(MODAL_OPEN);
-                modal.style["display"] = "block";
-            }
-            function modalHide() {
-                let modal = document.querySelector(MODAL);
-                modal.classList.remove(MODAL_OPEN);
-                modal.style["display"] = "none";
-            }
-
-            function errorShow(message) {
-                let error = document.querySelector(MODAL_ERROR);
-                error.innerHTML = message;
-                error.style.display = "block";
-            }
-            function errorHide(message) {
-                let error = document.querySelector(MODAL_ERROR);
-                error.innerHTML = "";
-                error.style.display = "none";
-            }
-            return that;
-        }
+        })()
     }
 
-    function gui()
+    function guiInit()
     {
         let links = document.querySelectorAll("a." + CLASS_MODAL);
         for (let i = 0; i < links.length; i++) {
+            links[i].classList.remove(CLASS_MODAL);
+            links[i].classList.add(CLASS_MODAL + _LOADED);
             links[i].addEventListener("click", function (e) {
                 e.preventDefault();
 
                 let that = this;
                 that.style["opacity"] = "0.5";
-                cm.modal({
-                    "open"          : "uk-open",
-                    "alert"         : "uk-modal-error uk-alert uk-alert-danger",
-                    "modal"         : "uk-modal",
-                    "close"         : "uk-close",
-                    "error"         : "uk-modal-error",
-                    "header"        : "uk-modal-header",
-                    "title"         : "uk-modal-title",
-                    "description"   : "uk-modal-description",
-                    "body"          : "uk-modal-body",
-                    "action"        : "uk-action",
-                    "footer"        : "uk-modal-footer"
-                }).open(this.href)
-                    .then(function(modal) {
+                cm.modal.open(this.href)
+                    .then(function() {
                         that.style["opacity"] = null;
                     });
             });
@@ -296,7 +354,7 @@ let cm = (function () {
     }
 
     document.addEventListener("DOMContentLoaded", function(event) {
-        gui();
+        guiInit();
     });
 
     return that;

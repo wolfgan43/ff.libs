@@ -741,7 +741,7 @@ class Log
                 self::remoteAddr(),
                 self::remotePort(),
                 self::referer(),
-                (self::isAjax() ? "ajax" : ""),
+                (self::isXhr() ? "ajax" : ""),
                 self::pathinfo(),
                 self::requestMethod(),
                 self::serverProtocol()

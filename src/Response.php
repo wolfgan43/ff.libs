@@ -202,7 +202,7 @@ error was encountered while trying to use an ErrorDocument to handle the request
      * @throws Exception
      * @todo da tipizzare
      */
-    public static function sendRawData($data, string $content_type, array $headers = null, $status = null)
+    public static function sendRawData($data, string $content_type, array $headers = [], $status = null)
     {
         if (self::isValidContentType($content_type)) {
             self::sendHeadersByMimeType($content_type, $headers);
@@ -333,7 +333,7 @@ error was encountered while trying to use an ErrorDocument to handle the request
      * @return void
      * @throws Exception
      */
-    public static function sendHtml(string $response, array $headers = null) : void
+    public static function sendHtml(string $response, array $headers = []) : void
     {
         self::sendRawData($response, "text/html", $headers);
     }
@@ -344,7 +344,7 @@ error was encountered while trying to use an ErrorDocument to handle the request
      * @return void
      * @throws Exception
      */
-    public static function sendJson(array $response, array $headers = null) : void
+    public static function sendJson(array $response, array $headers = []) : void
     {
         self::sendRawData($response, "application/json", $headers);
     }

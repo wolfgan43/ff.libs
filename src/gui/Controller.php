@@ -126,7 +126,7 @@ abstract class Controller
         $this->authorization                    = $page->getAuthorization();
         $this->script_path                      = $page->script_path;
         $this->path_info                        = $page->path_info;
-        $this->isXhr                            = $page->isAjax;
+        $this->isXhr                            = $page->isXhr;
 
         $this->config                           = $config;
         $this->cache_time                       = Kernel::useCache() ? null : "?" . time();

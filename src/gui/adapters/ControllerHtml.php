@@ -85,6 +85,8 @@ class ControllerHtml extends ControllerAdapter
     public $doc_type                            = null;
     public $body_class                          = null;
 
+    public $layout                              = null;      //necessario per interagire con il controller
+
     /**
      * @todo da finire
      *
@@ -100,7 +102,6 @@ class ControllerHtml extends ControllerAdapter
 
     protected $favicons                         = array();
 
-    public $layout                             = null;
     private $contents                           = array();
     private $scripts                            = [
                                                     self::ASSET_LOCATION_HEAD           => null,
@@ -695,6 +696,7 @@ class ControllerHtml extends ControllerAdapter
     public function toArray(string $html = null) : array
     {
         return [
+            "pathname"          => $this->path_info,
             "title"             => $this->title ?? $this->getTileDefault(),
             "description"       => $this->description,
             "css"               => $this->css,

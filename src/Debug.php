@@ -399,7 +399,7 @@ class Debug
         $html_dumpable                      = "";
         $debug_backtrace                    = self::getBacktrace();
         $collapse = (
-            self::isAjax() && self::requestMethod() != Request::METHOD_GET
+            self::isXhr() && self::requestMethod() != Request::METHOD_GET
             ? ''
             : 'display:none;'
         );

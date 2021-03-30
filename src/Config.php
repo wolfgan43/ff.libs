@@ -622,7 +622,7 @@ class Config implements Dumpable
                                                                                             "destination"   => [
                                                                                                 "obj"       => $controller[0],
                                                                                                 "method"    => null,
-                                                                                                "params"    => [$controller[1] ?? null]
+                                                                                                "params"    => (empty($controller[1]) ? [] : [$controller[1]])
                                                                                             ]
                                                                                         ];
                 } elseif (isset($attr[self::SCHEMA_ENGINE]) && isset(self::$engine[$attr[self::SCHEMA_ENGINE]])) {

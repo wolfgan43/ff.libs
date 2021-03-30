@@ -298,7 +298,6 @@ abstract class OrmItem
 
         $this->storedData = array_replace($this->storedData, $fill ?? []);
 
-
         $this->onLoad($this->db, $this->recordKey);
 
         if (!$this->isStored()) {
@@ -354,6 +353,7 @@ abstract class OrmItem
         if (!empty(static::JOINS)) {
             if (!isset(self::$buffer["current"])) {
                 self::$buffer["current"]                                        = static::class;
+                self::$buffer["db"]                                             =& $this->db;
             }
             self::$buffer["items"][static::class]                               = true;
             foreach (static::JOINS as $join => $fields) {
@@ -393,7 +393,7 @@ abstract class OrmItem
                     }
 
                     $this->tables[]                                             = $dtd->table;
-                    $this->db->join($dtd->table, $fields ?? $dtd->dataResponse);
+                    self::$buffer["db"]->join($dtd->table, $fields ?? $dtd->dataResponse);
                 }
             }
 
@@ -407,12 +407,15 @@ abstract class OrmItem
     {
         $rel                                                    = new stdClass();
         $rel->mapClass                                          = $mapClass;
-        $rel->primaryKey                                        = $dtd->primaryKey;
         $rel->dbExternal                                        = $relationship->external;
         $rel->dbPrimary                                         = $relationship->primary;
+        $rel->primaryKey                                        = $dtd->primaryKey ?? $rel->dbPrimary;
         $rel->informationSchema                                 = $informationSchema;
-        $rel->dataResponse                                      = array_fill_keys($dtd->dataResponse, true);
-
+        $rel->dataResponse                                      = (
+            empty($dtd->dataResponse)
+                                                                    ? array_intersect_key(get_class_vars($mapClass), $informationSchema->dtd)
+                                                                    : array_fill_keys($dtd->dataResponse, true)
+                                                                );
         $rel->indexes                                           = null;
         $rel->indexes_primary                                   = null;
 
@@ -460,12 +463,6 @@ abstract class OrmItem
             }
 
             $this->{$table}                                                     = array_replace($this->{$table} ?? [], $fields[$table]);
-            if (!empty($this->{$table}[$oneToOne->primaryKey]) && $this->isStored()) {
-                /**
-                 * Update
-                 */
-                $this->oneToOne[$table]->indexes                                = $this->indexes[$oneToOne->informationSchema->table][0];
-            }
             unset($fields[$table]);
         }
     }
@@ -484,21 +481,16 @@ abstract class OrmItem
             if (empty($this->{$table})) {
                 $this->{$table}                                                 = $fields[$table];
             } else {
-                $primaryKey                                                     = $oneToMany->primaryKey ?? $oneToMany->dbPrimary;
-                $keys                                                           = array_flip(array_column($this->{$table} ?? [], $primaryKey));
                 $data                                                           = [];
                 $count_update                                                   = 0;
+
                 foreach ($fields[$table] as $vars) {
-                    if (!empty($vars[$primaryKey]) && isset($keys[$vars[$primaryKey]])) {
-                        $primaryValue                                           = $vars[$primaryKey];
-                        $index                                                  = $keys[$primaryValue];
+                    if (!empty($vars[$oneToMany->primaryKey]) && isset($oneToMany->indexes[$vars[$oneToMany->primaryKey]])) {
+                        $index                                                  = $oneToMany->indexes[$vars[$oneToMany->primaryKey]];
                         /**
                          * Update
                          */
                         $data[$index]                                           = array_replace($this->{$table}[$index], $vars);
-                        if ($this->isStored()) {
-                            $this->oneToMany[$table]->indexes_primary[$primaryValue]    =& $this->indexes[$table][$index];
-                        }
                         $count_update++;
                     } else {
                         /**
@@ -509,7 +501,6 @@ abstract class OrmItem
                     }
                 }
 
-                $this->oneToMany[$table]->indexes                               = $keys;
                 $this->{$table}                                                 = array_replace($this->{$table}, $data);
             }
 
@@ -531,7 +522,7 @@ abstract class OrmItem
             $this->onInsert($this->db);
         }
 
-        $vars                                                                   = array_intersect_key($this->fieldSetPurged(), $this->informationSchema->dtd);
+        $vars                                                                   = $this->fieldSetPurged();
 
         $this->applyOneToOne($vars);
 
@@ -613,8 +604,9 @@ abstract class OrmItem
                 if (!is_array($var)) {
                     throw new Exception("Relationship is oneToMany (" . static::TABLE . " => " . $table . "). Property '" . $table . "' must be an array of items in parent class.", 500);
                 }
+
                 $relData                                                        = array_intersect_key($var, $oneToMany->informationSchema->dtd);
-                if (($primaryValue = ($relData[$oneToMany->primaryKey ?? $oneToMany->dbPrimary] ?? null)) && ($indexes = ($oneToMany->indexes_primary[$primaryValue] ?? null))) {
+                if (($primaryValue = ($relData[$oneToMany->primaryKey] ?? null)) && ($indexes = ($oneToMany->indexes_primary[$oneToMany->indexes[$primaryValue]] ?? null))) {
                     $key                                                        = $indexes[$oneToMany->dbPrimary];
 
                     /**
@@ -622,7 +614,9 @@ abstract class OrmItem
                      */
                     $relDataDB                                                  = $relDataDBs[$oneToMany->indexes[$primaryValue]] ?? null;
                     if ($relDataDB == $relData) {
-                        $this->{$table}[$index]                                 = array_intersect_key($this->{$table}[$index], $oneToMany->dataResponse);
+                        if (!empty($oneToMany->dataResponse)) {
+                            $this->{$table}[$index]                             = array_intersect_key($this->{$table}[$index], $oneToMany->dataResponse);
+                        }
                         continue;
                     }
 
@@ -639,8 +633,11 @@ abstract class OrmItem
                     /**
                      * Insert
                      */
+                    $indexes                                                    = array_intersect_key($relData, $oneToMany->informationSchema->indexes);
+                    $indexes[$oneToMany->dbExternal]                            = $this->recordKey;
+
                     $obj                                                        = $oneToMany->mapClass::load($relData)
-                                                                                    ->setIndexes([$oneToMany->dbExternal => $this->recordKey]);
+                                                                                    ->setIndexes($indexes);
                     $obj->apply();
                     $this->{$table}[$index]                                     = $obj->toArray();
                 } else {
@@ -667,8 +664,17 @@ abstract class OrmItem
                 $this->indexes                                                  = $item->indexes();
 
                 if ($record = $item->getArray(0)) {
-                    $this->storedData = $record;
+                    $this->storedData = json_decode(json_encode($record), true);
+
                     $this->autoMapping($record);
+
+                    foreach ($this->oneToOne as $table => $oneToOne) {
+                        $this->oneToOne[$table]->indexes                        = $this->indexes[$oneToOne->informationSchema->table][0];
+                    }
+                    foreach ($this->oneToMany as $table => $oneToMany) {
+                        $this->oneToMany[$table]->indexes                       = array_flip(array_column($this->indexes[$table] ?? [], $oneToMany->primaryKey));
+                        $this->oneToMany[$table]->indexes_primary               =& $this->indexes[$table];
+                    }
                 }
             }
         }
@@ -680,7 +686,7 @@ abstract class OrmItem
      */
     public function toDataResponse()
     {
-        $response = new DataResponse($this->toArray());
+        $response = new DataResponse(get_object_vars($this));
         if (!$this->recordKey) {
             $response->error(404, $this->db->getName() . " not stored");
         }
@@ -754,7 +760,7 @@ abstract class OrmItem
      */
     public function isChanged() : bool
     {
-        $vars = array_intersect_key($this->fieldSetPurged(), $this->informationSchema->dtd);
+        $vars = $this->fieldSetPurged();
         return array_intersect_key($this->storedData, $vars) != $vars;
     }
     /**
@@ -773,7 +779,7 @@ abstract class OrmItem
     {
         return ($fields
             ? array_intersect_key(get_object_vars($this), $fields)
-            : get_object_vars($this)
+            : array_intersect_key(get_object_vars($this), $this->informationSchema->dtd)
         );
     }
 

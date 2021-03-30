@@ -265,6 +265,7 @@ abstract class Controller
     protected const ASSET_LOCATION_BODY_TOP     = ControllerAdapter::ASSET_LOCATION_BODY_TOP;
     protected const ASSET_LOCATION_BODY_BOTTOM  = ControllerAdapter::ASSET_LOCATION_BODY_BOTTOM;
     protected const ASSET_LOCATION_DEFAULT      = self::ASSET_LOCATION_HEAD;
+    private const ASSET_MIN                     = ".min";
 
     /**
      * @param array $ref
@@ -276,7 +277,13 @@ abstract class Controller
     private function addAssetDeps(array &$ref, string $type, string $media, string $key) : void
     {
         $asset_name                                                             = "";
-        $assets                                                                 = explode(".", $key);
+        $limit                                                                  = (
+            substr($key, -4) === self::ASSET_MIN
+            ? substr_count($key, ".")
+            : null
+        );
+
+        $assets                                                                 = explode(".", $key, $limit);
         foreach ($assets as $asset) {
             $asset_name                                                         .= $asset;
             if (($asset_url = Resource::get($asset_name, $type)) && filesize($asset_url)) {

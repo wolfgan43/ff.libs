@@ -175,7 +175,7 @@ let cm = (function () {
             };
         })(),
         "modal" : (function() {
-            let settings = {...{
+            let setting = {...{
                     "modal" : {
                         "container"         : "cm-modal",
                         "header" : {

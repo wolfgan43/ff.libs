@@ -40,11 +40,13 @@ class RequestPage extends Mappable
     public $nocache                         = false;    //gestito in kernel
     public $https                           = null;     //gestito in request
     public $method                          = null;     //gestito in request
+    public $controller                      = null;     //gestito in request
 
     public $namespace                       = null;     //gestito in api
     public $map                             = null;     //gestito in self
     public $acl                             = null;     //gestito in secureManager
     public $accept                          = "*/*";    //gestito in request
+    public $accept_path_info                = false;    //gestito in self
 
     public $isXhr                           = null;     //gestito in self (impostato nel costruttore)
     public $layout                          = null;     //non gestito
@@ -90,6 +92,10 @@ class RequestPage extends Mappable
     public function onLoad() : void
     {
         //@todo da spostare la logica nel router. Aggiungere maintenance come tipo di access.
+        if (!$this->accept_path_info && $this->path_info) {
+            Response::sendError(404, "Page not Found");
+        }
+
         if ($this->vpn && $this->vpn != $this->remoteAddr()) {
             Response::sendError(401, "Access denied for ip: " . $this->remoteAddr());
         }
@@ -120,11 +126,7 @@ class RequestPage extends Mappable
             if (isset($pages[$path_info])) {
                 $config             = array_replace($pages[$path_info]["config"], $config);
                 if ($script_path == DIRECTORY_SEPARATOR) {
-                    $script_path    = (
-                        isset($config["accept_path_info"])
-                        ? $orig_path_info
-                        : $path_info
-                    );
+                    $script_path    = $path_info;
                 }
 
                 $rules->set($pages[$path_info]);

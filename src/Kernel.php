@@ -94,7 +94,7 @@ class Kernel
 
         self::$Page->onLoad();
 
-        Router::run(self::$Page->script_path);
+        Router::run(self::$Page->script_path . self::$Page->path_info);
     }
 
     /**

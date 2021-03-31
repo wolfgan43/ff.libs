@@ -293,17 +293,16 @@ class FilemanagerScan implements Dumpable
             $file_info->rootname                        = $arrDir[$subdir_count] ?? null;
         }
 
+        if (isset($opt->replace[$file_info->extension])) {
+            $file_info->filename                        = str_replace("." . $opt->replace[$file_info->extension], "", $file_info->filename);
+            $file_info->extension                       = $opt->replace[$file_info->extension];
+        }
+
         $file_info->defaultname                         = (
             $file_info->rootpathname
             ? $file_info->rootpathname . DIRECTORY_SEPARATOR
             : null
         ) . $file_info->filename;
-
-
-        if (isset($opt->replace[$file_info->extension])) {
-            $file_info->filename                        = str_replace("." . $opt->replace[$file_info->extension], "", $file_info->filename);
-            $file_info->extension                       = $opt->replace[$file_info->extension];
-        }
 
         $arrFileInfo                                    = (array) $file_info;
         $key                                            = (

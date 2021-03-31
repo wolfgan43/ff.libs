@@ -77,7 +77,8 @@ class Request implements Configurable, Dumpable
 
 
     /**
-     * @return RequestPage
+     * @param $page
+     * @return Request
      */
     public static function set(&$page) : self
     {
@@ -118,25 +119,6 @@ class Request implements Configurable, Dumpable
             }
         }
         return $headers;
-    }
-
-    /**
-     * @param string|null $method
-     * @param array $exclude
-     * @return string|null
-     */
-    public static function methodValid(string $method, array $exclude = array()) : ?string
-    {
-        return (in_array($method, array_diff([
-            self::METHOD_GET,
-            self::METHOD_POST,
-            self::METHOD_PUT,
-            self::METHOD_PATCH,
-            self::METHOD_DELETE
-        ], $exclude))
-            ? $method
-            : null
-        );
     }
 
     /**
@@ -410,7 +392,6 @@ class Request implements Configurable, Dumpable
         $_SERVER["ORIG_PATH_INFO"] = $this->orig_path_info;
         $_SERVER["PATH_INFO"] = $path_info;
 
-
         if ($this->isXhr()) {
             $_SERVER["XHR_PATH_INFO"] = rtrim($this->root_path . $this->referer(PHP_URL_PATH), "/");
         }
@@ -651,7 +632,7 @@ class Request implements Configurable, Dumpable
      */
     private function captureHeaders() : array
     {
-        if ($this->page->loadHeaders($_SERVER)) {
+        if ($this->page->loadHeaders($_SERVER) && empty($this->page->controller)) {
             $this->sendError($this->page->status, $this->page->error);
         }
 
@@ -672,7 +653,7 @@ class Request implements Configurable, Dumpable
 
         $request                                                                                = $this->getReq($method);
 
-        if ($this->page->loadRequestFile() || $this->page->loadRequest($request)) {
+        if (($this->page->loadRequestFile() || $this->page->loadRequest($request)) && empty($this->page->controller)) {
             $this->sendError($this->page->status, $this->page->error);
         }
 

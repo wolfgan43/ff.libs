@@ -634,7 +634,7 @@ abstract class OrmItem
                      * Insert
                      */
                     $indexes                                                    = array_intersect_key($relData, $oneToMany->informationSchema->indexes);
-                    $indexes[$oneToMany->dbExternal]                            = $this->recordKey;
+                    $indexes[$oneToMany->dbExternal]                            = $this->{static::PRIMARY_KEY} ?? $this->recordKey;
 
                     $obj                                                        = $oneToMany->mapClass::load($relData)
                                                                                     ->setIndexes($indexes);

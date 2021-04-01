@@ -450,8 +450,10 @@ class ControllerHtml extends ControllerAdapter
      */
     private function parseLayout() : string
     {
-        if (!$this->layout || strpos($this->layout, "<") === 0) {
-            return self::parseLayoutVars($this->layout ?? "{" . self::TPL_VAR_PREFIX . self::TPL_VAR_DEFAULT . "}");
+        if (!$this->layout) {
+            return self::parseLayoutVars("{" . self::TPL_VAR_PREFIX . self::TPL_VAR_DEFAULT . "}");
+        } elseif (strpos($this->layout, "<") === 0) {
+            return self::parseLayoutVars($this->layout);
         }
 
         Debug::stopWatch("layout/" . $this->layout);

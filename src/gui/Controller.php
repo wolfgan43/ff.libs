@@ -71,7 +71,6 @@ abstract class Controller
     private $http_status_code                   = 200;
 
     private $config                             = null;
-    private $layout_empty                       = false;
 
     private $contentEmpty                       = true;
 
@@ -137,14 +136,10 @@ abstract class Controller
         $adapter                                = static::CONTROLLER_ENGINE ?? Kernel::$Environment::CONTROLLER_ADAPTER;
         $bucket                                 = $adapter . DIRECTORY_SEPARATOR . static::CONTROLLER_TYPE;
         if (!isset(self::$controllers[$bucket])) {
-            self::$controllers[$bucket]        = $this->setAdapter($adapter, [$this->script_path, static::CONTROLLER_TYPE, static::LAYOUT]);
+            self::$controllers[$bucket]        = $this->setAdapter($adapter, [$this->script_path, static::CONTROLLER_TYPE,  $page->layout ?? static::LAYOUT]);
         }
 
         $this->adapter                          =& self::$controllers[$bucket];
-
-        if ($page->layout) {
-            $this->setLayout($page->layout, true);
-        }
     }
 
     /**
@@ -279,6 +274,7 @@ abstract class Controller
     private function addAssetDeps(array &$ref, string $type, string $media, string $key) : void
     {
         $asset_name                                                             = "";
+        $key                                                                    = rtrim($key, "." . $type);
         $limit                                                                  = (
             substr($key, -4) === self::ASSET_MIN
             ? substr_count($key, ".")
@@ -514,6 +510,11 @@ abstract class Controller
             }
         }
 
+        if (!empty($this->adapter->layout)) {
+            $this->addStylesheet($this->adapter->layout);
+            $this->addJavascriptDefer($this->adapter->layout);
+        }
+
         return $this->adapter
             ->display($this->http_status_code);
     }
@@ -545,21 +546,15 @@ abstract class Controller
 
     /**
      * @param string|null $layout_name
-     * @param bool $include_layout_assets
      * @return Controller
      * @throws Exception
      */
-    protected function setLayout(string $layout_name = null, bool $include_layout_assets = false) : self
+    protected function setLayout(string $layout_name = null) : self
     {
-        if ($layout_name && $include_layout_assets) {
-            $this->addStylesheet($layout_name);
-            $this->addJavascriptDefer($layout_name);
-        }
-
         $this->adapter->layout  = (
-            $layout_name === ''
-                ? null
-                : $layout_name
+            empty($layout_name)
+            ? null
+            : $layout_name
         );
 
         return $this;

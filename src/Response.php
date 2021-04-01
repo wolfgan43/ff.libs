@@ -151,6 +151,10 @@ class Response
                         ->error(self::errorStatus($code), $msg)
                         ->display());
                 } catch (Exception $e) {
+                    header("Content-Type: text/html");
+                    header('Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
+                    header("Pragma: no-cache");
+
                     $status = $e->getCode();
                     $status_message = Error::getErrorMessage($status);
                     Debug::setBackTrace($e->getTrace());

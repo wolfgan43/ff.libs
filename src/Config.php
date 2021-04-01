@@ -606,9 +606,7 @@ class Config implements Dumpable
                 unset($attr["source"]);
                 unset($attr["path"]);
 
-                if ($key == "/") {
-                    $key = "*";
-                } elseif (preg_match_all('#/{([^/]*)}#i', $key, $params)) {
+                if ($key != DIRECTORY_SEPARATOR && preg_match_all('#/{([^/]*)}#i', $key, $params)) {
                     $regexp                                                             = '#^' . str_replace($params[0], "(?:/([^/]+))?", $key) . '$#i';
                     $key                                                                = str_replace($params[0], "", $key);
                     $path2params[$key]                                                  = [

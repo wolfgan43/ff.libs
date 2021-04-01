@@ -71,7 +71,6 @@ abstract class Controller
     private $http_status_code                   = 200;
 
     private $config                             = null;
-    private $cache_time                         = null;
     private $layout_empty                       = false;
 
     private $contentEmpty                       = true;
@@ -129,7 +128,6 @@ abstract class Controller
         $this->isXhr                            = $page->isXhr;
 
         $this->config                           = $config;
-        $this->cache_time                       = Kernel::useCache() ? null : "?" . time();
 
         if (!empty($page->status)) {
             $this->error                        = $page->error;
@@ -137,12 +135,14 @@ abstract class Controller
         }
 
         $adapter                                = static::CONTROLLER_ENGINE ?? Kernel::$Environment::CONTROLLER_ADAPTER;
-
-        if (!isset(self::$controllers[$adapter])) {
-            self::$controllers[$adapter]        = $this->setAdapter($adapter, [$this->script_path, static::CONTROLLER_TYPE, static::LAYOUT]);
+        $bucket                                 = $adapter . DIRECTORY_SEPARATOR . static::CONTROLLER_TYPE;
+        if (!isset(self::$controllers[$bucket])) {
+            self::$controllers[$bucket]        = $this->setAdapter($adapter, [$this->script_path, static::CONTROLLER_TYPE, static::LAYOUT]);
         }
 
-        $this->adapter                          =& self::$controllers[$adapter];
+        if ($page->layout) {
+            $this->setLayout($page->layout, true);
+        }
     }
 
     /**
@@ -287,7 +287,7 @@ abstract class Controller
         foreach ($assets as $asset) {
             $asset_name                                                         .= $asset;
             if (($asset_url = Resource::get($asset_name, $type)) && filesize($asset_url)) {
-                $ref[Media::getUrlRelative($asset_url) . $this->cache_time]     = $media;
+                $ref[Media::getUrlRelative($asset_url)]                         = $media;
             }
             $asset_name                                                         .= ".";
         }
@@ -308,7 +308,7 @@ abstract class Controller
         } elseif (Validator::isFile($filename_or_url)) {
             if (strpos($filename_or_url, DIRECTORY_SEPARATOR) === 0 && Dir::checkDiskPath($filename_or_url)) {
                 if (filesize($filename_or_url)) {
-                    $ref[Media::getUrlRelative($filename_or_url) . $this->cache_time]   = $media;
+                    $ref[Media::getUrlRelative($filename_or_url)]                       = $media;
                 }
             } else {
                 $this->addAssetDeps($ref, $type, $media, $filename_or_url);
@@ -495,7 +495,7 @@ abstract class Controller
      */
     public function display(string $method = null) : DataAdapter
     {
-        $this->render($method);
+        $this->render($method ?? self::METHOD_DEFAULT);
 
         if ($this->isXhr) {
             return ($this->view
@@ -702,6 +702,11 @@ abstract class Controller
     {
         $bucket = static::ERROR_BUCKET . "/" . $this->class_name;
         Debug::stopWatch($bucket);
+
+        $method2lower = strtolower($this->method);
+        if ($method && $method != $method2lower && $method2lower != self::METHOD_DEFAULT && method_exists($this, $method . $this->method)) {
+            $method .= $this->method;
+        }
 
         $this->{$method ?? $this->method}();
 

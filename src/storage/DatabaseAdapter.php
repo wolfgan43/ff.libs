@@ -792,12 +792,12 @@ abstract class DatabaseAdapter implements Constant
 
     /**
      * @param array $set
-     * @param array $where
+     * @param array|null $where
      * @param string|null $table_name
      * @return DatabaseQuery
      * @throws Exception
      */
-    private function getQueryUpdate(array $set, array $where, string $table_name = null) : DatabaseQuery
+    private function getQueryUpdate(array $set, array $where = null, string $table_name = null) : DatabaseQuery
     {
         $query = $this->getQuery(self::ACTION_UPDATE, $table_name);
 
@@ -963,14 +963,14 @@ abstract class DatabaseAdapter implements Constant
 
     /**
      * @param array $set
-     * @param array $where
+     * @param array|null $where
      * @param string|null $table_name
      * @return array|null
      * @throws Exception
      */
-    public function update(array $set, array $where, string $table_name = null) : ?array
+    public function update(array $set, array $where = null, string $table_name = null) : ?array
     {
-        if (empty($set) || empty($where)) {
+        if (empty($set)) {
             throw new Exception(self::ERROR_UPDATE_IS_EMPTY, 500);
         }
 

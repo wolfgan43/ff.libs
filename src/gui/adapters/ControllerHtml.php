@@ -60,7 +60,6 @@ class ControllerHtml extends ControllerAdapter
     private const BODY_TAG                      = 'body';
 
     private const NEWLINE                       = "\n";
-    private const MAIN_CONTENT                  = "content";
     private const TITLE_DEFAULT                 = "Home";
 
     private $path_info                          = null;
@@ -68,6 +67,7 @@ class ControllerHtml extends ControllerAdapter
     private $region                             = null;
 
     private $preconnect                         = [];
+    private $cache_time                         = null;
 
     public $title                               = null;
     public $description                         = null;
@@ -129,6 +129,8 @@ class ControllerHtml extends ControllerAdapter
         $this->region                           = Locale::getCodeCountry();
         $this->path_info                        = $path_info;
         $this->layout                           = $layout;
+
+        $this->cache_time                       = Kernel::useCache() ? null : "?" . time();
     }
 
     /**
@@ -657,13 +659,14 @@ class ControllerHtml extends ControllerAdapter
      * @param string $path
      * @return string|null
      */
-    private function attrCors(string $path) : ?string
+    private function attrCors(string &$path) : ?string
     {
-        return (
-        strpos($path, "http") === 0
-            ? ' crossorigin="anonymous"'
-            : null
-        );
+        if (strpos($path, "http") === 0) {
+            return ' crossorigin="anonymous"';
+        } else {
+            $path .= $this->cache_time;
+            return null;
+        }
     }
 
     /**

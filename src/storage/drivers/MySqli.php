@@ -249,8 +249,12 @@ class MySqli extends DatabaseDriver
     public function update(DatabaseQuery $query) : bool
     {
         $query_string                   = "UPDATE " . $query->from . " SET 
-                                                " . $query->update . "
-                                            WHERE " . $query->where;
+                                                " . $query->update .
+                                                (
+                                                    $query->where
+                                                    ? " WHERE " . $query->where
+                                                    : null
+                                                );
 
         return $this->execute($query_string);
     }

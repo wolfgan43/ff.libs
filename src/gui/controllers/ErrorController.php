@@ -56,7 +56,6 @@ class ErrorController extends Controller
      */
     protected function get() : void
     {
-        $this->addStylesheet("main");
         $this->addStylesheet("error");
 
         $error = Translator::getWordByCode($this->error);
@@ -69,8 +68,6 @@ class ErrorController extends Controller
             $errorView->assign("email_support", $this->email_support);
             $errorView->parse("SezButtonSupport", false);
         }
-
-        $this->setLayout();
 
         $this
             ->assign(self::TPL_VAR_DEFAULT, $errorView)

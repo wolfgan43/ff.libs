@@ -188,11 +188,11 @@ class Model implements Configurable, Dumpable
 
     /**
      * @param array $set
-     * @param array $where
+     * @param array|null $where
      * @return OrmResults
      * @throws Exception
      */
-    public function update(array $set, array $where) : OrmResults
+    public function update(array $set, array $where = null) : OrmResults
     {
         return $this->getOrm()->update($this->fieldSet($set, $this->table), $where);
     }

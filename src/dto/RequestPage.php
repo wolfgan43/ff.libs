@@ -49,7 +49,7 @@ class RequestPage extends Mappable
     public $accept_path_info                = false;    //gestito in self
 
     public $isXhr                           = null;     //gestito in self (impostato nel costruttore)
-    public $layout                          = null;     //non gestito
+    public $layout                          = null;     //gestito in controller
     public $access                          = null;     //gestito in self && api
     public $vpn                             = null;     //gestito in self
 
@@ -135,12 +135,7 @@ class RequestPage extends Mappable
 
         $this->rules                = $rules;
         $this->script_path          = $script_path;
-        $this->path_info            = (
-            $this->script_path == DIRECTORY_SEPARATOR
-            ? $orig_path_info
-            : preg_replace('#^' . $script_path . '#i', "", $orig_path_info, 1)
-        );
-
+        $this->path_info            = preg_replace('#^' . $script_path . '#i', "", $orig_path_info, 1);
         $this->setPattern($config, $patterns);
 
         return $config;

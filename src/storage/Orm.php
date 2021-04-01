@@ -383,11 +383,11 @@ class Orm extends Mappable
 
     /**
      * @param array $set
-     * @param array $where
+     * @param array|null $where
      * @return OrmResults
      * @throws Exception
      */
-    public function update(array $set, array $where) : OrmResults
+    public function update(array $set, array $where = null) : OrmResults
     {
         $this->cacheRequest(self::ACTION_UPDATE, [$set, $where]);
 
@@ -819,10 +819,12 @@ class Orm extends Mappable
                     $data->where[$external_name]                                            = $this->main->where[$primary_name];
                 }
             }
-            if (!empty($data->where)) {
-                $regs                                                                       = $storage->update($data->set, $data->where, $data->def->table[self::TNAME]);
-                $update_key                                                                 = $regs[self::INDEX_PRIMARY][$key_name];
-            }
+
+            /**
+             * updateAll
+             */
+            $regs                                                                           = $storage->update($data->set, $data->where, $data->def->table[self::TNAME]);
+            $update_key                                                                     = $regs[self::INDEX_PRIMARY][$key_name];
         } elseif (empty($data->insert) && !empty($data->set) && !empty($data->where)) {
             /**
              * update
@@ -1049,7 +1051,7 @@ class Orm extends Mappable
             throw new Exception("Query is empty", 500);
         }
         $is_single_service                                                                  = (count($this->services_by_data->services) == 1);
-        if (empty($this->main->where) && empty($this->main->select) && empty($this->main->insert) && $is_single_service) {
+        if (empty($this->main->where) && empty($this->main->select) && empty($this->main->insert) && empty($this->main->set) && $is_single_service) {
             $subService                                                                     = $this->services_by_data->last; //key($this->services_by_data->services);
             $is_single_table                                                                = (count($this->services_by_data->services[$subService]) == 1);
             $Orm                                                                            = $this->getModel($subService);

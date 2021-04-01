@@ -151,12 +151,12 @@ class Database implements Constant
 
     /**
      * @param array $set
-     * @param array $where
+     * @param array|null $where
      * @param null|string $table_name
      * @return array|null
      * @throws Exception
      */
-    public function update(array $set, array $where, string $table_name = null) : ?array
+    public function update(array $set, array $where = null, string $table_name = null) : ?array
     {
         //@todo da alterare la cache in funzione dei dati inseriti
         foreach ($this->adapters as $adapter_name => $adapter) {

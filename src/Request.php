@@ -679,11 +679,11 @@ class Request implements Configurable, Dumpable
     {
         switch ($method) {
             case self::METHOD_POST:
-                $req                                                                            = (
+                $req                                                                            =  $_GET + (
                     $this->isFormData()
-                    ? $_GET + $_POST
-                    : json_decode(file_get_contents('php://input'), true)
-                );
+                        ? $_POST
+                        : (array) json_decode(file_get_contents('php://input'), true)
+                    );
                 break;
             case self::METHOD_GET:
             case self::METHOD_PUT:

@@ -140,6 +140,8 @@ abstract class Controller
             self::$controllers[$bucket]        = $this->setAdapter($adapter, [$this->script_path, static::CONTROLLER_TYPE, static::LAYOUT]);
         }
 
+        $this->adapter                          =& self::$controllers[$bucket];
+
         if ($page->layout) {
             $this->setLayout($page->layout, true);
         }

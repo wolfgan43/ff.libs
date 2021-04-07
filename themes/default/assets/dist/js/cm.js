@@ -1,4 +1,9 @@
 let settings = {
+    "class" : {
+        "main"              : "cm-main",
+        "modal"             : "cm-modal",
+        "xhr"               : "cm-xhr"
+    },
     "modal" : {
         "container"         : "uk-modal",
         "header" : {
@@ -31,8 +36,9 @@ let cm = (function () {
     const _ERROR                = "error";
     const _LOADED               = "-loaded";
 
-    const CLASS_MAIN            = "cm-main";
-    const CLASS_MODAL           = "cm-modal";
+    const CLASS_MAIN            = settings.class.main;
+    const CLASS_MODAL           = settings.class.modal;
+    const CLASS_XHR             = settings.class.xhr;
 
     let modalLoaded             = false;
 
@@ -207,7 +213,7 @@ let cm = (function () {
             const MODAL_DESCRIPTION     = MODAL_HEADER  + " ." + settings.modal.header.description;
 
             const MODAL_BODY            = MODAL         + " ." + settings.modal.body;
-            const MODAL_FORM            = MODAL_BODY    + " form";
+            const MODAL_FORM            = MODAL         + " form";
             const MODAL_FOOTER          = MODAL         + " ." + settings.modal.footer.container;
             const MODAL_FOOTER_ACTION   = MODAL_BODY    + " ." + settings.modal.footer.action;
 
@@ -215,10 +221,11 @@ let cm = (function () {
                 "init" : function () {
                     if(!modalLoaded) {
                         modalLoaded = true;
-                        document.querySelector(MODAL_CLOSE).addEventListener("click", function () {
-                            modal.hide();
-                        });
-
+                        if((close = document.querySelector(MODAL_CLOSE))) {
+                            close.addEventListener("click", function () {
+                                modal.hide();
+                            });
+                        }
                         if (!document.querySelector(MODAL_ERROR)) {
                             let body = document.querySelector(MODAL_BODY);
                             let error = document.createElement("DIV");
@@ -285,6 +292,21 @@ let cm = (function () {
                     modal.style["display"] = "none";
 
                     this.error.hide();
+                },
+                "clear" : function () {
+                    document.querySelector(MODAL_BODY).innerHTML    = "";
+                    document.querySelector(MODAL_ERROR).innerHTML   = "";
+
+                    if((title = document.querySelector(MODAL_TITLE))) {
+                        title.innerHTML                             = "";
+                    }
+                    if((description = document.querySelector(MODAL_DESCRIPTION))) {
+                        description.innerHTML                       = "";
+                    }
+                    if((footer = document.querySelector(MODAL_FOOTER))) {
+                        footer.style.display                        = 'none';
+                        footer.innerHTML                            = "";
+                    }
                 }
             }
 
@@ -294,6 +316,8 @@ let cm = (function () {
                     modal.init();
 
                     return new Promise(function (resolve, reject) {
+                        modal.clear();
+
                         cm.api.get(url, headers)
                             .then(function (dataResponse) {
                                 cm.inject(dataResponse, MODAL_BODY);
@@ -329,6 +353,9 @@ let cm = (function () {
                                 reject(message);
                             });
                     });
+                },
+                "close" : function() {
+                    modal.hide();
                 }
             }
         })()
@@ -347,6 +374,27 @@ let cm = (function () {
                 that.style["opacity"] = "0.5";
                 cm.modal.open(this.href)
                     .then(function() {
+                        that.style["opacity"] = null;
+                    })
+                    .finally(function() {
+                        that.style["opacity"] = null;
+                    });
+            });
+        }
+
+        links = document.querySelectorAll("a." + CLASS_XHR);
+        for (let i = 0; i < links.length; i++) {
+            links[i].addEventListener("click", function (e) {
+                e.preventDefault();
+
+                let that = this;
+                that.style["opacity"] = "0.5";
+                cm.api.get(this.href)
+                    .then(function(dataResponse) {
+                        cm.inject(dataResponse, dataResponse["component"] || ("." + CLASS_MAIN));
+                        that.style["opacity"] = null;
+                    })
+                    .finally(function() {
                         that.style["opacity"] = null;
                     });
             });

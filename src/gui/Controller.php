@@ -44,6 +44,7 @@ abstract class Controller
 
     private const METHOD_DEFAULT                = "get";
     private const LAYOUT_DEFAULT                = '<main>{' . self::TPL_VAR_PREFIX . 'content}</main>';
+    private const TPL_NORMALIZE                 = ['../', '.tpl'];
 
     /**
      * @var ControllerAdapter
@@ -140,6 +141,10 @@ abstract class Controller
         }
 
         $this->adapter                          =& self::$controllers[$bucket];
+
+        if (!empty($page->title)) {
+            $this->setTitle($page->title);
+        }
     }
 
     /**
@@ -660,7 +665,7 @@ abstract class Controller
     private function loadView(string $template_name = null, bool $include_assets = true) : View
     {
         $template                       = $this->getTemplate($template_name);
-        if (!($file_path = Resource::get(str_replace(['.tpl', '.html'], '', $template), Resource::TYPE_VIEWS))) {
+        if (!($file_path = Resource::get(str_replace(self::TPL_NORMALIZE, '', $template), Resource::TYPE_VIEWS))) {
             throw new Exception("View not Found: " . $template . " in " . static::class, 500);
         }
 

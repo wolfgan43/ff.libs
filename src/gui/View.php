@@ -23,11 +23,12 @@ class View
      * View constructor.
      * @param stdClass|null $config
      * @param string|null $templateAdapter
+     * @param string|null $widget
      */
-    public function __construct(stdClass $config = null, string $templateAdapter = null)
+    public function __construct(stdClass $config = null, string $templateAdapter = null, string $widget = null)
     {
         $this->config                               = $config;
-        $this->setAdapter($templateAdapter ?? Kernel::$Environment::TEMPLATE_ADAPTER);
+        $this->setAdapter($templateAdapter ?? Kernel::$Environment::TEMPLATE_ADAPTER, [$widget]);
     }
 
     /**

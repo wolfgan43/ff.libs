@@ -51,11 +51,15 @@ class ViewBlade extends BladeOne implements ViewAdapter
 
 
     private $tpl_file                   = null;
+    private $widget                     = null;
+
     private $data                       = array();
 
-    public function __construct()
+    public function __construct(string $widget = null)
     {
         parent::__construct(Dir::findViewPath(), Constant::CACHE_DISK_PATH . $this::VIEW_PATH);
+
+        $this->widget                   = $widget;
     }
 
     /**

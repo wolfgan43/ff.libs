@@ -9,7 +9,7 @@ interface ViewAdapter
 {
     const ERROR_BUCKET = "template";
 
-    public function __construct();
+    public function __construct(string $widget = null);
 
     /**
      * @param string $template_disk_path

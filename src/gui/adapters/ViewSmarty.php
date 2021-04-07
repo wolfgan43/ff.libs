@@ -54,11 +54,13 @@ class ViewSmarty extends Smarty implements ViewAdapter
     private static $components          = [];
 
     private $tpl_file                   = null;
+    private $widget                     = null;
 
     /**
      * ViewSmarty constructor.
+     * @param string|null $widget
      */
-    public function __construct()
+    public function __construct(string $widget = null)
     {
         parent::__construct();
 
@@ -70,6 +72,8 @@ class ViewSmarty extends Smarty implements ViewAdapter
         $this->caching                  = !Kernel::$Environment::DISABLE_CACHE;
 
         $this->cache_lifetime           = static::CACHE_LIFETIME;
+
+        $this->widget                   = $widget;
     }
 
     /**
@@ -116,7 +120,7 @@ class ViewSmarty extends Smarty implements ViewAdapter
         $this->assign("theme_path", Kernel::$Environment::PROJECT_THEME_DISK_PATH);
 
         $this->setAssignDefault();
-        $this->assign(Resource::views());
+        $this->assign(Resource::views($this->widget));
 
         return parent::fetch($this->tpl_file);
     }

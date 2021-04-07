@@ -50,6 +50,8 @@ class ViewHtml implements ViewAdapter
 
     protected const APPLET                      = '/\{\[(.+)\]\}/U';
 
+    private const TPL_NORMALIZE                 = ['../', '.tpl'];
+
     //private static $cache                       = null;
 
     public $root_element						= "main";
@@ -66,14 +68,17 @@ class ViewHtml implements ViewAdapter
     private $ParsedBlocks 						= [];
 
     private $cache                              = [];
+    private $widget                             = null;
+
     /**
      * @var bool|string[strip|strong_strip|minify]
      */
     public $minify								= false;
 
-    public function __construct(array &$cache = null)
+    public function __construct(string $widget = null, array &$cache = null)
     {
-        $this->cache =& $cache;
+        $this->widget                           = $widget;
+        $this->cache                            =& $cache;
     }
 
     /**
@@ -197,7 +202,7 @@ class ViewHtml implements ViewAdapter
         if ($rc && $matches) {
             $this->DVars = array_flip($matches[1]);
 
-            $views = Resource::views();
+            $views = Resource::views($this->widget);
             $translation = new stdClass();
             foreach ($this->DVars as $nName => $count) {
                 if (substr($nName, 0, 1) == "_") {
@@ -207,9 +212,9 @@ class ViewHtml implements ViewAdapter
                 } elseif (substr($nName, 0, 7) == "include" && substr_count($nName, '"') == 2) {
                     $view =  explode('"', $nName)[1];
 
-                    $template = $views[str_replace(['../', '.tpl', '.html'], '', $view)] ?? str_replace('$theme_path', Kernel::$Environment::PROJECT_THEME_DISK_PATH, $view);
+                    $template = $views[str_replace(self::TPL_NORMALIZE, '', $view)] ?? str_replace('$theme_path', Kernel::$Environment::PROJECT_THEME_DISK_PATH, $view);
 
-                    $include = (new self($this->cache))->include($template);
+                    $include = (new self($this->widget, $this->cache))->include($template);
                     $this->cache[$template] = filemtime($template);
 
                     $content = str_replace("{" . $nName . "}", $include, $content);
@@ -361,6 +366,7 @@ class ViewHtml implements ViewAdapter
     public function assign($tpl_var, $value = null) : ViewAdapter
     {
         if (is_array($tpl_var)) {
+            //@todo da togliere e inserire nella view principale
             $this->ParsedBlocks             = array_replace($this->ParsedBlocks, $tpl_var);
         } else {
             $this->ParsedBlocks[$tpl_var]   = $value;

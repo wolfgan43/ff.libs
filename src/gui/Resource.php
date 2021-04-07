@@ -88,15 +88,20 @@ class Resource extends Mappable implements Dumpable
     }
 
     /**
+     * @param string|null $widget
      * @return array
      */
-    public static function &views() : array
+    public static function &views(string $widget = null) : array
     {
         if (!self::$singleton) {
             self::$singleton = new Resource();
         }
 
-        return self::$singleton->resources[self::TYPE_VIEWS];
+        if ($widget) {
+            return self::$singleton->resources[self::TYPE_WIDGETS][$widget]["tpl"];
+        } else {
+            return self::$singleton->resources[self::TYPE_VIEWS];
+        }
     }
 
     /**

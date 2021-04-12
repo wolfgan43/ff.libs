@@ -74,6 +74,7 @@ abstract class Controller
     private $config                             = null;
 
     private $contentEmpty                       = true;
+    private $layoutException                    = null;
 
     /**
      * @var View
@@ -128,6 +129,7 @@ abstract class Controller
         $this->isXhr                            = $page->isXhr;
 
         $this->config                           = $config;
+        $this->layoutException                  = $page->layout_exception;
 
         if (!empty($page->status)) {
             $this->error                        = $page->error;
@@ -513,6 +515,10 @@ abstract class Controller
             if (!$this->view) {
                 $this->http_status_code = 404;
             }
+        }
+
+        if ($this->http_status_code >= 400 && $this->layoutException) {
+            $this->adapter->layout = $this->layoutException;
         }
 
         if (!empty($this->adapter->layout)) {

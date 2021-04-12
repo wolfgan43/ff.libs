@@ -50,6 +50,7 @@ class RequestPage extends Mappable
 
     public $isXhr                           = null;     //gestito in self (impostato nel costruttore)
     public $layout                          = null;     //gestito in controller
+    public $layout_exception                = null;     //gestito in controller
     public $title                           = null;     //gestito in controller
     public $access                          = null;     //gestito in self && api
     public $vpn                             = null;     //gestito in self

@@ -1,6 +1,8 @@
 <?php
 namespace phpformsframework\libs\dto;
 
+use stdClass;
+
 /**
  * Class DataTableResponse
  * @package phpformsframework\libs\dto
@@ -34,5 +36,13 @@ class DataTableResponse extends DataResponse
     public function getColumn(string $name) : array
     {
         return array_column($this->data ?? [], $name);
+    }
+
+    /**
+     * @return array|stdClass
+     */
+    public function toObject()
+    {
+        return parent::toObject() ?? [];
     }
 }

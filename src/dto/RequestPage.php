@@ -87,7 +87,7 @@ class RequestPage extends Mappable
         $this->method               = (
             $this->method
             ? strtoupper($this->method)
-            : self::requestMethod()
+            : self::requestMethod() ?? Request::METHOD_GET
         );
     }
 

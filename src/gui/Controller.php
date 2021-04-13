@@ -500,7 +500,7 @@ abstract class Controller
      */
     public function display(string $method = null) : DataAdapter
     {
-        $this->render($method ?? self::METHOD_DEFAULT);
+        $this->render($method);
 
         if ($this->isXhr) {
             return ($this->view
@@ -537,7 +537,7 @@ abstract class Controller
      */
     public function html(string $method = null) : ?string
     {
-        $this->render($method ?? self::METHOD_DEFAULT);
+        $this->render($method);
         return ($this->view
             ? $this->view->html()
             : null
@@ -715,9 +715,12 @@ abstract class Controller
         if ($method && $method != $method2lower && $method2lower != self::METHOD_DEFAULT && method_exists($this, $method . $this->method)) {
             $method .= $this->method;
         }
-
-        $this->{$method ?? $this->method}();
-
+        
+        $callback = $method ?? $this->method;
+        if (!method_exists($this, $callback)) {
+            throw new Exception("Method " . $callback . " not found in class " . $this->class_name, 501);
+        }
+        $this->$callback();
         $this->parseAssets();
 
         Debug::stopWatch($bucket);

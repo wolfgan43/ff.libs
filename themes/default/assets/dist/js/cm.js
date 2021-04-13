@@ -111,10 +111,24 @@ let cm = (function () {
                 document.head.appendChild(script);
             }
 
-            if (querySelector !== undefined && dataResponse[_HTML] !== undefined && (html = document.querySelector(querySelector))) {
-                html.innerHTML = dataResponse[_HTML];
+            if(dataResponse[_HTML] !== undefined) {
+                if(querySelector === undefined && dataResponse["component"] !== undefined) {
+                    querySelector = dataResponse["component"];
+                }
+                if(querySelector === undefined) {
+                    let div = document.createElement("div");
+                    div.innerHTML = dataResponse[_HTML];
+                    querySelector = ((selector = div.firstChild.getAttribute("id"))
+                        ? "#" + selector
+                        : undefined
+                    );
+                }
 
-                guiInit();
+                if(html = document.querySelector(querySelector || ("." + CLASS_MAIN))) {
+                    html.innerHTML = dataResponse[_HTML];
+
+                    guiInit();
+                }
             }
         },
         "api" : (function () {
@@ -249,7 +263,7 @@ let cm = (function () {
                             cm.api.post(form.action, new FormData(form), headers)
                                 .then(function(dataResponse) {
                                     if(dataResponse["pathname"] !== undefined && window.location.pathname === dataResponse["pathname"]) {
-                                        cm.inject(dataResponse, dataResponse["component"] || ("." + CLASS_MAIN));
+                                        cm.inject(dataResponse);
                                         modal.hide();
                                     } else {
                                         cm.inject(dataResponse, MODAL_BODY);
@@ -391,7 +405,7 @@ let cm = (function () {
                 that.style["opacity"] = "0.5";
                 cm.api.get(this.href)
                     .then(function(dataResponse) {
-                        cm.inject(dataResponse, dataResponse["component"] || ("." + CLASS_MAIN));
+                        cm.inject(dataResponse);
                         that.style["opacity"] = null;
                     })
                     .finally(function() {

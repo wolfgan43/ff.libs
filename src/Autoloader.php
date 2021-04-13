@@ -135,7 +135,7 @@ class Autoloader implements Dumpable
                             }
                         }
 
-                        if ($tokens[$i][0] === T_CLASS) {
+                        if ($tokens[$i][0] === T_CLASS || $tokens[$i][0] === T_INTERFACE || $tokens[$i][0] === T_TRAIT) {
                             for ($j = $i + 1; $j < count($tokens); $j++) {
                                 if ($tokens[$j][0] === T_STRING) {
                                     $class = $tokens[$j][1];

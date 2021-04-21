@@ -1,6 +1,7 @@
 <?php
 namespace phpformsframework\libs\dto;
 
+use Exception;
 use phpformsframework\libs\Mappable;
 use phpformsframework\libs\Request;
 use phpformsframework\libs\Response;
@@ -51,6 +52,7 @@ class RequestPage extends Mappable
     public $isXhr                           = null;     //gestito in self (impostato nel costruttore)
     public $layout                          = null;     //gestito in controller
     public $layout_exception                = null;     //gestito in controller
+    public $layout_type                     = null;     //gestito in controller
     public $title                           = null;     //gestito in controller
     public $access                          = null;     //gestito in self && api
     public $vpn                             = null;     //gestito in self
@@ -67,7 +69,11 @@ class RequestPage extends Mappable
 
     private $authorization                  = null;
     private $headers                        = [];
-    private $body                           = null;
+    private $body                           = [
+                                                self::REQUEST_RAWDATA   => [],
+                                                self::REQUEST_VALID     => [],
+                                                self::REQUEST_UNKNOWN   => []
+                                            ];
 
     private $su                             = [];
 
@@ -91,6 +97,9 @@ class RequestPage extends Mappable
         );
     }
 
+    /**
+     * @throws Exception
+     */
     public function onLoad() : void
     {
         //@todo da spostare la logica nel router. Aggiungere maintenance come tipo di access.
@@ -139,6 +148,10 @@ class RequestPage extends Mappable
         $this->script_path          = $script_path;
         $this->path_info            = preg_replace('#^' . $script_path . '#i', "", $orig_path_info, 1);
         $this->setPattern($config, $patterns);
+
+        if (($config["layout"] ?? null) != ($config["layout_exception"] ?? null) && empty($pages[$script_path]["config"]["layout"])) {
+            $config["layout"] = $config["layout_exception"];
+        }
 
         return $config;
     }
@@ -231,27 +244,11 @@ class RequestPage extends Mappable
     }
 
     /**
-     * @return bool
-     */
-    public function issetHeaders() : bool
-    {
-        return (!empty($this->headers));
-    }
-
-    /**
      * @return array
      */
     public function getHeaders() : array
     {
         return $this->headers;
-    }
-
-    /**
-     * @return bool
-     */
-    public function issetRequest() : bool
-    {
-        return (!empty($this->body));
     }
 
     public function getRawData() : array
@@ -260,12 +257,11 @@ class RequestPage extends Mappable
     }
 
     /**
-     * @param string $scope
      * @return array
      */
-    public function getRequest(string $scope = self::REQUEST_RAWDATA) : array
+    public function getRequest() : array
     {
-        return $this->body[$scope] ?? [];
+        return $this->body[self::REQUEST_RAWDATA];
     }
 
     /**
@@ -294,7 +290,7 @@ class RequestPage extends Mappable
      */
     public function getRequestValid() : array
     {
-        return $this->body[self::REQUEST_VALID] ?? [];
+        return $this->body[self::REQUEST_VALID];
     }
 
     /**
@@ -302,7 +298,7 @@ class RequestPage extends Mappable
      */
     public function getRequestUnknown() : array
     {
-        return $this->body[self::REQUEST_UNKNOWN] ?? [];
+        return $this->body[self::REQUEST_UNKNOWN];
     }
 
     /**
@@ -439,7 +435,6 @@ class RequestPage extends Mappable
             $rawdata                                                                        = $this->normalizeRawData($request);
 
             if (!empty($this->rules->$bucket)) {
-                $this->body[self::REQUEST_VALID]                                            = [];
                 foreach ($this->rules->$bucket as $key => $rule) {
                     $rule                                                                   = (object) $rule; //@todo necessario per design pattern
                     if (isset($rule->required) && $rule->required === true && (!isset($request[$key]) || $request[$key] === "")) {
@@ -455,9 +450,6 @@ class RequestPage extends Mappable
                             $rule->validator_range ?? $rule->validator_mime ?? null
                         );
 
-                        if (isset($rule->scope)) {
-                            $this->setRequest($rule->scope, $request[$key], $rule->name);
-                        }
                         if (!isset($rule->hide) || $rule->hide === false) {
                             $this->setRequest(self::REQUEST_VALID, $request[$key], $rule->name);
                         } else {
@@ -466,9 +458,6 @@ class RequestPage extends Mappable
                     } else {
                         $request[$key]                                                      = $this->getDefault($rule);
                         $this->setRequest(self::REQUEST_VALID, $request[$key], $rule->name);
-                        if (isset($rule->scope)) {
-                            $this->setRequest($rule->scope, $request[$key], $rule->name);
-                        }
                     }
 
                     if (!empty($rule->isOwner) && isset($this->path2params[$key])) {

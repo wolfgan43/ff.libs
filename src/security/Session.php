@@ -26,6 +26,22 @@ class Session
     private $session_started                                    = false;
 
     /**
+     * @todo da tipizzare
+     * @param string|null $hash
+     * @return bool|int
+     */
+    public static function csrf(string $hash = null)
+    {
+        $secret                                                 = Kernel::$Environment::APPID . "-" . Discover::visitor();
+
+        $csrf                                                   = crc32(self::serverAddr() . $secret);
+        return ($hash
+            ? $hash == $csrf
+            : $csrf
+        );
+    }
+
+    /**
      * @param bool|null $permanent
      * @param string|null $acl
      * @return DataResponse

@@ -292,6 +292,24 @@ class Config implements Dumpable
     }
 
     /**
+     * @param string $name
+     * @return array|null
+     */
+    public static function getSchema(string $name) : ?array
+    {
+        return self::$config_unknown[$name] ?? null;
+    }
+
+    public static function getXmlAttr(array $simple_xml, bool $toArray = false) : object
+    {
+        $attr = $simple_xml["@attributes"] ?? [];
+
+        return ($toArray
+            ? $attr
+            : (object) $attr
+        );
+    }
+    /**
      * @param string $namespace
      * @throws Exception
      */
@@ -623,8 +641,19 @@ class Config implements Dumpable
                                                                                                 "params"    => (empty($controller[1]) ? [] : [$controller[1]])
                                                                                             ]
                                                                                         ];
-                } elseif (isset($attr[self::SCHEMA_ENGINE]) && isset(self::$engine[$attr[self::SCHEMA_ENGINE]])) {
-                    $router[$key]                                                       = self::$engine[$attr[self::SCHEMA_ENGINE]][self::SCHEMA_ROUTER];
+                } elseif (isset($attr[self::SCHEMA_ENGINE])) {
+                    if (isset(self::$engine[$attr[self::SCHEMA_ENGINE]])) {
+                        $router[$key]                                                   = self::$engine[$attr[self::SCHEMA_ENGINE]][self::SCHEMA_ROUTER];
+                    } else {
+                        $controller                                                         = explode("::", $attr[self::SCHEMA_ENGINE]);
+                        $router[$key]                                                       = [
+                            "destination"   => [
+                                "obj"       => $controller[0],
+                                "method"    => (empty($controller[1]) ? null : $controller[1]),
+                                "params"    => null
+                            ]
+                        ];
+                    }
                 } elseif (!isset($router[$key])) {
                     $router[$key]                                                       = null;
                 }
@@ -696,6 +725,7 @@ class Config implements Dumpable
                 }
 
                 $schema[$key]["properties"]                                             = $attr;
+                $schema[$key]["properties"]["accept_path_info"]                         = true;
             }
 
             self::$engine                                                               = $schema;

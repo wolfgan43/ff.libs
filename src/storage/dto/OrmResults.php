@@ -26,6 +26,7 @@
 
 namespace phpformsframework\libs\storage\dto;
 
+use phpformsframework\libs\dto\DataTableResponse;
 use phpformsframework\libs\dto\Mapping;
 
 /**
@@ -36,17 +37,19 @@ class OrmResults
 {
     use Mapping;
 
-    private $recordset              = array();
-    private $countRecordset         = null;
-    private $countTotal             = null;
+    private const ERROR_RECORDSET_EMPTY     = "recordset empty";
 
-    private $record_map_class       = null;
-    private $key_name               = null;
-    private $recordset_keys         = null;
+    private $recordset                      = array();
+    private $countRecordset                 = null;
+    private $countTotal                     = null;
 
-    private $filter                 = null;
-    private $table                  = null;
-    private $indexes                = null;
+    private $record_map_class               = null;
+    private $key_name                       = null;
+    private $recordset_keys                 = null;
+
+    private $filter                         = null;
+    private $table                          = null;
+    private $indexes                        = null;
 
     /**
      * OrmResult constructor.
@@ -76,6 +79,25 @@ class OrmResults
 
         $this->recordset            = (array) $recordset;
         $this->recordset_keys       = $recordset_keys;
+    }
+
+    /**
+     * @return DataTableResponse
+     */
+    public function toDataTableResponse() : DataTableResponse
+    {
+        $dataTableResponse = new DataTableResponse();
+
+        if ($this->countRecordset) {
+            $dataTableResponse->fill($this->recordset);
+            $dataTableResponse->recordsFiltered                                 = $this->countRecordset;
+            $dataTableResponse->recordsTotal                                    = $this->countTotal;
+            $dataTableResponse->draw                                            = 1;
+        } else {
+            $dataTableResponse->error(204, self::ERROR_RECORDSET_EMPTY);
+        }
+
+        return $dataTableResponse;
     }
 
     /**

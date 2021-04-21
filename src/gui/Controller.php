@@ -46,6 +46,8 @@ abstract class Controller
     private const LAYOUT_DEFAULT                = '<main>{' . self::TPL_VAR_PREFIX . 'content}</main>';
     private const TPL_NORMALIZE                 = ['../', '.tpl'];
 
+    private const ERROR_CODE                    = 404;
+    private const ERROR_MESSAGE                 = "Page not found";
     /**
      * @var ControllerAdapter
      */
@@ -139,7 +141,7 @@ abstract class Controller
         $adapter                                = static::CONTROLLER_ENGINE ?? Kernel::$Environment::CONTROLLER_ADAPTER;
         $bucket                                 = $adapter . DIRECTORY_SEPARATOR . static::CONTROLLER_TYPE;
         if (!isset(self::$controllers[$bucket])) {
-            self::$controllers[$bucket]        = $this->setAdapter($adapter, [$this->script_path, static::CONTROLLER_TYPE,  $page->layout ?? static::LAYOUT]);
+            self::$controllers[$bucket]        = $this->setAdapter($adapter, [$this->script_path, $page->layout_type ?? static::CONTROLLER_TYPE,  $page->layout ?? static::LAYOUT]);
         }
 
         $this->adapter                          =& self::$controllers[$bucket];
@@ -151,10 +153,15 @@ abstract class Controller
 
     /**
      * @param string $key
+     * @param mixed|null $value
      * @return mixed|null
      */
-    protected function env(string $key)
+    protected function env(string $key, $value = null)
     {
+        if ($value) {
+            Env::set($key, $value, true);
+        }
+
         return Env::get($key);
     }
 
@@ -285,7 +292,7 @@ abstract class Controller
         $limit                                                                  = (
             substr($key, -4) === self::ASSET_MIN
             ? substr_count($key, ".")
-            : null
+            : PHP_INT_MAX
         );
 
         $assets                                                                 = explode(".", $key, $limit);
@@ -505,7 +512,7 @@ abstract class Controller
         if ($this->isXhr) {
             return ($this->view
                 ? new DataResponse($this->adapter->toArray($this->view->html()))
-                : (new DataResponse())->error("404", "Page not found")
+                : (new DataResponse())->error($this->http_status_code ?? self::ERROR_CODE, $this->error ?? self::ERROR_MESSAGE)
             );
         }
 
@@ -513,7 +520,7 @@ abstract class Controller
             $this->assign(self::TPL_VAR_DEFAULT, $this->view);
 
             if (!$this->view) {
-                $this->http_status_code = 404;
+                $this->http_status_code = self::ERROR_CODE;
             }
         }
 

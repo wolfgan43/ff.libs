@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <configdata>
     <request>
-        <get name="__nocache__"     scope="system"  hide="true" />
+        <get name="__nocache__"             hide="true" />
     </request>
     <dirs>
         <dir type="cache" name="thumbs"     path="/cache/.thumbs"           writable="true" />

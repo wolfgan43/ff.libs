@@ -1,9 +1,8 @@
 <?php
 namespace phpformsframework\libs\security\widgets\helpers;
 
-use hcore\App;
-use hcore\security\Hash;
 use phpformsframework\libs\gui\View;
+use phpformsframework\libs\security\Session;
 use phpformsframework\libs\security\User;
 
 use Exception;
@@ -70,7 +69,7 @@ trait CommonTemplate
      */
     private function setDefault(View $view, stdClass $config)
     {
-        $view->assign("csrf_token", Hash::csrf());
+        $view->assign("csrf_token", Session::csrf());
         if (!empty($config->redirect)) {
             $view->assign("redirect_url", $this->getWebUrl($config->redirect));
         }

@@ -48,8 +48,10 @@ class BufferFs extends BufferAdapter
      */
     protected function load(string $name, string $bucket = null)
     {
-        clearstatcache(true);
-        return Autoloader::loadScript($this->getCacheDiskPath($bucket . DIRECTORY_SEPARATOR . $name));
+        $file                       = $this->getCacheDiskPath($bucket . DIRECTORY_SEPARATOR . $name);
+
+        opcache_invalidate($file, true);
+        return Autoloader::loadScript($file);
     }
 
     /**

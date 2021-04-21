@@ -1,8 +1,6 @@
 <?php
 namespace phpformsframework\libs\dto;
 
-use ArrayObject;
-
 /**
  * Class Dto
  * @package phpformsframework\libs\dto

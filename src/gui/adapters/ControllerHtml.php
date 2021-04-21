@@ -51,6 +51,8 @@ class ControllerHtml extends ControllerAdapter
     private const TPL_VAR_PREFIX                = '$';
     private const TPL_VAR_DEFAULT               = "content";
 
+    private const MAP_PREFIX                    = "layout";
+
     private const MEDIA_DEVICE_DEFAULT          = self::MEDIA_DEVICE_ALL;
     private const JS_TEMPLATE_DEFAULT           = "text/x-template";
 
@@ -123,7 +125,7 @@ class ControllerHtml extends ControllerAdapter
     {
         Debug::stopWatch("gui/controller/html");
 
-        parent::__construct($controller_type, self::class);
+        parent::__construct($controller_type, self::MAP_PREFIX);
 
         $this->lang                             = Locale::getCodeLang();
         $this->region                           = Locale::getCodeCountry();

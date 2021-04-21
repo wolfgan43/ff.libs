@@ -187,7 +187,7 @@ class Router implements Configurable, Dumpable
             self::runWebRoot(self::pathinfo());
         }
 
-        Response::sendError(404);
+        Response::sendError();
     }
 
     /**

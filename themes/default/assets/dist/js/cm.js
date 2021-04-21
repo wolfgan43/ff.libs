@@ -52,7 +52,7 @@ let cm = (function () {
     };
 
 
-    let that = {
+    let self = {
         "getURLParameter" : function (name) {
             let tmp = (RegExp(name.replace(/\[/g, "\\[").replace(/\]/g, "\\]") + '=' + '(.+?)(&|$)').exec(location.search) || [, null])[1];
             if (tmp !== null) {
@@ -258,22 +258,22 @@ let cm = (function () {
 
                             modal.error.hide();
 
-                            let that = this;
-                            that.style["opacity"] = "0.5";
-                            cm.api.post(form.action, new FormData(form), headers)
+                            let self = this;
+                            self.style["opacity"] = "0.5";
+                            cm.api.post(self.action, new FormData(self), headers)
                                 .then(function(dataResponse) {
                                     if(dataResponse["pathname"] !== undefined && window.location.pathname === dataResponse["pathname"]) {
                                         cm.inject(dataResponse);
                                         modal.hide();
                                     } else {
                                         cm.inject(dataResponse, MODAL_BODY);
-                                        modal.formAddListener(form.action, headers);
+                                        modal.formAddListener(self.action, headers);
                                     }
                                 })
                                 .catch(function (message) {
                                     modal.error.show(message);
                                 }).finally(function () {
-                                that.style["opacity"] = null;
+                                self.style["opacity"] = null;
                             });
 
                             /*cm.api.head(this.href)
@@ -384,14 +384,14 @@ let cm = (function () {
             links[i].addEventListener("click", function (e) {
                 e.preventDefault();
 
-                let that = this;
-                that.style["opacity"] = "0.5";
+                let self = this;
+                self.style["opacity"] = "0.5";
                 cm.modal.open(this.href)
                     .then(function() {
-                        that.style["opacity"] = null;
+                        self.style["opacity"] = null;
                     })
                     .finally(function() {
-                        that.style["opacity"] = null;
+                        self.style["opacity"] = null;
                     });
             });
         }
@@ -401,15 +401,33 @@ let cm = (function () {
             links[i].addEventListener("click", function (e) {
                 e.preventDefault();
 
-                let that = this;
-                that.style["opacity"] = "0.5";
+                let self = this;
+                self.style["opacity"] = "0.5";
                 cm.api.get(this.href)
                     .then(function(dataResponse) {
                         cm.inject(dataResponse);
-                        that.style["opacity"] = null;
+                        self.style["opacity"] = null;
                     })
                     .finally(function() {
-                        that.style["opacity"] = null;
+                        self.style["opacity"] = null;
+                    });
+            });
+        }
+
+        links = document.querySelectorAll("form." + CLASS_XHR);
+        for (let i = 0; i < links.length; i++) {
+            links[i].addEventListener("submit", function (e) {
+                e.preventDefault();
+
+                let self = this;
+                self.style["opacity"] = "0.5";
+                cm.api.post(self.action, new FormData(self))
+                    .then(function(dataResponse) {
+                        cm.inject(dataResponse);
+                        self.style["opacity"] = null;
+                    })
+                    .finally(function() {
+                        self.style["opacity"] = null;
                     });
             });
         }
@@ -419,5 +437,5 @@ let cm = (function () {
         guiInit();
     });
 
-    return that;
+    return self;
 })();

@@ -640,27 +640,18 @@ class Request implements Configurable, Dumpable
     }
 
     /**
-     * @param null|string $scope
-     * @param null|string $method
      * @return null|array
      * @throws Exception
      */
-    private function captureBody(string $scope = null, string $method = null) : ?array
+    private function captureBody() : array
     {
-        if (!$method) {
-            $method                                                                             = $this->getRequestMethod();
-        }
-
-        $request                                                                                = $this->getReq($method);
+        $request                                                                                = $this->getReq($this->getRequestMethod());
 
         if (($this->page->loadRequestFile() || $this->page->loadRequest($request)) && empty($this->page->controller)) {
             $this->sendError($this->page->status, $this->page->error);
         }
 
-        return ($scope
-            ? $this->page->getRequest($scope)
-            : null
-        );
+        return $this->page->getRequest();
     }
 
     /**

@@ -68,7 +68,7 @@ class Activation extends Widget
      */
     private function otp() : array
     {
-        return Otp::toArray();
+        return Otp::toArray([], "get");
     }
 
     /**

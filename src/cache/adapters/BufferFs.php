@@ -49,8 +49,11 @@ class BufferFs extends BufferAdapter
     protected function load(string $name, string $bucket = null)
     {
         $file                       = $this->getCacheDiskPath($bucket . DIRECTORY_SEPARATOR . $name);
-
-        opcache_invalidate($file, true);
+        if (function_exists("opcache_invalidate")) {
+            opcache_invalidate($file, true);
+        } else {
+            clearstatcache(true);
+        }
         return Autoloader::loadScript($file);
     }
 

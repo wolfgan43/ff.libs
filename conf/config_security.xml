@@ -41,14 +41,15 @@
             <header name="csrf"                                                 />
 
             <post name="code"                           validator="totp"        />
-            <post name="identifier"                     validator="string"       />
+            <post name="identifier"                     validator="string"      />
             <post name="value"                          validator="password"    />
         </page>
 
-        <page path="/registration" controller="phpformsframework\libs\security\widgets\Registration">
+        <page path="/registration/{model}" controller="phpformsframework\libs\security\widgets\Registration">
             <header name="csrf"                                                 />
 
-            <post name="referral"                       />
+            <get name="model"                           />
+            <get name="referral"                        />
 
             <post name="identifier"                     validator="username"    />
             <post name="password"                       validator="password"    />

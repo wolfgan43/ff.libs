@@ -28,9 +28,8 @@ class Registration extends Widget
         $view                       = $this->view("index");
         $config                     = $view->getConfig();
 
-        $view->assign("registration_url", $this->getWebUrl($config->registration_path));
-
-        if ($this->path_info && $model = Model::get(basename($this->path_info))) {
+        if ($this->request->model && $model = Model::get($this->request->model)) {
+            $config->registration_path .= DIRECTORY_SEPARATOR . $this->request->model;
             $propertires = [
                 "required",
                 "placeholder",
@@ -55,6 +54,7 @@ class Registration extends Widget
             }
         }
 
+        $view->assign("registration_url", $this->getWebUrl($config->registration_path));
 
         $this->setDefault($view, $config);
         $this->setError($view, $config);

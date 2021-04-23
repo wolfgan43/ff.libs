@@ -112,7 +112,7 @@ create table access_users
     verified_email int(10)      null,
     verified_tel   int(10)      null,
     locale         varchar(5)   null,
-    referral       varchar(255) null,
+    referral       varchar(255) null
 )
     charset = utf8;
 

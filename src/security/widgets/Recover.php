@@ -35,8 +35,15 @@ class Recover extends Widget
         $config                     = $this->getConfig("recover");
 
         if (!empty($this->request->code)) {
+            if (!isset($config->api->{"change_" . $action})) {
+                throw new Exception("Recover not supported", 501);
+            }
+
             $response = $this->api($config->api->{"change_" . $action}, [$action => $this->request->value], ["Authorization" => $this->authorization . ":" . $this->request->code]);
-        } elseif (isset($config->api->{"recover_" . $action})) {
+        } else {
+            if (!isset($config->api->{"recover_" . $action})) {
+                throw new Exception("Recover request not supported", 501);
+            }
             $response = $this->api($config->api->{"recover_" . $action}, ["identifier" => $this->request->identifier]);
 
             $response->set("confirm", (
@@ -44,8 +51,6 @@ class Recover extends Widget
                 ? $this->snippet("confirm")
                 : $this->snippet("wait")
             ));
-        } else {
-            throw new Exception("Recover not supported: " . $action, 501);
         }
 
         $this->send($response);
@@ -89,7 +94,7 @@ class Recover extends Widget
         $view->assign("recover_url", $this->getWebUrl($this->script_path . $this->path_info));
 
         $this->setDefault($view, $config);
-        $this->setError($view, $config);
+        $this->setError($view);
         $this->setLogo($view, $config);
         $this->setHeader($view, $config);
     }

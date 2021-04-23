@@ -19,7 +19,9 @@
                     </div>
 
                     <form action="javascript:void(0);" onsubmit="hcore.security.logout('{logout_url}', '{redirect_url}');">
-                        <div class="error-container">{error}</div>
+                        <!--BeginSezError-->
+                        <div class="alert alert-warning">{error}</div>
+                        <!--EndSezError-->
                         <input type="hidden" name="csrf" value="{csrf_token}">
                         <div class="form-group mb-0 text-center">
                             <button class="btn btn-primary" type="submit">{_logout}</button>

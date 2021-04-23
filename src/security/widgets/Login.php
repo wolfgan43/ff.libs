@@ -101,7 +101,7 @@ class Login extends Widget
             }
 
             $this->setDefault($view, $config);
-            $this->setError($view, $config);
+            $this->setError($view);
             $this->setLogo($view, $config);
             $this->setHeader($view, $config);
         }
@@ -112,19 +112,24 @@ class Login extends Widget
      */
     protected function post(): void
     {
-        $config                                 = $this->getConfig();
-        $responseData                           = User::login($this->request->identifier, $this->request->password, $this->request->permanent);
-        if (!$responseData->isError()) {
-            if ($this->aclVerify()) {
-                $responseData->set("welcome", Welcome::toArray());
-            } else {
-                $responseData = User::logout();
-                $responseData->error(401, "Permission Denied.");
+        if (isset($this->request->identifier, $this->request->password)) {
+            $config                                 = $this->getConfig();
+            $responseData                           = User::login($this->request->identifier, $this->request->password, $this->request->permanent);
+            if (!$responseData->isError()) {
+                if ($this->aclVerify()) {
+                    $responseData->set("welcome", Welcome::toArray());
+                } else {
+                    $responseData = User::logout();
+                    $responseData->error(401, "Permission Denied.");
+                }
+            } elseif ($responseData->isError(409) && !empty($config->activation_path)) {
+                $responseData->set("error_link", $this->getWebUrl($config->activation_path));
             }
-        } elseif ($responseData->isError(409) && !empty($config->activation_path)) {
-            $responseData->set("error_link", $this->getWebUrl($config->activation_path));
+            $this->send($responseData);
+        } else {
+            $this->error(400, "missing identifier or password");
+            $this->get();
         }
-        $this->send($responseData);
     }
 
     protected function put(): void

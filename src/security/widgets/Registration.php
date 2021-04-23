@@ -57,7 +57,7 @@ class Registration extends Widget
         $view->assign("registration_url", $this->getWebUrl($config->registration_path));
 
         $this->setDefault($view, $config);
-        $this->setError($view, $config);
+        $this->setError($view);
         $this->setLogo($view, $config);
         $this->setHeader($view, $config);
     }

@@ -100,7 +100,7 @@ class Activation extends Widget
         $view->assign("activation_url", $this->getWebUrl($this->script_path . $this->path_info));
 
         $this->setDefault($view, $config);
-        $this->setError($view, $config);
+        $this->setError($view);
         $this->setLogo($view, $config);
         $this->setHeader($view, $config);
     }

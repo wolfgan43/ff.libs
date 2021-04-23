@@ -41,7 +41,7 @@ class Otp extends Widget
         $view->assign("otp_url", $this->getWebUrl($this->script_path));
 
         $this->setDefault($view, $config);
-        $this->setError($view, $config);
+        $this->setError($view);
         $this->setLogo($view, $config);
         $this->setHeader($view, $config);
     }

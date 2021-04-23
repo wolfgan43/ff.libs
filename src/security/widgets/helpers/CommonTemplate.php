@@ -34,17 +34,12 @@ trait CommonTemplate
 
     /**
      * @param View $view
-     * @param stdClass $config
      */
-    private function setError(View $view, stdClass $config)
+    private function setError(View $view)
     {
-        if (!empty($config->error)) {
-            $view->assign(
-                "error",
-                '<div class="alert alert-warning">'
-                . $config->error
-                . '</div>'
-            );
+        if (!empty($this->error)) {
+            $view->assign("error", $this->error);
+            $view->parse("SezError", false);
         }
     }
     /**

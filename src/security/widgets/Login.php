@@ -114,7 +114,7 @@ class Login extends Widget
     {
         if (isset($this->request->identifier, $this->request->password)) {
             $config                                 = $this->getConfig();
-            $responseData                           = User::login($this->request->identifier, $this->request->password, $this->request->permanent);
+            $responseData                           = User::login($this->request->identifier, $this->request->password, $this->request->permanent ?? null);
             if (!$responseData->isError()) {
                 if ($this->aclVerify()) {
                     $responseData->set("welcome", Welcome::toArray());

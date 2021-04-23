@@ -1,0 +1,283 @@
+{
+  "collection": "anagraph",
+  "main_table": "anagraph",
+  "adapters": {
+    "mysqli": null
+  },
+  "connectors": {
+    "mysqli": {
+      "host": null,
+      "username": null,
+      "password": null,
+      "name": null,
+      "prefix": "ANAGRAPH_DATABASE_",
+      "table": null,
+      "key": "id",
+      "key_rel" : "id_"
+    },
+    "mongodb": {
+      "host": null,
+      "username": null,
+      "password": null,
+      "name": null,
+      "prefix": "ANAGRAPH_MONGO_DATABASE_",
+      "table": null,
+      "key": "id",
+      "key_rel" : "id_"
+    },
+    "fs": {
+      "service": "php",
+      "path": "\/cache\/[TABLE]",
+      "name": [
+        "name",
+        "email",
+        "tel"
+      ],
+      "key": null
+    }
+  },
+  "struct": {
+    "anagraph": {
+      "id": "primary",
+      "type_id": "number",
+      "role_id": "number",
+      "user_uuid": "string",
+      "name": "string",
+      "email": "string",
+      "tel": "string",
+      "created_at": "timestamp",
+      "updated_at": "timestamp",
+      "avatar": "string",
+      "custom1": "string",
+      "custom2": "string",
+      "custom3": "string",
+      "custom4": "string",
+      "custom5": "string",
+      "custom6": "string",
+      "custom7": "string",
+      "custom8": "string",
+      "custom9": "string"
+    },
+    "anagraph_type": {
+      "id": "primary",
+      "name": "string"
+    },
+    "anagraph_role": {
+      "id": "primary",
+      "name": "string"
+    },
+    "anagraph_email": {
+      "id": "primary",
+      "anagraph_id": "number",
+      "type": "string",
+      "email": "string"
+    },
+    "anagraph_tel": {
+      "id": "primary",
+      "anagraph_id": "number",
+      "type": "string",
+      "tel": "string"
+    },
+    "anagraph_social": {
+      "id": "primary",
+      "anagraph_id": "number",
+      "type": "string",
+      "url": "string",
+      "text": "text"
+    },
+    "anagraph_person": {
+      "id": "primary",
+      "anagraph_id": "number",
+      "name": "string",
+      "surname": "string",
+      "cell": "string",
+      "gender": "char",
+      "birthday": "date",
+      "cf": "string",
+      "piva": "string",
+      "cv": "text",
+      "abstract": "text",
+      "biography": "text"
+    },
+    "anagraph_company": {
+      "id": "primary",
+      "anagraph_id": "number",
+      "ragsoc": "string",
+      "address": "string",
+      "cap": "string",
+      "city": "string",
+      "prov": "string",
+      "place_id": "number"
+    },
+    "anagraph_seo": {
+      "id": "primary",
+      "lang_id": "string",
+      "src_id": "string",
+      "visible": "string",
+      "permalink": "string",
+      "parent": "string",
+      "smart_url": "string",
+      "meta_title": "string",
+      "meta_description": "string",
+      "meta_robots": "string",
+      "h1": "string",
+      "meta_canonical": "string",
+      "meta": "string",
+      "httpstatus": "number",
+      "keywords": "string",
+      "pre_content": "string",
+      "post_content": "string"
+    },
+    "anagraph_place": {
+      "id": "primary",
+      "anagraph_id": "number",
+      "billprovince": "string",
+      "billtown": "string",
+      "billcap": "string",
+      "billaddress": "string"
+    }
+  },
+  "relationship": {
+    "anagraph": {
+      "type_id": {
+        "tbl": "anagraph_type",
+        "key": "id"
+      },
+      "user_uuid": {
+        "tbl": "users",
+        "key": "uuid"
+      },
+      "anagraph_person": {
+        "external": "anagraph_id",
+        "primary": "id"
+      },
+      "anagraph_company": {
+        "external": "anagraph_id",
+        "primary": "id"
+      },
+      "anagraph_seo": {
+        "external": "src_id",
+        "primary": "id"
+      },
+      "anagraph_place": {
+        "external": "anagraph_id",
+        "primary": "id"
+      }
+    },
+    "anagraph_type": {
+      "anagraph": {
+        "external": "type_id",
+        "primary": "id"
+      }
+    },
+    "anagraph_person": {
+      "anagraph": {
+        "external": "anagraph_id",
+        "primary": "id"
+      }
+    },
+    "anagraph_company": {
+      "anagraph": {
+        "external": "anagraph_id",
+        "primary": "id"
+      }
+    },
+    "anagraph_seo": {
+      "anagraph": {
+        "external": "src_id",
+        "primary": "id"
+      }
+    },
+    "anagraph_place": {
+      "anagraph": {
+        "external": "anagraph_id",
+        "primary": "id"
+      }
+    }
+  },
+  "indexes": {
+    "anagraph": {
+      "type_id": "hardindex",
+      "user_id": "hardindex"
+    },
+    "anagraph_person": {
+      "anagraph_id": "hardindex"
+    },
+    "anagraph_company": {
+      "anagraph_id": "hardindex"
+    },
+    "anagraph_place": {
+      "anagraph_id": "hardindex"
+    },
+    "anagraph_seo": {
+      "src_id": "hardindex",
+      "permalink": "unique"
+    }
+  },
+  "tables": {
+    "anagraph": {
+      "name": "anagraph",
+      "alias": "anagraph",
+      "engine": "InnoDB",
+      "crypt": false,
+      "pairing": false,
+      "transfert": false,
+      "charset": "utf8"
+    },
+    "anagraph_type": {
+      "name": "anagraph_type",
+      "alias": "type",
+      "engine": "InnoDB",
+      "crypt": false,
+      "pairing": false,
+      "transfert": false,
+      "charset": "utf8"
+    },
+    "anagraph_role": {
+      "name": "anagraph_role",
+      "alias": "type",
+      "engine": "InnoDB",
+      "crypt": false,
+      "pairing": false,
+      "transfert": false,
+      "charset": "utf8"
+    },
+    "anagraph_person": {
+      "name": "anagraph_person",
+      "alias": "person",
+      "engine": "InnoDB",
+      "crypt": false,
+      "pairing": false,
+      "transfert": false,
+      "charset": "utf8"
+    },
+    "anagraph_company": {
+      "name": "anagraph_company",
+      "alias": "company",
+      "engine": "InnoDB",
+      "crypt": false,
+      "pairing": false,
+      "transfert": false,
+      "charset": "utf8"
+    },
+    "anagraph_seo": {
+      "name": "seo_anagraph",
+      "alias": "seo",
+      "engine": "InnoDB",
+      "crypt": false,
+      "pairing": false,
+      "transfert": false,
+      "charset": "utf8"
+    },
+    "anagraph_place": {
+      "name": "anagraph_place",
+      "alias": "place",
+      "engine": "InnoDB",
+      "crypt": false,
+      "pairing": false,
+      "transfert": false,
+      "charset": "utf8"
+    }
+  },
+  "alias": {}
+}

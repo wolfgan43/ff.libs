@@ -23,8 +23,7 @@ class Recover extends Widget
      */
     protected function get(): void
     {
-        $action                     = basename($this->path_info);
-        $this->render($action);
+        $this->render($this->request->action ?? null);
     }
 
     /**
@@ -32,7 +31,7 @@ class Recover extends Widget
      */
     protected function post(): void
     {
-        $action                     = basename($this->path_info);
+        $action                     = $this->request->action ?? null;
         $config                     = $this->getConfig("recover");
 
         if (!empty($this->request->code)) {
@@ -57,7 +56,7 @@ class Recover extends Widget
      */
     protected function confirm() : void
     {
-        $action                     = basename($this->path_info);
+        $action                     = $this->request->action;
 
         $this->render($action . "_confirm");
     }
@@ -67,17 +66,17 @@ class Recover extends Widget
      */
     protected function wait() : void
     {
-        $action                     = basename($this->path_info);
+        $action                     = $this->request->action;
 
         $this->render($action . "_wait");
     }
 
     /**
-     * @param string $method
+     * @param string|null $method
      * @return array
      * @throws Exception
      */
-    private function render(string $method) : void
+    private function render(string $method = null) : void
     {
         if (empty($method)) {
             throw new Exception("Recover action is empty", 501);

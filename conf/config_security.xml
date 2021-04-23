@@ -37,8 +37,10 @@
             <post name="identifier"                     validator="email"       />
         </page>
 
-        <page path="/recover" controller="phpformsframework\libs\security\widgets\Recover">
+        <page path="/recover/{action}" controller="phpformsframework\libs\security\widgets\Recover">
             <header name="csrf"                                                 />
+
+            <get name="action"                          required="true"         />
 
             <post name="code"                           validator="totp"        />
             <post name="identifier"                     validator="string"      />

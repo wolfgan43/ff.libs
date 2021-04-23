@@ -76,33 +76,37 @@ class ErrorController extends Controller
 
     /**
      * @return mixed
+     * @throws Exception
      */
     protected function post() : void
     {
-        // TODO: Implement post() method.
+        $this->get();
     }
 
     /**
      * @return mixed
+     * @throws Exception
      */
     protected function put() : void
     {
-        // TODO: Implement put() method.
+        $this->get();
     }
 
     /**
      * @return mixed
+     * @throws Exception
      */
     protected function delete() : void
     {
-        // TODO: Implement delete() method.
+        $this->get();
     }
 
     /**
      * @return mixed
+     * @throws Exception
      */
     protected function patch() : void
     {
-        // TODO: Implement patch() method.
+        $this->get();
     }
 }

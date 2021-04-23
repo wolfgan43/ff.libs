@@ -71,7 +71,7 @@ abstract class Controller
     protected $requiredFonts                    = [];
     protected $assigns                          = [];
 
-    private $http_status_code                   = 200;
+    protected $http_status_code                 = 200;
 
     private $config                             = null;
 

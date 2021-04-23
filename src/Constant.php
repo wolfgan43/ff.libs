@@ -131,9 +131,9 @@ class Constant
     /**
      * Locale Settings
      */
-    const LOCALE_ACCEPTED_LANGS             = ["it", "en"];
-    const LOCALE_LANG_CODE                  = "en"; //it, en
-    const LOCALE_COUNTRY_CODE               = null; //IT, US
+    const LOCALE_ACCEPTED_LANGS             = ["en"];
+    const LOCALE_LANG_CODE                  = "en";
+    const LOCALE_COUNTRY_CODE               = "IT";
     const LOCALE_TIME_ZONE                  = "UTC";
     const LOCALE_TIME_LOC                   = "+0000";
 

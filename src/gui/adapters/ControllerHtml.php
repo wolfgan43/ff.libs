@@ -48,10 +48,13 @@ use Exception;
  */
 class ControllerHtml extends ControllerAdapter
 {
+    private const METHOD_DEFAULT                = Controller::METHOD_DEFAULT;
+
     private const TPL_VAR_PREFIX                = '$';
     private const TPL_VAR_DEFAULT               = "content";
 
     private const MAP_PREFIX                    = "layout";
+    private const STATUS_OK                     = 0;
 
     private const MEDIA_DEVICE_DEFAULT          = self::MEDIA_DEVICE_ALL;
     private const JS_TEMPLATE_DEFAULT           = "text/x-template";
@@ -552,7 +555,7 @@ class ControllerHtml extends ControllerAdapter
                  */
                 $controller = (new $component());
 
-                $layout = str_replace($tpl_key, $controller->html(), $layout);
+                $layout = str_replace($tpl_key, $controller->html(self::METHOD_DEFAULT), $layout);
             }
         }
 
@@ -689,10 +692,10 @@ class ControllerHtml extends ControllerAdapter
      * @return DataHtml
      * @throws Exception
      */
-    public function display(int $http_status_code) : DataHtml
+    public function display(int $http_status_code = null) : DataHtml
     {
         return (new DataHtml($this->toArray()))
-                    ->error($http_status_code);
+                    ->error($http_status_code ?? self::STATUS_OK);
     }
 
     /**

@@ -40,7 +40,7 @@ class Login extends Widget
     use CommonTemplate;
     use SecureManager;
 
-    protected $requiredJs           = ["hcore.security"];
+    protected $requiredJs           = ["cm"];
 
     /**
      * @throws Exception
@@ -100,7 +100,6 @@ class Login extends Widget
                 $view->parse("SezSocialLogin", false);
             }
 
-            $this->setDefault($view, $config);
             $this->setError($view);
             $this->setLogo($view, $config);
             $this->setHeader($view, $config);
@@ -117,15 +116,16 @@ class Login extends Widget
             $responseData                           = User::login($this->request->identifier, $this->request->password, $this->request->permanent ?? null);
             if (!$responseData->isError()) {
                 if ($this->aclVerify()) {
-                    $responseData->set("welcome", Welcome::toArray());
+                    $this->replaceWith(Welcome::class);
+                    //$this->response()->set("component", "#login-box");
                 } else {
-                    $responseData = User::logout();
-                    $responseData->error(401, "Permission Denied.");
+                    User::logout();
+                    $this->error(401, "Permission Denied.");
                 }
             } elseif ($responseData->isError(409) && !empty($config->activation_path)) {
                 $responseData->set("error_link", $this->getWebUrl($config->activation_path));
             }
-            $this->send($responseData);
+          //  $this->send($responseData);
         } else {
             $this->error(400, "missing identifier or password");
             $this->get();

@@ -30,10 +30,6 @@ class RequestPage extends Mappable
     public const REQUEST_VALID              = "valid";
     public const REQUEST_UNKNOWN            = "unknown";
 
-    private const SECURITY_HEADERS          = [
-                                                "csrf" => "HTTP_CSRF"
-                                            ];
-
     public $path_info                       = null;
     public $script_path                     = null;
 
@@ -56,6 +52,7 @@ class RequestPage extends Mappable
     public $title                           = null;     //gestito in controller
     public $access                          = null;     //gestito in self && api
     public $vpn                             = null;     //gestito in self
+    public $csrf                            = null;     //gestito in self
 
     public $onLoad                          = null;     //gestito in self
 
@@ -113,6 +110,17 @@ class RequestPage extends Mappable
 
         if ($this->access == self::ACCESS_PRIVATE && !User::isLogged()) {
             Response::sendError(401, "Access denied");
+        }
+
+        if ($this->csrf) {
+            if (empty($_SERVER["HTTP_X_CSRF_TOKEN"])) {
+                setcookie("csrf", Validator::csrf($this->serverAddr() . $this->path_info));
+            } elseif (Validator::csrf($this->serverAddr() . $this->path_info) !== $_SERVER["HTTP_X_CSRF_TOKEN"]) {
+                Response::sendError(403, "CSRF validation failed.");
+            }
+        } elseif (isset($_COOKIE["csrf"])) {
+            unset($_COOKIE["csrf"]);
+            setcookie('csrf', null, -1);
         }
 
         if (is_callable($this->onLoad)) {

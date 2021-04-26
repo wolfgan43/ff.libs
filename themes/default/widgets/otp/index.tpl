@@ -23,8 +23,6 @@
                         <!--BeginSezError-->
                         <div class="alert alert-warning">{error}</div>
                         <!--EndSezError-->
-                        <input type="hidden" name="csrf" value="{csrf_token}">
-
                         <div class="form-group verify-code">
                             <label for="code">{_Code}</label>
                             <input id="code" class="form-control" name="code" type="number" required="required" placeholder="{_Insert your code}">

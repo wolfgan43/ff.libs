@@ -23,8 +23,6 @@
                         <!--BeginSezError-->
                         <div class="alert alert-warning">{error}</div>
                         <!--EndSezError-->
-                        <input type="hidden" name="csrf" value="{csrf_token}">
-
                         <div class="form-group" >
                             <label for="password">{_New password}</label>
                             <input id="password" class="form-control" type="password" placeholder="{_Insert a new password}*" name='password' required="required"/>

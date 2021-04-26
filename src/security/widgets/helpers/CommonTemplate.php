@@ -58,17 +58,6 @@ trait CommonTemplate
             $view->parse("SezDescription", false);
         }
     }
-    /**
-     * @param View $view
-     * @param stdClass $config
-     */
-    private function setDefault(View $view, stdClass $config)
-    {
-        $view->assign("csrf_token", Session::csrf());
-        if (!empty($config->redirect)) {
-            $view->assign("redirect_url", $this->getWebUrl($config->redirect));
-        }
-    }
 
     /**
      * @param $view

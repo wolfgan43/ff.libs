@@ -3,7 +3,6 @@ hcore.security.recover = function (url, redirect, resendCode, selector) {
             ? "#" + selector
             : "#recover-box"
     );
-    let token = $(selectorID).find("INPUT[name='csrf']").val() || "";
 
     hcore.security.identifier = $(selectorID).find("INPUT[name='username']").val() || hcore.security.identifier || undefined;
     hcore.security.initInterface(selectorID, redirect || "/user");
@@ -13,7 +12,6 @@ hcore.security.recover = function (url, redirect, resendCode, selector) {
     }
 
     let headers = {
-        "csrf": token
     };
     let data = {
         "identifier": hcore.security.identifier
@@ -52,7 +50,6 @@ hcore.security.recoverConfirm = function (url, redirect, selector) {
             : "#recover-box"
     );
 
-    let token = $(selectorID).find("INPUT[name='csrf']").val() || "";
     let password = $(selectorID).find("INPUT[name='password']").val() || "";
     let confirmPassword = $(selectorID).find("INPUT[name='confirm-password']").val() || "";
     let verifyCode = $(selectorID).find("INPUT[name='code-confirm']").val() || undefined;
@@ -73,8 +70,7 @@ hcore.security.recoverConfirm = function (url, redirect, selector) {
         }
 
         let headers = {
-            "Authorization": bearer,
-            "csrf": token
+            "Authorization": bearer
         };
         let data = {
             "code": $.trim(verifyCode),

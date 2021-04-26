@@ -633,6 +633,16 @@ class Validator
     {
         return (bool) filter_var($url, FILTER_VALIDATE_URL);
     }
+
+    /**
+     * @param string|null $data
+     * @return string
+     */
+    public static function csrf(string $data = null) : string
+    {
+        return hash_hmac("sha256", Discover::visitor() . $data, Kernel::$Environment::APPID);
+    }
+
     /**
      * @param string $value
      * @return bool

@@ -1,7 +1,6 @@
 <?php
 namespace phpformsframework\libs\security\widgets;
 
-use hcore\util\MicroServices;
 use phpformsframework\libs\gui\Widget;
 use phpformsframework\libs\security\widgets\helpers\CommonTemplate;
 use Exception;
@@ -13,7 +12,6 @@ use Exception;
 class Activation extends Widget
 {
     use CommonTemplate;
-    use MicroServices;
 
     protected $requiredJs           = ["hcore.security"];
 
@@ -66,7 +64,7 @@ class Activation extends Widget
      * @return array
      * @throws Exception
      */
-    private function otp() : array
+    protected function otp() : array
     {
         return Otp::toArray([], "get");
     }
@@ -99,7 +97,6 @@ class Activation extends Widget
         $view->assign("help_mail", $config->help_mail ?? "support@" . $_SERVER['HTTP_HOST']);
         $view->assign("activation_url", $this->getWebUrl($this->script_path . $this->path_info));
 
-        $this->setDefault($view, $config);
         $this->setError($view);
         $this->setLogo($view, $config);
         $this->setHeader($view, $config);

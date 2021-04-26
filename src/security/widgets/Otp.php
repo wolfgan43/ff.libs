@@ -1,10 +1,8 @@
 <?php
 namespace phpformsframework\libs\security\widgets;
 
-use hcore\util\MicroServices;
 use phpformsframework\libs\gui\Widget;
 use phpformsframework\libs\security\widgets\helpers\CommonTemplate;
-use phpformsframework\libs\util\ServerManager;
 
 /**
  * Class Otp
@@ -13,7 +11,6 @@ use phpformsframework\libs\util\ServerManager;
 class Otp extends Widget
 {
     use CommonTemplate;
-    use MicroServices;
 
     private const API_AUTH2_OTP_CREATE = "auth2/otp/create";
 
@@ -40,7 +37,6 @@ class Otp extends Widget
         $view->assign("help_mail", $config->help_mail ?? "support@" . $_SERVER['HTTP_HOST']);
         $view->assign("otp_url", $this->getWebUrl($this->script_path));
 
-        $this->setDefault($view, $config);
         $this->setError($view);
         $this->setLogo($view, $config);
         $this->setHeader($view, $config);

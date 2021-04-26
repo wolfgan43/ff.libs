@@ -28,7 +28,6 @@ class Logout extends Widget
             $this->displayUser($view, $config);
             $view->assign("logout_url", $this->getWebUrl($config->logout_path));
 
-            $this->setDefault($view, $config);
             $this->setError($view);
             $this->setLogo($view, $config);
         } else {

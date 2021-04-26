@@ -1,7 +1,6 @@
 <?php
 namespace phpformsframework\libs\security\widgets;
 
-use hcore\util\MicroServices;
 use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\gui\Widget;
 use phpformsframework\libs\security\User;
@@ -16,7 +15,6 @@ use phpformsframework\libs\storage\Model;
 class Registration extends Widget
 {
     use CommonTemplate;
-    use MicroServices;
 
     protected $requiredJs           = ["hcore.security"];
 
@@ -56,7 +54,6 @@ class Registration extends Widget
 
         $view->assign("registration_url", $this->getWebUrl($config->registration_path));
 
-        $this->setDefault($view, $config);
         $this->setError($view);
         $this->setLogo($view, $config);
         $this->setHeader($view, $config);

@@ -1,30 +1,3 @@
-let settings = {
-    "class" : {
-        "main"              : "cm-main",
-        "modal"             : "cm-modal",
-        "xhr"               : "cm-xhr"
-    },
-    "modal" : {
-        "container"         : "uk-modal",
-        "header" : {
-            "container"     : "uk-modal-header",
-            "close"         : "uk-close",
-            "title"         : "uk-modal-title",
-            "description"   : "uk-modal-description"
-        },
-        "error"             : "uk-modal-error",
-        "body"              : "uk-modal-body",
-        "footer"            : {
-            "container"     : "uk-modal-footer",
-            "action"        : "uk-action"
-        },
-        "tokens"            : {
-            "open"          : "uk-open",
-            "error"         : "uk-modal-error uk-alert uk-alert-danger"
-        }
-    }
-};
-
 let cm = (function () {
     const _CSS                  = "css";
     const _STYLE                = "style";
@@ -36,11 +9,34 @@ let cm = (function () {
     const _ERROR                = "error";
     const _LOADED               = "-loaded";
 
-    const CLASS_MAIN            = settings.class.main;
-    const CLASS_MODAL           = settings.class.modal;
-    const CLASS_XHR             = settings.class.xhr;
-
     let modalLoaded             = false;
+    let settings = {
+        "class" : {
+            "main"              : "cm-main",
+            "modal"             : "cm-modal",
+            "xhr"               : "cm-xhr",
+            "error"             : "cm-error"
+        },
+        "modal" : {
+            "open"              : "cm-open",
+            "container"         : "cm-modal",
+            "header" : {
+                "container"     : "cm-modal-header",
+                "close"         : "cm-close",
+                "title"         : "cm-modal-title",
+                "description"   : "cm-modal-description"
+            },
+            "error"             : "cm-modal-error",
+            "body"              : "cm-modal-body",
+            "footer"            : {
+                "container"     : "cm-modal-footer",
+                "action"        : "cm-action"
+            }
+        },
+        "tokens"                : {
+            "error"             : "alert alert-danger"
+        }
+    };
 
     let isLoadedResource = function (resource, type) {
         const ATTR = {
@@ -53,6 +49,7 @@ let cm = (function () {
 
 
     let self = {
+        "defaults" : settings,
         "getURLParameter" : function (name) {
             let tmp = (RegExp(name.replace(/\[/g, "\\[").replace(/\]/g, "\\]") + '=' + '(.+?)(&|$)').exec(location.search) || [, null])[1];
             if (tmp !== null) {
@@ -61,11 +58,27 @@ let cm = (function () {
                 return null;
             }
         },
+        "cookie" : (function() {
+            return {
+                "get": function (name) {
+                    let v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+                    return v ? v[2] : null;
+                },
+                "set": function (name, value) {
+                    let d = new Date;
+                    d.setTime(d.getTime() + 24 * 60 * 60 * 1000 * days);
+                    document.cookie = name + "=" + value + ";path=/;expires=" + d.toGMTString();
+                },
+                "remove": function (name) {
+                    set(name, '', -1);
+                }
+            };
+        })(),
         "inject" : function (dataResponse, querySelector) {
             if(dataResponse === undefined) {
                 return;
             }
-            if (dataResponse[_CSS] !== undefined && dataResponse[_CSS].length) {
+            if (typeof dataResponse[_CSS] === "object") {
                 for (let key in dataResponse[_CSS]) {
                     if (!dataResponse[_CSS].hasOwnProperty(key) || isLoadedResource(key, "link")) {
                         continue;
@@ -92,7 +105,7 @@ let cm = (function () {
                 script.innerHTML = dataResponse[_STRUCTURED_DATA];
                 document.head.appendChild(script);
             }
-            if (dataResponse[_JS] !== undefined && dataResponse[_JS].length) {
+            if (typeof dataResponse[_JS] === "object") {
                 for (let key in dataResponse[_JS]) {
                     if (!dataResponse[_JS].hasOwnProperty(key) || isLoadedResource(key, "script")) {
                         continue;
@@ -124,10 +137,12 @@ let cm = (function () {
                     );
                 }
 
-                if(html = document.querySelector(querySelector || ("." + CLASS_MAIN))) {
+                if((html = (document.querySelector(querySelector)))) {
                     html.innerHTML = dataResponse[_HTML];
 
                     guiInit();
+                } else {
+                    console.error("querySelector error: declare component in response or in attribute data-component.", dataResponse);
                 }
             }
         },
@@ -181,6 +196,10 @@ let cm = (function () {
                     return request("GET", url, headers);
                 },
                 "post": function (url, data, headers) {
+                    if((csrf = cm.cookie.get("csrf"))) {
+                        headers = {...headers, ...{"X-CSRF-TOKEN" : csrf}};
+                    }
+
                     return request("POST", url, headers, data);
                 },
                 "put": function (url, headers) {
@@ -195,63 +214,27 @@ let cm = (function () {
             };
         })(),
         "modal" : (function() {
-            let setting = {...{
-                    "modal" : {
-                        "container"         : "cm-modal",
-                        "header" : {
-                            "container"     : "cm-modal-header",
-                            "close"         : "cm-close",
-                            "title"         : "cm-modal-title",
-                            "description"   : "cm-modal-description"
-                        },
-                        "error"             : "cm-modal-error",
-                        "body"              : "cm-modal-body",
-                        "footer"            : {
-                            "container"     : "cm-modal-footer",
-                            "action"        : "cm-action"
-                        },
-                        "tokens"            : {
-                            "open"          : "cm-open",
-                            "error"         : "cm-modal-error cm-alert cm-alert-danger"
-                        }
-                    }
-                }, ...settings};
-
-            const MODAL_OPEN            = settings.modal.tokens.open;
-            const MODAL_ALERT           = settings.modal.tokens.error;
-            const MODAL                 = "."           + settings.modal.container;
-            const MODAL_CLOSE           = MODAL         + " ." + settings.modal.header.close;
-            const MODAL_ERROR           = MODAL         + " ." + settings.modal.error;
-            const MODAL_HEADER          = MODAL         + " ." + settings.modal.header.container;
-            const MODAL_TITLE           = MODAL_HEADER  + " ." + settings.modal.header.title;
-            const MODAL_DESCRIPTION     = MODAL_HEADER  + " ." + settings.modal.header.description;
-
-            const MODAL_BODY            = MODAL         + " ." + settings.modal.body;
-            const MODAL_FORM            = MODAL         + " form";
-            const MODAL_FOOTER          = MODAL         + " ." + settings.modal.footer.container;
-            const MODAL_FOOTER_ACTION   = MODAL_BODY    + " ." + settings.modal.footer.action;
-
             let modal = {
                 "init" : function () {
                     if(!modalLoaded) {
                         modalLoaded = true;
-                        if((close = document.querySelector(MODAL_CLOSE))) {
+                        if((close = document.querySelector("." + settings.modal.container + " ." + settings.modal.header.close))) {
                             close.addEventListener("click", function () {
                                 modal.hide();
                             });
                         }
-                        if (!document.querySelector(MODAL_ERROR)) {
-                            let body = document.querySelector(MODAL_BODY);
+                        if (!document.querySelector("." + settings.modal.container + " ." + settings.modal.error)) {
+                            let body = document.querySelector("." + settings.modal.container + " ." + settings.modal.body);
                             let error = document.createElement("DIV");
 
-                            error.className = MODAL_ALERT;
+                            error.className = settings.modal.error + " " + settings.tokens.error;
                             error.style.display = "none";
                             body.parentNode.insertBefore(error, body);
                         }
                     }
                 },
                 "formAddListener" : function(url, headers = {}) {
-                    if((form = document.querySelector(MODAL_FORM))) {
+                    if((form = document.querySelector("." + settings.modal.container + " form"))) {
                         form.action = url;
                         form.addEventListener("submit", function(e) {
                             e.preventDefault();
@@ -266,7 +249,7 @@ let cm = (function () {
                                         cm.inject(dataResponse);
                                         modal.hide();
                                     } else {
-                                        cm.inject(dataResponse, MODAL_BODY);
+                                        cm.inject(dataResponse, "." + settings.modal.container + " ." + settings.modal.body);
                                         modal.formAddListener(self.action, headers);
                                     }
                                 })
@@ -285,39 +268,39 @@ let cm = (function () {
                 },
                 "error" : {
                     "show" : function(message) {
-                        let error = document.querySelector(MODAL_ERROR);
+                        let error = document.querySelector("." + settings.modal.container + " ." + settings.modal.error);
                         error.innerHTML = message;
                         error.style.display = "block";
                     },
                     "hide" : function() {
-                        let error = document.querySelector(MODAL_ERROR);
+                        let error = document.querySelector("." + settings.modal.container + " ." + settings.modal.error);
                         error.innerHTML = "";
                         error.style.display = "none";
                     }
                 },
                 "show" : function show() {
-                    let modal = document.querySelector(MODAL);
-                    modal.classList.add(MODAL_OPEN);
+                    let modal = document.querySelector("." + settings.modal.container);
+                    modal.classList.add(settings.modal.open);
                     modal.style["display"] = "block";
                 },
                 "hide" : function () {
-                    let modal = document.querySelector(MODAL);
-                    modal.classList.remove(MODAL_OPEN);
+                    let modal = document.querySelector("." + settings.modal.container);
+                    modal.classList.remove(settings.modal.open);
                     modal.style["display"] = "none";
 
                     this.error.hide();
                 },
                 "clear" : function () {
-                    document.querySelector(MODAL_BODY).innerHTML    = "";
-                    document.querySelector(MODAL_ERROR).innerHTML   = "";
+                    document.querySelector("." + settings.modal.container + " ." + settings.modal.body).innerHTML    = "";
+                    document.querySelector("." + settings.modal.container + " ." + settings.modal.error).innerHTML   = "";
 
-                    if((title = document.querySelector(MODAL_TITLE))) {
+                    if((title = document.querySelector("." + settings.modal.container + " ." + settings.modal.header.container + " ." + settings.modal.header.title))) {
                         title.innerHTML                             = "";
                     }
-                    if((description = document.querySelector(MODAL_DESCRIPTION))) {
+                    if((description = document.querySelector("." + settings.modal.container + " ." + settings.modal.header.container + " ." + settings.modal.header.description))) {
                         description.innerHTML                       = "";
                     }
-                    if((footer = document.querySelector(MODAL_FOOTER))) {
+                    if((footer = document.querySelector("." + settings.modal.container + " ." + settings.modal.footer.container))) {
                         footer.style.display                        = 'none';
                         footer.innerHTML                            = "";
                     }
@@ -334,17 +317,17 @@ let cm = (function () {
 
                         cm.api.get(url, headers)
                             .then(function (dataResponse) {
-                                cm.inject(dataResponse, MODAL_BODY);
-                                if(dataResponse["title"] !== undefined && (title = document.querySelector(MODAL_TITLE))) {
+                                cm.inject(dataResponse, "." + settings.modal.container + " ." + settings.modal.body);
+                                if(dataResponse["title"] !== undefined && (title = document.querySelector("." + settings.modal.container + " ." + settings.modal.header.container + " ." + settings.modal.header.title))) {
                                     title.innerHTML = dataResponse["title"];
                                 }
-                                if(dataResponse["description"] !== undefined && (description = document.querySelector(MODAL_DESCRIPTION))) {
+                                if(dataResponse["description"] !== undefined && (description = document.querySelector("." + settings.modal.container + " ." + settings.modal.header.container + " ." + settings.modal.header.description))) {
                                     description.innerHTML = dataResponse["description"];
                                 }
 
-                                if((footer = document.querySelector(MODAL_FOOTER))) {
+                                if((footer = document.querySelector("." + settings.modal.container + " ." + settings.modal.footer.container))) {
                                     footer.style.display = 'none';
-                                    if ((action = document.querySelector(MODAL_FOOTER_ACTION))) {
+                                    if ((action = document.querySelector("." + settings.modal.container + " ." + settings.modal.body + " ." + settings.modal.footer.action))) {
                                         footer.appendChild(action);
                                         footer.style.display = 'block';
                                     }
@@ -353,10 +336,10 @@ let cm = (function () {
                                 modal.formAddListener(url, headers);
                                 modal.show();
 
-                                resolve(document.querySelector(MODAL));
+                                resolve(document.querySelector("." + settings.modal.container));
                             })
                             .catch(function (message) {
-                                let error = document.querySelector(MODAL_ERROR);
+                                let error = document.querySelector("." + settings.modal.container + " ." + settings.modal.error);
                                 error.innerHTML = message;
                                 error.style.display = "block";
 
@@ -377,10 +360,10 @@ let cm = (function () {
 
     function guiInit()
     {
-        let links = document.querySelectorAll("a." + CLASS_MODAL);
+        let links = document.querySelectorAll("a." + settings.class.modal);
         for (let i = 0; i < links.length; i++) {
-            links[i].classList.remove(CLASS_MODAL);
-            links[i].classList.add(CLASS_MODAL + _LOADED);
+            links[i].classList.remove(settings.class.modal);
+            links[i].classList.add(settings.class.modal + _LOADED);
             links[i].addEventListener("click", function (e) {
                 e.preventDefault();
 
@@ -396,7 +379,7 @@ let cm = (function () {
             });
         }
 
-        links = document.querySelectorAll("a." + CLASS_XHR);
+        links = document.querySelectorAll("a." + settings.class.xhr);
         for (let i = 0; i < links.length; i++) {
             links[i].addEventListener("click", function (e) {
                 e.preventDefault();
@@ -414,7 +397,7 @@ let cm = (function () {
             });
         }
 
-        links = document.querySelectorAll("form." + CLASS_XHR);
+        links = document.querySelectorAll("form." + settings.class.xhr);
         for (let i = 0; i < links.length; i++) {
             links[i].addEventListener("submit", function (e) {
                 e.preventDefault();
@@ -423,8 +406,21 @@ let cm = (function () {
                 self.style["opacity"] = "0.5";
                 cm.api.post(self.action, new FormData(self))
                     .then(function(dataResponse) {
-                        cm.inject(dataResponse);
+                        cm.inject(dataResponse, self.getAttribute("data-component"));
                         self.style["opacity"] = null;
+                    })
+                    .catch(function(errorMessage) {
+                        let error = self.querySelector("." + settings.class.error);
+                        if (error) {
+                            error.innerHTML = errorMessage;
+                        } else {
+                            let error = document.createElement("DIV");
+
+                            error.className = settings.class.error + " " + settings.tokens.error;
+                            error.innerHTML = errorMessage;
+
+                            self.insertBefore(error, self.firstChild)
+                        }
                     })
                     .finally(function() {
                         self.style["opacity"] = null;
@@ -434,8 +430,12 @@ let cm = (function () {
     }
 
     document.addEventListener("DOMContentLoaded", function(event) {
+        settings = {...settings, ...self.defaults};
+
         guiInit();
     });
 
     return self;
 })();
+
+

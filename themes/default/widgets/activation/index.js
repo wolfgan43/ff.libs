@@ -3,7 +3,6 @@ hcore.security.activation = function (url, redirect, resendCode, selector) {
             ? "#" + selector
             : "#activation-box"
     );
-    let token = $(selectorID).find("INPUT[name='csrf']").val() || "";
 
     hcore.security.identifier = $(selectorID).find("INPUT[name='username']").val() || hcore.security.identifier || undefined;
     hcore.security.initInterface(selectorID, redirect || "/login");
@@ -13,7 +12,6 @@ hcore.security.activation = function (url, redirect, resendCode, selector) {
     }
 
     let headers = {
-        "csrf": token
     };
     let data = {
         "identifier": hcore.security.identifier

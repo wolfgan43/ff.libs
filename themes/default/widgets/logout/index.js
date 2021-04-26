@@ -4,14 +4,11 @@ hcore.security.logout = function (url, redirect, selector) {
             : "#logout-box"
     );
 
-    let csrf = jQuery(selectorID).find("INPUT[name='csrf']").val() || "";
-
     hcore.security.initInterface(selectorID, redirect);
 
     $.ajax({
         url: (url || window.location.pathname),
         headers: {
-            "csrf": csrf
         },
         method: 'POST',
         dataType: 'json',

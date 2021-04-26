@@ -4,8 +4,6 @@ hcore.security.registration = function (url, redirect, selector) {
             : "#registration-box"
     );
 
-    let token = $(selectorID).find("INPUT[name='csrf']").val() || "";
-
     let password = $(selectorID).find("INPUT[name='password']").val() || undefined;
     let confirmPassword = $(selectorID).find("INPUT[name='confirm-password']").val() || "";
     let email = $(selectorID).find("INPUT[name='email']").val() || undefined;
@@ -23,7 +21,6 @@ hcore.security.registration = function (url, redirect, selector) {
     }
 
     let headers = {
-        "csrf": token
     };
 
     let data = {

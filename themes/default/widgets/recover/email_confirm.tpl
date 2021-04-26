@@ -23,8 +23,6 @@
                         <!--BeginSezError-->
                         <div class="alert alert-warning">{error}</div>
                         <!--EndSezError-->
-                        <input type="hidden" name="csrf" value="{csrf_token}">
-
                         <div class="form-group" >
                             <label for="email">{_New email}</label>
                             <input id="email" class="form-control" type="email" placeholder="{_Insert a new email}*" name='email' required="required"/>

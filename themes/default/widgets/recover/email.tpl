@@ -23,8 +23,6 @@
                         <!--BeginSezError-->
                         <div class="alert alert-warning">{error}</div>
                         <!--EndSezError-->
-                        <input type="hidden" name="csrf" value="{csrf_token}">
-
                         <div class="form-group">
                             <label for="username">{_Phone Number}</label>
                             <input id="username" class="form-control" name="username" type="number" required="required" placeholder="{_Phone Number}">

@@ -3,7 +3,6 @@ hcore.security.otp = function (url, redirect, resendCode, selector) {
             ? "#" + selector
             : "#otp-box"
     );
-    let token = $(selectorID).find("INPUT[name='csrf']").val() || "";
 
     hcore.security.initInterface(selectorID, redirect || "/login");
 
@@ -12,7 +11,6 @@ hcore.security.otp = function (url, redirect, resendCode, selector) {
     }
 
     let headers = {
-        "csrf": token
     };
     let data = {
         "identifier": hcore.security.identifier
@@ -52,7 +50,6 @@ hcore.security.otpConfirm = function (url, redirect, selector) {
             : "#otp-box"
     );
 
-    let token = $(selectorID).find("INPUT[name='csrf']").val() || "";
     let verifyCode = $(selectorID).find("INPUT[name='code']").val() || undefined;
 
     hcore.security.initInterface(selectorID, redirect);
@@ -65,8 +62,7 @@ hcore.security.otpConfirm = function (url, redirect, selector) {
 
     if (bearer) {
         let headers = {
-            "Authorization": bearer,
-            "csrf": token
+            "Authorization": bearer
         };
         let data = {
             "code": $.trim(verifyCode)

@@ -42,12 +42,14 @@ abstract class Controller
     protected const TPL_VAR_DEFAULT             = "content";
     private const TPL_VAR_PREFIX                = '$';
 
-    private const METHOD_DEFAULT                = "get";
     private const LAYOUT_DEFAULT                = '<main>{' . self::TPL_VAR_PREFIX . 'content}</main>';
     private const TPL_NORMALIZE                 = ['../', '.tpl'];
 
     private const ERROR_CODE                    = 404;
     private const ERROR_MESSAGE                 = "Page not found";
+
+    public const METHOD_DEFAULT                = "get";
+
     /**
      * @var ControllerAdapter
      */
@@ -71,9 +73,10 @@ abstract class Controller
     protected $requiredFonts                    = [];
     protected $assigns                          = [];
 
-    protected $http_status_code                 = 200;
+    protected $http_status_code                 = null;
 
     private $config                             = null;
+    private $response                           = null;
 
     private $contentEmpty                       = true;
     private $layoutException                    = null;
@@ -131,6 +134,8 @@ abstract class Controller
         $this->isXhr                            = $page->isXhr;
 
         $this->config                           = $config;
+        $this->response                         = new DataResponse();
+
         $this->layoutException                  = $page->layout_exception;
 
         if (!empty($page->status)) {
@@ -463,6 +468,14 @@ abstract class Controller
     }
 
     /**
+     * @return DataResponse
+     */
+    protected function response() : DataResponse
+    {
+        return $this->response;
+    }
+
+    /**
      * @param string|null $device
      * @param string|null $media_query
      * @return string
@@ -505,22 +518,37 @@ abstract class Controller
      * @return DataAdapter
      * @throws Exception
      */
+    /**
+     * @param string|null $method
+     * @return DataAdapter
+     * @throws Exception
+     */
     public function display(string $method = null) : DataAdapter
     {
-        $this->render($method);
+        try {
+            $this->render($method);
+        } catch (Exception $e) {
+            $this->error($e->getCode(), $e->getMessage());
+            if (!$this->view) {
+                $this->{$method ?? self::METHOD_DEFAULT}();
+            }
+        }
 
         if ($this->isXhr) {
-            return ($this->view
-                ? new DataResponse($this->adapter->toArray($this->view->html()))
-                : (new DataResponse())->error($this->http_status_code ?? self::ERROR_CODE, $this->error ?? self::ERROR_MESSAGE)
+            return ($this->view && !$this->error
+                ? $this->response()->fill($this->adapter->toArray($this->view->html()))
+                : $this->response()->error($this->http_status_code ?? self::ERROR_CODE, $this->error ?? self::ERROR_MESSAGE)
             );
         }
 
         if ($this->contentEmpty) {
+            if ($this->error && !$this->view) {
+                $this->{$method ?? self::METHOD_DEFAULT}();
+            }
             $this->assign(self::TPL_VAR_DEFAULT, $this->view);
 
             if (!$this->view) {
-                $this->http_status_code = self::ERROR_CODE;
+                throw new Exception(self::ERROR_MESSAGE, self::ERROR_CODE);
             }
         }
 
@@ -532,6 +560,9 @@ abstract class Controller
             $this->addStylesheet($this->adapter->layout);
             $this->addJavascriptDefer($this->adapter->layout);
         }
+
+        $this->addStylesheet("main");
+        $this->addJavascriptDefer("main");
 
         return $this->adapter
             ->display($this->http_status_code);
@@ -604,16 +635,18 @@ abstract class Controller
     /**
      * @param string $widgetName
      * @param array|null $config
+     * @param string|null $method
      * @throws Exception
      */
-    protected function replaceWith(string $widgetName, array $config = null) : void
+    protected function replaceWith(string $widgetName, array $config = null, string $method = null) : void
     {
         $this->clearAssets();
         /**
          * @var Controller $controller
          */
+
         $controller             = new $widgetName($config);
-        $controller->render($this->method);
+        $controller->render($method ?? self::METHOD_DEFAULT);
         $this->view             = $controller->view;
     }
 

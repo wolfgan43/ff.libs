@@ -1,7 +1,6 @@
 <?php
 namespace phpformsframework\libs\security\widgets;
 
-use hcore\util\MicroServices;
 use phpformsframework\libs\gui\Widget;
 use phpformsframework\libs\security\widgets\helpers\CommonTemplate;
 use Exception;
@@ -13,7 +12,6 @@ use Exception;
 class Recover extends Widget
 {
     use CommonTemplate;
-    use MicroServices;
 
     protected $requiredJs           = ["hcore.security", "recover"];
     protected $requiredCss          = ["recover"];
@@ -93,7 +91,6 @@ class Recover extends Widget
         $view->assign("help_mail", $config->help_mail ?? "support@" . $_SERVER['HTTP_HOST']);
         $view->assign("recover_url", $this->getWebUrl($this->script_path . $this->path_info));
 
-        $this->setDefault($view, $config);
         $this->setError($view);
         $this->setLogo($view, $config);
         $this->setHeader($view, $config);

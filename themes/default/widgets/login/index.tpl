@@ -19,18 +19,16 @@
                     <!--EndSezDescription-->
                 </div>
 
-                <form action="javascript:void(0);" onsubmit="hcore.security.login('{login_url}', '{redirect_url}');" enctype="multipart/form-data">
+                <form method="post" class="cm-xhr">
                     <!--BeginSezError-->
                     <div class="alert alert-warning">{error}</div>
                     <!--EndSezError-->
-                    <input type="hidden" name="csrf" value="{csrf_token}">
-
                     <div class="form-group">
                         <!--BeginSezRecoverAccount-->
                         <a href="{recover_account_url}" class="text-muted float-right" tabindex="-1"><small>{_Forgot your account?}</small></a>
                         <!--EndSezRecoverAccount-->
                         <label for="emailaddress">{_Account}</label>
-                        <input class="form-control" name="username" type="text" id="emailaddress" required="required" placeholder="{_Enter your email or username or tel}" autocomplete="username">
+                        <input class="form-control" name="identifier" type="text" id="emailaddress" required="required" placeholder="{_Enter your email or username or tel}" autocomplete="username">
                     </div>
 
                     <div class="form-group">

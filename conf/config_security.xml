@@ -20,26 +20,19 @@
     </badpath>
     <pages>
         <!-- Widgets -->
-        <page path="/login" controller="phpformsframework\libs\security\widgets\Login">
-            <header name="csrf"                                                 />
-
+        <page path="/login" controller="phpformsframework\libs\security\widgets\Login"                          csrf="true">
             <post name="identifier" required="true"     validator="username"    />
             <post name="password"   required="true"     validator="password"    />
             <post name="permanent"                      validator="bool"        />
         </page>
-        <page path="/logout" controller="phpformsframework\libs\security\widgets\Logout">
-            <header name="csrf"                                                 />
+        <page path="/logout" controller="phpformsframework\libs\security\widgets\Logout"                        csrf="true">
         </page>
-        <page path="/activation" controller="phpformsframework\libs\security\widgets\Activation">
-            <header name="csrf"                                                 />
-
+        <page path="/activation" controller="phpformsframework\libs\security\widgets\Activation"                csrf="true">
             <post name="code"                           validator="totp"        />
             <post name="identifier"                     validator="email"       />
         </page>
 
-        <page path="/recover/{action}" controller="phpformsframework\libs\security\widgets\Recover">
-            <header name="csrf"                                                 />
-
+        <page path="/recover/{action}" controller="phpformsframework\libs\security\widgets\Recover"             csrf="true">
             <get name="action"                          required="true"         />
 
             <post name="code"                           validator="totp"        />
@@ -47,9 +40,7 @@
             <post name="value"                          validator="password"    />
         </page>
 
-        <page path="/registration/{model}" controller="phpformsframework\libs\security\widgets\Registration">
-            <header name="csrf"                                                 />
-
+        <page path="/registration/{model}" controller="phpformsframework\libs\security\widgets\Registration"    csrf="true">
             <get name="model"                           />
             <get name="referral"                        />
 
@@ -61,9 +52,7 @@
 
             <post name="code"                           validator="totp"        />
         </page>
-        <page path="/otp" controller="phpformsframework\libs\security\widgets\Otp">
-            <header name="csrf"                                                 />
-
+        <page path="/otp" controller="phpformsframework\libs\security\widgets\Otp"                              csrf="true">
             <post name="code"                           validator="totp"        />
         </page>
     </pages>

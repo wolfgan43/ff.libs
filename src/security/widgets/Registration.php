@@ -5,8 +5,8 @@ use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\gui\Widget;
 use phpformsframework\libs\security\User;
 use phpformsframework\libs\security\widgets\helpers\CommonTemplate;
-use Exception;
 use phpformsframework\libs\storage\Model;
+use Exception;
 
 /**
  * Class Registration
@@ -26,7 +26,7 @@ class Registration extends Widget
         $view                       = $this->view("index");
         $config                     = $view->getConfig();
 
-        if ($this->request->model && $model = Model::get($this->request->model)) {
+        if (!empty($this->request->model) && $model = Model::get($this->request->model)) {
             $config->registration_path .= DIRECTORY_SEPARATOR . $this->request->model;
             $propertires = [
                 "required",

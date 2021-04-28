@@ -2,11 +2,9 @@
 namespace phpformsframework\libs\security\widgets\helpers;
 
 use phpformsframework\libs\gui\View;
-use phpformsframework\libs\security\Session;
 use phpformsframework\libs\security\User;
 
 use Exception;
-use phpformsframework\libs\util\ServerManager;
 use stdClass;
 
 /**
@@ -15,7 +13,6 @@ use stdClass;
  */
 trait CommonTemplate
 {
-    use ServerManager;
     /**
      * @param View $view
      * @param stdClass $config

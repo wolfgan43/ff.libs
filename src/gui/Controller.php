@@ -468,11 +468,12 @@ abstract class Controller
     }
 
     /**
+     * @param array|null $values
      * @return DataResponse
      */
-    protected function response() : DataResponse
+    protected function response(array $values = null) : DataResponse
     {
-        return $this->response;
+        return $this->response->fill($values);
     }
 
     /**

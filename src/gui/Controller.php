@@ -473,7 +473,11 @@ abstract class Controller
      */
     protected function response(array $values = null) : DataResponse
     {
-        return $this->response->fill($values);
+        if ($values) {
+            $this->response->fill($values);
+        }
+
+        return $this->response;
     }
 
     /**

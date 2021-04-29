@@ -13,12 +13,12 @@
                 <div class="card-body p-4">
 
                     <div class="text-center w-75 m-auto">
-                        <img src="{user_avatar}" alt="{user_name}" title="{user_name}" height="88" class="rounded-circle shadow">
+                        <img src="{user_avatar}" alt="{user_name}" title="{user_name}" weight="100" class="rounded-circle shadow">
                         <h4 class="text-dark-50 text-center mt-3 font-weight-bold">{user_name} </h4>
                         <p class="text-muted mb-4">{_Click the button to sign out.}</p>
                     </div>
 
-                    <form action="javascript:void(0);" onsubmit="hcore.security.logout('{logout_url}', '{redirect_url}');">
+                    <form method="post" class="cm-xhr">
                         <!--BeginSezError-->
                         <div class="alert alert-warning">{error}</div>
                         <!--EndSezError-->

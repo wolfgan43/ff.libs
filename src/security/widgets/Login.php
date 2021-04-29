@@ -112,20 +112,9 @@ class Login extends Widget
     protected function post(): void
     {
         if (isset($this->request->identifier, $this->request->password)) {
-            $config                                 = $this->getConfig();
-            $responseData                           = User::login($this->request->identifier, $this->request->password, $this->request->permanent ?? null);
-            if (!$responseData->isError()) {
-                if ($this->aclVerify()) {
-                    $this->replaceWith(Welcome::class);
-                    //$this->response()->set("component", "#login-box");
-                } else {
-                    User::logout();
-                    $this->error(401, "Permission Denied.");
-                }
-            } elseif ($responseData->isError(409) && !empty($config->activation_path)) {
-                $responseData->set("error_link", $this->getWebUrl($config->activation_path));
-            }
-          //  $this->send($responseData);
+            User::login($this->request->identifier, $this->request->password, $this->request->permanent ?? null);
+
+            $this->welcome();
         } else {
             $this->error(400, "missing identifier or password");
             $this->get();
@@ -145,5 +134,13 @@ class Login extends Widget
     protected function patch(): void
     {
         // TODO: Implement patch() method.
+    }
+
+    private function welcome(): void
+    {
+        $view       = $this->view("welcome");
+        $config     = $view->getConfig();
+        $this->displayUser($view, $config);
+        $this->setLogo($view, $config);
     }
 }

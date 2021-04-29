@@ -8,6 +8,7 @@ use phpformsframework\libs\Response;
 use phpformsframework\libs\security\User;
 use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\security\ValidatorFile;
+use phpformsframework\libs\security\widgets\Login;
 use phpformsframework\libs\util\ServerManager;
 use phpformsframework\libs\util\TypesConverter;
 use stdClass;
@@ -24,7 +25,8 @@ class RequestPage extends Mappable
 
     private const ERROR_IS_REQUIRED         = " is required";
 
-    private const ACCESS_PRIVATE            = "private";
+    private const ACCESS_SESSION            = "session";
+    private const ACCESS_PUBLIC             = "public";
 
     public const REQUEST_RAWDATA            = "rawdata";
     public const REQUEST_VALID              = "valid";
@@ -108,8 +110,10 @@ class RequestPage extends Mappable
             Response::sendError(401, "Access denied for ip: " . $this->remoteAddr());
         }
 
-        if ($this->access == self::ACCESS_PRIVATE && !User::isLogged()) {
-            Response::sendError(401, "Access denied");
+        //@todo da fare controllo acl della pagina
+        if ($this->access == self::ACCESS_SESSION && $this->script_path !== "/assets" && !User::isLogged()) {
+            Response::send((new Login())
+                ->displayException());
         }
 
         if ($this->csrf) {

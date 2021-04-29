@@ -570,6 +570,19 @@ abstract class Controller
     }
 
     /**
+     * @return DataAdapter
+     * @throws Exception
+     */
+    public function displayException() : DataAdapter
+    {
+        if ($this->layoutException) {
+            $this->adapter->layout = $this->layoutException;
+        }
+
+        return $this->display();
+    }
+
+    /**
      * @param string|null $method
      * @return string|null
      * @throws Exception

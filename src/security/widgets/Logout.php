@@ -14,7 +14,7 @@ class Logout extends Widget
 {
     use CommonTemplate;
 
-    protected $requiredJs           = ["hcore.security"];
+    protected $requiredJs           = ["cm"];
 
     /**
      * @throws Exception
@@ -38,7 +38,12 @@ class Logout extends Widget
 
     protected function post(): void
     {
-        $this->send(User::logout());
+        User::logout();
+
+        $view = $this->view("thankyou");
+        $config = $view->getConfig();
+
+        $view->assign("login_path", $config->login_path);
     }
 
     protected function put(): void

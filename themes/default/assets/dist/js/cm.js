@@ -5,6 +5,7 @@ let cm = (function () {
     const _JS                   = "js";
     const _JS_EMBED             = "js_embed";
     const _HTML                 = "html";
+    const _COMPONENT            = "component";
     const _DEBUG                = "debug";
     const _ERROR                = "error";
     const _LOADED               = "-loaded";
@@ -125,24 +126,28 @@ let cm = (function () {
             }
 
             if(dataResponse[_HTML] !== undefined) {
-                if(querySelector === undefined && dataResponse["component"] !== undefined) {
-                    querySelector = dataResponse["component"];
-                }
-                if(querySelector === undefined) {
+                if(querySelector) {
+                    if((html = (document.querySelector(querySelector)))) {
+                        html.innerHTML = dataResponse[_HTML];
+
+                        guiInit();
+                    }
+                } else if(dataResponse[_COMPONENT] !== undefined) {
+                    if((html = (document.querySelector(dataResponse[_COMPONENT])))) {
+                        html.parentNode.replaceChild(dataResponse[_HTML], html);
+
+                        guiInit();
+                    } else {
+                        console.error("querySelector error: declare component in response or in attribute data-component.", dataResponse);
+                    }
+                } else {
                     let div = document.createElement("div");
                     div.innerHTML = dataResponse[_HTML];
-                    querySelector = ((selector = div.firstChild.getAttribute("id"))
-                        ? "#" + selector
-                        : undefined
-                    );
-                }
+                    if((selector = div.firstChild.getAttribute("id")) && (html = (document.querySelector("#" + selector)))) {
+                        html.parentNode.replaceChild(div, html);
 
-                if((html = (document.querySelector(querySelector)))) {
-                    html.innerHTML = dataResponse[_HTML];
-
-                    guiInit();
-                } else {
-                    console.error("querySelector error: declare component in response or in attribute data-component.", dataResponse);
+                        guiInit();
+                    }
                 }
             }
         },
@@ -437,5 +442,3 @@ let cm = (function () {
 
     return self;
 })();
-
-

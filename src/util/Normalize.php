@@ -1,12 +1,23 @@
 <?php
 namespace phpformsframework\libs\util;
 
+use phpformsframework\libs\international\Time;
+
 /**
  * Class Normalize
  * @package phpformsframework\libs\util
  */
 class Normalize
 {
+    /**
+     * @param int|null $timestamp
+     * @return Time
+     */
+    public static function convertDate(int $timestamp = null) : Time
+    {
+        return new Time($timestamp);
+    }
+
     /**
      * @param string|null $string
      * @param string $delimiter

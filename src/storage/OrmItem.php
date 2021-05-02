@@ -362,7 +362,7 @@ abstract class OrmItem
                     $fields                                                     = null;
                 }
 
-                if (!isset(self::$buffer["items"][$join]) && method_exists($join, 'dtd')) {
+                if (!isset(self::$buffer["items"][$join]) && is_callable([$join, 'dtd'])) {
                     $table                                                      = null;
                     /**
                      * @var OrmItem $join
@@ -715,7 +715,7 @@ abstract class OrmItem
 
             if (!empty(static::DELETE_JOINS)) {
                 foreach (static::DELETE_JOINS as $join) {
-                    if (method_exists($join, 'dtd')) {
+                    if (is_callable([$join, 'dtd'])) {
                         /**
                          * @var OrmItem $join
                          */
@@ -835,7 +835,7 @@ abstract class OrmItem
                 } elseif (!in_array($value, static::VALIDATOR[$field])) {
                     $errors[]                                                   = $field . " must be: [" . implode(", ", static::VALIDATOR[$field]) . "]";
                 }
-            } elseif (method_exists($this, static::VALIDATOR[$field])) {
+            } elseif (is_callable([$this, static::VALIDATOR[$field]])) {
                 if (!$this->{static::VALIDATOR[$field]}($value)) {
                     $errors[]                                                   = $field . " not valid";
                 }

@@ -319,10 +319,10 @@ class Orm extends Mappable
      */
     public function read(array $select = null, array $where = null, array $sort = null, int $limit = null, int $offset = null, bool $calc_found_rows = true) : ?OrmResults
     {
-        if ($this->cacheRequest(self::ACTION_READ, [$select, $where, $sort, $limit, $offset], $this->result, $this->main->def->mainTable)) {
+        if ($this->cacheRequest(self::ACTION_READ, [$select, $where, $sort, $limit, $offset], $this->result, $this->main_table)) {
             $this->get($select, $where, $sort, $limit, $offset, $calc_found_rows);
 
-            $this->cacheStore($this->result, $this->main->def->mainTable);
+            $this->cacheStore($this->result, $this->main_table);
         }
 
         return $this->getResult();
@@ -338,10 +338,10 @@ class Orm extends Mappable
      */
     public function readOne(array $select = null, array $where = null, array $sort = null, int $offset = null) : ?object
     {
-        if ($this->cacheRequest(self::ACTION_READONE, [$select, $where, $sort, $offset], $this->result, $this->main->def->mainTable)) {
+        if ($this->cacheRequest(self::ACTION_READONE, [$select, $where, $sort, $offset], $this->result, $this->main_table)) {
             $this->get($select, $where, $sort, 1, $offset);
 
-            $this->cacheStore($this->result, $this->main->def->mainTable);
+            $this->cacheStore($this->result, $this->main_table);
         }
 
         return $this->getResult()->first();
@@ -442,7 +442,7 @@ class Orm extends Mappable
      */
     public function cmd(string $action, array $where = null) : ?object
     {
-        if ($this->cacheRequest(self::ACTION_CMD, [$action, $where], $this->result, $this->main->def->mainTable)) {
+        if ($this->cacheRequest(self::ACTION_CMD, [$action, $where], $this->result, $this->main_table)) {
             $this->clearResult();
 
             $this->resolveFieldsByScopes(array(
@@ -452,7 +452,7 @@ class Orm extends Mappable
             $this->execSub($action);
             $this->cmdData($action);
 
-            $this->cacheStore($this->result, $this->main->def->mainTable);
+            $this->cacheStore($this->result, $this->main_table);
         }
 
         return $this->getResult()->first();

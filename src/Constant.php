@@ -134,8 +134,8 @@ class Constant
     const LOCALE_ACCEPTED_LANGS             = ["en"];
     const LOCALE_LANG_CODE                  = "en";
     const LOCALE_COUNTRY_CODE               = "IT";
-    const LOCALE_TIME_ZONE                  = "UTC";
-    const LOCALE_TIME_LOC                   = "+0000";
+    const LOCALE_TIME_ZONE                  = "Europe/Rome";
+    const LOCALE_TIME_LOC                   = "+1000";
 
     /**
      * Connection Credential

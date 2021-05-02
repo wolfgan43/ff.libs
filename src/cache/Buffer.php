@@ -24,10 +24,8 @@ class Buffer implements Dumpable
     private const SYMBOL                                = " (from cache)";
 
     private static $cache                               = [];
-    /**
-     * @var stdClass
-     */
-    private static $stats                               = null;
+
+    private static $exTime                              = [];
     private static $process                             = [];
 
     private static $pid                                 = null;
@@ -70,14 +68,7 @@ class Buffer implements Dumpable
      */
     public static function exTime(string $bucket) : float
     {
-        return self::$stats->extime[$bucket] ?? 0;
-    }
-    /**
-     * @return array|null
-     */
-    public static function stats() : ?stdClass
-    {
-        return self::$stats;
+        return self::$exTime[$bucket] ?? 0;
     }
 
     /**
@@ -160,7 +151,7 @@ class Buffer implements Dumpable
     {
         $exTime                                             = Debug::stopWatch(self::$tid->pkey);
 
-        self::setStats($exTime, self::$tid->bucket, self::$tid->pkey);
+        self::setExTime($exTime, self::$tid->bucket);
 
         self::$tid                                          = null;
 
@@ -259,18 +250,6 @@ class Buffer implements Dumpable
     }
 
     /**
-     * @param float $time
-     * @param string $bucket
-     * @param string $pkey
-     */
-    private static function setStats(float $time, string $bucket, string $pkey) : void
-    {
-        self::$stats->extime[$bucket]                       = $time + (self::$stats->extime[$bucket] ?? 0);
-        self::$stats->extime_action[$pkey]                  = $time + (self::$stats->extime_action[$pkey] ?? 0);
-        self::$stats->count[$pkey]                          = 1 + (self::$stats->count[$pkey] ?? 0);
-    }
-
-    /**
      * @param string $pid
      * @return void
      */
@@ -304,6 +283,6 @@ class Buffer implements Dumpable
      */
     public static function setExTime(float $time, string $bucket) : void
     {
-        self::$stats->extime[$bucket] = $time + (self::$stats->extime[$bucket] ?? 0);
+        self::$exTime[$bucket] = $time + (self::$exTime[$bucket] ?? 0);
     }
 }

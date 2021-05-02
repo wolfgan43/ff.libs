@@ -63,6 +63,22 @@ class User extends App
     }
 
     /**
+     * @param string|null $acl_required
+     * @return bool
+     */
+    public static function alcVerify(string $acl_required = null) : bool
+    {
+        if (($user = self::get())) {
+            $user_acl   = explode(",", $user->acl);
+            $acls       = explode(",", $acl_required);
+
+            return !empty(array_intersect($acls, $user_acl));
+        }
+
+        return !empty($user) && empty($acl_required);
+    }
+
+    /**
      * @return Session
      */
     private static function session() : Session

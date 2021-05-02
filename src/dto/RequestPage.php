@@ -111,9 +111,13 @@ class RequestPage extends Mappable
         }
 
         //@todo da fare controllo acl della pagina
-        if ($this->access == self::ACCESS_SESSION && $this->script_path !== "/assets" && !User::isLogged()) {
-            Response::send((new Login())
-                ->displayException());
+        if ($this->access == self::ACCESS_SESSION && $this->script_path !== "/assets" && !User::isLogged() /*$aclVerify = !User::alcVerify($this->acl))*/) {
+            $login = new Login();
+            /*if(!$aclVerify) {
+                $login->error(401, "Access Denied");
+            }*/
+
+            Response::send($login->displayException());
         }
 
         if ($this->csrf) {

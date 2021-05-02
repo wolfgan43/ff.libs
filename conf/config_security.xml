@@ -20,19 +20,19 @@
     </badpath>
     <pages>
         <!-- Widgets -->
-        <page path="/login" controller="phpformsframework\libs\security\widgets\Login"                          csrf="true">
+        <page path="/login" controller="phpformsframework\libs\security\widgets\Login"                          csrf="true"     access="public">
             <post name="identifier" required="true"     validator="username"    />
             <post name="password"   required="true"     validator="password"    />
             <post name="permanent"                      validator="bool"        />
         </page>
         <page path="/logout" controller="phpformsframework\libs\security\widgets\Logout"                        csrf="true">
         </page>
-        <page path="/activation" controller="phpformsframework\libs\security\widgets\Activation"                csrf="true">
+        <page path="/activation" controller="phpformsframework\libs\security\widgets\Activation"                csrf="true"     access="public">
             <post name="code"                           validator="totp"        />
             <post name="identifier"                     validator="email"       />
         </page>
 
-        <page path="/recover/{action}" controller="phpformsframework\libs\security\widgets\Recover"             csrf="true">
+        <page path="/recover/{action}" controller="phpformsframework\libs\security\widgets\Recover"             csrf="true"     access="public">
             <get name="action"                          required="true"         />
 
             <post name="code"                           validator="totp"        />
@@ -40,7 +40,7 @@
             <post name="value"                          validator="password"    />
         </page>
 
-        <page path="/registration/{model}" controller="phpformsframework\libs\security\widgets\Registration"    csrf="true">
+        <page path="/registration/{model}" controller="phpformsframework\libs\security\widgets\Registration"    csrf="true"     access="public">
             <get name="model"                           />
             <get name="referral"                        />
 

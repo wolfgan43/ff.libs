@@ -147,6 +147,10 @@ let cm = (function () {
                         html.parentNode.replaceChild(div, html);
 
                         guiInit();
+                    } else if((html = (document.querySelector("." + settings.class.main)))) {
+                        html.innerHTML = dataResponse[_HTML];
+
+                        guiInit();
                     }
                 }
             }

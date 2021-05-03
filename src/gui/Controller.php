@@ -32,9 +32,7 @@ abstract class Controller
     protected const CONTROLLER_TYPE             = "responsive";
     protected const THEME                       = "default";
 
-    protected const VIEW_ERROR                  = "error";
-
-    protected const ERROR_BUCKET                = "controller";
+    protected const ERROR_VIEW                  = null;
 
     protected const TPL_ENGINE_DEFAULT          = "Html";
     protected const TPL_ENGINE_SMARTY           = "Smarty";
@@ -42,6 +40,7 @@ abstract class Controller
 
     protected const TPL_VAR_DEFAULT             = "content";
     private const TPL_VAR_PREFIX                = '$';
+    private const CONTROLLER_PREFIX             = "controller";
 
     private const LAYOUT_DEFAULT                = '<main>{' . self::TPL_VAR_PREFIX . 'content}</main>';
     private const TPL_NORMALIZE                 = ['../', '.tpl'];
@@ -78,6 +77,7 @@ abstract class Controller
 
     private $config                             = null;
     private $response                           = null;
+    private $route                              = null;
 
     private $contentEmpty                       = true;
     private $layoutException                    = null;
@@ -125,7 +125,7 @@ abstract class Controller
     {
         $page                                   = Kernel::$Page;
 
-        $this->class_name                       = str_replace(self::ERROR_BUCKET, "", strtolower($this->getClassName()));
+        $this->class_name                       = str_replace(self::CONTROLLER_PREFIX, "", strtolower($this->getClassName()));
         $this->method                           = $page->method;
         $this->request                          = (object) $page->getRequest();
         $this->headers                          = (object) $page->getHeaders();
@@ -531,12 +531,14 @@ abstract class Controller
      */
     public function display(string $method = null) : DataAdapter
     {
+        $this->route = $method ?? self::METHOD_DEFAULT;
+
         try {
             $this->render($method);
         } catch (Exception $e) {
             $this->error($e->getCode(), $e->getMessage());
             if (!$this->view) {
-                $this->{static::VIEW_ERROR ?? $method ?? self::METHOD_DEFAULT}();
+                $this->{static::ERROR_VIEW ?? $this->route}();
             }
         }
 
@@ -549,7 +551,7 @@ abstract class Controller
 
         if ($this->contentEmpty) {
             if ($this->error && !$this->view) {
-                $this->{static::VIEW_ERROR ?? $method ?? self::METHOD_DEFAULT}();
+                $this->{static::ERROR_VIEW ?? $this->route}();
             }
             $this->assign(self::TPL_VAR_DEFAULT, $this->view);
 
@@ -696,19 +698,13 @@ abstract class Controller
     }
 
     /**
-     * @param array|null $assign
-     * @throws Exception
+     * @return View
      */
-    protected function default(array $assign = null) : void
+    protected function default() : View
     {
-        $this
-            ->addStylesheet(static::LAYOUT)
-            ->addJavascriptDefer(static::LAYOUT)
-            ->assign(
-                self::TPL_VAR_DEFAULT,
-                $this->view()
-                    ->assign($assign)
-            );
+        $this->{$this->route}();
+
+        return $this->view;
     }
 
     /**
@@ -767,7 +763,7 @@ abstract class Controller
      */
     private function render(string $method = null) : void
     {
-        $bucket = static::ERROR_BUCKET . "/" . $this->class_name;
+        $bucket = static::CONTROLLER_PREFIX . "/" . $this->class_name;
         Debug::stopWatch($bucket);
 
         $method2lower = strtolower($this->method);

@@ -32,6 +32,7 @@ abstract class Controller
     protected const CONTROLLER_TYPE             = "responsive";
     protected const THEME                       = "default";
 
+    protected const VIEW_ERROR                  = "error";
 
     protected const ERROR_BUCKET                = "controller";
 
@@ -535,7 +536,7 @@ abstract class Controller
         } catch (Exception $e) {
             $this->error($e->getCode(), $e->getMessage());
             if (!$this->view) {
-                $this->{$method ?? self::METHOD_DEFAULT}();
+                $this->{static::VIEW_ERROR ?? $method ?? self::METHOD_DEFAULT}();
             }
         }
 
@@ -548,7 +549,7 @@ abstract class Controller
 
         if ($this->contentEmpty) {
             if ($this->error && !$this->view) {
-                $this->{$method ?? self::METHOD_DEFAULT}();
+                $this->{static::VIEW_ERROR ?? $method ?? self::METHOD_DEFAULT}();
             }
             $this->assign(self::TPL_VAR_DEFAULT, $this->view);
 

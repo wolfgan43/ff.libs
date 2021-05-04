@@ -763,7 +763,7 @@ abstract class Controller
      */
     private function render(string $method = null) : void
     {
-        $bucket = static::CONTROLLER_PREFIX . "/" . $this->class_name;
+        $bucket = self::CONTROLLER_PREFIX . "/" . $this->class_name;
         Debug::stopWatch($bucket);
 
         $method2lower = strtolower($this->method);

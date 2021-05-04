@@ -214,8 +214,8 @@ abstract class OrmItem
         }
 
         $toDataResponse                                                         = $toDataResponse ?? $item::DATARESPONSE;
-        if (!empty($toDataResponse) && !is_array($toDataResponse)) {
-            $toDataResponse                                                     = Model::get($toDataResponse);
+        if (!empty($toDataResponse) && !is_array($toDataResponse) && !($toDataResponse = Model::get($toDataResponse))) {
+            throw new Exception("Model not found", 404);
         }
 
         if ($item::DELETE_LOGICAL_FIELD) {

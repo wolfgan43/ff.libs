@@ -14,6 +14,16 @@ class DataTableResponse extends DataResponse
     public $recordsFiltered     = 0;
 
 
+
+    public function __construct(array $data = array())
+    {
+        parent::__construct($data);
+
+        $this->draw             = 1;
+        $this->recordsFiltered  = count($data);
+        $this->recordsTotal     = count($data);
+    }
+
     /**
      * @return array
      */

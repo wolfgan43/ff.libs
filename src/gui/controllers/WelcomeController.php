@@ -46,7 +46,7 @@ class WelcomeController extends Controller
 
 
 
-        $this->default(["content" => $this->hostname()]);
+        $this->view()->assign("content", $this->hostname());
     }
 
     /**

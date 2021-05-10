@@ -7,44 +7,6 @@ namespace phpformsframework\libs\dto;
 trait Mapping
 {
     /**
-     * @param object $obj
-     * @return array
-     */
-    private function getObjectProperties(object $obj) : array
-    {
-        static $mapClass            = null;
-
-        $class_name                 = get_class($obj);
-        if (!isset($mapClass[$class_name])) {
-            $mapClass[$class_name]  = get_object_vars($obj);
-        }
-
-        return $mapClass[$class_name];
-    }
-
-    /**
-     * @param array $map
-     * @param object|null $obj
-     */
-    protected function autoMapping2(array $map, object &$obj = null) : void
-    {
-        foreach ($this->getProp($map, $obj) as $key => $value) {
-            $obj->$key              = $value;
-        }
-    }
-
-    private function getProp(array $map, object &$obj = null) : array
-    {
-        if (!$obj) {
-            $obj                    = $this;
-        }
-
-        $has                        = $this->getObjectProperties($obj);
-        return array_intersect_key($map, $has);
-    }
-
-
-    /**
      * @param array $map
      * @param object|null $obj
      */
@@ -54,7 +16,7 @@ trait Mapping
             $obj = $this;
         }
 
-        foreach (array_intersect_key($map, get_object_vars($obj))  as $key => $value) {
+        foreach (array_intersect_key($this->removeNull($map), get_object_vars($obj))  as $key => $value) {
             $obj->$key = $value;
         }
     }
@@ -70,8 +32,15 @@ trait Mapping
             $obj = $this;
         }
 
-        foreach ($map  as $key => $value) {
+        foreach ($this->removeNull($map) as $key => $value) {
             $obj->$key = $value;
         }
+    }
+
+    private function removeNull(array $map) : array
+    {
+        return array_filter($map, function ($var) {
+            return $var !== null;
+        });
     }
 }

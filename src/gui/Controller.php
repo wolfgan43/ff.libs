@@ -513,6 +513,8 @@ abstract class Controller
      */
     public function error(int $status, string $msg = null) : self
     {
+        $this->debug($msg);
+
         $this->http_status_code     = $status;
         $this->error                = $msg;
 
@@ -536,6 +538,10 @@ abstract class Controller
         try {
             $this->render($method);
         } catch (Exception $e) {
+            if ($e->getCode() >= 500) {
+                throw new Exception($e->getMessage(), $e->getCode());
+            }
+
             $this->error($e->getCode(), $e->getMessage());
             if (!$this->view) {
                 $this->{static::ERROR_VIEW ?? $this->route}();
@@ -695,16 +701,6 @@ abstract class Controller
         }
 
         Response::send($data, $headers);
-    }
-
-    /**
-     * @return View
-     */
-    protected function default() : View
-    {
-        $this->{$this->route}();
-
-        return $this->view;
     }
 
     /**

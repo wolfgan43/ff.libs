@@ -236,6 +236,7 @@ abstract class DatabaseAdapter implements Constant
         if ($this->key_name != $this->key_primary && $name == $this->key_primary) {
             $name = $this->convertKeyPrimary($name);
         }
+
         if (is_array($value)) {
             $res[$name] = $this->fieldOperations($value, $struct_type, $name);
         } else {
@@ -289,15 +290,19 @@ abstract class DatabaseAdapter implements Constant
      */
     private function fieldOperations(array $values, string $struct_type, string $name) : ?array
     {
-        $res                                = null;
-
+        $res                                    = null;
         foreach ($values as $op => $value) {
             if (!empty(self::OPERATOR_COMPARISON[$op])) {
-                $res[$op]                   = $this->fieldOperation($this->fieldIn($name, $value), $struct_type, $name, $op);
+                $res[$op]                       = $this->fieldOperation($this->fieldIn($name, $value), $struct_type, $name, $op);
             }
         }
+
         if (!$res) {
-            $res[self::OP_ARRAY_DEFAULT]    = $this->fieldOperation($this->fieldIn($name, $values), $struct_type, $name, self::OP_ARRAY_DEFAULT);
+            if (count($values) > 1) {
+                $res[self::OP_ARRAY_DEFAULT]    = $this->fieldOperation($this->fieldIn($name, $values), $struct_type, $name, self::OP_ARRAY_DEFAULT);
+            } else {
+                $res[self::OP_DEFAULT]          = $this->fieldOperation($this->fieldIn($name, $values), $struct_type, $name, self::OP_DEFAULT);
+            }
         }
 
         return $res;
@@ -335,7 +340,8 @@ abstract class DatabaseAdapter implements Constant
             $res[$name]                 = $value;
         }
 
-        ksort($res);
+        //@todo da togliere ksort e verificare se tutto funziona
+        //ksort($res);
         $this->prototype                = $res;
 
         return $res + $this->index2query;
@@ -370,32 +376,34 @@ abstract class DatabaseAdapter implements Constant
     protected function queryWhere(array $fields = null, string $delete_logical_field = null)
     {
         $res                            = array();
+
         if (isset($fields[self::OR])) {
-            //@todo da finire
-            $or                         = $this->queryWhere($fields[self::OR]);
+            $res[static::OR]            = self::queryWhere($fields[self::OR]);
+
             unset($fields[self::OR]);
+        }
+
+        if (isset($fields[self::AND])) {
+            $fields = $fields[self::AND];
         }
 
         if ($fields) {
             foreach ($fields as $name => $value) {
                 $struct_type            = $this->converter($name);
                 if (is_array($value)) {
-                    if (isset($value[self::AND])) {
-                        if (count($value) > 1) {
-                            throw new Exception('if you define $and you cant use values outside of $and or $or', 500);
-                        }
-                        $value          = $value[self::AND];
-                    }
-
                     if (isset($value[self::OR])) {
                         $this->fieldWhere($res, $value[self::OR], $struct_type, $name, static::OR);
                         unset($value[self::OR]);
+                        if (empty($value)) {
+                            continue;
+                        }
+                    }
+                    if (isset($value[self::AND])) {
+                        $value          = $value[self::AND];
                     }
                 }
 
                 $this->fieldWhere($res, $value, $struct_type, $name);
-
-                unset($res[static::OR]);
             }
 
             if ($delete_logical_field && !isset($fields[$delete_logical_field])) {

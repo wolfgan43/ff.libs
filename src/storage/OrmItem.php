@@ -231,8 +231,8 @@ abstract class OrmItem
 
         if ($recordset->countRecordset()) {
             $dataTableResponse->fill($recordset->getAllArray());
-            $dataTableResponse->recordsFiltered                                 = $recordset->countRecordset();
             $dataTableResponse->recordsTotal                                    = $recordset->countTotal();
+            $dataTableResponse->recordsFiltered                                 = ($where ? $recordset->countRecordset() : $dataTableResponse->recordsTotal);
             $dataTableResponse->draw                                            = $draw + 1;
         } else {
             $dataTableResponse->error(204, self::ERROR_RECORDSET_EMPTY);

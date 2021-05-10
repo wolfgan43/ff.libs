@@ -48,6 +48,11 @@ class DataTableResponse extends DataResponse
         return array_column($this->data ?? [], $name);
     }
 
+    public function columns() : array
+    {
+        return array_keys($this->data[0] ?? []);
+    }
+
     /**
      * @return array|stdClass
      */

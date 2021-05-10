@@ -26,7 +26,6 @@
 
 namespace phpformsframework\libs\storage\dto;
 
-use phpformsframework\libs\dto\DataTableResponse;
 use phpformsframework\libs\dto\Mapping;
 
 /**
@@ -36,8 +35,6 @@ use phpformsframework\libs\dto\Mapping;
 class OrmResults
 {
     use Mapping;
-
-    private const ERROR_RECORDSET_EMPTY     = "recordset empty";
 
     private $recordset                      = array();
     private $countRecordset                 = null;
@@ -79,25 +76,6 @@ class OrmResults
 
         $this->recordset            = (array) $recordset;
         $this->recordset_keys       = $recordset_keys;
-    }
-
-    /**
-     * @return DataTableResponse
-     */
-    public function toDataTableResponse() : DataTableResponse
-    {
-        $dataTableResponse = new DataTableResponse();
-
-        if ($this->countRecordset) {
-            $dataTableResponse->fill($this->recordset);
-            $dataTableResponse->recordsFiltered                                 = $this->countRecordset;
-            $dataTableResponse->recordsTotal                                    = $this->countTotal;
-            $dataTableResponse->draw                                            = 1;
-        } else {
-            $dataTableResponse->error(204, self::ERROR_RECORDSET_EMPTY);
-        }
-
-        return $dataTableResponse;
     }
 
     /**
@@ -175,6 +153,14 @@ class OrmResults
         foreach ($this->recordset as $record) {
             $callback($this->mapRecord($record, $map_class_name, $use_record_to_constructor));
         }
+    }
+
+    /**
+     * @return array
+     */
+    public function columns() : array
+    {
+        return array_keys($this->recordset[0] ?? []);
     }
 
     /**

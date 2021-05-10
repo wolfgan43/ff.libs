@@ -96,12 +96,16 @@ class DatabaseMysqli extends DatabaseAdapter
     protected function convertFieldWhere(array &$res, string $name, string $or = null) : void
     {
         if ($or) {
+            if (isset($res[$or][$name])) {
+                $res[$name][] = $res[$or][$name];
+            }
+
             $res[$or][$name] = implode($or, $res[$name]);
             unset($res[$name]);
         } else {
-            $res[$name] = implode(self:: AND, $res[$name]);
+            $res[$name] = implode(self::AND, $res[$name]);
             if (isset($res[self::OR][$name])) {
-                $res[$name] = $res[$name] . self:: AND . "(" . $res[self:: OR][$name] . ")";
+                $res[$name] = "((" . $res[$name] . ")" . self::OR . "(" . str_replace(self::OR, self::AND, $res[self:: OR][$name]) . "))";
                 unset($res[self:: OR][$name]);
             }
         }
@@ -247,7 +251,19 @@ class DatabaseMysqli extends DatabaseAdapter
      */
     protected function queryWhere(array $fields = null, string $delete_logical_field = null) : string
     {
-        return implode(static::AND, parent::queryWhere($fields, $delete_logical_field));
+        $res = null;
+        $query = parent::queryWhere($fields, $delete_logical_field);
+        if (isset($query[static::OR])) {
+            $res = "(" . implode(static::OR, $query[static::OR]) . ")";
+            unset($query[static::OR]);
+            if (!empty($query)) {
+                $res .= static::AND;
+            }
+        }
+
+        $res .= implode(static:: AND, $query);
+
+        return $res;
     }
 
     /**

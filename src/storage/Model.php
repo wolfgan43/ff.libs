@@ -232,6 +232,14 @@ class Model implements Configurable, Dumpable
     }
 
     /**
+     * @return array
+     */
+    public function dtdRaw() : ?array
+    {
+        return $this->schema->rawdata ?? null;
+    }
+
+    /**
      * @param string|null $table
      * @return stdClass|null
      */
@@ -424,7 +432,7 @@ class Model implements Configurable, Dumpable
                     );
                     foreach ($fields as $field) {
                         $attr                                                           = (object) Dir::getXmlAttr($field);
-                        if (!isset($attr->name)) {
+                        if (!isset($attr->name) || isset($schema[$model_name][self::READ][$prefix . $attr->db])) {
                             continue;
                         }
                         $key                                                            = $attr->name;

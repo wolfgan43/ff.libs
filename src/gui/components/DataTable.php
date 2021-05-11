@@ -2,8 +2,10 @@
 namespace phpformsframework\libs\gui\components;
 
 use Exception;
+use phpformsframework\libs\dto\DataTableResponse;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Kernel;
+use phpformsframework\libs\Response;
 use phpformsframework\libs\storage\dto\OrmResults;
 use phpformsframework\libs\storage\Model;
 
@@ -42,16 +44,16 @@ class DataTable
                                                 [SEARCH]
                                             </div>
                                             [PAGINATE_INFO]
-                                            [TABLE]
+                                            <table class="dt-table">
+                                                [THEAD]
+                                                [TBODY]
+                                                [TFOOT]
+                                            </table>
                                             <div class="dt-foot">
                                                 [PAGINATE_INFO]
                                                 [PAGINATE]
                                             </div>';
-    public $template_table              = '<table class="dt-table">
-                                                [THEAD]
-                                                [TBODY]
-                                                [TFOOT]
-                                            </table>';
+    public $template_table              = '';
 
 
 
@@ -87,13 +89,20 @@ class DataTable
     private $dtd                        = null;
 
     private $page                       = null;
+    private $start                      = null;
     private $length                     = null;
     private $records                    = null;
+    private $records_start              = null;
+    private $records_end                = null;
+    private $columns                    = null;
     private $pages                      = null;
     private $search                     = null;
     private $sort                       = null;
 
+    private $isXhr                      = false;
     private $query                      = null;
+    private $draw                       = null;
+
 
     /**
      * DataTable constructor.
@@ -103,21 +112,35 @@ class DataTable
     {
         $this->id                       = "dt/" . $model;
 
+        $this->isXhr                    = Kernel::$Page->isXhr;
         $this->query                    = Kernel::$Page->getRequest();
 
         $this->db                       = new Model($model);
         $this->dtd                      = $this->db->dtdStore();
+        $this->columns                  = $this->db->dtdRaw();
 
         $request                        = (object) $this->query;
-        $this->page                     = $request->page    ?? 1;
-        if ($this->page < 1) {
-            $this->page                 = 1;
+        $this->draw                     = $request->draw    ?? 1;
+
+
+        if (isset($request->search)) {
+            $this->search = $request->search["value"] ?? $request->search;
         }
-        $this->search                   = $request->search  ?? null;
+
         $this->sort                     = $request->sort    ?? [];
 
-        if ($this->displayTablePaginate) {
-            $this->length               = $request->length  ?? self::RECORD_LIMIT;
+        $this->length                   = $request->length  ?? self::RECORD_LIMIT;
+
+        if (isset($request->start)) {
+            $this->start                = $request->start;
+        } else {
+            $page = (
+                isset($request->page) && $request->page > 0
+                ? $request->page
+                : 1
+            );
+
+            $this->start                = $this->length * ($page - 1);
         }
     }
 
@@ -129,22 +152,31 @@ class DataTable
     {
         $where                          = null;
         $sort                           = null;
-        $keys                           = $this->db->dtdRaw();
 
         if ($this->search) {
-            $where =  ['$or' =>  array_fill_keys($keys, ['$regex' => "*" . $this->search . "*"])
-
-            ];
+            $where                      =  ['$or' =>  array_fill_keys($this->columns, ['$regex' => "*" . $this->search . "*"])];
         }
         foreach ($this->sort as $i => $dir) {
-            $sort[$keys[$i]]            = $dir;
+            $sort[$this->columns[$i]]   = $dir;
         }
 
-        $this->dataTable                = $this->db->read($where, $sort, $this->length, ($this->page - 1) * $this->length);
+        $this->dataTable                = $this->db->read($where, $sort, $this->length, $this->start);
         $this->records                  = $this->dataTable->countTotal();
-        $this->pages                    = ceil($this->records / $this->length);
+        $this->records_start            = ($this->length * ($this->page - 1));
+        $this->records_end              = (
+            $this->length * $this->page < $this->records
+                                            ? $this->length * $this->page
+                                            : $this->records
+                                        );
 
-        return $this->draw();
+        $this->pages                    = ceil($this->records / $this->length);
+        $this->page                     = floor($this->start / $this->length) + 1;
+
+
+        return ($this->isXhr
+            ? Response::send($this->dataTable->toDataTableResponse($this->draw, !empty($this->search)))
+            : $this->draw()
+        );
     }
 
     /**
@@ -153,56 +185,41 @@ class DataTable
      */
     private function draw() : string
     {
-        if ($this->useDataTablePlugin) {
-            return str_replace(
-                [
-                    "[THEAD]",
-                    "[TBODY]",
-                    "[TFOOT]"
-                 ],
-                [
-                    $this->tableHead(),
-                    $this->tableBody(),
-                    $this->tableFoot()
-                    ],
-                $this->template_table
-            ) . $this->pluginDataTable();
-        } else {
-            return $this->css() .
+        return ($this->useDataTablePlugin
+            ? $this->pluginDataTable()
+            : $this->css() .
                 '<form id="' . $this->id . '" class="dt-wrapper' . ($this->xhr ? " cm-xhr" : null) . '">' .
                 $this->hiddens() .
                 str_replace(
                     [
-                    "[TABLE]",
-                    "[TITLE]",
-                    "[DESCRIPTION]",
-                    "[ERROR]",
-                    "[ACTIONS]",
-                    "[LENGTH]",
-                    "[SEARCH]",
-                    "[THEAD]",
-                    "[TBODY]",
-                    "[TFOOT]",
-                    "[PAGINATE]",
-                    "[PAGINATE_INFO]"
-                ],
+                        "[TITLE]",
+                        "[DESCRIPTION]",
+                        "[ERROR]",
+                        "[ACTIONS]",
+                        "[LENGTH]",
+                        "[SEARCH]",
+                        "[THEAD]",
+                        "[TBODY]",
+                        "[TFOOT]",
+                        "[PAGINATE]",
+                        "[PAGINATE_INFO]"
+                    ],
                     [
-                    $this->table(),
-                    $this->title(),
-                    $this->description(),
-                    $this->error(),
-                    $this->actions(),
-                    $this->tableLength(),
-                    $this->tableSearch(),
-                    $this->tableHead(),
-                    $this->tableBody(),
-                    $this->tableFoot(),
-                    $this->tablePaginate(),
-                    $this->tablePaginateInfo()
-                ],
+                        $this->title(),
+                        $this->description(),
+                        $this->error(),
+                        $this->actions(),
+                        $this->tableLength(),
+                        $this->tableSearch(),
+                        $this->tableHead(),
+                        $this->tableBody(),
+                        $this->tableFoot(),
+                        $this->tablePaginate(),
+                        $this->tablePaginateInfo()
+                    ],
                     $this->template
-            ). '</form>' . $this->js();
-        }
+                ) . '</form>' . $this->js()
+        );
     }
 
     /**
@@ -248,18 +265,6 @@ class DataTable
         return ($actions
             ? '<div class="dt-buttons">' . $actions . '</div>'
             : null
-        );
-    }
-
-    /**
-     * @return string
-     * @throws Exception
-     */
-    private function table() : string
-    {
-        return ($this->records
-            ? $this->template_table
-            : '<div class="dt-empty">' . Translator::getWordByCode("No matching records found"). '</div>'
         );
     }
 
@@ -316,7 +321,11 @@ class DataTable
     private function tableBody() : string
     {
         return '<tbody>'
-            . $this->tableRows()
+            . (
+                $this->records
+                ? $this->tableRows()
+                : '<tr><td class="dt-empty" colspan="' . count($this->columns) . '">' . Translator::getWordByCode("No matching records found") . '</td></tr>'
+            )
             . '</tbody>';
     }
 
@@ -339,18 +348,27 @@ class DataTable
      */
     private function tablePaginate() : ?string
     {
-        if ($this->displayTablePaginate && $this->page <= $this->pages && $this->pages  > 1) {
+        if ($this->displayTablePaginate && $this->pages  > 1) {
             $pages = null;
+
+            if ($this->page <= $this->pages) {
+                $page_prev = $this->page - 1;
+                $page_next = $this->page + 1;
+            } else {
+                $page_prev = $this->pages - 1;
+                $page_next = $this->pages;
+            }
 
             $previous = (
                 $this->page == 1
                 ? '<span class="prev">' . Translator::getWordByCode("Previous") . '</span>'
-                : '<a href="' . $this->getUrl("page", ($this->page - 1)) . '" onclick="cm.dataTable(\'' . $this->id . '\').page(' . ($this->page - 1) . ')" class="previous">' . Translator::getWordByCode("Previous") . '</a>'
+                : '<a href="' . $this->getUrl("page", $page_prev) . '" onclick="cm.dataTable(\'' . $this->id . '\').page(' . $page_prev . ')" class="previous">' . Translator::getWordByCode("Previous") . '</a>'
             );
+
             $next = (
                 $this->page == $this->pages
                 ? '<span class="next">' . Translator::getWordByCode("Next") . '</span>'
-                : '<a href="' . $this->getUrl("page", ($this->page + 1)) . '" onclick="cm.dataTable(\'' . $this->id . '\').page(' . ($this->page + 1) . ')" class="next">' . Translator::getWordByCode("Next") . '</a>'
+                : '<a href="' . $this->getUrl("page", $page_next) . '" onclick="cm.dataTable(\'' . $this->id . '\').page(' . $page_next . ')" class="next">' . Translator::getWordByCode("Next") . '</a>'
             );
 
             for ($i = 1; $i <= $this->pages; $i++) {
@@ -374,7 +392,7 @@ class DataTable
     private function tablePaginateInfo() : ?string
     {
         return ($this->displayTablePaginateInfo && $this->records
-            ? '<span class="dt-info">' . Translator::getWordByCode("Showing") . ' ' . (($this->length * ($this->page - 1)) + 1) . ' ' . Translator::getWordByCode("to") . ' ' . ($this->length * $this->page < $this->records ? $this->length * $this->page : $this->records) . ' ' . Translator::getWordByCode("of") . ' ' . $this->records . ' ' . Translator::getWordByCode("entries") . '</span>'
+            ? '<span class="dt-info">' . Translator::getWordByCode("Showing") . ' ' . ($this->records_start + 1) . ' ' . Translator::getWordByCode("to") . ' ' . $this->records_end . ' ' . Translator::getWordByCode("of") . ' ' . $this->records . ' ' . Translator::getWordByCode("entries") . '</span>'
             : null
         );
     }
@@ -385,7 +403,7 @@ class DataTable
     private function tableColumns() : string
     {
         $columns = null;
-        foreach ($this->dataTable->columns() as $i => $column) {
+        foreach ($this->columns as $i => $column) {
             if ($this->displayTableSort) {
                 $dir = (
                     isset($this->sort[$i]) && $this->sort[$i] == "asc"
@@ -473,9 +491,10 @@ class DataTable
      */
     private function getUrl(string $name, $value) : string
     {
-        $this->query[$name] = $value;
+        $query          = $this->query;
+        $query[$name]   = $value;
 
-        return "?" . http_build_query(array_filter($this->query));
+        return "?" . http_build_query(array_filter($query));
     }
 
     /**
@@ -525,7 +544,25 @@ class DataTable
      */
     private function pluginDataTable() : string
     {
-        $embed = null;
+        $columns = null;
+        foreach ($this->columns as $column) {
+            $columns .= '<th>' . $column . '</th>';
+        }
+
+        $rows = null;
+        foreach ($this->dataTable->getAllArray() as $record) {
+            $rows .= '<tr><td>' . implode('</td><td>', $record). '</td></tr>';
+        }
+
+        $embed = '<table class="dt-table">
+                    <thead>
+                        <tr>' . $columns . '</tr>
+                    </thead>
+                    <tbody>
+                        ' . $rows . '
+                    </tbody>
+                </table>';
+
         foreach (self::JS as $js) {
             $embed .= '<script type="text/javascript" src="' . $js . '"></script>';
         }
@@ -538,15 +575,25 @@ class DataTable
             $(".dt-table").DataTable({
                 processing: true,
                 serverSide: true,
-                pageLength: ' . $this->records . ',
-                fixedHeader: true,
+                search: "' . $this->search . '",
+                order: ' . array_keys($this->sort)[0] . ',
+                displayStart: ' . $this->records_start . ',
+                pageLength: ' . $this->length . ',
                 ajax: {
-                    url: "",
+                    url: window.location.href,
                     type: "POST",
                     dataType : "json"
                 },
-                "deferLoading": ' . $this->records . '
-            
+                "columns": [
+                    { "data": "uuid" },
+                    { "data": "username" },
+                    { "data": "email" },
+                    { "data": "tel" },
+                    { "data": "avatar" },
+                    { "data": "status" },
+                    { "data": "acl" }
+                ],
+                deferLoading: ' . $this->records . '
             });
         </script>';
 

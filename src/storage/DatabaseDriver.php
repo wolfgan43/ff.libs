@@ -114,9 +114,9 @@ abstract class DatabaseDriver implements Constant
     abstract public function nextRecord(object &$obj = null) : bool;
 
     /**
-     * @return int|null
+     * @return int
      */
-    abstract public function numRows() : ?int;
+    abstract public function numRows() : int;
 
     /**
      * @return array|null

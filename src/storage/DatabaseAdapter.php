@@ -910,16 +910,14 @@ abstract class DatabaseAdapter implements Constant
      * @return array|null
      * @throws Exception
      */
-    public function read(array $fields, array $where = null, array $sort = null, int $limit = null, int $offset = null, bool $calc_found_rows = false, string $table_name = null) : ?array
+    public function read(array $fields, array $where = null, array $sort = null, int $limit = null, int $offset = null, bool $calc_found_rows = false, string $table_name = null) : array
     {
         $res                                                    = null;
         $query                                                  = $this->getQueryRead($fields, $where, $sort, $limit, $offset, $calc_found_rows, $table_name);
 
-        $db                                                     = $this->processRead($query);
-        if ($db) {
-            $res[self::RESULT]                                  = $db;
-            $res[self::COUNT]                                   = $this->driver->numRows();
-
+        $res[self::RESULT]                                      = $this->processRead($query);
+        $res[self::COUNT]                                       = $this->driver->numRows();
+        if ($res[self::RESULT]) {
             $count_recordset                                    = (is_array($res[self::RESULT]) ? count($res[self::RESULT]) : null);
             if ($count_recordset && (!empty($query->limit) || $count_recordset < static::MAX_NUMROWS)) {
                 $this->convertRecordset($res, array_flip($this->index2query));

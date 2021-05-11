@@ -483,10 +483,10 @@ class MySqli extends DatabaseDriver
 
     /**
      * Conta il numero di righe
-     * @return int|null
+     * @return int
      * @throws Exception
      */
-    public function numRows() : ?int
+    public function numRows() : int
     {
         if ($this->num_rows === null) {
             if ($this->use_found_rows) {
@@ -503,7 +503,7 @@ class MySqli extends DatabaseDriver
                 $this->num_rows = @mysqli_num_rows($this->query_id);
             }
         }
-        return $this->num_rows;
+        return $this->num_rows ?? 0;
     }
 
     /**

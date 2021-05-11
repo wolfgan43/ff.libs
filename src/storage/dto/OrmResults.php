@@ -37,8 +37,8 @@ class OrmResults
     use Mapping;
 
     private $recordset                      = array();
-    private $countRecordset                 = null;
-    private $countTotal                     = null;
+    private $countRecordset                 = 0;
+    private $countTotal                     = 0;
 
     private $record_map_class               = null;
     private $key_name                       = null;
@@ -50,14 +50,14 @@ class OrmResults
 
     /**
      * OrmResult constructor.
+     * @param int $count
      * @param array|null $recordset
-     * @param int|null $count
      * @param array|null $indexes
      * @param string|null $primary_table
      * @param string|null $primary_key
      * @param string|null $record_map_class
      */
-    public function __construct(array $recordset = null, int $count = null, array $indexes = null, string $primary_table = null, string $primary_key = null, string $record_map_class = null)
+    public function __construct(int $count, array $recordset = null, array $indexes = null, string $primary_table = null, string $primary_key = null, string $record_map_class = null)
     {
         $this->key_name             = $primary_key;
         $this->countTotal           = $count;
@@ -96,16 +96,16 @@ class OrmResults
     }
 
     /**
-     * @return int|null
+     * @return int
      */
-    public function countRecordset() : ?int
+    public function countRecordset() : int
     {
         return $this->countRecordset;
     }
     /**
-     * @return int|null
+     * @return int
      */
-    public function countTotal() : ?int
+    public function countTotal() : int
     {
         return $this->countTotal;
     }

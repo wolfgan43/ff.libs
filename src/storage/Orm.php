@@ -360,8 +360,6 @@ class Orm extends Mappable
 
         $this->cacheUpdate();
 
-        $this->setCount(count($this->result));
-
         return $this->getResult();
     }
 
@@ -429,18 +427,17 @@ class Orm extends Mappable
 
         $this->cacheUpdate();
 
-        $this->setCount(count($this->result));
-
         return $this->getResult();
     }
 
     /**
      * @param string $action
      * @param null|array $where
-     * @return object|null
+     * @return mixed
      * @throws Exception
+     * todo: da tipizzare
      */
-    public function cmd(string $action, array $where = null) : ?object
+    public function cmd(string $action, array $where = null)
     {
         if ($this->cacheRequest(self::ACTION_CMD, [$action, $where], $this->result, $this->main_table)) {
             $this->clearResult();
@@ -455,7 +452,7 @@ class Orm extends Mappable
             $this->cacheStore($this->result, $this->main_table);
         }
 
-        return $this->getResult()->first();
+        return $this->getResult()->getArray(0)[$action];
     }
 
     /**
@@ -748,6 +745,8 @@ class Orm extends Mappable
                 $this->setData($controller, $table);
             }
         }
+
+        $this->setCount(count($this->result_keys[$this->main->def->mainTable]));
     }
 
     /**
@@ -994,17 +993,11 @@ class Orm extends Mappable
     private function cmdData(string $command, string $controller = null, string $table = null) : void
     {
         $data                                                                               = $this->getCurrentData($controller, $table);
-        if (isset($data->where)) {
-            $Orm                                                                            = $this->getModel($controller);
-            $regs                                                                           = $Orm
+        $Orm                                                                                = $this->getModel($controller);
+        $regs                                                                               = $Orm
                                                                                                 ->setStorage($data->def)
-                                                                                                ->cmd(
-                                                                                                    $data->where,
-                                                                                                    $command
-                                                                                            );
-
-            $this->result[$data->table]                                                     = $regs;
-        }
+                                                                                                ->cmd($command, $data->where);
+        $this->result[$data->table]                                                         = $regs;
     }
 
     /**

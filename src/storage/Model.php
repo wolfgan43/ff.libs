@@ -206,6 +206,16 @@ class Model implements Configurable, Dumpable
     {
         return $this->getOrm()->delete($where);
     }
+
+    /**
+     * @return int
+     * @throws Exception
+     */
+    public function count() : int
+    {
+        return $this->getOrm()->cmd("count");
+    }
+
     /**
      * @return OrmResults
      */

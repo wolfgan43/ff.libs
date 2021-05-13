@@ -850,12 +850,12 @@ abstract class DatabaseAdapter implements Constant
     }
 
     /**
-     * @param array $where
+     * @param array|null $where
      * @param string|null $table_name
      * @return DatabaseQuery
      * @throws Exception
      */
-    private function getQueryCmd(array $where, string $table_name = null) : DatabaseQuery
+    private function getQueryCmd(array $where = null, string $table_name = null) : DatabaseQuery
     {
         $query = $this->getQuery(self::ACTION_CMD, $table_name);
 
@@ -1016,18 +1016,14 @@ abstract class DatabaseAdapter implements Constant
     }
 
     /**
-     * @param array $where
      * @param string $action
+     * @param array|null $where
      * @param string|null $table_name
      * @return array|null
      * @throws Exception
      */
-    public function cmd(array $where, string $action = self::CMD_COUNT, string $table_name = null) : ?array
+    public function cmd(string $action = self::CMD_COUNT, array $where = null, string $table_name = null) : ?array
     {
-        if (empty($where)) {
-            throw new Exception(self::ERROR_CMD_IS_EMPTY, 500);
-        }
-
         return $this->processCmd($this->getQueryCmd($where, $table_name), $action);
     }
 

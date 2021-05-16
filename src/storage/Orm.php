@@ -746,7 +746,9 @@ class Orm extends Mappable
             }
         }
 
-        $this->setCount(count($this->result_keys[$this->main->def->mainTable]));
+        if (isset($this->result_keys[$this->main->def->mainTable])) {
+            $this->setCount(count($this->result_keys[$this->main->def->mainTable]));
+        }
     }
 
     /**
@@ -1276,7 +1278,7 @@ class Orm extends Mappable
         $this->subs                                                         = array();
         $this->result                                                       = array();
         $this->result_keys                                                  = null;
-        $this->count                                                        = null;
+        $this->count                                                        = 0;
         $this->services_by_data                                             = null;
     }
 }

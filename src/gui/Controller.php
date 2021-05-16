@@ -8,6 +8,7 @@ use phpformsframework\libs\dto\DataAdapter;
 use phpformsframework\libs\dto\DataHtml;
 use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\Env;
+use phpformsframework\libs\gui\components\DataTable;
 use phpformsframework\libs\international\InternationalManager;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Response;
@@ -45,8 +46,13 @@ abstract class Controller
     private const LAYOUT_DEFAULT                = '<main>{' . self::TPL_VAR_PREFIX . 'content}</main>';
     private const TPL_NORMALIZE                 = ['../', '.tpl'];
 
-    private const ERROR_CODE                    = 404;
-    private const ERROR_MESSAGE                 = "Page not found";
+    private const ERROR_PAGE_NOT_FOUND_CODE         = 404;
+    private const ERROR_PAGE_NOT_FOUND              = "Page not found";
+    private const ERROR_COMPONENT_NOT_IMPLEMENTED   = "Component not implemented";
+
+    private const COMPONENT_DATA_TABLE          = 'dt';
+    private const COMPONENT_DATA_RECORD         = 'dr';
+    private const COMPONENT_DATA_FIELD          = 'df';
 
     public const METHOD_DEFAULT                = "get";
 
@@ -533,6 +539,21 @@ abstract class Controller
      */
     public function display(string $method = null) : DataAdapter
     {
+        if ($this->isXhr && !empty($this->request->component)) {
+            $component = explode(DIRECTORY_SEPARATOR, $this->request->component, 2);
+            switch ($component[0]) {
+                case self::COMPONENT_DATA_TABLE:
+                    $this->send(DataTable::xhr($component[1]));
+                    break;
+                case self::COMPONENT_DATA_RECORD:
+                    break;
+                case self::COMPONENT_DATA_FIELD:
+                    break;
+                default:
+                    throw new Exception(self::ERROR_COMPONENT_NOT_IMPLEMENTED, 501);
+            }
+        }
+
         $this->route = $method ?? self::METHOD_DEFAULT;
 
         try {
@@ -549,9 +570,13 @@ abstract class Controller
         }
 
         if ($this->isXhr) {
+            if (!$this->view) {
+                $this->{static::ERROR_VIEW ?? $this->route}();
+            }
+
             return ($this->view && !$this->error
                 ? $this->response()->fill($this->adapter->toArray($this->view->html()))
-                : $this->response()->error($this->http_status_code ?? self::ERROR_CODE, $this->error ?? self::ERROR_MESSAGE)
+                : $this->response()->error($this->http_status_code ?? self::ERROR_PAGE_NOT_FOUND_CODE, $this->error ?? self::ERROR_PAGE_NOT_FOUND)
             );
         }
 
@@ -562,7 +587,7 @@ abstract class Controller
             $this->assign(self::TPL_VAR_DEFAULT, $this->view);
 
             if (!$this->view) {
-                throw new Exception(self::ERROR_MESSAGE, self::ERROR_CODE);
+                throw new Exception(self::ERROR_PAGE_NOT_FOUND, self::ERROR_PAGE_NOT_FOUND_CODE);
             }
         }
 

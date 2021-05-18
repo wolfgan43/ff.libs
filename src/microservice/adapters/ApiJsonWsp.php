@@ -61,10 +61,11 @@ class ApiJsonWsp extends ApiAdapter
      */
     public function preflight() : ?array
     {
+        $this->request_method = Request::METHOD_HEAD;
         return FilemanagerWeb::fileGetContentsWithHeaders(
             $this->endpoint(),
             null,
-            Request::METHOD_HEAD
+            $this->request_method
         );
     }
 
@@ -79,8 +80,8 @@ class ApiJsonWsp extends ApiAdapter
     {
         $this->protocol         = $this->protocol();
 
-        $discover               = $this->discover();
-        $this->request_method   = $discover["Access-Control-Allow-Methods"] ?? $this->requestMethod();
+        $discover               = $this->discover($this->requestMethod());
+        $this->request_method   = $discover["Access-Control-Allow-Methods"];
         if (isset($discover["Strict-Transport-Security"])) {
             $this->protocol     = self::PROTOCOL;
         }

@@ -94,9 +94,10 @@ abstract class ApiAdapter
     }
 
     /**
+     * @param string $method
      * @return array|null
      */
-    public function discover() : ?array
+    public function discover(string $method) : ?array
     {
         Debug::stopWatch("api/remote/preflight");
 
@@ -115,6 +116,13 @@ abstract class ApiAdapter
 
         $discover                                                       = self::$preflight[$endpoint];
         $discover["exTimePreflight"]                                    = Debug::stopWatch("api/remote/preflight") . (!isset($cache) ? " cached" : null);
+
+        if (empty($discover["headers"]["Access-Control-Allow-Methods"])
+            || $discover["headers"]["Access-Control-Allow-Methods"] == "*"
+            || strpos($discover["headers"]["Access-Control-Allow-Methods"], $method) !== false
+        ) {
+            $discover["headers"]["Access-Control-Allow-Methods"] = $method;
+        }
 
         App::debug($discover, self::METHOD_HEAD . self::ERROR_REQUEST_LABEL . $endpoint);
 

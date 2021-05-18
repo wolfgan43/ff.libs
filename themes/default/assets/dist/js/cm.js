@@ -8,6 +8,7 @@ let cm = (function () {
     const _COMPONENT            = "component";
     const _DEBUG                = "debug";
     const _ERROR                = "error";
+    const _DATA                 = "data";
     const _LOADED               = "-loaded";
 
     let modalLoaded             = false;
@@ -50,7 +51,7 @@ let cm = (function () {
 
 
     let self = {
-        "defaults" : settings,
+        "settings" : settings,
         "getURLParameter" : function (name) {
             let tmp = (RegExp(name.replace(/\[/g, "\\[").replace(/\]/g, "\\]") + '=' + '(.+?)(&|$)').exec(location.search) || [, null])[1];
             if (tmp !== null) {
@@ -59,6 +60,35 @@ let cm = (function () {
                 return null;
             }
         },
+        "error" : (function(container, selector) {
+            function wrapper() {
+                let errorClass = selector || settings.class.error;
+                if (!container.querySelector("." + errorClass)) {
+                    let error = document.createElement("DIV");
+                    error.className = errorClass;
+                    container.insertBefore(error, container.firstChild);
+                }
+
+                return container.querySelector("." + errorClass);
+            }
+
+            return {
+                "set" : function(errorMessage) {
+                    console.error(errorMessage);
+
+                    this.clear();
+                    let error = document.createElement("DIV");
+
+                    error.className = settings.tokens.error;
+                    error.innerHTML = errorMessage;
+                    wrapper().appendChild(error);
+                },
+                "clear" : function() {
+                    wrapper().innerHTML = "";
+                }
+            };
+
+        }),
         "cookie" : (function() {
             return {
                 "get": function (name) {
@@ -158,10 +188,8 @@ let cm = (function () {
         "api" : (function () {
             let xhr = new XMLHttpRequest();
 
-            function request(method, url, headers, data) {
+            function request(method, url, headers, data, returnRawData) {
                 return new Promise(function (resolve, reject) {
-                    xhr.abort();
-
                     xhr.open(method, url);
                     xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
                     for (let key in headers) {
@@ -170,34 +198,41 @@ let cm = (function () {
                         }
                     }
                     xhr.onreadystatechange = function () {
-                        if (xhr.readyState === 4) {
+                        if (xhr.readyState === XMLHttpRequest.DONE) {
                             if((resp = xhr.responseText)) {
                                 let respJson = JSON.parse(resp);
 
                                 if (respJson[_DEBUG] !== undefined) {
-                                    console.log(respJson[_DEBUG]);
+                                    console.log(method + " " + url, data, headers, respJson[_DEBUG]);
                                 }
 
                                 if (xhr.status === 200) {
                                     if(respJson["redirect"] !== undefined) {
                                         window.location.href = respJson["redirect"];
                                     } else {
-                                        resolve(respJson["data"]);
+                                        resolve(returnRawData ? respJson : respJson[_DATA]);
                                     }
-                                    console.log("xhr done successfully");
+                                    //console.log("xhr done successfully");
                                 } else {
                                     reject(respJson[_ERROR]);
-                                    console.log("xhr failed");
+                                    //console.log("xhr failed");
                                 }
                             } else {
-                                console.log("xhr response empty");
+                                //console.log("xhr response empty");
                             }
                         } else {
-                            console.log("xhr processing going on");
+                            //console.log("xhr processing going on");
                         }
                     }
                     xhr.send(data);
                 });
+            }
+
+            function responseCSRF(method, url, headers, data) {
+                if((csrf = cm.cookie.get("csrf"))) {
+                    headers = {...headers, ...{"X-CSRF-TOKEN" : csrf}};
+                }
+                return request(method, url, headers, data);
             }
 
             return {
@@ -205,21 +240,20 @@ let cm = (function () {
                     return request("GET", url, headers);
                 },
                 "post": function (url, data, headers) {
-                    if((csrf = cm.cookie.get("csrf"))) {
-                        headers = {...headers, ...{"X-CSRF-TOKEN" : csrf}};
-                    }
-
-                    return request("POST", url, headers, data);
+                    return responseCSRF("POST", url, headers, data);
                 },
                 "put": function (url, headers) {
-                    return request("PUT", url, headers);
+                    return responseCSRF("PUT", url, headers, data);
                 },
                 "patch": function (url, headers) {
-                    return request("PATCH", url, headers);
+                    return responseCSRF("PATCH", url, headers, data);
                 },
                 "delete": function (url, headers) {
-                    return request("DELETE", url, headers);
-                }
+                    return responseCSRF("DELETE", url, headers, data);
+                },
+                "search": function (url, data, headers) {
+                    return request("POST", url, headers, data, true);
+                },
             };
         })(),
         "modal" : (function() {
@@ -232,14 +266,23 @@ let cm = (function () {
                                 modal.hide();
                             });
                         }
-                        if (!document.querySelector("." + settings.modal.container + " ." + settings.modal.error)) {
+
+                        /*if (!document.querySelector("." + settings.modal.container + " ." + settings.modal.error)) {
+                            let body = document.querySelector("." + settings.modal.container + " ." + settings.modal.body);
+                            let error = document.createElement("DIV");
+
+                            error.className = settings.modal.error;
+                            body.parentNode.insertBefore(error, body);
+                        }*/
+
+                        /*if (!document.querySelector("." + settings.modal.container + " ." + settings.modal.error)) {
                             let body = document.querySelector("." + settings.modal.container + " ." + settings.modal.body);
                             let error = document.createElement("DIV");
 
                             error.className = settings.modal.error + " " + settings.tokens.error;
                             error.style.display = "none";
                             body.parentNode.insertBefore(error, body);
-                        }
+                        }*/
                     }
                 },
                 "formAddListener" : function(url, headers = {}) {
@@ -277,14 +320,10 @@ let cm = (function () {
                 },
                 "error" : {
                     "show" : function(message) {
-                        let error = document.querySelector("." + settings.modal.container + " ." + settings.modal.error);
-                        error.innerHTML = message;
-                        error.style.display = "block";
+                        cm.error(document.querySelector("." + settings.modal.container + " ." + settings.modal.body), settings.modal.error).set(message);
                     },
                     "hide" : function() {
-                        let error = document.querySelector("." + settings.modal.container + " ." + settings.modal.error);
-                        error.innerHTML = "";
-                        error.style.display = "none";
+                        cm.error(document.querySelector("." + settings.modal.container + " ." + settings.modal.body), settings.modal.error).clear();
                     }
                 },
                 "show" : function show() {
@@ -300,8 +339,9 @@ let cm = (function () {
                     this.error.hide();
                 },
                 "clear" : function () {
+                    modal.error.hide();
                     document.querySelector("." + settings.modal.container + " ." + settings.modal.body).innerHTML    = "";
-                    document.querySelector("." + settings.modal.container + " ." + settings.modal.error).innerHTML   = "";
+                    //document.querySelector("." + settings.modal.container + " ." + settings.modal.error).innerHTML   = "";
 
                     if((title = document.querySelector("." + settings.modal.container + " ." + settings.modal.header.container + " ." + settings.modal.header.title))) {
                         title.innerHTML                             = "";
@@ -347,16 +387,11 @@ let cm = (function () {
 
                                 resolve(document.querySelector("." + settings.modal.container));
                             })
-                            .catch(function (message) {
-                                let error = document.querySelector("." + settings.modal.container + " ." + settings.modal.error);
-                                error.innerHTML = message;
-                                error.style.display = "block";
-
-                                console.log(message);
-
+                            .catch(function (errorMessage) {
+                                modal.error.show(errorMessage);
                                 modal.show();
 
-                                reject(message);
+                                reject(errorMessage);
                             });
                     });
                 },
@@ -379,9 +414,6 @@ let cm = (function () {
                 let self = this;
                 self.style["opacity"] = "0.5";
                 cm.modal.open(this.href)
-                    .then(function() {
-                        self.style["opacity"] = null;
-                    })
                     .finally(function() {
                         self.style["opacity"] = null;
                     });
@@ -398,7 +430,6 @@ let cm = (function () {
                 cm.api.get(this.href)
                     .then(function(dataResponse) {
                         cm.inject(dataResponse);
-                        self.style["opacity"] = null;
                     })
                     .finally(function() {
                         self.style["opacity"] = null;
@@ -416,20 +447,9 @@ let cm = (function () {
                 cm.api.post(self.action, new FormData(self))
                     .then(function(dataResponse) {
                         cm.inject(dataResponse, self.getAttribute("data-component"));
-                        self.style["opacity"] = null;
                     })
                     .catch(function(errorMessage) {
-                        let error = self.querySelector("." + settings.class.error);
-                        if (error) {
-                            error.innerHTML = errorMessage;
-                        } else {
-                            let error = document.createElement("DIV");
-
-                            error.className = settings.class.error + " " + settings.tokens.error;
-                            error.innerHTML = errorMessage;
-
-                            self.insertBefore(error, self.firstChild)
-                        }
+                        cm.error(self).set(errorMessage);
                     })
                     .finally(function() {
                         self.style["opacity"] = null;
@@ -439,7 +459,7 @@ let cm = (function () {
     }
 
     document.addEventListener("DOMContentLoaded", function(event) {
-        settings = {...settings, ...self.defaults};
+        settings = {...settings, ...self.settings};
 
         guiInit();
     });

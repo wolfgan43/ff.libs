@@ -50,7 +50,6 @@ abstract class Controller
     private const ERROR_PAGE_NOT_FOUND              = "Page not found";
     private const ERROR_COMPONENT_NOT_IMPLEMENTED   = "Component not implemented";
 
-    private const COMPONENT_DATA_TABLE          = 'dt';
     private const COMPONENT_DATA_RECORD         = 'dr';
     private const COMPONENT_DATA_FIELD          = 'df';
 
@@ -542,7 +541,7 @@ abstract class Controller
         if ($this->isXhr && !empty($this->request->component)) {
             $component = explode(DIRECTORY_SEPARATOR, $this->request->component, 2);
             switch ($component[0]) {
-                case self::COMPONENT_DATA_TABLE:
+                case DataTable::BUCKET:
                     $this->send(DataTable::xhr($component[1]));
                     break;
                 case self::COMPONENT_DATA_RECORD:
@@ -675,6 +674,13 @@ abstract class Controller
         }
 
         return $this;
+    }
+
+    protected function default() : View
+    {
+        $this->{$this->route}();
+
+        return $this->view;
     }
 
     protected function debug(string $msg = null) : self

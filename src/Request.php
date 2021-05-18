@@ -484,10 +484,13 @@ class Request implements Configurable, Dumpable
         switch ($this->requestMethod()) {
             case self::METHOD_OPTIONS:
             case self::METHOD_HEAD: //todo: to manage
-                header('Access-Control-Allow-Methods: ' . $this->page->method);
+                header('Access-Control-Allow-Methods: ' . (
+                    $this->page->method == self::METHOD_HEAD
+                        ? self::METHOD_GET . ", " . self::METHOD_POST
+                        : $this->page->method
+                    ));
                 $this->corsPreflight($origin);
                 exit;
-
             case self::METHOD_GET:
             case self::METHOD_POST:
             case self::METHOD_PUT:

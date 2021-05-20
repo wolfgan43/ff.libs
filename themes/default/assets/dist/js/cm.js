@@ -52,14 +52,6 @@ let cm = (function () {
 
     let self = {
         "settings" : settings,
-        "getURLParameter" : function (name) {
-            let tmp = (RegExp(name.replace(/\[/g, "\\[").replace(/\]/g, "\\]") + '=' + '(.+?)(&|$)').exec(location.search) || [, null])[1];
-            if (tmp !== null) {
-                return decodeURIComponent(tmp);
-            } else {
-                return null;
-            }
-        },
         "error" : (function(container, selector) {
             function wrapper() {
                 let errorClass = selector || settings.class.error;
@@ -217,8 +209,10 @@ let cm = (function () {
                                     reject(respJson[_ERROR]);
                                     //console.log("xhr failed");
                                 }
+                            } else if(xhr.status === 204) {
+                                resolve(returnRawData ? undefined : []);
                             } else {
-                                //console.log("xhr response empty");
+                                reject("xhr response empty");
                             }
                         } else {
                             //console.log("xhr processing going on");

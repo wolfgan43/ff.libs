@@ -1068,7 +1068,7 @@ abstract class DatabaseAdapter implements Constant
         if (!empty($this->to)) {
             foreach ($this->to as $field => $funcs) {
                 foreach ($funcs as $func => $params) {
-                    $res[$field]                                    = $this->to($res[$field], $func, $params);
+                    $res[$field]                                    = $this->to($func, $res[$field], $params);
                 }
             }
         }
@@ -1105,21 +1105,19 @@ abstract class DatabaseAdapter implements Constant
     }
 
     /**
-     * @param string $source
      * @param string $func
+     * @param string|null $source
      * @param array|null $params
      * @return string
      * @throws Exception
      */
-    private function to(string $source, string $func, array $params = null) : ?string
+    private function to(string $func, string $source = null, array $params = null) : ?string
     {
         $res                                                                = null;
         switch (strtoupper($func)) {
             case "IMAGE":
                 if ($source === true) {
                     $res                                                    = '<i></i>';
-                } elseif (strpos($source, "/") === 0) {
-                    $res                                                    = '<img src="' . Media::getUrl($source) . '" />';
                 } elseif (strpos($source, "<") === 0) {
                     $res                                                    = $source;
                 } elseif (strpos($source, "#") !== false) {
@@ -1130,6 +1128,8 @@ abstract class DatabaseAdapter implements Constant
                                                                                 : $this->getColorPalette(rand(0, 14))
                                                                             );
                     $res                                                    = '<span style="background-color: #' . $hex . ';">' . $arrSource[0] . '</span>';
+                } else {
+                    $res                                                    = '<img src="' . Media::getUrl($source, $params[0] ?? null) . '" />';
                 }
                 break;
             case "TIMEELAPSED":

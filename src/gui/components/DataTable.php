@@ -351,6 +351,7 @@ class DataTable
 
     /**
      * @return string|null
+     * @throws Exception
      */
     private function tableHead() : ?string
     {
@@ -379,6 +380,7 @@ class DataTable
 
     /**
      * @return string|null
+     * @throws Exception
      */
     private function tableFoot() : ?string
     {
@@ -396,7 +398,7 @@ class DataTable
      */
     private function tablePaginate() : ?string
     {
-        if ($this->displayTablePaginate && $this->pages  >= 1) {
+        if ($this->displayTablePaginate) {
             $pages = null;
 
             $page_prev = $this->page - 1;
@@ -434,7 +436,7 @@ class DataTable
      */
     private function tablePaginateInfo() : ?string
     {
-        if ($this->start > $this->records) {
+        if ($this->start > $this->records || !$this->records) {
             $start = 0;
             $length = 0;
         } else {
@@ -451,7 +453,7 @@ class DataTable
             ? ' (' . Translator::getWordByCode("filtered from") . ' '  . $this->records_total . ' ' . Translator::getWordByCode("total entries") . ')'
             : null
         );
-        return ($this->displayTablePaginateInfo && $this->records
+        return ($this->displayTablePaginateInfo
             ? '<span class="' . $this->tClass()->info . '">' . Translator::getWordByCode("Showing") . ' ' . $start . ' ' . Translator::getWordByCode("to") . ' ' . $length . ' ' . Translator::getWordByCode("of") . ' ' . $this->records . ' ' . Translator::getWordByCode("entries") . $total . '</span>'
             : null
         );
@@ -459,6 +461,7 @@ class DataTable
 
     /**
      * @return string
+     * @throws Exception
      */
     private function tableColumns() : string
     {

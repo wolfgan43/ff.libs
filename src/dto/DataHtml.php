@@ -34,16 +34,23 @@ class DataHtml extends DataAdapter
 {
     const CONTENT_TYPE = "text/html";
 
-    public $js                                  = array();
-    public $css                                 = array();
-    public $fonts                               = array();
+    public $pathname                            = null;
+    public $title                               = null;
+    public $description                         = null;
+    public $css                                 = [];
+    public $style                               = [];
+    public $fonts                               = [];
+    public $js                                  = [];
+    public $js_embed                            = [];
+    public $js_tpl                              = [];
+    public $json_ld                             = [];
 
     public $html                                = null;
 
     /**
      * @return null|string
      */
-    public function output()
+    public function output(): ?string
     {
         return $this->html;
     }

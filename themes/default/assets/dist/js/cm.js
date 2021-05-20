@@ -1,9 +1,11 @@
 let cm = (function () {
     const _CSS                  = "css";
     const _STYLE                = "style";
-    const _STRUCTURED_DATA      = "structured_data";
+    const _FONTS                = "fonts";
     const _JS                   = "js";
     const _JS_EMBED             = "js_embed";
+    const _JS_TPL               = "js_tpl";
+    const _JSON_LD              = "json_ld";
     const _HTML                 = "html";
     const _COMPONENT            = "component";
     const _DEBUG                = "debug";
@@ -117,17 +119,10 @@ let cm = (function () {
                     document.head.appendChild(css);
                 }
             }
-            if (dataResponse[_STYLE] !== undefined && dataResponse[_STYLE].length) {
-                let style = document.createElement(_STYLE);
-                style.innerHTML = dataResponse[_STYLE];
-                document.head.appendChild(style);
+            if (dataResponse[_STYLE] !== undefined && dataResponse[_STYLE].length && !isLoadedResource(dataResponse[_PATHNAME], "style")) {
+                document.head.appendChild(dataResponse[_STYLE]);
             }
-            if (dataResponse[_STRUCTURED_DATA] !== undefined && dataResponse[_STRUCTURED_DATA].length) {
-                let script = document.createElement("script");
-                script.type = "application/ld+json";
-                script.innerHTML = dataResponse[_STRUCTURED_DATA];
-                document.head.appendChild(script);
-            }
+
             if (typeof dataResponse[_JS] === "object") {
                 for (let key in dataResponse[_JS]) {
                     if (!dataResponse[_JS].hasOwnProperty(key) || isLoadedResource(key, "script")) {
@@ -140,11 +135,19 @@ let cm = (function () {
                     document.head.appendChild(script);
                 }
             }
-            if (dataResponse[_JS_EMBED] !== undefined && dataResponse[_JS_EMBED].length) {
+            if (dataResponse[_JS_EMBED] !== undefined && dataResponse[_JS_EMBED].length && !isLoadedResource(dataResponse[_PATHNAME], "embed")) {
                 let script = document.createElement("script");
                 script.type = "application/javascript";
                 script.innerHTML = dataResponse[_JS_EMBED];
                 document.head.appendChild(script);
+            }
+
+            if (dataResponse[_JS_TPL] !== undefined && dataResponse[_JS_TPL].length && !isLoadedResource(dataResponse[_PATHNAME], "tpl")) {
+                document.head.appendChild(dataResponse[_JS_TPL]);
+            }
+
+            if (dataResponse[_JSON_LD] !== undefined && dataResponse[_JSON_LD].length && !isLoadedResource(dataResponse[_PATHNAME], "ld")) {
+                document.head.appendChild(dataResponse[_JSON_LD]);
             }
 
             if(dataResponse[_HTML] !== undefined) {

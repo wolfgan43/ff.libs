@@ -261,7 +261,7 @@ class DatabaseMysqli extends DatabaseAdapter
             }
         }
 
-        $res .= implode(static:: AND, $query);
+        $res .= implode(static::AND, $query);
 
         return $res;
     }

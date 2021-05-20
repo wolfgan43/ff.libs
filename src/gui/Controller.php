@@ -456,7 +456,7 @@ abstract class Controller
      */
     protected function addStructuredData(array $data) : self
     {
-        $this->adapter->structured_data         = array_replace($this->adapter->structured_data, $data);
+        $this->adapter->json_ld             = array_replace($this->adapter->json_ld, $data);
 
         return $this;
     }
@@ -468,7 +468,7 @@ abstract class Controller
      */
     protected function addJsTemplate(string $content, string $type = null) : self
     {
-        $this->adapter->js_template[$content]   = $type;
+        $this->adapter->js_tpl[$content]   = $type;
 
         return $this;
     }

@@ -57,7 +57,7 @@ class ControllerHtml extends ControllerAdapter
     private const STATUS_OK                     = 0;
 
     private const MEDIA_DEVICE_DEFAULT          = self::MEDIA_DEVICE_ALL;
-    private const JS_TEMPLATE_DEFAULT           = "text/x-template";
+    private const JS_TPL_DEFAULT                = "text/x-template";
 
     private const DOC_TYPE                      = '<!DOCTYPE html>';
     private const PAGE_TAG                      = 'html';
@@ -81,8 +81,8 @@ class ControllerHtml extends ControllerAdapter
     public $fonts                               = [];
     public $js                                  = [];
     public $js_embed                            = [];
-    public $js_template                         = [];
-    public $structured_data                     = [];
+    public $js_tpl                              = [];
+    public $json_ld                             = [];
 
     public $meta                                = [];
 
@@ -182,9 +182,13 @@ class ControllerHtml extends ControllerAdapter
         if ($obj instanceof View || $obj instanceof Controller) {
             $html                               = $obj->html();
         } elseif ($obj instanceof DataHtml) {
-            $this->css                          = $this->css    + $obj->css;
-            $this->js                           = $this->js     + $obj->js;
-            $this->fonts                        = $this->fonts  + $obj->fonts;
+            $this->css                          = $this->css                + $obj->css;
+            $this->style                        = $this->style              + $obj->style;
+            $this->fonts                        = $this->fonts              + $obj->fonts;
+            $this->js                           = $this->js                 + $obj->js;
+            $this->js_embed                     = $this->js_embed           + $obj->js_embed;
+            $this->js_tpl                       = $this->js_tpl             + $obj->js_tpl;
+            $this->json_ld                      = $this->json_ld            + $obj->json_ld;
 
             $html                               = $obj->output();
         }
@@ -418,8 +422,8 @@ class ControllerHtml extends ControllerAdapter
 
     private function parseStructuredData() : ?string
     {
-        return (!empty($this->structured_data)
-            ? self::NEWLINE . '<script type="application/ld+json">' . json_encode($this->structured_data). '</script>'
+        return (!empty($this->json_ld)
+            ? self::NEWLINE . '<script type="application/ld+json">' . json_encode($this->json_ld). '</script>'
             : null
         );
     }
@@ -428,8 +432,8 @@ class ControllerHtml extends ControllerAdapter
     {
         $res                                    = null;
         $i                                      = 0;
-        foreach ($this->js_template as $template => $type) {
-            $res                                .= self::NEWLINE . '<script type="'. ($type ?? self::JS_TEMPLATE_DEFAULT) . '" id="xtpl' . ++$i . '">' . $template . '</script>';
+        foreach ($this->js_tpl as $template => $type) {
+            $res                                .= self::NEWLINE . '<script type="'. ($type ?? self::JS_TPL_DEFAULT) . '" id="xtpl' . ++$i . '">' . $template . '</script>';
         }
 
         return $res;
@@ -710,12 +714,12 @@ class ControllerHtml extends ControllerAdapter
             "title"             => $this->title ?? $this->getTileDefault(),
             "description"       => $this->description,
             "css"               => $this->css,
-            "style"             => $this->style,
+            "style"             => $this->parseStyle(),
             "fonts"             => $this->fonts,
             "js"                => $this->js,
-            "js_embed"          => $this->js_embed,
-            "js_template"       => $this->js_template,
-            "structured_data"   => $this->structured_data,
+            "js_embed"          => implode(self::NEWLINE, array_keys($this->js_embed)),
+            "js_tpl"            => $this->parseJsTemplate(),
+            "json_ld"           => $this->parseStructuredData(),
             "html"              => $html ?? $this->html()
         ];
     }

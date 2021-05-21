@@ -169,7 +169,7 @@ abstract class Controller
      */
     protected function env(string $key, $value = null)
     {
-        if ($value) {
+        if (isset($value)) {
             Env::set($key, $value, true);
         }
 

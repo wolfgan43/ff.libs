@@ -762,8 +762,7 @@ abstract class Controller
             $this->addJavascriptDefer($template);
         }
 
-        return $this->view              = (new View(null, static::TEMPLATE_ENGINE))
-                                            ->fetch($file_path)
+        return $this->view              = (new View($file_path, static::TEMPLATE_ENGINE, $this))
                                             ->assign($this->assigns);
     }
 

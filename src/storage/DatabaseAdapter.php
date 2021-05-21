@@ -1222,6 +1222,9 @@ abstract class DatabaseAdapter implements Constant
             case "IDEA":
                 $res                                                        = $this->decrypt($source, $params[0], $func);
                 break;
+            case "TRANSLATE":
+                $res                                                        = Translator::getWordByCode($source);
+                break;
             default:
                 if (!$params && is_callable($func)) {
                     $res                                                    = $func($source);

@@ -714,12 +714,12 @@ class ControllerHtml extends ControllerAdapter
             "title"             => $this->title ?? $this->getTileDefault(),
             "description"       => $this->description,
             "css"               => $this->css,
-            "style"             => $this->parseStyle(),
+            "style"             => $this->style,
             "fonts"             => $this->fonts,
             "js"                => $this->js,
             "js_embed"          => implode(self::NEWLINE, array_keys($this->js_embed)),
             "js_tpl"            => $this->parseJsTemplate(),
-            "json_ld"           => $this->parseStructuredData(),
+            "json_ld"           => (empty($this->json_ld) ? null: json_encode($this->json_ld)),
             "html"              => $html ?? $this->html()
         ];
     }

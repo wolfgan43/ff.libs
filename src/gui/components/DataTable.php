@@ -200,7 +200,7 @@ class DataTable
         $this->pages                    = ceil($this->records / $this->length);
         $this->page                     = floor($this->start / $this->length) + 1;
 
-        return $this->draw();
+        return $this->html();
     }
 
     private function tClass() : object
@@ -220,7 +220,7 @@ class DataTable
      * @return string
      * @throws Exception
      */
-    private function draw() : string
+    private function html() : string
     {
         return ($this->useDataTablePlugin
             ? $this->pluginDataTable()

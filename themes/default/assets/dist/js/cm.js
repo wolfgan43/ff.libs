@@ -1,4 +1,5 @@
 let cm = (function () {
+    const _PATHNAME             = "pathname";
     const _CSS                  = "css";
     const _STYLE                = "style";
     const _FONTS                = "fonts";
@@ -13,6 +14,7 @@ let cm = (function () {
     const _DATA                 = "data";
     const _LOADED               = "-loaded";
 
+    let cache                   = {};
     let modalLoaded             = false;
     let settings = {
         "class" : {
@@ -119,8 +121,21 @@ let cm = (function () {
                     document.head.appendChild(css);
                 }
             }
-            if (dataResponse[_STYLE] !== undefined && dataResponse[_STYLE].length && !isLoadedResource(dataResponse[_PATHNAME], "style")) {
-                document.head.appendChild(dataResponse[_STYLE]);
+            if (dataResponse[_STYLE]) {
+                for (let key in dataResponse[_STYLE]) {
+                    if (!dataResponse[_STYLE].hasOwnProperty(key) || cache[_STYLE + dataResponse[_PATHNAME]] !== undefined) {
+                        continue;
+                    }
+                    let style = document.createElement("style");
+                    style.type = "text/css";
+                    style.innerHTML = dataResponse[_STYLE][key].join("\n");
+                    if(key) {
+                        style.media = key;
+                    }
+                    document.head.appendChild(style);
+
+                    cache[_STYLE + dataResponse[_PATHNAME]] = true;
+                }
             }
 
             if (typeof dataResponse[_JS] === "object") {
@@ -135,19 +150,29 @@ let cm = (function () {
                     document.head.appendChild(script);
                 }
             }
-            if (dataResponse[_JS_EMBED] !== undefined && dataResponse[_JS_EMBED].length && !isLoadedResource(dataResponse[_PATHNAME], "embed")) {
+            if (dataResponse[_JS_EMBED] && cache[_JS_EMBED + dataResponse[_PATHNAME]] === undefined) {
                 let script = document.createElement("script");
                 script.type = "application/javascript";
                 script.innerHTML = dataResponse[_JS_EMBED];
                 document.head.appendChild(script);
+
+                cache[_JS_EMBED + dataResponse[_PATHNAME]] = true;
             }
 
-            if (dataResponse[_JS_TPL] !== undefined && dataResponse[_JS_TPL].length && !isLoadedResource(dataResponse[_PATHNAME], "tpl")) {
-                document.head.appendChild(dataResponse[_JS_TPL]);
+            if (dataResponse[_JS_TPL] && cache[_JS_TPL + dataResponse[_PATHNAME]] === undefined) {
+               document.head.insertAdjacentHTML( 'beforeend', dataResponse[_JS_TPL]);
+
+                cache[_JS_TPL + dataResponse[_PATHNAME]] = true;
             }
 
-            if (dataResponse[_JSON_LD] !== undefined && dataResponse[_JSON_LD].length && !isLoadedResource(dataResponse[_PATHNAME], "ld")) {
-                document.head.appendChild(dataResponse[_JSON_LD]);
+            if (dataResponse[_JSON_LD] && cache[_JSON_LD + dataResponse[_PATHNAME]] === undefined) {
+                let script = document.createElement("script");
+                script.id = "ld" + dataResponse[_PATHNAME];
+                script.type = "application/ld+json";
+                script.innerHTML = dataResponse[_JSON_LD];
+                document.head.appendChild(script);
+
+                cache[_JSON_LD + dataResponse[_PATHNAME]] = true;
             }
 
             if(dataResponse[_HTML] !== undefined) {
@@ -263,23 +288,6 @@ let cm = (function () {
                                 modal.hide();
                             });
                         }
-
-                        /*if (!document.querySelector("." + settings.modal.container + " ." + settings.modal.error)) {
-                            let body = document.querySelector("." + settings.modal.container + " ." + settings.modal.body);
-                            let error = document.createElement("DIV");
-
-                            error.className = settings.modal.error;
-                            body.parentNode.insertBefore(error, body);
-                        }*/
-
-                        /*if (!document.querySelector("." + settings.modal.container + " ." + settings.modal.error)) {
-                            let body = document.querySelector("." + settings.modal.container + " ." + settings.modal.body);
-                            let error = document.createElement("DIV");
-
-                            error.className = settings.modal.error + " " + settings.tokens.error;
-                            error.style.display = "none";
-                            body.parentNode.insertBefore(error, body);
-                        }*/
                     }
                 },
                 "formAddListener" : function(url, headers = {}) {
@@ -455,7 +463,7 @@ let cm = (function () {
         }
     }
 
-    document.addEventListener("DOMContentLoaded", function(event) {
+    document.addEventListener("DOMContentLoaded", function() {
         settings = {...settings, ...self.settings};
 
         guiInit();

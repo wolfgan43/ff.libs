@@ -17,29 +17,23 @@ class View
 
     private const ERROR_BUCKET                      = "view";
 
+    private $controller                             = null;
     private $config                                 = null;
 
     /**
      * View constructor.
-     * @param stdClass|null $config
+     * @param string $template_disk_path
      * @param string|null $templateAdapter
+     * @param Controller|null $controller
      * @param string|null $widget
+     * @param stdClass|null $config
      */
-    public function __construct(stdClass $config = null, string $templateAdapter = null, string $widget = null)
+    public function __construct(string $template_disk_path, string $templateAdapter = null, Controller $controller = null, string $widget = null, stdClass $config = null)
     {
         $this->config                               = $config;
+        $this->controller                           =& $controller;
         $this->setAdapter($templateAdapter ?? Kernel::$Environment::TEMPLATE_ADAPTER, [$widget]);
-    }
-
-    /**
-     * @param string $template_disk_path
-     * @return $this
-     */
-    public function fetch(string $template_disk_path) : View
-    {
         $this->adapter->fetch($template_disk_path);
-
-        return $this;
     }
 
     /**

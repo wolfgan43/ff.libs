@@ -41,9 +41,9 @@ class DataHtml extends DataAdapter
     public $style                               = [];
     public $fonts                               = [];
     public $js                                  = [];
-    public $js_embed                            = [];
-    public $js_tpl                              = [];
-    public $json_ld                             = [];
+    public $js_embed                            = null;
+    public $js_tpl                              = null;
+    public $json_ld                             = null;
 
     public $html                                = null;
 

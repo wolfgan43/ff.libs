@@ -672,12 +672,11 @@ class ControllerHtml extends ControllerAdapter
      */
     private function attrCors(string &$path) : ?string
     {
-        if (strpos($path, "http") === 0) {
-            return ' crossorigin="anonymous"';
-        } else {
+        if (strpos($path, "http") !== 0) {
             $path .= $this->cache_time;
-            return null;
         }
+
+        return null;
     }
 
     /**

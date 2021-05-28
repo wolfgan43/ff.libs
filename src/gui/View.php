@@ -1,8 +1,8 @@
 <?php
 namespace phpformsframework\libs\gui;
 
-use phpformsframework\libs\dto\DataResponse;
-use phpformsframework\libs\dto\DataTableResponse;
+use Exception;
+use phpformsframework\libs\dto\DataHtml;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\util\AdapterManager;
 use stdClass;
@@ -17,6 +17,9 @@ class View
 
     private const ERROR_BUCKET                      = "view";
 
+    /**
+     * @var Controller
+     */
     private $controller                             = null;
     private $config                                 = null;
 
@@ -61,17 +64,29 @@ class View
      * @param array|string|callable $data
      * @param null|string $value
      * @return $this
+     * @throws Exception
      */
     public function assign($data, $value = null) : View
     {
-        if ($data instanceof DataTableResponse) {
-            //@todo da fare
-        } elseif ($data instanceof DataResponse) {
-            //@todo da fare
+        if ($value instanceof DataHtml) {
+            $this->adapter->assign($data, $value->html);
+
+            foreach ($value->js as $js) {
+                $this->controller->addJavascriptDefer($js);
+            }
+            if ($value->js_embed) {
+                $this->controller->addJavascriptEmbed($value->js_embed);
+            }
+            foreach ($value->css as $css) {
+                $this->controller->addStylesheet($css);
+            }
+            foreach ($value->style as $style) {
+                $this->controller->addStylesheetEmbed($value->$style);
+            }
         } else {
             $this->adapter->assign($data, $value);
         }
-        
+
         return $this;
     }
 

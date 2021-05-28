@@ -242,7 +242,7 @@ abstract class Controller
      * @param string $relative_path
      * @return string
      */
-    public function getWebUrl(string $relative_path) : string
+    protected function getWebUrl(string $relative_path) : string
     {
         return Kernel::$Environment::SITE_PATH . $this->maskEnv($relative_path);
     }
@@ -253,7 +253,7 @@ abstract class Controller
      * @return string
      * @throws Exception
      */
-    public function getImageUrl(string $filename_or_url, string $mode = null) : string
+    protected function getImageUrl(string $filename_or_url, string $mode = null) : string
     {
         return Media::getUrl(Resource::image($filename_or_url) ?? $this->maskEnv($filename_or_url), $mode);
     }
@@ -265,7 +265,7 @@ abstract class Controller
      * @return string
      * @throws Exception
      */
-    public function getImageTag(string $filename_or_url, string $mode = null, string $alt = null) : string
+    protected function getImageTag(string $filename_or_url, string $mode = null, string $alt = null) : string
     {
         $altTag = (
             $alt
@@ -347,7 +347,7 @@ abstract class Controller
      * @param string $encoding
      * @return $this
      */
-    public function setEncoding(string $encoding) : self
+    protected function setEncoding(string $encoding) : self
     {
         $this->adapter->encoding                = $encoding;
 
@@ -378,7 +378,7 @@ abstract class Controller
      * @return $this
      * @throws Exception
      */
-    protected function addStylesheet(string $filename_or_url, string $device = null, string $media_query = null) : self
+    public function addStylesheet(string $filename_or_url, string $device = null, string $media_query = null) : self
     {
         $this->addAsset($this->adapter->css, Resource::TYPE_ASSET_CSS, $this->attrMedia($device, $media_query), $filename_or_url);
 
@@ -391,7 +391,7 @@ abstract class Controller
      * @param string|null $media_query
      * @return $this
      */
-    protected function addStylesheetEmbed(string $content, string $device = null, string $media_query = null) : self
+    public function addStylesheetEmbed(string $content, string $device = null, string $media_query = null) : self
     {
         $this->adapter->style[$this->attrMedia($device, $media_query)][] = $content;
 
@@ -405,7 +405,7 @@ abstract class Controller
      * @return $this
      * @throws Exception
      */
-    protected function addFont(string $filename_or_url, string $device = null, string $media_query = null) : self
+    public function addFont(string $filename_or_url, string $device = null, string $media_query = null) : self
     {
         $this->addAsset($this->adapter->fonts, Resource::TYPE_ASSET_FONTS, $this->attrMedia($device, $media_query), $filename_or_url);
 
@@ -418,7 +418,7 @@ abstract class Controller
      * @return $this
      * @throws Exception
      */
-    protected function addJavascript(string $filename_or_url, string $location = null) : self
+    public function addJavascript(string $filename_or_url, string $location = null) : self
     {
         $this->addAsset($this->adapter->js, Resource::TYPE_ASSET_JS, $location ?? self::ASSET_LOCATION_DEFAULT, $filename_or_url);
 
@@ -431,7 +431,7 @@ abstract class Controller
      * @return $this
      * @throws Exception
      */
-    protected function addJavascriptDefer(string $filename_or_url, bool $async = false) : self
+    public function addJavascriptDefer(string $filename_or_url, bool $async = false) : self
     {
         $this->addAsset($this->adapter->js, Resource::TYPE_ASSET_JS, $async ? self::ASSET_LOCATION_ASYNC : self::ASSET_LOCATION_DEFER, $filename_or_url);
 
@@ -443,7 +443,7 @@ abstract class Controller
      * @param string|null $location
      * @return $this
      */
-    protected function addJavascriptEmbed(string $content, string $location = null) : self
+    public function addJavascriptEmbed(string $content, string $location = null) : self
     {
         $this->adapter->js_embed[$content]      = $location ?? self::ASSET_LOCATION_DEFAULT;
 
@@ -454,7 +454,7 @@ abstract class Controller
      * @param array $data
      * @return $this
      */
-    protected function addStructuredData(array $data) : self
+    public function addStructuredData(array $data) : self
     {
         $this->adapter->json_ld             = array_replace($this->adapter->json_ld, $data);
 
@@ -466,7 +466,7 @@ abstract class Controller
      * @param string|null $type
      * @return $this
      */
-    protected function addJsTemplate(string $content, string $type = null) : self
+    public function addJsTemplate(string $content, string $type = null) : self
     {
         $this->adapter->js_tpl[$content]   = $type;
 
@@ -474,15 +474,10 @@ abstract class Controller
     }
 
     /**
-     * @param array|null $values
      * @return DataResponse
      */
-    protected function response(array $values = null) : DataResponse
+    private function &response() : DataResponse
     {
-        if ($values) {
-            $this->response->fill($values);
-        }
-
         return $this->response;
     }
 

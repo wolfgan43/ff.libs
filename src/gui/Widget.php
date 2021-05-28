@@ -64,7 +64,7 @@ abstract class Widget extends Controller
      * @return Controller
      * @throws Exception
      */
-    protected function addStylesheet(string $filename_or_url, string $device = null, string $media_query = null) : Controller
+    public function addStylesheet(string $filename_or_url, string $device = null, string $media_query = null) : Controller
     {
         $resources = $this->getResources();
         if (!empty($resources->css[$filename_or_url])) {
@@ -81,7 +81,7 @@ abstract class Widget extends Controller
      * @return Controller
      * @throws Exception
      */
-    protected function addFont(string $filename_or_url, string $device = null, string $media_query = null) : Controller
+    public function addFont(string $filename_or_url, string $device = null, string $media_query = null) : Controller
     {
         $resources = $this->getResources();
         if (!empty($resources->font[$filename_or_url])) {
@@ -98,7 +98,7 @@ abstract class Widget extends Controller
      * @return Controller
      * @throws Exception
      */
-    protected function addJavascript(string $filename_or_url, string $location = null): Controller
+    public function addJavascript(string $filename_or_url, string $location = null): Controller
     {
         $resources = $this->getResources();
         if (!empty($resources->js[$filename_or_url])) {
@@ -114,7 +114,7 @@ abstract class Widget extends Controller
      * @return Controller
      * @throws Exception
      */
-    protected function addJavascriptDefer(string $filename_or_url, bool $async = false): Controller
+    public function addJavascriptDefer(string $filename_or_url, bool $async = false): Controller
     {
         $resources = $this->getResources();
         if (!empty($resources->js[$filename_or_url])) {

@@ -2,6 +2,7 @@
 namespace phpformsframework\libs\gui\components;
 
 use Exception;
+use phpformsframework\libs\international\Translator;
 
 /**
  * Class Field
@@ -98,7 +99,7 @@ class Field
             "type"              => "number",
             "validator"         => "double",
             "properties"        => [
-                "sep"           => 0.01
+                "step"          => 0.01
             ]
         ]);
     }
@@ -108,7 +109,7 @@ class Field
             "type"              => "number",
             "validator"         => "double",
             "properties"        => [
-                "sep"           => 0.01
+                "step"          => 0.01
             ],
             "pre"               => "&euro;"
         ]);
@@ -211,41 +212,51 @@ class Field
             "default"           => true
         ]);
     }
+
     public const BUCKET                 = 'df';
 
     protected const TEMPLATE_CLASS      = [
-        "select" => [
-            "control" => "custom-select",
-            "label" => null
+        "select"                => [
+            "control"           => "custom-select",
+            "label"             => null
         ],
-        "check" => [
-            "wrapper" => "form-check",
-            "control" => "form-check-input",
-            "label" => "form-check-label"
+        "check"                 => [
+            "wrapper"           => "form-check",
+            "control"           => "form-check-input",
+            "label"             => "form-check-label"
         ],
-        "textarea" => [
-            "control" => "form-control",
-            "label" => null
+        "textarea"              => [
+            "control"           => "form-control",
+            "label"             => null
         ],
-        "file" => [
-            "wrapper" => "custom-file",
-            "control" => "custom-file-input",
-            "label" => "custom-file-label"
+        "file"                  => [
+            "wrapper"           => "custom-file",
+            "control"           => "custom-file-input",
+            "label"             => "custom-file-label"
         ],
-        "default" => [
-            "control" => "form-control",
-            "label" => null,
+        "default"               => [
+            "control"           => "form-control",
+            "label"             => null,
         ],
-        "readonly" => [
-            "control" => "form-control-plaintext",
-            "label" => null,
+        "readonly"              => [
+            "control"           => "form-control-plaintext",
+            "label"             => null,
         ],
-
-        "feedback" => [
-            "valid" => "valid-feedback",
-            "invalid" => "invalid-feedback"
+        "group"                 => [
+            "wrapper"           => "input-group",
+            "pre"               => "input-group-prepend",
+            "post"              => "input-group-append"
+        ],
+        "feedback"              => [
+            null                => "feedback",
+            "valid"             => "valid-feedback",
+            "invalid"           => "invalid-feedback",
+            "control"           => [
+                                    null        => "",
+                                    "valid"     => "is-valid",
+                                    "invalid"   => "is-invalid"
+                                ]
         ]
-
     ];
 
     private const TAG_DEFAULT           = 'input';
@@ -255,23 +266,11 @@ class Field
     private const TEMPLATE_ENGINE = [
         "label"     => '<label[CLASS][PROPERTIES][DATA]>[VALUE]</label>',
         "readonly"  => '<span[CLASS][DATA]>[VALUE_RAW]</span>',
-        "select"    => '[LABEL]<select[NAME][CLASS][PROPERTIES][DATA]>[OPTIONS]</select>',
-        "check"     => '<[TAG][TYPE][NAME][VALUE][CLASS][PROPERTIES][DATA] />[LABEL]',
-        "textarea"  => '[LABEL]<[TAG][NAME][CLASS][PROPERTIES][DATA]>[VALUE_RAW]</[TAG]>',
-        "default"   => '[LABEL]<[TAG][TYPE][NAME][VALUE][CLASS][PROPERTIES][DATA] />',
-        "group"     => '[LABEL]
-                        <div class="input-group">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text" id="inputGroupPrepend3">@</span>
-                            </div>
-                            <input type="text" class="form-control is-invalid" id="validationServerUsername" placeholder="Username" aria-describedby="inputGroupPrepend3" required="">
-                            <div class="input-group-append">
-                                <span class="input-group-text" id="inputGroupPrepend3">@</span>
-                            </div>
-                            <div class="invalid-feedback">
-                                Please choose a username.
-                            </div>
-                        </div>'
+        "select"    => '[LABEL]<select[NAME][CLASS][PROPERTIES][DATA]>[OPTIONS]</select>[FEEDBACK]',
+        "check"     => '<[TAG][TYPE][NAME][VALUE][CLASS][PROPERTIES][DATA] />[LABEL][FEEDBACK]',
+        "textarea"  => '[LABEL]<[TAG][NAME][CLASS][PROPERTIES][DATA]>[VALUE_RAW]</[TAG]>[FEEDBACK]',
+        "default"   => '[LABEL]<[TAG][TYPE][NAME][VALUE][CLASS][PROPERTIES][DATA] />[FEEDBACK]',
+        "group"     => '[LABEL]<div[GROUP_CLASS]>[PRE]<[TAG][TYPE][NAME][VALUE][CLASS][PROPERTIES][DATA] />[POST][FEEDBACK]</div>',
     ];
 
     private $name               = null;
@@ -288,11 +287,9 @@ class Field
     private $label_data         = [];
 
     private $message            = null;
-    private $message_class      = [];
+    private $message_type       = null;
     private $pre                = null;
-    private $pre_class          = [];
     private $post               = null;
-    private $post_class         = [];
 
     /**
      * Field constructor.
@@ -351,6 +348,16 @@ class Field
         );
     }
 
+    private function parseFeedBack() : ?string
+    {
+        $this->classes["feedback"] = static::TEMPLATE_CLASS["feedback"]["control"][$this->message_type];
+
+        return ($this->message
+            ? '<div class="' . static::TEMPLATE_CLASS["feedback"][$this->message_type] . '">' . $this->message . '</div>'
+            : null
+        );
+    }
+
     private function control() : string
     {
         self::$count++;
@@ -358,6 +365,7 @@ class Field
         return str_replace(
             [
                 "[LABEL]",
+                "[FEEDBACK]",
                 "[TAG]",
                 "[TYPE]",
                 "[NAME]",
@@ -369,6 +377,7 @@ class Field
             ],
             [
                 $this->parseLabel(),
+                $this->parseFeedBack(),
                 ($this->control->tag ?? self::TAG_DEFAULT),
                 $this->parseControlType(),
                 $this->parseControlName(),
@@ -376,10 +385,52 @@ class Field
                 $this->value,
                 $this->parseControlClass(),
                 $this->parseControlProperties(),
-                $this->parseControlData(),
-
+                $this->parseControlData()
             ],
-            static::TEMPLATE_ENGINE[$this->control->template]
+            $this->parseTemplate()
+        );
+    }
+
+    private function parseTemplate() : string
+    {
+        return ($this->control->template == self::TEMPLATE_DEFAULT && ($this->pre || $this->post)
+            ? $this->parseTemplateGroup()
+            : static::TEMPLATE_ENGINE[$this->control->template]
+        );
+    }
+
+    private function parseTemplateGroup() : string
+    {
+        return str_replace(
+            [
+                "[GROUP_CLASS]",
+                "[PRE]",
+                "[POST]"
+            ],
+            [
+                ' class="' . static::TEMPLATE_CLASS["group"]["wrapper"] . '"',
+                $this->parseControlPre(),
+                $this->parseControlPost(),
+            ],
+            static::TEMPLATE_ENGINE["group"]
+        );
+    }
+
+    private function parseControlPre() : ?string
+    {
+        return $this->parseControlAttach($this->pre ?? $this->control->pre ?? null, static::TEMPLATE_CLASS["group"]["pre"]);
+    }
+
+    private function parseControlPost() : ?string
+    {
+        return $this->parseControlAttach($this->post ?? $this->control->post ?? null, static::TEMPLATE_CLASS["group"]["post"]);
+    }
+
+    private function parseControlAttach(string $value, string $class) : ?string
+    {
+        return ($value
+            ? '<div class="' . $class . '">' . $value . '</div>'
+            : null
         );
     }
 
@@ -446,34 +497,42 @@ class Field
         return $this->html();
     }
 
-    public function label(string $value, string $class = null, array $data = []) : self
+    public function label(string $value, bool $translate = false, string $class = null, array $data = []) : self
     {
-        $this->label = $value;
+        $this->label = (
+            $translate
+            ? Translator::getWordByCode($value)
+            : $value
+        );
         $this->label_class["custom"] = $class;
         $this->label_data = $data;
 
         return $this;
     }
 
-    public function message(string $msg, array $class = null) : self
+    public function message(string $msg, bool $isError = null) : self
     {
         $this->message = $msg;
-        $this->message_class["custom"] = $class;
 
+        if (isset($isError)) {
+            $this->message_type = (
+                $isError
+                ? "invalid"
+                : "valid"
+            );
+        }
         return $this;
     }
 
-    public function pre(string $html, array $class = null) : self
+    public function pre(string $html) : self
     {
         $this->pre = $html;
-        $this->pre_class["custom"] = $class;
 
         return $this;
     }
-    public function post(string $html, array $class = null) : self
+    public function post(string $html) : self
     {
         $this->post = $html;
-        $this->post_class["custom"] = $class;
 
         return $this;
     }
@@ -485,9 +544,13 @@ class Field
         return $this;
     }
 
-    public function placeholder(string $value) : self
+    public function placeholder(string $value, bool $translate = false) : self
     {
-        $this->properties["placeholder"] = $value;
+        $this->properties["placeholder"] = (
+            $translate
+            ? Translator::getWordByCode($value)
+            : $value
+        );
 
         return $this;
     }

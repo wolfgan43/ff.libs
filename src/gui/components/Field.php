@@ -1,8 +1,9 @@
 <?php
 namespace phpformsframework\libs\gui\components;
 
-use Exception;
 use phpformsframework\libs\international\Translator;
+use phpformsframework\libs\security\Validator;
+use phpformsframework\libs\storage\Orm;
 
 /**
  * Class Field
@@ -12,14 +13,14 @@ class Field
 {
     private static $count               = 0;
 
-    public static function select(string $name, string $source, array $display_fields = null, string $key = null)
+    public static function select(string $name, string $collection, string $table, string $display_fields, string $key = null)
     {
-        return new static($name, [
+        return (new static($name, [
             "template"                  => "select"
-        ]);
+        ]))->source($collection, $table, $display_fields, $key);
     }
 
-    public static function checkbox(string $name, string $source, array $display_fields = null, string $key = null)
+    public static function checkbox(string $name, string $collection, string $table, array $display_fields = null, string $key = null)
     {
         return new static($name, [
             "template"                  => "check",
@@ -27,7 +28,7 @@ class Field
         ]);
     }
 
-    public static function radio(string $name, string $source, array $display_fields = null, string $key = null)
+    public static function radio(string $name, string $collection, string $table, array $display_fields = null, string $key = null)
     {
         return new static($name, [
             "template"                  => "check",
@@ -291,6 +292,8 @@ class Field
     private $pre                = null;
     private $post               = null;
 
+    private $options            = [];
+
     /**
      * Field constructor.
      * @param string $name
@@ -362,6 +365,8 @@ class Field
     {
         self::$count++;
 
+        $this->validate();
+
         return str_replace(
             [
                 "[LABEL]",
@@ -373,7 +378,8 @@ class Field
                 "[VALUE_RAW]",
                 "[CLASS]",
                 "[PROPERTIES]",
-                "[DATA]"
+                "[DATA]",
+                "[OPTIONS]"
             ],
             [
                 $this->parseLabel(),
@@ -385,7 +391,8 @@ class Field
                 $this->value,
                 $this->parseControlClass(),
                 $this->parseControlProperties(),
-                $this->parseControlData()
+                $this->parseControlData(),
+                $this->parseOptions(),
             ],
             $this->parseTemplate()
         );
@@ -469,6 +476,15 @@ class Field
         return $this->parseData($this->data);
     }
 
+    private function parseOptions() : ?string
+    {
+        $res = null;
+        foreach ($this->options as $key => $options) {
+            $res .= '<option value="' . $key . '">' .  $options . '</option>';
+        }
+
+        return $res;
+    }
     private function parseClasses(array $classes) : ?string
     {
         return (!empty($classes)
@@ -537,8 +553,12 @@ class Field
         return $this;
     }
 
-    public function value(string $value) : self
+    public function value(string $value, string $validator = null) : self
     {
+        if ($validator) {
+            $this->control->validator = $validator;
+        }
+
         $this->value = $value;
 
         return $this;
@@ -567,7 +587,7 @@ class Field
 
     public function class(string $classes) : self
     {
-        $this->classes["custom"] = $classes;
+        $this->classes["custom"]    = $classes;
 
         return $this;
     }
@@ -581,20 +601,25 @@ class Field
 
     public function data(array $data) : self
     {
-        $this->data = $data;
+        $this->data                 = $data;
 
         return $this;
     }
 
-    public function validator(string $name) : self
+    private function source(string $collection, string $table, string $display_fields, string $id = null) : self
     {
-        //@todo da finire
-        return $this;
-    }
+        $fields                     = null;
+        preg_match_all('#\[([^]]+)]#', $display_fields, $fields);
 
-    public function source(string $name, array $display, string $key) : self
-    {
-        //@todo da finire
+        $orm                        = Orm::getInstance($collection, $table);
+
+        $key                        = $id ?? $orm->informationSchema($table)->key;
+        $fields[1][]                = $key;
+
+        foreach ($orm->read($fields[1])->getAllArray() as $record) {
+            $this->options[$record[$key]] = str_replace($fields[0], array_values($record), $display_fields);
+        }
+
         return $this;
     }
 
@@ -607,5 +632,15 @@ class Field
         }
 
         return $this;
+    }
+
+    private function validate() : void
+    {
+        if (!empty($this->control->validator)) {
+            $validator = Validator::is($this->value, $this->value, $this->control->validator);
+            if ($validator->isError()) {
+                $this->message($validator->error, true);
+            }
+        }
     }
 }

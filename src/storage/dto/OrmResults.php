@@ -196,7 +196,11 @@ class OrmResults
      */
     public function keys(string $key_name = null) : array
     {
-        return array_column($this->recordset_keys ?? $this->recordset, $key_name ?? $this->key_name) ?? [];
+        static $keys                = null;
+        if (!isset($keys[$key_name])) {
+            $keys[$key_name]        = array_column($this->recordset_keys ?? $this->recordset, $key_name ?? $this->key_name) ?? [];
+        }
+        return $keys[$key_name];
     }
 
     /**

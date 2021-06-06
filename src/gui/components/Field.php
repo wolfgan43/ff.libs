@@ -1,6 +1,7 @@
 <?php
 namespace phpformsframework\libs\gui\components;
 
+use Exception;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\storage\Orm;
@@ -13,30 +14,65 @@ class Field
 {
     private static $count               = 0;
 
-    public static function select(string $name, string $collection, string $table, string $display_fields, string $key = null)
+    /**
+     * @param string $name
+     * @param array|null $fill
+     * @return Field
+     */
+    public static function select(string $name, array $fill = [])
     {
         return (new static($name, [
             "template"                  => "select"
-        ]))->source($collection, $table, $display_fields, $key);
+        ]))->setOptions($fill);
     }
 
-    public static function checkbox(string $name, string $collection, string $table, array $display_fields = null, string $key = null)
+    /**
+     * @param string $name
+     * @param array|null $fill
+     * @return Field
+     */
+    public static function list(string $name, array $fill = [])
     {
-        return new static($name, [
+        return (new static($name, [
+            "template"                  => "select",
+            "properties"                => [
+                "multiple"              => "null"
+            ]
+        ]))->setOptions($fill)
+            ->isMulti(true);
+    }
+
+    /**
+     * @param string $name
+     * @param array $fill
+     * @return static
+     */
+    public static function check(string $name, array $fill = [])
+    {
+        return (new static($name, [
             "template"                  => "check",
             "type"                      => "checkbox"
-        ]);
+        ]))->setOptions($fill)
+            ->isMulti(true);
     }
 
-    public static function radio(string $name, string $collection, string $table, array $display_fields = null, string $key = null)
+    /**
+     * @param string $name
+     * @param array $fill
+     * @return static
+     */
+    public static function radio(string $name, array $fill = [])
     {
-        return new static($name, [
+        return (new static($name, [
             "template"                  => "check",
             "type"                      => "radio"
-        ]);
+        ]))->setOptions($fill);
     }
 
-
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function hex(string $name) : self
     {
         return new static($name, [
@@ -44,6 +80,11 @@ class Field
             "validator"         => "hex"
         ]);
     }
+
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function date(string $name) : self
     {
         return new static($name, [
@@ -51,6 +92,11 @@ class Field
             "validator"         => "date"
         ]);
     }
+
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function datetime(string $name) : self
     {
         return new static($name, [
@@ -58,6 +104,11 @@ class Field
             "validator"         => "datetime"
         ]);
     }
+
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function email(string $name) : self
     {
         return new static($name, [
@@ -65,6 +116,11 @@ class Field
             "validator"         => "email"
         ]);
     }
+
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function upload(string $name) : self
     {
         return new static($name, [
@@ -73,6 +129,11 @@ class Field
             "validator"         => "file"
         ]);
     }
+
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function image(string $name) : self
     {
         return new static($name, [
@@ -81,12 +142,22 @@ class Field
             "validator"         => "file"
         ]);
     }
+
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function month(string $name) : self
     {
         return new static($name, [
             "type"              => "month",
         ]);
     }
+
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function int(string $name) : self
     {
         return new static($name, [
@@ -94,6 +165,11 @@ class Field
             "validator"         => "int"
         ]);
     }
+
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function double(string $name) : self
     {
         return new static($name, [
@@ -104,6 +180,11 @@ class Field
             ]
         ]);
     }
+
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function currency(string $name) : self
     {
         return new static($name, [
@@ -115,6 +196,11 @@ class Field
             "pre"               => "&euro;"
         ]);
     }
+
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function password(string $name) : self
     {
         return new static($name, [
@@ -122,24 +208,44 @@ class Field
             "validator"         => "double"
         ]);
     }
+
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function range(string $name) : self
     {
         return new static($name, [
             "type"              => "range"
         ]);
     }
+
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function reset(string $name) : self
     {
         return new static($name, [
             "type"              => "reset"
         ]);
     }
+
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function search(string $name) : self
     {
         return new static($name, [
             "type"              => "search"
         ]);
     }
+
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function tel(string $name) : self
     {
         return new static($name, [
@@ -147,12 +253,22 @@ class Field
             "validator"         => "tel",
         ]);
     }
+
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function string(string $name) : self
     {
         return new static($name, [
             "type"              => "text"
         ]);
     }
+
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function time(string $name) : self
     {
         return new static($name, [
@@ -160,6 +276,11 @@ class Field
             "validator"         => "time",
         ]);
     }
+
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function url(string $name) : self
     {
         return new static($name, [
@@ -167,12 +288,22 @@ class Field
             "validator"         => "url",
         ]);
     }
+
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function week(string $name) : self
     {
         return new static($name, [
             "type"              => "week"
         ]);
     }
+
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function video(string $name) : self
     {
         return new static($name, [
@@ -180,6 +311,11 @@ class Field
             "validator"         => "url",
         ]);
     }
+
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function audio(string $name) : self
     {
         return new static($name, [
@@ -187,6 +323,11 @@ class Field
             "validator"         => "url",
         ]);
     }
+
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function text(string $name) : self
     {
         return new static($name, [
@@ -195,6 +336,11 @@ class Field
             "validator"         => "text",
         ]);
     }
+
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function readonly(string $name) : self
     {
         return new static($name, [
@@ -204,6 +350,11 @@ class Field
             ]
         ]);
     }
+
+    /**
+     * @param string $name
+     * @return static
+     */
     public static function bool(string $name) : self
     {
         return new static($name, [
@@ -260,11 +411,7 @@ class Field
         ]
     ];
 
-    private const TAG_DEFAULT           = 'input';
-    private const TEMPLATE_DEFAULT      = 'default';
-    private const TEMPLATE_LABEL        = 'label';
-
-    private const TEMPLATE_ENGINE = [
+    protected const TEMPLATE_ENGINE     = [
         "label"     => '<label[CLASS][PROPERTIES][DATA]>[VALUE]</label>',
         "readonly"  => '<span[CLASS][DATA]>[VALUE_RAW]</span>',
         "select"    => '[LABEL]<select[NAME][CLASS][PROPERTIES][DATA]>[OPTIONS]</select>[FEEDBACK]',
@@ -273,6 +420,12 @@ class Field
         "default"   => '[LABEL]<[TAG][TYPE][NAME][VALUE][CLASS][PROPERTIES][DATA] />[FEEDBACK]',
         "group"     => '[LABEL]<div[GROUP_CLASS]>[PRE]<[TAG][TYPE][NAME][VALUE][CLASS][PROPERTIES][DATA] />[POST][FEEDBACK]</div>',
     ];
+
+    protected const SEP_DEFAULT         = ',';
+
+    private const TAG_DEFAULT           = 'input';
+    private const TEMPLATE_DEFAULT      = 'default';
+    private const TEMPLATE_LABEL        = 'label';
 
     private $name               = null;
     private $control            = null;
@@ -292,7 +445,8 @@ class Field
     private $pre                = null;
     private $post               = null;
 
-    private $options            = [];
+    protected $options          = [];
+    protected $options_multi    = false;
 
     /**
      * Field constructor.
@@ -311,6 +465,9 @@ class Field
         }
     }
 
+    /**
+     * @return string
+     */
     protected function html() : string
     {
         return (empty(static::TEMPLATE_CLASS[$this->control->template_class]["wrapper"])
@@ -321,6 +478,9 @@ class Field
         );
     }
 
+    /**
+     * @return string|null
+     */
     private function parseLabel() : ?string
     {
         if ($this->label === null) {
@@ -351,6 +511,9 @@ class Field
         );
     }
 
+    /**
+     * @return string|null
+     */
     private function parseFeedBack() : ?string
     {
         $this->classes["feedback"] = static::TEMPLATE_CLASS["feedback"]["control"][$this->message_type];
@@ -361,6 +524,9 @@ class Field
         );
     }
 
+    /**
+     * @return string
+     */
     private function control() : string
     {
         self::$count++;
@@ -398,6 +564,9 @@ class Field
         );
     }
 
+    /**
+     * @return string
+     */
     private function parseTemplate() : string
     {
         return ($this->control->template == self::TEMPLATE_DEFAULT && ($this->pre || $this->post)
@@ -406,6 +575,9 @@ class Field
         );
     }
 
+    /**
+     * @return string
+     */
     private function parseTemplateGroup() : string
     {
         return str_replace(
@@ -423,16 +595,27 @@ class Field
         );
     }
 
+    /**
+     * @return string|null
+     */
     private function parseControlPre() : ?string
     {
         return $this->parseControlAttach($this->pre ?? $this->control->pre ?? null, static::TEMPLATE_CLASS["group"]["pre"]);
     }
 
+    /**
+     * @return string|null
+     */
     private function parseControlPost() : ?string
     {
         return $this->parseControlAttach($this->post ?? $this->control->post ?? null, static::TEMPLATE_CLASS["group"]["post"]);
     }
 
+    /**
+     * @param string $value
+     * @param string $class
+     * @return string|null
+     */
     private function parseControlAttach(string $value, string $class) : ?string
     {
         return ($value
@@ -441,6 +624,9 @@ class Field
         );
     }
 
+    /**
+     * @return string|null
+     */
     private function parseControlType() : ?string
     {
         return (!empty($this->control->type)
@@ -448,10 +634,18 @@ class Field
             : null
         );
     }
+
+    /**
+     * @return string
+     */
     private function parseControlName() : string
     {
         return ' name="' . $this->name . '"';
     }
+
+    /**
+     * @return string|null
+     */
     private function parseControlValue() : ?string
     {
         return (!empty($value = $this->value ?? $this->control->default ?? null)
@@ -459,6 +653,10 @@ class Field
             : null
         );
     }
+
+    /**
+     * @return string|null
+     */
     private function parseControlClass() : ?string
     {
         $this->classes["default"]   = static::TEMPLATE_CLASS[$this->control->template_class]["control"];
@@ -466,25 +664,53 @@ class Field
         return $this->parseClasses(array_filter($this->classes));
     }
 
+    /**
+     * @return string|null
+     */
     private function parseControlProperties() : ?string
     {
         return $this->parseProperties(array_replace($this->properties, $this->control->properties ?? []));
     }
 
+    /**
+     * @return string|null
+     */
     private function parseControlData() : ?string
     {
         return $this->parseData($this->data);
     }
 
+    /**
+     * @return string|null
+     */
     private function parseOptions() : ?string
     {
-        $res = null;
-        foreach ($this->options as $key => $options) {
-            $res .= '<option value="' . $key . '">' .  $options . '</option>';
+        ksort($this->options, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return '<option value="">' . Translator::getWordByCode("None") . '</option>' . $this->setOptionSelected(implode("\n", $this->options));
+    }
+
+    private function setOptionSelected(string $options) : string
+    {
+        $search                 = [];
+        $replace                = [];
+        if ($this->options_multi) {
+            foreach (explode(static::SEP_DEFAULT, $this->value) as $value) {
+                $search[]       = 'value="' . $value . '"';
+                $replace[]      = 'value="' . $value . '" selected';
+            }
+        } else {
+            $search[]           = 'value="' . $this->value . '"';
+            $replace[]          = 'value="' . $this->value . '" selected';
         }
 
-        return $res;
+        return str_replace($search, $replace, $options);
     }
+
+    /**
+     * @param array $classes
+     * @return string|null
+     */
     private function parseClasses(array $classes) : ?string
     {
         return (!empty($classes)
@@ -492,6 +718,11 @@ class Field
             : null
         );
     }
+
+    /**
+     * @param array $properties
+     * @return string|null
+     */
     private function parseProperties(array $properties) : ?string
     {
         return (!empty($properties)
@@ -500,6 +731,10 @@ class Field
         );
     }
 
+    /**
+     * @param array $data
+     * @return string|null
+     */
     private function parseData(array $data) : ?string
     {
         return (!empty($data)
@@ -508,11 +743,22 @@ class Field
         );
     }
 
+    /**
+     * @return string
+     */
     public function display() : string
     {
         return $this->html();
     }
 
+    /**
+     * @param string $value
+     * @param bool $translate
+     * @param string|null $class
+     * @param array $data
+     * @return $this
+     * @throws Exception
+     */
     public function label(string $value, bool $translate = false, string $class = null, array $data = []) : self
     {
         $this->label = (
@@ -526,6 +772,11 @@ class Field
         return $this;
     }
 
+    /**
+     * @param string $msg
+     * @param bool|null $isError
+     * @return $this
+     */
     public function message(string $msg, bool $isError = null) : self
     {
         $this->message = $msg;
@@ -540,12 +791,21 @@ class Field
         return $this;
     }
 
+    /**
+     * @param string $html
+     * @return $this
+     */
     public function pre(string $html) : self
     {
         $this->pre = $html;
 
         return $this;
     }
+
+    /**
+     * @param string $html
+     * @return $this
+     */
     public function post(string $html) : self
     {
         $this->post = $html;
@@ -553,7 +813,12 @@ class Field
         return $this;
     }
 
-    public function value(string $value, string $validator = null) : self
+    /**
+     * @param string|null $value
+     * @param string|null $validator
+     * @return $this
+     */
+    public function value(string $value = null, string $validator = null) : self
     {
         if ($validator) {
             $this->control->validator = $validator;
@@ -564,6 +829,12 @@ class Field
         return $this;
     }
 
+    /**
+     * @param string $value
+     * @param bool $translate
+     * @return $this
+     * @throws Exception
+     */
     public function placeholder(string $value, bool $translate = false) : self
     {
         $this->properties["placeholder"] = (
@@ -575,16 +846,28 @@ class Field
         return $this;
     }
 
+    /**
+     * @param bool $isRequired
+     * @return $this
+     */
     public function isRequired(bool $isRequired = true) : self
     {
         return $this->setAttrNull("required", $isRequired);
     }
 
+    /**
+     * @param bool $isReadOnly
+     * @return $this
+     */
     public function isReadOnly(bool $isReadOnly = true) : self
     {
         return $this->setAttrNull("disabled", $isReadOnly);
     }
 
+    /**
+     * @param string $classes
+     * @return $this
+     */
     public function class(string $classes) : self
     {
         $this->classes["custom"]    = $classes;
@@ -592,6 +875,10 @@ class Field
         return $this;
     }
 
+    /**
+     * @param array $properties
+     * @return $this
+     */
     public function properties(array $properties) : self
     {
         $this->properties = array_replace($this->properties, $properties);
@@ -599,30 +886,89 @@ class Field
         return $this;
     }
 
+    /**
+     * @param array $data
+     * @return $this
+     */
     public function data(array $data) : self
     {
-        $this->data                 = $data;
+        $this->data                             = $data;
 
         return $this;
     }
 
-    private function source(string $collection, string $table, string $display_fields, string $id = null) : self
+    /**
+     * @param string $collection
+     * @param string $table
+     * @param string $display_fields
+     * @param string|null $id
+     * @return $this
+     * @throws Exception
+     */
+    public function sourceOrm(string $collection, string $table, string $display_fields, string $id = null) : self
     {
-        $fields                     = null;
-        preg_match_all('#\[([^]]+)]#', $display_fields, $fields);
+        $fields                                 = null;
+        $orm                                    = Orm::getInstance($collection, $table);
+        $key                                    = $id ?? $orm->informationSchema($table)->key;
 
-        $orm                        = Orm::getInstance($collection, $table);
+        if (strpos($display_fields, "[") === false) {
+            $fields                             = [$key, $display_fields];
+            foreach ($orm->read($fields)->getAllArray() as $record) {
+                $value                          = $record[$display_fields];
 
-        $key                        = $id ?? $orm->informationSchema($table)->key;
-        $fields[1][]                = $key;
+                $this->options[$value]          = $this->setOption($record[$key], $value);
+            }
+        } else {
+            preg_match_all('#\[([^]]+)]#', $display_fields, $fields);
+            $fields[1][]                        = $key;
+            foreach ($orm->read($fields[1])->getAllArray() as $record) {
+                $value                          = str_replace($fields[0], array_values($record), $display_fields);
 
-        foreach ($orm->read($fields[1])->getAllArray() as $record) {
-            $this->options[$record[$key]] = str_replace($fields[0], array_values($record), $display_fields);
+                $this->options[$value]          = $this->setOption($record[$key], $value);
+            }
         }
 
         return $this;
     }
 
+    /**
+     * @param string $key
+     * @param string $value
+     * @return string
+     */
+    protected function setOption(string $key, string $value) : string
+    {
+        return '<option value="' . $key . '">' .  $value . '</option>';
+    }
+
+    /**
+     * @param array $options
+     * @return $this
+     */
+    private function setOptions(array $options) : self
+    {
+        foreach ($options as $key => $value) {
+            $this->options[$value]          = $this->setOption($key, $value);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param bool $multi
+     * @return $this
+     */
+    private function isMulti(bool $multi) : self
+    {
+        $this->options_multi = $multi;
+
+        return $this;
+    }
+    /**
+     * @param string $name
+     * @param bool $isset
+     * @return $this
+     */
     private function setAttrNull(string $name, bool $isset) : self
     {
         if ($isset) {
@@ -634,9 +980,12 @@ class Field
         return $this;
     }
 
+    /**
+     *
+     */
     private function validate() : void
     {
-        if (!empty($this->control->validator)) {
+        if (isset($this->value) && !empty($this->control->validator)) {
             $validator = Validator::is($this->value, $this->value, $this->control->validator);
             if ($validator->isError()) {
                 $this->message($validator->error, true);

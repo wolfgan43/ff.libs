@@ -89,7 +89,7 @@ class Request implements Configurable, Dumpable
     {
         if (!isset(self::$pageLoaded[$path_info . self::checkSumArray($request)])) {
             $page = new RequestPage($path_info, self::$pages, self::$path2params, self::$patterns);
-            $page->loadRequest($request);
+            $page->loadRequest($request ?? []);
             $page->loadHeaders($headers, true);
             $page->loadAuthorization($headers["Authorization"] ?? self::getAuthorizationHeader());
 

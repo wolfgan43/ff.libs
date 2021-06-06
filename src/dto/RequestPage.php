@@ -252,7 +252,7 @@ class RequestPage extends Mappable
      * @param mixed|null $value
      * @return RequestPage
      */
-    public function setHeader(string $name, $value = null) : self
+    private function setHeader(string $name, $value = null) : self
     {
         $this->headers[$name]         = $value;
 
@@ -323,7 +323,7 @@ class RequestPage extends Mappable
      * @param string|null $name
      * @return RequestPage
      */
-    public function setRequest(string $scope, $value, string $name = null) : self
+    private function setRequest(string $scope, $value, string $name = null) : self
     {
         if ($name) {
             $this->body[$scope][$name]  = $value;
@@ -338,7 +338,7 @@ class RequestPage extends Mappable
      * @param array $request
      * @return RequestPage
      */
-    public function setUnknown(array $request) : self
+    private function setUnknown(array $request) : self
     {
         $this->body[self::REQUEST_UNKNOWN] = (
             isset($this->body[self::REQUEST_VALID])
@@ -372,15 +372,15 @@ class RequestPage extends Mappable
     }
 
     /**
-     * @param array|null $request
+     * @param array $request
      * @return bool
      */
-    public function loadRequest(array $request = null) : bool
+    public function loadRequest(array $request) : bool
     {
         $this->rawdata = $request;
 
-        return (is_array($request)
-            ? $this->securityParams($this->path2params + $this->file2params + $request, $this->method)
+        return (!empty($req = $this->path2params + $this->file2params + $request)
+            ? $this->securityParams($req, $this->method)
             : false
         );
     }

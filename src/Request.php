@@ -650,7 +650,7 @@ class Request implements Configurable, Dumpable
     {
         $request                                                                                = $this->getReq($this->getRequestMethod());
 
-        if (($this->page->loadRequestFile() || $this->page->loadRequest($request)) && empty($this->page->controller)) {
+        if ($this->page->loadRequest($request) && $this->page->loadRequestFile() && empty($this->page->controller)) {
             $this->sendError($this->page->status, $this->page->error);
         }
 

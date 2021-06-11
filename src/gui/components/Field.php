@@ -738,7 +738,7 @@ class Field
     private function parseData(array $data) : ?string
     {
         return (!empty($data)
-            ? ' data-' . str_replace("&", " data-", http_build_query($data, "", ""))
+            ? ' data-' . str_replace(["&", "="], ["' data-", "='"], urldecode(http_build_query($data, "", "&"))) . "'"
             : null
         );
     }

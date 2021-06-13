@@ -102,6 +102,14 @@ class Time
         return $this->dateTime->format($this->getFormat($locale) . " " . $this->getFormatTime($sep, true));
     }
 
+    /**
+     * @param string $sep
+     * @return string
+     */
+    public function toDateTimeLocal(string $sep = self::SEP) : string
+    {
+        return $this->dateTime->format($this->getFormat(self::FORMAT_DEFAULT) . "\T" . $this->getFormatTime($sep));
+    }
 
     /**
      * @return int

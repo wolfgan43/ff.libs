@@ -113,18 +113,18 @@ class Orm extends Mappable
     private $result_keys                                                                    = null;
 
     private $map_class                                                                      = null;
-    private $delete_logical_field                                                           = null;
+    private $logical_fields                                                                 = null;
 
     private $count                                                                          = 0;
 
     /**
      * @param string|null $collection
      * @param string|null $mainTable
-     * @param string|null $delete_logical_field
+     * @param array|null $logical_fields
      * @param string|null $mapClass
      * @return Orm
      */
-    public static function &getInstance(string $collection = null, string $mainTable = null, string $delete_logical_field = null, string $mapClass = null) : self
+    public static function &getInstance(string $collection = null, string $mainTable = null, array $logical_fields = null, string $mapClass = null) : self
     {
         if (!isset(self::$singleton[$collection])) {
             self::$singleton[$collection]                                                   = new Orm($collection);
@@ -132,7 +132,7 @@ class Orm extends Mappable
 
         return self::$singleton[$collection]
             ->setMainTable($mainTable)
-            ->setDeleteLogicalField($delete_logical_field)
+            ->setLogicalField($logical_fields)
             ->setMapClass($mapClass);
     }
 
@@ -166,12 +166,12 @@ class Orm extends Mappable
     }
 
     /**
-     * @param string|null $delete_logical_field
+     * @param array|null $logical_fields
      * @return Orm
      */
-    private function &setDeleteLogicalField(string $delete_logical_field = null) : self
+    private function &setLogicalField(array $logical_fields = null) : self
     {
-        $this->delete_logical_field                                                         = $delete_logical_field;
+        $this->logical_fields                                                               = $logical_fields;
 
         return $this;
     }
@@ -555,7 +555,7 @@ class Orm extends Mappable
                                                                                                 ->setStorage($data->def)
                                                                                                 ->read(
                                                                                                     $data->select(true),
-                                                                                                    $data->where($this->delete_logical_field),
+                                                                                                    $data->where($this->logical_fields),
                                                                                                     $data->sort,
                                                                                                     $limit,
                                                                                                     $offset,
@@ -701,7 +701,7 @@ class Orm extends Mappable
                                                                                                 ->setStorage($data->def)
                                                                                                 ->read(
                                                                                                     $data->select(true),
-                                                                                                    $data->where($this->delete_logical_field),
+                                                                                                    $data->where($this->logical_fields),
                                                                                                     $data->sort,
                                                                                                     $limit,
                                                                                                     $offset,
@@ -1230,7 +1230,7 @@ class Orm extends Mappable
     private function getModel(string $model = null) : Orm
     {
         return ($model
-            ? self::getInstance($model, $this->main_table, $this->delete_logical_field, $this->map_class)
+            ? self::getInstance($model, $this->main_table, $this->logical_fields, $this->map_class)
             : $this
         );
     }

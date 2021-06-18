@@ -45,7 +45,7 @@ class Model implements Configurable, Dumpable
     private $schema                                                                     = null;
     private $name                                                                       = null;
 
-    private $delete_logical_field                                                       = null;
+    private $logical_fields                                                             = null;
 
     /**
      * @return array
@@ -80,15 +80,15 @@ class Model implements Configurable, Dumpable
 
     /**
      * @param string $collection_name
-     * @param string|null $delete_logical_field
+     * @param array|null $logical_fields
      * @return Model
      */
-    public function loadCollection(string $collection_name, string $delete_logical_field = null) : self
+    public function loadCollection(string $collection_name, array $logical_fields = null) : self
     {
         $this->schema                                                                   = null;
         $this->name                                                                     = null;
         $this->collection                                                               = $collection_name;
-        $this->delete_logical_field                                                     = $delete_logical_field;
+        $this->logical_fields                                                           = $logical_fields;
 
         return $this;
     }
@@ -271,8 +271,8 @@ class Model implements Configurable, Dumpable
     private function getOrm() : Orm
     {
         return ($this->schema
-            ? Orm::getInstance($this->schema->collection, $this->schema->table, $this->delete_logical_field, $this->mapclass ?? $this->schema->mapclass)
-            : Orm::getInstance($this->collection, $this->table, $this->delete_logical_field, $this->mapclass)
+            ? Orm::getInstance($this->schema->collection, $this->schema->table, $this->logical_fields, $this->mapclass ?? $this->schema->mapclass)
+            : Orm::getInstance($this->collection, $this->table, $this->logical_fields, $this->mapclass)
         );
     }
 

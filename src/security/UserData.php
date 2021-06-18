@@ -67,12 +67,11 @@ class UserData extends OrmItem
     }
 
     /**
-     * @param Model $db
-     * @param string|null $recordKey
+     * @return array|null
      */
-    protected function onLoad($db, string $recordKey = null): void
+    protected function onLoad(): ?array
     {
-        // TODO: Implement onLoad() method.
+        return null;
     }
 
     /**

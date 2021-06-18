@@ -85,10 +85,9 @@ abstract class OrmItem
     private $informationSchema                                                  = null;
 
     /**
-     * @param Model $db
-     * @param string|null $recordKey
+     * @return array|null
      */
-    abstract protected function onLoad($db, string $recordKey = null)           : void;
+    abstract protected function onLoad()           : ?array;
 
     /**
      * @param Model $db
@@ -291,14 +290,17 @@ abstract class OrmItem
      */
     public function __construct(array $where = null, array $fill = null, string $record_key = null)
     {
-        $this->loadCollection();
+        $logical_fields = $this->onLoad();
+        if (!empty(static::DELETE_LOGICAL_FIELD) && !isset($logical_fields[static::DELETE_LOGICAL_FIELD])) {
+            $logical_fields[static::DELETE_LOGICAL_FIELD] = false;
+        }
+
+        $this->loadCollection($logical_fields);
         $this->read($where);
         $this->fill($fill);
         $this->setRecordKey($record_key);
 
         $this->storedData = array_replace($this->storedData, $fill ?? []);
-
-        $this->onLoad($this->db, $this->recordKey);
 
         if (!$this->isStored()) {
             $this->onCreate($this->db);
@@ -339,14 +341,15 @@ abstract class OrmItem
 
     /**
      *
+     * @param array|null $logical_fields
      * @throws Exception
      */
-    private function loadCollection()
+    private function loadCollection(array $logical_fields = null)
     {
         $collection_name                                                        = static::COLLECTION ?? $this->getClassName();
 
         $this->db                                                               = new Model();
-        $this->db->loadCollection($collection_name, static::DELETE_LOGICAL_FIELD);
+        $this->db->loadCollection($collection_name, $logical_fields);
         $this->db->table(static::TABLE);
         $this->informationSchema                                                = $this->db->informationSchema();
 

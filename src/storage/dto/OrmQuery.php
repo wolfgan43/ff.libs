@@ -116,13 +116,13 @@ class OrmQuery
     }
 
     /**
-     * @param string|null $delete_logical_field
+     * @param array|null $logical_fields
      * @return array|null
      */
-    public function where(string $delete_logical_field = null) : ?array
+    public function where(array $logical_fields = null) : ?array
     {
-        return ($delete_logical_field && !empty($this->where)
-            ? ($this->where + [$delete_logical_field => false])
+        return (!empty($logical_fields)
+            ? array_replace($this->where ?? [], $logical_fields)
             : $this->where
         );
     }

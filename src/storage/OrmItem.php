@@ -669,7 +669,9 @@ abstract class OrmItem
                     $this->autoMapping($record);
 
                     foreach ($this->oneToOne as $table => $oneToOne) {
-                        $this->oneToOne[$table]->indexes                        = $this->indexes[$oneToOne->informationSchema->table][0];
+                        if (isset($this->indexes[$oneToOne->informationSchema->table][0])) {
+                            $this->oneToOne[$table]->indexes                    = $this->indexes[$oneToOne->informationSchema->table][0];
+                        }
                     }
                     foreach ($this->oneToMany as $table => $oneToMany) {
                         $this->oneToMany[$table]->indexes                       = array_flip(array_column($this->indexes[$table] ?? [], $oneToMany->primaryKey));
@@ -681,12 +683,30 @@ abstract class OrmItem
     }
 
     /**
+     * @return array
+     */
+    private function getPublicVars() : array
+    {
+        $me = new class {
+            /**
+             * @param $object
+             * @return array
+             */
+            public function getPublicVars($object) : array
+            {
+                return get_object_vars($object);
+            }
+        };
+        return $me->getPublicVars($this);
+    }
+
+    /**
      * @return DataResponse
      * @todo da tipizzare
      */
     public function toDataResponse()
     {
-        $response = new DataResponse(get_object_vars($this));
+        $response = new DataResponse($this->getPublicVars());
         if (!$this->recordKey) {
             $response->error(404, $this->db->getName() . " not stored");
         }

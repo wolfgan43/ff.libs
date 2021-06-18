@@ -113,8 +113,8 @@ class Field
             "properties"                => [
                 "multiple"              => "null"
             ]
-        ]))->fillMulti($fill)
-            ->isMulti(true);
+        ]))->isMulti(true)
+            ->fillMulti($fill);
     }
 
     /**
@@ -129,8 +129,8 @@ class Field
             "template"                  => "multi",
             "template_class"            => "check-inline",
             "type"                      => "checkbox"
-        ]))->fillMulti($fill)
-            ->isMulti(true);
+        ]))->isMulti(true)
+            ->fillMulti($fill);
     }
 
     /**
@@ -953,7 +953,9 @@ class Field
             $this->control->validator = $validator;
         }
 
-        $this->value = $this->convert($value);
+        if ($value) {
+            $this->value = $this->convert($value);
+        }
 
         return $this;
     }

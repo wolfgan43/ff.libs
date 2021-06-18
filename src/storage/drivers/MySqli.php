@@ -570,7 +570,7 @@ class MySqli extends DatabaseDriver
     {
         $value = parent::toSqlArray($type, $Array);
         if (is_array($value)) {
-            $value = implode("','", $value);
+            $value = implode(",", $value);
         }
 
         return $this->tpSqlEscaper($value);

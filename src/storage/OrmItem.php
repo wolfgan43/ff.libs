@@ -85,9 +85,11 @@ abstract class OrmItem
     private $informationSchema                                                  = null;
 
     /**
+     * @param array|null $where
+     * @param array|null $fill
      * @return array|null
      */
-    abstract protected function onLoad()           : ?array;
+    abstract protected function onLoad(array &$where = null, array &$fill = null)   : ?array;
 
     /**
      * @param Model $db

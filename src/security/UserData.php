@@ -67,9 +67,11 @@ class UserData extends OrmItem
     }
 
     /**
+     * @param array|null $where
+     * @param array|null $fill
      * @return array|null
      */
-    protected function onLoad(): ?array
+    protected function onLoad(array &$where = null, array &$fill = null): ?array
     {
         return null;
     }

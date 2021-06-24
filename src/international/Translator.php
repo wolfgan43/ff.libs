@@ -187,6 +187,22 @@ class Translator implements Dumpable
     }
 
     /**
+     * @param string|null $code
+     * @param string|null $language Upper Code (es: ENG, ITA, SPA)
+     * @return string
+     * @throws Exception
+     */
+    public static function getWordByCodeCached(string $code = null, string $language = null) : ?string
+    {
+        if (!$code || Locale::isDefaultLang()) {
+            return $code;
+        }
+        $lang_tiny_code                                 = self::getLang($language);
+
+        return self::$cache[$lang_tiny_code][$code] ?? $code;
+    }
+
+    /**
      * @param string $code
      * @param string|null $language
      * @return string|null

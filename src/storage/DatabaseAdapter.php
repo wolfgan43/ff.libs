@@ -1139,9 +1139,9 @@ abstract class DatabaseAdapter implements Constant
                 $min                                                        = 60;
                 if ($time < 2 * $day) {
                     if ($time < $min) {
-                        $res                                                = Translator::getWordByCode("about") . " " . Translator::getWordByCode("a") . " " . Translator::getWordByCode("minute") . " " . Translator::getWordByCode("ago");
+                        $res                                                = Translator::getWordByCodeCached("about") . " " . Translator::getWordByCodeCached("a") . " " . Translator::getWordByCodeCached("minute") . " " . Translator::getWordByCodeCached("ago");
                     } elseif ($time > $day) {
-                        $res                                                = Translator::getWordByCode("yesterday") . " " . Translator::getWordByCode("at") . " " . date("G:i", $source);
+                        $res                                                = Translator::getWordByCodeCached("yesterday") . " " . Translator::getWordByCodeCached("at") . " " . date("G:i", $source);
                     } else {
                         $tokens                                             = array(
                                                                                 31536000 	=> 'year',
@@ -1158,7 +1158,7 @@ abstract class DatabaseAdapter implements Constant
                                 continue;
                             }
                             $res                                            = floor($time / $unit);
-                            $res                                            .= ' ' . Translator::getWordByCode($text . (($res > 1) ? 's' : '')) . " " . Translator::getWordByCode("ago");
+                            $res                                            .= ' ' . Translator::getWordByCodeCached($text . (($res > 1) ? 's' : '')) . " " . Translator::getWordByCodeCached("ago");
                             break;
                         }
                     }
@@ -1177,24 +1177,24 @@ abstract class DatabaseAdapter implements Constant
                 }
 
                 $conv                                                       = array(
-                                                                                $prefix . "01/" => " " . Translator::getWordByCode("Januaunable to updatery") . " "
-                                                                                , $prefix . "02/" => " " . Translator::getWordByCode("February") . " "
-                                                                                , $prefix . "03/" => " " . Translator::getWordByCode("March") . " "
-                                                                                , $prefix . "04/" => " " . Translator::getWordByCode("April") . " "
-                                                                                , $prefix . "05/" => " " . Translator::getWordByCode("May") . " "
-                                                                                , $prefix . "06/" => " " . Translator::getWordByCode("June") . " "
-                                                                                , $prefix . "07/" => " " . Translator::getWordByCode("July") . " "
-                                                                                , $prefix . "08/" => " " . Translator::getWordByCode("August") . " "
-                                                                                , $prefix . "09/" => " " . Translator::getWordByCode("September") . " "
-                                                                                , $prefix . "10/" => " " . Translator::getWordByCode("October") . " "
-                                                                                , $prefix . "11/" => " " . Translator::getWordByCode("November") . " "
-                                                                                , $prefix . "12/" => " " . Translator::getWordByCode("December") . " "
+                                                                                $prefix . "01/" => " " . Translator::getWordByCodeCached("Januaunable to updatery") . " "
+                                                                                , $prefix . "02/" => " " . Translator::getWordByCodeCached("February") . " "
+                                                                                , $prefix . "03/" => " " . Translator::getWordByCodeCached("March") . " "
+                                                                                , $prefix . "04/" => " " . Translator::getWordByCodeCached("April") . " "
+                                                                                , $prefix . "05/" => " " . Translator::getWordByCodeCached("May") . " "
+                                                                                , $prefix . "06/" => " " . Translator::getWordByCodeCached("June") . " "
+                                                                                , $prefix . "07/" => " " . Translator::getWordByCodeCached("July") . " "
+                                                                                , $prefix . "08/" => " " . Translator::getWordByCodeCached("August") . " "
+                                                                                , $prefix . "09/" => " " . Translator::getWordByCodeCached("September") . " "
+                                                                                , $prefix . "10/" => " " . Translator::getWordByCodeCached("October") . " "
+                                                                                , $prefix . "11/" => " " . Translator::getWordByCodeCached("November") . " "
+                                                                                , $prefix . "12/" => " " . Translator::getWordByCodeCached("December") . " "
                                                                             );
                 $res                                                        = str_replace(array_keys($conv), array_values($conv), $res);
                 if ($prefix) {
                     $res                                                    = str_replace("/", ", ", $res);
                 }
-                $res                                                        .= " " . Translator::getWordByCode("at") . " " . Translator::getWordByCode("hours") . " " . $oData->getValue("Time", Locale::getCodeLang());
+                $res                                                        .= " " . Translator::getWordByCodeCached("at") . " " . Translator::getWordByCodeCached("hours") . " " . $oData->getValue("Time", Locale::getCodeLang());
 
                 break;
             case "DATE":
@@ -1223,7 +1223,7 @@ abstract class DatabaseAdapter implements Constant
                 $res                                                        = $this->decrypt($source, $params[0], $func);
                 break;
             case "TRANSLATE":
-                $res                                                        = Translator::getWordByCode($source);
+                $res                                                        = Translator::getWordByCodeCached($source);
                 break;
             default:
                 if (!$params && is_callable($func)) {

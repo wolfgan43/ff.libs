@@ -58,10 +58,10 @@ class ErrorController extends Controller
     {
         $this->addStylesheet("error");
 
-        $error = Translator::getWordByCode($this->error);
+        $error = Translator::getWordByCodeCached($this->error);
 
         $errorView = $this->view()
-            ->assign("title", $error ?? Translator::getWordByCode(Error::getErrorMessage($this->http_status_code)))
+            ->assign("title", $error ?? Translator::getWordByCodeCached(Error::getErrorMessage($this->http_status_code)))
             ->assign("error_code", $this->http_status_code);
 
         if ($this->email_support) {

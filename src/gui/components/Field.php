@@ -465,7 +465,7 @@ class Field
             "type"              => "checkbox",
             "template"          => "check",
             "validator"         => "bool",
-            "default"           => true
+            "default"           => 1
         ]);
     }
 
@@ -943,11 +943,11 @@ class Field
     }
 
     /**
-     * @param string|null $value
+     * @param string|int|null $value
      * @param string|null $validator
      * @return $this
      */
-    public function value(string $value = null, string $validator = null) : self
+    public function value($value = null, string $validator = null) : self
     {
         if ($validator) {
             $this->control->validator = $validator;
@@ -972,6 +972,8 @@ class Field
                 ? (new Time($value))->toDateTimeLocal()
                 : str_replace(" ", "T", $value)
             );
+        } elseif ($this->control->validator == "bool" && $this->control->default === $value) {
+            $this->control->properties["checked"] = 'null';
         }
 
         return $value;

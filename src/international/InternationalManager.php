@@ -10,11 +10,19 @@ use Exception;
 trait InternationalManager
 {
     /**
-     * @return string|null
+     * @return string
      */
-    protected function locale() : ?string
+    protected function locale() : string
     {
         return Locale::get();
+    }
+
+    /**
+     * @return array
+     */
+    protected function acceptLanguage() : array
+    {
+        return array_keys(Locale::getAll());
     }
 
     /**

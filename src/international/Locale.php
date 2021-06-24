@@ -123,9 +123,17 @@ class Locale implements Configurable
     /**
      * @return string|null
      */
-    public static function get() : ?string
+    public static function get() : string
     {
         return self::$lang[self::CODE_] . "-" . self::$country[self::CODE_];
+    }
+
+    /**
+     * @return array|null
+     */
+    public static function getAll() : array
+    {
+        return self::acceptLocale();
     }
 
     /**
@@ -300,34 +308,53 @@ class Locale implements Configurable
                                                                         )
                                                                     ];
         } elseif (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
-            foreach (explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE']) as $locale) {
-                $pattern                                            = '/^(?P<primarytag>[a-zA-Z]{2,8})'.
-                    '(?:-(?P<subtag>[a-zA-Z]{2,8}))?(?:(?:;q=)'.
-                    '(?P<quantifier>\d\.\d))?$/';
-
-                $splits                                             = [];
-                if (preg_match($pattern, $locale, $splits)) {
-                    $lang                                           = strtolower($splits["primarytag"]);
-                    if (!in_array($lang, self::$accepted_langs)) {
-                        continue;
-                    }
-
-                    $res                                            = [
-                                                                        self::LANG_     => $lang,
-                                                                        self::COUNTRY_  => (
-                                                                            isset($splits["subtag"])
-                                                                                ? strtoupper($splits["subtag"])
-                                                                                : self::$lang[$lang][self::COUNTRY_]
-                                                                            )
-                                                                    ];
-                    break;
-                }
-            }
+            $res                                                    = self::acceptLocale(true);
         }
 
         return $res ?? [
             self::LANG_     => strtolower(Kernel::$Environment::LOCALE_LANG_CODE),
             self::COUNTRY_  => strtoupper(Kernel::$Environment::LOCALE_COUNTRY_CODE)
         ];
+    }
+
+    /**
+     * @param bool $onlyFirst
+     * @return array|null
+     */
+    private static function acceptLocale(bool $onlyFirst = false) : array
+    {
+        $locale_accepted                                        = [];
+        foreach (explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE']) as $locale) {
+            $pattern                                            = '/^(?P<primarytag>[a-zA-Z]{2,8})'.
+                '(?:-(?P<subtag>[a-zA-Z]{2,8}))?(?:(?:;q=)'.
+                '(?P<quantifier>\d\.\d))?$/';
+
+            $splits                                             = [];
+            if (preg_match($pattern, $locale, $splits)) {
+                $lang                                           = strtolower($splits["primarytag"]);
+                if (!in_array($lang, self::$accepted_langs)) {
+                    continue;
+                }
+
+                $country                                        = (
+                    isset($splits["subtag"])
+                    ? strtoupper($splits["subtag"])
+                    : self::$lang[$lang][self::COUNTRY_]
+                );
+
+
+                $locale_accepted[$lang . "-" . $country]        = [
+                                                                    self::LANG_     => $lang,
+                                                                    self::COUNTRY_  => $country
+                                                                ];
+
+
+                if ($onlyFirst) {
+                    return $locale_accepted[$lang . "-" . $country];
+                }
+            }
+        }
+
+        return $locale_accepted;
     }
 }

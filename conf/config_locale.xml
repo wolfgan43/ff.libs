@@ -10,7 +10,7 @@
         </lang>
         <country>
             <IT id="102" description="Italia" code="IT" lang="it" currency="eur" />
-            <UK id="30" description="United Kingdom" code="UK" lang="en" currency="gbp" />
+            <GB id="30" description="United Kingdom" code="GB" lang="en" currency="gbp" />
             <DE id="5" description="Deutschland" code="DE" lang="de" currency="eur" />
             <FR id="5" description="French" code="FR" lang="fr" currency="eur" />
             <SP id="4" description="Spain" code="SP" lang="es" currency="eur" />

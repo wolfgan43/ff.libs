@@ -324,7 +324,7 @@ class Locale implements Configurable
     private static function acceptLocale(bool $onlyFirst = false) : array
     {
         $locale_accepted                                        = [];
-        foreach (explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE']) as $locale) {
+        foreach (explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? self::get()) as $locale) {
             $pattern                                            = '/^(?P<primarytag>[a-zA-Z]{2,8})'.
                 '(?:-(?P<subtag>[a-zA-Z]{2,8}))?(?:(?:;q=)'.
                 '(?P<quantifier>\d\.\d))?$/';

@@ -20,7 +20,7 @@ trait InternationalManager
     /**
      * @return array
      */
-    protected function acceptLanguage() : array
+    protected function acceptLocale() : array
     {
         return array_keys(Locale::getAll());
     }

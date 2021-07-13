@@ -133,7 +133,7 @@ class Locale implements Configurable
      */
     public static function getAll() : array
     {
-        return self::acceptLocale();
+        return self::acceptLocale() ?? [];
     }
 
     /**
@@ -321,9 +321,9 @@ class Locale implements Configurable
      * @param bool $onlyFirst
      * @return array|null
      */
-    private static function acceptLocale(bool $onlyFirst = false) : array
+    private static function acceptLocale(bool $onlyFirst = false) : ?array
     {
-        $locale_accepted                                        = [];
+        $locale_accepted                                        = null;
         foreach (explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? self::get()) as $locale) {
             $pattern                                            = '/^(?P<primarytag>[a-zA-Z]{2,8})'.
                 '(?:-(?P<subtag>[a-zA-Z]{2,8}))?(?:(?:;q=)'.

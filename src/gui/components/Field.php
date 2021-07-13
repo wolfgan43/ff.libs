@@ -89,6 +89,20 @@ class Field
 
     /**
      * @param string $name
+     * @return static
+     * @throws Exception
+     */
+    public static function markdown(string $name) : self
+    {
+        return new static($name, [
+            "tag"               => "textarea",
+            "template"          => "textarea",
+            "validator"         => "markdown",
+        ]);
+    }
+
+    /**
+     * @param string $name
      * @param array|null $fill
      * @return Field
      * @throws Exception
@@ -961,10 +975,10 @@ class Field
     }
 
     /**
-     * @param string $value
+     * @param string|int|float|bool $value
      * @return string
      */
-    public function convert(string $value) : string
+    public function convert($value) : string
     {
         if ($this->control->convert == "datetime") {
             $value = (

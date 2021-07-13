@@ -232,10 +232,8 @@ let cm = (function () {
                                     } else {
                                         resolve(returnRawData ? respJson : respJson[_DATA]);
                                     }
-                                    //console.log("xhr done successfully");
                                 } else {
                                     reject(respJson[_ERROR]);
-                                    //console.log("xhr failed");
                                 }
                             } else if(xhr.status === 204) {
                                 resolve(returnRawData ? undefined : []);
@@ -243,10 +241,9 @@ let cm = (function () {
                                 reject("xhr response empty");
                             }
                         } else {
-                            //console.log("xhr processing going on");
                         }
                     }
-                    xhr.send(data);
+                    xhr.send(typeof data !== 'object' || data instanceof FormData ? data : JSON.stringify(data));
                 });
             }
 

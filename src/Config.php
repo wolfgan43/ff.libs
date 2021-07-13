@@ -658,6 +658,10 @@ class Config implements Dumpable
                     $router[$key]                                                       = null;
                 }
 
+                if (!isset($attr["controller"])) {
+                    $attr["controller"]                                                 = false;
+                }
+
                 if (isset($attr["priority"])) {
                     $router[$key]["priority"]                                           = $attr["priority"];
                     unset($attr["priority"]);

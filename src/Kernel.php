@@ -82,6 +82,8 @@ class Kernel
      */
     public function run()
     {
+        Config::autoloadRegister(static::NAMESPACE);
+
         Request::set(self::$Page)->capture();
 
         if (Env::get("REQUEST_SECURITY_LEVEL")) {
@@ -89,8 +91,6 @@ class Kernel
         }
 
         self::useCache(!self::$Page->nocache);
-
-        Config::autoloadRegister(static::NAMESPACE);
 
         self::$Page->onLoad();
 

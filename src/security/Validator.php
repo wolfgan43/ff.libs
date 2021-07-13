@@ -212,6 +212,13 @@ class Validator
                                                                     "options"       => null,
                                                                     "callback"      => '\phpformsframework\libs\security\Validator::checkBase64File',
                                                                     "length"        => 0
+                                                                ),
+                                                                "markdown"          => array(
+                                                                    "filter"        => null,
+                                                                    "flags"         => null,
+                                                                    "options"       => null,
+                                                                    "normalize"     => true,
+                                                                    "length"        => 128000
                                                                 )
                                                             );
 

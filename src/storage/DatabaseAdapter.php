@@ -341,7 +341,8 @@ abstract class DatabaseAdapter implements Constant
         }
 
         //@todo da togliere ksort e verificare se tutto funziona
-        //ksort($res);
+        ksort($res);
+
         $this->prototype                = $res;
 
         return $res + $this->index2query;

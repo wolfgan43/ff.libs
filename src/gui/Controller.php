@@ -705,7 +705,7 @@ abstract class Controller
 
 
     /**
-     * @param DataAdapter|string $data
+     * @param DataAdapter|array|string $data
      * @param array $headers
      * @throws Exception
      * @todo da tipizzare
@@ -720,6 +720,8 @@ abstract class Controller
             if ($obj instanceof Controller) {
                 $response = $obj->display();
             }
+        } elseif (is_array($data)) {
+            $response = new DataResponse($data);
         }
 
         if (!$response) {

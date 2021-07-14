@@ -5,6 +5,7 @@ use phpformsframework\libs\App;
 use SoapClient;
 use SoapHeader;
 use stdClass;
+use SoapFault;
 use Exception;
 
 /**
@@ -14,8 +15,6 @@ use Exception;
 class ApiSoap extends ApiAdapter
 {
     protected const ERROR_RESPONSE_INVALID_FORMAT                       = "Response is not a valid Object";
-
-    private const ERROR_MISSING_WSDL                                    = "Method not found in wsdl";
     /**
      * @var SoapClient|null
      */
@@ -29,7 +28,7 @@ class ApiSoap extends ApiAdapter
     protected $header_namespace                                         = null;
     protected $header_name                                              = null;
 
-    protected $body_namespace                                           = null;
+    protected $uri                                                      = null;
 
     protected $wsdl                                                     = null;
 
@@ -37,6 +36,8 @@ class ApiSoap extends ApiAdapter
     protected $wsdl_ttl                                                 = 900;
     protected $version                                                  = SOAP_1_2;
 
+    protected $connection_by_curl                                       = true;
+    protected $request_container                                        = null;
 
     /**
      * @param string $wsdl
@@ -66,17 +67,17 @@ class ApiSoap extends ApiAdapter
      * @return SoapClient|null
      * @throws Exception
      */
-    private function getClient() : ?SoapClient
+    private function loadClient() : ?SoapClient
     {
         if (!$this->client) {
             $options                                                    = array(
                 'location'                                              => $this->endpoint,
-                'uri'                                                   => $this->body_namespace,
+                'uri'                                                   => $this->uri,
                 'style'                                                 => SOAP_RPC,
                 'use'                                                   => SOAP_ENCODED,
                 'soap_version'                                          => $this->version,
                 'cache_wsdl'                                            => WSDL_CACHE_NONE,
-                'connection_timeout'                                    => self::REQUEST_TIMEOUT,
+                'connection_timeout'                                    => $this->timeout,
                 'trace'                                                 => true,
                 'encoding'                                              => $this->encoding,
                 'exceptions'                                            => true
@@ -90,10 +91,13 @@ class ApiSoap extends ApiAdapter
             }
 
             try {
-                $this->client                                           = new SoapClient($this->wsdl, $options);
-                $this->parseSoapTypes($this->client);
-            } catch (Exception $e) {
-                throw new Exception($e->getMessage(), 501);
+                $this->client                                           = (
+                    $this->connection_by_curl
+                    ? new SoapClientCurl($this->wsdl, $options)
+                    : new SoapClient($this->wsdl, $options)
+                );
+            } catch (SoapFault $e) {
+                throw new Exception($e->faultstring, 501);
             }
         }
 
@@ -108,10 +112,12 @@ class ApiSoap extends ApiAdapter
      */
     public function preflight() : ?array
     {
-        self::$preflight[$this->endpoint] = null;
+        self::$preflight[$this->endpoint]                               = null;
 
         return self::$preflight[$this->endpoint];
     }
+
+
     /**
      * @param string $method
      * @param array|null $params
@@ -121,31 +127,27 @@ class ApiSoap extends ApiAdapter
      */
     protected function get(string $method, array $params = null, array $headers = null) : stdClass
     {
-        $client                                                         = $this->getClient();
-
-        $request                                                        = $this->getRequest($method, $params);
-        $requestHeaders                                                 = $this->getSoapHeader($headers);
+        $response                                                       = new stdClass();
+        $this->loadClient();
+        $this->setSoapHeader($headers);
         try {
-            if (isset($this->sFunctions[$method])) {
-                if ($requestHeaders) {
-                    $client->__setSoapHeaders($requestHeaders);
-                }
+            $this->client->__action                                     = $method;
 
-                $response                                               = $this->getResponse($method, $request);
-            } else {
-                throw new Exception(self::ERROR_MISSING_WSDL, 404);
-            }
-        } catch (Exception $e) {
+            $request                                                    = $this->getRequest($method, $params);
+            $response                                                   = $this->getResponse($method, $request);
+        } catch (SoapFault $e) {
+            throw new Exception($e->faultstring, 500);
+        } finally {
             App::debug([
-                $this->endpoint . "::" . $method => [
-                    "header"                                            => $requestHeaders,
-                    "request"                                           => $request,
-                    "response"                                          => $this->sFunctions[$method]->response,
-                    "dtd"                                               => $this->sFunctions[$method]->dtd
-                ]
-            ]);
+                "location"                                              => $this->endpoint,
+                "uri"                                                   => $this->uri,
+                "header"                                                => [
+                                                                            "namespace"     => $this->header_namespace,
+                                                                            "name"          => $this->header_name
+                                                                        ],
+                "xml"                                                   => $this->client->__getLastRequest()
 
-            throw new Exception($e->getMessage(), 500);
+            ], "Soap" . "::" . $method);
         }
 
         return $response;
@@ -249,6 +251,8 @@ class ApiSoap extends ApiAdapter
         }
     }
 
+
+
     /**
      * @param string $method
      * @param array $params
@@ -256,11 +260,21 @@ class ApiSoap extends ApiAdapter
      */
     private function getRequest(string $method, array $params) : array
     {
-        $schema                                                         = $this->sFunctions[$method]->request ?? null;
+        $schema                                                         = $this->requests[$method] ?? null;
 
-        return ($schema
+        return $this->getContainerRequest(
+            $schema
             ? $this->mergeRequest($schema, $params)
-            : []
+            : $params
+        );
+    }
+
+    private function getContainerRequest(array $request) : array
+    {
+        return (
+            $this->request_container
+            ? [$this->request_container => $request]
+            : $request
         );
     }
 
@@ -288,7 +302,8 @@ class ApiSoap extends ApiAdapter
      */
     protected function getResponseSchema(string $method) : ?array
     {
-        $this->getClient();
+        $this->loadClient();
+        $this->parseSoapTypes($this->client);
 
         $schema                                                         = $this->schema[$this->sFunctions[$method]->response]["default"] ?? null;
         if (isset($schema[$method]) || isset($schema[$method . "Result"])) {
@@ -302,12 +317,17 @@ class ApiSoap extends ApiAdapter
      * @param string $method
      * @param array $request
      * @return stdClass
+     * @throws SoapFault
      */
     private function getResponse(string $method, array $request) : stdClass
     {
-        $response                                                       = $this->client->__soapCall($method, $request);
-        if (!empty($response) && isset($response->{$method . "Result"})) {
-            $response                                                   = $response->{$method . "Result"};
+        $response                                                       = (object) @$this->client->__soapCall($method, $request);
+        if (!empty($response)) {
+            if (isset($response->{$method . "Result"})) {
+                $response                                               = $response->{$method . "Result"};
+            } elseif (isset($response->{$method})) {
+                $response                                               = $response->{$method};
+            }
         }
 
         return $response ?? new stdClass();
@@ -319,10 +339,20 @@ class ApiSoap extends ApiAdapter
      */
     private function getSoapHeader(array $headers = null) : ?SoapHeader
     {
-        $soapHeader                                                     = null;
-        if ($this->header_namespace) {
-            $soapHeader                                                 = new SoapHeader($this->header_namespace, $this->header_name, $headers, true);
+        return ($this->header_namespace
+            ? new SoapHeader($this->header_namespace, $this->header_name, $this->getHeader($headers), true)
+            : null
+        );
+    }
+
+    /**
+     * @param array|null $headers
+     */
+    private function setSoapHeader(array $headers = null) : void
+    {
+        $requestHeaders                                                 = $this->getSoapHeader($headers);
+        if ($requestHeaders) {
+            $this->client->__setSoapHeaders($requestHeaders);
         }
-        return $soapHeader;
     }
 }

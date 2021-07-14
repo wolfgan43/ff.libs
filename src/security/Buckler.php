@@ -155,9 +155,7 @@ class Buckler implements Configurable
     {
         $path_info = null;
         if (isset($_SERVER["REQUEST_URI"])) {
-            $path_info =  rtrim(rtrim(isset($_SERVER["QUERY_STRING"]) && $_SERVER["QUERY_STRING"]
-                ? rtrim($_SERVER["REQUEST_URI"], $_SERVER["QUERY_STRING"])
-                : $_SERVER["REQUEST_URI"], "?"), "/");
+            $path_info = rtrim(explode("?", $_SERVER["REQUEST_URI"])[0], "/");
         }
 
         return $path_info;

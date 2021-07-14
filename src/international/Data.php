@@ -308,7 +308,7 @@ class Data
      * @param string|null $locale
      * @return bool
      */
-    public function checkValue($raw_value = null, string $data_type = null, string $locale = null) : bool
+    public function checkValue($raw_value = null, string $data_type = null, string $locale = null) : ?bool
     {
         if ($raw_value === null) {
             $raw_value = $this->ori_value;

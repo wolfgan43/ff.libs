@@ -48,6 +48,9 @@ class Constant
 
     const LOCALE_LANG_CODE                  = null; //IT, EN
     const LOCALE_COUNTRY_CODE               = null; //IT, US
+    const LOCALE_TIME_ZONE                  = "UTC"; //IT, US
+
+    const MEMORY_LIMIT                      = '128M';
 
     /**
      * Disk Settings
@@ -64,6 +67,7 @@ class Constant
     const CONFIG_FF_DISK_PATH               = self::LIBS_FF_DISK_PATH . DIRECTORY_SEPARATOR . 'conf';
     const CACHE_DISK_PATH                   = self::DISK_PATH . self::CACHE_PATH;
     const UPLOAD_DISK_PATH                  = self::DISK_PATH . self::UPLOAD_PATH;
+    const LOG_DISK_PATH                     = self::CACHE_DISK_PATH . DIRECTORY_SEPARATOR . "logs";
 
     /**
      * App Settings
@@ -102,6 +106,9 @@ class Constant
      */
     const HTTP_AUTH_USERNAME                = null;
     const HTTP_AUTH_SECRET                  = null;
+
+    const SSL_VERIFYPEER                    = true;
+    const SSL_VERIFYHOST                    = true;
 
     const FTP_USERNAME                      = null;
     const FTP_SECRET                        = null;

@@ -125,10 +125,7 @@ class OrmModel extends Mappable
      */
     public function setMainTable(string $main_table = null) : self
     {
-        if ($main_table) {
-            if (!isset($this->tables[$main_table])) {
-                Error::register("MainTable '" . $main_table . "' not found in " . $this->type);
-            }
+        if ($main_table && isset($this->tables[$main_table])) {
             $this->main_table                                                               = $main_table;
         } else {
             $this->main_table                                                               = $this->default_table;
@@ -759,13 +756,14 @@ class OrmModel extends Mappable
                 $controller                                                                 = $this->main->service;
             }
             foreach ($data->def->relationship as $tbl => $rel) {
-                if (isset($rel[self::FREL_EXTERNAL]) && isset($this->subs[$controller][$tbl])) {
+                if (isset($rel[self::FREL_EXTERNAL])) {
                     $field_ext                                                              = $rel[self::FREL_EXTERNAL];
                     if (isset($data->def->struct[$field_ext])) {
                         $field_ext                                                          = $rel[self::FREL_PRIMARY];
                     }
+
                     if ($key && $field_ext && $field_ext != $key_name) {
-                        if ($tbl != $this->main->def->mainTable) {
+                        if (isset($this->subs[$controller][$tbl])) {
                             $rev_controller                                                 = $this->rev[$tbl];
                             $sub = $this->getSubs($rev_controller, $tbl);
                             if (!empty($sub->insert)) {
@@ -774,7 +772,7 @@ class OrmModel extends Mappable
                             if (!empty($sub->set)) {
                                 $sub->where[$field_ext]                                     = $key;
                             }
-                        } else {
+                        } elseif ($tbl == $this->main->def->mainTable) {
                             if (!empty($this->main->insert)) {
                                 $this->main->insert[$field_ext]                             = $key;
                             }

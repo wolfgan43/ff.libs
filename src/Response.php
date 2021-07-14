@@ -250,10 +250,11 @@ class Response
 
     /**
      * @param DataAdapter $response
+     * @param array $headers
      * @param null|int $status
      * @return void
      */
-    public static function send(DataAdapter $response, int $status = null) : void
+    public static function send(DataAdapter $response, array $headers = [], int $status = null) : void
     {
         if (self::isValidContentType($response::CONTENT_TYPE)) {
             self::httpCode(
@@ -262,7 +263,7 @@ class Response
                 : $status
             );
 
-            self::sendHeadersByMimeType($response::CONTENT_TYPE);
+            self::sendHeadersByMimeType($response::CONTENT_TYPE, $headers);
             echo $response->output();
         }
 
@@ -343,11 +344,12 @@ class Response
 
     /**
      * @param string $mimetype
+     * @param array $headers
      */
-    private static function sendHeadersByMimeType(string $mimetype) : void
+    private static function sendHeadersByMimeType(string $mimetype, array $headers = []) : void
     {
         if (!headers_sent()) {
-            self::sendHeaders(array("mimetype" => $mimetype));
+            self::sendHeaders(array_replace($headers, ["mimetype" => $mimetype]));
         }
     }
 

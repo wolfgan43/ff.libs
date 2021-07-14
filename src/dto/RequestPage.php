@@ -500,7 +500,7 @@ class RequestPage extends Mappable
      */
     private function isAllowedSize(array $req, string $method) : bool
     {
-        $request_size                                                                           = strlen(http_build_query($req, '', ''));
+        $request_size                                                                           = strlen(serialize($req));
         return $request_size < Validator::getRequestMaxSize($method);
     }
 

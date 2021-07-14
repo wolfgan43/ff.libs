@@ -1101,16 +1101,14 @@ class Media implements Configurable
      */
     private function staticResourceName(string &$mode = null) : string
     {
-        if ($mode) {
-            $name                                                   = str_replace("-" . $mode, "", $this->pathinfo["filename"]);
-        } else {
-            $arrFilename                                            = explode("-", $this->pathinfo["filename"], 2);
-            $name                                                   = $arrFilename[0];
-            if (isset($arrFilename[1])) {
-                $mode                                               = $arrFilename[1];
-            }
+        if(!$mode) {
+            $mode                                                   = $this->getModeByNoImg($this->pathinfo["filename"]);
         }
-        return $name;
+
+        return ($mode
+            ? str_replace("-" . $mode, "", $this->pathinfo["filename"])
+            : $this->pathinfo["filename"]
+        );
     }
     /**
      * @param string|null $mode
@@ -1643,7 +1641,7 @@ class Media implements Configurable
     public function cacheIsValid(string $source_file, string $cache_file = null) : bool
     {
         return $cache_file
-            && (!Kernel::$Environment::DISABLE_CACHE || filemtime($cache_file) >= filemtime($source_file));
+            && (Kernel::useCache() || filemtime($cache_file) >= filemtime($source_file));
     }
     /**
      * @param string|null $filename

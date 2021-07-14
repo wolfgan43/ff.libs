@@ -533,6 +533,7 @@ class Debug
                 . '<span style="padding:15px;">CPU: ' . $benchmark["cpu"] . '</span>';
         }
 
+        $html .= '<div class="x-debug-profiler" ><a href="javascript:void(0);" onclick="if(document.getElementsByClassName(\'x-debug-profiler\')[0].className.indexOf(\' active\') === -1) { document.getElementsByClassName(\'x-debug-profiler\')[0].className = document.getElementsByClassName(\'x-debug-profiler\')[0].className + \' active\'; } else { document.getElementsByClassName(\'x-debug-profiler\')[0].className = document.getElementsByClassName(\'x-debug-profiler\')[0].className.replace(\' active\', \'\'); } " class="x-debug-profiler--btn" ></a><div class="wrapper" >';
         $html .= '<hr />' . '<div style="text-align: center;">'
             . '<span style="padding:15px;">BackTrace: ' . count($debug_backtrace) . '</span>'
             . '<span style="padding:15px;">Errors: ' . $errors_count . '</span>'
@@ -555,8 +556,6 @@ class Debug
             . $html_benchmark
             . '</div>';
 
-
-
         $html   .= '<table>';
         $html   .= '<thead>';
         $html   .= '<tr>'         . '<th>BACKTRACE</th>'      . '<th>VARIABLES</th>'           . '</tr>';
@@ -566,6 +565,7 @@ class Debug
         $html   .= '</tr>';
         $html   .= '</tbody>';
         $html   .= '</table>';
+        $html   .= '</div></div>';
 
         if ($return) {
             return $html;

@@ -150,7 +150,7 @@ class Resource extends Mappable implements Dumpable
             self::$singleton = new Resource();
         }
 
-        return new DataHtml(self::$singleton->resources["widget"][$name]);
+        return new DataHtml(self::$singleton->resources["widget"][$name] ?? []);
     }
 
     /**

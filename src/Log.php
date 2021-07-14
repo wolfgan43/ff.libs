@@ -444,7 +444,7 @@ class Log
      */
     public static function getLogDir(): ?string
     {
-        return Dir::findCachePath("logs");
+        return Kernel::$Environment::LOG_DISK_PATH;
     }
 
     /**

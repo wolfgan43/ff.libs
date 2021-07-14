@@ -608,7 +608,11 @@ class Media implements Configurable
     {
         $this->setPathInfo($pathinfo);
         $status                                                     = null;
-        $content_type                                               = $this->getMimeByExtension($this->pathinfo["extension"]);
+        $content_type                                               = (
+            empty($this->pathinfo->extension)
+            ? static::MIMETYPE_DEFAULT
+            : $this->getMimeByExtension($this->pathinfo->extension)
+        );
 
         $res                                                        = $content_type != static::MIMETYPE_DEFAULT && $this->process();
         if (!$res) {
@@ -1343,16 +1347,12 @@ class Media implements Configurable
     }
 
     /**
-     * @param bool $check_exist
+     * @param string|null $file_stored
      * @return string
      */
-    private function getFinalFile(bool $check_exist = false) : ?string
+    private function getFinalFile(string &$file_stored = null) : ?string
     {
         $final_path                                                 = null;
-        if ($check_exist && empty($this->final["exist"])) {
-            return $final_path;
-        }
-
         if ($this->final) {
             $final_path                                             = $this->basepathCache()
                                                                         . $this->final["dirname"]
@@ -1363,6 +1363,10 @@ class Media implements Configurable
                                                                         )
                                                                         . $this->final["filename"]
                                                                         . "." . $this->final["extension"];
+        }
+
+        if (!empty($this->final["exist"])) {
+            $file_stored = $final_path;
         }
 
         return $final_path;
@@ -1654,22 +1658,23 @@ class Media implements Configurable
             }
 
             if ($this->final) {
-                $final_file                                         = $this->getFinalFile(true);
+                $final_file_stored                                  = null;
+                $final_file                                         = $this->getFinalFile($final_file_stored);
 
                 $modeCurrent                                        = $this->getMode();
                 if (is_array($modeCurrent)) {
-                    if (!$this->cacheIsValid($this->basepath . $this->filesource, $final_file)) {
+                    if (!$this->cacheIsValid($this->basepath . $this->filesource, $final_file_stored)) {
                         $this->createImage($modeCurrent);
                         Hook::handle("media_on_create_image", $final_file);
                     }
                 } elseif (!$modeCurrent && is_file($this->basepath . $this->filesource)) {
-                    if (!$this->cacheIsValid($this->basepath . $this->filesource, $final_file)) {
+                    if (!$this->cacheIsValid($this->basepath . $this->filesource, $final_file_stored)) {
                         $this->saveFromOriginal($this->basepath . $this->filesource, $final_file);
                     }
                 } else {
                     $icon                                           = $this->getIconPath(basename($this->filesource), true);
 
-                    if (!$this->cacheIsValid($this->basepath . $this->filesource, $final_file) && $icon) {
+                    if (!$this->cacheIsValid($this->basepath . $this->filesource, $final_file_stored) && $icon) {
                         $this->saveFromOriginal($icon, $final_file);
                     }
                 }

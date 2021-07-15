@@ -1,7 +1,7 @@
 <?php
 /**
- * VGallery: CMS based on FormsFramework
- * Copyright (C) 2004-2015 Alessandro Stucchi <wolfgan@gmail.com>
+ * Library for WebApplication based on VGallery Framework
+ * Copyright (C) 2004-2021 Alessandro Stucchi <wolfgan@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,11 +17,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *  @package VGallery
- *  @subpackage core
+ *  @subpackage libs
  *  @author Alessandro Stucchi <wolfgan@gmail.com>
  *  @copyright Copyright (c) 2004, Alessandro Stucchi
- *  @license http://opensource.org/licenses/gpl-3.0.html
- *  @link https://github.com/wolfgan43/vgallery
+ *  @license http://opensource.org/licenses/lgpl-3.0.html
+ *  @link https://bitbucket.org/cmsff/libs
  */
 namespace phpformsframework\libs;
 
@@ -33,7 +33,6 @@ use phpformsframework\libs\security\Buckler;
 use phpformsframework\libs\storage\FilemanagerFs;
 use phpformsframework\libs\storage\FilemanagerScan;
 use phpformsframework\libs\storage\Media;
-use Exception;
 use phpformsframework\libs\storage\Model;
 
 /**
@@ -76,28 +75,28 @@ class Config implements Dumpable
     /**
      * @var null
      */
-    private static $config_dirs                                             = null;
+    private static $config_dirs                                             = [];
     /**
      * @var null
      */
-    private static $config_files                                            = null;
+    private static $config_files                                            = [];
     /**
      * @var null
      */
-    private static $config_data                                             = null;
+    private static $config_data                                             = [];
     /**
      * @var null
      */
-    private static $config_unknown                                          = null;
+    private static $config_unknown                                          = [];
     /**
      * @var null
      */
-    private static $engine                                                  = null;
+    private static $engine                                                  = [];
 
     /**
      * @var array
      */
-    private static $autoloads                                               = array();
+    private static $autoloads                                               = [];
     /**
      * @var null
      */
@@ -105,19 +104,19 @@ class Config implements Dumpable
     /**
      * @var null
      */
-    private static $dirstruct                                               = null;
+    private static $dirstruct                                               = [];
     /**
      * @var null
      */
-    private static $mapping_files                                           = null;
+    private static $mapping_files                                           = [];
     /**
      * @var null
      */
-    private static $mapping_data                                            = null;
+    private static $mapping_data                                            = [];
     /**
      * @var null
      */
-    private static $dirstruct_scan                                          = null;
+    private static $dirstruct_scan                                          = [];
 
     /**
      * @var array
@@ -238,11 +237,17 @@ class Config implements Dumpable
 
     /**
      * @param string $bucket
-     * @return array|null
+     * @param string $name
+     * @return string
+     * @throws Exception
      */
-    public static function getFilesMap(string $bucket) : ?array
+    public static function getFileMap(string $bucket, string $name) : string
     {
-        return self::$mapping_files[$bucket] ?? null;
+        if (!isset(self::$mapping_files[$bucket][$name])) {
+            throw new Exception("Mapping file: " . $name . " in bucket: " . $bucket . " not found", 500);
+        }
+
+        return self::$mapping_files[$bucket][$name];
     }
 
     /**
@@ -260,15 +265,15 @@ class Config implements Dumpable
 
     /**
      * @param string|null $bucket
-     * @return array|null
+     * @return array
      */
-    public static function getDirBucket(string $bucket = null) : ?array
+    public static function getDirBucket(string $bucket = null) : array
     {
         if (!$bucket) {
             return self::$dirstruct;
         }
 
-        return self::$dirstruct[$bucket] ?? null;
+        return self::$dirstruct[$bucket] ?? [];
     }
 
     /**
@@ -362,10 +367,7 @@ class Config implements Dumpable
             self::loadMap($bucket, $name);
         }
 
-        return (isset(self::$mapping_data[$bucket][$name])
-            ? self::$mapping_data[$bucket][$name]
-            : null
-        );
+        return self::$mapping_data[$bucket][$name] ?? null;
     }
 
     /**
@@ -381,7 +383,7 @@ class Config implements Dumpable
      * @param bool $remove
      * @return array|null
      */
-    private static function rawData(string $key, $remove = false) : ?array
+    private static function rawData(string $key, bool $remove = false) : ?array
     {
         $res                                                                = null;
         if (isset(self::$config_data[$key])) {
@@ -470,7 +472,7 @@ class Config implements Dumpable
                     self::$mapping_files[$arrFN[0]][$arrFN[1]]          = $file;
                     break;
                 default:
-                    Error::registerWarning("Config file Extension not supported", static::ERROR_BUCKET);
+                    Exception::warning("Config file Extension not supported", static::ERROR_BUCKET);
             }
         });
 
@@ -490,7 +492,7 @@ class Config implements Dumpable
                 $rawdata[$class_basename]                               = $class_name::loadSchema(self::$config_data[$class_basename]);
                 unset(self::$config_data[$class_basename]);
             } else {
-                Error::registerWarning("no configuration for: " . $class_basename, static::ERROR_BUCKET);
+                Exception::warning("no configuration for: " . $class_basename, static::ERROR_BUCKET);
             }
             Debug::stopWatch(self::SCHEMA_CONF . "/" . $class_basename);
         }

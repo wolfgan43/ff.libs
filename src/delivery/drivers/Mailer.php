@@ -1,7 +1,7 @@
 <?php
 /**
- * VGallery: CMS based on FormsFramework
- * Copyright (C) 2004-2015 Alessandro Stucchi <wolfgan@gmail.com>
+ * Library for WebApplication based on VGallery Framework
+ * Copyright (C) 2004-2021 Alessandro Stucchi <wolfgan@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,24 +17,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *  @package VGallery
- *  @subpackage core
+ *  @subpackage libs
  *  @author Alessandro Stucchi <wolfgan@gmail.com>
  *  @copyright Copyright (c) 2004, Alessandro Stucchi
- *  @license http://opensource.org/licenses/gpl-3.0.html
- *  @link https://github.com/wolfgan43/vgallery
+ *  @license http://opensource.org/licenses/lgpl-3.0.html
+ *  @link https://bitbucket.org/cmsff/libs
  */
 namespace phpformsframework\libs\delivery\drivers;
 
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\dto\DataError;
-use phpformsframework\libs\Error;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\security\Validator;
+use phpformsframework\libs\Exception;
 use PHPMailer\PHPMailer\Exception as MailerException;
 use PHPMailer\PHPMailer\PHPMailer;
-use Exception;
 
 /**
  * Class Mailer
@@ -81,11 +80,11 @@ abstract class Mailer
 
 
     /**
-     * @param null|string $template
+     * @param string|null $template
      * @return Mailer
      * @throws Exception
      */
-    public static function getInstance($template = null)
+    public static function getInstance(string $template = null)
     {
         if (!self::$singletons[$template]) {
             self::$singletons[$template]   = (
@@ -199,7 +198,7 @@ abstract class Mailer
                     $this->bcc[$email] 			            = $name;
                     break;
                 default:
-                    Error::register("recipient not supported: " . $type, static::ERROR_BUCKET);
+                    throw new Exception("recipient not supported: " . $type, 501);
             }
         }
 
@@ -225,7 +224,7 @@ abstract class Mailer
                 $this->attach[$name]["mime"]                = $mime;
                 $this->attach[$name]["encoded"]             = $encoded;
             } else {
-                Error::register("Attach not valid: " . $attach, static::ERROR_BUCKET);
+                throw new Exception("Attach not valid: " . $attach, 500);
             }
         } elseif ($attach) {
             if (!$name) {
@@ -233,7 +232,7 @@ abstract class Mailer
             }
             $this->attach[$name]["content"]                 = $attach;
         } else {
-            Error::register("Attach Empty", static::ERROR_BUCKET);
+            throw new Exception("Attach Empty", 500);
         }
 
 
@@ -254,7 +253,7 @@ abstract class Mailer
             }
             $this->images[$image]                           = $name;
         } else {
-            Error::register("Image not valid: " . $image, static::ERROR_BUCKET);
+            throw new Exception("Image not valid: " . $image, 500);
         }
 
         return $this;
@@ -339,12 +338,8 @@ abstract class Mailer
      */
     public function setFrom(string $email = null, string $name = null) : self
     {
-        $this->fromEmail = $email;
-        $this->fromName = (
-            $name
-            ? $name
-            : $email
-        );
+        $this->fromEmail                                    = $email;
+        $this->fromName                                     = $name ?: $email;
 
         return $this;
     }
@@ -386,7 +381,7 @@ abstract class Mailer
         if ($this->to) {
             $this->phpmailer();
         } else {
-            Error::registerWarning("Mailer: Recipients is empty", static::ERROR_BUCKET);
+            Exception::warning("Mailer: Recipients is empty", static::ERROR_BUCKET);
         }
 
         Debug::stopWatch("mailer/send");
@@ -400,95 +395,89 @@ abstract class Mailer
      */
     private function phpmailer()
     {
-        $mail                                               = new PHPMailer();
-        $mail->SetLanguage($this->lang);
-        $mail->Subject                                      = $this->processSubject();
-        $mail->CharSet                                      = $this->charset;
-        $mail->Encoding                                     = $this->encoding;
-
-
-
-        if ($this->adapter->driver == "smtp") {
-            $mail->IsSMTP();
-        } elseif ($this->adapter->driver == "mail") {
-            $mail->IsMail();
-        }
-
-        $mail->Host                                         = $this->adapter->host;
-        $mail->SMTPAuth                                     = $this->adapter->auth;
-        $mail->Username                                     = $this->adapter->username;
-        $mail->Port                                         = $this->adapter->port;
-        $mail->Password                                     = $this->adapter->password;
-        $mail->SMTPSecure                                   = $this->adapter->secure;
-        $mail->SMTPAutoTLS                                  = $this->adapter->autoTLS;
-        if (!$mail->SMTPSecure) {
-            $mail->SMTPSecure                               = "none";
-        }
-
-        $mail->FromName                                     = $this->fromName;
-        $mail->From                                         = (
-            strpos($this->adapter->username, "@") === false
-                                                                ? $this->fromEmail
-                                                                : $this->adapter->username
-                                                            );
-        if ($this->adapter->username != $this->fromEmail) {
-            $mail->AddReplyTo($this->fromEmail, $this->fromName);
-        }
-
-        if (!empty($this->to)) {
-            foreach ($this->to as $email => $name) {
-                $mail->addAddress($email, $name);
-            }
-        }
-        if (!empty($this->cc)) {
-            foreach ($this->cc as $email => $name) {
-                $mail->addCC($email, $name);
-            }
-        }
-        if (!empty($this->bcc)) {
-            foreach ($this->bcc as $email => $name) {
-                $mail->addBCC($email, $name);
-            }
-        }
-
-        $mail->IsHTML(true);
-        $mail->AllowEmpty                                   = true;
-        $mail->Body                                         = $this->processBody();
-        $mail->AltBody                                      = $this->processBodyAlt();
-        /*
-         * Images
-         */
-        if (!empty($this->images)) {
-            foreach ($this->images as $path => $name) {
-                if (strpos($mail->Body, "cid:" . basename($name)) !== false) {
-                    $mail->AddEmbeddedImage($path, basename($path), $name);
-                }
-            }
-        }
-        /*
-         * Attachment
-         */
-        if (!empty($this->attach)) {
-            foreach ($this->attach as $attach_key => $attach_value) {
-                if ($attach_value["path"]) {
-                    try {
-                        $mail->addAttachment($attach_value["path"], $attach_key, $attach_value["encoded"], $attach_value["mime"]);
-                    } catch (MailerException $e) {
-                        Error::register($e->getMessage(), static::ERROR_BUCKET);
-                    }
-                } elseif ($attach_value["content"]) {
-                    $mail->addStringAttachment($attach_value["content"], $attach_key, $attach_value["encoded"], $attach_value["mime"]);
-                }
-            }
-        }
-
         try {
-            $rc                                             = $mail->Send();
-            if (!$rc) {
-                Error::register($mail->ErrorInfo, static::ERROR_BUCKET);
+            $mail = new PHPMailer();
+            $mail->SetLanguage($this->lang);
+            $mail->Subject = $this->processSubject();
+            $mail->CharSet = $this->charset;
+            $mail->Encoding = $this->encoding;
+
+
+            if ($this->adapter->driver == "smtp") {
+                $mail->IsSMTP();
+            } elseif ($this->adapter->driver == "mail") {
+                $mail->IsMail();
+            }
+
+            $mail->Host = $this->adapter->host;
+            $mail->SMTPAuth = $this->adapter->auth;
+            $mail->Username = $this->adapter->username;
+            $mail->Port = $this->adapter->port;
+            $mail->Password = $this->adapter->password;
+            $mail->SMTPSecure = $this->adapter->secure;
+            $mail->SMTPAutoTLS = $this->adapter->autoTLS;
+            if (!$mail->SMTPSecure) {
+                $mail->SMTPSecure = "none";
+            }
+
+            $mail->FromName = $this->fromName;
+            $mail->From = (
+                strpos($this->adapter->username, "@") === false
+                ? $this->fromEmail
+                : $this->adapter->username
+            );
+            if ($this->adapter->username != $this->fromEmail) {
+                $mail->AddReplyTo($this->fromEmail, $this->fromName);
+            }
+
+            if (!empty($this->to)) {
+                foreach ($this->to as $email => $name) {
+                    $mail->addAddress($email, $name);
+                }
+            }
+            if (!empty($this->cc)) {
+                foreach ($this->cc as $email => $name) {
+                    $mail->addCC($email, $name);
+                }
+            }
+            if (!empty($this->bcc)) {
+                foreach ($this->bcc as $email => $name) {
+                    $mail->addBCC($email, $name);
+                }
+            }
+
+            $mail->IsHTML(true);
+            $mail->AllowEmpty = true;
+            $mail->Body = $this->processBody();
+            $mail->AltBody = $this->processBodyAlt();
+            /*
+             * Images
+             */
+            if (!empty($this->images)) {
+                foreach ($this->images as $path => $name) {
+                    if (strpos($mail->Body, "cid:" . basename($name)) !== false) {
+                        $mail->AddEmbeddedImage($path, basename($path), $name);
+                    }
+                }
+            }
+            /*
+             * Attachment
+             */
+            if (!empty($this->attach)) {
+                foreach ($this->attach as $attach_key => $attach_value) {
+                    if ($attach_value["path"]) {
+                        $mail->addAttachment($attach_value["path"], $attach_key, $attach_value["encoded"], $attach_value["mime"]);
+                    } elseif ($attach_value["content"]) {
+                        $mail->addStringAttachment($attach_value["content"], $attach_key, $attach_value["encoded"], $attach_value["mime"]);
+                    }
+                }
+            }
+
+            if (!$mail->Send()) {
+                throw new Exception($mail->ErrorInfo, 500);
             }
         } catch (MailerException $e) {
-            Error::register($e->getMessage(), static::ERROR_BUCKET);
+            throw new Exception($e->getMessage(), 500);
         }
     }
 
@@ -508,8 +497,6 @@ abstract class Mailer
         $this->to       = null;
         $this->cc       = null;
         $this->bcc      = null;
-
-        Error::clear(static::ERROR_BUCKET);
     }
 
     /**
@@ -518,7 +505,8 @@ abstract class Mailer
     private function getResult()
     {
         $dataError                                          = new DataError();
-        if (Error::check(static::ERROR_BUCKET) || Kernel::$Environment::DEBUG) {
+        $error                                              = Exception::raise(static::ERROR_BUCKET);
+        if ($error || Kernel::$Environment::DEBUG) {
             $dump = array(
                 "source"        => Debug::stackTrace(),
                 "subject"       => $this->subject,
@@ -527,18 +515,19 @@ abstract class Mailer
                 "to"            => $this->to,
                 "cc"            => $this->cc,
                 "bcc"           => $this->bcc,
-                "error"         => Error::raise(static::ERROR_BUCKET),
+                "error"         => $error,
                 "exTime"        => Debug::exTime("mailer/send")
             );
-            if (Error::check(static::ERROR_BUCKET)) {
+
+            if ($error) {
                 Log::critical($dump, static::ERROR_BUCKET, static::ERROR_BUCKET, "send");
             } else {
                 Log::debugging($dump, static::ERROR_BUCKET, static::ERROR_BUCKET, "send");
             }
         }
 
-        if (Error::check(static::ERROR_BUCKET)) {
-            $dataError->error(500, Error::raise(static::ERROR_BUCKET));
+        if ($error) {
+            $dataError->error(500, $error);
         }
 
         return $dataError;
@@ -554,7 +543,6 @@ abstract class Mailer
     public function preview($subject = null, $message = null)
     {
         $this->clearResult();
-
 
         if ($subject) {
             $this->setSubject($subject);

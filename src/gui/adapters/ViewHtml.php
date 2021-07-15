@@ -1,7 +1,7 @@
 <?php
 /**
- * VGallery: CMS based on FormsFramework
- * Copyright (C) 2004-2015 Alessandro Stucchi <wolfgan@gmail.com>
+ * Library for WebApplication based on VGallery Framework
+ * Copyright (C) 2004-2021 Alessandro Stucchi <wolfgan@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,27 +17,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *  @package VGallery
- *  @subpackage core
+ *  @subpackage libs
  *  @author Alessandro Stucchi <wolfgan@gmail.com>
  *  @copyright Copyright (c) 2004, Alessandro Stucchi
- *  @license http://opensource.org/licenses/gpl-3.0.html
- *  @link https://github.com/wolfgan43/vgallery
+ *  @license http://opensource.org/licenses/lgpl-3.0.html
+ *  @link https://bitbucket.org/cmsff/libs
  */
 namespace phpformsframework\libs\gui\adapters;
 
 use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
-use phpformsframework\libs\Error;
 use phpformsframework\libs\gui\Controller;
 use phpformsframework\libs\gui\Resource;
 use phpformsframework\libs\gui\View;
 use phpformsframework\libs\Hook;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Kernel;
-use phpformsframework\libs\storage\FilemanagerWeb;
+use phpformsframework\libs\storage\FilemanagerFs;
+use phpformsframework\libs\Exception;
 use stdClass;
-use Exception;
 
 /**
  * Class ViewHtml
@@ -403,7 +402,7 @@ class ViewHtml implements ViewAdapter
      */
     private function include(string $template_path) : string
     {
-        if (!$content = FilemanagerWeb::fileGetContents($template_path)) {
+        if (!($content = FilemanagerFs::fileGetContents($template_path))) {
             throw new Exception("Unable to find the template: " . $template_path, 500);
         }
 
@@ -444,10 +443,8 @@ class ViewHtml implements ViewAdapter
                 $count
             ));
         } else {
-            Error::register("Unknown minify method", static::ERROR_BUCKET);
+            throw new Exception("minify method not implemented", 501);
         }
-
-        return null;
     }
 
     /**
@@ -497,7 +494,7 @@ class ViewHtml implements ViewAdapter
                         if ($this->ParsedBlocks[$value] instanceof View || $this->ParsedBlocks[$value] instanceof Controller) {
                             $replace_with[] = $this->ParsedBlocks[$value]->html();
                         } else {
-                            Error::register("bad value into template", static::ERROR_BUCKET);
+                            throw new Exception("bad value into template", 500);
                         }
                     } else {
                         $replace_with[] = $this->ParsedBlocks[$value];

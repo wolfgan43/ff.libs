@@ -1,7 +1,7 @@
 <?php
 /**
- * VGallery: CMS based on FormsFramework
- * Copyright (C) 2004-2015 Alessandro Stucchi <wolfgan@gmail.com>
+ * Library for WebApplication based on VGallery Framework
+ * Copyright (C) 2004-2021 Alessandro Stucchi <wolfgan@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,11 +17,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *  @package VGallery
- *  @subpackage core
+ *  @subpackage libs
  *  @author Alessandro Stucchi <wolfgan@gmail.com>
  *  @copyright Copyright (c) 2004, Alessandro Stucchi
- *  @license http://opensource.org/licenses/gpl-3.0.html
- *  @link https://github.com/wolfgan43/vgallery
+ *  @license http://opensource.org/licenses/lgpl-3.0.html
+ *  @link https://bitbucket.org/cmsff/libs
  */
 namespace phpformsframework\libs;
 
@@ -31,7 +31,6 @@ use phpformsframework\libs\gui\Resource;
 use phpformsframework\libs\storage\FilemanagerFs;
 use phpformsframework\libs\util\ServerManager;
 use ReflectionClass;
-use Exception;
 
 /**
  * Class Debug
@@ -78,7 +77,7 @@ class Debug
         error_reporting(E_ALL);
         ini_set('display_errors', "On");
 
-        $_SERVER["HTTPS"]               = "on";
+        $_SERVER["HTTPS"]                   = "on";
 
         /**
          * Performance Profiling
@@ -276,7 +275,7 @@ class Debug
                         $implements[basename(str_replace('\\', '/', $class_name))]    = (array) $classDumpable::dump();
                     }
                 }
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 Response::httpCode(500);
                 die($e->getMessage());
             }
@@ -457,7 +456,7 @@ class Debug
             $html_dumpable .= '</ul></code>';
         }
 
-        $errors = array_filter(Error::dump());
+        $errors = array_filter(Exception::dump());
         $errors_count = 0;
         $dirstruct = Config::getDirBucket();
         if (!empty($dirstruct)) {

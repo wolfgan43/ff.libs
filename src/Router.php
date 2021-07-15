@@ -1,7 +1,7 @@
 <?php
 /**
- * VGallery: CMS based on FormsFramework
- * Copyright (C) 2004-2015 Alessandro Stucchi <wolfgan@gmail.com>
+ * Library for WebApplication based on VGallery Framework
+ * Copyright (C) 2004-2021 Alessandro Stucchi <wolfgan@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,18 +17,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *  @package VGallery
- *  @subpackage core
+ *  @subpackage libs
  *  @author Alessandro Stucchi <wolfgan@gmail.com>
  *  @copyright Copyright (c) 2004, Alessandro Stucchi
- *  @license http://opensource.org/licenses/gpl-3.0.html
- *  @link https://github.com/wolfgan43/vgallery
+ *  @license http://opensource.org/licenses/lgpl-3.0.html
+ *  @link https://bitbucket.org/cmsff/libs
  */
-
 namespace phpformsframework\libs;
 
 use phpformsframework\libs\util\ServerManager;
 use phpformsframework\libs\util\TypesConverter;
-use Exception;
 
 /**
  * Class Router
@@ -92,18 +90,13 @@ class Router implements Configurable, Dumpable
      */
     public static function loadSchema(array $rawdata) : array
     {
-        $schema                                             = null;
         if (!empty($rawdata)) {
-            $schema                                         = array();
+            $schema                                         = [];
             if (isset($rawdata["rule"])) {
                 $rules                                      = $rawdata["rule"];
                 foreach ($rules as $rule) {
                     $attr                                   = Dir::getXmlAttr($rule);
-                    $key                                    = (
-                        $attr["path"]
-                                                                ? $attr["path"]
-                                                                : $attr["source"]
-                                                            );
+                    $key                                    = $attr["path"] ?: $attr["source"];
                     $schema[$key]                           = $attr;
                 }
             }
@@ -192,7 +185,6 @@ class Router implements Configurable, Dumpable
 
     /**
      * @param string|null $path
-     * @throws Exception
      */
     private static function runWebRoot(string $path = null) : void
     {
@@ -215,6 +207,18 @@ class Router implements Configurable, Dumpable
                 self::execute($webroot . $file);
             }
         }
+    }
+
+    /**
+     * Anti injection, prevent error fs
+     * @param string $script
+     */
+    private static function execute(string $script) : void
+    {
+        if (!Autoloader::loadScript($script)) {
+            Response::sendError("404");
+        }
+        exit;
     }
 
     /**
@@ -272,21 +276,6 @@ class Router implements Configurable, Dumpable
                 self::$rules[$key]      = $rule;
             }
         }
-    }
-
-    /**
-     * @param string $script
-     * @throws Exception
-     */
-    private static function execute(string $script) : void
-    {
-        /*
-         * Anti injection, prevent error fs
-         */
-        if (!Autoloader::loadScript($script)) {
-            Error::run(self::pathinfo());
-        }
-        exit;
     }
 
     /**
@@ -416,8 +405,7 @@ class Router implements Configurable, Dumpable
                 if ($method && !is_array($method)) {
                     $output                                         = (new $class_name())->$method(...$params);
                 }
-            } catch (Exception $e) {
-                Debug::setBackTrace($e->getTrace());
+            } catch (\Exception $e) {
                 Response::sendError($e->getCode(), $e->getMessage());
             }
         } elseif (is_callable($method)) {

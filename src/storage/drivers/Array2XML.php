@@ -1,7 +1,7 @@
 <?php
 /**
- * VGallery: CMS based on FormsFramework
- * Copyright (C) 2004-2015 Alessandro Stucchi <wolfgan@gmail.com>
+ * Library for WebApplication based on VGallery Framework
+ * Copyright (C) 2004-2021 Alessandro Stucchi <wolfgan@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,17 +17,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *  @package VGallery
- *  @subpackage core
+ *  @subpackage libs
  *  @author Alessandro Stucchi <wolfgan@gmail.com>
  *  @copyright Copyright (c) 2004, Alessandro Stucchi
- *  @license http://opensource.org/licenses/gpl-3.0.html
- *  @link https://github.com/wolfgan43/vgallery
+ *  @license http://opensource.org/licenses/lgpl-3.0.html
+ *  @link https://bitbucket.org/cmsff/libs
  */
 namespace phpformsframework\libs\storage\drivers;
 
 use DOMDocument;
 use DOMNode;
 use UnexpectedValueException;
+use phpformsframework\libs\Exception;
 use phpformsframework\libs\security\Validator;
 use function simplexml_load_string;
 use function libxml_use_internal_errors;
@@ -38,8 +39,10 @@ use function libxml_use_internal_errors;
  */
 class Array2XML
 {
+    private const VERSION       = "1.0";
+    private const ENCODING      = "UTF-8";
+
     private static $xml         = null;
-    private static $encoding    = 'UTF-8';
 
     /**
      * Initialize the root XML node [optional]
@@ -47,11 +50,10 @@ class Array2XML
      * @param string $encoding
      * @param bool $format_output
      */
-    public static function init(string $version = '1.0', string $encoding = 'UTF-8', bool $format_output = true) : void
+    public static function createDOM(string $version = self::VERSION, string $encoding = self::ENCODING, bool $format_output = true) : void
     {
         self::$xml = new DomDocument($version, $encoding);
         self::$xml->formatOutput = $format_output;
-        self::$encoding = $encoding;
     }
 
     /**
@@ -59,13 +61,16 @@ class Array2XML
      * @param string $node_name - name of the root node to be converted
      * @param array $arr - aray to be converterd
      * @return DomDocument
-     * @throws UnexpectedValueException
+     * @throws Exception
      */
     public static function &createXML(string $node_name, array $arr = array()) : DomDocument
     {
-        $xml = self::getXMLRoot();
-        $xml->appendChild(self::convert($node_name, $arr));
-
+        try {
+            $xml = self::getXMLRoot();
+            $xml->appendChild(self::convert($node_name, $arr));
+        } catch (UnexpectedValueException $e) {
+            throw new Exception($e->getMessage(), $e->getCode());
+        }
         self::$xml = null;    // clear the xml node in the class for 2nd time use.
         return $xml;
     }
@@ -145,7 +150,7 @@ class Array2XML
     private static function getXMLRoot() : DOMDocument
     {
         if (empty(self::$xml)) {
-            self::init();
+            self::createDOM();
         }
         return self::$xml;
     }

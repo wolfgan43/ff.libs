@@ -1,7 +1,7 @@
 <?php
 /**
- * VGallery: CMS based on FormsFramework
- * Copyright (C) 2004-2015 Alessandro Stucchi <wolfgan@gmail.com>
+ * Library for WebApplication based on VGallery Framework
+ * Copyright (C) 2004-2021 Alessandro Stucchi <wolfgan@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,17 +17,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *  @package VGallery
- *  @subpackage core
+ *  @subpackage libs
  *  @author Alessandro Stucchi <wolfgan@gmail.com>
  *  @copyright Copyright (c) 2004, Alessandro Stucchi
- *  @license http://opensource.org/licenses/gpl-3.0.html
- *  @link https://github.com/wolfgan43/vgallery
+ *  @license http://opensource.org/licenses/lgpl-3.0.html
+ *  @link https://bitbucket.org/cmsff/libs
  */
-
 namespace phpformsframework\libs\international;
 
-use phpformsframework\libs\Error;
-use Exception;
+use phpformsframework\libs\Exception;
 
 /**
  * Class Data
@@ -154,7 +152,7 @@ class Data
     public static function getEmpty(string $data_type, string $locale = null) : string
     {
         if (($data_type == self::TYPE_CURRENCY || $data_type == self::TYPE_CURRENCY_MICRO) && $locale == self::LOCALE_SYSTEM) {
-            Error::register("Data cowardly refuse to manage currency on " . self::LOCALE_SYSTEM, static::ERROR_BUCKET);
+            throw new Exception("Data cowardly refuse to manage currency on " . self::LOCALE_SYSTEM, 500);
         }
 
         $dataLang = self::getAdapter(self::getLocale($locale));
@@ -171,7 +169,6 @@ class Data
     {
         if (!$locale) {
             $locale = self::LOCALE_SYSTEM;
-            Error::registerWarning("Locale Settings not found", static::ERROR_BUCKET);
         }
 
         if (!isset(self::$singleton[$locale])) {
@@ -237,11 +234,7 @@ class Data
             $dataLang = $this->getAdapter($locale);
             $funcname = $this->getFunc(self::FUNC_SET, $data_type);
 
-            try {
-                $dataLang->$funcname($this, $value);
-            } catch (Exception $e) {
-                Error::register($e->getMessage(), static::ERROR_BUCKET);
-            }
+            $dataLang->$funcname($this, $value);
         }
 
         return $this;
@@ -268,7 +261,7 @@ class Data
     private function getFunc(string $prefix, string $type) : string
     {
         if (!defined(__CLASS__ . "::TYPE_" . strtoupper($type))) {
-            Error::register("Type: " . $type . " not supported.", static::ERROR_BUCKET);
+            throw new Exception("Type: " . $type . " not supported.", 501);
         }
 
         return $prefix . $type;
@@ -294,7 +287,7 @@ class Data
         }
             
         if (($data_type == self::TYPE_CURRENCY || $data_type == self::TYPE_CURRENCY_MICRO) && $locale == self::LOCALE_SYSTEM) {
-            Error::register("Data cowardly refuse to manage currency on " . self::LOCALE_SYSTEM, static::ERROR_BUCKET);
+            throw new Exception("Data cowardly refuse to manage currency on " . self::LOCALE_SYSTEM, 500);
         }
 
         $dataLang = $this->getAdapter($locale);

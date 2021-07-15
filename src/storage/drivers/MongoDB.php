@@ -1,7 +1,7 @@
 <?php
 /**
- * VGallery: CMS based on FormsFramework
- * Copyright (C) 2004-2015 Alessandro Stucchi <wolfgan@gmail.com>
+ * Library for WebApplication based on VGallery Framework
+ * Copyright (C) 2004-2021 Alessandro Stucchi <wolfgan@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,11 +17,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *  @package VGallery
- *  @subpackage core
+ *  @subpackage libs
  *  @author Alessandro Stucchi <wolfgan@gmail.com>
  *  @copyright Copyright (c) 2004, Alessandro Stucchi
- *  @license http://opensource.org/licenses/gpl-3.0.html
- *  @link https://github.com/wolfgan43/vgallery
+ *  @license http://opensource.org/licenses/lgpl-3.0.html
+ *  @link https://bitbucket.org/cmsff/libs
  */
 namespace phpformsframework\libs\storage\drivers;
 
@@ -30,9 +30,10 @@ use MongoDB\Driver\BulkWrite;
 use MongoDB\Driver\Query;
 use MongoDB\Driver\Command;
 use MongoDB\BSON\ObjectID;
-use MongoDB\Driver\Exception\Exception;
+use MongoDB\Driver\Exception\Exception as MongoDB_Exception;
 use IteratorIterator;
 use phpformsframework\libs\cache\Cashable;
+use phpformsframework\libs\Exception;
 use phpformsframework\libs\storage\DatabaseDriver;
 use phpformsframework\libs\storage\DatabaseQuery;
 
@@ -43,7 +44,7 @@ use phpformsframework\libs\storage\DatabaseQuery;
  * @subpackage utils
  * @author Samuele Diella <samuele.diella@gmail.com>
  * @copyright Copyright &copy; 2000-2007, Samuele Diella
- * @license http://opensource.org/licenses/gpl-3.0.html
+ * @license http://opensource.org/licenses/lgpl-3.0.html
  * @link http://www.formsphpframework.com
  */
 class MongoDB extends DatabaseDriver
@@ -117,6 +118,7 @@ class MongoDB extends DatabaseDriver
      * @param string|null $Secret
      * @param bool $replica
      * @return bool
+     * @throws Exception
      */
     public function connect(string $Database = null, string $Host = null, string $User = null, string $Secret = null, $replica = false) : bool
     {
@@ -174,6 +176,7 @@ class MongoDB extends DatabaseDriver
     /**
      * @param DatabaseQuery $query
      * @return boolean
+     * @throws Exception
      */
     public function read(DatabaseQuery $query) : bool
     {
@@ -184,6 +187,7 @@ class MongoDB extends DatabaseDriver
     /**
      * @param DatabaseQuery $query
      * @return boolean
+     * @throws Exception
      */
     public function insert(DatabaseQuery $query) : bool
     {
@@ -194,6 +198,7 @@ class MongoDB extends DatabaseDriver
     /**
      * @param DatabaseQuery $query
      * @return bool
+     * @throws Exception
      */
     public function update(DatabaseQuery $query) : bool
     {
@@ -204,6 +209,7 @@ class MongoDB extends DatabaseDriver
     /**
      * @param DatabaseQuery $query
      * @return bool
+     * @throws Exception
      */
     public function delete(DatabaseQuery $query) : bool
     {
@@ -213,6 +219,7 @@ class MongoDB extends DatabaseDriver
 
     /**
      * @return array|null
+     * @throws Exception
      */
     public function getRecordset() :?array
     {
@@ -225,7 +232,7 @@ class MongoDB extends DatabaseDriver
             $cursor = null;
             try {
                 $cursor = $this->link_id->executeQuery($this->database . "." . $this->query_params->from, new Query($this->query_params->where, $this->query_params->options));
-            } catch (Exception $e) {
+            } catch (MongoDB_Exception $e) {
                 $this->errorHandler("Query failed: " . $e->getMessage());
             }
             if (!$cursor) {
@@ -259,6 +266,7 @@ class MongoDB extends DatabaseDriver
     /**
      * @param DatabaseQuery $query
      * @return bool
+     * @throws Exception
      */
     private function processQueryParams(DatabaseQuery $query) : bool
     {
@@ -330,6 +338,7 @@ class MongoDB extends DatabaseDriver
      * Esegue una query
      * @param DatabaseQuery $query
      * @return bool
+     * @throws Exception
      */
     private function query(DatabaseQuery $query) : bool
     {
@@ -342,7 +351,7 @@ class MongoDB extends DatabaseDriver
                         $this->stopWatch(self::ERROR_BUCKET);
                         $cursor = $this->link_id->executeQuery($this->database . "." . $this->query_params->from, new Query($this->query_params->where, $this->query_params->options));
                         $this->stopWatch(self::ERROR_BUCKET);
-                    } catch (Exception $e) {
+                    } catch (MongoDB_Exception $e) {
                         $this->errorHandler("Query failed: " . $e->getMessage());
                     }
                     if (!$cursor) {
@@ -414,6 +423,7 @@ class MongoDB extends DatabaseDriver
      * @param DatabaseQuery $query
      * @param string $action
      * @return array|null
+     * @throws Exception
      */
     public function cmd(DatabaseQuery $query, string $action = self::CMD_COUNT) : ?array
     {
@@ -438,6 +448,7 @@ class MongoDB extends DatabaseDriver
     /**
      * @param DatabaseQuery[] $queries
      * @return array|null
+     * @throws Exception
      */
     public function multiQuery(array $queries) : ?array
     {
@@ -451,8 +462,6 @@ class MongoDB extends DatabaseDriver
                 if ($this->query($query)) {
                     $queryId[] = $this->getResult();
                 }
-
-
             }
         }
 
@@ -461,6 +470,7 @@ class MongoDB extends DatabaseDriver
 
     /**
      * @return array
+     * @throws Exception
      */
     private function getResult() : array
     {
@@ -477,11 +487,12 @@ class MongoDB extends DatabaseDriver
 
         return [$this->query_params->action => $res];
     }
+
     /**
      * Sposta il puntatore al DB al record successivo (va chiamato almeno una volta)
      * @return boolean
      */
-    private function getRecord()
+    private function getRecord(): bool
     {
         $this->record                       = $this->query_id->current();
 
@@ -491,6 +502,7 @@ class MongoDB extends DatabaseDriver
     /**
      * @param object|null $obj
      * @return bool
+     * @throws Exception
      */
     public function nextRecord(object &$obj = null) : bool
     {
@@ -508,10 +520,10 @@ class MongoDB extends DatabaseDriver
     }
 
 
-
     /**
      * Conta il numero di righe
      * @return int
+     * @throws Exception
      */
     public function numRows() : int
     {
@@ -524,7 +536,7 @@ class MongoDB extends DatabaseDriver
                     ));
                     $cursor = $this->link_id->executeCommand($this->database, $Command);
                     $this->num_rows = $cursor->toArray()[0]->n;
-                } catch (Exception $e) {
+                } catch (MongoDB_Exception $e) {
                     $this->errorHandler("Command failed: " . $e->getMessage());
                 }
             } else {
@@ -547,6 +559,7 @@ class MongoDB extends DatabaseDriver
 
     /**
      * @return string|null
+     * @throws Exception
      */
     public function getInsertID() : ?string
     {
@@ -569,11 +582,11 @@ class MongoDB extends DatabaseDriver
 
     /**
      * @param string $msg
-     * @throws \Exception
+     * @throws Exception
      */
     protected function errorHandler(string $msg) : void
     {
-        throw new \Exception("MongoDB(" . $this->database . ") - " . $msg . " #" . $this->errno . ": " . $this->error, 500);
+        throw new Exception("MongoDB(" . $this->database . ") - " . $msg . " #" . $this->errno . ": " . $this->error, 500);
     }
 
     /**

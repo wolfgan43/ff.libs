@@ -1,7 +1,7 @@
 <?php
 /**
- * VGallery: CMS based on FormsFramework
- * Copyright (C) 2004-2015 Alessandro Stucchi <wolfgan@gmail.com>
+ * Library for WebApplication based on VGallery Framework
+ * Copyright (C) 2004-2021 Alessandro Stucchi <wolfgan@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,19 +17,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *  @package VGallery
- *  @subpackage core
+ *  @subpackage libs
  *  @author Alessandro Stucchi <wolfgan@gmail.com>
  *  @copyright Copyright (c) 2004, Alessandro Stucchi
- *  @license http://opensource.org/licenses/gpl-3.0.html
- *  @link https://github.com/wolfgan43/vgallery
+ *  @license http://opensource.org/licenses/lgpl-3.0.html
+ *  @link https://bitbucket.org/cmsff/libs
  */
 namespace phpformsframework\libs\storage\adapters;
 
-use phpformsframework\libs\Error;
 use phpformsframework\libs\storage\drivers\Array2XML;
-use phpformsframework\libs\storage\FilemanagerWeb;
+use phpformsframework\libs\storage\FilemanagerFs;
 use phpformsframework\libs\storage\FilemanagerAdapter;
-use Exception;
+use phpformsframework\libs\Exception;
 
 /**
  * Class FilemanagerFsXml
@@ -47,7 +46,7 @@ class FilemanagerFsXml extends FilemanagerAdapter
      */
     protected function loadFile(string $file_path, string $var = null) : ?array
     {
-        return Array2XML::xml2Array(FilemanagerWeb::fileGetContents($file_path));
+        return Array2XML::xml2Array(FilemanagerFs::fileGetContents($file_path));
     }
 
     /**
@@ -58,18 +57,8 @@ class FilemanagerFsXml extends FilemanagerAdapter
      */
     protected function output(array $data, string $var = null) : string
     {
-        $xml                                                    = null;
-        $root_node                                              = (
-            $var
-            ? $var
-            : "root"
-        );
-
-        try {
-            $xml                                                = Array2XML::createXML($root_node, $data);
-        } catch (Exception $e) {
-            Error::register($e->getMessage(), static::ERROR_BUCKET);
-        }
+        $root_node                                              = $var ?: "root";
+        $xml                                                    = Array2XML::createXML($root_node, $data);
 
         return $xml->saveXML();
     }

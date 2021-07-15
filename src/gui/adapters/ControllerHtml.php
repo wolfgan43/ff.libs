@@ -1,7 +1,7 @@
 <?php
 /**
- * VGallery: CMS based on FormsFramework
- * Copyright (C) 2004-2015 Alessandro Stucchi <wolfgan@gmail.com>
+ * Library for WebApplication based on VGallery Framework
+ * Copyright (C) 2004-2021 Alessandro Stucchi <wolfgan@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,11 +17,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *  @package VGallery
- *  @subpackage core
+ *  @subpackage libs
  *  @author Alessandro Stucchi <wolfgan@gmail.com>
  *  @copyright Copyright (c) 2004, Alessandro Stucchi
- *  @license http://opensource.org/licenses/gpl-3.0.html
- *  @link https://github.com/wolfgan43/vgallery
+ *  @license http://opensource.org/licenses/lgpl-3.0.html
+ *  @link https://bitbucket.org/cmsff/libs
  */
 namespace phpformsframework\libs\gui\adapters;
 
@@ -36,11 +36,11 @@ use phpformsframework\libs\gui\ControllerAdapter;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\security\Validator;
-use phpformsframework\libs\storage\FilemanagerWeb;
+use phpformsframework\libs\storage\FilemanagerFs;
 use phpformsframework\libs\storage\Media;
 use phpformsframework\libs\gui\Resource;
 use phpformsframework\libs\gui\View;
-use Exception;
+use phpformsframework\libs\Exception;
 
 /**
  * Class PageHtml
@@ -214,10 +214,10 @@ class ControllerHtml extends ControllerAdapter
                 $html                           = ob_get_contents();
                 ob_end_clean();
             } else {
-                $html                           = FilemanagerWeb::fileGetContents($string);
+                $html                           = FilemanagerFs::fileGetContents($string);
             }
         } elseif (Validator::isUrl($string)) {
-            $html                               = FilemanagerWeb::fileGetContents($string);
+            $html                               = FilemanagerFs::fileGetContents($string);
         } else {
             $html                               = $string;
         }
@@ -472,7 +472,7 @@ class ControllerHtml extends ControllerAdapter
         if (!$res) {
             $views = [];
             $layout_file = Resource::get($this->layout, Resource::TYPE_LAYOUTS);
-            if (!$layout_file || !($layout = FilemanagerWeb::fileGetContents($layout_file))) {
+            if (!$layout_file || !($layout = FilemanagerFs::fileGetContents($layout_file))) {
                 throw new Exception("Layout not Found: " . $this->layout, 500);
             }
 
@@ -481,7 +481,7 @@ class ControllerHtml extends ControllerAdapter
                 if (!empty($tpl_vars[1])) {
                     foreach ($tpl_vars[1] as $i => $tpl_var) {
                         $content_file = Kernel::$Environment::PROJECT_THEME_DISK_PATH . $tpl_var;
-                        if ($content = FilemanagerWeb::fileGetContents($content_file)) {
+                        if ($content = FilemanagerFs::fileGetContents($content_file)) {
                             $layout_files[$content_file] = filemtime($content_file);
                             $layout = str_replace($tpl_vars[0][$i], $content, $layout);
                         } else {

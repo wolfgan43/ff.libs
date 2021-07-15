@@ -1,7 +1,7 @@
 <?php
 /**
- * VGallery: CMS based on FormsFramework
- * Copyright (C) 2004-2015 Alessandro Stucchi <wolfgan@gmail.com>
+ * Library for WebApplication based on VGallery Framework
+ * Copyright (C) 2004-2021 Alessandro Stucchi <wolfgan@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,17 +17,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *  @package VGallery
- *  @subpackage core
+ *  @subpackage libs
  *  @author Alessandro Stucchi <wolfgan@gmail.com>
  *  @copyright Copyright (c) 2004, Alessandro Stucchi
- *  @license http://opensource.org/licenses/gpl-3.0.html
- *  @link https://github.com/wolfgan43/vgallery
+ *  @license http://opensource.org/licenses/lgpl-3.0.html
+ *  @link https://bitbucket.org/cmsff/libs
  */
 namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\Constant;
-use phpformsframework\libs\Error;
+use phpformsframework\libs\Dir;
+use phpformsframework\libs\Exception;
+use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\util\AdapterManager;
+use stdClass;
 
 /**
  * Class FilemanagerFs
@@ -37,6 +40,44 @@ class FilemanagerFs
 {
     use AdapterManager;
 
+    /**
+     * @param string $file_path
+     * @return string
+     * @throws Exception
+     */
+    public static function fileGetContents(string $file_path) : string
+    {
+        $content = @file_get_contents($file_path);
+        if ($content === false) {
+            throw new Exception($content . " forbidden", 403);
+        }
+
+        return $content;
+    }
+
+    /**
+     * @param string $file_path
+     * @return stdClass|null
+     * @throws Exception
+     */
+    public static function fileGetContentsJson(string $file_path) : ?stdClass
+    {
+        return Validator::jsonDecode(self::fileGetContents($file_path), false);
+    }
+
+    /**
+     * @param string $filename
+     * @param string $data
+     * @return false
+     */
+    public static function filePutContents(string $filename, string $data) : bool
+    {
+        if (!Dir::checkDiskPath(dirname($filename))) {
+            return false;
+        }
+
+        return file_put_contents($filename, $data);
+    }
     /**
      * @param string $fileType
      * @return FilemanagerAdapter
@@ -99,7 +140,7 @@ class FilemanagerFs
             if (!is_dir($base_path . $path)) {
                 if (!@mkdir($base_path . $path, $chmod, true)) {
                     $res                                                    = false;
-                    Error::registerWarning("MakeDir Permission Denied: " . $base_path . $path);
+                    Exception::warning("MakeDir Permission Denied: " . $base_path . $path);
                 }
             }
         }

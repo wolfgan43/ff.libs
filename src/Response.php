@@ -1,7 +1,7 @@
 <?php
 /**
- * VGallery: CMS based on FormsFramework
- * Copyright (C) 2004-2015 Alessandro Stucchi <wolfgan@gmail.com>
+ * Library for WebApplication based on VGallery Framework
+ * Copyright (C) 2004-2021 Alessandro Stucchi <wolfgan@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,11 +17,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *  @package VGallery
- *  @subpackage core
+ *  @subpackage libs
  *  @author Alessandro Stucchi <wolfgan@gmail.com>
  *  @copyright Copyright (c) 2004, Alessandro Stucchi
- *  @license http://opensource.org/licenses/gpl-3.0.html
- *  @link https://github.com/wolfgan43/vgallery
+ *  @license http://opensource.org/licenses/lgpl-3.0.html
+ *  @link https://bitbucket.org/cmsff/libs
  */
 namespace phpformsframework\libs;
 
@@ -29,7 +29,6 @@ use phpformsframework\libs\dto\DataAdapter;
 use phpformsframework\libs\dto\DataError;
 use phpformsframework\libs\gui\controllers\ErrorController;
 use phpformsframework\libs\storage\drivers\Array2XML;
-use Exception;
 use phpformsframework\libs\util\Normalize;
 use phpformsframework\libs\util\ServerManager;
 
@@ -150,14 +149,14 @@ class Response
                     self::send((new ErrorController())
                         ->error(self::errorStatus($code), $msg)
                         ->display());
-                } catch (Exception $e) {
+                } catch (\Exception $e) {
                     header("Content-Type: text/html");
                     header('Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
                     header("Pragma: no-cache");
 
                     $status = $e->getCode();
-                    $status_message = Error::getErrorMessage($status);
-                    Debug::setBackTrace($e->getTrace());
+                    $status_message = Exception::getErrorMessage($status);
+
                     self::httpCode($status);
                     echo '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
 <html><head>
@@ -244,11 +243,7 @@ error was encountered while trying to use an ErrorDocument to handle the request
             $data                                   = null;
         }
 
-        try {
-            $data                                   = Array2XML::createXML("root", $data);
-        } catch (Exception $e) {
-            Error::register($e, static::ERROR_BUCKET);
-        }
+        $data                                       = Array2XML::createXML("root", $data);
 
         return $data->saveXML();
     }

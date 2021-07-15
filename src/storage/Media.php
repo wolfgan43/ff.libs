@@ -1,7 +1,7 @@
 <?php
 /**
- * VGallery: CMS based on FormsFramework
- * Copyright (C) 2004-2015 Alessandro Stucchi <wolfgan@gmail.com>
+ * Library for WebApplication based on VGallery Framework
+ * Copyright (C) 2004-2021 Alessandro Stucchi <wolfgan@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,13 +17,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *  @package VGallery
- *  @subpackage core
+ *  @subpackage libs
  *  @author Alessandro Stucchi <wolfgan@gmail.com>
  *  @copyright Copyright (c) 2004, Alessandro Stucchi
- *  @license http://opensource.org/licenses/gpl-3.0.html
- *  @link https://github.com/wolfgan43/vgallery
+ *  @license http://opensource.org/licenses/lgpl-3.0.html
+ *  @link https://bitbucket.org/cmsff/libs
  */
-
 namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\cache\Buffer;
@@ -32,15 +31,14 @@ use phpformsframework\libs\Configurable;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Dir;
 use phpformsframework\libs\dto\ConfigRules;
-use phpformsframework\libs\Error;
 use phpformsframework\libs\Hook;
 use phpformsframework\libs\Response;
 use phpformsframework\libs\security\ValidatorFile;
 use phpformsframework\libs\storage\drivers\ImageCanvas;
 use phpformsframework\libs\storage\drivers\ImageThumb;
 use phpformsframework\libs\gui\Resource;
-use Exception;
 use phpformsframework\libs\util\ServerManager;
+use phpformsframework\libs\Exception;
 use stdClass;
 
 /**
@@ -492,7 +490,7 @@ class Media implements Configurable
                 $abs_path = Resource::image("error");
             }
             if (!$abs_path) {
-                Error::register("Icon " . $filename . " not found", static::ERROR_BUCKET);
+                throw new Exception("Icon " . $filename . " not found", 404);
             }
             $basename                                               = basename($abs_path);
             if ($abs === false) {
@@ -505,7 +503,7 @@ class Media implements Configurable
         } else {
             $abs_path = Resource::image("unknown");
             if (!$abs_path) {
-                Error::register("Icon unknown not found", static::ERROR_BUCKET);
+                throw new Exception("Icon unknown not found", 404);
             }
             $res                                                    = (
                 $abs
@@ -1235,11 +1233,11 @@ class Media implements Configurable
 
         if ($this->pathinfo->render == static::RENDER_ASSETS_PATH) {
             if (!@copy($source, $destination)) {
-                Error::register("Copy Failed. Check read permission on: " . $source . " and if directory exist and have write permission on " . $destination, static::ERROR_BUCKET);
+                throw new Exception("Copy Failed. Check read permission on: " . $source . " and if directory exist and have write permission on " . $destination, 500);
             }
         } else {
             if (is_writable($source) && !@link($source, $destination)) {
-                Error::register("Link Failed. Check write permission on: " . $source . " and if directory exist and have write permission on " . $destination, static::ERROR_BUCKET);
+                throw new Exception("Link Failed. Check write permission on: " . $source . " and if directory exist and have write permission on " . $destination, 500);
             }
         }
     }
@@ -1289,7 +1287,7 @@ class Media implements Configurable
         if ($code) {
             Response::httpCode($code);
         }
-        //todo: https://local.hcore.app/assets/images/nobrand-100x50.png non funziona cancellando la cache
+
         $this->sendHeaders($final_file, $this->headers);
         readfile($final_file);
         exit;

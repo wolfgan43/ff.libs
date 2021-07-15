@@ -1,7 +1,7 @@
 <?php
 /**
- * VGallery: CMS based on FormsFramework
- * Copyright (C) 2004-2015 Alessandro Stucchi <wolfgan@gmail.com>
+ * Library for WebApplication based on VGallery Framework
+ * Copyright (C) 2004-2021 Alessandro Stucchi <wolfgan@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,18 +17,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *  @package VGallery
- *  @subpackage core
+ *  @subpackage libs
  *  @author Alessandro Stucchi <wolfgan@gmail.com>
  *  @copyright Copyright (c) 2004, Alessandro Stucchi
- *  @license http://opensource.org/licenses/gpl-3.0.html
- *  @link https://github.com/wolfgan43/vgallery
+ *  @license http://opensource.org/licenses/lgpl-3.0.html
+ *  @link https://bitbucket.org/cmsff/libs
  */
 namespace phpformsframework\libs\storage\drivers;
 
-use Exception;
 use phpformsframework\libs\cache\Cashable;
 use phpformsframework\libs\storage\DatabaseDriver;
 use phpformsframework\libs\storage\DatabaseQuery;
+use phpformsframework\libs\Exception;
 use mysqli_result;
 
 /**
@@ -38,12 +38,14 @@ use mysqli_result;
  * @subpackage utils
  * @author Samuele Diella <samuele.diella@gmail.com>
  * @copyright Copyright &copy; 2000-2007, Samuele Diella
- * @license http://opensource.org/licenses/gpl-3.0.html
+ * @license http://opensource.org/licenses/lgpl-3.0.html
  * @link http://www.formsphpframework.com
  */
 class MySqli extends DatabaseDriver
 {
     use Cashable;
+
+    private const SEP               = ",";
 
     public $charset			        = "utf8";
     public $charset_names		    = "utf8";
@@ -311,7 +313,6 @@ class MySqli extends DatabaseDriver
      */
     public function getRecordset() : ?array
     {
-        $res = null;
         if (!$this->query_id) {
             $this->errorHandler("eachAll called with no query pending");
         }
@@ -566,14 +567,31 @@ class MySqli extends DatabaseDriver
      * @param array $Array
      * @return string|null
      */
-    protected function toSqlArray(string $type, array $Array): ?string
+    protected function toSqlArray(string $type, array $Array): string
     {
         $value = parent::toSqlArray($type, $Array);
         if (is_array($value)) {
-            $value = implode(",", $value);
+            return $this->toSqlArray2String($value);
         }
 
         return $this->tpSqlEscaper($value);
+    }
+
+    /**
+     * @param array $values
+     * @return string
+     */
+    private function toSqlArray2String(array $values) : string
+    {
+        $res = [];
+        foreach ($values as $value) {
+            $res[] = (
+                is_bool($value) || is_int($value)
+                ? $value
+                : $this->tpSqlEscaper($value)
+            );
+        }
+        return implode(self::SEP, $res);
     }
 
     /**

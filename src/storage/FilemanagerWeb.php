@@ -1,7 +1,7 @@
 <?php
 /**
- * VGallery: CMS based on FormsFramework
- * Copyright (C) 2004-2015 Alessandro Stucchi <wolfgan@gmail.com>
+ * Library for WebApplication based on VGallery Framework
+ * Copyright (C) 2004-2021 Alessandro Stucchi <wolfgan@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,13 +17,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  *  @package VGallery
- *  @subpackage core
+ *  @subpackage libs
  *  @author Alessandro Stucchi <wolfgan@gmail.com>
  *  @copyright Copyright (c) 2004, Alessandro Stucchi
- *  @license http://opensource.org/licenses/gpl-3.0.html
- *  @link https://github.com/wolfgan43/vgallery
+ *  @license http://opensource.org/licenses/lgpl-3.0.html
+ *  @link https://bitbucket.org/cmsff/libs
  */
-
 namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\Debug;
@@ -34,8 +33,8 @@ use phpformsframework\libs\Request;
 use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\util\AdapterManager;
 use phpformsframework\libs\util\Normalize;
+use phpformsframework\libs\Exception;
 use stdClass;
-use Exception;
 
 /**
  * Class FilemanagerWeb
@@ -144,20 +143,6 @@ class FilemanagerWeb implements Dumpable
     }
 
     /**
-     * @param string $filename
-     * @param string $data
-     * @return false
-     */
-    public static function filePutContents(string $filename, string $data) : bool
-    {
-        if (!Dir::checkDiskPath(dirname($filename))) {
-            return false;
-        }
-
-        return file_put_contents($filename, $data);
-    }
-
-    /**
      * @param string $url
      * @param array|null $params
      * @return array|null
@@ -250,7 +235,7 @@ class FilemanagerWeb implements Dumpable
 
         $content                            = @file_get_contents($path, false, $context);
         if ($content === false) {
-            Debug::set(($path ? $path : "empty"), self::ERROR_FILE_FORBIDDEN);
+            Debug::set($path ?: "empty", self::ERROR_FILE_FORBIDDEN);
             throw new Exception(self::ERROR_FILE_FORBIDDEN, 403);
         }
 

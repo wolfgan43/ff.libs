@@ -1025,7 +1025,7 @@ class Orm extends Mappable
      */
     private function getResult() : OrmResults
     {
-        return new OrmResults($this->count, $this->result[$this->main->def->mainTable] ?? null, $this->result_keys, $this->main->def->mainTable, $this->main->def->key_primary, $this->map_class);
+        return new OrmResults($this->count, $this->result[$this->main_table] ?? null, $this->result_keys, $this->main_table, $this->main->def->key_primary, $this->map_class);
     }
 
     /**
@@ -1062,7 +1062,7 @@ class Orm extends Mappable
                 $this->main->def                                                            = $Orm->getStruct($subTable);
             }
             $this->main->service                                                            = $subService;
-
+            $this->main_table                                                               = $this->main->def->mainTable;
             unset($this->subs[$subService][$subTable]);
             if (!count($this->subs[$subService])) {
                 unset($this->subs[$subService]);

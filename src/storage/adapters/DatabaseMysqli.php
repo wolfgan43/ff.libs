@@ -49,8 +49,8 @@ class DatabaseMysqli extends DatabaseAdapter
         '$lte'          => '`NAME` <= `VALUE`',
         '$eq'           => '`NAME` = `VALUE`',
         '$regex'        => '`NAME` LIKE `*VALUE*`',
-        '$in'           => '`NAME` IN(`VALUE`)',
-        '$nin'          => '`NAME` NOT IN(`VALUE`)',
+        '$in'           => '`NAME` IN(`#VALUE#`)',
+        '$nin'          => '`NAME` NOT IN(`#VALUE#`)',
         '$ne'           => '`NAME` != `VALUE`',
         '$inset'        => 'FIND_IN_SET(`NAME`, `VALUE`)',
         '$inc'          => '`NAME` = `NAME` + 1',
@@ -193,12 +193,14 @@ class DatabaseMysqli extends DatabaseAdapter
             array(
                 "`NAME`",
                 "`*VALUE*`",
+                "`#VALUE#`",
                 "`VALUE`"
             ),
             array(
                 "`" . str_replace("`", "", $name) . "`",
                 $this->driver->toSql(str_replace(array("(.*)", "(.+)", ".*", ".+", "*", "+"), "%", $value), $struct_type),
-                $this->driver->toSql($value, $struct_type)
+                $this->driver->toSql($value, $struct_type),
+                str_replace("','", ",", $this->driver->toSql($value, $struct_type))
             ),
             self::OPERATOR_COMPARISON[$op]
         );

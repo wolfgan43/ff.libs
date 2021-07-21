@@ -578,7 +578,7 @@ abstract class Controller
             $this->render($method);
         } catch (\Exception $e) {
             if ($e->getCode() >= 500) {
-                throw new Exception($e->getMessage(), $e->getCode());
+                throw new \Exception($e->getMessage(), $e->getCode());
             }
 
             $this->error($e->getCode(), $e->getMessage());

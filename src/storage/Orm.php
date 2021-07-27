@@ -616,7 +616,7 @@ class Orm extends Mappable
 
                     $keyValue = array_column($regs[self::INDEX] ?? [], $thisKey);
                     if (isset($whereRef) && count($keyValue)) {
-                        $this->whereBuilder($whereRef, $keyValue, $relKey);
+                        $this->whereBuilder($whereRef, array_filter($keyValue), $relKey);
                     } elseif (isset($this->services_by_data->tables[$controller . "." . $relTable])) {
                         throw new Exception("Relationship found but missing keyValue in result. Check in configuration indexes: " . $thisTable . " => " . $thisKey . " (" . $relTable . "." . $relKey . ")", 500);
                     }
@@ -1245,7 +1245,7 @@ class Orm extends Mappable
             $ref->where                                                                     = array();
         }
 
-        if (empty($ref->where[$ref->def->key_primary])) {
+        if (!empty($keys) && empty($ref->where[$ref->def->key_primary])) {
             if (!isset($ref->where[$field])) {
                 $ref->where[$field]                                                         = (
                     count($keys) == 1

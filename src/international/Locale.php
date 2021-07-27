@@ -188,11 +188,7 @@ class Locale implements Configurable
             self::$country                                              = self::$default[self::COUNTRY_];
         } else {
             self::$lang                                                 = self::$locale[self::LANG_][$lang_tiny_code];
-            self::$country                                              = (
-                isset(self::$locale[self::COUNTRY_][$country_tiny_code])
-                ? self::$locale[self::COUNTRY_][$country_tiny_code]
-                : self::$locale[self::COUNTRY_][self::$lang[self::COUNTRY_]]
-            );
+            self::$country                                              = self::$locale[self::COUNTRY_][$country_tiny_code] ?? self::$locale[self::COUNTRY_][self::$lang[self::COUNTRY_]];
         }
 
         if (!self::isDefaultLang()) {
@@ -304,7 +300,7 @@ class Locale implements Configurable
                                                                         self::COUNTRY_  => (
                                                                             $country
                                                                             ? strtoupper($country)
-                                                                            : self::$lang[$lang][self::COUNTRY_]
+                                                                            : self::$locale[self::LANG_][$lang][self::COUNTRY_]
                                                                         )
                                                                     ];
         } elseif (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
@@ -339,7 +335,7 @@ class Locale implements Configurable
                 $country                                        = (
                     isset($splits["subtag"])
                     ? strtoupper($splits["subtag"])
-                    : self::$lang[$lang][self::COUNTRY_]
+                    : self::$locale[self::LANG_][$lang][self::COUNTRY_]
                 );
 
 

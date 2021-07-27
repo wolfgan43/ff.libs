@@ -37,7 +37,10 @@ let cm = (function () {
             "footer"            : {
                 "container"     : "cm-modal-footer",
                 "action"        : "cm-action"
-            }
+            },
+			"tpl"				: '<div class="cm-modal cm-open" style="">    <div class="cm-modal-dialog cm-overflow-hidden">        <div class="cm-modal-header">            <h2 class="cm-modal-title white-text cm-margin-remove"></h2>            <p class="cm-modal-description white-text cm-margin-remove"></p>            <button class="cm-modal-close-default white-text cm-icon cm-close" type="button"><svg width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" data-svg="close-icon"><line fill="none" stroke="#000" stroke-width="1.1" x1="1" y1="1" x2="13" y2="13"></line><line fill="none" stroke="#000" stroke-width="1.1" x1="13" y1="1" x2="1" y2="13"></line></svg></button>        </div>        <div class="cm-modal-body">        </div>        <div class="cm-modal-footer cm-action">        </div>    </div></div>',
+			"tpl_bt"			: '<button id="{bt_id}" type="button" class="btn">{label}</button>',
+			
         },
         "tokens"                : {
             "error"             : "alert alert-danger"
@@ -52,7 +55,16 @@ let cm = (function () {
 
         return null !== document.querySelector(type + "[" + ATTR[type] + "^='" + resource.split("?")[0] + "']");
     };
-
+	
+	function onReady(cb) {
+		if (document.readyState !== 'loading') {
+			cb();
+		} else {
+			document.addEventListener('DOMContentLoaded', function (event) {
+				cb(event);
+			});
+		}
+	}
 
     let self = {
         "settings" : settings,
@@ -276,131 +288,254 @@ let cm = (function () {
             };
         })(),
         "modal" : (function() {
+			var $dialog = undefined;
+			
+			function getTplObj(domObj, selectorClass) {
+				let tmp = domObj.querySelector("." + selectorClass);
+				tmp.classList.remove(selectorClass);
+				let tpl = tmp.outerHTML;
+				tmp.remove();
+				return tpl;
+			}
+			
             let modal = {
-                "init" : function () {
-                    if(!modalLoaded) {
-                        modalLoaded = true;
-                        if((close = document.querySelector("." + settings.modal.container + " ." + settings.modal.header.close))) {
-                            close.addEventListener("click", function () {
-                                modal.hide();
-                            });
-                        }
-                    }
-                },
                 "formAddListener" : function(url, headers = {}) {
-                    if((form = document.querySelector("." + settings.modal.container + " form"))) {
-                        form.action = url;
-                        form.addEventListener("submit", function(e) {
+                    if(($form = $dialog.querySelector("form"))) {
+                        $form.action = url;
+                        $form.addEventListener("submit", function(e) {
                             e.preventDefault();
 
-                            modal.error.hide();
-
-                            let self = this;
-                            self.style["opacity"] = "0.5";
-                            cm.api.post(self.action, new FormData(self), headers)
-                                .then(function(dataResponse) {
-                                    if(dataResponse["pathname"] !== undefined && window.location.pathname === dataResponse["pathname"]) {
-                                        cm.inject(dataResponse);
-                                        modal.hide();
-                                    } else {
-                                        cm.inject(dataResponse, "." + settings.modal.container + " ." + settings.modal.body);
-                                        modal.formAddListener(self.action, headers);
-                                    }
-                                })
-                                .catch(function (message) {
-                                    modal.error.show(message);
-                                }).finally(function () {
-                                self.style["opacity"] = null;
-                            });
-
-                            /*cm.api.head(this.href)
-                                .then(function (response) {
-                                    cm.api.head(this.href)
-                                });*/
+                            publics.open(url, headers, "post", new FormData($form));
                         });
                     }
                 },
+				
                 "error" : {
                     "show" : function(message) {
-                        cm.error(document.querySelector("." + settings.modal.container + " ." + settings.modal.body), settings.modal.error).set(message);
+						if (!$dialog) {
+							return;
+						}
+
+						cm.error($dialog.querySelector("." + settings.modal.body), settings.modal.error).set(message);
                     },
                     "hide" : function() {
-                        cm.error(document.querySelector("." + settings.modal.container + " ." + settings.modal.body), settings.modal.error).clear();
+						if (!$dialog) {
+							return;
+						}
+                        cm.error($dialog.querySelector("." + settings.modal.body), settings.modal.error).clear();
                     }
                 },
                 "show" : function show() {
-                    let modal = document.querySelector("." + settings.modal.container);
-                    modal.classList.add(settings.modal.open);
-                    modal.style["display"] = "block";
+					if (!$dialog) {
+						throw new Error("cm - dialog not created");
+					}
+					
+                    $dialog.classList.add(settings.modal.open);
+                    $dialog.style["display"] = "block";
                 },
                 "hide" : function () {
-                    let modal = document.querySelector("." + settings.modal.container);
-                    modal.classList.remove(settings.modal.open);
-                    modal.style["display"] = "none";
+					if (!$dialog) {
+						return;
+					}
+					
+                    $dialog.classList.remove(settings.modal.open);
+                    $dialog.style["display"] = "none";
 
                     this.error.hide();
                 },
                 "clear" : function () {
                     modal.error.hide();
-                    document.querySelector("." + settings.modal.container + " ." + settings.modal.body).innerHTML    = "";
-                    //document.querySelector("." + settings.modal.container + " ." + settings.modal.error).innerHTML   = "";
-
-                    if((title = document.querySelector("." + settings.modal.container + " ." + settings.modal.header.container + " ." + settings.modal.header.title))) {
-                        title.innerHTML                             = "";
-                    }
-                    if((description = document.querySelector("." + settings.modal.container + " ." + settings.modal.header.container + " ." + settings.modal.header.description))) {
-                        description.innerHTML                       = "";
-                    }
-                    if((footer = document.querySelector("." + settings.modal.container + " ." + settings.modal.footer.container))) {
-                        footer.style.display                        = 'none';
-                        footer.innerHTML                            = "";
-                    }
+					publics.set({
+						title : "",
+						description : "",
+						message : "",
+					});
                 }
             }
 
+            var publics = {
+				"create" : function ({
+					title,
+					description,
+					message,
+					buttons,
+					nodefaultbt = false,
+					defaultaction,
+					show = true,
+				} = {}) {
+					return new Promise(resolve => {
+						onReady(function (event){
+							if ($dialog) {
+								resolve('created');
+								return;
+							}
+							
+							$dialog = document.createElement("cm-modal-dlg");
+							$dialog.innerHTML = settings.modal.tpl;
+							$dialog = $dialog.firstElementChild;
 
-            return {
-                "open" : function(url, headers = {}) {
-                    modal.init();
+							let close;
+							if (close = $dialog.querySelector("." + settings.modal.header.close)) {
+								close.addEventListener("click", function () {
+									publics.close();
+								});
+							};
 
+							if (!nodefaultbt && (!buttons || !buttons.length) && !close) {
+								buttons = [];
+								buttons.push({
+									"id"		: "continue",
+									"label"		: "Continua",
+									"class"		: "btn-primary",
+									"action"	: defaultaction,
+									"hide"		: true,
+								});
+							}
+							
+							publics.set({
+								title,
+								description,
+								message,
+								buttons,
+							});
+
+							document.getElementsByTagName("body")[0].appendChild($dialog);
+							if (show) {
+								modal.show();
+							}
+							
+							resolve('created');
+						}); // onReady
+					}); // promise
+				},
+				
+				"bt" : function (button) {
+					if (button.hide) {
+						publics.close();
+					}
+
+					if (button.action !== undefined) {
+						button.action();
+					}
+				},
+				
+				"set" : function ({
+					title,
+					description,
+					message,
+					buttons,
+					actions = ""
+				} = {}) {
+					if (title !== undefined) {
+						let $title = $dialog.querySelector("." + settings.modal.header.title)
+						if ($title) {
+							$title.innerHTML = title;
+						}
+					}
+					
+					if (description !== undefined) {
+						let $description = $dialog.querySelector("." + settings.modal.header.description)
+						if ($description) {
+							$description.innerHTML = description;
+						}
+					}
+
+					if (message !== undefined) {
+						let $message = $dialog.querySelector("." + settings.modal.body);
+						if ($message) {
+							$message.innerHTML = message;
+						}
+					}
+					
+					let display_footer = false;
+					let $footer = $dialog.querySelector("." + settings.modal.footer.container);
+					if (actions !== undefined) {
+						$footer.innerHTML = "";
+					}
+
+					if (buttons !== undefined) {
+						display_footer = true;
+						buttons.each(function (i, v) {
+							var tmp = settings.modal.tpl_bt.replaceAll("{bt_id}", v.id);
+							tmp = tmp.replaceAll("{label}", v.label);
+							var $bt = document.createElement("dialog_bt");
+							$bt.innerHTML = tmp;
+							$bt = $bt.firstElementChild;
+							if (!v.id) {
+								$bt.removeAttribute("id");
+							}
+							if (v.class) {
+								$bt.classList.add(v.class);
+							}
+							$bt.addEventListener("click", publics.bt.bind(null, v));
+							$dialog.querySelector("." + settings.modal.footer.action).appendChild($bt);
+							/*$dialog.querySelector("." + settings.modal.footer.action).appendChild(...$bt.childNodes);
+							$bt.remove();*/
+						});
+					}
+					
+					if (buttons === undefined) { // check for actions embedded in the content
+						if (($tmp = $dialog.querySelector("." + settings.modal.body + " ." + settings.modal.footer.action))) {
+							display_footer = true;
+							$footer.appendChild($tmp);
+						}
+					}
+					
+					$footer.style.display = display_footer ? 'block' : 'none';
+				},
+				
+                "open" : function(url, headers = {}, method = "get", formdata = undefined) {
                     return new Promise(function (resolve, reject) {
-                        modal.clear();
-
-                        cm.api.get(url, headers)
+                        if ($dialog) {
+                            modal.error.hide();
+							$dialog.style["opacity"] = "0.8";
+						}
+                        cm.api[method](url, method === "get" ? headers : formdata, method === "post" ? headers : undefined)
                             .then(function (dataResponse) {
-                                cm.inject(dataResponse, "." + settings.modal.container + " ." + settings.modal.body);
-                                if(dataResponse["title"] !== undefined && (title = document.querySelector("." + settings.modal.container + " ." + settings.modal.header.container + " ." + settings.modal.header.title))) {
-                                    title.innerHTML = dataResponse["title"];
-                                }
-                                if(dataResponse["description"] !== undefined && (description = document.querySelector("." + settings.modal.container + " ." + settings.modal.header.container + " ." + settings.modal.header.description))) {
-                                    description.innerHTML = dataResponse["description"];
-                                }
+								if(dataResponse["pathname"] !== undefined && window.location.pathname === dataResponse["pathname"]) {
+									cm.inject(dataResponse);
+									publics.close();
+									return;
+								}
+									
+								publics.create({"show" : false}).then(_ => {							
+									cm.inject(dataResponse, "." + settings.modal.container + " ." + settings.modal.body);
 
-                                if((footer = document.querySelector("." + settings.modal.container + " ." + settings.modal.footer.container))) {
-                                    footer.style.display = 'none';
-                                    if ((action = document.querySelector("." + settings.modal.container + " ." + settings.modal.body + " ." + settings.modal.footer.action))) {
-                                        footer.appendChild(action);
-                                        footer.style.display = 'block';
-                                    }
-                                }
+									publics.set({
+										title : dataResponse["title"],
+										description : dataResponse["description"],
+									});
 
-                                modal.formAddListener(url, headers);
-                                modal.show();
+									modal.formAddListener(url, headers);
+									modal.show();
 
-                                resolve(document.querySelector("." + settings.modal.container));
+									resolve($dialog);
+								});
                             })
                             .catch(function (errorMessage) {
-                                modal.error.show(errorMessage);
-                                modal.show();
+								publics.create({"show" : false}).then(_ => {							
+									modal.error.show(errorMessage);
+									modal.show();
 
-                                reject(errorMessage);
+	                                reject(errorMessage);
+								});
+							}).finally(function () {
+								if ($dialog) {
+									$dialog.style["opacity"] = null;
+								}
                             });
                     });
                 },
                 "close" : function() {
+					if (!$dialog) {
+						return;
+					}
                     modal.hide();
+					$dialog.remove();
+					$dialog = undefined;
                 }
-            }
+            };
+			return publics;
         })()
     }
 
@@ -414,7 +549,7 @@ let cm = (function () {
                 e.preventDefault();
 
                 let self = this;
-                self.style["opacity"] = "0.5";
+                self.style["opacity"] = "0.8";
                 cm.modal.open(this.href)
                     .finally(function() {
                         self.style["opacity"] = null;
@@ -428,7 +563,7 @@ let cm = (function () {
                 e.preventDefault();
 
                 let self = this;
-                self.style["opacity"] = "0.5";
+                self.style["opacity"] = "0.8";
                 cm.api.get(this.href)
                     .then(function(dataResponse) {
                         cm.inject(dataResponse);
@@ -445,7 +580,7 @@ let cm = (function () {
                 e.preventDefault();
 
                 let self = this;
-                self.style["opacity"] = "0.5";
+                self.style["opacity"] = "0.8";
                 cm.api.post(self.action, new FormData(self))
                     .then(function(dataResponse) {
                         cm.inject(dataResponse, self.getAttribute("data-component"));

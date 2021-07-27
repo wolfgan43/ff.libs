@@ -49,7 +49,7 @@ class FilemanagerFs
     {
         $content = @file_get_contents($file_path);
         if ($content === false) {
-            throw new Exception($content . " forbidden", 403);
+            throw new Exception($file_path . " forbidden", 403);
         }
 
         return $content;

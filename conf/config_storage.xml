@@ -59,6 +59,7 @@
 
         <dir    type="app"      name="conf"         path="[PROJECT_DOCUMENT_ROOT]/conf"  />
         <dir    type="app"      name="public"       path="[PROJECT_DOCUMENT_ROOT]/public"                   webroot="true" />
+        <dir    type="app"      name="api"          path="[PROJECT_DOCUMENT_ROOT]/api"                      autoload="true" />
         <dir    type="app"      name="models"       path="[PROJECT_DOCUMENT_ROOT]/models"                   autoload="true" />
         <dir    type="app"      name="helpers"      path="[PROJECT_DOCUMENT_ROOT]/helpers"                  autoload="true" />
         <dir    type="app"      name="controllers"  path="[PROJECT_DOCUMENT_ROOT]/controllers"              autoload="true" />

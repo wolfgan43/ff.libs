@@ -103,23 +103,24 @@ class Autoloader implements Dumpable
     {
         $classes = [];
         foreach ($include_paths as $include_path => $group) {
-            $class = '';
+            $buffer = '';
             $namespace = '';
-
+            $class = '';
+            
             if ($fp = fopen($include_path, 'r')) {
-                $buffer = '';
-                while (!$class) {
-                    if (feof($fp)) {
-                        break;
-                    }
-
+                $offset = 0;
+                while (!$class && !feof($fp)) {
                     $buffer .= fread($fp, 512);
-                    $tokens = @token_get_all($buffer);
-                    error_clear_last();
 
-                    if (strpos($buffer, '{') === false) {
+                    if (($offset = strpos($buffer, '{', intval($offset))) === false) {
                         continue;
                     }
+                    
+                    $namespace = '';
+                    $class = '';
+                    
+                    $tokens = @token_get_all($buffer);
+                    error_clear_last();
 
                     for ($i = 0; $i < count($tokens); $i++) {
                         if (!$store && $tokens[$i][0] === T_ABSTRACT) {
@@ -140,17 +141,13 @@ class Autoloader implements Dumpable
                             for ($j = $i + 1; $j < count($tokens); $j++) {
                                 if ($tokens[$j][0] === T_STRING) {
                                     $class = $tokens[$j][1];
-                                    break;
+                                    break 3;
                                 }
                                 if ($tokens[$j] === '{') {
                                     $class = $tokens[$i + 2][1];
-                                    break;
+                                    break 3;
                                 }
                             }
-                        }
-
-                        if ($class) {
-                            break;
                         }
                     }
                 }

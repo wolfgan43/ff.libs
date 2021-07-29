@@ -302,6 +302,7 @@ class FilemanagerScan implements Dumpable
     {
         $file                                           = $file_info->dirname . DIRECTORY_SEPARATOR . $file_info->basename;
         $type                                           = $opt->type ?? "unknowns";
+        $rootshift                                      = $opt->rootshift ?? 0;
 
         $file_info->parentname                          = basename($file_info->dirname);
         if (isset($opt->rootpath)) {
@@ -310,9 +311,9 @@ class FilemanagerScan implements Dumpable
             $file_info->rootname                        = basename($file_info->rootpath);
         } else {
             $subdir_count                               = substr_count(preg_replace('/(\/\*){2,}$/', DIRECTORY_SEPARATOR . "*", $opt->pattern), DIRECTORY_SEPARATOR);
-            $arrDir                                     = explode(DIRECTORY_SEPARATOR, $file_info->dirname, $subdir_count + 2);
+            $arrDir                                     = explode(DIRECTORY_SEPARATOR, $file_info->dirname, $subdir_count + $rootshift + 1);
 
-            $file_info->rootpathname                    = $arrDir[$subdir_count + 1] ?? null;
+            $file_info->rootpathname                    = $arrDir[$subdir_count + $rootshift] ?? null;
             $file_info->rootpath                        = DIRECTORY_SEPARATOR . $file_info->rootpathname;
             $file_info->rootname                        = $arrDir[$subdir_count] ?? null;
         }
@@ -322,9 +323,15 @@ class FilemanagerScan implements Dumpable
             $file_info->extension                       = $opt->replace[$file_info->extension];
         }
 
+        $defaultname = (
+            strpos($file_info->rootpathname, $file_info->extension . DIRECTORY_SEPARATOR) === 0
+            ? substr($file_info->rootpathname, strlen($file_info->extension . DIRECTORY_SEPARATOR))
+            : $file_info->rootpathname
+        );
+
         $file_info->defaultname                         = (
-            $file_info->rootpathname
-            ? $file_info->rootpathname . DIRECTORY_SEPARATOR
+            $defaultname
+            ? $defaultname . DIRECTORY_SEPARATOR
             : null
         ) . $file_info->filename;
 

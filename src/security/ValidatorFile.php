@@ -242,6 +242,7 @@ class ValidatorFile
                                                                 "mpc"       => "application/x-project",
                                                                 "mpe"       => "video/mpeg",
                                                                 "mpeg"      => "video/mpeg",
+                                                                "mp4"       => "video/mp4",
                                                                 "mpg"       => "audio/mpeg",
                                                                 "mpga"      => "audio/mpeg",
                                                                 "mpp"       => "application/vnd.ms-project",
@@ -535,7 +536,7 @@ class ValidatorFile
         if (isset($_FILES[$value])) {
             $names                                                          = (array) $_FILES[$value]["name"];
             if (!empty($names)) {
-                foreach ($names as $index => $name) {
+                foreach ($names as $name) {
                     if (!self::isFilePath($name)) {
                         $error[]                                            = $name . " is not valid path";
                     }
@@ -626,9 +627,7 @@ class ValidatorFile
      */
     private static function getSignature(string $type) : ?array
     {
-        return (isset(self::SIGNATURES[$type])
-            ? self::SIGNATURES[$type]
-            : null
+        return (self::SIGNATURES[$type] ?? null
         );
     }
     /**

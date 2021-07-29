@@ -14,6 +14,7 @@
         "tpl"
       ],
       "prototype" : "defaultname",
+      "rootshift": 1,
       "exclude" : [
         "layouts",
         "email",
@@ -26,14 +27,16 @@
       "type": "css",
       "filter": [
         "css"
-      ]
+      ],
+      "prototype" : "defaultname"
     },
     "js": {
       "flag": 8,
       "type": "js",
       "filter": [
         "js"
-      ]
+      ],
+      "prototype" : "defaultname"
     },
     "images": {
       "flag": 8,
@@ -52,9 +55,9 @@
       "filter": [
         "otf",
         "eot",
-        "svg", 
-        "ttf", 
-        "woff", 
+        "svg",
+        "ttf",
+        "woff",
         "woff2"
       ]
     },
@@ -63,6 +66,7 @@
       "type": "widgets",
       "prototype" : "defaultname",
       "groupby": "rootname/extension",
+      "rootshift": 1,
       "replace": {
         "json" : "cfg"
       },
@@ -71,75 +75,6 @@
         "css",
         "js",
         "json"
-      ]
-    },
-    "widgets/css": {
-      "flag": 4,
-      "type": "widgets",
-      "prototype" : "filename",
-      "rootpath": "../",
-      "groupby": "rootname/css",
-      "filter": [
-        "css"
-      ]
-    },
-    "widgets/js": {
-      "flag": 4,
-      "type": "widgets",
-      "prototype" : "filename",
-      "rootpath": "../",
-      "groupby": "rootname/js",
-      "filter": [
-        "js"
-      ]
-    },
-    "widgets/images": {
-      "flag": 4,
-      "type": "widgets",
-      "prototype" : "filename",
-      "rootpath": "../",
-      "groupby": "rootname/images",
-      "filter": [ 
-        "jpg",
-        "png",
-        "svg",
-        "jpeg",
-        "gif"
-      ]
-    },
-    "widgets/fonts": {
-      "flag": 4,
-      "type": "widgets",
-      "prototype" : "basename",
-      "rootpath": "../../",
-      "groupby": "rootname/fonts",
-      "filter": [
-        "otf",
-        "eot",
-        "svg",
-        "ttf",
-        "woff",
-        "woff2"
-      ]
-    },
-    "widgets/audio": {
-      "flag": 4,
-      "type": "widgets",
-      "prototype" : "basename",
-      "rootpath": "../",
-      "groupby": "rootname/audio",
-      "filter": [
-        "mp3"
-      ]
-    },
-    "widgets/video": {
-      "flag": 4,
-      "type": "widgets",
-      "prototype" : "basename",
-      "rootpath": "../",
-      "groupby": "rootname/video",
-      "filter": [
-        "avi"
       ]
     },
     "xml": {

@@ -87,19 +87,30 @@ class Media implements Configurable
 
     private const MIMETYPE_DEFAULT                                          = "text/plain";
     private const MIMETYPE_IMAGE                                            = array(
-                                                                                "jpg" => self::MIMETYPE["jpg"],
-                                                                                "jpeg" => self::MIMETYPE["jpeg"],
-                                                                                "png" => self::MIMETYPE["png"],
-                                                                                "gif" => self::MIMETYPE["gif"],
-                                                                                "svg" => self::MIMETYPE["svg"]
+                                                                                "jpg"   => self::MIMETYPE["jpg"],
+                                                                                "jpeg"  => self::MIMETYPE["jpeg"],
+                                                                                "png"   => self::MIMETYPE["png"],
+                                                                                "gif"   => self::MIMETYPE["gif"],
+                                                                                "svg"   => self::MIMETYPE["svg"]
                                                                             );
     private const MIMETYPE_FONT                                             = array(
-                                                                                "eot" => self::MIMETYPE["eot"],
-                                                                                "ttf" => self::MIMETYPE["ttf"],
-                                                                                "otf" => self::MIMETYPE["otf"],
-                                                                                "woff" => self::MIMETYPE["woff"]
+                                                                                "eot"   => self::MIMETYPE["eot"],
+                                                                                "ttf"   => self::MIMETYPE["ttf"],
+                                                                                "otf"   => self::MIMETYPE["otf"],
+                                                                                "woff"  => self::MIMETYPE["woff"]
                                                                             );
-
+    private const MIMETYPE_VIDEO                                            = array(
+                                                                                "avi"   => self::MIMETYPE["avi"],
+                                                                                "mp4"   => self::MIMETYPE["mp4"],
+                                                                                "mpe"   => self::MIMETYPE["mpe"],
+                                                                                "mpeg"  => self::MIMETYPE["mpeg"]
+                                                                            );
+    private const MIMETYPE_AUDIO                                            = array(
+                                                                                "mid"   => self::MIMETYPE["mid"],
+                                                                                "rmi"   => self::MIMETYPE["rmi"],
+                                                                                "mp3"   => self::MIMETYPE["mp3"],
+                                                                                "mpg"   => self::MIMETYPE["mpg"]
+                                                                            );
     /**
      * @var Media
      */
@@ -247,31 +258,15 @@ class Media implements Configurable
         $showfiles                                                  = Constant::SITE_PATH . static::RENDER_MEDIA_PATH;
         if (strpos($arrFile->dirname, static::RENDER_WIDGET_PATH) !== false) {
             $showfiles                                              = Constant::SITE_PATH . static::RENDER_ASSETS_PATH . static::RENDER_WIDGET_PATH;
-            if (preg_match('#' . static::RENDER_WIDGET_PATH . DIRECTORY_SEPARATOR . '([^' . DIRECTORY_SEPARATOR . ']*)' . DIRECTORY_SEPARATOR . '?' .  '([^' . DIRECTORY_SEPARATOR . ']*)(.*)#i', $arrFile->dirname, $subdir)) {
-                if (empty($subdir[2])) {
-                    $arrFile->dirname                               = DIRECTORY_SEPARATOR . $subdir[1] . DIRECTORY_SEPARATOR . $arrFile->extension;
-                } else {
-                    foreach (Config::getDirBucket(Constant::RESOURCE_WIDGETS) as $type => $asset) {
-                        if ($asset["path"] == DIRECTORY_SEPARATOR . $subdir[2]) {
-                            $arrFile->dirname = DIRECTORY_SEPARATOR . $subdir[1] . DIRECTORY_SEPARATOR . $type . $subdir[3];
-                            break;
-                        }
-                    }
-                }
+            if (preg_match('#' . static::RENDER_WIDGET_PATH . DIRECTORY_SEPARATOR . '([^' . DIRECTORY_SEPARATOR . ']*)' . '(.*)#i', $arrFile->dirname, $subdir)) {
+                $arrFile->dirname                                   = DIRECTORY_SEPARATOR . $subdir[1] . DIRECTORY_SEPARATOR . self::ext2dirBucket(Constant::RESOURCE_WIDGETS, $arrFile, $subdir[2]);
             }
-        } else {
-            foreach (Config::getDirBucket(Constant::RESOURCE_ASSETS) as $type => $asset) {
-                $fileAsset = explode($asset["path"], $arrFile->dirname, 2);
-                if (count($fileAsset) == 2) {
-                    $showfiles                                      = Constant::SITE_PATH . static::RENDER_ASSETS_PATH;
-                    $arrFile->dirname                               = DIRECTORY_SEPARATOR . $type . $fileAsset[1];
-                    break;
-                }
-            }
+        } elseif ($asset_path = self::ext2dirBucket(Constant::RESOURCE_ASSETS, $arrFile)) {
+            $showfiles                                      = Constant::SITE_PATH . static::RENDER_ASSETS_PATH;
+            $arrFile->dirname                               = DIRECTORY_SEPARATOR . $asset_path;
         }
 
         $arrFile->dirname                                           = str_replace(Constant::DISK_PATH, Constant::SITE_PATH, $arrFile->dirname);
-
         $dirfilename                                                = $showfiles . ($arrFile->dirname == DIRECTORY_SEPARATOR ? "" : $arrFile->dirname) . DIRECTORY_SEPARATOR . $arrFile->filename;
         $diskfile                                                   = $dirfilename . ($arrFile->filename && $mode ? "-" : "") . $mode . ($arrFile->extension ? "." . $arrFile->extension : "") . $query;
 
@@ -281,6 +276,36 @@ class Media implements Configurable
             $dirfilename,
             $mode,
             self::protocolHost() . $diskfile
+        );
+    }
+
+    /**
+     * @param string $bucket
+     * @param stdClass $arrFile
+     * @param string|null $path
+     * @return string
+     */
+    private static function ext2dirBucket(string $bucket, stdClass $arrFile, string $path = null) : string
+    {
+        if (isset(static::MIMETYPE_IMAGE[$arrFile->extension])) {
+            $key = "images";
+        } elseif (isset(static::MIMETYPE_FONT[$arrFile->extension])) {
+            $key = "fonts";
+        } elseif (isset(static::MIMETYPE_VIDEO[$arrFile->extension])) {
+            $key = "video";
+        } elseif (isset(static::MIMETYPE_AUDIO[$arrFile->extension])) {
+            $key = "audio";
+        } else {
+            $key = $arrFile->extension;
+        }
+
+        if (!$path && ($asset_path = Config::getDirBucket($bucket)[$key]["path"] ?? null) && count(($fileAsset = explode($asset_path, $arrFile->dirname, 2)))== 2) {
+            $path = $fileAsset[1];
+        }
+
+        return (strpos($path, DIRECTORY_SEPARATOR . $key . DIRECTORY_SEPARATOR) === 0
+            ? ltrim($path, DIRECTORY_SEPARATOR)
+            : $key . $path
         );
     }
 
@@ -608,9 +633,15 @@ class Media implements Configurable
      */
     private function staticProcessWidget(string $resource_name) : ?string
     {
-        $arrDirname                                                 = explode(DIRECTORY_SEPARATOR, $this->pathinfo->dirname);
+        $arrDirname                                                 = explode(DIRECTORY_SEPARATOR, $this->pathinfo->dirname, 5);
         $widget                                                     = Resource::widget($arrDirname[2]);
-        return $widget[$arrDirname[3]][$resource_name] ?? null;
+        $prefix                                                     = (
+            !empty($arrDirname[4])
+            ? $arrDirname[4] . DIRECTORY_SEPARATOR
+            : null
+        );
+
+        return $widget[$arrDirname[3]][$prefix . $resource_name] ?? null;
     }
 
     /**
@@ -619,8 +650,14 @@ class Media implements Configurable
      */
     private function staticProcessAsset(string $resource_name) : ?string
     {
-        $arrDirname                                                 = explode(DIRECTORY_SEPARATOR, $this->pathinfo->dirname);
-        return Resource::get($resource_name, $arrDirname[1]);
+        $arrDirname                                                 = explode(DIRECTORY_SEPARATOR, $this->pathinfo->dirname, 3);
+        $prefix                                                     = (
+            !empty($arrDirname[2])
+            ? $arrDirname[2] . DIRECTORY_SEPARATOR
+            : null
+        );
+
+        return Resource::get($prefix . $resource_name, $arrDirname[1]);
     }
 
     /**

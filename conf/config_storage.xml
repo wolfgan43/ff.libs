@@ -25,13 +25,8 @@
         <dir    type="gui"      path="[PROJECT_DOCUMENT_ROOT]/themes/*/assets/dist/js/*"                    scan="js" />
         <dir    type="gui"      path="[PROJECT_DOCUMENT_ROOT]/themes/*/assets/dist/video/*"                 scan="video" />
 
-        <dir    type="gui"      path="[PROJECT_DOCUMENT_ROOT]/themes/*/widgets/*/*"                         scan="widgets" />
-        <dir    type="gui"      path="[PROJECT_DOCUMENT_ROOT]/themes/*/widgets/*/css/*"                     scan="widgets/css" />
-        <dir    type="gui"      path="[PROJECT_DOCUMENT_ROOT]/themes/*/widgets/*/js/*"                      scan="widgets/js" />
-        <dir    type="gui"      path="[PROJECT_DOCUMENT_ROOT]/themes/*/widgets/*/images/*"                  scan="widgets/images" />
-        <dir    type="gui"      path="[PROJECT_DOCUMENT_ROOT]/themes/*/widgets/*/fonts/*/*"                 scan="widgets/fonts" />
-        <dir    type="gui"      path="[PROJECT_DOCUMENT_ROOT]/themes/*/widgets/*/audio/*"                   scan="widgets/audio" />
-        <dir    type="gui"      path="[PROJECT_DOCUMENT_ROOT]/themes/*/widgets/*/video/*"                   scan="widgets/video" />
+        <dir    type="gui"      path="[PROJECT_DOCUMENT_ROOT]/themes/*/widgets/*"                           scan="widgets" />
+
 
         <!-- Libbase -->
         <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/src/gui/controllers/*"             scan="controllers" />
@@ -47,13 +42,7 @@
         <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/assets/dist/js/*"         scan="js" />
         <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/assets/dist/video/*"      scan="video" />
 
-        <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/*"              scan="widgets" />
-        <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/css/*"          scan="widgets/css" />
-        <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/js/*"           scan="widgets/js" />
-        <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/images/*"       scan="widgets/images" />
-        <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/fonts/*/*"      scan="widgets/fonts" />
-        <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/audio/*"        scan="widgets/audio" />
-        <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*/video/*"        scan="widgets/video" />
+        <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/*/widgets/*"                scan="widgets" />
 
         <dir    type="app"      name="uploads"      path="/uploads"                                         writable="true" />
 
@@ -75,12 +64,5 @@
         <dir    type="assets"   name="images"       path="/assets/dist/images"                              virtual="true" />
         <dir    type="assets"   name="js"           path="/assets/dist/js"                                  virtual="true" />
         <dir    type="assets"   name="video"        path="/assets/dist/video"                               virtual="true" />
-
-        <dir    type="widgets"  name="audio"        path="/audio"                                           virtual="true" />
-        <dir    type="widgets"  name="css"          path="/css"                                             virtual="true" />
-        <dir    type="widgets"  name="fonts"        path="/fonts"                                           virtual="true" />
-        <dir    type="widgets"  name="images"       path="/img"                                             virtual="true" />
-        <dir    type="widgets"  name="js"           path="/js"                                              virtual="true" />
-        <dir    type="widgets"  name="video"        path="/video"                                           virtual="true" />
     </dirs>
 </configdata>

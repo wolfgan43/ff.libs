@@ -596,7 +596,7 @@ let cm = (function () {
     }
 
     document.addEventListener("DOMContentLoaded", function() {
-        settings = {...settings, ...self.settings};
+        Object.assign(settings, self.settings);
 
         guiInit();
     });

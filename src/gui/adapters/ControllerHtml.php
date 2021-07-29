@@ -135,7 +135,7 @@ class ControllerHtml extends ControllerAdapter
         $this->path_info                        = $path_info;
         $this->layout                           = $layout;
 
-        $this->cache_time                       = Kernel::useCache() ? null : "?" . time();
+        $this->cache_time                       = null; //Kernel::useCache() ? null : "?" . time();
     }
 
     /**

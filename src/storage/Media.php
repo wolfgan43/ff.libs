@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\storage;
 
+use phpformsframework\libs\Kernel;
 use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\Config;
 use phpformsframework\libs\Configurable;
@@ -1236,6 +1237,14 @@ class Media implements Configurable
                 $final_file                                         = $this->getFinalFile($final_file_stored);
 
                 $modeCurrent                                        = $this->getMode();
+
+                if (!Kernel::useCache() && !$modeCurrent) {
+                    return ($this->isImage()
+                        ? $this->getIconPath(basename($this->filesource), true)
+                        : $this->basepath . $this->filesource
+                    );
+                }
+
                 if (is_array($modeCurrent)) {
                     if (!Buffer::cacheIsValid($this->basepath . $this->filesource, $final_file_stored)) {
                         $this->createImage($modeCurrent);

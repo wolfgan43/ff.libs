@@ -199,24 +199,29 @@ class ViewHtml implements ViewAdapter
         $matches = null;
         $rc = preg_match_all(static::REGEXP, $content, $matches);
         if ($rc && $matches) {
-            $this->DVars = array_flip($matches[1]);
+            $this->DVars = array_fill_keys($matches[1], []);
 
             $views = Resource::views($this->widget);
             $translation = new stdClass();
             foreach ($this->DVars as $nName => $count) {
                 if (substr($nName, 0, 1) == "_") {
-                    $translation->key[]           = "{" . $nName . "}";
-                    $translation->value[]         = Translator::getWordByCode(substr($nName, 1));
+                    $translation->key[]                     = "{" . $nName . "}";
+                    $translation->value[]                   = Translator::getWordByCode(substr($nName, 1));
                     unset($this->DVars[$nName]);
                 } elseif (substr($nName, 0, 7) == "include" && substr_count($nName, '"') == 2) {
-                    $view =  explode('"', $nName)[1];
+                    $view                                   =  explode('"', $nName)[1];
 
-                    $template = $views[str_replace(self::TPL_NORMALIZE, '', $view)] ?? str_replace('$theme_path', Kernel::$Environment::PROJECT_THEME_DISK_PATH, $view);
+                    $template                               = $views[str_replace(self::TPL_NORMALIZE, '', $view)] ?? str_replace('$theme_path', Kernel::$Environment::PROJECT_THEME_DISK_PATH, $view);
 
-                    $include = (new self($this->widget, $this->cache))->include($template);
-                    $this->cache[$template] = filemtime($template);
+                    $include                                = (new self($this->widget, $this->cache))->include($template);
+                    $this->cache[$template]                 = filemtime($template);
 
-                    $content = str_replace("{" . $nName . "}", $include, $content);
+                    $content                                = str_replace("{" . $nName . "}", $include, $content);
+                } elseif (strpos($nName, "::") !== false) {
+                    $component                              = explode("::", $nName);
+
+                    $this->DVars[$component[0]][$nName]     = $component[1];
+                    unset($this->DVars[$nName]);
                 }
             }
             if (isset($translation->key)) {
@@ -387,8 +392,13 @@ class ViewHtml implements ViewAdapter
              * @var Controller $controller
              */
             $controller = (new $component());
-
-            $this->assign($key, $controller->html());
+            if (!empty($this->DVars[$key])) {
+                foreach ($this->DVars[$key] as $DVar => $method) {
+                    $this->assign($DVar, $controller->html($method));
+                }
+            } else {
+                $this->assign($key, $controller->html());
+            }
         }
 
         $this->parse($this->root_element);

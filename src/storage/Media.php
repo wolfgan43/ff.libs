@@ -187,7 +187,7 @@ class Media implements Configurable
     {
         $icon = new Media(false);
         $icon->setNoImg($mode, $name);
-        $icon->renderNoImg($icon->processFinalFile());
+        $icon->readfile($icon->processFinalFile());
 
         //deve renderizzare l'icona
         //da fare con la gestione delle iconde di ffImafge
@@ -731,7 +731,7 @@ class Media implements Configurable
             if ($this->staticProcess($mode)) {
                 $final_file = $this->processFinalFile();
                 if ($final_file) {
-                    $this->renderNoImg($final_file);
+                    $this->readfile($final_file);
                 }
             } elseif ($this->isImage()) {
                 Response::redirect($this->getIconPath("noimg"), 302);
@@ -816,7 +816,7 @@ class Media implements Configurable
         }
 
         if ($final_file) {
-            $this->renderNoImg($final_file, $status);
+            $this->readfile($final_file, $status);
         }
 
         return false;
@@ -1324,13 +1324,14 @@ class Media implements Configurable
      * @param string $final_file
      * @param int|null $code
      */
-    private function renderNoImg(string $final_file, int $code = null)
+    private function readfile(string $final_file, int $code = null)
     {
-        $this->headers["cache"]                                     = "must-revalidate";
         $this->headers["filename"]                                  = $this->pathinfo->basename;
         $this->headers["mimetype"]                                  = $this->getMimeByFilename($final_file);
 
         if ($code) {
+            $this->headers["cache"]                                = "must-revalidate";
+
             Response::httpCode($code);
         }
 

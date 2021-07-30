@@ -56,18 +56,23 @@ let cm = (function () {
         return null !== document.querySelector(type + "[" + ATTR[type] + "^='" + resource.split("?")[0] + "']");
     };
 	
-	function onReady(cb) {
-		if (document.readyState !== 'loading') {
-			cb();
-		} else {
-			document.addEventListener('DOMContentLoaded', function (event) {
-				cb(event);
-			});
-		}
-	}
-
     let self = {
         "settings" : settings,
+		
+		"onReady" : function (cb) {
+			if (document.readyState !== 'loading') {
+				cb();
+			} else {
+				document.addEventListener('DOMContentLoaded', function (event) {
+					cb(event);
+				});
+			}
+		},
+		
+		"changeSettings" : function (newsettings) {
+			Object.assign(settings, newsettings);
+		},
+
         "error" : (function(container, selector) {
             function wrapper() {
                 let errorClass = selector || settings.class.error;
@@ -288,7 +293,10 @@ let cm = (function () {
             };
         })(),
         "modal" : (function() {
-			var $dialog = undefined;
+			var privates = {
+				"$dialog" : undefined,
+				"events" : undefined,
+			};
 			
 			function getTplObj(domObj, selectorClass) {
 				let tmp = domObj.querySelector("." + selectorClass);
@@ -300,7 +308,7 @@ let cm = (function () {
 			
             let modal = {
                 "formAddListener" : function(url, headers = {}) {
-                    if(($form = $dialog.querySelector("form"))) {
+                    if(($form = privates.$dialog.querySelector("form"))) {
                         $form.action = url;
                         $form.addEventListener("submit", function(e) {
                             e.preventDefault();
@@ -312,34 +320,40 @@ let cm = (function () {
 				
                 "error" : {
                     "show" : function(message) {
-						if (!$dialog) {
+						if (!privates.$dialog) {
 							return;
 						}
 
-						cm.error($dialog.querySelector("." + settings.modal.body), settings.modal.error).set(message);
+						cm.error(privates.$dialog.querySelector("." + settings.modal.body), settings.modal.error).set(message);
                     },
                     "hide" : function() {
-						if (!$dialog) {
+						if (!privates.$dialog) {
 							return;
 						}
-                        cm.error($dialog.querySelector("." + settings.modal.body), settings.modal.error).clear();
+                        cm.error(privates.$dialog.querySelector("." + settings.modal.body), settings.modal.error).clear();
                     }
                 },
                 "show" : function show() {
-					if (!$dialog) {
+					if (!privates.$dialog) {
 						throw new Error("cm - dialog not created");
 					}
 					
-                    $dialog.classList.add(settings.modal.open);
-                    $dialog.style["display"] = "block";
+                    privates.$dialog.classList.add(settings.modal.open);
+                    privates.$dialog.style["display"] = "block";
+					
+					if (privates.events.open) {
+						privates.events.open({
+							"$dialog"	: privates.$dialog,
+						});
+					}
                 },
                 "hide" : function () {
-					if (!$dialog) {
+					if (!privates.$dialog) {
 						return;
 					}
 					
-                    $dialog.classList.remove(settings.modal.open);
-                    $dialog.style["display"] = "none";
+                    privates.$dialog.classList.remove(settings.modal.open);
+                    privates.$dialog.style["display"] = "none";
 
                     this.error.hide();
                 },
@@ -362,20 +376,26 @@ let cm = (function () {
 					nodefaultbt = false,
 					defaultaction,
 					show = true,
+					events = {
+						"open"	: undefined,
+						"close" : undefined,
+					},
 				} = {}) {
 					return new Promise(resolve => {
-						onReady(function (event){
-							if ($dialog) {
+						self.onReady(function (event){
+							if (privates.$dialog) {
 								resolve('created');
 								return;
 							}
 							
-							$dialog = document.createElement("cm-modal-dlg");
-							$dialog.innerHTML = settings.modal.tpl;
-							$dialog = $dialog.firstElementChild;
+							privates.events = events;
+							
+							privates.$dialog = document.createElement("cm-modal-dlg");
+							privates.$dialog.innerHTML = settings.modal.tpl;
+							privates.$dialog = privates.$dialog.firstElementChild;
 
 							let close;
-							if (close = $dialog.querySelector("." + settings.modal.header.close)) {
+							if (close = privates.$dialog.querySelector("." + settings.modal.header.close)) {
 								close.addEventListener("click", function () {
 									publics.close();
 								});
@@ -399,7 +419,7 @@ let cm = (function () {
 								buttons,
 							});
 
-							document.getElementsByTagName("body")[0].appendChild($dialog);
+							document.getElementsByTagName("body")[0].appendChild(privates.$dialog);
 							if (show) {
 								modal.show();
 							}
@@ -427,28 +447,28 @@ let cm = (function () {
 					actions = ""
 				} = {}) {
 					if (title !== undefined) {
-						let $title = $dialog.querySelector("." + settings.modal.header.title)
+						let $title = privates.$dialog.querySelector("." + settings.modal.header.title)
 						if ($title) {
 							$title.innerHTML = title;
 						}
 					}
 					
 					if (description !== undefined) {
-						let $description = $dialog.querySelector("." + settings.modal.header.description)
+						let $description = privates.$dialog.querySelector("." + settings.modal.header.description)
 						if ($description) {
 							$description.innerHTML = description;
 						}
 					}
 
 					if (message !== undefined) {
-						let $message = $dialog.querySelector("." + settings.modal.body);
+						let $message = privates.$dialog.querySelector("." + settings.modal.body);
 						if ($message) {
 							$message.innerHTML = message;
 						}
 					}
 					
 					let display_footer = false;
-					let $footer = $dialog.querySelector("." + settings.modal.footer.container);
+					let $footer = privates.$dialog.querySelector("." + settings.modal.footer.container);
 					if (actions !== undefined) {
 						$footer.innerHTML = "";
 					}
@@ -468,14 +488,14 @@ let cm = (function () {
 								$bt.classList.add(v.class);
 							}
 							$bt.addEventListener("click", publics.bt.bind(null, v));
-							$dialog.querySelector("." + settings.modal.footer.action).appendChild($bt);
-							/*$dialog.querySelector("." + settings.modal.footer.action).appendChild(...$bt.childNodes);
+							privates.$dialog.querySelector("." + settings.modal.footer.action).appendChild($bt);
+							/*privates.$dialog.querySelector("." + settings.modal.footer.action).appendChild(...$bt.childNodes);
 							$bt.remove();*/
 						});
 					}
 					
 					if (buttons === undefined) { // check for actions embedded in the content
-						if (($tmp = $dialog.querySelector("." + settings.modal.body + " ." + settings.modal.footer.action))) {
+						if (($tmp = privates.$dialog.querySelector("." + settings.modal.body + " ." + settings.modal.footer.action))) {
 							display_footer = true;
 							$footer.appendChild($tmp);
 						}
@@ -484,11 +504,11 @@ let cm = (function () {
 					$footer.style.display = display_footer ? 'block' : 'none';
 				},
 				
-                "open" : function(url, headers = {}, method = "get", formdata = undefined) {
+                "open" : function(url, headers = {}, method = "get", formdata = undefined, options = {}) {
                     return new Promise(function (resolve, reject) {
-                        if ($dialog) {
+                        if (privates.$dialog) {
                             modal.error.hide();
-							$dialog.style["opacity"] = "0.8";
+							privates.$dialog.style["opacity"] = "0.8";
 						}
                         cm.api[method](url, method === "get" ? headers : formdata, method === "post" ? headers : undefined)
                             .then(function (dataResponse) {
@@ -498,7 +518,7 @@ let cm = (function () {
 									return;
 								}
 									
-								publics.create({"show" : false}).then(_ => {							
+								publics.create(Object.assign(options, {"show" : false})).then(_ => {							
 									cm.inject(dataResponse, "." + settings.modal.container + " ." + settings.modal.body);
 
 									publics.set({
@@ -509,7 +529,7 @@ let cm = (function () {
 									modal.formAddListener(url, headers);
 									modal.show();
 
-									resolve($dialog);
+									resolve(privates.$dialog);
 								});
                             })
                             .catch(function (errorMessage) {
@@ -520,27 +540,30 @@ let cm = (function () {
 	                                reject(errorMessage);
 								});
 							}).finally(function () {
-								if ($dialog) {
-									$dialog.style["opacity"] = null;
+								if (privates.$dialog) {
+									privates.$dialog.style["opacity"] = null;
 								}
                             });
                     });
                 },
                 "close" : function() {
-					if (!$dialog) {
+					if (!privates.$dialog) {
 						return;
 					}
                     modal.hide();
-					$dialog.remove();
-					$dialog = undefined;
+					if (privates.events.close) {
+						privates.events.close();
+					}
+					privates.$dialog.remove();
+					privates.$dialog	= undefined;
+					privates.events		= undefined;
                 }
             };
 			return publics;
         })()
     }
 
-    function guiInit()
-    {
+    function guiInit() {
         let links = document.querySelectorAll("a." + settings.class.modal);
         for (let i = 0; i < links.length; i++) {
             links[i].classList.remove(settings.class.modal);
@@ -548,12 +571,18 @@ let cm = (function () {
             links[i].addEventListener("click", function (e) {
                 e.preventDefault();
 
-                let self = this;
-                self.style["opacity"] = "0.8";
-                cm.modal.open(this.href)
-                    .finally(function() {
-                        self.style["opacity"] = null;
-                    });
+				let options = {
+					"events" : {
+					},
+				};
+				if (tmp = this.getAttribute("modal-open")) {
+					options.events.open = eval.bind(null, tmp);
+				}
+				if (tmp = this.getAttribute("modal-close")) {
+					options.events.close = eval.bind(null, tmp);
+				}
+				
+                cm.modal.open(this.href, {}, "get", undefined, options);
             });
         }
 
@@ -595,9 +624,7 @@ let cm = (function () {
         }
     }
 
-    document.addEventListener("DOMContentLoaded", function() {
-        Object.assign(settings, self.settings);
-
+    self.onReady(function() {
         guiInit();
     });
 

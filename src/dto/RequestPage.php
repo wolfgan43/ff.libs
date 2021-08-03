@@ -79,6 +79,7 @@ class RequestPage extends Mappable
     public $access                          = null;     //gestito in self && api
     public $vpn                             = null;     //gestito in self
     public $csrf                            = null;     //gestito in self
+    public $exception                       = null;     //gestito in self
 
     public $onLoad                          = null;     //gestito in self
 
@@ -392,9 +393,7 @@ class RequestPage extends Mappable
      */
     public function loadHeaders(array $server = null, bool $isCli = false) : bool
     {
-        return ($server
-            ? $this->securityHeaderParams($server, $isCli)
-            : false
+        return ($server && $this->securityHeaderParams($server, $isCli)
         );
     }
 
@@ -406,10 +405,7 @@ class RequestPage extends Mappable
     {
         $this->rawdata = $request;
 
-        return (!empty($req = $this->path2params + $this->file2params + $request)
-            ? $this->securityParams($req, $this->method)
-            : false
-        );
+        return $this->securityParams($this->path2params + $this->file2params + $request, $this->method);
     }
     /**
      * @return bool

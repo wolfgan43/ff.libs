@@ -243,13 +243,6 @@ abstract class OrmItem
             throw new Exception("Model not found", 404);
         }
 
-        if ($item::DELETE_LOGICAL_FIELD) {
-            $where[$item::DELETE_LOGICAL_FIELD]                                 = false;
-            foreach ($item->tables as $table) {
-                $where[$table . "." . $item::DELETE_LOGICAL_FIELD]              = false;
-            }
-        }
-
         $recordset                                                              = $item->db
             ->table($item::TABLE, $toDataResponse)
             ->read($where, $sort, $limit, $offset);
@@ -259,6 +252,7 @@ abstract class OrmItem
             $dataTableResponse->recordsTotal                                    = $recordset->countTotal();
             $dataTableResponse->recordsFiltered                                 = ($where ? $recordset->countRecordset() : $dataTableResponse->recordsTotal);
             $dataTableResponse->draw                                            = $draw + 1;
+            $dataTableResponse->class                                           = $item->getClassName();
         } else {
             $dataTableResponse->error(204, self::ERROR_RECORDSET_EMPTY);
         }
@@ -267,16 +261,17 @@ abstract class OrmItem
 
     /**
      * @param array $where
+     * @param bool $forse_physical
      * @return OrmResults
      * @throws Exception
      */
-    public static function deleteAll(array $where) : OrmResults
+    public static function deleteAll(array $where, bool $forse_physical = false) : OrmResults
     {
         $item                                                                   = new static();
         $db                                                                     = $item
                                                                                     ->db
                                                                                     ->table(static::TABLE);
-        return ($item::DELETE_LOGICAL_FIELD
+        return ($item::DELETE_LOGICAL_FIELD && !$forse_physical
             ? $db->update([$item::DELETE_LOGICAL_FIELD => true], $where)
             : $db->delete($where)
         );
@@ -316,7 +311,7 @@ abstract class OrmItem
      */
     public function __construct(array $where = null, array $fill = null, string $record_key = null)
     {
-        $logical_fields = $this->onLoad();
+        $logical_fields = $this->onLoad($where, $fill);
         if (!empty(static::DELETE_LOGICAL_FIELD) && !isset($logical_fields[static::DELETE_LOGICAL_FIELD])) {
             $logical_fields[static::DELETE_LOGICAL_FIELD] = false;
         }
@@ -818,6 +813,21 @@ abstract class OrmItem
     public function getID() : ?string
     {
         return $this->recordKey;
+    }
+
+    /**
+     * @param string $message
+     * @param int|null $code
+     * @return $this
+     * @throws Exception
+     */
+    public function exceptionNotFound(string $message, int $code = null) : self
+    {
+        if (!$this->isStored()) {
+            throw new Exception($message, $code);
+        }
+
+        return $this;
     }
 
     /**

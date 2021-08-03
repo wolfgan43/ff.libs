@@ -120,8 +120,8 @@ class OrmQuery
      */
     public function where(array $logical_fields = null) : ?array
     {
-        return (!empty($logical_fields)
-            ? array_replace($this->where ?? [], $logical_fields)
+        return (!empty($logical_fields) && !empty($logical_fields[$this->table])
+            ? array_replace($this->where ?? [], $logical_fields[$this->table])
             : $this->where
         );
     }

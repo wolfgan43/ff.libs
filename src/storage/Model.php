@@ -294,9 +294,9 @@ class Model implements Configurable, Dumpable
     private function getOrm() : Orm
     {
         return ($this->schema
-            ? Orm::getInstance($this->schema->collection, $this->schema->table, $this->logical_fields, $this->mapclass ?? $this->schema->mapclass)
-            : Orm::getInstance($this->collection, $this->table, $this->logical_fields, $this->mapclass)
-        );
+            ? Orm::getInstance($this->schema->collection, $this->schema->table, $this->mapclass ?? $this->schema->mapclass)
+            : Orm::getInstance($this->collection, $this->table, $this->mapclass)
+        )->setLogicalField($this->logical_fields);
     }
 
     /**

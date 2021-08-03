@@ -78,19 +78,22 @@ class DataTable
                                             [DESCRIPTION]
                                             [ERROR]
                                             [ACTIONS]
-                                            <div class="dt-head">
-                                                [LENGTH]
-                                                [SEARCH]
-                                            </div>
-                                            [PAGINATE_INFO]
-                                            <table class="dt-table">
-                                                [THEAD]
-                                                [TBODY]
-                                                [TFOOT]
-                                            </table>
-                                            <div class="dt-foot">
-                                                [PAGINATE_INFO]
-                                                [PAGINATE]
+                                            <div class="dataTable-wrapper">
+                                                <div class="dataTable-top">
+                                                    [LENGTH]
+                                                    [SEARCH]
+                                                </div>
+                                                <div class="dataTable-container">
+                                                    <table class="table dataTable-table">
+                                                        [THEAD]
+                                                        [TBODY]
+                                                        [TFOOT]
+                                                    </table>
+                                                </div>
+                                                <div class="dataTable-bottom">
+                                                    [PAGINATE_INFO]
+                                                    [PAGINATE]
+                                                </div>
                                             </div>';
 
     public $displayTableHead            = true;
@@ -369,7 +372,7 @@ class DataTable
                 $lenths .= '<option value="' . $lenth . '"' . ($this->length == $lenth ? " " . self::TC_SELECTED : null) . '>' . $lenth . '</option>';
             }
 
-            return '<span class="dt-length"><label>' . Translator::getWordByCode("Show") . ' <select name="length">' . $lenths . '</select> ' . Translator::getWordByCode("entries") . '</label></span>';
+            return '<div class="dataTable-dropdown"><label>' . Translator::getWordByCode("Show") . ' <select name="length">' . $lenths . '</select> ' . Translator::getWordByCode("entries") . '</label></div>';
         }
 
         return null;
@@ -382,7 +385,7 @@ class DataTable
     private function tableSearch() : ?string
     {
         return ($this->displayTableSearch
-            ? '<span class="dt-search">' . Translator::getWordByCode("Search") . '<input type="search" name="search" value="' . htmlspecialchars($this->search) . '"/></span>'
+            ? '<div class="dataTable-search">' . Translator::getWordByCode("Search") . '<input type="search" name="search" value="' . htmlspecialchars($this->search) . '"/></div>'
             : null
         );
     }
@@ -442,27 +445,27 @@ class DataTable
             $page_prev = $this->page - 1;
             $page_next = $this->page + 1;
 
-            $previous = (
+            $previous = '<li>' . (
                 $this->page <= 1 || $this->page > $this->pages
                 ? '<span class="' . self::TC_PREV . '">' . Translator::getWordByCode("Previous") . '</span>'
                 : '<a href="' . $this->getUrl(self::TC_PAGE, $page_prev) . '" class="' . self::TC_PREV . '">' . Translator::getWordByCode("Previous") . '</a>'
-            );
+            ) . '</li>';
 
-            $next = (
+            $next = '<li>' . (
                 $this->page < 1 || $this->page >= $this->pages
                 ? '<span class="' . self::TC_NEXT . '">' . Translator::getWordByCode("Next") . '</span>'
                 : '<a href="' . $this->getUrl(self::TC_PAGE, $page_next) . '" class="' . self::TC_NEXT . '">' . Translator::getWordByCode("Next") . '</a>'
-            );
+            ) . '</li>';
 
             for ($i = 1; $i <= $this->pages; $i++) {
-                $pages .= (
+                $pages .= '<li>' . (
                     $i == $this->page
                     ? '<span class="' . self::TC_PAGE . '">' . $i . '</span>'
                     : '<a href="' . $this->getUrl(self::TC_PAGE, $i) . '" class="' . self::TC_PAGE . '' . ($i == $this->page ? " " . self::TC_CURRENT : null) . '">' . $i . '</a>'
-                );
+                ) . '</li>';
             }
 
-            return '<span class="dt-paginate">' . $previous . $pages . $next . '</span>';
+            return '<nav class="dataTable-pagination"><ul>' . $previous . $pages . $next . '</ul></nav>';
         }
 
         return null;
@@ -492,7 +495,7 @@ class DataTable
             : null
         );
         return ($this->displayTablePaginateInfo
-            ? '<span class="dt-info">' . Translator::getWordByCode("Showing") . ' ' . $start . ' ' . Translator::getWordByCode("to") . ' ' . $length . ' ' . Translator::getWordByCode("of") . ' ' . $this->records . ' ' . Translator::getWordByCode("entries") . $total . '</span>'
+            ? '<div class="dataTable-info">' . Translator::getWordByCode("Showing") . ' ' . $start . ' ' . Translator::getWordByCode("to") . ' ' . $length . ' ' . Translator::getWordByCode("of") . ' ' . $this->records . ' ' . Translator::getWordByCode("entries") . $total . '</div>'
             : null
         );
     }
@@ -506,7 +509,7 @@ class DataTable
         $columns = null;
         foreach ($this->columns as $i => $column) {
             if ($this->displayTableSort) {
-                $class  = (isset($this->sort[$i]) ? ' class="' . self::TC_SORT . ' ' . $this->sort[$i] . '"' : null);
+                $class  = (isset($this->sort[$i]) ? ' class="dataTable-sorter ' . $this->sort[$i] . '"' : null);
                 $dir    = self::RDIR[$this->sort[$i] ?? null];
 
                 $columns .= '<th data-id="' . $column . '"' . $class . '><a href="' . $this->getUrl(self::TC_SORT, [$i => $dir]) . '">' . Translator::getWordByCode($column) . '</a></th>';

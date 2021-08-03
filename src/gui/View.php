@@ -26,6 +26,7 @@
 namespace phpformsframework\libs\gui;
 
 use phpformsframework\libs\dto\DataHtml;
+use phpformsframework\libs\dto\DataTableResponse;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\util\AdapterManager;
 use phpformsframework\libs\Exception;
@@ -107,6 +108,13 @@ class View
             }
             foreach ($value->style as $style) {
                 $this->controller->addStylesheetEmbed($value->$style);
+            }
+        } elseif ($data instanceof DataTableResponse) {
+            foreach ($data->toArray() as $item) {
+                foreach ($item as $key => $value) {
+                    $this->adapter->assign($key, $value);
+                }
+                $this->adapter->parse("Sez" . $data->class, true);
             }
         } else {
             $this->adapter->assign($data, $value);

@@ -218,6 +218,8 @@ let cm = (function () {
                         html.innerHTML = dataResponse[_HTML];
 
                         guiInit();
+                    } else {
+                        console.error("querySelector error: missing class ." + settings.class.main + " in template ", dataResponse);
                     }
                 }
             }

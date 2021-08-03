@@ -33,11 +33,10 @@ use stdClass;
  */
 class DataTableResponse extends DataResponse
 {
+    public $class               = null;
     public $draw                = 0;
     public $recordsTotal        = 0;
     public $recordsFiltered     = 0;
-
-
 
     public function __construct(array $data = array())
     {

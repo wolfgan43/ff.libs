@@ -301,7 +301,7 @@ abstract class DatabaseAdapter implements Constant
             if (count($values) > 1) {
                 $res[self::OP_ARRAY_DEFAULT]    = $this->fieldOperation($this->fieldIn($name, $values), $struct_type, $name, self::OP_ARRAY_DEFAULT);
             } else {
-                $res[self::OP_DEFAULT]          = $this->fieldOperation($this->fieldIn($name, $values), $struct_type, $name, self::OP_DEFAULT);
+                $res[self::OP_DEFAULT]          = $this->fieldOperation($this->fieldIn($name, $values[0]), $struct_type, $name, self::OP_DEFAULT);
             }
         }
 

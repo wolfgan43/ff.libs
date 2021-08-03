@@ -46,6 +46,7 @@ class Orm extends Mappable
      * @var Orm[]
      */
     private static $singleton                                                               = null;
+    private static $logical_fields                                                          = null;
 
     public const ERROR_BUCKET                                                               = "orm";
 
@@ -112,18 +113,16 @@ class Orm extends Mappable
     private $result_keys                                                                    = null;
 
     private $map_class                                                                      = null;
-    private $logical_fields                                                                 = null;
 
     private $count                                                                          = 0;
 
     /**
      * @param string|null $collection
      * @param string|null $mainTable
-     * @param array|null $logical_fields
      * @param string|null $mapClass
      * @return Orm
      */
-    public static function &getInstance(string $collection = null, string $mainTable = null, array $logical_fields = null, string $mapClass = null) : self
+    public static function &getInstance(string $collection = null, string $mainTable = null, string $mapClass = null) : self
     {
         if (!isset(self::$singleton[$collection])) {
             self::$singleton[$collection]                                                   = new Orm($collection);
@@ -131,7 +130,6 @@ class Orm extends Mappable
 
         return self::$singleton[$collection]
             ->setMainTable($mainTable)
-            ->setLogicalField($logical_fields)
             ->setMapClass($mapClass);
     }
 
@@ -168,9 +166,9 @@ class Orm extends Mappable
      * @param array|null $logical_fields
      * @return Orm
      */
-    private function &setLogicalField(array $logical_fields = null) : self
+    public function setLogicalField(array $logical_fields = null) : self
     {
-        $this->logical_fields                                                               = $logical_fields;
+        self::$logical_fields[$this->main_table]                                            = $logical_fields;
 
         return $this;
     }
@@ -554,7 +552,7 @@ class Orm extends Mappable
                                                                                                 ->setStorage($data->def)
                                                                                                 ->read(
                                                                                                     $data->select(true),
-                                                                                                    $data->where($this->logical_fields),
+                                                                                                    $data->where(self::$logical_fields),
                                                                                                     $data->sort,
                                                                                                     $limit,
                                                                                                     $offset,
@@ -614,9 +612,9 @@ class Orm extends Mappable
                         throw new Exception("Relationship not found: " . $thisTable . "." . $thisKey . " => " . $relTable . "." . $relKey, 500);
                     }
 
-                    $keyValue = array_column($regs[self::INDEX] ?? [], $thisKey);
+                    $keyValue = array_column($regs[self::INDEX] ?? $regs[self::RESULT], $thisKey);
                     if (isset($whereRef) && count($keyValue)) {
-                        $this->whereBuilder($whereRef, array_filter($keyValue), $relKey);
+                        $this->whereBuilder($whereRef, array_values(array_filter(array_unique($keyValue))), $relKey);
                     } elseif (isset($this->services_by_data->tables[$controller . "." . $relTable])) {
                         throw new Exception("Relationship found but missing keyValue in result. Check in configuration indexes: " . $thisTable . " => " . $thisKey . " (" . $relTable . "." . $relKey . ")", 500);
                     }
@@ -700,7 +698,7 @@ class Orm extends Mappable
                                                                                                 ->setStorage($data->def)
                                                                                                 ->read(
                                                                                                     $data->select(true),
-                                                                                                    $data->where($this->logical_fields),
+                                                                                                    $data->where(self::$logical_fields),
                                                                                                     $data->sort,
                                                                                                     $limit,
                                                                                                     $offset,
@@ -1229,7 +1227,7 @@ class Orm extends Mappable
     private function getModel(string $model = null) : Orm
     {
         return ($model
-            ? self::getInstance($model, $this->main_table, $this->logical_fields, $this->map_class)
+            ? self::getInstance($model, $this->main_table, $this->map_class)
             : $this
         );
     }

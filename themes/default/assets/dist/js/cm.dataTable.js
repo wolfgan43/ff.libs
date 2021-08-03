@@ -1,5 +1,22 @@
 cm.dataTable = (function () {
-
+    let settings = {
+        "class" : {
+            "component"         : "dt-wrapper",
+            "error"             : "cm-error",
+            "title"             : "dt-title",
+            "description"       : "dt-description",
+            "wrapper"           : "dataTable-wrapper",
+            "top"               : "dataTable-top",
+                "length"        : "dataTable-dropdown",
+                "search"        : "dataTable-search",
+            "container"         : "dataTable-container",
+                "table"         : "dataTable-table",
+                "empty"         : "dt-empty",
+            "bottom"            : "dataTable-bottom",
+                "info"          : "dataTable-info",
+                "paginate"      : "dataTable-pagination"
+        }
+    };
     let self = {
         "page" : function(id, number) {
             dataTable(document.getElementById(id)).run("page", number);
@@ -90,7 +107,7 @@ cm.dataTable = (function () {
                     sort = SORT + "[" + i + "]";
                     order[i].parentNode.removeAttribute("class");
                     if(i === index) {
-                        order[i].parentNode.setAttribute("class", SORT + " " + dir);
+                        order[i].parentNode.setAttribute("class", "dataTable-sorter" + " " + dir);
                         url.searchParams.set(sort, RDIR[dir]);
                     } else {
                         url.searchParams.set(sort, dir);
@@ -113,31 +130,31 @@ cm.dataTable = (function () {
                 let page_next = page + 1;
 
                 url.searchParams.set("page", page_prev);
-                prev = (
+                prev = '<li>' + (
                     page <= 1 || page > page_tot
                         ? '<span class="prev">Previous</span>'
                         : '<a href="' + url.toString() + '" class="prev">Previous</a>'
-                );
+                ) + '</li>';
 
                 url.searchParams.set("page", page_next);
-                next = (
+                next = '<li>' + (
                     page < 1 || page >= page_tot
                         ? '<span class="next">Next</span>'
                         : '<a href="' + url.toString() + '" class="next">Next</a>'
-                );
+                ) + '</li>';
 
                 for (let i = 1; i <= page_tot; i++) {
                     url.searchParams.set("page", i);
 
-                    pages += (
+                    pages += '<li>' + (
                         i === page
                             ? '<span class="page">' + i + '</span>'
                             : '<a href="' + url.toString() + '" class="page' + (i === page ? " current" : "") + '">' + i + '</a>'
-                    );
+                    ) + '</li>';
                 }
 
                 for (let i = 0; i < paging.length; i++) {
-                    paging[i].innerHTML = prev + pages + next;
+                    paging[i].innerHTML = '<ul>' + prev + pages + next + '</ul>';
 
                     addListener("a.prev, a.page, a.next", "click", function(self) {
                         return self.href;
@@ -178,7 +195,7 @@ cm.dataTable = (function () {
                     let columns = {};
 
                     for (let i = 0; i < TH.length; i++) {
-                        columns[TH[i].getAttribute("data-id")] = TH[i].classList.contains("sort");
+                        columns[TH[i].getAttribute("data-id")] = TH[i].classList.contains(SORT);
                     }
 
                     let TR = '';
@@ -197,14 +214,14 @@ cm.dataTable = (function () {
             }
 
             function drawBodyEmpty(TH, tBody, message) {
-                tBody.innerHTML = '<tr class="dt-empty"><td colspan="' + TH.length + '">No matching records found. ' + message + '</td></tr>';
+                tBody.innerHTML = '<tr class="' + settings.class.empty + '"><td colspan="' + TH.length + '">No matching records found. ' + message + '</td></tr>';
             }
 
             if(response) {
                 drawOrder(dt.querySelectorAll("THEAD TH a"));
                 drawBody(dt.querySelectorAll("THEAD TH"), dt.querySelector("TBODY"));
-                drawInfo(dt.querySelectorAll(".dt-info"), dt.querySelector(".dt-length SELECT").value);
-                drawPage(dt.querySelectorAll(".dt-paginate"), dt.querySelector(".dt-length SELECT").value);
+                drawInfo(dt.querySelectorAll("." + settings.class.info), dt.querySelector("." + settings.class.length + " SELECT").value);
+                drawPage(dt.querySelectorAll("." + settings.class.paginate), dt.querySelector("." + settings.class.length + " SELECT").value);
             } else {
                 response = {
                     recordsFiltered : 0,
@@ -213,8 +230,8 @@ cm.dataTable = (function () {
 
                 drawOrder(dt.querySelectorAll("THEAD TH a"));
                 drawBodyEmpty(dt.querySelectorAll("THEAD TH"), dt.querySelector("TBODY"));
-                drawInfo(dt.querySelectorAll(".dt-info"), dt.querySelector(".dt-length SELECT").value);
-                drawPage(dt.querySelectorAll(".dt-paginate"), dt.querySelector(".dt-length SELECT").value);
+                drawInfo(dt.querySelectorAll("." + settings.class.info), dt.querySelector(".dt" + settings.class.length + " SELECT").value);
+                drawPage(dt.querySelectorAll("." + settings.class.paginate), dt.querySelector("." + settings.class.length + " SELECT").value);
             }
         }
 
@@ -240,7 +257,7 @@ cm.dataTable = (function () {
     }
 
     function guiInit() {
-        let dt  = document.querySelectorAll(".dt-wrapper");
+        let dt  = document.querySelectorAll("." + settings.class.component);
         for (let i = 0; i < dt.length; i++) {
             dataTable(dt[i]);
         }

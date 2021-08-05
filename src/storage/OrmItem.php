@@ -49,6 +49,11 @@ abstract class OrmItem
 
     private static $buffer                                                      = null;
 
+    private const LOGICAL_OPERATORS                                             = [
+        '$or'           => '$or',
+        '$and'          => '$and'
+    ];
+
     private const SEARCH_OPERATORS                                              = [
         'gt'            => '$gt',
         'gte'           => '$gte',
@@ -190,6 +195,10 @@ abstract class OrmItem
         if (is_array($query)) {
             $dtd                                                                = $item->db->dtdStore();
             foreach ($query as $key => $value) {
+                if (isset(self::LOGICAL_OPERATORS[$key])) {
+                    $where[$key]                                                = $value;
+                    continue;
+                }
                 if (!isset($dtd->$key)) {
                     throw new Exception("Field " . $key . " not found in table " . $item::TABLE . " (" . $item::COLLECTION . ")", 500);
                 }

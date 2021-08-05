@@ -2,7 +2,6 @@ let cm = (function () {
     const _PATHNAME             = "pathname";
     const _CSS                  = "css";
     const _STYLE                = "style";
-    const _FONTS                = "fonts";
     const _JS                   = "js";
     const _JS_EMBED             = "js_embed";
     const _JS_TPL               = "js_tpl";
@@ -15,7 +14,6 @@ let cm = (function () {
     const _LOADED               = "-loaded";
 
     let cache                   = {};
-    let modalLoaded             = false;
     let settings = {
         "class" : {
             "main"              : "cm-main",
@@ -57,22 +55,18 @@ let cm = (function () {
     };
 	
     let self = {
-        "settings" : settings,
-		
-		"onReady" : function (cb) {
+        "settings" : function (newsettings) {
+            Object.assign(settings, newsettings);
+        },
+		"onReady" : function (callback) {
 			if (document.readyState !== 'loading') {
-				cb();
+                callback();
 			} else {
 				document.addEventListener('DOMContentLoaded', function (event) {
-					cb(event);
+                    callback(event);
 				});
 			}
 		},
-		
-		"changeSettings" : function (newsettings) {
-			Object.assign(settings, newsettings);
-		},
-
         "error" : (function(container, selector) {
             function wrapper() {
                 let errorClass = selector || settings.class.error;
@@ -155,27 +149,6 @@ let cm = (function () {
                 }
             }
 
-            if (typeof dataResponse[_JS] === "object") {
-                for (let key in dataResponse[_JS]) {
-                    if (!dataResponse[_JS].hasOwnProperty(key) || isLoadedResource(key, "script")) {
-                        continue;
-                    }
-
-                    let script = document.createElement("script");
-                    script.type = "application/javascript";
-                    script.src = key;
-                    document.head.appendChild(script);
-                }
-            }
-            if (dataResponse[_JS_EMBED] && cache[_JS_EMBED + dataResponse[_PATHNAME]] === undefined) {
-                let script = document.createElement("script");
-                script.type = "application/javascript";
-                script.innerHTML = dataResponse[_JS_EMBED];
-                document.head.appendChild(script);
-
-                cache[_JS_EMBED + dataResponse[_PATHNAME]] = true;
-            }
-
             if (dataResponse[_JS_TPL] && cache[_JS_TPL + dataResponse[_PATHNAME]] === undefined) {
                document.head.insertAdjacentHTML( 'beforeend', dataResponse[_JS_TPL]);
 
@@ -192,36 +165,138 @@ let cm = (function () {
                 cache[_JSON_LD + dataResponse[_PATHNAME]] = true;
             }
 
+            let html;
+            let guiInit = false;
             if(dataResponse[_HTML] !== undefined) {
                 if(querySelector) {
                     if((html = (document.querySelector(querySelector)))) {
                         html.innerHTML = dataResponse[_HTML];
 
-                        guiInit();
+                        guiInit = true;
                     }
                 } else if(dataResponse[_COMPONENT] !== undefined) {
                     if((html = (document.querySelector(dataResponse[_COMPONENT])))) {
                         html.parentNode.replaceChild(dataResponse[_HTML], html);
 
-                        guiInit();
+                        guiInit = true;
                     } else {
                         console.error("querySelector error: declare component in response or in attribute data-component.", dataResponse);
                     }
                 } else {
+                    let selector;
                     let div = document.createElement("div");
                     div.innerHTML = dataResponse[_HTML];
                     if((selector = div.firstChild.getAttribute("id")) && (html = (document.querySelector("#" + selector)))) {
                         html.parentNode.replaceChild(div, html);
 
-                        guiInit();
+                        guiInit = true;
                     } else if((html = (document.querySelector("." + settings.class.main)))) {
                         html.innerHTML = dataResponse[_HTML];
 
-                        guiInit();
+                        guiInit = true;
                     } else {
                         console.error("querySelector error: missing class ." + settings.class.main + " in template ", dataResponse);
                     }
                 }
+            }
+
+            if ((typeof dataResponse[_JS] === "object")
+                || (dataResponse[_JS_EMBED] && cache[_JS_EMBED + dataResponse[_PATHNAME]] === undefined)) {
+
+                (function loadNextScript () {
+                    if (typeof dataResponse[_JS] === "object") {
+                        for (let key in dataResponse[_JS]) {
+                            if (!dataResponse[_JS].hasOwnProperty(key) || isLoadedResource(key, "script")) {
+                                continue;
+                            }
+
+                            let script = document.createElement("script");
+                            script.defer = true;
+                            script.type = "application/javascript";
+                            script.onload = loadNextScript;
+                            script.src = key;
+                            document.head.appendChild(script);
+                            delete dataResponse[_JS][key];
+                            return;
+                        }
+                    }
+
+                    if (dataResponse[_JS_EMBED] && cache[_JS_EMBED + dataResponse[_PATHNAME]] === undefined) {
+                        let script = document.createElement("script");
+                        script.type = "application/javascript";
+                        script.innerHTML = dataResponse[_JS_EMBED];
+                        document.head.appendChild(script);
+
+                        cache[_JS_EMBED + dataResponse[_PATHNAME]] = true;
+                    }
+
+                    guiInit && self.guiInit();
+                })();
+            } else {
+                guiInit && self.guiInit();
+            }
+        },
+        "guiInit" : function (domElement) {
+            domElement = domElement || document;
+
+            let links = domElement.querySelectorAll("a." + settings.class.modal);
+            for (let i = 0; i < links.length; i++) {
+                links[i].classList.remove(settings.class.modal);
+                links[i].classList.add(settings.class.modal + _LOADED);
+                links[i].addEventListener("click", function (e) {
+                    e.preventDefault();
+
+                    let tmp;
+                    let options = {
+                        "events" : {
+                        },
+                    };
+                    if ((tmp = this.getAttribute("modal-open"))) {
+                        options.events.open = eval.bind(null, tmp);
+                    }
+                    if ((tmp = this.getAttribute("modal-close"))) {
+                        options.events.close = eval.bind(null, tmp);
+                    }
+
+                    cm.modal.open(this.href, {}, "get", undefined, options);
+                });
+            }
+
+            links = domElement.querySelectorAll("a." + settings.class.xhr);
+            for (let i = 0; i < links.length; i++) {
+                links[i].addEventListener("click", function (e) {
+                    e.preventDefault();
+
+                    let self = this;
+                    self.style["opacity"] = "0.8";
+                    cm.api.get(this.href)
+                        .then(function(dataResponse) {
+                            cm.inject(dataResponse);
+                        })
+                        .finally(function() {
+                            self.style["opacity"] = null;
+                        });
+                });
+            }
+
+            links = domElement.querySelectorAll("form." + settings.class.xhr);
+            for (let i = 0; i < links.length; i++) {
+                links[i].addEventListener("submit", function (e) {
+                    e.preventDefault();
+
+                    let self = this;
+                    self.style["opacity"] = "0.8";
+                    cm.api.post(self.action, new FormData(self))
+                        .then(function(dataResponse) {
+                            cm.inject(dataResponse, self.getAttribute("data-component"));
+                        })
+                        .catch(function(errorMessage) {
+                            cm.error(self).set(errorMessage);
+                        })
+                        .finally(function() {
+                            self.style["opacity"] = null;
+                        });
+                });
             }
         },
         "api" : (function () {
@@ -238,7 +313,8 @@ let cm = (function () {
                     }
                     xhr.onreadystatechange = function () {
                         if (xhr.readyState === XMLHttpRequest.DONE) {
-                            if((resp = xhr.responseText)) {
+                            let resp;
+                            if ((resp = xhr.responseText)) {
                                 let respJson = JSON.parse(resp);
 
                                 if (respJson[_DEBUG] !== undefined) {
@@ -246,7 +322,7 @@ let cm = (function () {
                                 }
 
                                 if (xhr.status === 200) {
-                                    if(respJson["redirect"] !== undefined) {
+                                    if (respJson["redirect"] !== undefined) {
                                         window.location.href = respJson["redirect"];
                                     } else {
                                         resolve(returnRawData ? respJson : respJson[_DATA]);
@@ -254,12 +330,11 @@ let cm = (function () {
                                 } else {
                                     reject(respJson[_ERROR]);
                                 }
-                            } else if(xhr.status === 204) {
+                            } else if (xhr.status === 204) {
                                 resolve(returnRawData ? undefined : []);
                             } else {
                                 reject("xhr response empty");
                             }
-                        } else {
                         }
                     }
                     xhr.send(typeof data !== 'object' || data instanceof FormData ? data : JSON.stringify(data));
@@ -267,8 +342,9 @@ let cm = (function () {
             }
 
             function responseCSRF(method, url, headers, data) {
-                if((csrf = cm.cookie.get("csrf"))) {
-                    headers = {...headers, ...{"X-CSRF-TOKEN" : csrf}};
+                let csrf;
+                if ((csrf = cm.cookie.get("csrf"))) {
+                    headers = {...headers, ...{"X-CSRF-TOKEN": csrf}};
                 }
                 return request(method, url, headers, data);
             }
@@ -295,81 +371,12 @@ let cm = (function () {
             };
         })(),
         "modal" : (function() {
-			var privates = {
-				"$dialog" : undefined,
-				"events" : undefined,
-			};
-			
-			function getTplObj(domObj, selectorClass) {
-				let tmp = domObj.querySelector("." + selectorClass);
-				tmp.classList.remove(selectorClass);
-				let tpl = tmp.outerHTML;
-				tmp.remove();
-				return tpl;
-			}
-			
-            let modal = {
-                "formAddListener" : function(url, headers = {}) {
-                    if(($form = privates.$dialog.querySelector("form"))) {
-                        $form.action = url;
-                        $form.addEventListener("submit", function(e) {
-                            e.preventDefault();
+            let privates = {
+                "$dialog": undefined,
+                "events": undefined,
+            };
 
-                            publics.open(url, headers, "post", new FormData($form));
-                        });
-                    }
-                },
-				
-                "error" : {
-                    "show" : function(message) {
-						if (!privates.$dialog) {
-							return;
-						}
-
-						cm.error(privates.$dialog.querySelector("." + settings.modal.body), settings.modal.error).set(message);
-                    },
-                    "hide" : function() {
-						if (!privates.$dialog) {
-							return;
-						}
-                        cm.error(privates.$dialog.querySelector("." + settings.modal.body), settings.modal.error).clear();
-                    }
-                },
-                "show" : function show() {
-					if (!privates.$dialog) {
-						throw new Error("cm - dialog not created");
-					}
-					
-                    privates.$dialog.classList.add(settings.modal.open);
-                    privates.$dialog.style["display"] = "block";
-					
-					if (privates.events.open) {
-						privates.events.open({
-							"$dialog"	: privates.$dialog,
-						});
-					}
-                },
-                "hide" : function () {
-					if (!privates.$dialog) {
-						return;
-					}
-					
-                    privates.$dialog.classList.remove(settings.modal.open);
-                    privates.$dialog.style["display"] = "none";
-
-                    this.error.hide();
-                },
-                "clear" : function () {
-                    modal.error.hide();
-					publics.set({
-						title : "",
-						description : "",
-						message : "",
-					});
-                }
-            }
-
-            var publics = {
+            let publics = {
 				"create" : function ({
 					title,
 					description,
@@ -384,24 +391,24 @@ let cm = (function () {
 					},
 				} = {}) {
 					return new Promise(resolve => {
-						self.onReady(function (event){
+						self.onReady(function () {
 							if (privates.$dialog) {
 								resolve('created');
 								return;
 							}
-							
+
 							privates.events = events;
-							
+
 							privates.$dialog = document.createElement("cm-modal-dlg");
 							privates.$dialog.innerHTML = settings.modal.tpl;
 							privates.$dialog = privates.$dialog.firstElementChild;
 
 							let close;
-							if (close = privates.$dialog.querySelector("." + settings.modal.header.close)) {
+							if ((close = privates.$dialog.querySelector("." + settings.modal.header.close))) {
 								close.addEventListener("click", function () {
 									publics.close();
 								});
-							};
+							}
 
 							if (!nodefaultbt && (!buttons || !buttons.length) && !close) {
 								buttons = [];
@@ -413,7 +420,7 @@ let cm = (function () {
 									"hide"		: true,
 								});
 							}
-							
+
 							publics.set({
 								title,
 								description,
@@ -425,12 +432,11 @@ let cm = (function () {
 							if (show) {
 								modal.show();
 							}
-							
+
 							resolve('created');
-						}); // onReady
-					}); // promise
+						});
+					});
 				},
-				
 				"bt" : function (button) {
 					if (button.hide) {
 						publics.close();
@@ -440,7 +446,6 @@ let cm = (function () {
 						button.action();
 					}
 				},
-				
 				"set" : function ({
 					title,
 					description,
@@ -454,7 +459,7 @@ let cm = (function () {
 							$title.innerHTML = title;
 						}
 					}
-					
+
 					if (description !== undefined) {
 						let $description = privates.$dialog.querySelector("." + settings.modal.header.description)
 						if ($description) {
@@ -468,7 +473,7 @@ let cm = (function () {
 							$message.innerHTML = message;
 						}
 					}
-					
+
 					let display_footer = false;
 					let $footer = privates.$dialog.querySelector("." + settings.modal.footer.container);
 					if (actions !== undefined) {
@@ -478,9 +483,8 @@ let cm = (function () {
 					if (buttons !== undefined) {
 						display_footer = true;
 						buttons.each(function (i, v) {
-							var tmp = settings.modal.tpl_bt.replaceAll("{bt_id}", v.id);
-							tmp = tmp.replaceAll("{label}", v.label);
-							var $bt = document.createElement("dialog_bt");
+							let tmp = settings.modal.tpl_bt.replaceAll("{bt_id}", v.id).replaceAll("{label}", v.label);
+                            let $bt = document.createElement("dialog_bt");
 							$bt.innerHTML = tmp;
 							$bt = $bt.firstElementChild;
 							if (!v.id) {
@@ -491,21 +495,19 @@ let cm = (function () {
 							}
 							$bt.addEventListener("click", publics.bt.bind(null, v));
 							privates.$dialog.querySelector("." + settings.modal.footer.action).appendChild($bt);
-							/*privates.$dialog.querySelector("." + settings.modal.footer.action).appendChild(...$bt.childNodes);
-							$bt.remove();*/
 						});
 					}
-					
-					if (buttons === undefined) { // check for actions embedded in the content
-						if (($tmp = privates.$dialog.querySelector("." + settings.modal.body + " ." + settings.modal.footer.action))) {
-							display_footer = true;
-							$footer.appendChild($tmp);
-						}
-					}
-					
+
+                    if (buttons === undefined) { // check for actions embedded in the content
+                        let $tmp;
+                        if (($tmp = privates.$dialog.querySelector("." + settings.modal.body + " ." + settings.modal.footer.action))) {
+                            display_footer = true;
+                            $footer.appendChild($tmp);
+                        }
+                    }
+
 					$footer.style.display = display_footer ? 'block' : 'none';
 				},
-				
                 "open" : function(url, headers = {}, method = "get", formdata = undefined, options = {}) {
                     return new Promise(function (resolve, reject) {
                         if (privates.$dialog) {
@@ -519,8 +521,8 @@ let cm = (function () {
 									publics.close();
 									return;
 								}
-									
-								publics.create(Object.assign(options, {"show" : false})).then(_ => {							
+
+								publics.create(Object.assign(options, {"show" : false})).then(_ => {
 									cm.inject(dataResponse, "." + settings.modal.container + " ." + settings.modal.body);
 
 									publics.set({
@@ -535,7 +537,7 @@ let cm = (function () {
 								});
                             })
                             .catch(function (errorMessage) {
-								publics.create({"show" : false}).then(_ => {							
+								publics.create({"show" : false}).then(_ => {
 									modal.error.show(errorMessage);
 									modal.show();
 
@@ -559,75 +561,76 @@ let cm = (function () {
 					privates.$dialog.remove();
 					privates.$dialog	= undefined;
 					privates.events		= undefined;
-                }
+                },
             };
-			return publics;
+
+            let modal = {
+                "formAddListener" : function(url, headers = {}) {
+                    let $form;
+                    if (($form = privates.$dialog.querySelector("form"))) {
+                        $form.action = url;
+                        $form.addEventListener("submit", function (e) {
+                            e.preventDefault();
+
+                            publics.open(url, headers, "post", new FormData($form));
+                        });
+                    }
+                },
+                "error" : {
+                    "show" : function(message) {
+						if (!privates.$dialog) {
+							return;
+						}
+
+						cm.error(privates.$dialog.querySelector("." + settings.modal.body), settings.modal.error).set(message);
+                    },
+                    "hide" : function() {
+						if (!privates.$dialog) {
+							return;
+						}
+                        cm.error(privates.$dialog.querySelector("." + settings.modal.body), settings.modal.error).clear();
+                    }
+                },
+                "show" : function show() {
+					if (!privates.$dialog) {
+						throw new Error("cm - dialog not created");
+					}
+
+                    privates.$dialog.classList.add(settings.modal.open);
+                    privates.$dialog.style["display"] = "block";
+
+					if (privates.events.open) {
+						privates.events.open({
+							"$dialog"	: privates.$dialog,
+						});
+					}
+                },
+                "hide" : function () {
+					if (!privates.$dialog) {
+						return;
+					}
+
+                    privates.$dialog.classList.remove(settings.modal.open);
+                    privates.$dialog.style["display"] = "none";
+
+                    this.error.hide();
+                },
+                "clear" : function () {
+                    modal.error.hide();
+					publics.set({
+						title : "",
+						description : "",
+						message : "",
+					});
+                }
+            }
+
+            return publics;
         })()
     }
 
-    function guiInit() {
-        let links = document.querySelectorAll("a." + settings.class.modal);
-        for (let i = 0; i < links.length; i++) {
-            links[i].classList.remove(settings.class.modal);
-            links[i].classList.add(settings.class.modal + _LOADED);
-            links[i].addEventListener("click", function (e) {
-                e.preventDefault();
-
-				let options = {
-					"events" : {
-					},
-				};
-				if (tmp = this.getAttribute("modal-open")) {
-					options.events.open = eval.bind(null, tmp);
-				}
-				if (tmp = this.getAttribute("modal-close")) {
-					options.events.close = eval.bind(null, tmp);
-				}
-				
-                cm.modal.open(this.href, {}, "get", undefined, options);
-            });
-        }
-
-        links = document.querySelectorAll("a." + settings.class.xhr);
-        for (let i = 0; i < links.length; i++) {
-            links[i].addEventListener("click", function (e) {
-                e.preventDefault();
-
-                let self = this;
-                self.style["opacity"] = "0.8";
-                cm.api.get(this.href)
-                    .then(function(dataResponse) {
-                        cm.inject(dataResponse);
-                    })
-                    .finally(function() {
-                        self.style["opacity"] = null;
-                    });
-            });
-        }
-
-        links = document.querySelectorAll("form." + settings.class.xhr);
-        for (let i = 0; i < links.length; i++) {
-            links[i].addEventListener("submit", function (e) {
-                e.preventDefault();
-
-                let self = this;
-                self.style["opacity"] = "0.8";
-                cm.api.post(self.action, new FormData(self))
-                    .then(function(dataResponse) {
-                        cm.inject(dataResponse, self.getAttribute("data-component"));
-                    })
-                    .catch(function(errorMessage) {
-                        cm.error(self).set(errorMessage);
-                    })
-                    .finally(function() {
-                        self.style["opacity"] = null;
-                    });
-            });
-        }
-    }
-
     self.onReady(function() {
-        guiInit();
+        self.guiInit();
     });
 
     return self;

@@ -350,7 +350,7 @@ abstract class Controller
      */
     private function addAsset(array &$ref, string $type, string $media, string $filename_or_url) : self
     {
-        if (Validator::isUrl($filename_or_url)) {
+        if (strpos($filename_or_url, "data:") === 0 || Validator::isUrl($filename_or_url)) {
             $ref[$this->maskEnv($filename_or_url)]                                      = $media;
         } elseif (Validator::isFile($filename_or_url)) {
             if (strpos($filename_or_url, DIRECTORY_SEPARATOR) === 0 && Dir::checkDiskPath($filename_or_url)) {

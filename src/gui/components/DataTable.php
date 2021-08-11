@@ -60,6 +60,8 @@ class DataTable
     private const TC_ERROR              = "cm-error";
     private const TC_XHR                = "cm-xhr";
 
+    private const DEFAULT_SORT          = "0";
+    private const DEFAULT_SORT_DIR      = "asc";
 
     private const RECORD_LIMIT          = 25;
 
@@ -125,6 +127,7 @@ class DataTable
      */
     private $db                         = null;
     private $dtd                        = null;
+    protected $schema                   = null;
 
     private $page                       = null;
     protected $start                    = null;
@@ -161,17 +164,17 @@ class DataTable
     /**
      * DataTable constructor.
      * @param string $model
+     * @param string|null $view
      */
-    public function __construct(string $model)
+    public function __construct(string $model, string $view = null)
     {
-        $this->id                       = self::BUCKET . DIRECTORY_SEPARATOR . $model;
-
         $this->isXhr                    = Kernel::$Page->isXhr;
         $this->query                    = Kernel::$Page->getRequest();
 
-        $this->db                       = new Model($model);
+        $this->db                       = new Model($model, $view);
         $this->dtd                      = $this->db->dtdStore();
-        $this->columns                  = $this->db->dtdRaw();
+        $this->schema                   = $this->db->schema();
+        $this->id                       = self::BUCKET . DIRECTORY_SEPARATOR . $this->schema->id;
 
         $request                        = (object)$this->query;
         $this->draw                     = $request->draw ?? 1;
@@ -202,13 +205,19 @@ class DataTable
         $sort = null;
 
         if ($this->search) {
-            $where = ['$or' => array_fill_keys($this->columns, ['$regex' => "*" . $this->search . "*"])];
+            $where = ['$or' => array_fill_keys($this->schema->columns, ['$regex' => "*" . $this->search . "*"])];
         }
 
         foreach ($this->sort as $i => $dir) {
-            $sort[$this->columns[$i]] = $dir;
+            if (isset($this->schema->columns[$i])) {
+                $sort[$this->schema->columns[$i]] = $dir;
+            }
         }
 
+        if (!$sort) {
+            $this->sort[self::DEFAULT_SORT] = self::DEFAULT_SORT_DIR;
+            $sort[$this->schema->columns[self::DEFAULT_SORT]] = self::DEFAULT_SORT_DIR;
+        }
         $records = $this->db->read($where, $sort, $this->length, $this->start);
 
         $this->records = $records->countTotal();
@@ -414,7 +423,7 @@ class DataTable
             . (
                 $this->records && $this->start <= $this->records
                 ? $this->tableRows()
-                : '<tr><td class="dt-empty" colspan="' . count($this->columns) . '">' . Translator::getWordByCode("No matching records found") . '</td></tr>'
+                : '<tr><td class="dt-empty" colspan="' . count($this->schema->columns) . '">' . Translator::getWordByCode("No matching records found") . '</td></tr>'
             )
             . '</tbody>';
     }
@@ -507,7 +516,7 @@ class DataTable
     private function tableColumns() : string
     {
         $columns = null;
-        foreach ($this->columns as $i => $column) {
+        foreach ($this->schema->columns as $i => $column) {
             if ($this->displayTableSort) {
                 $class  = (isset($this->sort[$i]) ? ' class="dataTable-sorter ' . $this->sort[$i] . '"' : null);
                 $dir    = self::RDIR[$this->sort[$i] ?? null];

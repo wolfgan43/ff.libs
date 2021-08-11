@@ -113,6 +113,7 @@ class Orm extends Mappable
     private $result_keys                                                                    = null;
 
     private $map_class                                                                      = null;
+    private $preserve_columns_order                                                         = false;
 
     private $count                                                                          = 0;
 
@@ -164,12 +165,14 @@ class Orm extends Mappable
 
     /**
      * @param array|null $logical_fields
+     * @param bool $preserve_columns_order
      * @return Orm
      */
-    public function setLogicalField(array $logical_fields = null) : self
+    public function setLogicalField(array $logical_fields = null, bool $preserve_columns_order = false) : self
     {
         self::$logical_fields[$this->main_table]                                            = $logical_fields;
 
+        $this->preserve_columns_order                                                       = $preserve_columns_order;
         return $this;
     }
 
@@ -257,7 +260,7 @@ class Orm extends Mappable
      */
     private function setStorage(OrmDef $struct) : Database
     {
-        return Database::getInstance($this->adapters, $struct->toArray());
+        return Database::getInstance($this->adapters, $struct->toArray($this->preserve_columns_order));
     }
 
     /**

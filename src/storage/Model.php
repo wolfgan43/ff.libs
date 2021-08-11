@@ -25,9 +25,9 @@
  */
 namespace phpformsframework\libs\storage;
 
+use phpformsframework\libs\Config;
 use phpformsframework\libs\Configurable;
 use phpformsframework\libs\Debug;
-use phpformsframework\libs\Dir;
 use phpformsframework\libs\dto\ConfigRules;
 use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\storage\dto\OrmResults;
@@ -43,16 +43,22 @@ class Model implements Configurable, Dumpable
     private const ERROR_BUCKET                                                          = Orm::ERROR_BUCKET;
 
     private const ERROR_MODEL_NOT_FOUND                                                 = "Model not Found";
+    private const KEY                                                                   = "id";
     private const COLLECTION                                                            = "collection";
     private const TABLE                                                                 = "table";
     private const MAPCLASS                                                              = "mapclass";
-    private const RAWDATA                                                               = "rawdata";
+    private const FIELD                                                                 = "field";
+    private const COLUMNS                                                               = "columns";
     private const READ                                                                  = "read";
     private const INSERT                                                                = "insert";
-    private const FAKE                                                                  = "fake";
+    private const MOCK                                                                  = "mock";
     private const DTD                                                                   = "dtd";
+    private const PROPERTIES                                                            = "properties";
+    private const OPTION                                                                = "option";
     private const DOT                                                                   = ".";
     private const SELECT_ALL                                                            = ".*";
+
+    private const DEFAULT_FIELD_TYPE                                                    = "string";
 
     private static $models                                                              = null;
 
@@ -80,9 +86,13 @@ class Model implements Configurable, Dumpable
         );
     }
 
-    public static function get(string $model_name) : ?array
+    /**
+     * @param string $model_name
+     * @return array|null
+     */
+    public static function columns(string $model_name) : ?array
     {
-        return self::$models[$model_name][self::RAWDATA] ?? null;
+        return self::$models[$model_name][self::COLUMNS] ?? null;
     }
 
 
@@ -91,11 +101,12 @@ class Model implements Configurable, Dumpable
      * @todo da valutare poiche da problemi di omonimia. Se mai usata da togliere $collection_or_model
      * @param string|null $collection_or_model
      */
-    public function __construct(string $collection_or_model = null)
+    public function __construct(string $collection_or_model = null, string $view = null)
     {
+        $this->name                                                                     = $collection_or_model;
+
         if (isset(self::$models[$collection_or_model])) {
-            $this->schema                                                               = (object) self::$models[$collection_or_model];
-            $this->name                                                                 = $collection_or_model;
+            $this->schema                                                               = (object) (self::$models[$collection_or_model . DIRECTORY_SEPARATOR . $view] ?? self::$models[$collection_or_model]);
         } else {
             $this->collection                                                           = $collection_or_model;
         }
@@ -109,7 +120,6 @@ class Model implements Configurable, Dumpable
     public function loadCollection(string $collection_name, array $logical_fields = null) : self
     {
         $this->schema                                                                   = null;
-        $this->name                                                                     = null;
         $this->collection                                                               = $collection_name;
         $this->logical_fields                                                           = $logical_fields;
 
@@ -121,14 +131,13 @@ class Model implements Configurable, Dumpable
      * @return Model
      * @throws Exception
      */
-    public function loadModel(string $model_name) : self
+    public function load(string $model_name) : self
     {
         if (!isset(self::$models[$model_name])) {
             throw new Exception(self::ERROR_MODEL_NOT_FOUND . ": " . $model_name, 501);
         }
 
         $this->schema                                                                   = (object) (self::$models[$model_name]);
-        $this->name                                                                     = $model_name;
         $this->collection                                                               = null;
 
         return $this;
@@ -244,7 +253,7 @@ class Model implements Configurable, Dumpable
      */
     public function readByMock() : OrmResults
     {
-        return new OrmResults(1, array($this->schema->fake), null, null, null, $this->schema->mapclass);
+        return new OrmResults(1, array($this->schema->mock), null, null, null, $this->schema->mapclass);
     }
 
     /**
@@ -257,19 +266,11 @@ class Model implements Configurable, Dumpable
     }
 
     /**
-     * @return array
+     * @return stdClass
      */
-    public function dtdModel() : ?array
+    public function schema() : stdClass
     {
-        return $this->schema->dtd ?? null;
-    }
-
-    /**
-     * @return array
-     */
-    public function dtdRaw() : ?array
-    {
-        return $this->schema->rawdata ?? null;
+        return $this->schema;
     }
 
     /**
@@ -281,11 +282,11 @@ class Model implements Configurable, Dumpable
         return $this->getOrm()->informationSchema($table ?? $this->schema->table ?? $this->table);
     }
     /**
-     * @return stdClass
+     * @return string|null
      */
     public function getName() : ?string
     {
-        return $this->name ?? $this->collection . DIRECTORY_SEPARATOR . $this->table;
+        return $this->name . DIRECTORY_SEPARATOR . $this->table;
     }
 
     /**
@@ -296,7 +297,7 @@ class Model implements Configurable, Dumpable
         return ($this->schema
             ? Orm::getInstance($this->schema->collection, $this->schema->table, $this->mapclass ?? $this->schema->mapclass)
             : Orm::getInstance($this->collection, $this->table, $this->mapclass)
-        )->setLogicalField($this->logical_fields);
+        )->setLogicalField($this->logical_fields, true);
     }
 
     /**
@@ -437,7 +438,7 @@ class Model implements Configurable, Dumpable
         }
 
         return array(
-            "models"       => self::$models
+            "models"        => self::$models
         );
     }
 
@@ -446,49 +447,110 @@ class Model implements Configurable, Dumpable
      */
     private static function loadModels(array $models) : void
     {
-        $schema                                                                         = array();
+        $extends = [];
         foreach ($models as $model) {
-            $model_attr                                                                 = (object) Dir::getXmlAttr($model);
-            if (isset($model_attr->name)) {
-                $model_name                                                             = $model_attr->name;
+            if (self::loadModel($model)) {
+                $extends[] = $model;
+            }
+        }
+        foreach ($extends as $extend) {
+            self::loadModel($extend, true);
+        }
+    }
 
-                $schema[$model_name][self::COLLECTION]                                  = $model_attr->collection   ?? null;
-                $schema[$model_name][self::TABLE]                                       = $model_attr->table        ?? null;
-                $schema[$model_name][self::MAPCLASS]                                    = $model_attr->mapclass     ?? null;
+    private static function loadModel(array $model, bool $isExtend = null) : ?bool
+    {
+        $model_attr                                                                             = Config::getXmlAttr($model);
 
-                if (isset($model["field"])) {
-                    $fields                                                             = $model["field"];
-                    $prefix                                                             = (
-                        $schema[$model_name][self::COLLECTION]
-                        ? $schema[$model_name][self::COLLECTION] . self::DOT
-                        : null
-                    );
-                    foreach ($fields as $field) {
-                        $attr                                                           = (object) Dir::getXmlAttr($field);
-                        if (!isset($attr->name) || isset($schema[$model_name][self::READ][$prefix . $attr->db])) {
+        if ($isExtend) {
+            $extend                                                                             = self::$models[$model_attr->extends];
+            $schema_name                                                                        = $model_attr->extends . DIRECTORY_SEPARATOR . $model_attr->name;
+
+            $schema[self::COLLECTION]                                                           = $extend[self::COLLECTION];
+            $schema[self::TABLE]                                                                = $extend[self::TABLE];
+            $schema[self::MAPCLASS]                                                             = $extend[self::MAPCLASS]     ?? null;
+        } elseif (!empty($model_attr->extends)) {
+            return true;
+        } elseif (empty($model_attr->table) || empty($model_attr->collection)) {
+            Exception::warning("Model attribute: 'collection' and 'table' are required", static::ERROR_BUCKET);
+            return null;
+        } else {
+            $schema                                                                             = [];
+            $schema_name                                                                        = $model_attr->name ?? $model_attr->table;
+
+            $schema[self::COLLECTION]                                                           = $model_attr->collection;
+            $schema[self::TABLE]                                                                = $model_attr->table;
+            $schema[self::MAPCLASS]                                                             = $model_attr->mapclass     ?? null;
+        }
+        $schema[self::KEY]                                                                      = $schema_name;
+        if (!empty($model[self::FIELD])) {
+            if (!isset($model[self::FIELD][0])) {
+                $model[self::FIELD]                                                             = array($model[self::FIELD]);
+            }
+            $prefix                                                                             = $schema[self::COLLECTION] . self::DOT . $schema[self::TABLE] . self::DOT;
+            foreach ($model[self::FIELD] as $field) {
+                $attr                                                                           = Config::getXmlAttr($field);
+                $orm_field                                                                      = array_search($attr->name, $extend[self::READ] ?? []) ?: $prefix . ($attr->db ?? $attr->name);
+                if (!isset($attr->name) || isset($schema[self::READ][$orm_field])) {
+                    continue;
+                }
+
+                $key                                                                            = $attr->name;
+
+                /**
+                 * Columns and Dtd
+                 */
+                $schema[self::COLUMNS][]                                                        = $key;
+                $schema[self::DTD][$key]                                                        = $extend[self::DTD][$key] ?? $attr->type ?? self::DEFAULT_FIELD_TYPE;
+
+                /**
+                 * Mock
+                 */
+                if (!empty($attr->mock) || !empty($extend[self::MOCK][$key])) {
+                    $schema[self::MOCK][$key]                                                   = $extend[self::MOCK][$key] ?? $attr->mock;
+                }
+
+                /**
+                 * Read and Insert
+                 */
+                $schema[self::READ][$orm_field]                                                 = $key;
+                if (isset($attr->request)) {
+                    $schema[self::INSERT][$orm_field]                                           = $attr->request;
+                } elseif (isset($extend[self::INSERT][$orm_field])) {
+                    $schema[self::INSERT][$orm_field]                                           = $extend[self::INSERT][$orm_field];
+                }
+
+                /**
+                 * Options
+                 */
+                if (!empty($field[self::OPTION])) {
+                    if (!isset($field[self::OPTION][0])) {
+                        $field[self::OPTION]                                                    = array($field[self::OPTION]);
+                    }
+                    foreach ($field[self::OPTION] as $option) {
+                        $attrOpt                                                                = Config::getXmlAttr($option);
+                        if (!$attrOpt->value) {
                             continue;
                         }
-                        $key                                                            = $attr->name;
-                        $schema[$model_name][self::RAWDATA][]                           = $key;
-                        $schema[$model_name][self::DTD][$key]                           = $attr->validator ?? null;
 
-                        if (isset($attr->fake)) {
-                            $schema[$model_name][self::FAKE][$key]                      = $attr->fake;
-                        }
-                        if (isset($attr->db)) {
-                            $schema[$model_name][self::READ][$prefix . $attr->db]       = $key;
-
-                            if (isset($attr->source)) {
-                                $schema[$model_name][self::INSERT][$prefix .$attr->db]  = $attr->source;
-                            }
-                        }
+                        $schema[self::OPTION][$key][$attrOpt->key ?? $attrOpt->value]           = $attrOpt->value;
                     }
+                } elseif (isset($extend[self::OPTION][$key])) {
+                    $schema[self::OPTION][$key]                                                 = $extend[self::OPTION][$key];
                 }
-            } else {
-                Exception::warning("Model name not set or Fields empty", static::ERROR_BUCKET);
+
+
+                unset($attr->name, $attr->db, $attr->type, $attr->mock, $attr->request);
+
+                $properties                                                                     = (array) $attr;
+                if (!empty($properties) || !empty($extend[self::PROPERTIES][$key])) {
+                    $schema[self::PROPERTIES][$key]                                             = array_replace($extend[self::PROPERTIES][$key] ?? [], $properties);
+                }
             }
         }
 
-        self::$models                                                                   = $schema;
+        self::$models[$schema_name]                                                             = $schema;
+
+        return false;
     }
 }

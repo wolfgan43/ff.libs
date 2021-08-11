@@ -61,7 +61,7 @@ cm.dataTable = (function () {
                     });
             }
 
-            if(dt.classList.contains(cm.settings.class.xhr)) {
+            if(dt.classList.contains(cm.settings().class.xhr)) {
                 window.history.pushState({}, "", url);
                 submit(dt, url);
             } else {
@@ -122,9 +122,7 @@ cm.dataTable = (function () {
                 let page = parseInt(url.searchParams.get("page") || 1);
                 let page_tot = Math.ceil(response.recordsFiltered / parseInt(length));
 
-                let prev = "";
                 let pages = "";
-                let next = "";
 
                 let page_prev = page - 1;
                 let page_next = page + 1;
@@ -214,7 +212,7 @@ cm.dataTable = (function () {
             }
 
             function drawBodyEmpty(TH, tBody, message) {
-                tBody.innerHTML = '<tr class="' + settings.class.empty + '"><td colspan="' + TH.length + '">No matching records found. ' + message + '</td></tr>';
+                tBody.innerHTML = '<tr class="' + settings.class.empty + '"><td colspan="' + TH.length + '">No matching records found. ' + (message || "") + '</td></tr>';
             }
 
             if(response) {
@@ -230,7 +228,7 @@ cm.dataTable = (function () {
 
                 drawOrder(dt.querySelectorAll("THEAD TH a"));
                 drawBodyEmpty(dt.querySelectorAll("THEAD TH"), dt.querySelector("TBODY"));
-                drawInfo(dt.querySelectorAll("." + settings.class.info), dt.querySelector(".dt" + settings.class.length + " SELECT").value);
+                drawInfo(dt.querySelectorAll("." + settings.class.info), dt.querySelector("." + settings.class.length + " SELECT").value);
                 drawPage(dt.querySelectorAll("." + settings.class.paginate), dt.querySelector("." + settings.class.length + " SELECT").value);
             }
         }

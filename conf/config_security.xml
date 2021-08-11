@@ -59,14 +59,14 @@
 
     <models>
         <model name="user" collection="access" table="users" mapclass="\phpformsframework\libs\security\UserData">
-            <field name="uuid"              db="users.uuid"                         source="$uuid"                  fake="fdbba8ff-86a4-442f-a3c4-ac034210b7e9" />
-            <field name="username"          db="users.username"                     source="$username"              fake="nobody" />
-            <field name="email"             db="users.email"                        source="$email"                 fake="john.doe@nobody.it" />
-            <field name="tel"               db="users.tel"                          source="$tel"                   fake="3498844546" />
-            <field name="display_name"      db="users.username"                     source="$username"              fake="nobody" />
-            <field name="avatar"            db="users.avatar"                       source="$avatar"                fake="noavatar" />
-            <field name="status"            db="users.status"                       source="$status"                fake="1" />
-            <field name="acl"               db="users.acl"                          source="$acl"                   fake="" />
+            <field name="uuid"              db="uuid"                         request="$uuid"                  mock="fdbba8ff-86a4-442f-a3c4-ac034210b7e9" />
+            <field name="username"          db="username"                     request="$username"              mock="nobody" />
+            <field name="email"             db="email"                        request="$email"                 mock="john.doe@nobody.it" />
+            <field name="tel"               db="tel"                          request="$tel"                   mock="3498844546" />
+            <field name="display_name"      db="display_name"                 request="$display_name"          mock="John Doe" />
+            <field name="avatar"            db="avatar"                       request="$avatar"                mock="noavatar" />
+            <field name="status"            db="status"                       request="$status"                mock="1" />
+            <field name="acl"               db="acl"                          request="$acl"                   mock="" />
         </model>
     </models>
 </configdata>

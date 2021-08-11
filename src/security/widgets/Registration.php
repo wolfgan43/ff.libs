@@ -50,14 +50,9 @@ class Registration extends Widget
         $view                       = $this->view("index");
         $config                     = $view->getConfig();
 
-        if (!empty($this->request->model) && $model = Model::get($this->request->model)) {
+        if (!empty($this->request->model) && $model = Model::columns($this->request->model)) {
             $config->registration_path .= DIRECTORY_SEPARATOR . $this->request->model;
-            $propertires = [
-                "required",
-                "placeholder",
-                "min",
-                "max",
-            ];
+
             foreach ($model as $field_name) {
                 $view->assign("field_name", $field_name);
                 $view->assign("field_label", $this->translate($field_name));

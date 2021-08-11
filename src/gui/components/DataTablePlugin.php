@@ -63,7 +63,7 @@ class DataTablePlugin extends DataTable
 
         $columns = null;
         $columns_json = [];
-        foreach ($this->columns as $column) {
+        foreach ($this->schema->columns as $column) {
             $columns                    .= '<th>' . $column . '</th>';
             $columns_json[]["data"]     = $column;
         }

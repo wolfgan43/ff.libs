@@ -55,10 +55,13 @@ class OrmDef
     }
 
     /**
+     * @param bool $preserve_columns_order
      * @return array
      */
-    public function toArray() : array
+    public function toArray(bool $preserve_columns_order = false) : array
     {
+        $this->table["preserve_columns_order"] = $preserve_columns_order;
+
         return get_object_vars($this);
     }
 }

@@ -334,7 +334,7 @@ class Field
     {
         return new static($name, [
             "type"              => "password",
-            "validator"         => "double"
+            "validator"         => "password"
         ]);
     }
 

@@ -83,6 +83,7 @@ abstract class DatabaseAdapter implements Constant
     private const COUNT                 = Database::COUNT;
     private const INDEX_PRIMARY         = Database::INDEX_PRIMARY;
 
+    private $preserve_columns_order     = false;
     private $connection                 = array(
                                             "host"          => null
                                             , "username"    => null
@@ -124,86 +125,6 @@ abstract class DatabaseAdapter implements Constant
     abstract protected function getDriver();
 
     /**
-     * @param array|null $casts
-     * @param string|null $field_db
-     * @param string|null $field_output
-     */
-    private function converterCallback(array $casts = null, string $field_db = null, string $field_output  = null) : void
-    {
-        if ($casts) {
-            foreach ($casts as $cast) {
-                $params                                 = array();
-                $op                                     = strtolower(substr($cast, 0, 2));
-                if (strpos($cast, "(") !== false) {
-                    $func = explode("(", $cast, 2);
-                    $cast = $func[0];
-                    $params = explode(",", rtrim($func[1], ")"));
-                }
-
-
-
-
-                if ($op === "to" && $field_output) {
-                    $this->to[$field_output][substr($cast, 2)]         = $params;
-                } elseif ($op === "in" && $field_db) {
-                    $this->in[$field_db][substr($cast, 2)]             = $params;
-                } else {
-                    throw new Exception($cast . " is not a valid function", 500);
-                }
-            }
-        }
-    }
-
-    /**
-     * @param string $field_output
-     * @param string|null $field_db
-     * @return string
-     * @throws Exception
-     */
-    private function converter(string &$field_output, string $field_db = null) : string
-    {
-        $casts                                      = $this->converterCasts($field_output);
-        if (!$field_db) {
-            $field_db                               = $field_output;
-        }
-
-        $this->converterCallback($casts, $field_db, $field_output);
-
-        return $this->converterStruct($field_db, $field_output);
-    }
-
-    /**
-     * @param string $subject
-     * @return array|null
-     */
-    private function converterCasts(string &$subject) : ?array
-    {
-        $casts                                      = null;
-        if (strpos($subject, ":") !== false) {
-            $casts                                  = explode(":", $subject);
-            $subject                                = array_shift($casts);
-        }
-
-        return $casts;
-    }
-
-    /**
-     * @param string $field_db
-     * @param string|null $field_output
-     * @return string
-     * @throws Exception
-     */
-    private function converterStruct(string $field_db, string $field_output = null) : string
-    {
-        $struct_type                                = $this->getStructField($field_db);
-        $casts                                      = $this->converterCasts($struct_type);
-
-        $this->converterCallback($casts, $field_db, $field_output);
-
-        return $struct_type;
-    }
-
-    /**
      * @param string $value
      * @return string|int
      * @todo da tipizzare
@@ -225,46 +146,6 @@ abstract class DatabaseAdapter implements Constant
 
     /**
      * @todo da tipizzare
-     * @param array $res
-     * @param $value
-     * @param string $struct_type
-     * @param string|null $name
-     * @param string|null $or
-     */
-    private function fieldWhere(array &$res, $value, string $struct_type, string $name = null, string $or = null) : void
-    {
-        if ($this->key_name != $this->key_primary && $name == $this->key_primary) {
-            $name = $this->convertKeyPrimary($name);
-        }
-
-        if (is_array($value)) {
-            $res[$name] = $this->fieldOperations($value, $struct_type, $name);
-        } else {
-            $res[$name][self::OP_DEFAULT] = $this->fieldOperation($this->fieldIn($name, $value), $struct_type, $name, self::OP_DEFAULT);
-        }
-
-        $this->convertFieldWhere($res, $name, $or);
-    }
-
-    /**
-     * @todo da tipizzare
-     * @param string $name
-     * @param mixed|null $value
-     * @return string
-     */
-    private function fieldIn(string $name, $value = null)
-    {
-        if ($value && isset($this->in[$name])) {
-            foreach ($this->in[$name] as $func => $params) {
-                $value = $this->convertWith($value, strtoupper($func), $params);
-            }
-        }
-
-        return $value;
-    }
-
-    /**
-     * @todo da tipizzare
      * @param $value
      * @param string $struct_type
      * @param string|null $name
@@ -283,30 +164,248 @@ abstract class DatabaseAdapter implements Constant
     abstract protected function fieldOperationNULL(string $struct_type, string $name, string $op = null);
 
     /**
-     * @param array $values
-     * @param string $struct_type
-     * @param string $name
+     * DatabaseAdapter constructor.
+     * @param string|null $main_table
+     * @param array|null $table
+     * @param array|null $struct
+     * @param array|null $relationship
+     * @param array|null $indexes
+     * @param string|null $key_primary
+     */
+    public function __construct(string $main_table = null, array $table = null, array $struct = null, array $indexes = null, array $relationship = null, string $key_primary = null)
+    {
+        $this->main_table                               = $main_table;
+        $this->table                                    = $table;
+        $this->struct                                   = $struct;
+        $this->indexes                                  = $indexes;
+        $this->relationship                             = $relationship;
+        $this->key_primary                              = $key_primary;
+    }
+
+    /**
+     * @todo da tipizzare
+     * @param $query
      * @return array|null
      */
-    private function fieldOperations(array $values, string $struct_type, string $name) : ?array
+    public function rawQuery($query) : ?array
     {
-        $res                                    = null;
-        foreach ($values as $op => $value) {
-            if (!empty(self::OPERATOR_COMPARISON[$op])) {
-                $res[$op]                       = $this->fieldOperation($this->fieldIn($name, $value), $struct_type, $name, $op);
+        $this->clearResult();
+
+        return $this->processRawQuery($query);
+    }
+
+    /**
+     * @param array $fields
+     * @param array|null $where
+     * @param array|null $sort
+     * @param int|null $limit
+     * @param int|null $offset
+     * @param bool $calc_found_rows
+     * @param string|null $table_name
+     * @return array|null
+     * @throws Exception
+     */
+    public function read(array $fields, array $where = null, array $sort = null, int $limit = null, int $offset = null, bool $calc_found_rows = false, string $table_name = null) : array
+    {
+        $res                                                    = null;
+        $query                                                  = $this->getQueryRead($fields, $where, $sort, $limit, $offset, $calc_found_rows, $table_name);
+
+        $res[self::RESULT]                                      = $this->processRead($query);
+        $res[self::COUNT]                                       = $this->driver->numRows();
+        if ($res[self::RESULT]) {
+            $count_recordset                                    = (is_array($res[self::RESULT]) ? count($res[self::RESULT]) : null);
+            if ($count_recordset && (!empty($query->limit) || $count_recordset < static::MAX_NUMROWS)) {
+                $this->convertRecordset($res, array_flip($this->index2query));
             }
         }
 
-        if (!$res) {
-            if (count($values) > 1) {
-                $res[self::OP_ARRAY_DEFAULT]    = $this->fieldOperation($this->fieldIn($name, $values), $struct_type, $name, self::OP_ARRAY_DEFAULT);
-            } elseif (empty($values)) {
-                $res                            = $this->fieldOperationNULL($struct_type, $name, self::OP_DEFAULT);
-            } else {
-                $res[self::OP_DEFAULT]          = $this->fieldOperation($this->fieldIn($name, $values[0]), $struct_type, $name, self::OP_DEFAULT);
-            }
+        return $res;
+    }
+
+    /**
+     * @param array $insert
+     * @param string|null $table_name
+     * @return array|null
+     * @throws Exception
+     */
+    public function insert(array $insert, string $table_name = null) : ?array
+    {
+        if (empty($insert)) {
+            throw new Exception(self::ERROR_INSERT_IS_EMPTY, 500);
         }
 
+        return $this->processInsert($this->getQueryInsert($insert, $table_name));
+    }
+
+    /**
+     * @param array $set
+     * @param array|null $where
+     * @param string|null $table_name
+     * @return array|null
+     * @throws Exception
+     */
+    public function update(array $set, array $where = null, string $table_name = null) : ?array
+    {
+        if (empty($set)) {
+            throw new Exception(self::ERROR_UPDATE_IS_EMPTY, 500);
+        }
+
+        return $this->processUpdate($this->getQueryUpdate($set, $where, $table_name));
+    }
+
+    /**
+     * @param array $insert
+     * @param array $set
+     * @param array $where
+     * @param string|null $table_name
+     * @return array|null
+     * @throws Exception
+     */
+    public function write(array $insert, array $set, array $where, string $table_name = null) : ?array
+    {
+        if (empty($insert) || empty($set) || empty($where)) {
+            throw new Exception(self::ERROR_WRITE_IS_EMPTY, 500);
+        }
+
+        return $this->processWrite($this->getQueryWrite($insert, $set, $where, $table_name));
+    }
+
+    /**
+     * @param array $where
+     * @param string|null $table_name
+     * @return array|null
+     * @throws Exception
+     */
+    public function delete(array $where, string $table_name = null) : ?array
+    {
+        if (empty($where)) {
+            throw new Exception(self::ERROR_DELETE_IS_EMPTY, 500);
+        }
+        //@todo da creare lo switch per gestire la cancellazione logica
+        return $this->processDelete($this->getQueryDelete($where, $table_name));
+    }
+
+    /**
+     * @param string $action
+     * @param array|null $where
+     * @param string|null $table_name
+     * @return array|null
+     * @throws Exception
+     */
+    public function cmd(string $action = self::CMD_COUNT, array $where = null, string $table_name = null) : ?array
+    {
+        return $this->processCmd($this->getQueryCmd($where, $table_name), $action);
+    }
+
+    /**
+     * @todo da tipizzare
+     * @param $query
+     * @return array|null
+     */
+    protected function processRawQuery($query) : ?array
+    {
+        return ($this->driver->rawQuery($query)
+            ? $this->driver->getRecordset()
+            : null
+        );
+    }
+
+    /**
+     * @return array
+     * @throws Exception
+     */
+    protected function getConnector() : array
+    {
+        $connector                                      = array();
+
+        try {
+            $env                                        = Kernel::$Environment;
+            $prefix                                     = $env . '::' . (
+                isset($this->connection["prefix"]) && defined($env . '::' . $this->connection["prefix"] . "NAME")
+                ? $this->connection["prefix"]
+                : static::PREFIX
+            );
+
+            $connector["host"]                          = constant($prefix . "HOST");
+            $connector["username"]                      = constant($prefix . "USER");
+            $connector["secret"]                        = constant($prefix . "SECRET");
+            $connector["name"]                          = constant($prefix . "NAME");
+
+            $connector["table"]                         = (
+                empty($this->connection["table"])
+                ? null
+                : $this->connection["table"]
+            );
+            $connector["key"]                           = (
+                empty($this->connection["key"])
+                ? static::KEY_NAME
+                : $this->connection["key"]
+            );
+
+            $key_rel                                    = (
+                empty($this->connection["key_rel"])
+                ? static::KEY_REL
+                : $this->connection["key_rel"]
+            );
+            $connector["key_rel"]                       = $key_rel;
+
+            if (!$this->table && $connector["table"]) {
+                $this->setTable($connector["table"]);
+            }
+
+            if (empty($connector["name"])) {
+                throw new Exception(static::TYPE . " database connection failed", 500);
+            }
+        } catch (\Exception $e) {
+            throw new Exception("Connection Params Missing: " . $e->getMessage(), 500);
+        }
+
+        return $connector;
+    }
+
+    /**
+     * @param array $db
+     * @param array|null $indexes
+     * @throws Exception
+     */
+    protected function convertRecordset(array &$db, array $indexes = null) : void
+    {
+        $use_control                                    = !empty($indexes);
+        if ($use_control || count($this->to)) {
+            foreach ($db[self::RESULT] as &$record) {
+                if ($use_control) {
+                    $index                              = array_intersect_key($record, $indexes);
+
+                    if (isset($record[$this->key_name])) {
+                        $index[$this->key_primary]      = $record[$this->key_name];
+                    }
+
+                    $db[self::INDEX][]                  = $index;
+                }
+
+                $record                                 = $this->fields2output($record);
+            }
+        }
+    }
+
+    /**
+     * @param array $record
+     * @return array
+     * @throws Exception
+     */
+    protected function fields2output(array $record) : array
+    {
+        $keys                                                       = array_intersect_key($this->prototype, $record);
+        $values                                                     = array_intersect_key($record, $this->prototype);
+
+        $res                                                        = array_combine($keys, $values);
+        if (!empty($this->to)) {
+            foreach ($this->to as $field => $funcs) {
+                foreach ($funcs as $func => $params) {
+                    $res[$field]                                    = $this->to($func, $res[$field], $params);
+                }
+            }
+        }
         return $res;
     }
 
@@ -342,8 +441,9 @@ abstract class DatabaseAdapter implements Constant
             $res[$name]                 = $value;
         }
 
-        //@todo da togliere ksort e verificare se tutto funziona
-        ksort($res);
+        if (empty($this->table["preserve_columns_order"])) {
+            ksort($res);
+        }
 
         $this->prototype                = $res;
 
@@ -593,24 +693,6 @@ abstract class DatabaseAdapter implements Constant
     {
         return $this->driver->cmd($query, $action);
     }
-    /**
-     * DatabaseAdapter constructor.
-     * @param string|null $main_table
-     * @param array|null $table
-     * @param array|null $struct
-     * @param array|null $relationship
-     * @param array|null $indexes
-     * @param string|null $key_primary
-     */
-    public function __construct(string $main_table = null, array $table = null, array $struct = null, array $indexes = null, array $relationship = null, string $key_primary = null)
-    {
-        $this->main_table                               = $main_table;
-        $this->table                                    = $table;
-        $this->struct                                   = $struct;
-        $this->indexes                                  = $indexes;
-        $this->relationship                             = $relationship;
-        $this->key_primary                              = $key_primary;
-    }
 
     /**
      * @return bool
@@ -639,81 +721,12 @@ abstract class DatabaseAdapter implements Constant
     }
 
     /**
-     * @todo da tipizzare
-     * @param $query
-     * @return array|null
-     */
-    protected function processRawQuery($query) : ?array
-    {
-        return ($this->driver->rawQuery($query)
-            ? $this->driver->getRecordset()
-            : null
-        );
-    }
-
-    /**
-     * @return array
-     * @throws Exception
-     */
-    protected function getConnector() : array
-    {
-        $connector                                      = array();
-
-        try {
-            $env                                        = Kernel::$Environment;
-            $prefix                                     = $env . '::' . (
-                isset($this->connection["prefix"]) && defined($env . '::' . $this->connection["prefix"] . "NAME")
-                ? $this->connection["prefix"]
-                : static::PREFIX
-            );
-
-            $connector["host"]                          = constant($prefix . "HOST");
-            $connector["username"]                      = constant($prefix . "USER");
-            $connector["secret"]                        = constant($prefix . "SECRET");
-            $connector["name"]                          = constant($prefix . "NAME");
-
-            $connector["table"]                         = (
-                empty($this->connection["table"])
-                ? null
-                : $this->connection["table"]
-            );
-            $connector["key"]                           = (
-                empty($this->connection["key"])
-                ? static::KEY_NAME
-                : $this->connection["key"]
-            );
-
-            $key_rel                                    = (
-                empty($this->connection["key_rel"])
-                ? static::KEY_REL
-                : $this->connection["key_rel"]
-            );
-            $connector["key_rel"]                       = $key_rel;
-
-            if (!$this->table && $connector["table"]) {
-                $this->setTable($connector["table"]);
-            }
-
-            if (empty($connector["name"])) {
-                throw new Exception(static::TYPE . " database connection failed", 500);
-            }
-        } catch (\Exception $e) {
-            throw new Exception("Connection Params Missing: " . $e->getMessage(), 500);
-        }
-
-        return $connector;
-    }
-
-    /**
      * @param string $key
      * @return string|null
      */
     private function getTable(string $key) : ?string
     {
-        return (isset($this->table[$key])
-            ? $this->table[$key]
-            : null
-        );
+        return $this->table[$key] ?? null;
     }
 
     /**
@@ -891,147 +904,6 @@ abstract class DatabaseAdapter implements Constant
     }
 
     /**
-     * @todo da tipizzare
-     * @param $query
-     * @return array|null
-     */
-    public function rawQuery($query) : ?array
-    {
-        $this->clearResult();
-
-        return $this->processRawQuery($query);
-    }
-
-    /**
-     * @param array $fields
-     * @param array|null $where
-     * @param array|null $sort
-     * @param int|null $limit
-     * @param int|null $offset
-     * @param bool $calc_found_rows
-     * @param string|null $table_name
-     * @return array|null
-     * @throws Exception
-     */
-    public function read(array $fields, array $where = null, array $sort = null, int $limit = null, int $offset = null, bool $calc_found_rows = false, string $table_name = null) : array
-    {
-        $res                                                    = null;
-        $query                                                  = $this->getQueryRead($fields, $where, $sort, $limit, $offset, $calc_found_rows, $table_name);
-
-        $res[self::RESULT]                                      = $this->processRead($query);
-        $res[self::COUNT]                                       = $this->driver->numRows();
-        if ($res[self::RESULT]) {
-            $count_recordset                                    = (is_array($res[self::RESULT]) ? count($res[self::RESULT]) : null);
-            if ($count_recordset && (!empty($query->limit) || $count_recordset < static::MAX_NUMROWS)) {
-                $this->convertRecordset($res, array_flip($this->index2query));
-            }
-        }
-
-        return $res;
-    }
-
-    /**
-     * @param array $db
-     * @param array|null $indexes
-     * @throws Exception
-     */
-    protected function convertRecordset(array &$db, array $indexes = null) : void
-    {
-        $use_control                                    = !empty($indexes);
-        if ($use_control || count($this->to)) {
-            foreach ($db[self::RESULT] as &$record) {
-                if ($use_control) {
-                    $index                              = array_intersect_key($record, $indexes);
-
-                    if (isset($record[$this->key_name])) {
-                        $index[$this->key_primary]      = $record[$this->key_name];
-                    }
-
-                    $db[self::INDEX][]                  = $index;
-                }
-
-                $record                                 = $this->fields2output($record);
-            }
-        }
-    }
-
-    /**
-     * @param array $insert
-     * @param string|null $table_name
-     * @return array|null
-     * @throws Exception
-     */
-    public function insert(array $insert, string $table_name = null) : ?array
-    {
-        if (empty($insert)) {
-            throw new Exception(self::ERROR_INSERT_IS_EMPTY, 500);
-        }
-
-        return $this->processInsert($this->getQueryInsert($insert, $table_name));
-    }
-
-    /**
-     * @param array $set
-     * @param array|null $where
-     * @param string|null $table_name
-     * @return array|null
-     * @throws Exception
-     */
-    public function update(array $set, array $where = null, string $table_name = null) : ?array
-    {
-        if (empty($set)) {
-            throw new Exception(self::ERROR_UPDATE_IS_EMPTY, 500);
-        }
-
-        return $this->processUpdate($this->getQueryUpdate($set, $where, $table_name));
-    }
-
-    /**
-     * @param array $insert
-     * @param array $set
-     * @param array $where
-     * @param string|null $table_name
-     * @return array|null
-     * @throws Exception
-     */
-    public function write(array $insert, array $set, array $where, string $table_name = null) : ?array
-    {
-        if (empty($insert) || empty($set) || empty($where)) {
-            throw new Exception(self::ERROR_WRITE_IS_EMPTY, 500);
-        }
-
-        return $this->processWrite($this->getQueryWrite($insert, $set, $where, $table_name));
-    }
-
-    /**
-     * @param array $where
-     * @param string|null $table_name
-     * @return array|null
-     * @throws Exception
-     */
-    public function delete(array $where, string $table_name = null) : ?array
-    {
-        if (empty($where)) {
-            throw new Exception(self::ERROR_DELETE_IS_EMPTY, 500);
-        }
-        //@todo da creare lo switch per gestire la cancellazione logica
-        return $this->processDelete($this->getQueryDelete($where, $table_name));
-    }
-
-    /**
-     * @param string $action
-     * @param array|null $where
-     * @param string|null $table_name
-     * @return array|null
-     * @throws Exception
-     */
-    public function cmd(string $action = self::CMD_COUNT, array $where = null, string $table_name = null) : ?array
-    {
-        return $this->processCmd($this->getQueryCmd($where, $table_name), $action);
-    }
-
-
-    /**
      * @param string $key
      * @return string
      * @throws Exception
@@ -1058,27 +930,6 @@ abstract class DatabaseAdapter implements Constant
     }
 
     /**
-     * @param array $record
-     * @return array
-     * @throws Exception
-     */
-    protected function fields2output(array $record) : array
-    {
-        $keys                                                       = array_intersect_key($this->prototype, $record);
-        $values                                                     = array_intersect_key($record, $this->prototype);
-
-        $res                                                        = array_combine($keys, $values);
-        if (!empty($this->to)) {
-            foreach ($this->to as $field => $funcs) {
-                foreach ($funcs as $func => $params) {
-                    $res[$field]                                    = $this->to($func, $res[$field], $params);
-                }
-            }
-        }
-        return $res;
-    }
-
-    /**
      * @param int $index
      * @return string|null
      */
@@ -1101,10 +952,8 @@ abstract class DatabaseAdapter implements Constant
             , "FFCA28"
             , "FFA726"
         );
-        return (isset($colors[$index])
-            ? $colors[$index]
-            : null
-        );
+
+        return $colors[$index] ?? null;
     }
 
     /**
@@ -1237,6 +1086,155 @@ abstract class DatabaseAdapter implements Constant
         }
 
         return $res;
+    }
+
+    /**
+     * @param array|null $casts
+     * @param string|null $field_db
+     * @param string|null $field_output
+     * @throws Exception
+     */
+    private function converterCallback(array $casts = null, string $field_db = null, string $field_output  = null) : void
+    {
+        if ($casts) {
+            foreach ($casts as $cast) {
+                $params                                 = array();
+                $op                                     = strtolower(substr($cast, 0, 2));
+                if (strpos($cast, "(") !== false) {
+                    $func = explode("(", $cast, 2);
+                    $cast = $func[0];
+                    $params = explode(",", rtrim($func[1], ")"));
+                }
+
+
+
+
+                if ($op === "to" && $field_output) {
+                    $this->to[$field_output][substr($cast, 2)]         = $params;
+                } elseif ($op === "in" && $field_db) {
+                    $this->in[$field_db][substr($cast, 2)]             = $params;
+                } else {
+                    throw new Exception($cast . " is not a valid function", 500);
+                }
+            }
+        }
+    }
+
+    /**
+     * @param string $field_output
+     * @param string|null $field_db
+     * @return string
+     * @throws Exception
+     */
+    private function converter(string &$field_output, string $field_db = null) : string
+    {
+        $casts                                      = $this->converterCasts($field_output);
+        if (!$field_db) {
+            $field_db                               = $field_output;
+        }
+
+        $this->converterCallback($casts, $field_db, $field_output);
+
+        return $this->converterStruct($field_db, $field_output);
+    }
+
+    /**
+     * @param string $subject
+     * @return array|null
+     */
+    private function converterCasts(string &$subject) : ?array
+    {
+        $casts                                      = null;
+        if (strpos($subject, ":") !== false) {
+            $casts                                  = explode(":", $subject);
+            $subject                                = array_shift($casts);
+        }
+
+        return $casts;
+    }
+
+    /**
+     * @param string $field_db
+     * @param string|null $field_output
+     * @return string
+     * @throws Exception
+     */
+    private function converterStruct(string $field_db, string $field_output = null) : string
+    {
+        $struct_type                                = $this->getStructField($field_db);
+        $casts                                      = $this->converterCasts($struct_type);
+
+        $this->converterCallback($casts, $field_db, $field_output);
+
+        return $struct_type;
+    }
+
+    /**
+     * @todo da tipizzare
+     * @param array $res
+     * @param $value
+     * @param string $struct_type
+     * @param string|null $name
+     * @param string|null $or
+     */
+    private function fieldWhere(array &$res, $value, string $struct_type, string $name = null, string $or = null) : void
+    {
+        if ($this->key_name != $this->key_primary && $name == $this->key_primary) {
+            $name = $this->convertKeyPrimary($name);
+        }
+
+        if (is_array($value)) {
+            $res[$name] = $this->fieldOperations($value, $struct_type, $name);
+        } else {
+            $res[$name][self::OP_DEFAULT] = $this->fieldOperation($this->fieldIn($name, $value), $struct_type, $name, self::OP_DEFAULT);
+        }
+
+        $this->convertFieldWhere($res, $name, $or);
+    }
+
+    /**
+     * @param array $values
+     * @param string $struct_type
+     * @param string $name
+     * @return array|null
+     */
+    private function fieldOperations(array $values, string $struct_type, string $name) : ?array
+    {
+        $res                                    = null;
+        foreach ($values as $op => $value) {
+            if (!empty(self::OPERATOR_COMPARISON[$op])) {
+                $res[$op]                       = $this->fieldOperation($this->fieldIn($name, $value), $struct_type, $name, $op);
+            }
+        }
+
+        if (!$res) {
+            if (count($values) > 1) {
+                $res[self::OP_ARRAY_DEFAULT]    = $this->fieldOperation($this->fieldIn($name, $values), $struct_type, $name, self::OP_ARRAY_DEFAULT);
+            } elseif (empty($values)) {
+                $res                            = $this->fieldOperationNULL($struct_type, $name, self::OP_DEFAULT);
+            } else {
+                $res[self::OP_DEFAULT]          = $this->fieldOperation($this->fieldIn($name, $values[0]), $struct_type, $name, self::OP_DEFAULT);
+            }
+        }
+
+        return $res;
+    }
+
+    /**
+     * @todo da tipizzare
+     * @param string $name
+     * @param mixed|null $value
+     * @return string
+     */
+    private function fieldIn(string $name, $value = null)
+    {
+        if ($value && isset($this->in[$name])) {
+            foreach ($this->in[$name] as $func => $params) {
+                $value = $this->convertWith($value, strtoupper($func), $params);
+            }
+        }
+
+        return $value;
     }
 
     /**

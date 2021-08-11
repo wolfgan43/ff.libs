@@ -56,7 +56,11 @@ let cm = (function () {
 	
     let self = {
         "settings" : function (newsettings) {
-            Object.assign(settings, newsettings);
+            if(newsettings) {
+                Object.assign(settings, newsettings);
+            }
+
+            return settings;
         },
 		"onReady" : function (callback) {
 			if (document.readyState !== 'loading') {
@@ -482,7 +486,7 @@ let cm = (function () {
 
 					if (buttons !== undefined) {
 						display_footer = true;
-						buttons.each(function (i, v) {
+						buttons.forEach(function (v) {
 							let tmp = settings.modal.tpl_bt.replaceAll("{bt_id}", v.id).replaceAll("{label}", v.label);
                             let $bt = document.createElement("dialog_bt");
 							$bt.innerHTML = tmp;

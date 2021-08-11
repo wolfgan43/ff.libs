@@ -93,11 +93,7 @@ class Database implements Constant
             $this->setAdapter($adapter, array_values($struct));
         }
 
-        $this->table                                                        = (
-            isset($struct["table"]["name"])
-                                                                                ? $struct["table"]["name"]
-                                                                                : null
-                                                                            );
+        $this->table                                                        = $struct["table"]["name"] ?? null;
     }
 
 

@@ -102,8 +102,8 @@ class OrmModel
     private function loadModel(string $name = null)
     {
         $this->db                                                               = new Model();
-        $this->db->loadModel($name);
-        $this->data                                                             = $this->db->dtdModel();
+        $this->db->load($name);
+        $this->data                                                             = $this->db->schema()->dtd;
     }
 
     /**

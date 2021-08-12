@@ -30,6 +30,7 @@ use phpformsframework\libs\dto\DataTableResponse;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\storage\dto\OrmResults;
+use phpformsframework\libs\storage\dto\Schema;
 use phpformsframework\libs\storage\Model;
 use phpformsframework\libs\Exception;
 
@@ -127,6 +128,9 @@ class DataTable
      */
     private $db                         = null;
     private $dtd                        = null;
+    /**
+     * @var Schema
+     */
     protected $schema                   = null;
 
     private $page                       = null;

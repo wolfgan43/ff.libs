@@ -262,9 +262,11 @@ class Media implements Configurable
             if (preg_match('#' . static::RENDER_WIDGET_PATH . DIRECTORY_SEPARATOR . '([^' . DIRECTORY_SEPARATOR . ']*)' . '(.*)#i', $arrFile->dirname, $subdir)) {
                 $arrFile->dirname                                   = DIRECTORY_SEPARATOR . $subdir[1] . DIRECTORY_SEPARATOR . self::ext2dirBucket(Constant::RESOURCE_WIDGETS, $arrFile, $subdir[2]);
             }
-        } elseif ($asset_path = self::ext2dirBucket(Constant::RESOURCE_ASSETS, $arrFile)) {
-            $showfiles                                      = Constant::SITE_PATH . static::RENDER_ASSETS_PATH;
-            $arrFile->dirname                               = DIRECTORY_SEPARATOR . $asset_path;
+        } elseif (strpos($arrFile->dirname, static::RENDER_ASSETS_PATH) !== false && ($asset_path = self::ext2dirBucket(Constant::RESOURCE_ASSETS, $arrFile))) {
+            $showfiles                                              = Constant::SITE_PATH . static::RENDER_ASSETS_PATH;
+            $arrFile->dirname                                       = DIRECTORY_SEPARATOR . $asset_path;
+        } elseif(strpos($arrFile->dirname, Constant::UPLOAD_PATH) === 0) {
+            $arrFile->dirname                                       = substr($arrFile->dirname, strlen(Constant::UPLOAD_PATH));
         }
 
         $arrFile->dirname                                           = str_replace(Constant::DISK_PATH, Constant::SITE_PATH, $arrFile->dirname);
@@ -478,7 +480,7 @@ class Media implements Configurable
      * @return string
      * @throws Exception
      */
-    public static function getIconPath(string $ext = null, bool $abs = false) : string
+    public function getIconPath(string $ext = null, bool $abs = false) : string
     {
         if ($ext) {
             $arrExt                                                 = explode(".", $ext);
@@ -518,7 +520,13 @@ class Media implements Configurable
             if (!$abs_path) {
                 throw new Exception("Icon " . $filename . " not found", 404);
             }
-            $basename                                               = basename($abs_path);
+            $this->resolveSrcPath();
+            if($this->mode) {
+                $basename = pathinfo($abs_path, PATHINFO_FILENAME) . "-" . $this->mode . "." . pathinfo($abs_path, PATHINFO_EXTENSION);
+            } else {
+                $basename                                           = basename($abs_path);
+            }
+
             if ($abs === false) {
                 $res                                                = Constant::SITE_PATH . static::RENDER_ASSETS_PATH . static::RENDER_IMAGE_PATH . DIRECTORY_SEPARATOR . $basename;
             } elseif ($abs === true) {
@@ -545,7 +553,7 @@ class Media implements Configurable
      * @param string $basename
      * @return string|null
      */
-    private static function getModeByNoImg(string $basename) : ?string
+    private function getModeByNoImg(string $basename) : ?string
     {
         $mode                                                       = null;
         $source                                                     = explode(".", strrev($basename), 2);
@@ -568,15 +576,15 @@ class Media implements Configurable
         if (!$mode) {
             if ($offset >= 2 && is_numeric($arrFilename[$offset]) && is_numeric($arrFilename[$offset - 1])) {
                 $mode                                               = $arrFilename[$offset - 1] . "-" . $arrFilename[$offset];
-            } elseif (self::getModeAuto($arrFilename[$offset], "x")
-                || self::getModeAuto($arrFilename[$offset], "q")
-                || self::getModeAuto($arrFilename[$offset], "w")
-                || self::getModeAuto($arrFilename[$offset], "e")
-                || self::getModeAuto($arrFilename[$offset], "a")
-                || self::getModeAuto($arrFilename[$offset], "s")
-                || self::getModeAuto($arrFilename[$offset], "d")
-                || self::getModeAuto($arrFilename[$offset], "z")
-                || self::getModeAuto($arrFilename[$offset], "c")
+            } elseif ($this->getModeAuto($arrFilename[$offset], "x")
+                || $this->getModeAuto($arrFilename[$offset], "q")
+                || $this->getModeAuto($arrFilename[$offset], "w")
+                || $this->getModeAuto($arrFilename[$offset], "e")
+                || $this->getModeAuto($arrFilename[$offset], "a")
+                || $this->getModeAuto($arrFilename[$offset], "s")
+                || $this->getModeAuto($arrFilename[$offset], "d")
+                || $this->getModeAuto($arrFilename[$offset], "z")
+                || $this->getModeAuto($arrFilename[$offset], "c")
             ) {
                 $mode                                               = $arrFilename[$offset];
             }
@@ -594,7 +602,7 @@ class Media implements Configurable
      * @param string $char
      * @return bool
      */
-    private static function getModeAuto(string $value, string $char) : bool
+    private function getModeAuto(string $value, string $char) : bool
     {
         return is_numeric(str_replace($char, "", $value)) && substr_count($value, $char) == 1;
     }
@@ -603,12 +611,12 @@ class Media implements Configurable
      * @param string $file
      * @return array|null
      */
-    private static function getModeByFile(string $file) : ?stdClass
+    private function getModeByFile(string $file) : ?stdClass
     {
         $res                                                        = null;
         $source                                                     = (object) pathinfo($file);
 
-        $mode                                                       = self::getModeByNoImg($source->basename);
+        $mode                                                       = $this->getModeByNoImg($source->basename);
         if ($mode) {
             $res                                                    = new stdClass();
             $res->mode                                              = $mode;
@@ -787,7 +795,6 @@ class Media implements Configurable
 
         $status                                                     = null;
         $final_file                                                 = null;
-
         if ($this->filesource && $this->basepath && is_file($this->basepath . $this->filesource)) {
             if ($this->mode) {
                 $final_file                                         = $this->processFinalFile();
@@ -1305,7 +1312,7 @@ class Media implements Configurable
             );
         }
         if (!$mode) {
-            $mode                                                   = self::getModeByNoImg($this->pathinfo->basename);
+            $mode                                                   = $this->getModeByNoImg($this->pathinfo->basename);
         }
         if ($mode) {
             $icon_name                                              = str_replace("-". $mode, "", $icon_name);

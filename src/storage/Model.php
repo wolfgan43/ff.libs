@@ -32,10 +32,11 @@ use phpformsframework\libs\dto\ConfigRules;
 use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\storage\dto\OrmResults;
 use phpformsframework\libs\Exception;
+use phpformsframework\libs\storage\dto\Schema;
 use stdClass;
 
 /**
- * Class DB
+ * Class Model
  * @package phpformsframework\libs
  */
 class Model implements Configurable, Dumpable
@@ -69,7 +70,7 @@ class Model implements Configurable, Dumpable
     private $selectJoin                                                                 = [];
     private $where                                                                      = [];
     /**
-     * @var stdClass
+     * @var Schema
      */
     private $schema                                                                     = null;
     private $name                                                                       = null;
@@ -106,7 +107,7 @@ class Model implements Configurable, Dumpable
         $this->name                                                                     = $collection_or_model;
 
         if (isset(self::$models[$collection_or_model])) {
-            $this->schema                                                               = (object) (self::$models[$collection_or_model . DIRECTORY_SEPARATOR . $view] ?? self::$models[$collection_or_model]);
+            $this->schema                                                               = new Schema(self::$models[$collection_or_model . DIRECTORY_SEPARATOR . $view] ?? self::$models[$collection_or_model]);
         } else {
             $this->collection                                                           = $collection_or_model;
         }
@@ -137,7 +138,7 @@ class Model implements Configurable, Dumpable
             throw new Exception(self::ERROR_MODEL_NOT_FOUND . ": " . $model_name, 501);
         }
 
-        $this->schema                                                                   = (object) (self::$models[$model_name]);
+        $this->schema                                                                   = new Schema(self::$models[$model_name]);
         $this->collection                                                               = null;
 
         return $this;
@@ -266,9 +267,9 @@ class Model implements Configurable, Dumpable
     }
 
     /**
-     * @return stdClass
+     * @return Schema
      */
-    public function schema() : stdClass
+    public function schema() : Schema
     {
         return $this->schema;
     }

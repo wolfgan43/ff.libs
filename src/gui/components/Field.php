@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\gui\components;
 
+use phpformsframework\libs\Constant;
 use phpformsframework\libs\international\Time;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\security\Validator;
@@ -39,6 +40,8 @@ class Field
 {
     public const BUCKET                 = 'df';
     public const BUCKET_MULTI           = 'dfm';
+
+    private const ENCODING              = Constant::ENCODING;
 
     protected const TEMPLATE_CLASS      = [
         "select"                => [
@@ -757,9 +760,18 @@ class Field
     private function parseControlValue() : ?string
     {
         return (!empty($value = $this->value ?? $this->control->default ?? null)
-            ? ' value="' . $value . '"'
+            ? ' value="' . $this->encode($value) . '"'
             : null
         );
+    }
+
+    /**
+     * @param string $value
+     * @return string
+     */
+    private function encode(string $value) : string
+    {
+        return htmlspecialchars($value, ENT_QUOTES, self::ENCODING, true);
     }
 
     /**

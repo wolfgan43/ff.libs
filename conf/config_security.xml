@@ -59,14 +59,14 @@
 
     <models>
         <model name="user" collection="access" table="users" mapclass="\phpformsframework\libs\security\UserData">
-            <field name="uuid"              db="uuid"                         request="$uuid"                  mock="fdbba8ff-86a4-442f-a3c4-ac034210b7e9" />
-            <field name="username"          db="username"                     request="$username"              mock="nobody" />
-            <field name="email"             db="email"                        request="$email"                 mock="john.doe@nobody.it" />
-            <field name="tel"               db="tel"                          request="$tel"                   mock="3498844546" />
-            <field name="display_name"      db="display_name"                 request="$display_name"          mock="John Doe" />
-            <field name="avatar"            db="avatar"                       request="$avatar"                mock="noavatar" />
-            <field name="status"            db="status"                       request="$status"                mock="1" />
-            <field name="acl"               db="acl"                          request="$acl"                   mock="" />
+            <field name="uuid"              type="string"       db="uuid"                         request="$uuid"                  mock="fdbba8ff-86a4-442f-a3c4-ac034210b7e9" />
+            <field name="username"          type="string"       db="username"                     request="$username"              mock="nobody" />
+            <field name="email"             type="email"        db="email"                        request="$email"                 mock="john.doe@nobody.it" />
+            <field name="tel"               type="tel"          db="tel"                          request="$tel"                   mock="3498844546" />
+            <field name="display_name"      type="string"       db="display_name"                 request="$display_name"          mock="John Doe" />
+            <field name="avatar"            type="image"        db="avatar"                       request="$avatar"                width="100" height="100"     resize="crop"   mock="noavatar"  />
+            <field name="status"            type="bool"         db="status"                       request="$status"                mock="1" />
+            <field name="acl"               type="string"       db="acl"                          request="$acl"                   mock="" />
         </model>
     </models>
 </configdata>

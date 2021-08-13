@@ -73,19 +73,7 @@ class Data
      *  - FF_LOCALE : il tipo usato per visualizzare i dati all'utente
      * @var string
      */
-    public $locale 	                        = self::LOCALE_SYSTEM;	/* The default locale setting.
-
-                                                NB.: DON'T ALTER THIS!!!!
-                                                This will be altered on single instances, but is NOT safe to alter the default
-                                                due to superclasses automation.
-                                                If you want to alter the default locale of system objects, alter the settings
-                                                in configuration file. */
-    /**
-     * Se dev'essere applicata una trasformazione in modo che non venga mai restituito null come valore.
-     * Se "true", per dati di tipo testuale verrà restituita stringa nulla, per dati di tipo numerico verrà restituito 0
-     * @var string
-     */
-    public $transform_null 		            = false;
+    public $locale 	                        = self::LOCALE_SYSTEM;
 
     /**
      * Il valore testuale del dato
@@ -243,9 +231,14 @@ class Data
     /**
      * @param string|null $type
      * @return string
+     * @throws Exception
      */
     private function getDataType(string $type = null) : string
     {
+        if (!defined(__CLASS__ . "::TYPE_" . strtoupper($type))) {
+            throw new Exception("Type " . $type . " not implemented in " . __CLASS__, 501);
+        }
+
         return ($type
             ? constant(__CLASS__ . "::TYPE_" . strtoupper($type))
             : $this->data_type
@@ -322,6 +315,4 @@ class Data
 
         return $dataLang->$funcname($raw_value);
     }
-
-
 }

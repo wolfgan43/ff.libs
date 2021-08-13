@@ -25,11 +25,9 @@
  */
 namespace phpformsframework\libs\storage;
 
-use phpformsframework\libs\international\Data;
-use phpformsframework\libs\international\Locale;
-use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Kernel;
-use phpformsframework\libs\util\Normalize;
+use phpformsframework\libs\storage\dto\OrmDef;
+use phpformsframework\libs\storage\dto\Schema;
 use phpformsframework\libs\Exception;
 
 /**
@@ -69,7 +67,6 @@ abstract class DatabaseAdapter implements Constant
     private const ERROR_UPDATE_IS_EMPTY = "set and/or where are empty";
     private const ERROR_WRITE_IS_EMPTY  = "insert and/or set and/or where are empty";
     private const ERROR_DELETE_IS_EMPTY = "you cant truncate table. where is empty";
-    private const ERROR_CMD_IS_EMPTY    = "where and/or command is empty";
 
     protected const TYPE                = null;
     protected const PREFIX              = null;
@@ -83,30 +80,31 @@ abstract class DatabaseAdapter implements Constant
     private const COUNT                 = Database::COUNT;
     private const INDEX_PRIMARY         = Database::INDEX_PRIMARY;
 
-    private $preserve_columns_order     = false;
-    private $connection                 = array(
-                                            "host"          => null
-                                            , "username"    => null
-                                            , "secret"      => null
-                                            , "name"        => null
-                                            , "prefix"		=> null
-                                            , "table"       => null
-                                            , "key"         => null
-                                            , "key_rel"     => null
-                                        );
+    private $connection                 = [
+                                            "host"          => null,
+                                            "username"      => null,
+                                            "secret"        => null,
+                                            "name"          => null,
+                                            "prefix"		=> null,
+                                            "table"         => null,
+                                            "key"           => null,
+                                            "key_rel"       => null
+                                        ];
 
     protected $key_name                 = null;
     protected $key_rel_prefix           = null;
     protected $key_rel_suffix           = null;
-    protected $key_primary              = null;
 
-    protected $main_table    			= null;
-    protected $struct					= null;
-    protected $relationship			    = null;
-    protected $indexes					= null;
-    protected $table                    = null;
+    /**
+     * @var OrmDef
+     */
+    protected $def                      = null;
+    /**
+     * @var Schema
+     */
+    protected $schema                   = null;
 
-    private $index2query                = array();
+    private $index2query                = [];
     private $table_name                 = null;
 
     /**
@@ -114,10 +112,12 @@ abstract class DatabaseAdapter implements Constant
      */
     protected $driver                   = null;
 
-    private $prototype                  = array();
-    private $to                         = array();
-    private $in                         = array();
+    private $prototype                  = [];
 
+    /**
+     * @var DatabaseConverter
+     */
+    private $converter                  = null;
 
     /**
      * @return mixed
@@ -165,21 +165,14 @@ abstract class DatabaseAdapter implements Constant
 
     /**
      * DatabaseAdapter constructor.
-     * @param string|null $main_table
-     * @param array|null $table
-     * @param array|null $struct
-     * @param array|null $relationship
-     * @param array|null $indexes
-     * @param string|null $key_primary
+     * @param OrmDef $def
+     * @param Schema|null $schema
      */
-    public function __construct(string $main_table = null, array $table = null, array $struct = null, array $indexes = null, array $relationship = null, string $key_primary = null)
+    public function __construct(OrmDef $def, Schema $schema = null)
     {
-        $this->main_table                               = $main_table;
-        $this->table                                    = $table;
-        $this->struct                                   = $struct;
-        $this->indexes                                  = $indexes;
-        $this->relationship                             = $relationship;
-        $this->key_primary                              = $key_primary;
+        $this->def                                      = $def;
+        $this->schema                                   = $schema;
+        $this->converter                                = $this->schema->converter ?? new DatabaseConverter($this->def);
     }
 
     /**
@@ -349,7 +342,7 @@ abstract class DatabaseAdapter implements Constant
             );
             $connector["key_rel"]                       = $key_rel;
 
-            if (!$this->table && $connector["table"]) {
+            if (!$this->def->table && !empty($connector["table"])) {
                 $this->setTable($connector["table"]);
             }
 
@@ -366,18 +359,17 @@ abstract class DatabaseAdapter implements Constant
     /**
      * @param array $db
      * @param array|null $indexes
-     * @throws Exception
      */
     protected function convertRecordset(array &$db, array $indexes = null) : void
     {
         $use_control                                    = !empty($indexes);
-        if ($use_control || count($this->to)) {
+        if ($use_control || $this->converter->issetTo()) {
             foreach ($db[self::RESULT] as &$record) {
                 if ($use_control) {
                     $index                              = array_intersect_key($record, $indexes);
 
                     if (isset($record[$this->key_name])) {
-                        $index[$this->key_primary]      = $record[$this->key_name];
+                        $index[$this->def->key_primary] = $record[$this->key_name];
                     }
 
                     $db[self::INDEX][]                  = $index;
@@ -391,22 +383,11 @@ abstract class DatabaseAdapter implements Constant
     /**
      * @param array $record
      * @return array
-     * @throws Exception
      */
     protected function fields2output(array $record) : array
     {
-        $keys                                                       = array_intersect_key($this->prototype, $record);
-        $values                                                     = array_intersect_key($record, $this->prototype);
+        return $this->converter->to(array_intersect_key($record, $this->prototype));
 
-        $res                                                        = array_combine($keys, $values);
-        if (!empty($this->to)) {
-            foreach ($this->to as $field => $funcs) {
-                foreach ($funcs as $func => $params) {
-                    $res[$field]                                    = $this->to($func, $res[$field], $params);
-                }
-            }
-        }
-        return $res;
     }
 
     /**
@@ -424,24 +405,24 @@ abstract class DatabaseAdapter implements Constant
         }
 
         foreach ($fields as $name => $value) {
-            if (!isset($this->struct[$name])) {
+            if (!isset($this->def->struct[$name])) {
                 continue;
             }
 
             if (is_bool($value) || $name == $value) {
                 $value                  = $name;
-                $this->converter($name);
+                $this->converter->set($name);
             } else {
-                $this->converter($value, $name);
+                $this->converter->set($value, $name);
             }
 
-            if ($this->key_name != $this->key_primary && $name == $this->key_primary) {
+            if ($this->key_name != $this->def->key_primary && $name == $this->def->key_primary) {
                 $name = $this->convertKeyPrimary($name);
             }
             $res[$name]                 = $value;
         }
 
-        if (empty($this->table["preserve_columns_order"])) {
+        if (empty($this->def->table["preserve_columns_order"])) {
             ksort($res);
         }
 
@@ -461,7 +442,7 @@ abstract class DatabaseAdapter implements Constant
         $res                            = array();
         if ($fields) {
             foreach ($fields as $name => $value) {
-                $this->converter($name);
+                $this->converter->set($name);
 
                 $res[$name]             = $this->convertFieldSort($value);
             }
@@ -492,7 +473,7 @@ abstract class DatabaseAdapter implements Constant
 
         if ($fields) {
             foreach ($fields as $name => $value) {
-                $struct_type            = $this->converter($name);
+                $struct_type            = $this->converter->set($name);
                 if (is_array($value)) {
                     if (isset($value[self::OR])) {
                         $this->fieldWhere($res, $value[self::OR], $struct_type, $name, static::OR);
@@ -527,16 +508,16 @@ abstract class DatabaseAdapter implements Constant
         $res                            = array();
         if ($fields) {
             foreach ($fields as $name => $value) {
-                if (!isset($this->struct[$name])) {
+                if (!isset($this->def->struct[$name])) {
                     continue;
                 }
 
-                $struct_type            = $this->converter($name);
+                $struct_type            = $this->converter->set($name);
 
                 $res[$name]             = (
                     $value === null
                     ? $this->fieldOperationNULL($struct_type, $name)
-                    : $this->driver->toSql($this->fieldIn($name, $value), $struct_type)
+                    : $this->driver->toSql($this->converter->in($name, $value), $struct_type)
                 );
             }
         }
@@ -556,19 +537,19 @@ abstract class DatabaseAdapter implements Constant
         $res                                                = array();
         if ($fields) {
             foreach ($fields as $name => $value) {
-                if (!isset($this->struct[$name])) {
+                if (!isset($this->def->struct[$name])) {
                     continue;
                 }
 
-                $struct_type                                = $this->converter($name);
+                $struct_type                                = $this->converter->set($name);
                 if ($value === "++") {
-                    $res[self::OP_INC_DEC][$name]           = $this->fieldOperation($this->fieldIn($name, $value), $struct_type, $name, self::OP_INC_DEC);
+                    $res[self::OP_INC_DEC][$name]           = $this->fieldOperation($this->converter->in($name, $value), $struct_type, $name, self::OP_INC_DEC);
                 } elseif ($value === "--") {
-                    $res[self::OP_INC_DEC][$name]           = $this->fieldOperation($this->fieldIn($name, $value), $struct_type, $name, self::OP_INC_DEC . '-');
+                    $res[self::OP_INC_DEC][$name]           = $this->fieldOperation($this->converter->in($name, $value), $struct_type, $name, self::OP_INC_DEC . '-');
                 } elseif ($value === "+") {
-                    $res[self::OP_ADD_TO_SET][$name]        = $this->fieldOperation($this->fieldIn($name, $value), $struct_type, $name, self::OP_ADD_TO_SET);
+                    $res[self::OP_ADD_TO_SET][$name]        = $this->fieldOperation($this->converter->in($name, $value), $struct_type, $name, self::OP_ADD_TO_SET);
                 } else {
-                    $res[self::OP_SET][$name]               = $this->fieldOperation($this->fieldIn($name, $value), $struct_type, $name, self::OP_SET);
+                    $res[self::OP_SET][$name]               = $this->fieldOperation($this->converter->in($name, $value), $struct_type, $name, self::OP_SET);
                 }
             }
         }
@@ -577,10 +558,10 @@ abstract class DatabaseAdapter implements Constant
 
     /**
      * @param DatabaseQuery $query
-     * @return array|object|null
+     * @return array|null
      * todo da tipizzare
      */
-    private function processRead(DatabaseQuery $query)
+    private function processRead(DatabaseQuery $query): ?array
     {
         return ($this->driver->read($query)
             ? $this->driver->getRecordset()
@@ -598,7 +579,7 @@ abstract class DatabaseAdapter implements Constant
         if ($this->driver->insert($query)) {
             $res                                        = array(
                                                             self::INDEX_PRIMARY => array(
-                                                                $this->key_primary => $this->driver->getInsertID()
+                                                                $this->def->key_primary => $this->driver->getInsertID()
                                                             )
                                                         );
         }
@@ -616,7 +597,7 @@ abstract class DatabaseAdapter implements Constant
         if ($this->driver->update($query)) {
             $res                                        = array(
                                                             self::INDEX_PRIMARY => array(
-                                                                $this->key_primary => null
+                                                                $this->def->key_primary => null
                                                             )
                                                         );
         }
@@ -634,7 +615,7 @@ abstract class DatabaseAdapter implements Constant
         if ($this->driver->delete($query)) {
             $res                                        = array(
                                                             self::INDEX_PRIMARY => array(
-                                                                $this->key_primary => null
+                                                                $this->def->key_primary => null
                                                             )
                                                         );
         }
@@ -653,7 +634,7 @@ abstract class DatabaseAdapter implements Constant
         $res                                            = null;
         $keys                                           = array();
         $query_read                                     = clone $query;
-        $query_read->select                             = $this->querySelect([$this->key_primary => true], false);
+        $query_read->select                             = $this->querySelect([$this->def->key_primary => true], false);
         if ($this->driver->read($query_read)) {
             $keys                                       = array_column((array) $this->driver->getRecordset(), $this->key_name);
         }
@@ -664,7 +645,7 @@ abstract class DatabaseAdapter implements Constant
             if ($this->driver->update($query_update)) {
                 $res                                = array(
                                                         self::INDEX_PRIMARY => array(
-                                                            $this->key_primary => $this->driver->getUpdatedIDs($keys)
+                                                            $this->def->key_primary => $this->driver->getUpdatedIDs($keys)
                                                         ),
                                                         "action"    => self::ACTION_UPDATE
                                                     );
@@ -674,7 +655,7 @@ abstract class DatabaseAdapter implements Constant
             if ($this->driver->insert($query_insert)) {
                 $res                                = array(
                                                         self::INDEX_PRIMARY => array(
-                                                            $this->key_primary => $this->driver->getInsertID()
+                                                            $this->def->key_primary => $this->driver->getInsertID()
                                                         ),
                                                         "action"    => self::ACTION_INSERT
                                                     );
@@ -721,12 +702,11 @@ abstract class DatabaseAdapter implements Constant
     }
 
     /**
-     * @param string $key
      * @return string|null
      */
-    private function getTable(string $key) : ?string
+    private function getTableName() : ?string
     {
-        return $this->table[$key] ?? null;
+        return $this->def->table["name"] ?? null;
     }
 
     /**
@@ -734,13 +714,13 @@ abstract class DatabaseAdapter implements Constant
      */
     private function setIndex2Query() : void
     {
-        if (!empty($this->indexes)) {
-            $indexes = array_keys($this->indexes);
+        if (!empty($this->def->indexes)) {
+            $indexes = array_keys($this->def->indexes);
             $this->index2query = array_combine($indexes, $indexes);
         }
 
-        if ($this->key_primary) {
-            $this->index2query[$this->key_primary]  = $this->key_primary;
+        if ($this->def->key_primary) {
+            $this->index2query[$this->def->key_primary]  = $this->def->key_primary;
         }
     }
 
@@ -756,12 +736,7 @@ abstract class DatabaseAdapter implements Constant
         $this->clearResult();
 
         if ($this->loadDriver()) {
-            $this->table_name = (
-                $table_name
-                ? $table_name
-                : $this->getTable("name")
-            );
-
+            $this->table_name = $table_name ?: $this->getTableName();
             if (!$this->key_name) {
                 throw new Exception(static::TYPE . " key missing", 500);
             }
@@ -772,7 +747,7 @@ abstract class DatabaseAdapter implements Constant
             throw new Exception("Connection failed to database: " . static::TYPE, 500);
         }
 
-        return new DatabaseQuery($action, $this->table_name, $this->key_primary, $calc_found_rows);
+        return new DatabaseQuery($action, $this->table_name, $this->def->key_primary, $calc_found_rows);
     }
 
     /**
@@ -790,9 +765,9 @@ abstract class DatabaseAdapter implements Constant
     {
         $query                  = $this->getQuery(self::ACTION_READ, $table_name, $calc_found_rows);
 
-        $query->select          = $this->querySelect($select, empty($this->table["skip_control"]));
+        $query->select          = $this->querySelect($select, empty($this->def->table["skip_control"]));
         $query->sort            = $this->querySort($sort);
-        $query->where           = $this->queryWhere($where, $this->table["delete_logical_field"] ?? null);
+        $query->where           = $this->queryWhere($where, $this->def->table["delete_logical_field"] ?? null);
         $query->limit           = $limit    < 0 ? null : $limit;
         $query->offset          = $offset   < 0 ? null : $offset;
 
@@ -881,40 +856,19 @@ abstract class DatabaseAdapter implements Constant
     }
 
     /**
-     * @param string|null $table
-     * @param null $key
+     * @param string $table
      */
-    private function setTable(string $table = null, $key = null) : void
+    private function setTable(string $table) : void
     {
-        if ($table) {
-            if ($key) {
-                $this->table[$key]                                  = $table;
-            } else {
-                $this->table                                        = array(
-                                                                        "name"      => $table,
-                                                                        "alias"     => $table,
-                                                                        "engine"    => "InnoDB",
-                                                                        "crypt"     => false,
-                                                                        "pairing"   => false,
-                                                                        "transfert" => false,
-                                                                        "charset"   => "utf8"
-                                                                    );
-            }
-        }
-    }
-
-    /**
-     * @param string $key
-     * @return string
-     * @throws Exception
-     */
-    private function getStructField(string $key) : string
-    {
-        if (!isset($this->struct[$key])) {
-            throw new Exception("Field: '" . $key . "' not found in struct on table: " . $this->table["name"], 500);
-        }
-
-        return $this->struct[$key];
+        $this->def->table                                   = array(
+                                                                "name"      => $table,
+                                                                "alias"     => $table,
+                                                                "engine"    => "InnoDB",
+                                                                "crypt"     => false,
+                                                                "pairing"   => false,
+                                                                "transfert" => false,
+                                                                "charset"   => "utf8"
+                                                            );
     }
 
     /**
@@ -923,250 +877,8 @@ abstract class DatabaseAdapter implements Constant
     private function clearResult()
     {
         $this->table_name                                           = null;
-        $this->index2query                                          = array();
-        $this->prototype                                            = array();
-        $this->to                                                   = array();
-        $this->in                                                   = array();
-    }
-
-    /**
-     * @param int $index
-     * @return string|null
-     */
-    private function getColorPalette(int $index) : ?string
-    {
-        $colors = array(
-            "EF5350"
-            , "EC407A"
-            , "AB47BC"
-            , "7E57C2"
-            , "5C6BC0"
-            , "42A5F5"
-            , "29B6F6"
-            , "26C6DA"
-            , "26A69A"
-            , "66BB6A"
-            , "9CCC65"
-            , "D4E157"
-            , "FFEE58"
-            , "FFCA28"
-            , "FFA726"
-        );
-
-        return $colors[$index] ?? null;
-    }
-
-    /**
-     * @param string $func
-     * @param string|null $source
-     * @param array|null $params
-     * @return string
-     * @throws Exception
-     */
-    private function to(string $func, string $source = null, array $params = null) : ?string
-    {
-        $res                                                                = null;
-        switch (strtoupper($func)) {
-            case "IMAGE":
-                if ($source === true) {
-                    $res                                                    = '<i></i>';
-                } elseif (strpos($source, "<") === 0) {
-                    $res                                                    = $source;
-                } elseif (strpos($source, "#") !== false) {
-                    $arrSource                                              = explode("#", $source);
-                    $hex                                                    = (
-                        $arrSource[1]
-                                                                                ? $arrSource[1]
-                                                                                : $this->getColorPalette(rand(0, 14))
-                                                                            );
-                    $res                                                    = '<span style="background-color: #' . $hex . ';">' . $arrSource[0] . '</span>';
-                } else {
-                    $res                                                    = '<img src="' . Media::getUrl($source, $params[0] ?? null) . '" />';
-                }
-                break;
-            case "TIMEELAPSED":
-                $time                                                       = time() - $source; // to get the time since that moment
-                $time                                                       = ($time < 1) ? 1 : $time;
-                $day                                                        = 86400;
-                $min                                                        = 60;
-                if ($time < 2 * $day) {
-                    if ($time < $min) {
-                        $res                                                = Translator::getWordByCodeCached("about") . " " . Translator::getWordByCodeCached("a") . " " . Translator::getWordByCodeCached("minute") . " " . Translator::getWordByCodeCached("ago");
-                    } elseif ($time > $day) {
-                        $res                                                = Translator::getWordByCodeCached("yesterday") . " " . Translator::getWordByCodeCached("at") . " " . date("G:i", $source);
-                    } else {
-                        $tokens                                             = array(
-                                                                                31536000 	=> 'year',
-                                                                                2592000 	=> 'month',
-                                                                                604800 		=> 'week',
-                                                                                86400 		=> 'day',
-                                                                                3600 		=> 'hour',
-                                                                                60 			=> 'minute',
-                                                                                1 			=> 'second'
-                                                                            );
-
-                        foreach ($tokens as $unit => $text) {
-                            if ($time < $unit) {
-                                continue;
-                            }
-                            $res                                            = floor($time / $unit);
-                            $res                                            .= ' ' . Translator::getWordByCodeCached($text . (($res > 1) ? 's' : '')) . " " . Translator::getWordByCodeCached("ago");
-                            break;
-                        }
-                    }
-                }
-                break;
-            case "DATETIME":
-                $lang                                                       = Locale::getCodeLang();
-                $oData                                                      = new Data($source, "Timestamp");
-                $res                                                        = $oData->getValue("Date", $lang);
-
-                if ($lang == "en") {
-                    $prefix                                                 = "+";
-                    $res                                                    = "+" . $res;
-                } else {
-                    $prefix                                                 = "/";
-                }
-
-                $conv                                                       = array(
-                                                                                $prefix . "01/" => " " . Translator::getWordByCodeCached("Januaunable to updatery") . " "
-                                                                                , $prefix . "02/" => " " . Translator::getWordByCodeCached("February") . " "
-                                                                                , $prefix . "03/" => " " . Translator::getWordByCodeCached("March") . " "
-                                                                                , $prefix . "04/" => " " . Translator::getWordByCodeCached("April") . " "
-                                                                                , $prefix . "05/" => " " . Translator::getWordByCodeCached("May") . " "
-                                                                                , $prefix . "06/" => " " . Translator::getWordByCodeCached("June") . " "
-                                                                                , $prefix . "07/" => " " . Translator::getWordByCodeCached("July") . " "
-                                                                                , $prefix . "08/" => " " . Translator::getWordByCodeCached("August") . " "
-                                                                                , $prefix . "09/" => " " . Translator::getWordByCodeCached("September") . " "
-                                                                                , $prefix . "10/" => " " . Translator::getWordByCodeCached("October") . " "
-                                                                                , $prefix . "11/" => " " . Translator::getWordByCodeCached("November") . " "
-                                                                                , $prefix . "12/" => " " . Translator::getWordByCodeCached("December") . " "
-                                                                            );
-                $res                                                        = str_replace(array_keys($conv), array_values($conv), $res);
-                if ($prefix) {
-                    $res                                                    = str_replace("/", ", ", $res);
-                }
-                $res                                                        .= " " . Translator::getWordByCodeCached("at") . " " . Translator::getWordByCodeCached("hours") . " " . $oData->getValue("Time", Locale::getCodeLang());
-
-                break;
-            case "DATE":
-                $oData                                                      = new Data($source, "Timestamp");
-                $res                                                        = $oData->getValue("Date", Locale::getCodeLang());
-                break;
-            case "TIME":
-                $oData                                                      = new Data($source, "Timestamp");
-                $res                                                        = $oData->getValue("Time", Locale::getCodeLang());
-                break;
-            case "STRING":
-                $res                                                        = $source;
-                break;
-            case "SLUG":
-                $res                                                        = Normalize::urlRewrite($source);
-                break;
-            case "DESCRYPT":
-                $res                                                        = $this->decrypt($source, $params[0], $params[1]);
-                break;
-            case "AES128":
-            case "AES192":
-            case "AES256":
-            case "BF":
-            case "CAST":
-            case "IDEA":
-                $res                                                        = $this->decrypt($source, $params[0], $func);
-                break;
-            case "TRANSLATE":
-                $res                                                        = Translator::getWordByCodeCached($source);
-                break;
-            default:
-                if (!$params && is_callable($func)) {
-                    $res                                                    = $func($source);
-                } else {
-                    throw new Exception("ConversionTo not Managed: " . $func . " for " . $source, 500);
-                }
-        }
-
-        return $res;
-    }
-
-    /**
-     * @param array|null $casts
-     * @param string|null $field_db
-     * @param string|null $field_output
-     * @throws Exception
-     */
-    private function converterCallback(array $casts = null, string $field_db = null, string $field_output  = null) : void
-    {
-        if ($casts) {
-            foreach ($casts as $cast) {
-                $params                                 = array();
-                $op                                     = strtolower(substr($cast, 0, 2));
-                if (strpos($cast, "(") !== false) {
-                    $func = explode("(", $cast, 2);
-                    $cast = $func[0];
-                    $params = explode(",", rtrim($func[1], ")"));
-                }
-
-
-
-
-                if ($op === "to" && $field_output) {
-                    $this->to[$field_output][substr($cast, 2)]         = $params;
-                } elseif ($op === "in" && $field_db) {
-                    $this->in[$field_db][substr($cast, 2)]             = $params;
-                } else {
-                    throw new Exception($cast . " is not a valid function", 500);
-                }
-            }
-        }
-    }
-
-    /**
-     * @param string $field_output
-     * @param string|null $field_db
-     * @return string
-     * @throws Exception
-     */
-    private function converter(string &$field_output, string $field_db = null) : string
-    {
-        $casts                                      = $this->converterCasts($field_output);
-        if (!$field_db) {
-            $field_db                               = $field_output;
-        }
-
-        $this->converterCallback($casts, $field_db, $field_output);
-
-        return $this->converterStruct($field_db, $field_output);
-    }
-
-    /**
-     * @param string $subject
-     * @return array|null
-     */
-    private function converterCasts(string &$subject) : ?array
-    {
-        $casts                                      = null;
-        if (strpos($subject, ":") !== false) {
-            $casts                                  = explode(":", $subject);
-            $subject                                = array_shift($casts);
-        }
-
-        return $casts;
-    }
-
-    /**
-     * @param string $field_db
-     * @param string|null $field_output
-     * @return string
-     * @throws Exception
-     */
-    private function converterStruct(string $field_db, string $field_output = null) : string
-    {
-        $struct_type                                = $this->getStructField($field_db);
-        $casts                                      = $this->converterCasts($struct_type);
-
-        $this->converterCallback($casts, $field_db, $field_output);
-
-        return $struct_type;
+        $this->index2query                                          = [];
+        $this->prototype                                            = [];
     }
 
     /**
@@ -1179,14 +891,14 @@ abstract class DatabaseAdapter implements Constant
      */
     private function fieldWhere(array &$res, $value, string $struct_type, string $name = null, string $or = null) : void
     {
-        if ($this->key_name != $this->key_primary && $name == $this->key_primary) {
+        if ($this->key_name != $this->def->key_primary && $name == $this->def->key_primary) {
             $name = $this->convertKeyPrimary($name);
         }
 
         if (is_array($value)) {
             $res[$name] = $this->fieldOperations($value, $struct_type, $name);
         } else {
-            $res[$name][self::OP_DEFAULT] = $this->fieldOperation($this->fieldIn($name, $value), $struct_type, $name, self::OP_DEFAULT);
+            $res[$name][self::OP_DEFAULT] = $this->fieldOperation($this->converter->in($name, $value), $struct_type, $name, self::OP_DEFAULT);
         }
 
         $this->convertFieldWhere($res, $name, $or);
@@ -1203,202 +915,20 @@ abstract class DatabaseAdapter implements Constant
         $res                                    = null;
         foreach ($values as $op => $value) {
             if (!empty(self::OPERATOR_COMPARISON[$op])) {
-                $res[$op]                       = $this->fieldOperation($this->fieldIn($name, $value), $struct_type, $name, $op);
+                $res[$op]                       = $this->fieldOperation($this->converter->in($name, $value), $struct_type, $name, $op);
             }
         }
 
         if (!$res) {
             if (count($values) > 1) {
-                $res[self::OP_ARRAY_DEFAULT]    = $this->fieldOperation($this->fieldIn($name, $values), $struct_type, $name, self::OP_ARRAY_DEFAULT);
+                $res[self::OP_ARRAY_DEFAULT]    = $this->fieldOperation($this->converter->in($name, $values), $struct_type, $name, self::OP_ARRAY_DEFAULT);
             } elseif (empty($values)) {
                 $res                            = $this->fieldOperationNULL($struct_type, $name, self::OP_DEFAULT);
             } else {
-                $res[self::OP_DEFAULT]          = $this->fieldOperation($this->fieldIn($name, $values[0]), $struct_type, $name, self::OP_DEFAULT);
+                $res[self::OP_DEFAULT]          = $this->fieldOperation($this->converter->in($name, $values[0]), $struct_type, $name, self::OP_DEFAULT);
             }
         }
 
-        return $res;
-    }
-
-    /**
-     * @todo da tipizzare
-     * @param string $name
-     * @param mixed|null $value
-     * @return string
-     */
-    private function fieldIn(string $name, $value = null)
-    {
-        if ($value && isset($this->in[$name])) {
-            foreach ($this->in[$name] as $func => $params) {
-                $value = $this->convertWith($value, strtoupper($func), $params);
-            }
-        }
-
-        return $value;
-    }
-
-    /**
-     * @param string $data
-     * @param string $method
-     * @param array|null $params
-     * @return string
-     */
-    private function convertWith(string $data, string $method, array $params = null) : string
-    {
-        switch ($method) {
-            case "ASCII":
-                $res                                                        = ord($data);
-                break;
-            case "CHAR_LENGTH":
-            case "CHARACTER_LENGTH":
-            case "LENGTH":
-                $res                                                        = strlen($data);
-                break;
-            case "LCASE":
-            case "LOWER":
-                $res                                                        = strtolower($data);
-                break;
-            case "LTRIM":
-                $res                                                        = ltrim($data, $params[0]);
-                break;
-            case "RTRIM":
-                $res                                                        = rtrim($data, $params[0]);
-                break;
-            case "TRIM":
-                $res                                                        = trim($data, $params[0]);
-                break;
-            case "UCASE":
-            case "UPPER":
-                $res                                                        = strtoupper($data);
-                break;
-            case "REVERSE":
-                $res                                                        = strrev($data);
-                break;
-            case "MD5":
-                $res                                                        = md5($data);
-                break;
-            case "OLDPASSWORD":
-                $res                                                        = "*" . strtoupper(sha1(sha1($data, true)));
-                break;
-            case "PASSWORD":
-                $res                                                        = "*" . strtoupper(sha1(sha1($data, true)));
-                //todo: da usare Password_Verify (password_hash($data, PASSWORD_DEFAULT))
-                break;
-            case "BCRYPT":
-                $res                                                        = password_hash($data, PASSWORD_BCRYPT);
-                break;
-            case "ARGON2I":
-                $res                                                        = password_hash($data, PASSWORD_ARGON2I);
-                break;
-            case "REPLACE":
-                $res                                                        = str_replace($params[0], $params[1], $data);
-                break;
-            case "CONCAT":
-                $res                                                        = $data . " " . implode(" ", $params);
-                break;
-            case "ENCRYPT":
-                $res                                                        = $this->encrypt($data, $params[0], $params[1]);
-                break;
-            case "AES128":
-            case "AES192":
-            case "AES256":
-            case "BF":
-            case "CAST":
-            case "IDEA":
-                $res                                                        = $this->encrypt($data, $params[0], $method);
-                break;
-            case "SLUG":
-                $res                                                        = Normalize::urlRewrite($data);
-                break;
-            default:
-                $res                                                        = (
-                    $params
-                    ? $data
-                    : $method($data)
-                );
-        }
-
-        return $res;
-    }
-
-    /**
-     * @param string $password
-     * @param string $algorithm
-     * @param int $cost
-     * @return array|null
-     */
-    private function getEncryptParams(string $password, string $algorithm, int $cost = 12) : ?array
-    {
-        $res                                                                = null;
-        if ($password && $algorithm) {
-            switch ($algorithm) {
-                case "AES128":
-                    $method                                                 = "aes-128-cbc";
-                    break;
-                case "AES192":
-                    $method                                                 = "aes-192-cbc";
-                    break;
-                case "AES256":
-                    $method                                                 = "aes-256-cbc";
-                    break;
-                case "BF":
-                    $method                                                 = "bf-cbc";
-                    break;
-                case "CAST":
-                    $method                                                 = "cast5-cbc";
-                    break;
-                case "IDEA":
-                    $method                                                 = "idea-cbc";
-                    break;
-                default:
-                    $method                                                 = null;
-            }
-
-
-            if ($method) {
-                $res = array(
-                    "key"       => password_hash($password, PASSWORD_BCRYPT, ['cost' => $cost])
-                    , "method"  => $method
-                    , "iv"      => chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0)
-                );
-            }
-        }
-
-        return $res;
-    }
-
-    /**
-     * @param string $data
-     * @param string $password
-     * @param string $algorithm
-     * @param int $cost
-     * @return string|null
-     */
-    private function encrypt(string $data, string $password, string $algorithm = "AES256", int $cost = 12) : ?string
-    {
-        $res                                                                = null;
-        $params                                                             = $this->getEncryptParams($password, $algorithm, $cost);
-        if ($params) {
-            $res = base64_encode(openssl_encrypt($data, $params["method"], $params["key"], OPENSSL_RAW_DATA, $params["iv"]));
-        }
-
-        return $res;
-    }
-
-    /**
-     * @param string $encrypted
-     * @param string $password
-     * @param string $algorithm
-     * @param int $cost
-     * @return string|null
-     */
-    private function decrypt(string $encrypted, string $password, string $algorithm = "AES256", int $cost = 12) : ?string
-    {
-        $res                                                                = null;
-        $params                                                             = $this->getEncryptParams($password, $algorithm, $cost);
-        if ($params) {
-            $res = openssl_decrypt(base64_decode($encrypted), $params["method"], $params["key"], OPENSSL_RAW_DATA, $params["key"]);
-        }
         return $res;
     }
 }

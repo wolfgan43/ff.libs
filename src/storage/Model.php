@@ -65,7 +65,6 @@ class Model implements Configurable, Dumpable
 
     private $collection                                                                 = null;
     private $table                                                                      = null;
-    private $mapclass                                                                   = null;
     private $select                                                                     = null;
     private $selectJoin                                                                 = [];
     private $where                                                                      = [];
@@ -296,8 +295,8 @@ class Model implements Configurable, Dumpable
     private function getOrm() : Orm
     {
         return ($this->schema
-            ? Orm::getInstance($this->schema->collection, $this->schema->table, $this->mapclass ?? $this->schema->mapclass)
-            : Orm::getInstance($this->collection, $this->table, $this->mapclass)
+            ? Orm::model($this->schema)
+            : Orm::getInstance($this->collection, $this->table)
         )->setLogicalField($this->logical_fields, true);
     }
 

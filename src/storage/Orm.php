@@ -32,6 +32,7 @@ use phpformsframework\libs\storage\dto\OrmDef;
 use phpformsframework\libs\storage\dto\OrmQuery;
 use phpformsframework\libs\storage\dto\OrmResults;
 use phpformsframework\libs\Exception;
+use phpformsframework\libs\storage\dto\Schema;
 use stdClass;
 
 /**
@@ -112,18 +113,28 @@ class Orm extends Mappable
     private $result                                                                         = array();
     private $result_keys                                                                    = null;
 
+    /**
+     * @var Schema
+     */
+    private $schema                                                                         = null;
     private $map_class                                                                      = null;
     private $preserve_columns_order                                                         = false;
 
     private $count                                                                          = 0;
 
+    public static function &model(Schema $schema) : self
+    {
+        return self::getInstance($schema->collection, $schema->table, $schema->mapclass)
+            ->setSchema($schema);
+    }
+
     /**
-     * @param string|null $collection
+     * @param string $collection
      * @param string|null $mainTable
      * @param string|null $mapClass
      * @return Orm
      */
-    public static function &getInstance(string $collection = null, string $mainTable = null, string $mapClass = null) : self
+    public static function &getInstance(string $collection, string $mainTable = null, string $mapClass = null) : self
     {
         if (!isset(self::$singleton[$collection])) {
             self::$singleton[$collection]                                                   = new Orm($collection);
@@ -173,6 +184,7 @@ class Orm extends Mappable
         self::$logical_fields[$this->main_table]                                            = $logical_fields;
 
         $this->preserve_columns_order                                                       = $preserve_columns_order;
+
         return $this;
     }
 
@@ -183,6 +195,17 @@ class Orm extends Mappable
     private function &setMapClass(string $map_class = null) : self
     {
         $this->map_class                                                                    = $map_class;
+
+        return $this;
+    }
+
+    /**
+     * @param Schema $schema
+     * @return $this
+     */
+    private function &setSchema(Schema $schema) : self
+    {
+        $this->schema                                                                       = $schema;
 
         return $this;
     }
@@ -255,12 +278,14 @@ class Orm extends Mappable
     }
 
     /**
-     * @param OrmDef $struct
+     * @param OrmDef $def
      * @return Database
      */
-    private function setStorage(OrmDef $struct) : Database
+    private function setStorage(OrmDef $def) : Database
     {
-        return Database::getInstance($this->adapters, $struct->toArray($this->preserve_columns_order));
+        $def->table["preserve_columns_order"] = $this->preserve_columns_order;
+
+        return new Database($this->adapters, $def, $this->schema);
     }
 
     /**
@@ -689,12 +714,7 @@ class Orm extends Mappable
      */
     private function getDataSingle(string $controller, string $table, int $limit = null, int $offset = null, bool $calc_found_rows = false) : int
     {
-        $count                                                                              = 0;
-        $data                                                                               = (
-            isset($this->subs[$controller][$table])
-                                                                                                ? $this->subs[$controller][$table]
-                                                                                                : $this->main
-                                                                                            );
+        $data                                                                               = $this->subs[$controller][$table] ?? $this->main;
         if ($data) {
             $data->setControl(true);
             $regs                                                                           = $this->getModel($data->getController($controller))
@@ -961,16 +981,8 @@ class Orm extends Mappable
         if (isset($this->subs) && !empty($this->subs)) {
             foreach ($this->subs as $controller => $tables) {
                 foreach ($tables as $table => $sub) {
-                    $field_ext                                                              = (
-                        isset($sub->def->relationship[$sub->def->mainTable][self::FREL_EXTERNAL])
-                                                                                                ? $sub->def->relationship[$sub->def->mainTable][self::FREL_EXTERNAL]
-                                                                                                : null
-                                                                                            );
-                    $field_main_ext                                                         = (
-                        isset($sub->def->relationship[$this->main->def->mainTable][self::FREL_EXTERNAL])
-                                                                                                ? $sub->def->relationship[$this->main->def->mainTable][self::FREL_EXTERNAL]
-                                                                                                : null
-                                                                                            );
+                    $field_ext                                                              = $sub->def->relationship[$sub->def->mainTable][self::FREL_EXTERNAL]        ?? null;
+                    $field_main_ext                                                         = $sub->def->relationship[$this->main->def->mainTable][self::FREL_EXTERNAL] ?? null;
 
                     if (isset($sub->def->struct[$field_ext]) || isset($sub->def->struct[$field_main_ext])) {
                         $this->rev[$table]                                                  = $controller;
@@ -1011,11 +1023,7 @@ class Orm extends Mappable
     {
         $data       = $this->main;
         if ($controller || $table) {
-            $data   = ($this->subs[$controller][(
-                $table
-                ? $table
-                : $this->getModel($controller)->getMainTable()
-            )]);
+            $data   = ($this->subs[$controller][$table ?: $this->getModel($controller)->getMainTable()]);
         }
 
         return $data;
@@ -1047,7 +1055,7 @@ class Orm extends Mappable
         }
         $is_single_service                                                                  = (count($this->services_by_data->services) == 1);
         if (empty($this->main->where) && empty($this->main->select) && empty($this->main->insert) && empty($this->main->set) && $is_single_service) {
-            $subService                                                                     = $this->services_by_data->last; //key($this->services_by_data->services);
+            $subService                                                                     = $this->services_by_data->last;
             $is_single_table                                                                = (count($this->services_by_data->services[$subService]) == 1);
             $Orm                                                                            = $this->getModel($subService);
             $subTable                                                                       = (

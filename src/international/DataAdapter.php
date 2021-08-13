@@ -37,6 +37,9 @@ use DateTime;
 class DataAdapter extends Mappable
 {
     private $locale     = null;
+    protected $timestamp = array(
+        "prototype"     => ""
+    );
     protected $datetime = array(
         "prototype"     => "DAY/MONTH/YEAR HOUR:MINUTE:SECOND"
     );
@@ -463,7 +466,7 @@ class DataAdapter extends Mappable
      */
     private function sendError(string $value, string $type) : void
     {
-        throw new Exception($value . " is not valid " .  "currency" . " for locale " . $this->locale . ": " . $this->getFormat($type), 500);
+        throw new Exception($value . " is not valid " .  $type . " for locale " . $this->locale . ": " . $this->getFormat($type), 500);
     }
 
     /**

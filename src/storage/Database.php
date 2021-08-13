@@ -25,7 +25,8 @@
  */
 namespace phpformsframework\libs\storage;
 
-use phpformsframework\libs\Kernel;
+use phpformsframework\libs\storage\dto\OrmDef;
+use phpformsframework\libs\storage\dto\Schema;
 use phpformsframework\libs\util\AdapterManager;
 use phpformsframework\libs\util\TypesConverter;
 use phpformsframework\libs\Exception;
@@ -52,14 +53,15 @@ class Database implements Constant
 
     /**
      * @param array $databaseAdapters
-     * @param null|array $struct
+     * @param OrmDef $def
+     * @param Schema|null $schema
      * @return Database
      */
-    public static function getInstance(array $databaseAdapters, array $struct = null) : Database
+    public static function getInstance(array $databaseAdapters, OrmDef $def, Schema $schema = null) : Database
     {
-        $key                                                                = self::checkSumArray($databaseAdapters + $struct["table"]);
+        $key                                                                = self::checkSumArray($databaseAdapters + $def->table);
         if (!isset(self::$singletons[$key])) {
-            self::$singletons[$key]                                         = new Database($databaseAdapters, $struct);
+            self::$singletons[$key]                                         = new Database($databaseAdapters, $def, $schema);
         }
 
         return self::$singletons[$key];
@@ -68,8 +70,9 @@ class Database implements Constant
     /**
      * Database constructor.
      *
-     * @param array|null $databaseAdapters
-     * @param array|null $struct
+     * @param array $databaseAdapters
+     * @param OrmDef $def
+     * @param Schema|null $schema
      * @example string $databaseAdapters: mysqli OR mongodb OR ecc
      * @example array $databaseAdapters: [mysqli, mongodb]
      * @example arrayAssociative $databaseAdapters: [mysqli : {
@@ -81,19 +84,14 @@ class Database implements Constant
      * , "table"       => null
      * , "key"         => null
      * }
-     *
      */
-    public function __construct(array $databaseAdapters = null, array $struct = null)
+    public function __construct(array $databaseAdapters, OrmDef $def, Schema $schema = null)
     {
-        if (!$databaseAdapters) {
-            $databaseAdapters[Kernel::$Environment::DATABASE_ADAPTER]       = null;
-        }
-
         foreach ($databaseAdapters as $adapter => $connection) {
-            $this->setAdapter($adapter, array_values($struct));
+            $this->setAdapter($adapter, [$def, $schema]);
         }
 
-        $this->table                                                        = $struct["table"]["name"] ?? null;
+        $this->table                                                        = $def->table["name"] ?? null;
     }
 
 

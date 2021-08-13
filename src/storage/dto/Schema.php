@@ -25,9 +25,7 @@
  */
 namespace phpformsframework\libs\storage\dto;
 
-use phpformsframework\libs\Constant;
 use phpformsframework\libs\dto\Mapping;
-use phpformsframework\libs\storage\Media;
 
 /**
  * Class Schema
@@ -36,8 +34,6 @@ use phpformsframework\libs\storage\Media;
 class Schema
 {
     use Mapping;
-
-    private const ENCODING              = Constant::ENCODING;
 
     private const TYPE = [
         "markdown",
@@ -70,13 +66,7 @@ class Schema
         "readonly",
         "bool",
     ];
-    private const IMAGE_RESIZE = [
-        "crop"          => "x",
-        "proportional"  => "-",
-        "stretch"       => "|"
-    ];
 
-    private const DEFAULT_IMAGE_RESIZE = "crop";
     private const DEFAULT_TYPE = "string";
 
     public $collection      = null;
@@ -90,60 +80,17 @@ class Schema
     public $insert          = null;
     public $properties      = null;
 
+    private $in             = [];
+    private $to             = [
+                                "avatar" => [
+                                    "imageHtml" => [
+
+                                    ]
+                                ]
+                            ];
+
     public function __construct(array $schema)
     {
         $this->autoMapping($schema);
-    }
-
-
-    public function get(string $field) : \stdClass
-    {
-        return (object) [
-            "type" => $this->dtd[$field] ?? null,
-            "properties" => $this->properties[$field] ?? null,
-        ];
-    }
-
-
-    public function display(string $field, string $value = null) : string
-    {
-        if (empty($value)) {
-            return "";
-        }
-
-        if (empty($this->properties[$field]["encode"])) {
-            $value = $this->encode($value);
-        }
-
-        switch ($this->dtd[$field] ?? null) {
-            case "image":
-                return $this->toHtmlImage($field, $value);
-            default:
-        }
-
-        return $value;
-    }
-
-
-    private function toHtmlImage(string $field, string $value) : string
-    {
-        $mode   = null;
-        $width  = null;
-        $height = null;
-        if (!empty($this->properties[$field]["width"]) && !empty($this->properties[$field]["height"])) {
-            $mode   = $this->properties[$field]["width"] . self::IMAGE_RESIZE[$this->properties[$field]["resize"] ?? self::DEFAULT_IMAGE_RESIZE] . $this->properties[$field]["height"];
-            $width  = ' width="' . $this->properties[$field]["width"] . '"';
-            $height = ' height="' . $this->properties[$field]["height"] . '"';
-        }
-
-        return '<img src="' . Media::getUrl($value, $mode) . '" alt="' . basename($value) . '"' . $width . $height . ' />';
-    }
-    /**
-     * @param string $value
-     * @return string
-     */
-    private function encode(string $value) : string
-    {
-        return htmlspecialchars($value, ENT_QUOTES, self::ENCODING, true);
     }
 }

@@ -525,7 +525,7 @@ class DataTable
                 $class  = (isset($this->sort[$i]) ? ' class="dataTable-sorter ' . $this->sort[$i] . '"' : null);
                 $dir    = self::RDIR[$this->sort[$i] ?? null];
 
-                $columns .= '<th data-id="' . $column . '"' . $class . '><a href="' . $this->getUrl(self::TC_SORT, [$i => $dir]) . '">' . Translator::getWordByCode($column) . '</a></th>';
+                $columns .= '<th data-id="' . $column . '"' . $class . '><a href="' . $this->getUrl(self::TC_SORT, [$i => $dir]) . '">' . ($this->schema->properties[$column]["label"] ?? Translator::getWordByCode($column)) . '</a></th>';
             } else {
                 $columns .= '<th>' . $column . '</th>';
             }

@@ -26,6 +26,7 @@
 namespace phpformsframework\libs\storage\dto;
 
 use phpformsframework\libs\dto\Mapping;
+use phpformsframework\libs\storage\DatabaseConverter;
 
 /**
  * Class Schema
@@ -80,17 +81,21 @@ class Schema
     public $insert          = null;
     public $properties      = null;
 
-    private $in             = [];
-    private $to             = [
-                                "avatar" => [
-                                    "imageHtml" => [
+    /**
+     * @var DatabaseConverter
+     */
+    public $converter       = null;
 
-                                    ]
-                                ]
-                            ];
+    private $to                         = [
+        "avatar" => ["image" => ["width" => 100, "height" => 100]],
+        "login_at" => ["datetime" => null]
+    ];
+    private $in                         = [];
 
     public function __construct(array $schema)
     {
         $this->autoMapping($schema);
+
+        $this->converter = new DatabaseConverter($this->to, $this->in);
     }
 }

@@ -172,7 +172,8 @@ abstract class DatabaseAdapter implements Constant
     {
         $this->def                                      = $def;
         $this->schema                                   = $schema;
-        $this->converter                                = $this->schema->converter ?? new DatabaseConverter($this->def);
+        $this->converter                                = ($this->schema->converter ?? new DatabaseConverter())
+            ->setDef($this->def);
     }
 
     /**

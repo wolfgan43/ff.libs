@@ -61,9 +61,25 @@ class DatabaseConverter
     private $to                         = [];
     private $in                         = [];
 
-    public function __construct(OrmDef $def)
+    /**
+     * @param array $to
+     * @param array $in
+     */
+    public function __construct(array $to = [], array $in = [])
     {
-        $this->def = $def;
+        $this->to = $to;
+        $this->in = $in;
+    }
+
+    /**
+     * @param OrmDef $def
+     * @return $this
+     */
+    public function setDef(OrmDef $def) : self
+    {
+        $this->def                                  = $def;
+
+        return $this;
     }
 
     /**
@@ -109,7 +125,7 @@ class DatabaseConverter
     {
         foreach (array_intersect_key($this->to, $record) as $field => $funcs) {
             foreach ($funcs as $func => $properties) {
-                $record[$field] = $this->$func($record[$field], $properties);
+                $record[$field] = $this->$func($record[$field], (object) $properties);
             }
         }
 
@@ -147,7 +163,7 @@ class DatabaseConverter
         $width  = null;
         $height = null;
         if (!empty($properties->width) && !empty($properties->height)) {
-            $mode   = $properties->width . (self::IMAGE_RESIZE[$properties->resize] ?? self::DEFAULT_IMAGE_RESIZE) . $properties->height;
+            $mode   = $properties->width . (self::IMAGE_RESIZE[$properties->resize ?? null] ?? self::DEFAULT_IMAGE_RESIZE) . $properties->height;
             $width  = ' width="' . $properties->width . '"';
             $height = ' height="' . $properties->height . '"';
         }
@@ -460,7 +476,7 @@ class DatabaseConverter
             $properties                                                     = $params;
         }
 
-        $ref[$field_name][$func]                                            = (object) $properties;
+        $ref[$field_name][$func]                                            = $properties;
     }
     /**
      * @param string $key

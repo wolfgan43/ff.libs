@@ -54,6 +54,7 @@ class Model implements Configurable, Dumpable
     private const INSERT                                                                = "insert";
     private const MOCK                                                                  = "mock";
     private const DTD                                                                   = "dtd";
+    private const HOOKS                                                                 = "hooks";
     private const PROPERTIES                                                            = "properties";
     private const OPTION                                                                = "option";
     private const DOT                                                                   = ".";
@@ -266,10 +267,15 @@ class Model implements Configurable, Dumpable
     }
 
     /**
+     * @param array|null $convertTo
+     * @param array|null $convertIn
      * @return Schema
      */
-    public function schema() : Schema
+    public function schema(array $convertTo = null, array $convertIn = null) : Schema
     {
+        $this->schema->to = $convertTo;
+        $this->schema->in = $convertIn;
+
         return $this->schema;
     }
 
@@ -461,7 +467,6 @@ class Model implements Configurable, Dumpable
     private static function loadModel(array $model, bool $isExtend = null) : ?bool
     {
         $model_attr                                                                             = Config::getXmlAttr($model);
-
         if ($isExtend) {
             $extend                                                                             = self::$models[$model_attr->extends];
             $schema_name                                                                        = $model_attr->extends . DIRECTORY_SEPARATOR . $model_attr->name;
@@ -539,8 +544,16 @@ class Model implements Configurable, Dumpable
                     $schema[self::OPTION][$key]                                                 = $extend[self::OPTION][$key];
                 }
 
+                /**
+                 * Hooks
+                 */
+                if (isset($attr->onProcessField)) {
+                    $schema[self::HOOKS][$key]                                                  = $attr->onProcessField;
+                } elseif (isset($extend[self::HOOKS][$key])) {
+                    $schema[self::HOOKS][$key]                                                  = $extend[self::HOOKS][$key];
+                }
 
-                unset($attr->name, $attr->db, $attr->type, $attr->mock, $attr->request);
+                unset($attr->name, $attr->db, $attr->type, $attr->mock, $attr->request, $attr->onProcessField);
 
                 $properties                                                                     = (array) $attr;
                 if (!empty($properties) || !empty($extend[self::PROPERTIES][$key])) {

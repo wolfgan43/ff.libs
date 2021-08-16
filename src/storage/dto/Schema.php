@@ -81,21 +81,17 @@ class Schema
     public $insert          = null;
     public $properties      = null;
 
-    /**
-     * @var DatabaseConverter
-     */
-    public $converter       = null;
+    public $converter       = DatabaseConverter::class;
 
-    private $to                         = [
-        "avatar" => ["image" => ["width" => 100, "height" => 100]],
-        "login_at" => ["datetime" => null]
-    ];
-    private $in                         = [];
+    /**
+     * @var callable[]
+     */
+    public $hooks           = [];
+    public $to              = [];
+    public $in              = [];
 
     public function __construct(array $schema)
     {
         $this->autoMapping($schema);
-
-        $this->converter = new DatabaseConverter($this->to, $this->in);
     }
 }

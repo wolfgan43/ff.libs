@@ -558,17 +558,11 @@ abstract class Controller
     public function display(string $method = null) : DataAdapter
     {
         if ($this->isXhr && !empty($this->request->component)) {
-            $component = explode(DIRECTORY_SEPARATOR, $this->request->component, 2);
-            switch ($component[0]) {
-                case DataTable::BUCKET:
-                    $this->send(DataTable::xhr($component[1]));
-                    break;
-                case self::COMPONENT_DATA_RECORD:
-                    break;
-                case self::COMPONENT_DATA_FIELD:
-                    break;
-                default:
-                    throw new Exception(self::ERROR_COMPONENT_NOT_IMPLEMENTED, 501);
+            $component = explode(":", $this->request->component, 2);
+            if (class_exists($component[0])) {
+                $this->send($component[0]::xhr($component[1]));
+            } else {
+                throw new Exception(self::ERROR_COMPONENT_NOT_IMPLEMENTED, 501);
             }
         }
 

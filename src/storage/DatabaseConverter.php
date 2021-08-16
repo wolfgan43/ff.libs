@@ -31,6 +31,7 @@ use phpformsframework\libs\Exception;
 use phpformsframework\libs\international\Data;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\international\Translator;
+use phpformsframework\libs\storage\dto\Schema;
 use phpformsframework\libs\util\Normalize;
 use stdClass;
 
@@ -58,28 +59,35 @@ class DatabaseConverter
      */
     private $def                         = null;
 
+    private $hooks                      = null;
+
     private $to                         = [];
     private $in                         = [];
 
     /**
-     * @param array $to
-     * @param array $in
-     */
-    public function __construct(array $to = [], array $in = [])
-    {
-        $this->to = $to;
-        $this->in = $in;
-    }
-
-    /**
      * @param OrmDef $def
-     * @return $this
+     * @param Schema|null $schema
+     * @throws Exception
      */
-    public function setDef(OrmDef $def) : self
+    public function __construct(OrmDef $def, Schema $schema = null)
     {
-        $this->def                                  = $def;
-
-        return $this;
+        $this->def                      = $def;
+        if($schema) {
+            foreach ($schema->hooks as $field => $hook) {
+                if(!is_callable($hook)) {
+                    throw new Exception($field . "->onProcessField: " . $hook . " not found", 501);
+                }
+            }
+            $this->hooks                    = $schema->hooks;
+            foreach ($schema->columns as $field) {
+                if (isset($schema->to[$schema->dtd[$field]])) {
+                    $this->add($this->to, $field, $schema->dtd[$field], $schema->properties[$field] ?? $schema->to[$schema->dtd[$field]]);
+                }
+                if (isset($schema->in[$schema->dtd[$field]])) {
+                    $this->add($this->in, $field, $schema->dtd[$field], $schema->properties[$field] ?? $schema->in[$schema->dtd[$field]]);
+                }
+            }
+        }
     }
 
     /**
@@ -108,7 +116,7 @@ class DatabaseConverter
      */
     public function in(string $name, $value = null): string
     {
-        if ($value && isset($this->in[$name])) {
+        if (!empty($value) && isset($this->in[$name])) {
             foreach ($this->in[$name] as $func => $properties) {
                 $value = $this->$func($value, $properties);
             }
@@ -123,10 +131,15 @@ class DatabaseConverter
      */
     public function to(array $record) : array
     {
-        foreach (array_intersect_key($this->to, $record) as $field => $funcs) {
+        foreach ($this->to as $field => $funcs) {
             foreach ($funcs as $func => $properties) {
-                $record[$field] = $this->$func($record[$field], (object) $properties);
+                $record[$field] = $this->$func($record[$field], $properties);
             }
+        }
+
+        //@todo da fare meglio
+        foreach($this->hooks as $field => $funcs) {
+            $record[$field] = $funcs($record[$field], $properties);
         }
 
         return $record;
@@ -272,32 +285,35 @@ class DatabaseConverter
 
     /**
      * @param string $value
+     * @param stdClass|null $properties
      * @return string|null
      * @throws Exception
      */
-    protected function dateTime(string $value) : ?string
+    protected function dateTime(string $value, stdClass $properties = null) : ?string
     {
-        return (new Data($value, "Timestamp"))->getValue("DateTime", Locale::getCodeLang());
+        return (new Data($value, $properties->type))->getValue("DateTime", Locale::getCodeLang());
     }
 
     /**
      * @param string $value
+     * @param stdClass|null $properties
      * @return string|null
      * @throws Exception
      */
-    protected function date(string $value) : ?string
+    protected function date(string $value, stdClass $properties = null) : ?string
     {
-        return (new Data($value, "Timestamp"))->getValue("Date", Locale::getCodeLang());
+        return (new Data($value, $properties->type))->getValue("Date", Locale::getCodeLang());
     }
 
     /**
      * @param string $value
+     * @param stdClass|null $properties
      * @return string|null
      * @throws Exception
      */
-    protected function time(string $value) : ?string
+    protected function time(string $value, stdClass $properties = null) : ?string
     {
-        return (new Data($value, "Timestamp"))->getValue("Time", Locale::getCodeLang());
+        return (new Data($value, $properties->type))->getValue("Time", Locale::getCodeLang());
     }
 
     /**
@@ -463,20 +479,23 @@ class DatabaseConverter
      */
     private function add(array &$ref, string $field_name, string $func, array $params = null) : void
     {
+        $func                                                               = strtolower($func);
         if (!method_exists($this, $func)) {
             throw new Exception("Function " . $func . " not implemented in " . __CLASS__, "501");
         }
 
         $properties                                                         = [];
-        if (isset($this->prototype[strtolower($func)])) {
-            foreach ($this->prototype[strtolower($func)] as $i => $key) {
-                $properties[$key]                                           = trim($params[$key] ?? $params[$i]) ?: null;
+        if (isset($this->prototype[$func])) {
+            foreach ($this->prototype[$func] as $i => $key) {
+                $properties[$key]                                           = trim($params[$key] ?? $params[$i] ?? null);
             }
         } else {
             $properties                                                     = $params;
         }
 
-        $ref[$field_name][$func]                                            = $properties;
+        $properties["name"]                                                 = $field_name;
+        $properties["type"]                                                 = $this->def->struct[$field_name];
+        $ref[$field_name][$func]                                            = (object) $properties;
     }
     /**
      * @param string $key

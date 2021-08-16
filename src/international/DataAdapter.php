@@ -115,13 +115,13 @@ class DataAdapter extends Mappable
     /**
      * @param Data $oData
      * @param string $rule_name
-     * @return string|null
+     * @return string
      */
-    private function getDateByRule(Data $oData, string $rule_name) : ?string
+    private function getDateByRule(Data $oData, string $rule_name) : string
     {
         if ($oData->value_date_year == 0 || $oData->value_date_month == 0 || $oData->value_date_day == 0
             || !strlen($oData->ori_value)) {
-            return null;
+            return "";
         } else {
             $rule                       = $this->getRule($rule_name);
 

@@ -66,6 +66,15 @@ class DataTable
 
     private const RECORD_LIMIT          = 25;
 
+    protected const CONVERTER           = [
+                                            "image"         => [
+                                                "width"     => 100,
+                                                "height"    => 100,
+                                            ],
+                                            "datetime"      => [],
+                                            "date"          => [],
+                                            "time"          => []
+                                        ];
     protected const TEMPLATE_CLASS      = [];
 
     protected const CSS                 = [
@@ -174,11 +183,10 @@ class DataTable
     {
         $this->isXhr                    = Kernel::$Page->isXhr;
         $this->query                    = Kernel::$Page->getRequest();
-
         $this->db                       = new Model($model, $view);
         $this->dtd                      = $this->db->dtdStore();
-        $this->schema                   = $this->db->schema();
-        $this->id                       = self::BUCKET . DIRECTORY_SEPARATOR . $this->schema->id;
+        $this->schema                   = $this->db->schema(static::CONVERTER);
+        $this->id                       = static::class . ":" . $this->schema->id;
 
         $request                        = (object)$this->query;
         $this->draw                     = $request->draw ?? 1;
@@ -197,6 +205,20 @@ class DataTable
         if ($this->start < 0) {
             $this->start = 0;
         }
+    }
+
+    /**
+     * @return DataHtml
+     * @throws Exception
+     */
+    public function display() : DataHtml
+    {
+        $this->dataTable                = $this->read();
+
+        $this->pages                    = ceil($this->records / $this->length);
+        $this->page                     = floor($this->start / $this->length) + 1;
+
+        return new DataHtml($this->toArray());
     }
 
     /**
@@ -232,20 +254,6 @@ class DataTable
         );
 
         return $records;
-    }
-
-    /**
-     * @return DataHtml
-     * @throws Exception
-     */
-    public function display() : DataHtml
-    {
-        $this->dataTable                = $this->read();
-
-        $this->pages                    = ceil($this->records / $this->length);
-        $this->page                     = floor($this->start / $this->length) + 1;
-
-        return new DataHtml($this->toArray());
     }
 
     /**

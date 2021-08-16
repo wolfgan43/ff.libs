@@ -49,19 +49,11 @@ class OrmDef
         $this->mainTable   = $main_table;
     }
 
+    /**
+     *
+     */
     public function setKeyPrimary()
     {
         $this->key_primary  = (string) array_search(Database::FTYPE_PRIMARY, $this->struct);
-    }
-
-    /**
-     * @param bool $preserve_columns_order
-     * @return array
-     */
-    public function toArray(bool $preserve_columns_order = false) : array
-    {
-        $this->table["preserve_columns_order"] = $preserve_columns_order;
-
-        return get_object_vars($this);
     }
 }

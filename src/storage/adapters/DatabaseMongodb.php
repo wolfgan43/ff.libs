@@ -127,7 +127,6 @@ class DatabaseMongodb extends DatabaseAdapter
      * @param array $db
      * @param array|null $indexes
      * @param string|null $map_class
-     * @throws Exception
      */
     protected function convertRecordset(array &$db, array $indexes = null, string $map_class = null) : void
     {
@@ -139,7 +138,7 @@ class DatabaseMongodb extends DatabaseAdapter
             if ($use_control) {
                 $index                                  = array_intersect_key($record, $indexes);
                 if (isset($record[$this->key_name])) {
-                    $index[$this->key_primary]          = $record[$this->key_name];
+                    $index[$this->def->key_primary]     = $record[$this->key_name];
                 }
 
                 $db[self::INDEX][]                      = $index;

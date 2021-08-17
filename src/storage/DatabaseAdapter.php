@@ -167,12 +167,13 @@ abstract class DatabaseAdapter implements Constant
      * DatabaseAdapter constructor.
      * @param OrmDef $def
      * @param Schema|null $schema
+     * @throws Exception
      */
     public function __construct(OrmDef $def, Schema $schema = null)
     {
         $this->def                                      = $def;
         $this->schema                                   = $schema;
-        $this->converter                                = new $this->schema->converter($this->def, $this->schema);
+        $this->converter                                = new DatabaseConverter($this->def, $this->schema);
 
     }
 

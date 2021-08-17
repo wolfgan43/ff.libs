@@ -81,12 +81,15 @@ class Schema
     public $insert          = null;
     public $properties      = null;
 
-    public $converter       = DatabaseConverter::class;
-
     /**
      * @var callable[]
      */
-    public $hooks           = [];
+    public $onRead          = [];
+    /**
+     * @var callable[]
+     */
+    public $onWrite         = [];
+
     public $to              = [];
     public $in              = [];
 

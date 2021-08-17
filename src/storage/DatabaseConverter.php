@@ -26,14 +26,9 @@
 namespace phpformsframework\libs\storage;
 
 use phpformsframework\libs\storage\dto\OrmDef;
-use phpformsframework\libs\Constant;
 use phpformsframework\libs\Exception;
-use phpformsframework\libs\international\Data;
-use phpformsframework\libs\international\Locale;
-use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\storage\dto\Schema;
-use phpformsframework\libs\util\Normalize;
-use stdClass;
+use phpformsframework\libs\util\Convert;
 
 /**
  * Class DatabaseConverter
@@ -41,25 +36,10 @@ use stdClass;
  */
 class DatabaseConverter
 {
-    private const ENCODING              = Constant::ENCODING;
-    private const IMAGE_RESIZE          = [
-                                            "crop"          => "x",
-                                            "proportional"  => "-",
-                                            "stretch"       => "|"
-                                        ];
-    private const DEFAULT_IMAGE_RESIZE  = "x";
-
-    protected $prototype                = [
-                                            "image"     => ["width", "height", "resize"],
-                                            "encrypt"   => ["password", "algorithm", "cost"],
-                                            "dencrypt"  => ["password", "algorithm", "cost"]
-                                        ];
     /**
      * @var OrmDef
      */
-    private $def                         = null;
-
-    private $hooks                      = null;
+    private $def                        = null;
 
     private $to                         = [];
     private $in                         = [];
@@ -72,19 +52,21 @@ class DatabaseConverter
     public function __construct(OrmDef $def, Schema $schema = null)
     {
         $this->def                      = $def;
-        if($schema) {
-            foreach ($schema->hooks as $field => $hook) {
-                if(!is_callable($hook)) {
-                    throw new Exception($field . "->onProcessField: " . $hook . " not found", 501);
-                }
+        if ($schema) {
+            foreach ($schema->onRead as $field => $hook) {
+                $this->add($this->to, $field, $hook, $schema->properties[$field]);
             }
-            $this->hooks                    = $schema->hooks;
+            foreach ($schema->onWrite as $field => $hook) {
+                $this->add($this->in, $field, $hook, $schema->properties[$field]);
+            }
             foreach ($schema->columns as $field) {
-                if (isset($schema->to[$schema->dtd[$field]])) {
-                    $this->add($this->to, $field, $schema->dtd[$field], $schema->properties[$field] ?? $schema->to[$schema->dtd[$field]]);
+                $type = $schema->dtd[$field];
+
+                if (isset($schema->to[$type])) {
+                    $this->add($this->to, $field, $schema->to[$type]["callback"] ?? $type, array_replace($schema->to[$type], $schema->properties[$field]));
                 }
-                if (isset($schema->in[$schema->dtd[$field]])) {
-                    $this->add($this->in, $field, $schema->dtd[$field], $schema->properties[$field] ?? $schema->in[$schema->dtd[$field]]);
+                if (isset($schema->in[$type])) {
+                    $this->add($this->in, $field, $schema->in[$type]["callback"] ?? $type, array_replace($schema->in[$type], $schema->properties[$field]));
                 }
             }
         }
@@ -117,9 +99,7 @@ class DatabaseConverter
     public function in(string $name, $value = null): string
     {
         if (!empty($value) && isset($this->in[$name])) {
-            foreach ($this->in[$name] as $func => $properties) {
-                $value = $this->$func($value, $properties);
-            }
+            $value = ($this->in[$name]->callback)($value);
         }
 
         return $value;
@@ -131,15 +111,8 @@ class DatabaseConverter
      */
     public function to(array $record) : array
     {
-        foreach ($this->to as $field => $funcs) {
-            foreach ($funcs as $func => $properties) {
-                $record[$field] = $this->$func($record[$field], $properties);
-            }
-        }
-
-        //@todo da fare meglio
-        foreach($this->hooks as $field => $funcs) {
-            $record[$field] = $funcs($record[$field], $properties);
+        foreach ($this->to as $field => $params) {
+            $record[$field] = ($params->callback)($record[$field], $params->properties);
         }
 
         return $record;
@@ -153,258 +126,7 @@ class DatabaseConverter
         return !empty($this->to);
     }
 
-    /**
-     * @param string $value
-     * @return string
-     */
-    protected function encode(string $value) : string
-    {
-        return htmlspecialchars($value, ENT_QUOTES, self::ENCODING, true);
-    }
 
-    /**
-     * @param string $value
-     * @param stdClass|null $properties
-     * @return string
-     * @throws Exception
-     */
-    protected function image(string $value, stdClass $properties = null) : string
-    {
-        $value = $this->encode($value);
-
-        $mode   = null;
-        $width  = null;
-        $height = null;
-        if (!empty($properties->width) && !empty($properties->height)) {
-            $mode   = $properties->width . (self::IMAGE_RESIZE[$properties->resize ?? null] ?? self::DEFAULT_IMAGE_RESIZE) . $properties->height;
-            $width  = ' width="' . $properties->width . '"';
-            $height = ' height="' . $properties->height . '"';
-        }
-
-        return '<img src="' . Media::getUrl($value, $mode) . '" alt="' . basename($value) . '"' . $width . $height . ' />';
-    }
-
-    /**
-     * @param string $value
-     * @param stdClass|null $properties
-     * @return string
-     * @throws Exception
-     */
-    protected function imageUrl(string $value, stdClass $properties = null) : string
-    {
-        $value = $this->encode($value);
-
-        $mode   = null;
-        if (!empty($properties->width) && !empty($properties->height)) {
-            $mode   = $properties->width . (self::IMAGE_RESIZE[$properties->resize] ?? self::DEFAULT_IMAGE_RESIZE) . $properties->height;
-        }
-
-        return Media::getUrl($value, $mode);
-    }
-
-    /**
-     * @param string $value
-     * @return string|null
-     * @throws Exception
-     */
-    protected function timeElapsed(string $value) : ?string
-    {
-        $res                                                        = null;
-        $time                                                       = time() - $value; // to get the time since that moment
-        $time                                                       = ($time < 1) ? 1 : $time;
-        $day                                                        = 86400;
-        $min                                                        = 60;
-        if ($time < 2 * $day) {
-            if ($time < $min) {
-                $res                                                = Translator::getWordByCodeCached("about") . " " . Translator::getWordByCodeCached("a") . " " . Translator::getWordByCodeCached("minute") . " " . Translator::getWordByCodeCached("ago");
-            } elseif ($time > $day) {
-                $res                                                = Translator::getWordByCodeCached("yesterday") . " " . Translator::getWordByCodeCached("at") . " " . date("G:i", $value);
-            } else {
-                $tokens                                             = array(
-                    31536000 	=> 'year',
-                    2592000 	=> 'month',
-                    604800 		=> 'week',
-                    86400 		=> 'day',
-                    3600 		=> 'hour',
-                    60 			=> 'minute',
-                    1 			=> 'second'
-                );
-
-                foreach ($tokens as $unit => $text) {
-                    if ($time < $unit) {
-                        continue;
-                    }
-                    $res                                            = floor($time / $unit);
-                    $res                                            .= ' ' . Translator::getWordByCodeCached($text . (($res > 1) ? 's' : '')) . " " . Translator::getWordByCodeCached("ago");
-                    break;
-                }
-            }
-        }
-
-        return $res;
-    }
-
-    /**
-     * @param string $value
-     * @return string
-     * @throws Exception
-     */
-    protected function dateElapsed(string $value): string
-    {
-        $lang                                                       = Locale::getCodeLang();
-        $oData                                                      = new Data($value, "Timestamp");
-        $res                                                        = $oData->getValue("Date", $lang);
-
-        if ($lang == "en") {
-            $prefix                                                 = "+";
-            $res                                                    = "+" . $res;
-        } else {
-            $prefix                                                 = "/";
-        }
-
-        $conv                                                       = [
-            $prefix . "01/" => " " . Translator::getWordByCodeCached("Januaunable to updatery") . " ",
-            $prefix . "02/" => " " . Translator::getWordByCodeCached("February") . " ",
-            $prefix . "03/" => " " . Translator::getWordByCodeCached("March") . " ",
-            $prefix . "04/" => " " . Translator::getWordByCodeCached("April") . " ",
-            $prefix . "05/" => " " . Translator::getWordByCodeCached("May") . " ",
-            $prefix . "06/" => " " . Translator::getWordByCodeCached("June") . " ",
-            $prefix . "07/" => " " . Translator::getWordByCodeCached("July") . " ",
-            $prefix . "08/" => " " . Translator::getWordByCodeCached("August") . " ",
-            $prefix . "09/" => " " . Translator::getWordByCodeCached("September") . " ",
-            $prefix . "10/" => " " . Translator::getWordByCodeCached("October") . " ",
-            $prefix . "11/" => " " . Translator::getWordByCodeCached("November") . " ",
-            $prefix . "12/" => " " . Translator::getWordByCodeCached("December") . " "
-        ];
-        $res                                                        = str_replace(array_keys($conv), array_values($conv), $res);
-        $res                                                        = str_replace("/", ", ", $res);
-        $res                                                        .= " " . Translator::getWordByCodeCached("at") . " " . Translator::getWordByCodeCached("hours") . " " . $oData->getValue("Time", Locale::getCodeLang());
-
-        return $res;
-    }
-
-    /**
-     * @param string $value
-     * @param stdClass|null $properties
-     * @return string|null
-     * @throws Exception
-     */
-    protected function dateTime(string $value, stdClass $properties = null) : ?string
-    {
-        return (new Data($value, $properties->type))->getValue("DateTime", Locale::getCodeLang());
-    }
-
-    /**
-     * @param string $value
-     * @param stdClass|null $properties
-     * @return string|null
-     * @throws Exception
-     */
-    protected function date(string $value, stdClass $properties = null) : ?string
-    {
-        return (new Data($value, $properties->type))->getValue("Date", Locale::getCodeLang());
-    }
-
-    /**
-     * @param string $value
-     * @param stdClass|null $properties
-     * @return string|null
-     * @throws Exception
-     */
-    protected function time(string $value, stdClass $properties = null) : ?string
-    {
-        return (new Data($value, $properties->type))->getValue("Time", Locale::getCodeLang());
-    }
-
-    /**
-     * @param string $value
-     * @return string|null
-     */
-    protected function slug(string $value) : ?string
-    {
-        return Normalize::urlRewrite($value);
-    }
-
-    /**
-     * @param string $value
-     * @return string|null
-     * @throws Exception
-     */
-    protected function translate(string $value) : ?string
-    {
-        return Translator::getWordByCodeCached($value);
-    }
-
-    /**
-     * @param string $value
-     * @return int
-     */
-    protected function ascii(string $value) : int
-    {
-        return ord($value);
-    }
-
-    /**
-     * @param string $value
-     * @return int
-     */
-    protected function length(string $value) : int
-    {
-        return strlen($value);
-    }
-
-    /**
-     * @param string $value
-     * @return string
-     */
-    protected function lower(string $value) : string
-    {
-        return strtolower($value);
-    }
-
-    /**
-     * @param string $value
-     * @return string
-     */
-    protected function upper(string $value) : string
-    {
-        return strtoupper($value);
-    }
-
-    /**
-     * @param string $value
-     * @return string
-     */
-    protected function password(string $value) : string
-    {
-        return "*" . strtoupper(sha1(sha1($value, true)));
-    }
-
-    /**
-     * @param string $value
-     * @param stdClass|null $properties
-     * @return string|null
-     */
-    protected function decrypt(string $value, stdClass $properties = null) : ?string
-    {
-        return (($params = $this->getEncryptParams($properties->password, $properties->algorithm, $properties->cost))
-            ? openssl_decrypt(base64_decode($value), $params["method"], $params["key"], OPENSSL_RAW_DATA, $params["key"])
-            : null
-        );
-    }
-
-    /**
-     * @param string $value
-     * @param stdClass|null $properties
-     * @return string|null
-     */
-    protected function encrypt(string $value, stdClass $properties = null) : ?string
-    {
-        return (($params = $this->getEncryptParams($properties->password, $properties->algorithm, $properties->cost))
-            ? base64_encode(openssl_encrypt($value, $params["method"], $params["key"], OPENSSL_RAW_DATA, $params["iv"]))
-            : null
-        );
-    }
 
     /*********************+
      * SET
@@ -472,30 +194,28 @@ class DatabaseConverter
 
     /**
      * @param array $ref
-     * @param string $field_name
+     * @param string $field
      * @param string $func
      * @param array|null $params
      * @throws Exception
      */
-    private function add(array &$ref, string $field_name, string $func, array $params = null) : void
+    private function add(array &$ref, string $field, string $func, array $params = null) : void
     {
-        $func                                                               = strtolower($func);
-        if (!method_exists($this, $func)) {
-            throw new Exception("Function " . $func . " not implemented in " . __CLASS__, "501");
-        }
-
-        $properties                                                         = [];
-        if (isset($this->prototype[$func])) {
-            foreach ($this->prototype[$func] as $i => $key) {
-                $properties[$key]                                           = trim($params[$key] ?? $params[$i] ?? null);
+        if (!isset($ref[$field])) {
+            if (is_callable($func)) {
+                $callback       = $func;
+            } elseif (is_callable(Convert::class . "::" . $func)) {
+                $callback       = Convert::class . "::" . $func;
+            } else {
+                throw new Exception("Function " . $func . " not implemented for " . __CLASS__, "501");
             }
-        } else {
-            $properties                                                     = $params;
-        }
 
-        $properties["name"]                                                 = $field_name;
-        $properties["type"]                                                 = $this->def->struct[$field_name];
-        $ref[$field_name][$func]                                            = (object) $properties;
+            $params["dbType"]   = $this->def->struct[$field];
+            $ref[$field]        = (object) [
+                "callback"      => $callback,
+                "properties"    => (object) $params
+            ];
+        }
     }
     /**
      * @param string $key
@@ -509,51 +229,5 @@ class DatabaseConverter
         }
 
         return $this->def->struct[$key];
-    }
-
-    /**
-     * @param string $password
-     * @param string $algorithm
-     * @param int $cost
-     * @return array|null
-     */
-    private function getEncryptParams(string $password, string $algorithm, int $cost = 12) : ?array
-    {
-        $res                                                                = null;
-        if ($password && $algorithm) {
-            switch ($algorithm) {
-                case "AES128":
-                    $method                                                 = "aes-128-cbc";
-                    break;
-                case "AES192":
-                    $method                                                 = "aes-192-cbc";
-                    break;
-                case "AES256":
-                    $method                                                 = "aes-256-cbc";
-                    break;
-                case "BF":
-                    $method                                                 = "bf-cbc";
-                    break;
-                case "CAST":
-                    $method                                                 = "cast5-cbc";
-                    break;
-                case "IDEA":
-                    $method                                                 = "idea-cbc";
-                    break;
-                default:
-                    $method                                                 = null;
-            }
-
-
-            if ($method) {
-                $res = array(
-                    "key"       => password_hash($password, PASSWORD_BCRYPT, ['cost' => $cost]),
-                    "method"    => $method,
-                    "iv"        => chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0) . chr(0x0)
-                );
-            }
-        }
-
-        return $res;
     }
 }

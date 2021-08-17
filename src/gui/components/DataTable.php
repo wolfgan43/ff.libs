@@ -40,8 +40,6 @@ use phpformsframework\libs\Exception;
  */
 class DataTable
 {
-    public const BUCKET                 = "dt";
-
     /**
      * Token Class
      */
@@ -66,14 +64,17 @@ class DataTable
 
     private const RECORD_LIMIT          = 25;
 
-    protected const CONVERTER           = [
+    protected const CONVERT_BY_TYPE     = [
                                             "image"         => [
+                                                "callback"  => "imageTag",
                                                 "width"     => 100,
                                                 "height"    => 100,
                                             ],
                                             "datetime"      => [],
                                             "date"          => [],
-                                            "time"          => []
+                                            "time"          => [],
+                                            "week"          => [],
+                                            "currency"      => []
                                         ];
     protected const TEMPLATE_CLASS      = [];
 
@@ -152,7 +153,6 @@ class DataTable
     protected $search                   = null;
     protected $sort                     = null;
 
-    private $isXhr                      = false;
     private $query                      = null;
     private $draw                       = null;
 
@@ -181,11 +181,10 @@ class DataTable
      */
     public function __construct(string $model, string $view = null)
     {
-        $this->isXhr                    = Kernel::$Page->isXhr;
         $this->query                    = Kernel::$Page->getRequest();
         $this->db                       = new Model($model, $view);
         $this->dtd                      = $this->db->dtdStore();
-        $this->schema                   = $this->db->schema(static::CONVERTER);
+        $this->schema                   = $this->db->schema(static::CONVERT_BY_TYPE);
         $this->id                       = static::class . ":" . $this->schema->id;
 
         $request                        = (object)$this->query;

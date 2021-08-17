@@ -417,8 +417,8 @@ class DataAdapter extends Mappable
         } else {
             $oData->value_sign = false;
         }
-        $oData->value_numeric_integer = preg_replace("/[^0-9]+/", "", $matches[2][0]);
-        $oData->value_numeric_decimal = preg_replace("/[^0-9]+/", "", $matches[4][0]);
+        $oData->value_numeric_integer = (int) preg_replace("/[^0-9]+/", "", $matches[2][0]);
+        $oData->value_numeric_decimal = (int) preg_replace("/[^0-9]+/", "", $matches[4][0]);
     }
 
     /**

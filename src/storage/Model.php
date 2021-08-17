@@ -54,7 +54,7 @@ class Model implements Configurable, Dumpable
     private const INSERT                                                                = "insert";
     private const MOCK                                                                  = "mock";
     private const DTD                                                                   = "dtd";
-    private const HOOKS                                                                 = "hooks";
+    private const HOOKS_READ                                                            = "onRead";
     private const PROPERTIES                                                            = "properties";
     private const OPTION                                                                = "option";
     private const DOT                                                                   = ".";
@@ -506,13 +506,13 @@ class Model implements Configurable, Dumpable
                  * Columns and Dtd
                  */
                 $schema[self::COLUMNS][]                                                        = $key;
-                $schema[self::DTD][$key]                                                        = $extend[self::DTD][$key] ?? $attr->type ?? self::DEFAULT_FIELD_TYPE;
+                $schema[self::DTD][$key]                                                        = $attr->type ?? $extend[self::DTD][$key] ?? self::DEFAULT_FIELD_TYPE;
 
                 /**
                  * Mock
                  */
                 if (!empty($attr->mock) || !empty($extend[self::MOCK][$key])) {
-                    $schema[self::MOCK][$key]                                                   = $extend[self::MOCK][$key] ?? $attr->mock;
+                    $schema[self::MOCK][$key]                                                   = $attr->mock ?? $extend[self::MOCK][$key];
                 }
 
                 /**
@@ -548,12 +548,12 @@ class Model implements Configurable, Dumpable
                  * Hooks
                  */
                 if (isset($attr->onProcessField)) {
-                    $schema[self::HOOKS][$key]                                                  = $attr->onProcessField;
-                } elseif (isset($extend[self::HOOKS][$key])) {
-                    $schema[self::HOOKS][$key]                                                  = $extend[self::HOOKS][$key];
+                    $schema[self::HOOKS_READ][$key]                                             = $attr->onProcessField;
+                } elseif (isset($extend[self::HOOKS_READ][$key])) {
+                    $schema[self::HOOKS_READ][$key]                                             = $extend[self::HOOKS_READ][$key];
                 }
 
-                unset($attr->name, $attr->db, $attr->type, $attr->mock, $attr->request, $attr->onProcessField);
+                unset($attr->db, $attr->mock, $attr->request, $attr->onProcessField);
 
                 $properties                                                                     = (array) $attr;
                 if (!empty($properties) || !empty($extend[self::PROPERTIES][$key])) {

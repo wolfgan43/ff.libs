@@ -77,7 +77,7 @@ class ViewSmarty extends Smarty implements ViewAdapter
     }
 
     /**
-     * @param array|callable|string $tpl_var
+     * @param array|string $tpl_var
      * @param mixed|null $value
      * @param bool $nocache
      * @return ViewAdapter

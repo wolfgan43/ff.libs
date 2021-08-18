@@ -26,7 +26,6 @@
 namespace phpformsframework\libs\storage\dto;
 
 use phpformsframework\libs\dto\Mapping;
-use phpformsframework\libs\storage\DatabaseConverter;
 
 /**
  * Class Schema

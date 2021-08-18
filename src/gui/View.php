@@ -87,7 +87,7 @@ class View
     }
 
     /**
-     * @param array|string|callable $data
+     * @param array|string|DataHtml|DataTableResponse $data
      * @param null|string $value
      * @return $this
      * @throws Exception

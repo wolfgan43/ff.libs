@@ -469,7 +469,7 @@ class Config implements Dumpable
                     break;
                 case "map":
                     $arrFN                                              = explode("_", $pathinfo["filename"], 2);
-                    self::$mapping_files[$arrFN[0]][$arrFN[1]]          = $file;
+                    self::$mapping_files[$arrFN[0]][$arrFN[1] ?? "unknown"]     = $file;
                     break;
                 default:
                     Exception::warning("Config file Extension not supported", static::ERROR_BUCKET);

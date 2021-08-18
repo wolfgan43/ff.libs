@@ -401,8 +401,7 @@ abstract class OrmItem
                      * @var OrmItem $join
                      */
                     $dtd                                                        = $join::dtd();
-
-                    $informationSchemaJoin                                      = $this->db->informationSchema($dtd->table);
+                    $informationSchemaJoin                                      = $this->db->informationSchema($dtd->table, $dtd->collection);
                     if (isset($informationSchemaJoin->relationship[static::TABLE])) {
                         /**
                          * OneToOne
@@ -426,7 +425,7 @@ abstract class OrmItem
                     }
 
                     $this->tables[]                                             = $dtd->table;
-                    self::$buffer["db"]->join($dtd->table, $fields ?? $dtd->dataResponse);
+                    self::$buffer["db"]->join($dtd->collection, $dtd->table, $fields ?? $dtd->dataResponse);
                 }
             }
 

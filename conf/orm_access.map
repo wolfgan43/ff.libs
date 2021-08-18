@@ -95,7 +95,7 @@
       "avatar": "string",
       "created_at": "timestamp",
       "updated_at": "timestamp",
-      "login_at": "number",
+      "login_at": "timestamp",
       "verified_email": "number",
       "verified_tel": "number",
       "locale": "string",

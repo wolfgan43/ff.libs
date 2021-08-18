@@ -55,6 +55,7 @@ class Model implements Configurable, Dumpable
     private const MOCK                                                                  = "mock";
     private const DTD                                                                   = "dtd";
     private const HOOKS_READ                                                            = "onRead";
+    private const HOOKS_WRITE                                                           = "onWrite";
     private const PROPERTIES                                                            = "properties";
     private const OPTION                                                                = "option";
     private const DOT                                                                   = ".";
@@ -108,6 +109,8 @@ class Model implements Configurable, Dumpable
 
         if (isset(self::$models[$collection_or_model])) {
             $this->schema                                                               = new Schema(self::$models[$collection_or_model . DIRECTORY_SEPARATOR . $view] ?? self::$models[$collection_or_model]);
+            $this->collection                                                           = $this->schema->collection;
+            $this->table                                                                = $this->schema->table;
         } else {
             $this->collection                                                           = $collection_or_model;
         }
@@ -139,7 +142,8 @@ class Model implements Configurable, Dumpable
         }
 
         $this->schema                                                                   = new Schema(self::$models[$model_name]);
-        $this->collection                                                               = null;
+        $this->collection                                                               = $this->schema->collection;
+        $this->table                                                                    = $this->schema->table;
 
         return $this;
     }
@@ -158,13 +162,14 @@ class Model implements Configurable, Dumpable
     }
 
     /**
+     * @param string $collection
      * @param string $table_name
      * @param array|null $fields
      * @return Model
      */
-    public function join(string $table_name, array $fields = null) : self
+    public function join(string $collection, string $table_name, array $fields = null) : self
     {
-        $this->fieldSelect($this->selectJoin, $table_name, $fields);
+        $this->fieldSelect($this->selectJoin, ($this->collection != $collection ? $collection . "." : "") . $table_name, $fields);
 
         return $this;
     }
@@ -258,15 +263,6 @@ class Model implements Configurable, Dumpable
     }
 
     /**
-     * @param string|null $table_name
-     * @return stdClass
-     */
-    public function dtdStore(string $table_name = null) : stdClass
-    {
-        return (object) $this->getOrm()->dtd($table_name ?? $this->schema->table ?? $this->table);
-    }
-
-    /**
      * @param array|null $convertTo
      * @param array|null $convertIn
      * @return Schema
@@ -280,12 +276,22 @@ class Model implements Configurable, Dumpable
     }
 
     /**
+     * @param string|null $table_name
+     * @return stdClass
+     */
+    public function dtdStore(string $table_name = null, string $collection = null) : stdClass
+    {
+        return (object) Orm::getInstance($collection ?? $this->collection)->dtd($table_name ?? $this->table);
+    }
+
+    /**
      * @param string|null $table
+     * @param string|null $collection
      * @return stdClass|null
      */
-    public function informationSchema(string $table = null) : ?stdClass
+    public function informationSchema(string $table = null, string $collection = null) : ?stdClass
     {
-        return $this->getOrm()->informationSchema($table ?? $this->schema->table ?? $this->table);
+        return Orm::getInstance($collection ?? $this->collection)->informationSchema($table ?? $this->table);
     }
     /**
      * @return string|null
@@ -312,10 +318,10 @@ class Model implements Configurable, Dumpable
      */
     private function setWhere(array $where = null) : ?array
     {
-        if ($where && ($table = $this->schema->table ?? $this->table ?? null)) {
+        if ($where && !empty($this->table)) {
             foreach ($where as $key => $value) {
                 if (strpos($key, ".") === false) {
-                    $key = $table . "." . $key;
+                    $key = $this->table . "." . $key;
                 }
                 $this->where[$key]                                                      = $value;
             }
@@ -551,6 +557,11 @@ class Model implements Configurable, Dumpable
                     $schema[self::HOOKS_READ][$key]                                             = $attr->onProcessField;
                 } elseif (isset($extend[self::HOOKS_READ][$key])) {
                     $schema[self::HOOKS_READ][$key]                                             = $extend[self::HOOKS_READ][$key];
+                }
+                if (isset($attr->onStoreField)) {
+                    $schema[self::HOOKS_WRITE][$key]                                            = $attr->onStoreField;
+                } elseif (isset($extend[self::HOOKS_WRITE][$key])) {
+                    $schema[self::HOOKS_WRITE][$key]                                            = $extend[self::HOOKS_WRITE][$key];
                 }
 
                 unset($attr->db, $attr->mock, $attr->request, $attr->onProcessField);

@@ -177,6 +177,10 @@ class Constant
     const SESSION_PERMANENT                 = true;
     const SESSION_SHARE                     = true;
 
+    /**
+     * GUI Settings
+     */
+    const ASSET_LOCATION_DEFAULT           = "defer";
 
 
     /**

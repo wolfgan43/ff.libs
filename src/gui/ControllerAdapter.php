@@ -39,9 +39,9 @@ abstract class ControllerAdapter extends Mappable
      */
     public const ASSET_LOCATION_ASYNC           = "async";
     public const ASSET_LOCATION_DEFER           = "defer";
-    public const ASSET_LOCATION_HEAD            = "Head";
-    public const ASSET_LOCATION_BODY_TOP        = "BodyTop";
-    public const ASSET_LOCATION_BODY_BOTTOM     = "BodyBottom";
+    public const ASSET_LOCATION_HEAD            = "head";
+    public const ASSET_LOCATION_BODY_TOP        = "bodytop";
+    public const ASSET_LOCATION_BODY_BOTTOM     = "bodybottom";
 
     public const MEDIA_DEVICE_ALL               = "all";
     public const MEDIA_DEVICE_PRINT             = "print";

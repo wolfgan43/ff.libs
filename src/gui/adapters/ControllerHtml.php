@@ -372,6 +372,9 @@ class ControllerHtml extends ControllerAdapter
         return $res;
     }
 
+    /**
+     * @return string|null
+     */
     private function parseStyle() : ?string
     {
         $res                                    = null;
@@ -382,10 +385,15 @@ class ControllerHtml extends ControllerAdapter
         return $res;
     }
 
+    /**
+     * @param array $scripts
+     * @param bool $embed
+     * @throws Exception
+     */
     private function renderJs(array $scripts, bool $embed = false) : void
     {
         foreach ($scripts as $js => $type) {
-            $media                              = ucfirst($type);
+            $media                              = strtolower($type ?? Kernel::$Environment::ASSET_LOCATION_DEFAULT);
             switch ($media) {
                 case self::ASSET_LOCATION_HEAD:
                 case self::ASSET_LOCATION_BODY_TOP:
@@ -396,9 +404,10 @@ class ControllerHtml extends ControllerAdapter
                     $script                     = self::NEWLINE . '<script async';
                     break;
                 case self::ASSET_LOCATION_DEFER:
-                default:
-                    $media                      = self::ASSET_LOCATION_DEFER;
                     $script                     = self::NEWLINE . '<script defer';
+                    break;
+                default:
+                    throw new Exception("Media " . $media . " not supported: " . $js);
             }
 
             $this->scripts[$media]              .= $script . ' type="application/javascript"' . (
@@ -418,7 +427,9 @@ class ControllerHtml extends ControllerAdapter
         return $this->scripts[$location];
     }
 
-
+    /**
+     * @return string|null
+     */
     private function parseStructuredData() : ?string
     {
         return (!empty($this->json_ld)
@@ -427,6 +438,9 @@ class ControllerHtml extends ControllerAdapter
         );
     }
 
+    /**
+     * @return string|null
+     */
     private function parseJsTemplate() : ?string
     {
         $res                                    = null;
@@ -436,8 +450,6 @@ class ControllerHtml extends ControllerAdapter
 
         return $res;
     }
-
-
 
     /**
      * @param string $key

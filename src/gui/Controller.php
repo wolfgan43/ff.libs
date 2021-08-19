@@ -305,12 +305,11 @@ abstract class Controller
      * Assets Method
      * ------------------------------------------------------------------------
      */
-    protected const ASSET_LOCATION_ASYNC        = ControllerAdapter::ASSET_LOCATION_ASYNC;
-    protected const ASSET_LOCATION_DEFER        = ControllerAdapter::ASSET_LOCATION_DEFER;
-    protected const ASSET_LOCATION_HEAD         = ControllerAdapter::ASSET_LOCATION_HEAD;
-    protected const ASSET_LOCATION_BODY_TOP     = ControllerAdapter::ASSET_LOCATION_BODY_TOP;
-    protected const ASSET_LOCATION_BODY_BOTTOM  = ControllerAdapter::ASSET_LOCATION_BODY_BOTTOM;
-    protected const ASSET_LOCATION_DEFAULT      = self::ASSET_LOCATION_HEAD;
+    private const ASSET_LOCATION_ASYNC          = ControllerAdapter::ASSET_LOCATION_ASYNC;
+    private const ASSET_LOCATION_DEFER          = ControllerAdapter::ASSET_LOCATION_DEFER;
+    private const ASSET_LOCATION_HEAD           = ControllerAdapter::ASSET_LOCATION_HEAD;
+    private const ASSET_LOCATION_BODY_TOP       = ControllerAdapter::ASSET_LOCATION_BODY_TOP;
+    private const ASSET_LOCATION_BODY_BOTTOM    = ControllerAdapter::ASSET_LOCATION_BODY_BOTTOM;
     private const ASSET_MIN                     = ".min";
 
     /**
@@ -385,7 +384,7 @@ abstract class Controller
      * @param string $type_content
      * @return $this
      */
-    public function addMeta(string $key, string $content, string $type = "name", $type_content = "content") : self
+    public function addMeta(string $key, string $content, string $type = "name", string $type_content = "content") : self
     {
         $this->adapter->meta[$key]              = array(
                                                     $type           => $key,
@@ -444,20 +443,7 @@ abstract class Controller
      */
     public function addJavascript(string $filename_or_url, string $location = null) : self
     {
-        $this->addAsset($this->adapter->js, Resource::TYPE_ASSET_JS, $location ?? self::ASSET_LOCATION_DEFAULT, $filename_or_url);
-
-        return $this;
-    }
-
-    /**
-     * @param string $filename_or_url
-     * @param bool $async
-     * @return $this
-     * @throws Exception
-     */
-    public function addJavascriptDefer(string $filename_or_url, bool $async = false) : self
-    {
-        $this->addAsset($this->adapter->js, Resource::TYPE_ASSET_JS, $async ? self::ASSET_LOCATION_ASYNC : self::ASSET_LOCATION_DEFER, $filename_or_url);
+        $this->addAsset($this->adapter->js, Resource::TYPE_ASSET_JS, $location ?? Kernel::$Environment::ASSET_LOCATION_DEFAULT, $filename_or_url);
 
         return $this;
     }
@@ -469,7 +455,11 @@ abstract class Controller
      */
     public function addJavascriptEmbed(string $content, string $location = null) : self
     {
-        $this->adapter->js_embed[$content]  = $location ?? self::ASSET_LOCATION_DEFAULT;
+        if(!$location && Kernel::$Environment::ASSET_LOCATION_DEFAULT == self::ASSET_LOCATION_DEFER) {
+            $this->addJavascript("data:text/javascript;base64," . base64_encode($content), self::ASSET_LOCATION_DEFER);
+        } else {
+            $this->adapter->js_embed[$content] = $location ?? Kernel::$Environment::ASSET_LOCATION_DEFAULT;
+        }
 
         return $this;
     }
@@ -554,11 +544,6 @@ abstract class Controller
      * @return DataAdapter
      * @throws Exception
      */
-    /**
-     * @param string|null $method
-     * @return DataAdapter
-     * @throws Exception
-     */
     public function display(string $method = null) : DataAdapter
     {
         if ($this->isXhr && !empty($this->request->component)) {
@@ -613,11 +598,11 @@ abstract class Controller
 
         if (!empty($this->adapter->layout)) {
             $this->addStylesheet($this->adapter->layout);
-            $this->addJavascriptDefer($this->adapter->layout);
+            $this->addJavascript($this->adapter->layout);
         }
 
         $this->addStylesheet("main");
-        $this->addJavascriptDefer("main");
+        $this->addJavascript("main");
 
         return $this->adapter
             ->display($this->http_status_code);
@@ -778,7 +763,7 @@ abstract class Controller
 
         if ($include_assets) {
             $this->addStylesheet($template);
-            $this->addJavascriptDefer($template);
+            $this->addJavascript($template);
         }
 
         return $this->view              = (new View($file_path, static::TEMPLATE_ENGINE, $this))
@@ -827,7 +812,7 @@ abstract class Controller
         if ($method && $method != $method2lower && $method2lower != self::METHOD_DEFAULT && method_exists($this, $method . $this->method)) {
             $method .= $this->method;
         }
-        
+
         $callback = $method ?? $this->method;
         if (!method_exists($this, $callback)) {
             throw new Exception("Method " . $callback . " not found in class " . $this->class_name, 501);
@@ -844,7 +829,7 @@ abstract class Controller
     private function parseAssets() : void
     {
         foreach ($this->requiredJs as $js) {
-            $this->addJavascriptDefer($js);
+            $this->addJavascript($js);
         }
         foreach ($this->requiredCss as $css) {
             $this->addStylesheet($css);

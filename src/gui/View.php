@@ -98,7 +98,7 @@ class View
             $this->adapter->assign($data, $value->html);
 
             foreach ($value->js as $js) {
-                $this->controller->addJavascriptDefer($js);
+                $this->controller->addJavascript($js);
             }
             if ($value->js_embed) {
                 $this->controller->addJavascriptEmbed($value->js_embed);

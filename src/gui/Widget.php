@@ -131,22 +131,6 @@ abstract class Widget extends Controller
     }
 
     /**
-     * @param string $filename_or_url
-     * @param bool $async
-     * @return Controller
-     * @throws Exception
-     */
-    public function addJavascriptDefer(string $filename_or_url, bool $async = false): Controller
-    {
-        $resources = $this->getResources();
-        if (!empty($resources->js[$filename_or_url])) {
-            $filename_or_url = $resources->js[$filename_or_url];
-        }
-
-        return parent::addJavascriptDefer($filename_or_url, $async);
-    }
-
-    /**
      * Standard Method
      * ------------------------------------------------------------------------
      */

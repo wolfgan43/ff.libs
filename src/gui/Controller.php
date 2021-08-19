@@ -32,11 +32,11 @@ use phpformsframework\libs\dto\DataAdapter;
 use phpformsframework\libs\dto\DataHtml;
 use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\Env;
-use phpformsframework\libs\gui\components\DataTable;
 use phpformsframework\libs\international\InternationalManager;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Response;
 use phpformsframework\libs\security\Validator;
+use phpformsframework\libs\storage\FilemanagerFs;
 use phpformsframework\libs\storage\Media;
 use phpformsframework\libs\util\AdapterManager;
 use phpformsframework\libs\Exception;
@@ -469,7 +469,7 @@ abstract class Controller
      */
     public function addJavascriptEmbed(string $content, string $location = null) : self
     {
-        $this->adapter->js_embed[$content]      = $location ?? self::ASSET_LOCATION_DEFAULT;
+        $this->adapter->js_embed[$content]  = $location ?? self::ASSET_LOCATION_DEFAULT;
 
         return $this;
     }
@@ -486,13 +486,17 @@ abstract class Controller
     }
 
     /**
+     * @param string $id
      * @param string $content
      * @param string|null $type
      * @return $this
      */
-    public function addJsTemplate(string $content, string $type = null) : self
+    public function addJsTemplate(string $id, string $content, string $type = null) : self
     {
-        $this->adapter->js_tpl[$content]   = $type;
+        $this->adapter->js_tpl[$id]         = [
+            "content"   => $content,
+            "type"      => $type
+        ];
 
         return $this;
     }
@@ -753,7 +757,7 @@ abstract class Controller
      * @param string|null $template_name
      * @return string
      */
-    private function getTemplate(string $template_name = null) : string
+    private function getTemplateName(string $template_name = null) : string
     {
         return $template_name ?? $this->class_name;
     }
@@ -767,7 +771,7 @@ abstract class Controller
      */
     private function loadView(string $template_name = null, bool $include_assets = true) : View
     {
-        $template                       = $this->getTemplate($template_name);
+        $template                       = $this->getTemplateName($template_name);
         if (!($file_path = Resource::get(str_replace(self::TPL_NORMALIZE, '', $template), Resource::TYPE_VIEWS))) {
             throw new Exception("View not Found: " . $template . " in " . static::class, 500);
         }
@@ -792,6 +796,18 @@ abstract class Controller
         return $this->view ?? $this->loadView($template_name, $include_template_assets);
     }
 
+    /**
+     * @param string $template_name
+     * @return string|null
+     * @throws Exception
+     */
+    protected function getTemplate(string $template_name) : ?string
+    {
+        return (!empty($file_disk_path = Resource::get(str_replace(self::TPL_NORMALIZE, '', $template_name), Resource::TYPE_VIEWS))
+            ? FilemanagerFs::fileGetContents($file_disk_path)
+            : null
+        );
+    }
 
     /**
      * Private Method

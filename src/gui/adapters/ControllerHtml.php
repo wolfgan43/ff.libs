@@ -135,7 +135,7 @@ class ControllerHtml extends ControllerAdapter
         $this->path_info                        = $path_info;
         $this->layout                           = $layout;
 
-        $this->cache_time                       = null; //Kernel::useCache() ? null : "?" . time();
+        $this->cache_time                       = null;
     }
 
     /**
@@ -203,7 +203,6 @@ class ControllerHtml extends ControllerAdapter
      */
     private function getHtmlByString(string $string) : ?string
     {
-        $html                                   = null;
         if (strpos($string, DIRECTORY_SEPARATOR) === 0) {
             if (strpos($string, Constant::DISK_PATH) !== 0) {
                 $string                         = Dir::findViewPath() . $string;
@@ -431,9 +430,8 @@ class ControllerHtml extends ControllerAdapter
     private function parseJsTemplate() : ?string
     {
         $res                                    = null;
-        $i                                      = 0;
-        foreach ($this->js_tpl as $template => $type) {
-            $res                                .= self::NEWLINE . '<script type="'. ($type ?? self::JS_TPL_DEFAULT) . '" id="xtpl' . ++$i . '">' . $template . '</script>';
+        foreach ($this->js_tpl as $id => $tpl) {
+            $res                                .= self::NEWLINE . '<script type="'. ($tpl["type"] ?? self::JS_TPL_DEFAULT) . '" id="' . $id . '">' . $tpl["content"] . '</script>';
         }
 
         return $res;
@@ -593,7 +591,6 @@ class ControllerHtml extends ControllerAdapter
 
     /**
      * @return string
-     * @throws Exception
      */
     private function parseDebug() : string
     {

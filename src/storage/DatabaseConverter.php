@@ -94,9 +94,9 @@ class DatabaseConverter
      * @todo da tipizzare
      * @param string $name
      * @param mixed|null $value
-     * @return string
+     * @return string|array
      */
-    public function in(string $name, $value = null): string
+    public function in(string $name, $value = null)
     {
         if (!empty($value) && isset($this->in[$name])) {
             $value = ($this->in[$name]->callback)($value);

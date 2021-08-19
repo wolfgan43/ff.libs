@@ -41,7 +41,6 @@ abstract class Widget extends Controller
     protected const ERROR_BUCKET                    = "widget";
 
     private $config                                 = [];
-    private $resources                              = null;
 
     /**
      * Widget constructor.
@@ -185,8 +184,22 @@ abstract class Widget extends Controller
     }
 
     /**
+     * @param string $template_name
+     * @return string|null
+     * @throws Exception
+     */
+    protected function getTemplate(string $template_name) : ?string
+    {
+        return (!empty($file_disk_path = $this->getResources()->tpl[$template_name])
+            ? FilemanagerFs::fileGetContents($file_disk_path)
+            : parent::getTemplate($template_name)
+        );
+    }
+
+    /**
      * @param string|null $config_name
      * @return object|null
+     * @throws Exception
      */
     protected function getConfig(string $config_name = null) : ?object
     {
@@ -231,10 +244,6 @@ abstract class Widget extends Controller
      */
     private function getResources() : stdClass
     {
-        if (!isset($this->resources[$this->class_name])) {
-            $this->resources[$this->class_name]                 = Resource::widget($this->class_name);
-        }
-
-        return (object) ($this->resources[$this->class_name] ?? null);
+        return (object) Resource::widget($this->class_name);
     }
 }

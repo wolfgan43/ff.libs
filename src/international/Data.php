@@ -275,15 +275,16 @@ class Data
         if (!$data_type) {
             $data_type = $this->data_type;
         }
+
         if ($data_type == self::TYPE_TEXT) {
             return $this->value_text;
         }
-            
+
         if (($data_type == self::TYPE_CURRENCY || $data_type == self::TYPE_CURRENCY_MICRO) && $locale == self::LOCALE_SYSTEM) {
             throw new Exception("Data cowardly refuse to manage currency on " . self::LOCALE_SYSTEM, 500);
         }
 
-        $dataLang = $this->getAdapter($locale);
+        $dataLang = $this->getAdapter($locale ?? $this->locale);
         $funcname = $this->getFunc(self::FUNC_GET, $data_type);
 
         return $dataLang->$funcname($this);

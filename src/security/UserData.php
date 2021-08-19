@@ -61,6 +61,7 @@ class UserData extends OrmItem
     public $uuid                    = null;
     public $username                = null;
     public $acl                     = null;
+    public $role                    = null;
     public $status                  = null;
     public $token                   = null;
     public $model                   = null;

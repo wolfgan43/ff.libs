@@ -26,6 +26,7 @@
 namespace phpformsframework\libs\storage\adapters;
 
 use phpformsframework\libs\storage\DatabaseAdapter;
+use phpformsframework\libs\storage\DatabaseDriver;
 use phpformsframework\libs\storage\drivers\MongoDB as nosql;
 use phpformsframework\libs\Exception;
 
@@ -35,29 +36,26 @@ use phpformsframework\libs\Exception;
  */
 class DatabaseMongodb extends DatabaseAdapter
 {
-    protected const PREFIX                              = "MONGO_DATABASE_";
-    protected const TYPE                                = "nosql";
+    protected const ENGINE                              = nosql::ENGINE;
     protected const KEY_NAME                            = "_id";
     protected const KEY_REL                             = "_id";
 
     /**
      * @return nosql
      */
-    protected function getDriver() : nosql
+    protected function driver(string $prefix = null) : DatabaseDriver
     {
-        return new nosql();
+        return new nosql($prefix);
     }
 
     /**
-     * @return array
-     * @throws Exception
+     * @param array $connection
+     * @return void
      */
-    protected function getConnector() : array
+    protected function setConnection(array $connection) : void
     {
-        $connector                                      = parent::getConnector();
-        $connector["key"]                               = static::KEY_NAME;
-
-        return $connector;
+        parent::setConnection($connection);
+        $this->key_name                                 = static::KEY_NAME;
     }
 
     /**

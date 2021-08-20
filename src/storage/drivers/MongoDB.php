@@ -51,7 +51,10 @@ class MongoDB extends DatabaseDriver
 {
     use Cashable;
 
-    private $replica                 = null;
+    public const ENGINE             = "nosql";
+    protected const PREFIX          = "MONGO_DATABASE_";
+
+    private $replica                = null;
 
     /**
      * @var Manager|null
@@ -72,7 +75,7 @@ class MongoDB extends DatabaseDriver
 
     public static function freeAll() : void
     {
-        static::$_dbs = array();
+        self::$links = [];
     }
 
     /**
@@ -82,8 +85,8 @@ class MongoDB extends DatabaseDriver
     {
         $this->freeResult();
         $dbkey = $this->host . "|" . $this->user . "|" . $this->replica;
-        if (isset(static::$_dbs[$dbkey])) {
-            unset(static::$_dbs[$dbkey]);
+        if (isset(self::$links[$dbkey])) {
+            unset(self::$links[$dbkey]);
         }
 
         $this->link_id                  = null;
@@ -133,18 +136,17 @@ class MongoDB extends DatabaseDriver
         }
 
         $dbkey = $this->host . "|" . $this->user . "|" . $this->replica;
-        if (isset(static::$_dbs[$dbkey])) {
-            $this->link_id =& static::$_dbs[$dbkey];
+        if (isset(self::$links[$dbkey])) {
+            $this->link_id =& self::$links[$dbkey];
         }
-
-        $auth                                       = (
-            $this->user && $this->secret
-                                                        ? $this->user . ":" . $this->secret . "@"
-                                                        : ""
-                                                    );
 
         if (!$this->link_id) {
             if (class_exists("\MongoDB\Driver\Manager")) {
+                $auth                                       = (
+                    $this->user && $this->secret
+                    ? $this->user . ":" . $this->secret . "@"
+                    : ""
+                );
                 $this->link_id = new Manager(
                     "mongodb://"
                     . $auth
@@ -166,8 +168,8 @@ class MongoDB extends DatabaseDriver
                 $this->errorHandler("Class not found: MongoDB\Driver\Manager");
             }
 
-            static::$_dbs[$dbkey] = $this->link_id;
-            $this->link_id =& static::$_dbs[$dbkey];
+            self::$links[$dbkey] = $this->link_id;
+            $this->link_id =& self::$links[$dbkey];
         }
 
         return is_object($this->link_id);
@@ -270,10 +272,6 @@ class MongoDB extends DatabaseDriver
      */
     private function processQueryParams(DatabaseQuery $query) : bool
     {
-        if (!$this->link_id && !$this->connect()) {
-            return false;
-        }
-
         $this->cacheSetProcess($query->toJson());
 
         $this->freeResult();
@@ -340,8 +338,12 @@ class MongoDB extends DatabaseDriver
      * @return bool
      * @throws Exception
      */
-    private function query(DatabaseQuery $query) : bool
+    public function query($query) : bool
     {
+        if (!$this->link_id && !$this->connect()) {
+            return false;
+        }
+
         $this->processQueryParams($query);
         switch ($this->query_params->action) {
             case self::ACTION_READ:
@@ -427,6 +429,10 @@ class MongoDB extends DatabaseDriver
      */
     public function cmd(DatabaseQuery $query, string $action = self::CMD_COUNT) : ?array
     {
+        if (!$this->link_id && !$this->connect()) {
+            return null;
+        }
+
         $res = null;
         switch ($action) {
             case self::CMD_COUNT:
@@ -489,14 +495,11 @@ class MongoDB extends DatabaseDriver
     }
 
     /**
-     * Sposta il puntatore al DB al record successivo (va chiamato almeno una volta)
-     * @return boolean
+     * @return array|null
      */
-    private function getRecord(): bool
+    public function getRecord(): ?array
     {
-        $this->record                       = $this->query_id->current();
-
-        return (bool) $this->record;
+        return $this->record;
     }
 
     /**
@@ -510,7 +513,7 @@ class MongoDB extends DatabaseDriver
             $this->errorHandler("nextRecord called with no query pending");
         }
 
-        if ($this->getRecord()) {
+        if (($this->record = $this->query_id->current())) {
             $this->row += 1;
             $this->query_id->next();
             return true;

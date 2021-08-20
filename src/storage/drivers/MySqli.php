@@ -45,11 +45,12 @@ class MySqli extends DatabaseDriver
 {
     use Cashable;
 
+    public const ENGINE             = "sql";
+    protected const PREFIX          = "MYSQL_DATABASE_";
+
     private const SEP               = ",";
 
     public $charset			        = "utf8";
-    public $charset_names		    = "utf8";
-    public $charset_collation	    = "utf8_unicode_ci";
 
     public $persistent				= false;
 
@@ -65,9 +66,6 @@ class MySqli extends DatabaseDriver
     public $avoid_real_connect      = true;
     public $buffered_affected_rows  = null;
 
-    public $reconnect               = true;
-    public $reconnect_tryed         = false;
-
     private $use_found_rows         = false;
 
     /**
@@ -75,7 +73,7 @@ class MySqli extends DatabaseDriver
      */
     public static function freeAll() : void
     {
-        foreach (static::$_dbs as $link) {
+        foreach (self::$links as $link) {
             @mysqli_kill($link, mysqli_thread_id($link));
             @mysqli_close($link);
         }
@@ -91,8 +89,8 @@ class MySqli extends DatabaseDriver
             @mysqli_kill($this->link_id, mysqli_thread_id($this->link_id));
             @mysqli_close($this->link_id);
             $dbkey = $this->host . "|" . $this->user . "|" . $this->secret;
-            if (isset(static::$_dbs[$dbkey])) {
-                unset(static::$_dbs[$dbkey]);
+            if (isset(self::$links[$dbkey])) {
+                unset(self::$links[$dbkey]);
             }
         }
         $this->link_id      = null;
@@ -142,8 +140,8 @@ class MySqli extends DatabaseDriver
         }
 
         $dbkey = $this->host . "|" . $this->user . "|" . $this->database;
-        if (isset(static::$_dbs[$dbkey])) {
-            $this->link_id =& static::$_dbs[$dbkey];
+        if (isset(self::$links[$dbkey])) {
+            $this->link_id =& self::$links[$dbkey];
         }
 
         if (!$this->link_id) {
@@ -177,8 +175,8 @@ class MySqli extends DatabaseDriver
                 @mysqli_set_charset($this->link_id, $this->charset);
             }
 
-            static::$_dbs[$dbkey]       = $this->link_id;
-            $this->link_id              =& static::$_dbs[$dbkey];
+            self::$links[$dbkey]       = $this->link_id;
+            $this->link_id              =& self::$links[$dbkey];
 
             mysqli_options($this->link_id, MYSQLI_OPT_INT_AND_FLOAT_NATIVE, true);
         }
@@ -282,9 +280,6 @@ class MySqli extends DatabaseDriver
      */
     private function execute(string $query_string) : bool
     {
-        if (!$query_string) {
-            $this->errorHandler("Execute invoked With blank Query String");
-        }
         if (!$this->link_id && !$this->connect()) {
             return false;
         }
@@ -305,6 +300,14 @@ class MySqli extends DatabaseDriver
         $this->buffered_insert_id = @mysqli_insert_id($this->link_id);
 
         return true;
+    }
+
+    /**
+     * @return array|null
+     */
+    public function getRecord() : ?array
+    {
+        return $this->record;
     }
 
     /**
@@ -352,31 +355,28 @@ class MySqli extends DatabaseDriver
 
     /**
      * Esegue una query
-     * @param string $query_string
+     * @param string $query
      * @return bool
      * @throws Exception
      */
-    private function query(string $query_string) : bool
+    public function query($query) : bool
     {
-        if (!$query_string) {
-            $this->errorHandler("Query invoked With blank Query String");
-        }
         if (!$this->link_id && !$this->connect()) {
             return false;
         }
 
-        $this->cacheSetProcess($query_string);
+        $this->cacheSetProcess($query);
 
         $this->freeResult();
 
-        $this->use_found_rows                               = strpos($query_string, " SQL_CALC_FOUND_ROWS ") !== false;
+        $this->use_found_rows                               = strpos($query, " SQL_CALC_FOUND_ROWS ") !== false;
 
         $this->stopWatch(self::ERROR_BUCKET);
-        $this->query_id = @mysqli_query($this->link_id, $query_string);
+        $this->query_id = @mysqli_query($this->link_id, $query);
         $this->stopWatch(self::ERROR_BUCKET);
 
         if (!$this->query_id || $this->checkError()) {
-            $this->errorHandler("Invalid SQL: " . $query_string);
+            $this->errorHandler("Invalid SQL: " . $query);
         }
 
         return is_object($this->query_id);
@@ -418,17 +418,17 @@ class MySqli extends DatabaseDriver
     }
 
     /**
-     * @param array $Query
+     * @param array $queries
      * @return array|null
      * @throws Exception
      */
-    public function multiQuery(array $Query) : ?array
+    public function multiQuery(array $queries) : ?array
     {
         if (!$this->link_id && !$this->connect()) {
             return null;
         }
 
-        $query_string = implode("; ", $Query);
+        $query_string = implode("; ", $queries);
 
         $this->cacheSetProcess($query_string);
 
@@ -625,7 +625,7 @@ class MySqli extends DatabaseDriver
      */
     protected function errorHandler(string $msg) : void
     {
-        $this->checkError(); // this is needed due to params order
+        $this->checkError();
 
         throw new Exception("MySQL(" . $this->database . ") - " . $msg . " #" . $this->errno . ": " . $this->error, 500);
     }

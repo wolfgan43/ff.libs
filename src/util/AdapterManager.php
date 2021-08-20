@@ -40,7 +40,7 @@ trait AdapterManager
      * @param string $class_name
      * @return mixed
      */
-    private static function loadAdapter(string $adapterName, array $args = array(), $class_name = __CLASS__) : object
+    private static function loadAdapter(string $adapterName, array $args = array(), string $class_name = __CLASS__) : object
     {
         $class                                              = str_replace(array('\\drivers\\','\\'), array('\\', '/'), $class_name);
         $className                                          = basename($class);
@@ -60,7 +60,7 @@ trait AdapterManager
      * @param string $class_name
      * @return object
      */
-    private function setAdapter(string $adapterName, array $args = array(), $class_name = __CLASS__) : object
+    private function setAdapter(string $adapterName, array $args = array(), string $class_name = __CLASS__) : object
     {
         $this->adapters[$adapterName]                       = $this->loadAdapter($adapterName, $args, $class_name);
         $this->adapter                                      =& $this->adapters[$adapterName];

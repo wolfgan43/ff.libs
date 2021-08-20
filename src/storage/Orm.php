@@ -87,8 +87,8 @@ class Orm extends Mappable
     protected $main_table                                                                   = null;
 
     protected $connectors                                                                   = array();
-
     protected $adapters                                                                     = array();
+
     protected $struct                                                                       = null;
     protected $relationship                                                                 = null;
     protected $indexes                                                                      = null;
@@ -123,6 +123,30 @@ class Orm extends Mappable
 
     private $count                                                                          = 0;
 
+    /**
+     * @param string|null $prefix
+     * @return DatabaseDriver
+     */
+    public static function sql(string $prefix = null) : DatabaseDriver
+    {
+        $class_name = __NAMESPACE__ . "\\drivers\\MySqli";
+        return new $class_name($prefix);
+    }
+
+    /**
+     * @param string|null $prefix
+     * @return DatabaseDriver
+     */
+    public static function noSql(string $prefix = null) : DatabaseDriver
+    {
+        $class_name = __NAMESPACE__ . "\\drivers\\MongoDB";
+        return new $class_name($prefix);
+    }
+
+    /**
+     * @param Schema $schema
+     * @return static
+     */
     public static function &model(Schema $schema) : self
     {
         return self::getInstance($schema->collection, $schema->table, $schema->mapclass)
@@ -148,16 +172,14 @@ class Orm extends Mappable
 
     /**
      * Orm constructor.
-     * @param string|null $collection
+     * @param string $collection
      */
-    public function __construct(string $collection = null)
+    public function __construct(string $collection)
     {
-        if ($collection) {
-            parent::__construct($collection);
+        parent::__construct($collection);
 
-            $this->adapters                                                                 = array_intersect_key($this->connectors, $this->adapters);
-            $this->default_table                                                            = $this->main_table;
-        }
+        $this->adapters                                                                 = array_intersect_key($this->connectors, $this->adapters);
+        $this->default_table                                                            = $this->main_table;
     }
 
     /**
@@ -286,7 +308,7 @@ class Orm extends Mappable
     {
         $def->table["preserve_columns_order"] = $this->preserve_columns_order;
 
-        return new Database($this->adapters, $def, $this->schema);
+        return Database::getInstance($this->adapters, $def, $this->schema);
     }
 
     /**
@@ -322,15 +344,6 @@ class Orm extends Mappable
             "indexes"       => $this->indexes[$table]       ?? [],
             "key"           => $keys[$table]
         ];
-    }
-
-    /**
-     * @param $query
-     * @return array|null
-     */
-    public function rawQuery($query) : ?array
-    {
-        return Database::getInstance($this->adapters)->rawQuery($query);
     }
 
     /**
@@ -826,7 +839,7 @@ class Orm extends Mappable
             if (isset($data->def->relationship[$this->main->def->mainTable]) && !empty($this->main->where)) {
                 $key_main_primary                                                           = $data->def->relationship[$this->main->def->mainTable][self::FREL_PRIMARY];
                 if (!isset($this->main->where[$key_main_primary])) {
-                    $regs                                                                   = $this->getModel($modelName)
+                    $regs                                                                   = $Orm
                                                                                                 ->setStorage($this->main->def)
                                                                                                 ->read(
                                                                                                     array($key_main_primary => true),

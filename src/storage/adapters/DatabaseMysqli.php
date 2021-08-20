@@ -26,6 +26,7 @@
 namespace phpformsframework\libs\storage\adapters;
 
 use phpformsframework\libs\storage\DatabaseAdapter;
+use phpformsframework\libs\storage\DatabaseDriver;
 use phpformsframework\libs\storage\drivers\MySqli as sql;
 use phpformsframework\libs\Exception;
 
@@ -63,17 +64,16 @@ class DatabaseMysqli extends DatabaseAdapter
     protected const OR                                  = " OR ";
     protected const AND                                 = " AND ";
 
-    protected const PREFIX                              = "MYSQL_DATABASE_";
-    protected const TYPE                                = "sql";
+    protected const ENGINE                              = sql::ENGINE;
     protected const KEY_NAME                            = "ID";
     protected const KEY_IS_INT                          = true;
 
     /**
      * @return sql
      */
-    protected function getDriver() : sql
+    protected function driver(string $prefix = null) : DatabaseDriver
     {
-        return new sql();
+        return new sql($prefix);
     }
 
     /**

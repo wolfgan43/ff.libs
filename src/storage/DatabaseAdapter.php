@@ -25,7 +25,6 @@
  */
 namespace phpformsframework\libs\storage;
 
-use phpformsframework\libs\Kernel;
 use phpformsframework\libs\storage\dto\OrmDef;
 use phpformsframework\libs\storage\dto\Schema;
 use phpformsframework\libs\Exception;
@@ -68,8 +67,7 @@ abstract class DatabaseAdapter implements Constant
     private const ERROR_WRITE_IS_EMPTY  = "insert and/or set and/or where are empty";
     private const ERROR_DELETE_IS_EMPTY = "you cant truncate table. where is empty";
 
-    protected const TYPE                = null;
-    protected const PREFIX              = null;
+    protected const ENGINE              = null;
     protected const KEY_NAME            = null;
     protected const KEY_REL             = "ID_";
     protected const KEY_IS_INT          = false;
@@ -91,6 +89,7 @@ abstract class DatabaseAdapter implements Constant
                                             "key_rel"       => null
                                         ];
 
+    protected $prefix                   = null;
     protected $key_name                 = null;
     protected $key_rel_prefix           = null;
     protected $key_rel_suffix           = null;
@@ -120,9 +119,9 @@ abstract class DatabaseAdapter implements Constant
     private $converter                  = null;
 
     /**
-     * @return mixed
+     * @return DatabaseDriver
      */
-    abstract protected function getDriver();
+    abstract protected function driver(string $prefix = null) : DatabaseDriver;
 
     /**
      * @param string $value
@@ -165,28 +164,19 @@ abstract class DatabaseAdapter implements Constant
 
     /**
      * DatabaseAdapter constructor.
+     * @param array $connection
      * @param OrmDef $def
      * @param Schema|null $schema
      * @throws Exception
      */
-    public function __construct(OrmDef $def, Schema $schema = null)
+    public function __construct(array $connection, OrmDef $def, Schema $schema = null)
     {
         $this->def                                      = $def;
         $this->schema                                   = $schema;
         $this->converter                                = new DatabaseConverter($this->def, $this->schema);
 
-    }
-
-    /**
-     * @todo da tipizzare
-     * @param $query
-     * @return array|null
-     */
-    public function rawQuery($query) : ?array
-    {
-        $this->clearResult();
-
-        return $this->processRawQuery($query);
+        $this->setConnection($connection);
+        $this->driver                                   = $this->driver($this->prefix);
     }
 
     /**
@@ -293,69 +283,18 @@ abstract class DatabaseAdapter implements Constant
     }
 
     /**
-     * @todo da tipizzare
-     * @param $query
-     * @return array|null
+     * @param array $connection
      */
-    protected function processRawQuery($query) : ?array
+    protected function setConnection(array $connection) : void
     {
-        return ($this->driver->rawQuery($query)
-            ? $this->driver->getRecordset()
-            : null
-        );
-    }
-
-    /**
-     * @return array
-     * @throws Exception
-     */
-    protected function getConnector() : array
-    {
-        $connector                                      = array();
-
-        try {
-            $env                                        = Kernel::$Environment;
-            $prefix                                     = $env . '::' . (
-                isset($this->connection["prefix"]) && defined($env . '::' . $this->connection["prefix"] . "NAME")
-                ? $this->connection["prefix"]
-                : static::PREFIX
-            );
-
-            $connector["host"]                          = constant($prefix . "HOST");
-            $connector["username"]                      = constant($prefix . "USER");
-            $connector["secret"]                        = constant($prefix . "SECRET");
-            $connector["name"]                          = constant($prefix . "NAME");
-
-            $connector["table"]                         = (
-                empty($this->connection["table"])
-                ? null
-                : $this->connection["table"]
-            );
-            $connector["key"]                           = (
-                empty($this->connection["key"])
-                ? static::KEY_NAME
-                : $this->connection["key"]
-            );
-
-            $key_rel                                    = (
-                empty($this->connection["key_rel"])
-                ? static::KEY_REL
-                : $this->connection["key_rel"]
-            );
-            $connector["key_rel"]                       = $key_rel;
-
-            if (!$this->def->table && !empty($connector["table"])) {
-                $this->setTable($connector["table"]);
-            }
-
-            if (empty($connector["name"])) {
-                throw new Exception(static::TYPE . " database connection failed", 500);
-            }
-        } catch (\Exception $e) {
-            throw new Exception("Connection Params Missing: " . $e->getMessage(), 500);
+        $this->prefix                           = $connection["prefix"]     ?? null;
+        $this->key_name                         = $connection["key"]        ?? static::KEY_NAME;
+        $key_rel                                = $connection["key_rel"]    ?? static::KEY_REL;
+        if (strpos($key_rel, "_") === 0) {
+            $this->key_rel_prefix               = $key_rel;
+        } else {
+            $this->key_rel_suffix               = $key_rel;
         }
-
-        return $connector;
     }
 
     /**
@@ -678,32 +617,6 @@ abstract class DatabaseAdapter implements Constant
     }
 
     /**
-     * @return bool
-     * @throws Exception
-     */
-    private function loadDriver() : bool
-    {
-        $connector                                      = $this->getConnector();
-        if ($connector) {
-            $this->driver                               = $this->getDriver();
-            if ($this->driver->connect(
-                $connector["name"],
-                $connector["host"],
-                $connector["username"],
-                $connector["secret"]
-            )) {
-                $this->key_name                         = $connector["key"];
-                if (strpos($connector["key_rel"], "_") === 0) {
-                    $this->key_rel_prefix               = $connector["key_rel"];
-                } else {
-                    $this->key_rel_suffix               = $connector["key_rel"];
-                }
-            }
-        }
-        return (bool) $this->driver;
-    }
-
-    /**
      * @return string|null
      */
     private function getTableName() : ?string
@@ -737,16 +650,12 @@ abstract class DatabaseAdapter implements Constant
     {
         $this->clearResult();
 
-        if ($this->loadDriver()) {
-            $this->table_name = $table_name ?: $this->getTableName();
-            if (!$this->key_name) {
-                throw new Exception(static::TYPE . " key missing", 500);
-            }
-            if (!$this->table_name) {
-                throw new Exception(static::TYPE . " table missing", 500);
-            }
-        } else {
-            throw new Exception("Connection failed to database: " . static::TYPE, 500);
+        $this->table_name = $table_name ?: $this->getTableName();
+        if (!$this->key_name) {
+            throw new Exception(static::ENGINE . " key missing", 500);
+        }
+        if (!$this->table_name) {
+            throw new Exception(static::ENGINE . " table missing", 500);
         }
 
         return new DatabaseQuery($action, $this->table_name, $this->def->key_primary, $calc_found_rows);

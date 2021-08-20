@@ -28,6 +28,7 @@ namespace phpformsframework\libs\storage;
 use phpformsframework\libs\international\Data;
 use phpformsframework\libs\Exception;
 use DateTime;
+use phpformsframework\libs\Kernel;
 
 /**
  * Class DatabaseDriver
@@ -35,9 +36,12 @@ use DateTime;
  */
 abstract class DatabaseDriver implements Constant
 {
-    protected static $_dbs 	                = array();
+    protected static $links 	            = [];
+
+    public const ENGINE                     = null;
 
     protected const MAX_NUMROWS             = DatabaseAdapter::MAX_NUMROWS;
+    protected const PREFIX                  = null;
 
     protected $locale                       = "ISO9075";
 
@@ -102,6 +106,12 @@ abstract class DatabaseDriver implements Constant
     abstract public function cmd(DatabaseQuery $query, string $action = self::CMD_COUNT) : ?array;
 
     /**
+     * @param string|DatabaseQuery $query
+     * @return bool
+     */
+    abstract public function query($query) : bool;
+
+    /**
      * @param array $queries
      * @return array|null
      */
@@ -117,6 +127,11 @@ abstract class DatabaseDriver implements Constant
      * @return int
      */
     abstract public function numRows() : int;
+
+    /**
+     * @return array|null
+     */
+    abstract public function getRecord() : ?array;
 
     /**
      * @return array|null
@@ -158,6 +173,22 @@ abstract class DatabaseDriver implements Constant
      */
     abstract protected function convertID(string $value = null);
 
+    public function __construct(string $prefix = null)
+    {
+        $bucket                                 = Kernel::$Environment . '::' . (
+            $prefix && defined(Kernel::$Environment . '::' . $prefix . "NAME")
+                ? $prefix
+                : static::PREFIX
+            );
+
+        $this->connect(
+            Constant($bucket . "NAME"),
+            Constant($bucket . "HOST"),
+            Constant($bucket . "USER"),
+            Constant($bucket . "SECRET")
+        );
+    }
+
     /**
      * @param mixed $mixed
      * @param string $type
@@ -165,7 +196,7 @@ abstract class DatabaseDriver implements Constant
      * @throws Exception
      * @todo da tipizzare
      */
-    public function toSql($mixed, string $type)
+    public function toSql($mixed, string $type = self::FTYPE_STRING)
     {
         if (is_array($mixed)) {
             $res = $this->toSqlArray($type, $mixed);

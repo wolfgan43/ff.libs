@@ -48,7 +48,6 @@ class Database implements Constant
 
     private static $singletons                                              = null;
 
-    private $table                                                          = null;
     private $result                                                         = null;
 
     /**
@@ -60,11 +59,8 @@ class Database implements Constant
     public static function getInstance(array $databaseAdapters, OrmDef $def, Schema $schema = null) : Database
     {
         $key                                                                = self::checkSumArray($databaseAdapters + $def->table);
-        if (!isset(self::$singletons[$key])) {
-            self::$singletons[$key]                                         = new Database($databaseAdapters, $def, $schema);
-        }
 
-        return self::$singletons[$key];
+        return self::$singletons[$key] ?? (self::$singletons[$key] = new Database($databaseAdapters, $def, $schema));
     }
 
     /**
@@ -88,24 +84,8 @@ class Database implements Constant
     public function __construct(array $databaseAdapters, OrmDef $def, Schema $schema = null)
     {
         foreach ($databaseAdapters as $adapter => $connection) {
-            $this->setAdapter($adapter, [$def, $schema]);
+            $this->setAdapter($adapter, [$connection, $def, $schema]);
         }
-
-        $this->table                                                        = $def->table["name"] ?? null;
-    }
-
-
-    /**
-     * @todo da tipizzare
-     * @param $query
-     * @return array|null
-     */
-    public function rawQuery($query) : ?array
-    {
-        foreach ($this->adapters as $adapter_name => $adapter) {
-            $this->result[$adapter_name]                                    = $adapter->rawQuery($query);
-        }
-        return $this->getResult();
     }
 
     /**
@@ -122,7 +102,9 @@ class Database implements Constant
     public function read(array $fields = null, array $where = null, array $sort = null, int $limit = null, int $offset = null, bool $calc_found_rows = false, string $table_name = null) : ?array
     {
         foreach ($this->adapters as $adapter_name => $adapter) {
-            $this->result[$adapter_name]                                    = $adapter->read($fields, $where, $sort, $limit, $offset, $calc_found_rows, $table_name);
+            if (!empty($this->result[$adapter_name] = $adapter->read($fields, $where, $sort, $limit, $offset, $calc_found_rows, $table_name))) {
+                break;
+            }
         }
 
         return $this->getResult();

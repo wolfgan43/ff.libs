@@ -141,7 +141,7 @@ class DatabaseMysqli extends DatabaseAdapter
                 $value = array_filter($value, function ($v) {
                     return !is_null($v);
                 });
-                $res = "(" . $this->replacerNULL($name, '$eq') . " OR " . $this->replacer(
+                $res = "(" . $this->replacerNULL($name, self::OP_DEFAULT) . " OR " . $this->replacer(
                     $name,
                     $op,
                     $struct_type,

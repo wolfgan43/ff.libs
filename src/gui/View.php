@@ -28,6 +28,7 @@ namespace phpformsframework\libs\gui;
 use phpformsframework\libs\dto\DataHtml;
 use phpformsframework\libs\dto\DataTableResponse;
 use phpformsframework\libs\Kernel;
+use phpformsframework\libs\storage\OrmItem;
 use phpformsframework\libs\util\AdapterManager;
 use phpformsframework\libs\Exception;
 use stdClass;
@@ -87,8 +88,8 @@ class View
     }
 
     /**
-     * @param array|string|DataHtml|DataTableResponse $data
-     * @param null|string $value
+     * @param array|string|DataTableResponse|OrmItem $data
+     * @param null|string|DataHtml $value
      * @return $this
      * @throws Exception
      */
@@ -111,11 +112,11 @@ class View
             }
         } elseif ($data instanceof DataTableResponse) {
             foreach ($data->toArray() as $item) {
-                foreach ($item as $key => $value) {
-                    $this->adapter->assign($key, $value);
-                }
+                $this->adapter->assign($item);
                 $this->adapter->parse("Sez" . $data->class, true);
             }
+        } elseif ($data instanceof OrmItem) {
+            $this->adapter->assign($data->toArray());
         } else {
             $this->adapter->assign($data, $value);
         }

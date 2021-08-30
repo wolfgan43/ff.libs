@@ -64,9 +64,10 @@
             <field name="email"             type="email"        db="email"                        request="$email"                 mock="john.doe@nobody.it" />
             <field name="tel"               type="tel"          db="tel"                          request="$tel"                   mock="3498844546" />
             <field name="display_name"      type="string"       db="display_name"                 request="$display_name"          mock="John Doe" />
-            <field name="avatar"            type="image"        db="avatar"                       request="$avatar"                width="100" height="100"     resize="crop"   mock="noavatar"  />
+            <field name="avatar"            type="image"        db="avatar"                       request="$avatar"                default="noavatar" width="100" height="100"     resize="crop"   mock="noavatar"  />
             <field name="status"            type="bool"         db="status"                       request="$status"                mock="1" />
             <field name="acl"               type="string"       db="acl"                          request="$acl"                   mock="" />
+            <field name="login_at"          type="datetime"     db="login_at"                                                      mock="" />
         </model>
     </models>
 </configdata>

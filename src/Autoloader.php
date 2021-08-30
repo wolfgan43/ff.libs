@@ -129,7 +129,10 @@ class Autoloader implements Dumpable
 
                         if ($tokens[$i][0] === T_NAMESPACE) {
                             for ($j = $i + 1; $j < count($tokens); $j++) {
-                                if ($tokens[$j][0] === T_STRING) {
+                                if ($tokens[$j][0] === T_NAME_QUALIFIED || $tokens[$j][0] === T_NAME_FULLY_QUALIFIED) {
+                                    $namespace = $tokens[$j][1];
+                                    break;
+                                } elseif ($tokens[$j][0] === T_STRING) {
                                     $namespace .= '\\' . $tokens[$j][1];
                                 } elseif ($tokens[$j] === '{' || $tokens[$j] === ';') {
                                     break;

@@ -90,7 +90,7 @@ trait CommonTemplate
         if ($user) {
             $view->assign("user_name", $user->username);
             $view->assign("user_email", $user->email);
-            $view->assign("user_avatar", $user->getAvatar($config->avatar));
+            $view->assign("user_avatar", $user->setAvatar()->avatar);
         }
     }
 }

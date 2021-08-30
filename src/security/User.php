@@ -143,6 +143,9 @@ class User extends App
         $user                                                   = static::check($username, $secret);
         $response                                               = self::session()->create($permanent, $user->acl);
 
+        $user->login_at                                         = time();
+        $user->apply();
+
         self::set($user);
 
         return $response;

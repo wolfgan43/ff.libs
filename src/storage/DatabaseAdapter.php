@@ -833,8 +833,8 @@ abstract class DatabaseAdapter implements Constant
         if (!$res) {
             if (count($values) > 1) {
                 $res[self::OP_ARRAY_DEFAULT]    = $this->fieldOperation($this->converter->in($name, $values), $struct_type, $name, self::OP_ARRAY_DEFAULT);
-            } elseif (empty($values)) {
-                $res                            = $this->fieldOperationNULL($struct_type, $name, self::OP_DEFAULT);
+            } elseif (empty($values) && ($operation = $this->fieldOperationNULL($struct_type, $name, self::OP_DEFAULT))) {
+                $res[self::OP_DEFAULT]          = $operation;
             } else {
                 $res[self::OP_DEFAULT]          = $this->fieldOperation($this->converter->in($name, $values[0]), $struct_type, $name, self::OP_DEFAULT);
             }

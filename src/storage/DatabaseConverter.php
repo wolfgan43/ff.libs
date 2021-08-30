@@ -112,7 +112,9 @@ class DatabaseConverter
     public function to(array $record) : array
     {
         foreach ($this->to as $field => $params) {
-            $record[$field] = ($params->callback)($record[$field], $params->properties);
+            if (($value = $record[$field] ?? $params->properties->default ?? null)) {
+                $record[$field] = ($params->callback)($value, $params->properties);
+            }
         }
 
         return $record;

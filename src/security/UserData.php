@@ -29,6 +29,7 @@ use phpformsframework\libs\storage\Media;
 use phpformsframework\libs\storage\Model;
 use phpformsframework\libs\storage\OrmItem;
 use phpformsframework\libs\Exception;
+use phpformsframework\libs\util\Convert;
 
 /**
  * Class DataUser
@@ -53,18 +54,17 @@ class UserData extends OrmItem
         "slug"              => "username:toSlug"
     ];
 
-    private const MODES             = [
-      "crop"                => "x",
-      "proportional"        => "-",
-    ];
+    private const AVATAR_DEFAULT    = "noavatar";
+    private const AVATAR_WIDTH      = 100;
+    private const AVATAR_HEIGHT     = 100;
 
     public $uuid                    = null;
     public $username                = null;
+    public $domain                  = null;
     public $acl                     = null;
     public $role                    = null;
     public $status                  = null;
     public $token                   = null;
-    public $model                   = null;
 
     public $env                     = array();
     public $profile                 = array();
@@ -72,23 +72,29 @@ class UserData extends OrmItem
 
     public $anagraph                = null;
 
-    public $slug                    = null;
+    public $username_slug           = null;
     public $avatar                  = null;
     public $display_name            = null;
     public $email                   = null;
     public $tel                     = null;
     public $locale                  = null;
-    public $lang                    = null;
+    public $referral                = null;
+
+    public $created_at              = null;
+    public $updated_at              = null;
+    public $login_at                = null;
 
     /**
-     * @param string|null $mode
-     * @param string $noavatar
-     * @return string|null
+     * @param int $width
+     * @param int $height
+     * @return UserData
      * @throws Exception
      */
-    public function getAvatar(string $mode = null, string $noavatar = "noavatar") : ?string
+    public function setAvatar(int $width = self::AVATAR_WIDTH, int $height = self::AVATAR_HEIGHT) : self
     {
-        return Media::getUrl($this->avatar ?? $noavatar, $mode);
+        $this->avatar = Convert::image($this->avatar ?? self::AVATAR_DEFAULT, (object) ["width" => $width, "height" => $height]);
+
+        return $this;
     }
 
     /**

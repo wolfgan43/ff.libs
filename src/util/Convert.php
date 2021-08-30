@@ -90,7 +90,7 @@ class Convert
 
         $mode   = null;
         if (!empty($properties->width) && !empty($properties->height)) {
-            $mode   = $properties->width . (self::IMAGE_RESIZE[$properties->resize] ?? self::DEFAULT_IMAGE_RESIZE) . $properties->height;
+            $mode   = $properties->width . (self::IMAGE_RESIZE[$properties->resize ?? null] ?? self::DEFAULT_IMAGE_RESIZE) . $properties->height;
         }
 
         return Media::getUrl($value, $mode);

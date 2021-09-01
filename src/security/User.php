@@ -38,6 +38,9 @@ class User extends App
     private const ERROR_USER_NOT_FOUND                          = "Wrong user or Password";
     private const USER_LABEL                                    = "user";
 
+    /**
+     * @var Session
+     */
     private static $session                                     = null;
     /**
      * @var UserData
@@ -50,7 +53,7 @@ class User extends App
      */
     public static function isLogged() : bool
     {
-        return (bool) (self::$user || self::session()->verify());
+        return self::$user || self::session()->verify(true);
     }
 
     /**
@@ -59,7 +62,7 @@ class User extends App
      */
     public static function get() : ?UserData
     {
-        if (!self::$user && self::session()->verify()) {
+        if (!self::$user && self::session()->verify(true)) {
             self::$user                                         = UserData::load(self::session()->get(self::USER_LABEL) ?? []);
         }
 

@@ -54,7 +54,7 @@ class Session
      * @param string|null $acl
      * @return DataResponse
      */
-    public function create($permanent = null, string $acl = null) : DataResponse
+    public function create(bool $permanent = null, string $acl = null) : DataResponse
     {
         $dataResponse                                           = new DataResponse();
         if (!$this->sessionPath()) {
@@ -124,15 +124,19 @@ class Session
     }
 
     /**
-     * @return bool
+     * @param bool $abort
+     * @return bool|null
      * @throws Exception
      */
-    public function verify() : ?bool
+    public function verify(bool $abort = false) : ?bool
     {
         if ($this->session_started) {
             $session_valid                                      = true;
         } elseif ($this->checkSession()) {
             $session_valid                                      = $this->sessionStart();
+            if ($abort) {
+                session_abort();
+            }
         } else {
             $session_valid                                      = null;
         }
@@ -207,10 +211,7 @@ class Session
     {
         $session_name                                           = $this->sessionName();
 
-        return (isset($_COOKIE[$session_name])
-            ? $_COOKIE[$session_name]
-            : null
-        );
+        return $_COOKIE[$session_name] ?? null;
     }
 
     /**

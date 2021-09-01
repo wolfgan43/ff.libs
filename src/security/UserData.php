@@ -41,7 +41,7 @@ class UserData extends OrmItem
     protected const TABLE           = "users";
     protected const JOINS           = [];
     protected const REQUIRED        = [
-        "uuid", "username", "email", "tel"
+        "uuid", "username", "email"
     ];
     protected const VALIDATOR       = [
         "uuid"                      => "uuid",

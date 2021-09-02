@@ -175,7 +175,7 @@ class Constant
     const SESSION_NAME                      = self::APPNAME;
     const SESSION_SAVE_PATH                 = DIRECTORY_SEPARATOR . "tmp";
     const SESSION_PERMANENT                 = true;
-    const SESSION_SHARE                     = true;
+    const SESSION_COOKIE_HTTPONLY           = true;
 
     /**
      * GUI Settings

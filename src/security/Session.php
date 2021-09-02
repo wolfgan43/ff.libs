@@ -299,7 +299,7 @@ class Session
             : $sessionCookie->lifetime
         );
 
-        setcookie($name, $value, $lifetime, $sessionCookie->path, $sessionCookie->domain, $this->isHTTPS(), true);
+        setcookie($name, $value, $lifetime, $sessionCookie->path, $sessionCookie->domain, $this->isHTTPS(), Kernel::$Environment::SESSION_COOKIE_HTTPONLY);
         $_COOKIE[$name]                                         = $value;
     }
 
@@ -311,9 +311,9 @@ class Session
         $secure                                                 = $this->isHTTPS();
         $sessionCookie                                          = (object) session_get_cookie_params();
 
-        setcookie($name, false, $sessionCookie->lifetime, $sessionCookie->path, $sessionCookie->domain, $secure, true);
-        setcookie($name, false, $sessionCookie->lifetime, $sessionCookie->path, $this->hostname(), $secure, true);
-        setcookie($name, false, $sessionCookie->lifetime, $sessionCookie->path, '.' . $this->getPrimaryDomain(), $secure, true);
+        setcookie($name, false, $sessionCookie->lifetime, $sessionCookie->path, $sessionCookie->domain, $secure, Kernel::$Environment::SESSION_COOKIE_HTTPONLY);
+        setcookie($name, false, $sessionCookie->lifetime, $sessionCookie->path, $this->hostname(), $secure, Kernel::$Environment::SESSION_COOKIE_HTTPONLY);
+        setcookie($name, false, $sessionCookie->lifetime, $sessionCookie->path, '.' . $this->getPrimaryDomain(), $secure, Kernel::$Environment::SESSION_COOKIE_HTTPONLY);
 
         unset($_COOKIE[$name]);
     }

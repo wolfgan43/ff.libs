@@ -105,7 +105,7 @@ class Kernel
      */
     public function run()
     {
-        Config::autoloadRegister(static::NAME_SPACE);
+        $this->autoloadRegister();
 
         Request::set(self::$Page)->capture();
 
@@ -118,6 +118,14 @@ class Kernel
         self::$Page->onLoad();
 
         Router::run(self::$Page->script_path . self::$Page->path_info);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function autoloadRegister() : void
+    {
+        Config::autoloadRegister(static::NAME_SPACE);
     }
 
     /**

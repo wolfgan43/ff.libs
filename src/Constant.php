@@ -172,8 +172,8 @@ class Constant
     const FTP_USERNAME                      = null;
     const FTP_SECRET                        = null;
 
-    const SESSION_NAME                      = self::APPNAME;
-    const SESSION_SAVE_PATH                 = DIRECTORY_SEPARATOR . "tmp";
+    const SESSION_NAME                      = null;
+    const SESSION_SAVE_PATH                 = null;
     const SESSION_PERMANENT                 = true;
     const SESSION_COOKIE_HTTPONLY           = true;
 

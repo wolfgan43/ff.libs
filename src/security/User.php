@@ -39,10 +39,6 @@ class User extends App
     private const USER_LABEL                                    = "user";
 
     /**
-     * @var Session
-     */
-    private static $session                                     = null;
-    /**
      * @var UserData
      */
     private static $user                                        = null;
@@ -63,7 +59,7 @@ class User extends App
     public static function get() : ?UserData
     {
         if (!self::$user && self::session()->verify(true)) {
-            self::$user                                         = UserData::load(self::session()->get(self::USER_LABEL) ?? []);
+            self::$user                                         = UserData::load(self::session()->get(self::USER_LABEL));
         }
 
         return self::$user;
@@ -111,11 +107,7 @@ class User extends App
      */
     private static function session() : Session
     {
-        if (!self::$session) {
-            self::$session                                      = new Session();
-        }
-
-        return self::$session;
+        return Session::getInstance();
     }
 
     /**

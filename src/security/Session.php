@@ -40,28 +40,50 @@ class Session
     use ServerManager;
 
     private const ERROR_SESSION_INVALID                         = "Invalid Session";
-    private const ERROR_SESSION_PATH_NOT_WRITABLE               = "Session path not writable or header already sent";
+    private const ERROR_SESSION_HEADER_SENT                     = "Session header already sent";
 
     private const COOKIE_EXPIRE                                 = 60 * 60 * 24 * 365;
 
     private const GROUP_LABEL                                   = "group";
     private const SESSION_PREFIX_FILE_LABEL                     = "sess_";
 
+    private static $singleton                                   = [];
+
+    private $session_save_path                                  = null;
+    private $session_name                                       = null;
+    private $session_id                                         = null;
+
     private $session_started                                    = false;
+
+
+    public static function getInstance(string $session_name = null, string $session_path = null) : self
+    {
+        if (!isset(self::$singleton[$session_name . $session_path])) {
+            self::$singleton[$session_name . $session_path]     = new Session($session_name, $session_path);
+        }
+
+        return self::$singleton[$session_name . $session_path];
+    }
+
+    public function __construct(string $session_name = null, string $session_path = null)
+    {
+        $this->setSessionName($session_name);
+        $this->setSessionPath($session_path);
+    }
 
     /**
      * @param bool|null $permanent
      * @param string|null $acl
      * @return DataResponse
+     * @throws Exception
      */
     public function create(bool $permanent = null, string $acl = null) : DataResponse
     {
-        $dataResponse                                           = new DataResponse();
-        if (!$this->sessionPath()) {
-            $dataResponse->error(500, self::ERROR_SESSION_PATH_NOT_WRITABLE);
+        if (headers_sent()) {
+            throw new Exception(self::ERROR_SESSION_HEADER_SENT, 500);
         }
 
-        $this->sessionName();
+        $dataResponse                                           = new DataResponse();
         $invalid_session                                        = false;
         $permanent                                              = $permanent ?? Kernel::$Environment::SESSION_PERMANENT;
         $domain                                                 = $this->getPrimaryDomain();
@@ -77,28 +99,22 @@ class Session
         /**
          * Purge header and remove old cookie
          */
-        $session_id                                         = null;
-        if (!headers_sent()) {
-            $this->destroy();
-            $this->sessionStart(true);
-            $session_id                                     = session_id();
-        }
+        $this->destroy();
+        $this->sessionStart(true);
 
-        Hook::handle("on_created_session", $session_id);
+        Hook::handle("on_created_session", $this->session_id);
 
         /*
          * Set Cookie
          */
-        if (!headers_sent()) {
-            $this->cookieCreate($this->sessionName(), $session_id, $permanent);
-            if ($acl) {
-                $this->cookieCreate(self::GROUP_LABEL, $acl, $permanent);
-            }
+        $this->cookieCreate($this->session_name, $this->session_id, $permanent);
+        if ($acl) {
+            $this->cookieCreate(self::GROUP_LABEL, $acl, $permanent);
         }
 
         $dataResponse->set("session", array(
-            "name"      => $this->sessionName(),
-            "id"        => $this->sessionId()
+            "name"      => $this->session_name,
+            "id"        => $this->session_id
         ));
 
         return $dataResponse;
@@ -109,16 +125,10 @@ class Session
         @session_destroy();
 
         $this->session_started                                  = false;
+        header_remove("Set-Cookie");
 
-        $session_name                                           = $this->sessionName();
-        if (!headers_sent()) {
-            header_remove("Set-Cookie");
-
-            $this->cookieDestroy($session_name);
-            $this->cookieDestroy(self::GROUP_LABEL);
-        }
-
-        unset($_COOKIE[$session_name], $_COOKIE[self::GROUP_LABEL]);
+        $this->cookieDestroy($this->session_name);
+        $this->cookieDestroy(self::GROUP_LABEL);
 
         Hook::handle("on_destroyed_session");
     }
@@ -151,22 +161,24 @@ class Session
 
     /**
      * @param string $name
-     * @return UserData|string|null
-     * @todo da tipizzare
+     * @return array
      */
-    public function get(string $name)
+    public function get(string $name) : array
     {
-        return $this->session($name);
+        return $_SESSION[$name] ?? [];
     }
 
     /**
      * @param string $name
-     * @param UserData|string|null $value
+     * @param array|string|null $value
+     * @return Session
      * @todo da tipizzare
      */
-    public function set(string $name, $value = null) : void
+    public function set(string $name, $value = null) : self
     {
-        $this->session($name, $value);
+        $_SESSION[$name] = $value;
+
+        return $this;
     }
 
     /**
@@ -180,109 +192,38 @@ class Session
             session_regenerate_id(true);
         }
 
+        $this->session_id                                       = session_id();
+
         return $this->session_started;
     }
 
     /**
-     * @param string|null $id
-     * @param string|null $path
      * @return bool
+     * @throws Exception
      */
-    private function checkSession(string $id = null, string $path = null) : bool
+    private function checkSession() : bool
     {
-        if (!$id) {
-            $id                                                 = $this->sessionId();
-        }
-        if (!$path) {
-            $path                                               = $this->sessionPath();
+        if (headers_sent()) {
+            throw new Exception(self::ERROR_SESSION_HEADER_SENT, 500);
         }
 
-        $valid_session                                          = file_exists(rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . self::SESSION_PREFIX_FILE_LABEL . $id);
+        $valid_session                                          = !empty($_COOKIE[$this->session_name]) && file_exists(rtrim($this->session_save_path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . self::SESSION_PREFIX_FILE_LABEL . $_COOKIE[$this->session_name]);
 
-        Hook::handle("on_check_session", $valid_session, array("id" => $id, "path" => $path));
+        Hook::handle("on_check_session", $valid_session, array("id" => $this->session_id, "name" => $this->session_name, "path" => $this->session_save_path));
 
         return $valid_session;
     }
 
-    /**
-     * @return string|null
-     */
-    private function sessionId() : ?string
+    private function setSessionName(string $name = null) : void
     {
-        $session_name                                           = $this->sessionName();
-
-        return $_COOKIE[$session_name] ?? null;
+        $this->session_name = $name ?? Kernel::$Environment::SESSION_NAME ?? session_name();
+        session_name($this->session_name);
     }
 
-    /**
-     * @return null|string
-     */
-    private function sessionName() : ?string
+    private function setSessionPath(string $path = null) : void
     {
-        static $isset                                           = null;
-
-        $name                                                   = Kernel::$Environment::SESSION_NAME ?? session_name();
-        if ($isset != $name && session_name() != $name) {
-            if (!headers_sent()) {
-                session_name($name);
-            } else {
-                return null;
-            }
-        }
-        $isset                                                  = $name;
-
-        return $name;
-    }
-
-    /**
-     * @return string|null
-     */
-    private function sessionPath() : ?string
-    {
-        static $isset                                           = null;
-
-
-        if (Kernel::$Environment::SESSION_SAVE_PATH) {
-            $path                                               = Kernel::$Environment::SESSION_SAVE_PATH;
-        } elseif (session_save_path()) {
-            $path                                               = session_save_path();
-        } else {
-            $path                                               = sys_get_temp_dir();
-        }
-
-        if ($isset != $path && session_save_path() != $path) {
-            if (!headers_sent()) {
-                session_save_path($path);
-            } else {
-                return null;
-            }
-        }
-
-        $isset                                                   = $path;
-        return $path;
-    }
-
-
-
-    /**
-     * @param string $name
-     * @param UserData|string|null $value
-     * @return UserData|string|null
-     * @todo da tipizzare
-     */
-    private function session(string $name, $value = null)
-    {
-        if ($name) {
-            $ref                                                = &$_SESSION[$name];
-        } else {
-            $ref                                                = &$_SESSION;
-        }
-
-        if ($value) {
-            $ref                                                = $value;
-        }
-
-        return $ref;
+        $this->session_save_path = $path ?? Kernel::$Environment::SESSION_SAVE_PATH ?? session_save_path() ?? sys_get_temp_dir();
+        session_save_path($this->session_save_path);
     }
 
     /**

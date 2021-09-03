@@ -174,13 +174,13 @@ let cm = (function () {
             if(dataResponse[_HTML] !== undefined) {
                 if(querySelector) {
                     if((html = (document.querySelector(querySelector)))) {
-                        html.innerHTML = dataResponse[_HTML];
+                        html.innerHTML = dataResponse[_HTML].trim();
 
                         guiInit = true;
                     }
                 } else if(dataResponse[_COMPONENT] !== undefined) {
                     if((html = (document.querySelector(dataResponse[_COMPONENT])))) {
-                        html.parentNode.replaceChild(dataResponse[_HTML], html);
+                        html.parentNode.replaceChild(dataResponse[_HTML].trim(), html);
 
                         guiInit = true;
                     } else {
@@ -189,13 +189,13 @@ let cm = (function () {
                 } else {
                     let selector;
                     let div = document.createElement("div");
-                    div.innerHTML = dataResponse[_HTML];
+                    div.innerHTML = dataResponse[_HTML].trim();
                     if((selector = div.firstChild.getAttribute("id")) && (html = (document.querySelector("#" + selector)))) {
                         html.parentNode.replaceChild(div, html);
 
                         guiInit = true;
                     } else if((html = (document.querySelector("." + settings.class.main)))) {
-                        html.innerHTML = dataResponse[_HTML];
+                        html.innerHTML = dataResponse[_HTML].trim();
 
                         guiInit = true;
                     } else {

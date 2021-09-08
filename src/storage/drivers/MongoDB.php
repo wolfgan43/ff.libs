@@ -84,9 +84,9 @@ class MongoDB extends DatabaseDriver
     private function cleanup()
     {
         $this->freeResult();
-        $dbkey = $this->host . "|" . $this->user . "|" . $this->replica;
-        if (isset(self::$links[$dbkey])) {
-            unset(self::$links[$dbkey]);
+
+        if (isset(self::$links[$this->dbKey])) {
+            unset(self::$links[$this->dbKey]);
         }
 
         $this->link_id                  = null;
@@ -135,9 +135,9 @@ class MongoDB extends DatabaseDriver
             $this->replica                          = $replica;
         }
 
-        $dbkey = $this->host . "|" . $this->user . "|" . $this->replica;
-        if (isset(self::$links[$dbkey])) {
-            $this->link_id =& self::$links[$dbkey];
+        $this->dbKey                                = $this->host . "|" . $this->user . "|" . $this->replica;
+        if (isset(self::$links[$this->dbKey])) {
+            $this->link_id =& self::$links[$this->dbKey];
         }
 
         if (!$this->link_id) {
@@ -168,8 +168,8 @@ class MongoDB extends DatabaseDriver
                 $this->errorHandler("Class not found: MongoDB\Driver\Manager");
             }
 
-            self::$links[$dbkey] = $this->link_id;
-            $this->link_id =& self::$links[$dbkey];
+            self::$links[$this->dbKey] = $this->link_id;
+            $this->link_id =& self::$links[$this->dbKey];
         }
 
         return is_object($this->link_id);

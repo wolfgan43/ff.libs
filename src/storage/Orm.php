@@ -124,13 +124,13 @@ class Orm extends Mappable
     private $count                                                                          = 0;
 
     /**
-     * @param string|null $prefix
+     * @param string|null $prefix_connection
      * @return DatabaseDriver
      */
-    public static function sql(string $prefix = null) : DatabaseDriver
+    public static function sql(string $prefix_connection = null) : DatabaseDriver
     {
         $class_name = __NAMESPACE__ . "\\drivers\\MySqli";
-        return new $class_name($prefix);
+        return new $class_name($prefix_connection);
     }
 
     /**

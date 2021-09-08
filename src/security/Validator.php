@@ -211,6 +211,13 @@ class Validator
                                                                     "callback"      => '\phpformsframework\libs\security\Validator::checkBase64File',
                                                                     "length"        => 0
                                                                 ),
+                                                                "base64url"        => array(
+                                                                    "filter"        => null,
+                                                                    "flags"         => null,
+                                                                    "options"       => null,
+                                                                    "callback"      => '\phpformsframework\libs\security\Validator::checkBase64Url',
+                                                                    "length"        => 0
+                                                                ),
                                                                 "markdown"          => array(
                                                                     "filter"        => null,
                                                                     "flags"         => null,
@@ -337,10 +344,7 @@ class Validator
      */
     public static function getDefault(string $type)
     {
-        return (isset(self::RULES[$type]["options"]["default"])
-            ? self::RULES[$type]["options"]["default"]
-            : null
-        );
+        return self::RULES[$type]["options"]["default"] ?? null;
     }
 
     /**
@@ -372,7 +376,8 @@ class Validator
             case "json":
             case "base64":
             case "base64file":
-                $value      = self::$conversion;
+            case "base64url":
+            $value      = self::$conversion;
                 break;
             case "boolean":
             case "bool":
@@ -533,6 +538,29 @@ class Validator
 
         return self::checkSpecialChars($res);
     }
+
+    /**
+     * @param string $value
+     * @return string|null
+     * @throws Exception
+     */
+    private static function checkBase64Url(string $value) : ?string
+    {
+        $arrBase64                                                          = explode(";", $value, 3);
+        if (count($arrBase64) !== 2) {
+            return self::getContextName() . " invalid Format: [mimetype;base64content]";
+        }
+        $base64Content                                                      = explode(",", $arrBase64[1]);
+
+        if ($base64Content[0] != "base64" || !self::isBase64(end($base64Content))) {
+            return self::getContextName() . self::ERROR_NO_BASE64;
+        }
+
+        self::$conversion                                                   = str_replace(['data://', 'data:'], [''], $arrBase64[0]) . ";" . str_replace(' ', '+', urldecode($arrBase64[1]));
+
+        return null;
+    }
+
 
     private static function checkJsonBase64(string $value) : ?string
     {

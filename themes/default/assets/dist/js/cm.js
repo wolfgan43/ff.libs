@@ -24,6 +24,7 @@ let cm = (function () {
         "modal" : {
             "open"              : "cm-open",
             "container"         : "cm-modal",
+            "dialog"            : "cm-modal-dialog",
             "header" : {
                 "container"     : "cm-modal-header",
                 "close"         : "cm-close",
@@ -36,9 +37,34 @@ let cm = (function () {
                 "container"     : "cm-modal-footer",
                 "action"        : "cm-action"
             },
-			"tpl"				: '<div class="cm-modal cm-open" style="">    <div class="cm-modal-dialog cm-overflow-hidden">        <div class="cm-modal-header">            <h2 class="cm-modal-title white-text cm-margin-remove"></h2>            <p class="cm-modal-description white-text cm-margin-remove"></p>            <button class="cm-modal-close-default white-text cm-icon cm-close" type="button"><svg width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" data-svg="close-icon"><line fill="none" stroke="#000" stroke-width="1.1" x1="1" y1="1" x2="13" y2="13"></line><line fill="none" stroke="#000" stroke-width="1.1" x1="13" y1="1" x2="1" y2="13"></line></svg></button>        </div>        <div class="cm-modal-body">        </div>        <div class="cm-modal-footer cm-action">        </div>    </div></div>',
-			"tpl_bt"			: '<button id="{bt_id}" type="button" class="btn">{label}</button>',
-			
+            "tpl"				:
+                '<div class="cm-modal cm-open" style="position: fixed;top: 0;right: 0;bottom: 0;left: 0;padding: 3% 0;overflow: hidden;background: rgba(0,0,0,.6);">    ' +
+                '   <div class="cm-modal-dialog" style="position: relative;margin: 0 auto;width: 600px;background: black;">' +
+                '       <div class="cm-modal-header" style="padding: 15px 30px;background: #cacaca;">' +
+                '           <h2 class="cm-modal-title"></h2>' +
+                '           <p class="cm-modal-description"></p>' +
+                '           <button class="cm-modal-close cm-close" type="button" style="position: absolute;top: 10px;right: 10px;padding: 5px;border: 0;cursor: pointer;z-index: 1">X</button>' +
+                '       </div>        ' +
+                '       <div class="cm-modal-body" style="padding: 30px 30px;"></div>' +
+                '       <div class="cm-modal-footer cm-action" style="padding: 15px 30px;background: #fff;text-align: right;"></div>' +
+                '   </div>' +
+                '</div>',
+            "tpl_bt"			:
+                '<button id="{bt_id}" type="button" class="btn">{label}</button>',
+        },
+        "overlay"               : {
+            "body"              : 'cm-modal-body',
+            "footer"            : {
+                "container"     : "cm-modal-footer",
+                "action"        : "cm-action"
+            },
+            "tpl"	            :
+                '<div class="cm-modal-overlay" style="position: absolute;top: 0;bottom: 0;left: 0;right: 0;opacity: 0.9;background-color: grey;display: flex;flex-direction: column;">' +
+                '   <div class="cm-modal-body" style="flex-grow: 1;padding: 15px 30px;"></div>' +
+                '   <div class="cm-modal-footer cm-action" style="padding: 15px 30px;background: #fff;text-align: right;"></div>' +
+                '</div>',
+            "tpl_bt"	        :
+                '<button id="{bt_id}" type="button" class="btn">{label}</button>',
         },
         "tokens"                : {
             "error"             : "alert alert-danger"
@@ -53,7 +79,7 @@ let cm = (function () {
 
         return null !== document.querySelector(type + "[" + ATTR[type] + "^='" + resource.split("?")[0] + "']");
     };
-	
+
     let self = {
         "settings" : function (newsettings) {
             if(newsettings) {
@@ -112,7 +138,7 @@ let cm = (function () {
                     document.cookie = name + "=" + value + ";path=/;expires=" + d.toGMTString();
                 },
                 "remove": function (name) {
-                    set(name, '', -1);
+                    this.set(name, '', -1);
                 }
             };
         })(),
@@ -341,6 +367,7 @@ let cm = (function () {
                             }
                         }
                     }
+
                     xhr.send(typeof data !== 'object' || data instanceof FormData ? data : JSON.stringify(data));
                 });
             }
@@ -376,11 +403,143 @@ let cm = (function () {
         })(),
         "modal" : (function() {
             let privates = {
-                "$dialog": undefined,
+                "$container": undefined,
                 "events": undefined,
             };
 
             let publics = {
+                "overlay" : (function() {
+                    let ov_privates = {
+                        $node : undefined,
+                        events: undefined
+                    };
+                    let ov_publics = {
+                        "create": function({
+                             message,
+                             buttons,
+                             nodefaultbt = false,
+                             defaultaction,
+                             show = true, // false to open it later after open() ajax call
+                             events = {
+                                 "open"	: undefined,
+                                 "close" : undefined,
+                             }
+                        } = {}) {
+                            return new Promise((resolve, reject) => {
+                                if (!(body = privates.$container && privates.$container.querySelector("." + settings.modal.body))) {
+                                    return reject("dialog not opened");
+                                }
+                                if (ov_privates.$node) {
+                                    resolve('created');
+                                    return;
+                                }
+
+                                ov_privates.events = events;
+
+                                ov_privates.$node = document.createElement("cm-modal-ovl");
+                                ov_privates.$node.innerHTML = settings.overlay.tpl;
+                                ov_privates.$node = ov_privates.$node.firstElementChild;
+                                ov_privates.$node.prepend(privates.$container.querySelector("." + settings.modal.header.container).cloneNode(true));
+
+                                if (!nodefaultbt && (!buttons || !buttons.length)) {
+                                    buttons = [];
+                                    buttons.push({
+                                        "id"		: "continue",
+                                        "label"		: "Continua",
+                                        "class"		: "btn-primary",
+                                        "action"	: defaultaction,
+                                        "hide"		: true,
+                                    });
+                                }
+
+                                ov_publics.set({
+                                    message,
+                                    buttons,
+                                });
+
+                                privates.$container.querySelector("." + settings.modal.dialog).appendChild(ov_privates.$node);
+                                if (show) {
+                                    // code to show
+                                }
+
+                                resolve('created');
+                            });
+                        },
+                        "bt" : function (button) {
+                            if (button.hide) {
+                                ov_publics.close();
+                            }
+
+                            if (button.action !== undefined) {
+                                button.action();
+                            }
+                        },
+                        "set" : function ({
+                                              message,
+                                              buttons,
+                                              actions = ""
+                                          } = {}) {
+
+                            if (message !== undefined) {
+                                let $message = ov_privates.$node.querySelector("." + settings.overlay.body);
+                                if ($message) {
+                                    $message.innerHTML = message;
+                                }
+                            }
+
+                            let display_footer = false;
+                            let $footer = ov_privates.$node.querySelector("." + settings.overlay.footer.container);
+                            if (actions !== undefined) {
+                                $footer.innerHTML = "";
+                            }
+
+                            if (buttons !== undefined) {
+                                display_footer = true;
+                                buttons.forEach(function (v) {
+                                    let tmp = settings.overlay.tpl_bt.replaceAll("{bt_id}", v.id).replaceAll("{label}", v.label);
+                                    let $bt = document.createElement("dialog_bt");
+                                    $bt.innerHTML = tmp;
+                                    $bt = $bt.firstElementChild;
+                                    if (!v.id) {
+                                        $bt.removeAttribute("id");
+                                    }
+                                    if (v.class) {
+                                        $bt.classList.add(v.class);
+                                    }
+                                    $bt.addEventListener("click", ov_publics.bt.bind(null, v));
+                                    ov_privates.$node.querySelector("." + settings.overlay.footer.action).appendChild($bt);
+                                });
+                            }
+
+                            if (buttons === undefined) { // check for actions embedded in the content
+                                let $tmp;
+                                if (($tmp = ov_privates.$node.querySelector("." + settings.overlay.body + " ." + settings.overlay.footer.action))) {
+                                    display_footer = true;
+                                    $footer.appendChild($tmp);
+                                }
+                            }
+
+                            $footer.style.display = display_footer ? 'block' : 'none';
+                        },
+                        "open" : function() {
+                            // to be used for ajax call
+                            // it will show it when done
+                        },
+                        "close" : function() {
+                            if (!ov_privates.$node) {
+                                return;
+                            }
+
+                            if (ov_privates.events.close) {
+                                ov_privates.events.close();
+                            }
+                            ov_privates.$node.remove();
+                            ov_privates.$node	    = undefined;
+                            ov_privates.events		= undefined;
+                        },
+                    };
+                    return ov_publics;
+                })(),
 				"create" : function ({
 					title,
 					description,
@@ -396,19 +555,19 @@ let cm = (function () {
 				} = {}) {
 					return new Promise(resolve => {
 						self.onReady(function () {
-							if (privates.$dialog) {
+							if (privates.$container) {
 								resolve('created');
 								return;
 							}
 
 							privates.events = events;
 
-							privates.$dialog = document.createElement("cm-modal-dlg");
-							privates.$dialog.innerHTML = settings.modal.tpl;
-							privates.$dialog = privates.$dialog.firstElementChild;
+							privates.$container = document.createElement("cm-modal-dlg");
+							privates.$container.innerHTML = settings.modal.tpl;
+							privates.$container = privates.$container.firstElementChild;
 
 							let close;
-							if ((close = privates.$dialog.querySelector("." + settings.modal.header.close))) {
+							if ((close = privates.$container.querySelector("." + settings.modal.header.close))) {
 								close.addEventListener("click", function () {
 									publics.close();
 								});
@@ -432,7 +591,7 @@ let cm = (function () {
 								buttons,
 							});
 
-							document.getElementsByTagName("body")[0].appendChild(privates.$dialog);
+							document.getElementsByTagName("body")[0].appendChild(privates.$container);
 							if (show) {
 								modal.show();
 							}
@@ -458,28 +617,28 @@ let cm = (function () {
 					actions = ""
 				} = {}) {
 					if (title !== undefined) {
-						let $title = privates.$dialog.querySelector("." + settings.modal.header.title)
+						let $title = privates.$container.querySelector("." + settings.modal.header.title)
 						if ($title) {
 							$title.innerHTML = title;
 						}
 					}
 
 					if (description !== undefined) {
-						let $description = privates.$dialog.querySelector("." + settings.modal.header.description)
+						let $description = privates.$container.querySelector("." + settings.modal.header.description)
 						if ($description) {
 							$description.innerHTML = description;
 						}
 					}
 
 					if (message !== undefined) {
-						let $message = privates.$dialog.querySelector("." + settings.modal.body);
+						let $message = privates.$container.querySelector("." + settings.modal.body);
 						if ($message) {
 							$message.innerHTML = message;
 						}
 					}
 
 					let display_footer = false;
-					let $footer = privates.$dialog.querySelector("." + settings.modal.footer.container);
+					let $footer = privates.$container.querySelector("." + settings.modal.footer.container);
 					if (actions !== undefined) {
 						$footer.innerHTML = "";
 					}
@@ -498,13 +657,13 @@ let cm = (function () {
 								$bt.classList.add(v.class);
 							}
 							$bt.addEventListener("click", publics.bt.bind(null, v));
-							privates.$dialog.querySelector("." + settings.modal.footer.action).appendChild($bt);
+							privates.$container.querySelector("." + settings.modal.footer.action).appendChild($bt);
 						});
 					}
 
                     if (buttons === undefined) { // check for actions embedded in the content
                         let $tmp;
-                        if (($tmp = privates.$dialog.querySelector("." + settings.modal.body + " ." + settings.modal.footer.action))) {
+                        if (($tmp = privates.$container.querySelector("." + settings.modal.body + " ." + settings.modal.footer.action))) {
                             display_footer = true;
                             $footer.appendChild($tmp);
                         }
@@ -514,9 +673,9 @@ let cm = (function () {
 				},
                 "open" : function(url, headers = {}, method = "get", formdata = undefined, options = {}) {
                     return new Promise(function (resolve, reject) {
-                        if (privates.$dialog) {
+                        if (privates.$container) {
                             modal.error.hide();
-							privates.$dialog.style["opacity"] = "0.8";
+							privates.$container.style["opacity"] = "0.8";
 						}
                         cm.api[method](url, method === "get" ? headers : formdata, method === "post" ? headers : undefined)
                             .then(function (dataResponse) {
@@ -537,7 +696,7 @@ let cm = (function () {
 									modal.formAddListener(url, headers);
 									modal.show();
 
-									resolve(privates.$dialog);
+									resolve(privates.$container);
 								});
                             })
                             .catch(function (errorMessage) {
@@ -548,22 +707,23 @@ let cm = (function () {
 	                                reject(errorMessage);
 								});
 							}).finally(function () {
-								if (privates.$dialog) {
-									privates.$dialog.style["opacity"] = null;
+								if (privates.$container) {
+									privates.$container.style["opacity"] = null;
 								}
                             });
                     });
                 },
                 "close" : function() {
-					if (!privates.$dialog) {
+					if (!privates.$container) {
 						return;
 					}
                     modal.hide();
+					publics.overlay.close();
 					if (privates.events.close) {
 						privates.events.close();
 					}
-					privates.$dialog.remove();
-					privates.$dialog	= undefined;
+					privates.$container.remove();
+					privates.$container	= undefined;
 					privates.events		= undefined;
                 },
             };
@@ -571,7 +731,7 @@ let cm = (function () {
             let modal = {
                 "formAddListener" : function(url, headers = {}) {
                     let $form;
-                    if (($form = privates.$dialog.querySelector("form"))) {
+                    if (($form = privates.$container.querySelector("form"))) {
                         $form.action = url;
                         $form.addEventListener("submit", function (e) {
                             e.preventDefault();
@@ -582,40 +742,40 @@ let cm = (function () {
                 },
                 "error" : {
                     "show" : function(message) {
-						if (!privates.$dialog) {
+						if (!privates.$container) {
 							return;
 						}
 
-						cm.error(privates.$dialog.querySelector("." + settings.modal.body), settings.modal.error).set(message);
+						cm.error(privates.$container.querySelector("." + settings.modal.body), settings.modal.error).set(message);
                     },
                     "hide" : function() {
-						if (!privates.$dialog) {
+						if (!privates.$container) {
 							return;
 						}
-                        cm.error(privates.$dialog.querySelector("." + settings.modal.body), settings.modal.error).clear();
+                        cm.error(privates.$container.querySelector("." + settings.modal.body), settings.modal.error).clear();
                     }
                 },
                 "show" : function show() {
-					if (!privates.$dialog) {
+					if (!privates.$container) {
 						throw new Error("cm - dialog not created");
 					}
 
-                    privates.$dialog.classList.add(settings.modal.open);
-                    privates.$dialog.style["display"] = "block";
+                    privates.$container.classList.add(settings.modal.open);
+                    privates.$container.style["display"] = "block";
 
 					if (privates.events.open) {
 						privates.events.open({
-							"$dialog"	: privates.$dialog,
+							"$dialog"	: privates.$container,
 						});
 					}
                 },
                 "hide" : function () {
-					if (!privates.$dialog) {
+					if (!privates.$container) {
 						return;
 					}
 
-                    privates.$dialog.classList.remove(settings.modal.open);
-                    privates.$dialog.style["display"] = "none";
+                    privates.$container.classList.remove(settings.modal.open);
+                    privates.$container.style["display"] = "none";
 
                     this.error.hide();
                 },

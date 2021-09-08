@@ -382,7 +382,9 @@ abstract class OrmItem
         $this->db->loadCollection($collection_name, $logical_fields);
         $this->db->table(static::TABLE);
         $this->informationSchema                                                = $this->db->informationSchema();
-
+        if (!$this->informationSchema) {
+            throw new Exception("Table: " . static::TABLE . " not found in Colletion: " . static::COLLECTION, 501);
+        }
         if (!empty(static::JOINS)) {
             if (!isset(self::$buffer["current"])) {
                 self::$buffer["current"]                                        = static::class;

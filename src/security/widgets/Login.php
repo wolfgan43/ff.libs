@@ -136,11 +136,14 @@ class Login extends Widget
         // TODO: Implement patch() method.
     }
 
+    /**
+     * @throws Exception
+     */
     private function welcome(): void
     {
         $view       = $this->view("welcome");
         $config     = $view->getConfig();
-        $this->displayUser($view, $config);
+        $this->displayUser($view);
         $this->setLogo($view, $config);
     }
 }

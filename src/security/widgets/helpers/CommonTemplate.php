@@ -54,6 +54,7 @@ trait CommonTemplate
 
     /**
      * @param View $view
+     * @throws Exception
      */
     private function setError(View $view)
     {
@@ -62,9 +63,11 @@ trait CommonTemplate
             $view->parse("SezError", false);
         }
     }
+
     /**
      * @param View $view
      * @param stdClass $config
+     * @throws Exception
      */
     private function setHeader(View $view, stdClass $config)
     {
@@ -80,11 +83,10 @@ trait CommonTemplate
     }
 
     /**
-     * @param $view
-     * @param stdClass $config
+     * @param View $view
      * @throws Exception
      */
-    private function displayUser(View $view, stdClass $config)
+    private function displayUser(View $view)
     {
         $user = User::get();
         if ($user) {

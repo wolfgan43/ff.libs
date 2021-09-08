@@ -54,6 +54,7 @@ abstract class DatabaseDriver implements Constant
     protected $errno                        = 0;
     protected $error                        = "";
 
+    protected $dbKey                        = null;
     protected $link_id                      = null;
     protected $query_id                     = null;
     protected $fields                       = array();
@@ -187,6 +188,14 @@ abstract class DatabaseDriver implements Constant
             Constant($bucket . "USER"),
             Constant($bucket . "SECRET")
         );
+    }
+
+    /**
+     * @return string|null
+     */
+    public function dbKey() : ?string
+    {
+        return crc32($this->dbKey);
     }
 
     /**

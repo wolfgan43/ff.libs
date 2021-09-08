@@ -560,9 +560,9 @@ abstract class Controller
         try {
             $this->render($method);
         } catch (\Exception $e) {
-            if ($e->getCode() >= 500) {
+            /*if ($e->getCode() >= 500) {
                 throw new \Exception($e->getMessage(), $e->getCode());
-            }
+            }*/
 
             $this->error($e->getCode(), $e->getMessage());
             if (!$this->view) {
@@ -722,13 +722,15 @@ abstract class Controller
         $response = null;
         if ($data instanceof DataAdapter) {
             $response = $data;
+        } elseif (is_array($data)) {
+            $response = new DataResponse($data);
         } elseif (class_exists($data)) {
             $obj = new $data();
             if ($obj instanceof Controller) {
                 $response = $obj->display();
             }
-        } elseif (is_array($data)) {
-            $response = new DataResponse($data);
+        } else {
+            $response = new DataResponse((array) json_decode($data, true));
         }
 
         if (!$response) {

@@ -88,9 +88,9 @@ class MySqli extends DatabaseDriver
         if (is_object($this->link_id) && !$this->persistent) {
             @mysqli_kill($this->link_id, mysqli_thread_id($this->link_id));
             @mysqli_close($this->link_id);
-            $dbkey = $this->host . "|" . $this->user . "|" . $this->secret;
-            if (isset(self::$links[$dbkey])) {
-                unset(self::$links[$dbkey]);
+
+            if (isset(self::$links[$this->dbKey])) {
+                unset(self::$links[$this->dbKey]);
             }
         }
         $this->link_id      = null;
@@ -139,9 +139,9 @@ class MySqli extends DatabaseDriver
             $this->secret                           = $Secret;
         }
 
-        $dbkey = $this->host . "|" . $this->user . "|" . $this->database;
-        if (isset(self::$links[$dbkey])) {
-            $this->link_id =& self::$links[$dbkey];
+        $this->dbKey                                = $this->host . "|" . $this->user . "|" . $this->database;
+        if (isset(self::$links[$this->dbKey])) {
+            $this->link_id =& self::$links[$this->dbKey];
         }
 
         if (!$this->link_id) {
@@ -175,8 +175,8 @@ class MySqli extends DatabaseDriver
                 @mysqli_set_charset($this->link_id, $this->charset);
             }
 
-            self::$links[$dbkey]       = $this->link_id;
-            $this->link_id              =& self::$links[$dbkey];
+            self::$links[$this->dbKey]  = $this->link_id;
+            $this->link_id              =& self::$links[$this->dbKey];
 
             mysqli_options($this->link_id, MYSQLI_OPT_INT_AND_FLOAT_NATIVE, true);
         }

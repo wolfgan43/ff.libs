@@ -93,9 +93,10 @@ class Registration extends Widget
         } else {
             $response                   = $this->api($config->api->registration, (array)$this->request);
             if (User::isLogged()) {
-                $response->set("welcome", Welcome::toArray([
+                $this->welcome();
+                /*$response->set("welcome", Welcome::toArray([
                     "redirect"          => $config->redirect
-                ]));
+                ]));*/
             } elseif ($response->get("activation")) {
                 $response->set("confirm", Activation::toArray([
                     "redirect"          => $config->redirect,
@@ -120,5 +121,16 @@ class Registration extends Widget
     protected function patch(): void
     {
         // TODO: Implement patch() method.
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function welcome(): void
+    {
+        $view       = $this->view("welcome");
+        $config     = $view->getConfig();
+        $this->displayUser($view);
+        $this->setLogo($view, $config);
     }
 }

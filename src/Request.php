@@ -687,7 +687,7 @@ class Request implements Configurable, Dumpable
             default:
                 $req                                                                            = $_REQUEST;
         }
-        return (array) $req;
+        return $req;
     }
 
     /**

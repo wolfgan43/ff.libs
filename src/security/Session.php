@@ -28,8 +28,10 @@ namespace phpformsframework\libs\security;
 use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\Hook;
 use phpformsframework\libs\Kernel;
+use phpformsframework\libs\storage\FilemanagerFs;
 use phpformsframework\libs\util\ServerManager;
-use phpformsframework\libs\Exception;
+use Exception;
+use stdClass;
 
 /**
  * Class Session
@@ -40,7 +42,7 @@ class Session
     use ServerManager;
 
     private const ERROR_SESSION_INVALID                         = "Invalid Session";
-    private const ERROR_SESSION_HEADER_SENT                     = "Session header already sent";
+    private const ERROR_SESSION_HEADER_SENT                     = "Error: Session header already sent";
 
     private const COOKIE_EXPIRE                                 = 60 * 60 * 24 * 365;
 
@@ -56,6 +58,12 @@ class Session
     private $session_started                                    = false;
 
 
+    /**
+     * @param string|null $session_name
+     * @param string|null $session_path
+     * @return static
+     * @throws Exception
+     */
     public static function getInstance(string $session_name = null, string $session_path = null) : self
     {
         if (!isset(self::$singleton[$session_name . $session_path])) {
@@ -65,8 +73,83 @@ class Session
         return self::$singleton[$session_name . $session_path];
     }
 
+    /**
+     * @param string $session_id
+     * @return array|null
+     * @throws Exception
+     */
+    public static function load(string $session_id) : ?stdClass
+    {
+        $session_path = Kernel::$Environment::SESSION_SAVE_PATH ?? session_save_path() ?? sys_get_temp_dir();
+        if (empty($session_data = FilemanagerFs::fileGetContents($session_path . DIRECTORY_SEPARATOR . self::SESSION_PREFIX_FILE_LABEL . $session_id))) {
+            return null;
+        }
+
+        switch ($method = ini_get("session.serialize_handler")) {
+            case "php":
+                return self::phpUnserialize($session_data);
+            case "php_binary":
+                return self::phpBinaryUnserialize($session_data);
+            default:
+                throw new Exception("Unsupported session.serialize_handler: " . $method . ". Supported: php, php_binary");
+        }
+    }
+
+    /**
+     * @param string $session_data
+     * @return stdClass
+     * @throws Exception
+     */
+    private static function phpUnserialize(string $session_data) : stdClass
+    {
+        $return_data = [];
+        $offset = 0;
+        while ($offset < strlen($session_data)) {
+            if (!strstr(substr($session_data, $offset), "|")) {
+                throw new Exception("invalid data, remaining: " . substr($session_data, $offset));
+            }
+            $pos = strpos($session_data, "|", $offset);
+            $num = $pos - $offset;
+            $varname = substr($session_data, $offset, $num);
+            $offset += $num + 1;
+            $data = unserialize(substr($session_data, $offset));
+            $return_data[$varname] = $data;
+            $offset += strlen(serialize($data));
+        }
+        return (object) $return_data;
+    }
+
+    /**
+     * @param string $session_data
+     * @return stdClass
+     */
+    private static function phpBinaryUnserialize(string $session_data) : stdClass
+    {
+        $return_data = [];
+        $offset = 0;
+        while ($offset < strlen($session_data)) {
+            $num = ord($session_data[$offset]);
+            $offset += 1;
+            $varname = substr($session_data, $offset, $num);
+            $offset += $num;
+            $data = unserialize(substr($session_data, $offset));
+            $return_data[$varname] = $data;
+            $offset += strlen(serialize($data));
+        }
+        return (object) $return_data;
+    }
+
+    /**
+     * @param string|null $session_name
+     * @param string|null $session_path
+     * @throws Exception
+     */
     public function __construct(string $session_name = null, string $session_path = null)
     {
+        if (headers_sent()) {
+            die(self::ERROR_SESSION_HEADER_SENT);
+        }
+
         $this->setSessionName($session_name);
         $this->setSessionPath($session_path);
     }
@@ -75,14 +158,9 @@ class Session
      * @param bool|null $permanent
      * @param string|null $acl
      * @return DataResponse
-     * @throws Exception
      */
     public function create(bool $permanent = null, string $acl = null) : DataResponse
     {
-        if (headers_sent()) {
-            throw new Exception(self::ERROR_SESSION_HEADER_SENT, 500);
-        }
-
         $dataResponse                                           = new DataResponse();
         $invalid_session                                        = false;
         $permanent                                              = $permanent ?? Kernel::$Environment::SESSION_PERMANENT;
@@ -199,14 +277,9 @@ class Session
 
     /**
      * @return bool
-     * @throws Exception
      */
     private function checkSession() : bool
     {
-        if (headers_sent()) {
-            throw new Exception(self::ERROR_SESSION_HEADER_SENT, 500);
-        }
-
         $valid_session                                          = !empty($_COOKIE[$this->session_name]) && file_exists(rtrim($this->session_save_path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . self::SESSION_PREFIX_FILE_LABEL . $_COOKIE[$this->session_name]);
 
         Hook::handle("on_check_session", $valid_session, array("id" => $this->session_id, "name" => $this->session_name, "path" => $this->session_save_path));

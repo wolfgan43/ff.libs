@@ -552,7 +552,7 @@ class Validator
         }
         $base64Content                                                      = explode(",", $arrBase64[1]);
 
-        if ($base64Content[0] != "base64" || !self::isBase64(end($base64Content))) {
+        if ($base64Content[0] != "base64" || !ctype_print(end($base64Content))) {
             return self::getContextName() . self::ERROR_NO_BASE64;
         }
 

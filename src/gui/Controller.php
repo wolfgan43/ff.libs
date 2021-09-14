@@ -737,7 +737,7 @@ abstract class Controller
             throw new Exception(static::class . "::" . $this->method . ": response must be instanceOf DataAdapter", 500);
         }
 
-        Response::send($data, $headers);
+        Response::send($response, $headers);
     }
 
     /**

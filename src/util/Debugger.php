@@ -78,10 +78,11 @@ trait Debugger
     }
 
     /**
+     * @param array $backtrace
      * @return void
      */
-    private static function setBackTrace() : void
+    private static function setBackTrace(array $backtrace) : void
     {
-        Debug::setBackTrace(debug_backtrace());
+        Debug::setBackTrace($backtrace);
     }
 }

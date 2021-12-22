@@ -34,6 +34,7 @@
     position: relative;
     width: 100%;
     color: inherit;
+    margin-right: 1em;
 }
 
 .dataTable-table > tfoot > tr > th {
@@ -123,14 +124,24 @@
 .dataTable-pagination a:hover {
     background-color: #d9d9d9;
 }
+.dataTable-table .odd {
+    opacity: 0.7;
+}
 
-
-
-
-.dt-wrapper INPUT, .dt-wrapper SELECT, .dt-wrapper BUTTON, .dt-wrapper A, .dt-wrapper SPAN {
+.dt-component INPUT, .dt-component SELECT, .dt-component BUTTON, .dt-component A, .dt-component SPAN {
     padding: 0.6em;
 }
 
-.dataTable-table .odd {
-    opacity: 0.7;
+.dt-component {
+    padding: 1.5em;
+}
+
+.dt-header, .dt-footer {
+    display: flex;
+    justify-content: space-between;
+    margin: 1em;
+}
+
+.dt-description {
+    margin-left: 2em;
 }

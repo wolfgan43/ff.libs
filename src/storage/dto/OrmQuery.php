@@ -52,12 +52,19 @@ class OrmQuery
      */
     public function getController(string $controller = null) : ?string
     {
-        return ($this->service
-            ? $this->service
-            : $controller
-        );
+        return $this->service ?? $controller;
     }
 
+    /**
+     * @param bool $skipControl
+     * @return OrmDef
+     */
+    public function getDef(bool $skipControl) : OrmDef
+    {
+        $this->def->table["skip_control"] = $skipControl;
+
+        return $this->def;
+    }
     /**
      * @todo da tipizzare
      * @param string $key
@@ -124,14 +131,6 @@ class OrmQuery
             ? array_replace($this->where ?? [], $logical_fields[$this->table])
             : $this->where
         );
-    }
-
-    /**
-     * @param bool $skip
-     */
-    public function setControl(bool $skip = false) : void
-    {
-        $this->def->table["skip_control"] = $skip;
     }
 
     /**

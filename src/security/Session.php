@@ -30,7 +30,7 @@ use phpformsframework\libs\Hook;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\storage\FilemanagerFs;
 use phpformsframework\libs\util\ServerManager;
-use Exception;
+use phpformsframework\libs\Exception;
 use stdClass;
 
 /**
@@ -43,6 +43,11 @@ class Session
 
     private const ERROR_SESSION_INVALID                         = "Invalid Session";
     private const ERROR_SESSION_HEADER_SENT                     = "Error: Session header already sent";
+
+    private const HOOK_ON_BEFORE_CREATE                         = "Session::onBeforeCreate";
+    private const HOOK_ON_AFTER_CREATE                          = "Session::onAfterCreate";
+    private const HOOK_ON_AFTER_DESTROY                         = "Session::onAfterDestroy";
+    private const HOOK_ON_AFTER_CHECK                           = "Session::onAfterCheck";
 
     private const COOKIE_EXPIRE                                 = 60 * 60 * 24 * 365;
 
@@ -147,7 +152,7 @@ class Session
     public function __construct(string $session_name = null, string $session_path = null)
     {
         if (headers_sent()) {
-            die(self::ERROR_SESSION_HEADER_SENT);
+            throw new Exception(self::ERROR_SESSION_HEADER_SENT, 500);
         }
 
         $this->setSessionName($session_name);
@@ -166,7 +171,7 @@ class Session
         $permanent                                              = $permanent ?? Kernel::$Environment::SESSION_PERMANENT;
         $domain                                                 = $this->getPrimaryDomain();
 
-        Hook::handle("on_create_session", $invalid_session, array(
+        Hook::handle(self::HOOK_ON_BEFORE_CREATE, $invalid_session, array(
             "domain"    => $domain,
             "permanent" => $permanent
         ));
@@ -180,7 +185,7 @@ class Session
         $this->destroy();
         $this->sessionStart(true);
 
-        Hook::handle("on_created_session", $this->session_id);
+        Hook::handle(self::HOOK_ON_AFTER_CREATE, $this->session_id);
 
         /*
          * Set Cookie
@@ -208,7 +213,7 @@ class Session
         $this->cookieDestroy($this->session_name);
         $this->cookieDestroy(self::GROUP_LABEL);
 
-        Hook::handle("on_destroyed_session");
+        Hook::handle(self::HOOK_ON_AFTER_DESTROY);
     }
 
     /**
@@ -282,7 +287,7 @@ class Session
     {
         $valid_session                                          = !empty($_COOKIE[$this->session_name]) && file_exists(rtrim($this->session_save_path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . self::SESSION_PREFIX_FILE_LABEL . $_COOKIE[$this->session_name]);
 
-        Hook::handle("on_check_session", $valid_session, array("id" => $this->session_id, "name" => $this->session_name, "path" => $this->session_save_path));
+        Hook::handle(self::HOOK_ON_AFTER_CHECK, $valid_session, array("id" => $this->session_id, "name" => $this->session_name, "path" => $this->session_save_path));
 
         return $valid_session;
     }

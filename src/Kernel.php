@@ -30,11 +30,12 @@ use phpformsframework\libs\dto\RequestPage;
 /**
  * Class Kernel
  * @package phpformsframework\libs
- *
  */
 class Kernel
 {
-    const NAME_SPACE                 = __NAMESPACE__ . '\\';
+    const NAME_SPACE                = __NAMESPACE__ . '\\';
+
+    private const HOOK_ON_BEFORE_RUN= "App::beforeRun";
 
     private static $use_cache       = true;
     /**
@@ -109,13 +110,9 @@ class Kernel
 
         Request::set(self::$Page)->capture();
 
-        if (Env::get("REQUEST_SECURITY_LEVEL")) {
-            Hook::handle("on_app_run", $this);
-        }
+        Hook::handle(self::HOOK_ON_BEFORE_RUN, $this);
 
         self::useCache(!self::$Page->nocache);
-
-        self::$Page->onLoad();
 
         Router::run(self::$Page->script_path . self::$Page->path_info);
     }

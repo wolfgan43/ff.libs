@@ -1,11 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <configdata>
-    <env>
-        <REQUEST_SECURITY_LEVEL value="1" />
-    </env>
     <hooks>
-        <hook name="on_app_run" obj="\phpformsframework\libs\security\Buckler" method="antiVulnerabilityScanner" />
+        <hook name="App::beforeRun" obj="\phpformsframework\libs\security\Buckler" method="antiVulnerabilityScanner" />
+        <hook name="App::beforeRun" obj="\phpformsframework\libs\security\Buckler" method="onPageLoad" />
     </hooks>
+    <env>
+        <CONTENT_TYPE_OPTIONS           value="nosniff" />
+        <XSS_PROTECTION                 value="1; mode=block" />
+        <ACCESS_CONTROL_ALLOW_HEADERS   value="DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,content-type" />
+        <STRICT_TRANSPORT_SECURITY      value="max-age=31536000; includeSubDomains" />
+        <FRAME_OPTIONS                  value="sameorigin" />
+        <REFERRER_POLICY                value="origin-when-cross-origin" />
+        <EXPECT_CT                      value="max-age=7776000, enforce" />
+        <CONTENT_SECURITY_POLICY        value="default-src 'none'; script-src 'self'; connect-src 'self'; img-src 'self'; style-src 'self';" />
+        <PERMISSIONS_POLICY             value="geolocation=(), midi=(),sync-xhr=(),accelerometer=(), gyroscope=(), magnetometer=(), camera=(), fullscreen=(self)" />
+    </env>
     <badpath>
         <rule source="^/cache*"                         destination="404"       />
         <rule source="^/uploads*"                       destination="404"       />

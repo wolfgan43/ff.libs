@@ -49,6 +49,7 @@ class ViewHtml implements ViewAdapter
 
     protected const APPLET                      = '/\{\[(.+)\]\}/U';
 
+    private const HOOK_ON_FETCH_CONTENT         = 'View::onFetchContent';
     private const TPL_NORMALIZE                 = ['../', '.tpl'];
 
     //private static $cache                       = null;
@@ -157,7 +158,7 @@ class ViewHtml implements ViewAdapter
             $this->root_element = $res["root_element"];
         }
 
-        Hook::handle("on_loaded_data", $this);
+        Hook::handle(self::HOOK_ON_FETCH_CONTENT, $this);
 
         Debug::stopWatch("tpl/" . $tpl_name);
     }
@@ -184,7 +185,7 @@ class ViewHtml implements ViewAdapter
             $nName = $this->nextDBlockName($this->root_element);
         }
 
-        Hook::handle("on_loaded_data", $this);
+        Hook::handle(self::HOOK_ON_FETCH_CONTENT, $this);
     }
 
     /**

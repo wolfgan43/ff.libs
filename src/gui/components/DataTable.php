@@ -29,8 +29,8 @@ use phpformsframework\libs\dto\DataHtml;
 use phpformsframework\libs\dto\DataTableResponse;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Kernel;
+use phpformsframework\libs\microservice\adapters\ApiJsonWsp;
 use phpformsframework\libs\storage\dto\OrmResults;
-use phpformsframework\libs\storage\dto\Schema;
 use phpformsframework\libs\storage\Model;
 use phpformsframework\libs\Exception;
 
@@ -43,6 +43,7 @@ class DataTable
     /**
      * Token Class
      */
+    private const DIR                   = ["asc" => "asc", "desc" => "desc", 0 => "asc", 1 => "desc", null => "asc"];
     private const RDIR                  = ["asc" => "desc", "desc" => "asc", null => "asc"];
 
     private const TC_SORT               = "sort";
@@ -58,56 +59,89 @@ class DataTable
 
     private const TC_ERROR              = "cm-error";
     private const TC_XHR                = "cm-xhr";
+    private const TC_MODAL              = "cm-modal";
 
     private const DEFAULT_SORT          = "0";
     private const DEFAULT_SORT_DIR      = "asc";
 
     private const RECORD_LIMIT          = 25;
 
+    protected const RECORD_KEY          = "id";
+
     protected const CONVERT_BY_TYPE     = [
-                                            "image"         => [
+                                            "image"     => [
                                                 "callback"  => "imageTag",
                                                 "width"     => 100,
                                                 "height"    => 100,
+                                                "default"   => "noimg"
                                             ],
-                                            "datetime"      => [],
-                                            "date"          => [],
-                                            "time"          => [],
-                                            "week"          => [],
-                                            "currency"      => []
+                                            "datetime"  => [],
+                                            "date"      => [],
+                                            "time"      => [],
+                                            "week"      => [],
+                                            "currency"  => []
                                         ];
+    protected const BUTTONS             = [
+                                            "addnew"    => [
+                                                "type"          => Button::TYPE_PRIMARY,
+                                                "label"         => "AddNew",
+                                                "icon"          => "fa fa-plus"
+                                            ],
+                                            "modify"    => [
+                                                "placeholder"   => "Modify",
+                                                "icon"          => "fa fa-pencil-alt"
+                                            ],
+                                            "delete"    => [
+                                                "placeholder"   => "Delete",
+                                                "icon"          => "fa fa-trash"
+                                            ]
+                                        ];
+
     protected const TEMPLATE_CLASS      = [];
 
     protected const CSS                 = [
-        "cm.dataTable"
-    ];
+                                            "cm.dataTable"
+                                        ];
 
     protected const JS                  = [
-        "cm.dataTable"
-    ];
+                                            "cm.dataTable"
+                                        ];
 
+    private const DATA_SOURCE_ORM       = "orm";
+    private const DATA_SOURCE_API       = "api";
+    private const DATA_SOURCE_ARRAY     = "array";
+    private const DATA_SOURCE_SQL       = "sql";
+    private const DATA_SOURCE_NOSQL     = "nosql";
 
-    public $template                    = '[TITLE]
+    public $template                    = '
+                                            <div class="dt-header"> 
+                                                [TITLE][ACTION_HEADER]
+                                            </div>
                                             [DESCRIPTION]
-                                            [ERROR]
-                                            [ACTIONS]
-                                            <div class="dataTable-wrapper">
-                                                <div class="dataTable-top">
-                                                    [LENGTH]
-                                                    [SEARCH]
+                                            <div class="dt-body">
+                                                [ERROR]
+                                                <div class="dataTable-wrapper">
+                                                    <div class="dataTable-top">
+                                                        [LENGTH]
+                                                        [SEARCH]
+                                                    </div>
+                                                    <div class="dataTable-container">
+                                                        <table class="table dataTable-table">
+                                                            [THEAD]
+                                                            [TBODY]
+                                                            [TFOOT]
+                                                        </table>
+                                                    </div>
+                                                    <div class="dataTable-bottom">
+                                                        [PAGINATE_INFO]
+                                                        [PAGINATE]
+                                                    </div>
                                                 </div>
-                                                <div class="dataTable-container">
-                                                    <table class="table dataTable-table">
-                                                        [THEAD]
-                                                        [TBODY]
-                                                        [TFOOT]
-                                                    </table>
-                                                </div>
-                                                <div class="dataTable-bottom">
-                                                    [PAGINATE_INFO]
-                                                    [PAGINATE]
-                                                </div>
-                                            </div>';
+                                            </div>
+                                            <div class="dt-footer">
+                                                [FOOTER][ACTION_FOOTER]
+                                            </div>
+                                           ';
 
     public $displayTableHead            = true;
     public $displayTableFoot            = false;
@@ -122,46 +156,54 @@ class DataTable
     public $xhr                         = false;
 
     public $lengths                     = [10, 25, 50];
-    public $title                       = null;
-    public $description                 = null;
+
+    private $title                      = null;
+    private $description                = null;
     public $error                       = null;
-    public $actions                     = [];
 
     /**
-     * @var OrmResults
+     * @var DataTableResponse
      */
-    public $dataTable                   = null;
+    protected $dataTable                = null;
 
     protected $id                       = null;
-    /**
-     * @var Model
-     */
-    private $db                         = null;
-    private $dtd                        = null;
-    /**
-     * @var Schema
-     */
-    protected $schema                   = null;
+    protected $columns                  = [];
+    protected $properties               = [];
+    protected $dtd                      = null;
 
-    private $page                       = null;
+    /**
+     * @var Button[]
+     */
+    private $buttonsHeader              = [];
+    /**
+     * @var Button[]
+     */
+    private $buttonsRecord              = [];
+    /**
+     * @var Button[]
+     */
+    private $buttonsFooter              = [];
+
+    protected $draw                     = null;
     protected $start                    = null;
     protected $length                   = null;
-    protected $records                  = null;
-    private $records_total              = null;
-    protected $columns                  = null;
-    private $pages                      = null;
+    protected $records_filtered         = null;
+    protected $records_total            = null;
     protected $search                   = null;
     protected $sort                     = null;
 
-    private $query                      = null;
-    private $draw                       = null;
+    private $request                    = null;
+    private $pages                      = null;
+    private $page                       = null;
 
     protected $style                    = [];
     protected $js_embed                 = null;
 
-    public $record_url                  = null;
-    public $record_key                  = null;
+    protected $record_url               = null;
+    protected $record_key               = null;
 
+    private $dataSource                 = self::DATA_SOURCE_ARRAY;
+    private $records                    = [];
     /**
      * @param string $model
      * @return DataTableResponse
@@ -169,27 +211,249 @@ class DataTable
      */
     public static function xhr(string $model): DataTableResponse
     {
-        $dt = new static($model);
+        $dt = new static();
 
-        return $dt->read()->toDataTableResponse($dt->draw, $dt->records_total);
+        $component = explode(":", $model, 2);
+
+        $dt->id = $component[0];
+        if(!empty($component[1])) {
+            $dt->dataSource = $component[1];
+        }
+
+        return $dt->dataTable();
+    }
+
+    public function sourceOrm(string $model) : self
+    {
+        $this->dataSource               = self::DATA_SOURCE_ORM;
+        $this->id                       = $model;
+
+        return $this;
+    }
+
+    public function sourceApi(string $model) : self
+    {
+        $this->dataSource               = self::DATA_SOURCE_API;
+        $this->id                       = $model;
+
+        return $this;
+    }
+
+    public function sourceArray(array $data) : self
+    {
+        /**
+         * @todo da definire il funzionamento
+         */
+
+        $this->dataSource               = self::DATA_SOURCE_ARRAY;
+        $this->records                  = $data;
+
+        return $this;
+    }
+    public function sourceSql(string $query) : self
+    {
+        /**
+         * @todo da definire il funzionamento
+         */
+        $this->dataSource               = self::DATA_SOURCE_SQL;
+        $this->id                       = null;
+
+        return $this;
+    }
+    public function sourceNoSql(array $query) : self
+    {
+        /**
+         * @todo da definire il funzionamento
+         */
+        $this->dataSource               = self::DATA_SOURCE_NOSQL;
+        $this->id                       = null;
+
+        return $this;
     }
 
     /**
-     * DataTable constructor.
-     * @param string $model
-     * @param string|null $view
+     * @return DataHtml
+     * @throws Exception
      */
-    public function __construct(string $model, string $view = null)
+    public function display() : DataHtml
     {
-        $this->query                    = Kernel::$Page->getRequest();
-        $this->db                       = new Model($model, $view);
-        $this->dtd                      = $this->db->dtdStore();
-        $this->schema                   = $this->db->schema(static::CONVERT_BY_TYPE);
-        $this->id                       = static::class . ":" . $this->schema->id;
+        $this->dataTable                = $this->dataTable();
 
-        $request                        = (object)$this->query;
+        $this->pages                    = ceil($this->records_filtered / $this->length);
+        $this->page                     = floor($this->start / $this->length) + 1;
+
+        return new DataHtml($this->toArray());
+    }
+
+    public function displayAddNew(bool $show = true) : ?Button
+    {
+        return $this->setButton($this->buttonsHeader, $show, "addnew");
+    }
+    public function displayEdit(bool $show = true) : ?Button
+    {
+        return $this->setButton($this->buttonsRecord, $show, "modify");
+    }
+
+    public function displayDelete(bool $show = true) : ?Button
+    {
+        return $this->setButton($this->buttonsRecord, $show, "delete");
+    }
+
+    /**
+     * @param string $title
+     * @param bool $translate
+     * @param bool $encode
+     * @return $this
+     * @throws Exception
+     */
+    public function title(string $title, bool $translate = true, bool $encode = false) : self
+    {
+        $this->title = $title;
+        return $this->setPropertyHtml($this->title, $translate, $encode);
+    }
+
+    /**
+     * @param string $description
+     * @param bool $translate
+     * @param bool $encode
+     * @return $this
+     * @throws Exception
+     */
+    public function description(string $description, bool $translate = true, bool $encode = false) : self
+    {
+        $this->description = $description;
+        return $this->setPropertyHtml($this->description, $translate, $encode);
+    }
+
+    public function record(string $key, bool $modal = null, string $url = null) : self
+    {
+        $this->record_key       = $key;
+        if ($url) {
+            $this->record_url   = $url . DIRECTORY_SEPARATOR;
+        }
+
+        $addnew = $this->setButton($this->buttonsHeader, true, "addnew")
+            ->url($this->record_url . "addnew");
+        $modify = $this->setButton($this->buttonsRecord, true, "modify")
+            ->url($this->record_url . "modify");
+
+        if ($modal === true) {
+            $addnew->ajaxModal();
+            $modify->ajaxModal();
+        } elseif ($modal === false) {
+            $addnew->ajaxNone();
+            $modify->ajaxNone();
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param string $property
+     * @param bool $translate
+     * @param bool $encode
+     * @return $this
+     * @throws Exception
+     */
+    private function setPropertyHtml(string &$property, bool $translate = true, bool $encode = false) : self
+    {
+        if ($translate) {
+            $property               = Translator::getWordByCode($property);
+        }
+        if ($encode) {
+            $property               = htmlspecialchars($property);
+        }
+        return $this;
+    }
+
+    /**
+     * @param array $actions
+     * @param bool $display
+     * @param string $id
+     * @return Button|null
+     */
+    private function setButton(array &$actions, bool $display, string $id) : ?Button
+    {
+        if ($display) {
+            return $actions[$id] ?? ($actions[$id] = Button::create($id, static::BUTTONS[$id]));
+        } else {
+            unset($actions[$id]);
+        }
+
+        return null;
+    }
+
+    /**
+     * @param string $name
+     * @param string|null $type
+     * @param string|null $jsCallback
+     * @return Button
+     */
+    public function addButtonHeader(string $name, string $type = null, string $jsCallback = null) : Button
+    {
+        $this->addButton($this->buttonsHeader, $name, $type, $jsCallback);
+
+        return $this->buttonsHeader[$name];
+    }
+
+    /**
+     * @param string $name
+     * @param string|null $type
+     * @param string|null $jsCallback
+     * @return Button
+     */
+    public function addButtonRecord(string $name, string $type = null, string $jsCallback = null) : Button
+    {
+        $this->addButton($this->buttonsRecord, $name, $type, $jsCallback);
+
+        return $this->buttonsRecord[$name];
+    }
+
+    /**
+     * @param string $name
+     * @param string|null $type
+     * @param string|null $jsCallback
+     * @return Button
+     */
+    public function addButtonFooter(string $name, string $type = null, string $jsCallback = null) : Button
+    {
+        $this->addButton($this->buttonsFooter, $name, $type, $jsCallback);
+
+        return $this->buttonsFooter[$name];
+    }
+
+    /**
+     * @param array $buttons
+     * @param string $id
+     * @param string|null $type
+     * @param string|null $jsCallback
+     */
+    private function addButton(array &$buttons, string $id, string $type = null, string $jsCallback = null)
+    {
+        $buttons[$id] = Button::$type($id, $jsCallback);
+    }
+
+    /**
+     * @return string
+     */
+    protected function getName() : string
+    {
+        return static::class . ":" . $this->id . ":" . $this->dataSource;
+    }
+
+    /**
+     * @return DataTableResponse
+     * @throws Exception
+     */
+    protected function dataTable() : DataTableResponse
+    {
+        $this->request                  = Kernel::$Page->getRequest();
+
+        $request                        = (object)$this->request;
         $this->draw                     = $request->draw ?? 1;
-
+        if (isset($request->key)) {
+            $this->record_key           = $request->key;
+        }
         if (isset($request->search)) {
             $this->search               = $request->search["value"] ?? $request->search;
         }
@@ -202,57 +466,115 @@ class DataTable
         }
         $this->start                    = (int)($request->start ?? ($this->length * (((int)($request->page ?? 1)) - 1)));
         if ($this->start < 0) {
-            $this->start = 0;
+            $this->start                = 0;
+        }
+
+        return $this->dataSource();
+    }
+
+    private function dataSource() : dataTableResponse
+    {
+        switch ($this->dataSource) {
+            case self::DATA_SOURCE_ORM:
+                return $this->ormSource();
+            case self::DATA_SOURCE_API:
+                return $this->apiSource();
+            case self::DATA_SOURCE_ARRAY:
+                return $this->arraySource();
+            case self::DATA_SOURCE_SQL:
+                return $this->sqlSource();
+            case self::DATA_SOURCE_NOSQL:
+                return $this->nosqlSource();
+            default:
+                throw new Exception("dataTable source type: " . $this->dataSource . " not implemented", 501);
         }
     }
 
-    /**
-     * @return DataHtml
-     * @throws Exception
-     */
-    public function display() : DataHtml
+    private function ormSource() : DataTableResponse
     {
-        $this->dataTable                = $this->read();
+        $db                             = new Model($this->id);
 
-        $this->pages                    = ceil($this->records / $this->length);
-        $this->page                     = floor($this->start / $this->length) + 1;
+        $schema                         = $db->schema(static::CONVERT_BY_TYPE);
+        $this->columns                  = $schema->columns;
+        $this->properties               = $schema->properties;
+        $this->dtd                      = $db->dtd();
 
-        return new DataHtml($this->toArray());
-    }
-
-    /**
-     * @return OrmResults
-     * @throws Exception
-     */
-    private function read(): OrmResults
-    {
         $where = null;
         $sort = null;
 
         if ($this->search) {
-            $where = ['$or' => array_fill_keys($this->schema->columns, ['$regex' => "*" . $this->search . "*"])];
+            $where = ['$or' => array_fill_keys($this->columns, ['$regex' => "*" . $this->search . "*"])];
         }
 
         foreach ($this->sort as $i => $dir) {
-            if (isset($this->schema->columns[$i])) {
-                $sort[$this->schema->columns[$i]] = $dir;
+            if (isset($this->columns[$i])) {
+                $sort[$this->columns[$i]] = $dir;
             }
         }
 
         if (!$sort) {
             $this->sort[self::DEFAULT_SORT] = self::DEFAULT_SORT_DIR;
-            $sort[$this->schema->columns[self::DEFAULT_SORT]] = self::DEFAULT_SORT_DIR;
+            $sort[$this->columns[self::DEFAULT_SORT]] = self::DEFAULT_SORT_DIR;
         }
-        $records = $this->db->read($where, $sort, $this->length, $this->start);
+        $records = $db->read($where, $sort, $this->length, $this->start);
 
-        $this->records = $records->countTotal();
+        $this->records_filtered = $records->countTotal();
         $this->records_total = (
-            empty($this->search)
-            ? $this->records
-            : $this->db->count()
+            !empty($this->search)
+            ? $db->count()
+            : $this->records_filtered
         );
 
-        return $records;
+        return $records->toDataTable(function (OrmResults $results, DataTableResponse $dataTableResponse) {
+            $dataTableResponse->draw                = $this->draw + 1;
+            $dataTableResponse->columns             = $this->columns;
+            $dataTableResponse->properties          = $this->properties;
+            if ($dataTableResponse->recordsFiltered) {
+                $dataTableResponse->recordsTotal    = $this->search ? $this->records_total : null;
+
+                if (!empty($this->key)) {
+                    $dataTableResponse->keys        = $results->keys($this->record_key);
+                }
+            }
+        });
+    }
+
+    /**
+     * @return DataTableResponse
+     * @throws Exception
+     */
+    protected function apiSource() : DataTableResponse
+    {
+        $response               = (new ApiJsonWsp($this->id))->send($this->search);
+        if (!$response instanceof DataTableResponse) {
+            throw new Exception($this->id . ":apiSource require DataTableResponse", 501);
+        }
+
+        $this->columns          = $response->columns();
+        $this->properties       = $response->properties;
+        $this->dtd              = null;
+        $this->records_filtered = $response->recordsFiltered;
+        $this->records_total    = (
+            !empty($this->search)
+            ? $response->recordsTotal
+            : $this->records_filtered
+        );
+
+        return $response;
+    }
+
+    private function arraySource() : DataTableResponse
+    {
+        return new DataTableResponse($this->records);
+    }
+    private function sqlSource() : DataTableResponse
+    {
+
+    }
+
+    private function nosqlSource() : DataTableResponse
+    {
+
     }
 
     /**
@@ -298,42 +620,61 @@ class DataTable
      */
     protected function html() : string
     {
-        return $this->setClass('<div id="' . $this->id . '" class="dt-wrapper' . $this->xhrClass() . '">' .
+        return $this->setClass('<div id="' . $this->getName() . '" class="dt-component' . $this->xhrClass() . '">' .
             str_replace(
                 [
                     "[TITLE]",
                     "[DESCRIPTION]",
                     "[ERROR]",
-                    "[ACTIONS]",
+                    "[ACTION_HEADER]",
                     "[LENGTH]",
                     "[SEARCH]",
                     "[THEAD]",
                     "[TBODY]",
                     "[TFOOT]",
                     "[PAGINATE]",
-                    "[PAGINATE_INFO]"
+                    "[PAGINATE_INFO]",
+                    "[FOOTER]",
+                    "[ACTION_FOOTER]",
                 ],
                 [
-                    $this->title(),
-                    $this->description(),
+                    $this->parseTitle(),
+                    $this->parseDescription(),
                     $this->error(),
-                    $this->actions(),
+                    $this->actions($this->buttonsHeader),
                     $this->tableLength(),
                     $this->tableSearch(),
                     $this->tableHead(),
                     $this->tableBody(),
                     $this->tableFoot(),
                     $this->tablePaginate(),
-                    $this->tablePaginateInfo()
+                    $this->tablePaginateInfo(),
+                    $this->footer(),
+                    $this->actions($this->buttonsFooter),
                 ],
                 $this->template
-            ) . '</div>');
+            ) . $this->jsTpl() . '</div>');
     }
 
     /**
      * @return string|null
      */
-    private function title() : ?string
+    private function jsTpl() : ?string
+    {
+        $tpl = null;
+        foreach ($this->buttonsRecord as $button) {
+            $tpl .= $button->displayTpl($this->xhr);
+        }
+
+        return ($tpl
+            ? '<script class="dt-btn" type="text/x-template">' . $tpl . '</script>'
+            : null
+        );
+    }
+    /**
+     * @return string|null
+     */
+    private function parseTitle() : ?string
     {
         return ($this->title
             ? '<h3 class="dt-title">' . $this->title . '</h3>'
@@ -344,9 +685,9 @@ class DataTable
     /**
      * @return string|null
      */
-    private function description() : ?string
+    private function parseDescription() : ?string
     {
-        return ($this->title
+        return ($this->description
             ? '<p class="dt-description">' . $this->description . '</p>'
             : null
         );
@@ -361,19 +702,21 @@ class DataTable
     }
 
     /**
+     * @param Button[] $buttons
      * @return string|null
      */
-    private function actions() : ?string
+    private function actions(array $buttons) : ?string
     {
-        $actions = null;
-        foreach ($this->actions as $key => $action) {
-            $actions .= '<a href="' . $action["url"] . '" class="dbt-' . $key . ($action["xhr"] ? " " . self::TC_XHR : "") . '">' . $action["label"] . '</a>';
-        }
-
+        $actions = $this->buttons($buttons);
         return ($actions
-            ? '<div class="dt-actions">' . $actions . '</div>'
+            ? '<div class="dt-action">' . $actions . '</div>'
             : null
         );
+    }
+
+    private function footer() : ?string
+    {
+        return null;
     }
 
     /**
@@ -424,17 +767,32 @@ class DataTable
         );
     }
 
+    private function parseRecordAttr() : ?string
+    {
+        $record = null;
+        if ($this->xhr) {
+            if ($this->record_key) {
+                $record .= ' data-key="' . ($this->record_key ?? static::RECORD_KEY) . '"';
+            }
+            if ($this->record_url) {
+                $record .= ' data-url="' . $this->record_url . '"';
+            }
+        }
+
+        return $record;
+    }
+
     /**
      * @return string
      * @throws Exception
      */
     private function tableBody() : string
     {
-        return '<tbody' . ($this->xhr && $this->record_url ? ' data-url="' . $this->record_url . '"' : null) . '>'
+        return '<tbody' . $this->parseRecordAttr() . '>'
             . (
-                $this->records && $this->start <= $this->records
+                $this->records_filtered && $this->start <= $this->records_filtered
                 ? $this->tableRows()
-                : '<tr><td class="dt-empty" colspan="' . count($this->schema->columns) . '">' . Translator::getWordByCode("No matching records found") . '</td></tr>'
+                : '<tr><td class="dt-empty" colspan="' . count($this->columns) . '">' . Translator::getWordByCode("No matching records found") . '</td></tr>'
             )
             . '</tbody>';
     }
@@ -497,25 +855,25 @@ class DataTable
      */
     private function tablePaginateInfo() : ?string
     {
-        if ($this->start > $this->records || !$this->records) {
+        if ($this->start > $this->records_filtered || !$this->records_filtered) {
             $start = 0;
             $length = 0;
         } else {
             $length = (
-                $this->start + $this->length > $this->records
-                ? $this->records
+                $this->start + $this->length > $this->records_filtered
+                ? $this->records_filtered
                 : $this->start + $this->length
             );
             $start = $this->start + 1;
         }
 
         $total = (
-            $this->records != $this->records_total
+            $this->records_filtered != $this->records_total
             ? ' (' . Translator::getWordByCode("filtered from") . ' '  . $this->records_total . ' ' . Translator::getWordByCode("total entries") . ')'
             : null
         );
         return ($this->displayTablePaginateInfo
-            ? '<div class="dataTable-info">' . Translator::getWordByCode("Showing") . ' ' . $start . ' ' . Translator::getWordByCode("to") . ' ' . $length . ' ' . Translator::getWordByCode("of") . ' ' . $this->records . ' ' . Translator::getWordByCode("entries") . $total . '</div>'
+            ? '<div class="dataTable-info">' . Translator::getWordByCode("Showing") . ' ' . $start . ' ' . Translator::getWordByCode("to") . ' ' . $length . ' ' . Translator::getWordByCode("of") . ' ' . $this->records_filtered . ' ' . Translator::getWordByCode("entries") . $total . '</div>'
             : null
         );
     }
@@ -527,15 +885,29 @@ class DataTable
     private function tableColumns() : string
     {
         $columns = null;
-        foreach ($this->schema->columns as $i => $column) {
-            if ($this->displayTableSort) {
-                $class  = (isset($this->sort[$i]) ? ' class="dataTable-sorter ' . $this->sort[$i] . '"' : null);
-                $dir    = self::RDIR[$this->sort[$i] ?? null];
+        if (empty($this->sort)) {
+            $this->sort[self::DEFAULT_SORT] = self::DEFAULT_SORT_DIR;
+        }
 
-                $columns .= '<th data-id="' . $column . '"' . $class . '><a href="' . $this->getUrl(self::TC_SORT, [$i => $dir]) . '">' . ($this->schema->properties[$column]["label"] ?? Translator::getWordByCode($column)) . '</a></th>';
+        foreach ($this->columns as $i => $column) {
+            if ($this->displayTableSort) {
+                if (isset($this->sort[$i])) {
+                    $dir = self::DIR[$this->sort[$i]] ?? self::DEFAULT_SORT_DIR;
+                    $rdir = self::RDIR[$dir];
+                    $class  = ' class="dataTable-sorter ' . $dir . '"';
+                } else {
+                    $rdir = self::DEFAULT_SORT_DIR;
+                    $class = null;
+                }
+
+                $columns .= '<th data-id="' . $column . '"' . $class . '><a href="' . $this->getUrl(self::TC_SORT, [$i => $rdir]) . '">' . ($this->properties->$column["label"] ?? Translator::getWordByCode($column)) . '</a></th>';
             } else {
                 $columns .= '<th>' . $column . '</th>';
             }
+        }
+
+        if (!empty($this->buttonsRecord)) {
+            $columns .= '<th class="actions">' . '</th>';
         }
 
         return '<tr>' . $columns . '</tr>';
@@ -547,12 +919,46 @@ class DataTable
     private function tableRows() : ?string
     {
         $rows = null;
-        foreach ($this->dataTable->getAllArray() as $i => $record) {
-            $rows .= '<tr' . $this->setModify($i) . ' class="' . ($i % 2 == 0 ? self::TC_ODD : self::TC_EVEN) . (isset($this->sort[$i]) ? ' ' . self::TC_SORT : null) . '">' . $this->tableRow($record) . '</tr>';
+        foreach ($this->dataTable->toArray() as $i => $record) {
+            $rows .= '<tr' . $this->setModify($i) . ' class="' . ($i % 2 == 0 ? self::TC_ODD : self::TC_EVEN) . (isset($this->sort[$i]) ? ' ' . self::TC_SORT : null) . '">' . $this->tableRow($record) . $this->tableActions($i) . '</tr>';
         }
 
         return $rows;
     }
+
+    /**
+     * @param int $i
+     * @return string|null
+     */
+    private function tableActions(int $i) : ?string
+    {
+        $params = [];
+        if ($this->record_key && isset($this->dataTable->keys[$i])) {
+            $params[$this->record_key] = $this->dataTable->keys[$i];
+        }
+
+        $actions = $this->buttons($this->buttonsRecord, $params);
+        return ($actions
+            ? '<td>' . $actions . '</td>'
+            : null
+        );
+    }
+
+    /**
+     * @param Button[] $buttons
+     * @param array $params
+     * @return string|null
+     */
+    private function buttons(array $buttons, array $params = []) : ?string
+    {
+        $actions = null;
+        foreach ($buttons as $button) {
+            $actions .= $button->display($params, $this->xhr);
+        }
+
+        return $actions;
+    }
+
 
     /**
      * @param array $record
@@ -563,8 +969,10 @@ class DataTable
         $row = null;
         $i = 0;
         foreach ($record as $field => $value) {
-            $row .= '<td' . $this->tableRowClass($field, $i) . '>' . $value . '</td>';
-            $i++;
+            if (in_array($field, $this->columns)) {
+                $row .= '<td' . $this->tableRowClass($field, $i) . '>' . $value . '</td>';
+                $i++;
+            }
         }
 
         return $row;
@@ -577,7 +985,7 @@ class DataTable
      */
     private function tableRowClass(string $field, int $i) : ?string
     {
-        $class = trim(($this->dtd->$field != "string" ? $this->dtd->$field : null) . (isset($this->sort[$i]) ? ' ' . self::TC_SORT : null));
+        $class = trim((isset($this->dtd->$field) && $this->dtd->$field != "string" ? $this->dtd->$field : null) . (isset($this->sort[$i]) ? ' ' . self::TC_SORT : null));
 
         return ($class
             ? ' class="' . $class . '"'
@@ -585,10 +993,10 @@ class DataTable
         );
     }
 
-    private function setModify(int $index) : ?string
+    private function setModify(int $i) : ?string
     {
-        return ($this->record_url
-            ? ' data-key="' . $this->dataTable->key($index) . '"'
+        return ($this->record_key && !empty($this->dataTable->keys[$i])
+            ? ' data-id="' . $this->dataTable->keys[$i] . '"'
             : null
         );
     }
@@ -601,9 +1009,9 @@ class DataTable
      */
     private function getUrl(string $name, $value) : string
     {
-        $query          = $this->query;
-        $query[$name]   = $value;
+        $request        = $this->request;
+        $request[$name] = $value;
 
-        return "?" . http_build_query(array_filter($query));
+        return "?" . http_build_query(array_filter($request));
     }
 }

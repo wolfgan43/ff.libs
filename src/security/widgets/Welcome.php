@@ -44,7 +44,7 @@ class Welcome extends Widget
     {
         $view       = $this->view("index");
         $config     = $view->getConfig();
-        $this->displayUser($view, $config);
+        $this->displayUser($view);
         $this->setLogo($view, $config);
     }
 

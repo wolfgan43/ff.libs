@@ -294,14 +294,18 @@ class DataAdapter extends Mappable
      */
     public function setDateTime(Data $oData, string $value) : void
     {
-        $date                       = new DateTime($value);
-        $oData->value_date_day      = $date->format("d");
-        $oData->value_date_month    = $date->format("m");
-        $oData->value_date_year     = $date->format("Y");
+        try {
+            $date                       = $this->dateTime($value);
+            $oData->value_date_day      = $date->format("d");
+            $oData->value_date_month    = $date->format("m");
+            $oData->value_date_year     = $date->format("Y");
 
-        $oData->value_date_hours    = $date->format("H");
-        $oData->value_date_minutes  = $date->format("i");
-        $oData->value_date_seconds  = $date->format("s");
+            $oData->value_date_hours    = $date->format("H");
+            $oData->value_date_minutes  = $date->format("i");
+            $oData->value_date_seconds  = $date->format("s");
+        } catch (Exception $e) {
+            $this->sendError($value, "dateTime");
+        }
     }
 
     /**
@@ -311,10 +315,14 @@ class DataAdapter extends Mappable
      */
     public function setDate(Data $oData, string $value) : void
     {
-        $date                       = new DateTime($value);
-        $oData->value_date_day      = $date->format("d");
-        $oData->value_date_month    = $date->format("m");
-        $oData->value_date_year     = $date->format("Y");
+        try {
+            $date                       = $this->dateTime($value);
+            $oData->value_date_day      = $date->format("d");
+            $oData->value_date_month    = $date->format("m");
+            $oData->value_date_year     = $date->format("Y");
+        } catch (Exception $e) {
+            $this->sendError($value, "date");
+        }
     }
 
     /**
@@ -324,10 +332,14 @@ class DataAdapter extends Mappable
      */
     public function setTime(Data $oData, string $value) : void
     {
-        $date                       = new DateTime($value);
-        $oData->value_date_hours    = $date->format("H");
-        $oData->value_date_minutes  = $date->format("i");
-        $oData->value_date_seconds  = $date->format("s");
+        try {
+            $date                       = $this->dateTime($value);
+            $oData->value_date_hours    = $date->format("H");
+            $oData->value_date_minutes  = $date->format("i");
+            $oData->value_date_seconds  = $date->format("s");
+        } catch (Exception $e) {
+            $this->sendError($value, "time");
+        }
     }
 
     /**
@@ -457,6 +469,22 @@ class DataAdapter extends Mappable
         } else {
             $this->sendError($value, "timetosec");
         }
+    }
+
+    /**
+     * @param string $value
+     * @return DateTime
+     * @throws Exception
+     */
+    private function dateTime(string $value) : DateTime
+    {
+        if (is_numeric($value)) {
+            $date                       = new DateTime();
+            $date->setTimestamp($value);
+        } else {
+            $date                       = new DateTime($value);
+        }
+        return $date;
     }
 
     /**

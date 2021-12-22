@@ -44,12 +44,21 @@ class Validator
     private const MEMORY_LIMIT_REQUEST                      = 11;
     private const MEMORY_LIMIT_BASE64                       = 4;
     private const REQUEST_LIMIT                             = 1024000000;    //1024MB
-    private const SPELL_CHECK                               = array("''", '""', '\\"', '\\', '../', './', 'file://');
+    private const SPELL_CHECK                               = array("''", '""', '\\"', '\\\\', '../', './', 'file://');
+    private const SPELL_CHECK_TEXT                          = array('\\"', '\\\\', '../', './', 'file://');
     private const RULES                                     = array(
                                                                 "bool"              => array(
                                                                     "filter"        => FILTER_VALIDATE_BOOLEAN,
                                                                     "flags"         => FILTER_NULL_ON_FAILURE,
                                                                     "options"       => array("default" => false),
+                                                                    "normalize"     => true,
+                                                                    "length"        => 1
+                                                                ),
+                                                                "boolean"           => array(
+                                                                    "filter"        => FILTER_VALIDATE_BOOLEAN,
+                                                                    "flags"         => FILTER_NULL_ON_FAILURE,
+                                                                    "options"       => array("default" => false),
+                                                                    "normalize"     => true,
                                                                     "length"        => 1
                                                                 ),
                                                                 "domain"            => array(
@@ -136,6 +145,13 @@ class Validator
                                                                     "length"        => 128
                                                                 ),
                                                                 "text"              => array(
+                                                                    "filter"        => null,
+                                                                    "flags"         => null,
+                                                                    "options"       => null,
+                                                                    "callback"      => "\phpformsframework\libs\security\Validator::checkSpecialCharsText",
+                                                                    "length"        => 128000
+                                                                ),
+                                                                "texthtml"          => array(
                                                                     "filter"        => FILTER_CALLBACK,
                                                                     "flags"         => null,
                                                                     "options"       => "nl2br",
@@ -147,6 +163,12 @@ class Validator
                                                                     "flags"         => null,
                                                                     "options"       => '\phpformsframework\libs\security\Validator::isTimeStamp',
                                                                     "length"        => 10
+                                                                ),
+                                                                "timestampmicro"    => array(
+                                                                    "filter"        => FILTER_CALLBACK,
+                                                                    "flags"         => null,
+                                                                    "options"       => '\phpformsframework\libs\security\Validator::isTimeStampMicro',
+                                                                    "length"        => 13
                                                                 ),
                                                                 "json"              => array(
                                                                     "filter"        => FILTER_CALLBACK,
@@ -217,13 +239,6 @@ class Validator
                                                                     "options"       => null,
                                                                     "callback"      => '\phpformsframework\libs\security\Validator::checkBase64Url',
                                                                     "length"        => 0
-                                                                ),
-                                                                "markdown"          => array(
-                                                                    "filter"        => null,
-                                                                    "flags"         => null,
-                                                                    "options"       => null,
-                                                                    "normalize"     => true,
-                                                                    "length"        => 128000
                                                                 )
                                                             );
 
@@ -271,7 +286,7 @@ class Validator
                 is_array($what)
                                                             ? "array"
                                                             : "string"
-                                                        );
+            );
         }
         $rule                                           = (object) self::RULES[$type];
 
@@ -289,24 +304,32 @@ class Validator
                 return $dataError->error(413, $context . ": Memory Limit Reached. Validator is " . $type);
             }
 
+            if ($type === "json" && is_array($what)) {
+                $type = "array";
+            }
+            
             $validation                                 = filter_var($what, $rule->filter, array(
                                                             "flags"     => $rule->flags         ?? null,
                                                             "options"   => $rule->options       ?? null
                                                         ));
 
-            if ($validation === true || $validation == $what || ($validation === null && $rule->filter == FILTER_CALLBACK)) {
-                //da fare in modo piu elegante
-            } elseif (is_array($validation) && ($error = self::isArrayAllowed($what, $type))) {
-                $dataError->error(400, $error);
-            } elseif (isset($rule->normalize)) {
-                $what                                   = $validation;
-            } elseif (!is_array($validation)) {
+            //workground php bug: 49510
+            if ($validation === false && $rule->filter == FILTER_VALIDATE_BOOLEAN && ($what === false || $what === "false" || $what === "0" || $what === 0 || $what === "off" || $what === "no")) {
+                $validation                             = null;
+                $what                                   = false;
+            }
+
+            if ($validation === false) {
                 $dataError->error(
                     400,
                     $context . " is not a valid " . $type
-                        . ($validation ? ": " . $validation : "")
-                        . ($range ? ". The permitted values are [" . $range . "]" : "")
+                    . (strlen($what)    ? ": " . $what : "")
+                    . ($range           ? ". The permitted values are [" . $range . "]" : "")
                 );
+            } elseif (is_array($validation) && ($error  = self::isArrayAllowed($what, $type))) {
+                $dataError->error(400, $error);
+            } elseif (!empty($rule->normalize)) {
+                $what                                   = $validation;
             }
         }
 
@@ -394,13 +417,14 @@ class Validator
                 }
         }
     }
+
     /**
      * @param string|null $value
      * @return bool
      */
     public static function isJson(string $value = null) : bool
     {
-        return $value && (bool) self::convertJson($value);
+        return $value === "" || $value == "[]" || self::convertJson($value);
     }
 
     /**
@@ -426,11 +450,24 @@ class Validator
      * @param $value
      * @return string|null
      */
-    public static function checkSpecialChars($value) : ?string
+    public static function checkSpecialCharsText($value) : ?string
+    {
+        return self::checkSpecialChars($value, self::SPELL_CHECK_TEXT);
+    }
+
+    /**
+     * @param $value
+     * @param array|null $spell_check
+     * @return string|null
+     */
+    public static function checkSpecialChars($value, array $spell_check = null) : ?string
     {
         $error                                          = null;
+        if (!$spell_check) {
+            $spell_check                                = self::SPELL_CHECK;
+        }
         foreach ((array) $value as $key => $item) {
-            if ($item != str_replace(self::SPELL_CHECK, "", $item)) {
+            if ($item != str_replace($spell_check, "", $item)) {
                 $label = (
                     is_numeric($key)
                     ? self::getContextName()
@@ -439,8 +476,8 @@ class Validator
                 $error                                  = $label . (
                     is_float($item)
                         ? " is not a valid float. Max precision must be: " . ini_get("precision")
-                        : " is not a valid. " . "You can't use [" . implode(" ", self::SPELL_CHECK) . "]"
-                    );
+                        : " is not a valid. " . "You can't use [" . implode(" ", $spell_check) . "]"
+                );
                 break;
             }
         }
@@ -453,9 +490,22 @@ class Validator
      */
     public static function isTimeStamp($timestamp) : bool
     {
-        return (is_numeric($timestamp)
-            && $timestamp > 0
-            && $timestamp < pow(2, 31));
+        return (empty($timestamp) || (is_numeric($timestamp)
+                && $timestamp > 0
+                && $timestamp < pow(2, 31))
+        );
+    }
+
+    /**
+     * @param $timestampMicro
+     * @return bool
+     */
+    public static function isTimeStampMicro($timestampMicro) : bool
+    {
+        return (empty($timestampMicro) || (is_numeric($timestampMicro)
+            && $timestampMicro > 0
+            && $timestampMicro < pow(2, 63))
+        );
     }
 
     /**
@@ -609,7 +659,7 @@ class Validator
             Kernel::$Environment::DEBUG
                                                                                 ? '/^([\.0-9a-z_\-\+]+)@(([0-9a-z\-]+\.)+[0-9a-z]{2,12})$/i'
                                                                                 : '/^([\.0-9a-z_\-]+)@(([0-9a-z\-]+\.)+[0-9a-z]{2,12})$/i'
-                                                                            );
+        );
         return (bool) preg_match($regex, $value);
     }
 
@@ -638,7 +688,7 @@ class Validator
      */
     public static function isUUID(string $uuid) : bool
     {
-        return is_string($uuid) && (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/', $uuid) === 1);
+        return $uuid === "" || (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/', $uuid) === 1);
     }
 
     /**

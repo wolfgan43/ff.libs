@@ -75,10 +75,10 @@ abstract class ApiAdapter
     /**
      * @param array|null $params
      * @param array|null $headers
-     * @return stdClass|array|null
+     * @return stdClass
      * @throws Exception
      */
-    abstract protected function get(array $params = null, array $headers = null);
+    abstract protected function get(array $params = null, array $headers = null) : stdClass;
 
     /**
      * @return array
@@ -182,7 +182,7 @@ abstract class ApiAdapter
 
         $exception                                                      = null;
         $response                                                       = null;
-        $DataResponse                                                   = $this->dataResponse();
+        $dataResponse                                                   = $this->dataResponse();
         if ($this->endpoint) {
             $headers                                                     = $this->getHeader($headers);
             try {
@@ -196,6 +196,8 @@ abstract class ApiAdapter
                 /** Response Invalid Format (nojson or no object) */
                 App::debug($exception->getMessage(), $this->request_method . self::ERROR_RESPONSE_LABEL . $this->endpoint());
                 throw new Exception($exception->getMessage(), $exception->getCode());
+            } elseif (empty((array) $response)) {
+                $dataResponse = $this->dataTableResponse();
             } elseif (isset($response->status, $response->error)) {
                 if ($response->status >= 400) {
                     /** Request Wrong Params */
@@ -205,19 +207,19 @@ abstract class ApiAdapter
                     App::debug(empty($response->data) ? self::ERROR_RESPONSE_EMPTY : $response->data, $this->request_method . self::ERROR_RESPONSE_LABEL . $this->endpoint());
                 }
 
-                if (isset($response->draw, $response->recordsTotal, $response->recordsFiltered)) {
-                    $DataResponse                   = $this->dataTableResponse();
-                    $DataResponse->draw             = $response->draw;
-                    $DataResponse->recordsTotal     = $response->recordsTotal;
-                    $DataResponse->recordsFiltered  = $response->recordsFiltered;
+                if (isset($response->draw, $response->recordsFiltered)) {
+                    $dataResponse                   = $this->dataTableResponse();
+                    $dataResponse->draw             = $response->draw;
+                    $dataResponse->recordsTotal     = $response->recordsTotal;
+                    $dataResponse->recordsFiltered  = $response->recordsFiltered;
                     unset($response->draw, $response->recordsTotal, $response->recordsFiltered);
                 }
 
                 if (isset($response->data)) {
-                    $DataResponse->fillObject($response->data);
+                    $dataResponse->fillObject($response->data);
                     unset($response->data, $response->error, $response->status, $response->debug);
                     foreach (get_object_vars($response) as $property => $value) {
-                        $DataResponse->$property = $value;
+                        $dataResponse->$property = $value;
                     }
                 }
             } elseif (empty($response)) {
@@ -225,15 +227,15 @@ abstract class ApiAdapter
                 App::debug(self::ERROR_RESPONSE_EMPTY, $this->request_method . self::ERROR_RESPONSE_LABEL . $this->endpoint());
                 throw new Exception(self::ERROR_RESPONSE_EMPTY, 404);
             } else {
-                $DataResponse->fillObject($response);
-                $DataResponse->outputMode(true);
+                $dataResponse->fillObject($response);
+                $dataResponse->outputMode(true);
                 App::debug($response, $this->request_method . self::ERROR_RESPONSE_LABEL . $this->endpoint());
             }
         } else {
-            $DataResponse->error(500, self::ERROR_RESPONSE_EMPTY);
+            $dataResponse->error(500, self::ERROR_RESPONSE_EMPTY);
             App::debug(self::ERROR_ENDPOINT_EMPTY, $this->request_method . self::ERROR_RESPONSE_LABEL);
         }
-        return $DataResponse;
+        return $dataResponse;
     }
 
     protected function endpoint() : string

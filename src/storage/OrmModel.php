@@ -30,6 +30,7 @@ use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\dto\Mapping;
 use phpformsframework\libs\storage\dto\OrmResults;
 use phpformsframework\libs\Exception;
+use phpformsframework\libs\storage\dto\Schema;
 
 /**
  * Class OrmModel
@@ -42,6 +43,7 @@ class OrmModel
     use OrmUtil;
 
     private $data                                                               = null;
+    private $relationshipKey                                                    = null;
 
     /**
      * OrmItem constructor.
@@ -65,12 +67,13 @@ class OrmModel
 
         if ($rawdata) {
             $this->fill($rawdata);
-            $ref->{$informationSchema->table}                                   = $this->apply();
         }
 
         if (!empty($ref->{$informationSchema->table})) {
             $this->read([$informationSchema->key => $ref->{$informationSchema->table}]);
         }
+
+        $this->relationshipKey                                                  =& $ref->{$informationSchema->table};
     }
 
     /**
@@ -96,6 +99,14 @@ class OrmModel
     }
 
     /**
+     * @return Schema
+     */
+    public function schema() : Schema
+    {
+        return  $this->db->schema;
+    }
+
+    /**
      * @param string|null $name
      * @throws Exception
      */
@@ -103,7 +114,7 @@ class OrmModel
     {
         $this->db                                                               = new Model();
         $this->db->load($name);
-        $this->data                                                             = $this->db->schema()->dtd;
+        $this->data                                                             = array_fill_keys($this->db->schema()->columns, null);
     }
 
     /**
@@ -144,6 +155,7 @@ class OrmModel
             $item                                                               = $this->db->insert($this->data);
             $this->recordKey                                                    = $item->key(0);
             $this->primaryKey                                                   = $item->getPrimaryKey();
+            $this->relationshipKey                                              = $this->recordKey;
         }
 
         return $this->recordKey;

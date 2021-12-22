@@ -187,7 +187,7 @@ trait ServerManager
     private static function rawAccept() : ?string
     {
         return (isset($_SERVER["HTTP_ACCEPT"]) && $_SERVER["HTTP_ACCEPT"] != '*/*'
-            ? $_SERVER["HTTP_ACCEPT"]
+            ? urldecode($_SERVER["HTTP_ACCEPT"])
             : null
         );
     }
@@ -212,6 +212,14 @@ trait ServerManager
         return isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
     }
 
+    /**
+     * @return string|null
+     */
+    private static function contentEncoding() : ?string
+    {
+        return $_SERVER['HTTP_CONTENT_ENCODING'] ?? null;
+    }
+    
     /**
      * @return bool
      */

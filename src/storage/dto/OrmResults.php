@@ -81,23 +81,23 @@ class OrmResults
     }
 
     /**
-     * @param int $draw
-     * @param int|null $countTotal
+     * @param callable|null $callback
      * @return DataTableResponse
      */
-    public function toDataTableResponse(int $draw = 0, int $countTotal = null) : DataTableResponse
+    public function toDataTable(callable $callback = null) : DataTableResponse
     {
-        $dataTableResponse = new DataTableResponse();
+        $dataTableResponse                                                      = new DataTableResponse();
 
         if ($this->countRecordset) {
             $dataTableResponse->fill($this->recordset);
-
             $dataTableResponse->recordsFiltered                                 = $this->countTotal;
-            $dataTableResponse->recordsTotal                                    = $countTotal ?? $this->countTotal;
-
-            $dataTableResponse->draw                                            = $draw + 1;
+            $dataTableResponse->recordsTotal                                    = $this->countTotal;
         } else {
             $dataTableResponse->error(204, self::ERROR_RECORDSET_EMPTY);
+        }
+
+        if ($callback) {
+            $callback($this, $dataTableResponse);
         }
 
         return $dataTableResponse;

@@ -49,9 +49,6 @@ class RequestPage extends Mappable
 
     private const ERROR_IS_REQUIRED         = " is required";
 
-    private const ACCESS_SESSION            = "session";
-    private const ACCESS_PUBLIC             = "public";
-
     public const REQUEST_RAWDATA            = "rawdata";
     public const REQUEST_VALID              = "valid";
     public const REQUEST_UNKNOWN            = "unknown";
@@ -119,46 +116,6 @@ class RequestPage extends Mappable
             ? strtoupper($this->method)
             : self::requestMethod() ?? Request::METHOD_GET
         );
-    }
-
-    /**
-     * @throws Exception
-     */
-    public function onLoad() : void
-    {
-        //@todo da spostare la logica nel router. Aggiungere maintenance come tipo di access.
-        if (!$this->accept_path_info && $this->path_info) {
-            Response::sendError(404, "Page not Found");
-        }
-
-        if ($this->vpn && $this->vpn != $this->remoteAddr()) {
-            Response::sendError(401, "Access denied for ip: " . $this->remoteAddr());
-        }
-
-        //@todo da fare controllo acl della pagina
-        if ($this->access == self::ACCESS_SESSION && $this->script_path !== "/assets" && !User::isLogged() /*$aclVerify = !User::alcVerify($this->acl))*/) {
-            $login = new Login();
-            /*if(!$aclVerify) {
-                $login->error(401, "Access Denied");
-            }*/
-
-            Response::send($login->displayException());
-        }
-
-        if ($this->csrf) {
-            if (empty($_SERVER["HTTP_X_CSRF_TOKEN"])) {
-                setcookie("csrf", Validator::csrf($this->serverAddr() . $this->path_info));
-            } elseif (Validator::csrf($this->serverAddr() . $this->path_info) !== $_SERVER["HTTP_X_CSRF_TOKEN"]) {
-                Response::sendError(403, "CSRF validation failed.");
-            }
-        } elseif (isset($_COOKIE["csrf"])) {
-            unset($_COOKIE["csrf"]);
-            setcookie('csrf', null, -1);
-        }
-
-        if (is_callable($this->onLoad)) {
-            ($this->onLoad)();
-        }
     }
 
     /**
@@ -667,5 +624,13 @@ class RequestPage extends Mappable
             ? explode(",", $accept)[0]
             : $this->pageAccept()
         );
+    }
+
+    /**
+     * @return bool
+     */
+    public function isAjax() : bool
+    {
+        return $this->isXhr || $this->accept() == "application/json";
     }
 }

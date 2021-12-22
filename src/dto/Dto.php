@@ -25,6 +25,8 @@
  */
 namespace phpformsframework\libs\dto;
 
+use phpformsframework\libs\util\TypesConverter;
+
 /**
  * Class Dto
  * @package phpformsframework\libs\dto
@@ -32,6 +34,7 @@ namespace phpformsframework\libs\dto;
 class Dto
 {
     use Mapping;
+    use TypesConverter;
 
     private static $page = null;
 
@@ -46,8 +49,37 @@ class Dto
         }
     }
 
-    public function getRawData() : array
+    /**
+     * @param bool $force_array_or_object
+     * @return array
+     */
+    public function getRawData(bool $force_array_or_object = false) : array
     {
-        return self::$page->getRawData();
+        $rawdata = self::$page->getRawData();
+        return ($force_array_or_object && !isset($rawdata[0])
+            ? [$rawdata]
+            : $rawdata
+        );
+    }
+
+    /**
+     * @return string
+     */
+    public function pathInfo() : string
+    {
+        return self::$page->script_path;
+    }
+
+    /**
+     * @param array $params
+     * @param array|null $request
+     * @return array
+     */
+    public function fill(array $params, array $request = null) : array
+    {
+        if (!empty($params) && !empty($request = ($request ?? $this->getRawData()))) {
+            $params = $this->mergeRequest($params, $request);
+        }
+        return $params;
     }
 }

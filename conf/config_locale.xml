@@ -3,7 +3,7 @@
     <locale>
         <lang>
             <it id="1" description="Italiano" code="ita" country="IT" />
-            <en id="2" description="English" code="eng" country="IT" />
+            <en id="2" description="English" code="eng" country="GB" />
             <de id="5" description="Deutch" code="deu" country="DE" />
             <fr id="3" description="French" code="fra" country="FR" />
             <es id="4" description="Espanol" code="esp" country="SP" />

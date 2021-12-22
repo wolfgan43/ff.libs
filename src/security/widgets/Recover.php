@@ -100,7 +100,6 @@ class Recover extends Widget
 
     /**
      * @param string|null $method
-     * @return array
      * @throws Exception
      */
     private function render(string $method = null) : void

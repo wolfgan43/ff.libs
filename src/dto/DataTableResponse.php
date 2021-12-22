@@ -34,6 +34,11 @@ use stdClass;
 class DataTableResponse extends DataResponse
 {
     public $class               = null;
+
+    public $keys                = null;
+    public $columns             = null;
+    public $properties          = null;
+
     public $draw                = 0;
     public $recordsTotal        = 0;
     public $recordsFiltered     = 0;
@@ -43,8 +48,8 @@ class DataTableResponse extends DataResponse
         parent::__construct($data);
 
         $this->draw             = 1;
-        $this->recordsFiltered  = count($data);
         $this->recordsTotal     = count($data);
+        $this->recordsFiltered  = $this->recordsTotal;
     }
 
     /**
@@ -52,7 +57,7 @@ class DataTableResponse extends DataResponse
      */
     protected function getDefaultVars() : array
     {
-        return [
+        $res = [
             "draw"              => $this->draw,
             "data"              => $this->data,
             "recordsTotal"      => $this->recordsTotal,
@@ -60,6 +65,18 @@ class DataTableResponse extends DataResponse
             "error"             => $this->error,
             "status"            => $this->status
         ];
+
+        if (!empty($this->keys)) {
+            $res["keys"]        = $this->keys;
+        }
+        if (!empty($this->columns)) {
+            $res["columns"]     = $this->columns;
+        }
+        if (!empty($this->properties)) {
+            $res["properties"]  = $this->properties;
+        }
+
+        return $res;
     }
 
     /**
@@ -73,7 +90,7 @@ class DataTableResponse extends DataResponse
 
     public function columns() : array
     {
-        return array_keys($this->data[0] ?? []);
+        return $this->columns ?? array_keys($this->data[0] ?? []);
     }
 
     /**

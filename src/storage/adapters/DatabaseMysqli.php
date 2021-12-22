@@ -106,7 +106,7 @@ class DatabaseMysqli extends DatabaseAdapter
             $res[$name] = implode(self::AND, $res[$name]);
             if (isset($res[self::OR][$name])) {
                 $res[$name] = "((" . $res[$name] . ")" . self::OR . "(" . str_replace(self::OR, self::AND, $res[self:: OR][$name]) . "))";
-                unset($res[self:: OR][$name]);
+                unset($res[self::OR][$name]);
             }
         }
     }
@@ -125,11 +125,12 @@ class DatabaseMysqli extends DatabaseAdapter
      * @param string $struct_type
      * @param string|null $name
      * @param string|null $op
+     * @param bool $castResult
      * @return string
      * @throws Exception
      * @todo da tipizzare
      */
-    protected function fieldOperation($value, string $struct_type, string $name = null, string $op = null) : string
+    protected function fieldOperation($value, string $struct_type, string $name = null, string $op = null, bool $castResult = false) : string
     {
         if ($value === null) {
             $res = $this->fieldOperationNULL($struct_type, $name, $op);
@@ -152,7 +153,8 @@ class DatabaseMysqli extends DatabaseAdapter
                     $name,
                     $op,
                     $struct_type,
-                    $value
+                    $value,
+                    $castResult
                 );
             }
         }
@@ -183,11 +185,12 @@ class DatabaseMysqli extends DatabaseAdapter
      * @param string $op
      * @param string $struct_type
      * @param string|array|null $value
+     * @param bool $castResult
      * @return string
      * @throws Exception
      * @todo da tipizzare
      */
-    private function replacer(string $name, string $op, string $struct_type, $value = null) : string
+    private function replacer(string $name, string $op, string $struct_type, $value, bool $castResult = false) : string
     {
         return str_replace(
             array(
@@ -198,9 +201,9 @@ class DatabaseMysqli extends DatabaseAdapter
             ),
             array(
                 "`" . str_replace("`", "", $name) . "`",
-                $this->driver->toSql(str_replace(array("(.*)", "(.+)", ".*", ".+", "*", "+"), "%", $value), $struct_type),
-                $this->driver->toSql($value, $struct_type),
-                str_replace("','", ",", $this->driver->toSql($value, $struct_type))
+                $this->driver->toSql(str_replace(array("(.*)", "(.+)", ".*", ".+", "*", "+"), "%", $value), $struct_type, $castResult),
+                $this->driver->toSql($value, $struct_type, $castResult),
+                str_replace("','", ",", $this->driver->toSql($value, $struct_type, $castResult))
             ),
             self::OPERATOR_COMPARISON[$op]
         );
@@ -226,13 +229,16 @@ class DatabaseMysqli extends DatabaseAdapter
 
     /**
      * @param array|null $fields
-     * @param bool $skip_control
+     * @param bool $use_control
      * @return string
      * @throws Exception
      */
-    protected function querySelect(array $fields = null, bool $skip_control = false) : string
+    protected function querySelect(array $fields = null, bool $use_control = true) : string
     {
-        return "`" . implode("`" . static::CONCAT . "`", array_keys(parent::querySelect($fields, $skip_control))) . "`";
+        return ($fields
+            ? "`" . implode("`" . static::CONCAT . "`", array_keys(parent::querySelect($fields, $use_control))) . "`"
+            : ""
+        );
     }
 
     /**
@@ -242,7 +248,10 @@ class DatabaseMysqli extends DatabaseAdapter
      */
     protected function querySort(array $fields = null) : string
     {
-        return str_replace("=", " ", http_build_query(parent::querySort($fields), '', static::CONCAT));
+        return ($fields
+            ? str_replace("=", "` ", "`" . http_build_query(parent::querySort($fields), '', static::CONCAT . "`"))
+            : ""
+        );
     }
 
     /**

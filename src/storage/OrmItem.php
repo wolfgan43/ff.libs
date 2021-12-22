@@ -193,7 +193,7 @@ abstract class OrmItem
 
         $where                                                                  = null;
         if (is_array($query)) {
-            $dtd                                                                = $item->db->dtdStore();
+            $dtd                                                                = $item->db->dtd();
             foreach ($query as $key => $value) {
                 if (isset(self::LOGICAL_OPERATORS[$key])) {
                     $where[$key]                                                = $value;
@@ -566,7 +566,7 @@ abstract class OrmItem
 
         if ($this->recordKey) {
             if (($storedVars = array_intersect_key($this->storedData, $vars)) != $vars) {
-                $this->db->update(array_diff_assoc($vars, $storedVars), [$this->primaryKey => $this->recordKey]);
+                $this->db->update(array_diff_assoc($vars, $storedVars), [static::TABLE . "." . $this->primaryKey => $this->recordKey]);
             }
         } else {
             $item                                                               = $this->db->insert(array_merge($vars, $this->primaryIndexes));
@@ -608,6 +608,9 @@ abstract class OrmItem
              */
             if (isset($this->{$table}[$oneToOne->primaryKey]) && ($relDataDB[$oneToOne->primaryKey] ?? null) != $this->{$table}[$oneToOne->primaryKey]) {
                 $obj = new $oneToOne->mapClass([$oneToOne->primaryKey => $this->{$table}[$oneToOne->primaryKey]]);
+                if (!$obj->isStored()) {
+                    throw new Exception($oneToOne->primaryKey . " '" . $this->{$table}[$oneToOne->primaryKey] . "' not found in table '" . $table . "'", 404);
+                }
                 $obj->fill($relData);
             } elseif (isset($this->primaryIndexes[$oneToOne->dbExternal])) {
                 $obj = $oneToOne->mapClass::load($relDataDB, $this->primaryIndexes[$oneToOne->dbExternal])
@@ -782,22 +785,22 @@ abstract class OrmItem
                              */
                             $relationship                                           = (object) $informationSchemaJoin->relationship[static::TABLE];
 
-                            $join::deleteAll([$relationship->primary => $this->primaryIndexes[$relationship->external]]);
+                            $join::deleteAll([static::TABLE . "." . $relationship->primary => $this->primaryIndexes[$relationship->external]]);
                         } elseif (isset($this->informationSchema->relationship[$dtd->table])) {
                             /**
                              * OneToMany
                              */
                             $relationship                                           = (object) $this->informationSchema->relationship[$dtd->table];
 
-                            $join::deleteAll([$relationship->external => $this->recordKey]);
+                            $join::deleteAll([$dtd->table . "." . $relationship->external => $this->recordKey]);
                         }
                     }
                 }
             }
             if (static::DELETE_LOGICAL_FIELD) {
-                $this->db->update([static::DELETE_LOGICAL_FIELD => true], [$this->primaryKey => $this->recordKey]);
+                $this->db->update([static::DELETE_LOGICAL_FIELD => true], [static::TABLE . "." . $this->primaryKey => $this->recordKey]);
             } else {
-                $this->db->delete([$this->primaryKey => $this->recordKey]);
+                $this->db->delete([static::TABLE . "." . $this->primaryKey => $this->recordKey]);
             }
         }
     }
@@ -879,7 +882,10 @@ abstract class OrmItem
      */
     private function verifyRequire(array $vars) : void
     {
-        $required                                                               = array_diff_key(array_fill_keys(static::REQUIRED, true), array_filter($vars));
+        $required   = array_diff_key(array_fill_keys(static::REQUIRED, true), array_filter($vars, function ($var) {
+            return $var !== null;
+        }));
+
         if (!empty($required)) {
             $this->error(array_keys($required), " are required");
         }
@@ -893,10 +899,10 @@ abstract class OrmItem
     {
         $errors                                                                 = null;
         $validators                                                             = array_intersect_key($vars, static::VALIDATOR);
-        $dtd                                                                    = $this->db->dtdStore();
+        $dtd                                                                    = $this->db->dtd();
         foreach ($validators as $field => $value) {
             if (is_array(static::VALIDATOR[$field])) {
-                if ($dtd->$field == Database::FTYPE_ARRAY || $dtd->$field == Database::FTYPE_ARRAY_OF_NUMBER) {
+                if (isset($dtd->$field) && ($dtd->$field == Database::FTYPE_ARRAY || $dtd->$field == Database::FTYPE_ARRAY_OF_NUMBER)) {
                     $arrField                                                   = Normalize::string2array($value);
                     if (count(array_diff($arrField, static::VALIDATOR[$field]))) {
                         $errors[]                                               = $field . " must be: [" . implode(", ", static::VALIDATOR[$field]) . "]";

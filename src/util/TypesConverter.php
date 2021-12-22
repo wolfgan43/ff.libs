@@ -46,7 +46,7 @@ trait TypesConverter
 
     /**
      * @param array|null $array $array
-     * @return string
+     * @return string|null
      */
     private static function checkSumArray(array $array = null) : ?string
     {
@@ -57,14 +57,33 @@ trait TypesConverter
     }
     
     /**
-     * @param array $array
-     * @return bool
+     * @param array $params
+     * @param array|null $request
+     * @return array
      */
-    public static function isAssocArray(array $array) : bool
+    private static function mergeRequest(array $params, array $request = null) : array
     {
-        if (array() === $array) {
-            return false;
+        $request_key            = array();
+        $request_value          = array();
+        foreach ($request as $key => $value) {
+            if (is_array($value)) {
+                $value          = json_encode($value);
+            }
+            $request_key[]      = '$' . $key . "#";
+            $request_key[]      = '$' . $key . " ";
+            $request_value[]    = $value . "#";
+            $request_value[]    = $value . " ";
         }
-        return array_keys($array) !== range(0, count($array) - 1);
+        $prototype              = str_replace(
+            $request_key,
+            $request_value,
+            implode("#", $params) . "#"
+        );
+        $prototype              = preg_replace('/\$[a-zA-Z_]+/', "", $prototype);
+
+        return array_combine(
+            array_keys($params),
+            explode("#", substr($prototype, 0, -1))
+        );
     }
 }

@@ -49,7 +49,7 @@ class User extends App
      */
     public static function isLogged() : bool
     {
-        return self::$user || self::session()->verify(true);
+        return (self::$user || self::session()->verify(true));
     }
 
     /**

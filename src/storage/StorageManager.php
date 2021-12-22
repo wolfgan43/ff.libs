@@ -67,7 +67,7 @@ trait StorageManager
      */
     private static function filePutContents(string $file_path, string $data) : bool
     {
-        return FilemanagerFs::filePutContents($file_path, $data);
+        return FilemanagerFs::makeDir(dirname($file_path)) && FilemanagerFs::filePutContents($file_path, $data);
     }
 
     /**

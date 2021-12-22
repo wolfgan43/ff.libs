@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\storage\dto;
 
+use phpformsframework\libs\Exception;
 use phpformsframework\libs\storage\Database;
 
 /**
@@ -50,10 +51,13 @@ class OrmDef
     }
 
     /**
-     *
+     * @throws Exception
      */
     public function setKeyPrimary()
     {
         $this->key_primary  = (string) array_search(Database::FTYPE_PRIMARY, $this->struct);
+        if (empty($this->key_primary)) {
+            throw new Exception("primary field not set in orm.map: " . $this->table["name"], 500);
+        }
     }
 }

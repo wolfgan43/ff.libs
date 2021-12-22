@@ -216,8 +216,8 @@ class Translator implements Dumpable
             $res                                        = $orm->readOne([
                                                             "translations.text"
                                                         ], [
-                                                            "translations.lang" => $lang
-                                                            , "translations.code" => substr($code, 0, 254)
+                                                            "translations.lang" => $lang,
+                                                            "translations.code" => substr($code, 0, 254)
                                                         ]);
 
             if ($res) {

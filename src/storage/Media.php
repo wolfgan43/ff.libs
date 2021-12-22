@@ -79,6 +79,8 @@ class Media implements Configurable
 
     protected const ERROR_BUCKET                                            = "storage";
 
+    private const HOOK_ON_AFTER_CREATE                                      = "Media::onAfterCreate";
+
     private const RENDER_MEDIA_PATH                                         = DIRECTORY_SEPARATOR . "media";
     private const RENDER_ASSETS_PATH                                        = DIRECTORY_SEPARATOR . Constant::RESOURCE_ASSETS;
     private const RENDER_WIDGET_PATH                                        = DIRECTORY_SEPARATOR . Constant::RESOURCE_WIDGETS;
@@ -1255,7 +1257,7 @@ class Media implements Configurable
                 if (is_array($modeCurrent)) {
                     if (!Buffer::cacheIsValid($this->basepath . $this->filesource, $final_file_stored)) {
                         $this->createImage($modeCurrent);
-                        Hook::handle("media_on_create_image", $final_file);
+                        Hook::handle(self::HOOK_ON_AFTER_CREATE, $final_file);
                     }
                 } elseif (!$modeCurrent && is_file($this->basepath . $this->filesource)) {
                     if (!Buffer::cacheIsValid($this->basepath . $this->filesource, $final_file_stored)) {

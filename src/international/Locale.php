@@ -129,11 +129,11 @@ class Locale implements Configurable
     }
 
     /**
-     * @return array|null
+     * @return array
      */
     public static function getAll() : array
     {
-        return self::acceptLocale() ?? [];
+        return self::acceptLocale();
     }
 
     /**
@@ -289,9 +289,9 @@ class Locale implements Configurable
     /**
      * @param string|null $lang
      * @param string|null $country
-     * @return array|null
+     * @return array
      */
-    private static function acceptLanguage(string $lang = null, string $country = null) : ?array
+    private static function acceptLanguage(string $lang = null, string $country = null) : array
     {
         $res                                                        = null;
         if ($lang && in_array($lang, self::$accepted_langs)) {
@@ -307,17 +307,14 @@ class Locale implements Configurable
             $res                                                    = self::acceptLocale(true);
         }
 
-        return $res ?? [
-            self::LANG_     => strtolower(Kernel::$Environment::LOCALE_LANG_CODE),
-            self::COUNTRY_  => strtoupper(Kernel::$Environment::LOCALE_COUNTRY_CODE)
-        ];
+        return $res ?? self::defaultLocale();
     }
 
     /**
      * @param bool $onlyFirst
-     * @return array|null
+     * @return array
      */
-    private static function acceptLocale(bool $onlyFirst = false) : ?array
+    private static function acceptLocale(bool $onlyFirst = false) : array
     {
         $locale_accepted                                        = null;
         foreach (explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? self::get()) as $locale) {
@@ -326,7 +323,7 @@ class Locale implements Configurable
                 '(?P<quantifier>\d\.\d))?$/';
 
             $splits                                             = [];
-            if (preg_match($pattern, $locale, $splits)) {
+            if (preg_match($pattern, trim($locale), $splits)) {
                 $lang                                           = strtolower($splits["primarytag"]);
                 if (!in_array($lang, self::$accepted_langs)) {
                     continue;
@@ -351,6 +348,26 @@ class Locale implements Configurable
             }
         }
 
+        if (empty($locale_accepted)) {
+            $locale_default                                     = self::defaultLocale();
+            if ($onlyFirst) {
+                return $locale_default;
+            }
+
+            $locale_accepted[$locale_default[self::LANG_] . "-" . $locale_default[self::COUNTRY_]] = $locale_default;
+        }
+
         return $locale_accepted;
+    }
+
+    /**
+     * @return array
+     */
+    private static function defaultLocale() : array
+    {
+        return [
+            self::LANG_     => strtolower(Kernel::$Environment::LOCALE_LANG_CODE),
+            self::COUNTRY_  => strtoupper(Kernel::$Environment::LOCALE_COUNTRY_CODE)
+        ];
     }
 }

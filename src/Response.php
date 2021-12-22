@@ -140,15 +140,14 @@ class Response
                 Log::registerProcedure("Request", "validator" . Log::CLASS_SEP . "error");
 
                 $response = new DataError();
-                $response->error(self::errorStatus($code), $msg);
+                $response->error($code, $msg);
                 self::send($response, ["cache" => "no-cache"]);
                 break;
             case "text/html":
                 Log::registerProcedure("Router", "page" . Log::CLASS_SEP . "error");
                 try {
                     self::send((new ErrorController())
-                        ->error(self::errorStatus($code), $msg)
-                        ->display());
+                        ->displayException($code, $msg), [], $code);
                 } catch (\Exception $e) {
                     header("Content-Type: text/html");
                     header('Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
@@ -156,7 +155,7 @@ class Response
 
                     $status = $e->getCode();
                     $status_message = Exception::getErrorMessage($status);
-
+                    Debug::setBackTrace($e->getTrace());
                     self::httpCode($status);
                     echo '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
 <html><head>
@@ -181,21 +180,10 @@ error was encountered while trying to use an ErrorDocument to handle the request
 
     public static function sendErrorPlain(string $msg = null, int $code = null) : void
     {
-        self::httpCode(self::errorStatus($code));
+        self::httpCode($code);
         die($msg ?? "Unknown Error");
     }
 
-    /**
-     * @param int|null $code
-     * @return int
-     */
-    private static function errorStatus(int $code = null) : int
-    {
-        return ($code < 400
-            ? 500
-            : $code
-        );
-    }
     /**
      * @param mixed $data
      * @param string $content_type
@@ -205,7 +193,7 @@ error was encountered while trying to use an ErrorDocument to handle the request
      * @throws Exception
      * @todo da tipizzare
      */
-    public static function sendRawData($data, string $content_type, array $headers = [], $status = null)
+    public static function sendRawData($data, string $content_type, array $headers = [], int $status = null)
     {
         if (self::isValidContentType($content_type)) {
             self::sendHeadersByMimeType($content_type, $headers);

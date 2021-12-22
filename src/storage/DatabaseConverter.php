@@ -60,13 +60,17 @@ class DatabaseConverter
                 $this->add($this->in, $field, $hook, $schema->properties[$field]);
             }
             foreach ($schema->columns as $field) {
+                if (!isset($schema->dtd[$field])) {
+                    continue;
+                }
+
                 $type = $schema->dtd[$field];
 
                 if (isset($schema->to[$type])) {
-                    $this->add($this->to, $field, $schema->to[$type]["callback"] ?? $type, array_replace($schema->to[$type], $schema->properties[$field]));
+                    $this->add($this->to, $field, $schema->to[$type]["callback"] ?? $type, array_replace($schema->to[$type], $schema->properties[$field] ?? []));
                 }
                 if (isset($schema->in[$type])) {
-                    $this->add($this->in, $field, $schema->in[$type]["callback"] ?? $type, array_replace($schema->in[$type], $schema->properties[$field]));
+                    $this->add($this->in, $field, $schema->in[$type]["callback"] ?? $type, array_replace($schema->in[$type], $schema->properties[$field] ?? []));
                 }
             }
         }
@@ -204,10 +208,10 @@ class DatabaseConverter
     private function add(array &$ref, string $field, string $func, array $params = null) : void
     {
         if (!isset($ref[$field])) {
-            if (is_callable($func)) {
-                $callback       = $func;
-            } elseif (is_callable(Convert::class . "::" . $func)) {
+            if (is_callable(Convert::class . "::" . $func)) {
                 $callback       = Convert::class . "::" . $func;
+            } elseif (is_callable($func)) {
+                $callback       = $func;
             } else {
                 throw new Exception("Function " . $func . " not implemented for " . __CLASS__, "501");
             }

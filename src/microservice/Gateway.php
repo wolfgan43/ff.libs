@@ -32,6 +32,8 @@ use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\util\Normalize;
 use phpformsframework\libs\util\ServerManager;
+use phpformsframework\libs\microservice\adapters\ApiJsonWsp;
+use phpformsframework\libs\security\UUID;
 
 /**
  * Class Gateway
@@ -41,7 +43,14 @@ class Gateway implements Configurable, Dumpable
 {
     use ServerManager;
 
+    protected const API_CLIENT_SIGNUP                       = null;
+
+    private const CLIENT_TYPE_PUBLIC                        = "public";
+    private const CLIENT_TYPE_CONFIDENTIAL                  = "confidential";
+
     private static $clients                                 = [];
+    private $request                                        = null;
+
     /**
      * @access private
      * @param ConfigRules $configRules
@@ -97,12 +106,16 @@ class Gateway implements Configurable, Dumpable
         );
     }
 
+    public function __construct(array $request = null)
+    {
+        $this->request = (object) $request;
+    }
+
     /**
      * @return array
      */
     public function discover()
     {
-        $client_type                    = null;
         $aud                            = [];
         $scopes_register                = [];
         $scopes_require_client          = [];
@@ -110,8 +123,8 @@ class Gateway implements Configurable, Dumpable
         $grant_types                    = [];
         $modules                        = [];
         $discover                       = [
-            "client_id"                 => Kernel::$Environment::APPNAME,
-            "client_secret"             => Kernel::$Environment::APPID,
+            "client-id"                 => Kernel::$Environment::APPNAME,
+            "client-secret"             => Kernel::$Environment::APPID,
         ];
 
         foreach (self::$clients as $name => $client) {
@@ -130,31 +143,47 @@ class Gateway implements Configurable, Dumpable
             $scopes                     = $client["scopes"]["require_user"];
             $scopes_require_user        = array_replace($scopes_require_user, array_combine($scopes, $scopes));
 
-            $grants                     = explode(",", "client,password");
+            $grants                     = (empty(array_filter($scopes_require_user)) ? ["client"] : ["client","password"]);
             $grant_types                = array_replace($grant_types, array_combine($grants, $grants));
 
-
             $module = [
-                "client_type"                   => $client["type"],
-                "scopes_register"               => implode(",", $client["scopes"]["register"]),
-                "scopes_require_client"         => implode(",", $client["scopes"]["require_client"]),
-                "scopes_require_user"           => implode(",", $client["scopes"]["require_user"]),
-                "grant_types"                   => "client,password",
+                "client-type"                   => $client["type"],
+                "scopes-register"               => implode(",", $client["scopes"]["register"]),
+                "scopes-require-client"         => implode(",", $client["scopes"]["require_client"]),
+                "scopes-require-user"           => implode(",", $client["scopes"]["require_user"]),
+                "grant-types"                   => implode(",", $grants),
             ];
 
             $modules[$client["type"]][$name]    = $module;
         }
 
         $discover["aud"]                        = ucwords(implode(", ", $aud));
-        $discover["client_type"]                = Kernel::$Environment::APPNAME;
-        $discover["scopes_register"]            = implode(",", $scopes_register);
-        $discover["scopes_require_client"]      = implode(",", $scopes_require_client);
-        $discover["scopes_require_user"]        = implode(",", $scopes_require_user);
-        $discover["grant_types"]                = implode(",", $grant_types);
-        $discover["secret_uri"]                 = $this->protocolHost() . "/api/secreturi";
-        $discover["site_url"]                   = null;
-        $discover["redirect_uri"]               = null;
-        $discover["privacy_url"]                = null;
+        $discover["client-type"]                = (empty($scopes_register) ? self::CLIENT_TYPE_PUBLIC : self::CLIENT_TYPE_CONFIDENTIAL);
+        $discover["scopes-register"]            = implode(",", $scopes_register);
+        $discover["scopes-require-client"]      = implode(",", $scopes_require_client);
+        $discover["scopes-require-user"]        = implode(",", $scopes_require_user);
+        $discover["grant-types"]                = implode(",", $grant_types);
+        $discover["secret-uri"]                 = $this->protocolHost() . "/api/" . UUID::v5(Kernel::$Environment::APPID, __CLASS__);
+        $discover["site-url"]                   = null;
+        $discover["redirect-uri"]               = null;
+        $discover["privacy-url"]                = null;
+
+        if (static::API_CLIENT_SIGNUP && !empty($this->request->registrar)) {
+            $discover["domain"]                 = $this->request->domain                ?? null;
+            $discover["scopes-require-client"]  = $this->request->scopes_require_client ?? $discover["scopes-require-client"];
+            $discover["scopes-require-user"]    = $this->request->scopes_require_user   ?? $discover["scopes-require-user"];
+            $discover["grant-types"]            = (
+            empty($discover["scopes-require-user"])
+                ? "client"
+                : "client,password"
+            );
+
+            $api                                = new ApiJsonWsp($this->request->registrar . static::API_CLIENT_SIGNUP);
+            $response                           = $api->send($discover, []);
+        }
+
+        $discover["client-secret"]              = "*****************";
+        $discover["secret-uri"]                 = "*****************";
 
         return $discover + $modules;
     }

@@ -106,19 +106,19 @@ class Autoloader implements Dumpable
             $buffer = '';
             $namespace = '';
             $class = '';
-            
+
             if ($fp = fopen($include_path, 'r')) {
                 $offset = 0;
-                while (!$class && !feof($fp)) {
+                while (!feof($fp)) {
                     $buffer .= fread($fp, 512);
 
                     if (($offset = strpos($buffer, '{', intval($offset))) === false) {
                         continue;
                     }
-                    
+
                     $namespace = '';
                     $class = '';
-                    
+
                     $tokens = @token_get_all($buffer);
                     error_clear_last();
 
@@ -129,7 +129,7 @@ class Autoloader implements Dumpable
 
                         if ($tokens[$i][0] === T_NAMESPACE) {
                             for ($j = $i + 1; $j < count($tokens); $j++) {
-                                if ($tokens[$j][0] === T_NAME_QUALIFIED || $tokens[$j][0] === T_NAME_FULLY_QUALIFIED) {
+                                if (defined("T_NAME_QUALIFIED") && ($tokens[$j][0] === T_NAME_QUALIFIED || $tokens[$j][0] === T_NAME_FULLY_QUALIFIED)) {
                                     $namespace = $tokens[$j][1];
                                     break;
                                 } elseif ($tokens[$j][0] === T_STRING) {

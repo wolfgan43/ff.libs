@@ -111,7 +111,7 @@ abstract class DatabaseAdapter implements Constant
      */
     protected $driver                   = null;
 
-    private $prototype                  = [];
+    protected $prototype                = [];
 
     /**
      * @var DatabaseConverter
@@ -119,6 +119,7 @@ abstract class DatabaseAdapter implements Constant
     private $converter                  = null;
 
     /**
+     * @param string|null $prefix
      * @return DatabaseDriver
      */
     abstract protected function driver(string $prefix = null) : DatabaseDriver;
@@ -144,14 +145,15 @@ abstract class DatabaseAdapter implements Constant
     abstract protected function convertKeyPrimary(string $key_primary) : string;
 
     /**
-     * @todo da tipizzare
      * @param $value
      * @param string $struct_type
      * @param string|null $name
      * @param string|null $op
+     * @param bool $castResult
      * @return mixed
+     * @todo da tipizzare
      */
-    abstract protected function fieldOperation($value, string $struct_type, string $name = null, string $op = null);
+    abstract protected function fieldOperation($value, string $struct_type, string $name = null, string $op = null, bool $castResult = false);
 
     /**
      * @param string $struct_type
@@ -328,7 +330,6 @@ abstract class DatabaseAdapter implements Constant
     protected function fields2output(array $record) : array
     {
         return $this->converter->to(array_intersect_key($record, $this->prototype));
-
     }
 
     /**
@@ -458,7 +459,7 @@ abstract class DatabaseAdapter implements Constant
                 $res[$name]             = (
                     $value === null
                     ? $this->fieldOperationNULL($struct_type, $name)
-                    : $this->driver->toSql($this->converter->in($name, $value), $struct_type)
+                    : $this->driver->toSql($this->converter->in($name, $value), $struct_type, true)
                 );
             }
         }
@@ -475,7 +476,7 @@ abstract class DatabaseAdapter implements Constant
      */
     protected function queryUpdate(array $fields = null)
     {
-        $res                                                = array();
+        $res                                                = [];
         if ($fields) {
             foreach ($fields as $name => $value) {
                 if (!isset($this->def->struct[$name])) {
@@ -484,13 +485,13 @@ abstract class DatabaseAdapter implements Constant
 
                 $struct_type                                = $this->converter->set($name);
                 if ($value === "++") {
-                    $res[self::OP_INC_DEC][$name]           = $this->fieldOperation($this->converter->in($name, $value), $struct_type, $name, self::OP_INC_DEC);
+                    $res[self::OP_INC_DEC][$name]           = $this->fieldOperation($this->converter->in($name, $value), $struct_type, $name, self::OP_INC_DEC, true);
                 } elseif ($value === "--") {
-                    $res[self::OP_INC_DEC][$name]           = $this->fieldOperation($this->converter->in($name, $value), $struct_type, $name, self::OP_INC_DEC . '-');
+                    $res[self::OP_INC_DEC][$name]           = $this->fieldOperation($this->converter->in($name, $value), $struct_type, $name, self::OP_INC_DEC . '-', true);
                 } elseif ($value === "+") {
-                    $res[self::OP_ADD_TO_SET][$name]        = $this->fieldOperation($this->converter->in($name, $value), $struct_type, $name, self::OP_ADD_TO_SET);
+                    $res[self::OP_ADD_TO_SET][$name]        = $this->fieldOperation($this->converter->in($name, $value), $struct_type, $name, self::OP_ADD_TO_SET, true);
                 } else {
-                    $res[self::OP_SET][$name]               = $this->fieldOperation($this->converter->in($name, $value), $struct_type, $name, self::OP_SET);
+                    $res[self::OP_SET][$name]               = $this->fieldOperation($this->converter->in($name, $value), $struct_type, $name, self::OP_SET, true);
                 }
             }
         }
@@ -534,16 +535,15 @@ abstract class DatabaseAdapter implements Constant
      */
     private function processUpdate(DatabaseQuery $query) : ?array
     {
-        $res                                            = null;
-        if ($this->driver->update($query)) {
-            $res                                        = array(
-                                                            self::INDEX_PRIMARY => array(
-                                                                $this->def->key_primary => null
-                                                            )
-                                                        );
-        }
-
-        return $res;
+        return array(
+            self::INDEX_PRIMARY => array(
+                $this->def->key_primary => (
+                    $this->driver->update($query)
+                    ? ""
+                    : null
+                )
+            )
+        );
     }
 
     /**
@@ -823,23 +823,34 @@ abstract class DatabaseAdapter implements Constant
      */
     private function fieldOperations(array $values, string $struct_type, string $name) : ?array
     {
-        $res                                    = null;
+        $res                                    = [];
         foreach ($values as $op => $value) {
-            if (!empty(self::OPERATOR_COMPARISON[$op])) {
-                $res[$op]                       = $this->fieldOperation($this->converter->in($name, $value), $struct_type, $name, $op);
+            if (isset(self::OPERATOR_COMPARISON[$op])) {
+                $res[$op]          = $this->fieldOperation($this->converter->in($name, $value), $struct_type, $name, $op);
             }
         }
 
-        if (!$res) {
-            if (count($values) > 1) {
-                $res[self::OP_ARRAY_DEFAULT]    = $this->fieldOperation($this->converter->in($name, $values), $struct_type, $name, self::OP_ARRAY_DEFAULT);
-            } elseif (empty($values) && ($operation = $this->fieldOperationNULL($struct_type, $name, self::OP_DEFAULT))) {
-                $res[self::OP_DEFAULT]          = $operation;
-            } else {
-                $res[self::OP_DEFAULT]          = $this->fieldOperation($this->converter->in($name, $values[0]), $struct_type, $name, self::OP_DEFAULT);
-            }
+        if (empty($res)) {
+            $this->fieldOperationSwitch($res, $struct_type, $name, $values);
         }
 
         return $res;
+    }
+
+    /**
+     * @param array $ref
+     * @param string $name
+     * @param $value
+     * @param string $struct_type
+     */
+    private function fieldOperationSwitch(array &$ref, string $struct_type, string $name, $value) : void
+    {
+        if (is_array($value) && count($value) > 1) {
+            $ref[self::OP_ARRAY_DEFAULT]    = $this->fieldOperation($this->converter->in($name, $value), $struct_type, $name, self::OP_ARRAY_DEFAULT);
+        } elseif (isset($value[0])) {
+            $ref[self::OP_DEFAULT]          = $this->fieldOperation($this->converter->in($name, $value[0]), $struct_type, $name, self::OP_DEFAULT);
+        } elseif (empty($value) && ($operation = $this->fieldOperationNULL($struct_type, $name, self::OP_DEFAULT))) {
+            $ref[self::OP_DEFAULT]          = $operation;
+        }
     }
 }

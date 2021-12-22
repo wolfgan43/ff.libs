@@ -108,10 +108,10 @@ class Buffer implements Dumpable
     {
         self::watchStart($bucket, $action);
 
+        $pid                                                = self::hash($bucket, $action, $params);
         if (!self::cacheEnabled()) {
-            return true;
+            return self::init($pid, $bucket, $action, $params);
         }
-        $pid                                            = self::hash($bucket, $action, $params);
 
         return ($res && self::isCached($pid)
             ? self::initRef($pid, $res, $cnf)
@@ -243,14 +243,16 @@ class Buffer implements Dumpable
 
         return true;
     }
+
     /**
-     * @param $value
+     * @param string $value
      */
     public static function set(string $value) : void
     {
-        self::$cache[self::$pid]->process[]                 =& self::setProcess($value);
+        if (isset(self::$cache[self::$pid])) {
+            self::$cache[self::$pid]->process[]             =& self::setProcess($value);
+        }
     }
-
 
     /**
      * @param string $value

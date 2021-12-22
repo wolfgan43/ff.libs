@@ -144,7 +144,7 @@ class MongoDB extends DatabaseDriver
             if (class_exists("\MongoDB\Driver\Manager")) {
                 $auth                                       = (
                     $this->user && $this->secret
-                    ? $this->user . ":" . $this->secret . "@"
+                    ? urlencode($this->user) . ":" . urlencode($this->secret) . "@"
                     : ""
                 );
                 $this->link_id = new Manager(
@@ -569,16 +569,16 @@ class MongoDB extends DatabaseDriver
         if (!$this->link_id) {
             $this->errorHandler("insert_id() called with no DB connection");
         }
-        
+
         return (string) $this->buffered_insert_id;
     }
 
     /**
-     * @param string|int|float|null $DataValue
-     * @return string|int|float|null
+     * @param bool|float|int|string|array $DataValue
+     * @return bool|float|int|string|array
      * @todo da tipizzare
      */
-    protected function toSqlEscape($DataValue = null)
+    protected function toSqlEscape($DataValue)
     {
         return $DataValue;
     }

@@ -1,8 +1,9 @@
 cm.dataTable = (function () {
     let settings = {
         "class" : {
-            "component"         : "dt-wrapper",
+            "component"         : "dt-component",
             "error"             : "cm-error",
+            "action"            : "dt-action",
             "title"             : "dt-title",
             "description"       : "dt-description",
             "wrapper"           : "dataTable-wrapper",
@@ -43,15 +44,19 @@ cm.dataTable = (function () {
             return url.toString();
         }
 
-        function run(dt, url) {
-            function submit(dt, url) {
+        function run(url) {
+            function submit(url) {
                 let api = new URL(url);
                 api.searchParams.set("component", dt.id);
+                if((key = dt.querySelector("TBODY").getAttribute("data-key"))) {
+                    api.searchParams.set("key", key);
+                }
 
                 dt.style["opacity"] = "0.5";
                 cm.api.search(api.toString())
                     .then(function(response) {
-                        draw(dt, response);
+                        cm.error(dt).clear();
+                        draw(response);
                     })
                     .catch(function(errorMessage) {
                         cm.error(dt).set(errorMessage);
@@ -63,7 +68,7 @@ cm.dataTable = (function () {
 
             if(dt.classList.contains(cm.settings().class.xhr)) {
                 window.history.pushState({}, "", url);
-                submit(dt, url);
+                submit(url);
             } else {
                 window.location.href = url;
             }
@@ -71,20 +76,21 @@ cm.dataTable = (function () {
 
         function addListener(selector, event, callback)
         {
-            let length  = dt.querySelectorAll(selector);
-            for (let i = 0; i < length.length; i++) {
-                length[i].addEventListener(event, function (e) {
+            let nodes = dt.querySelectorAll(selector);
+            for (let i = 0; i < nodes.length; i++) {
+                nodes[i].addEventListener(event, function (e) {
                     e.preventDefault();
 
-                    run(dt, callback(this));
+                    run(callback(this));
                 });
             }
         }
 
 
-        function draw(dt, response) {
+        function draw(response) {
             const INFO = "Showing [start] to [length] of [rfilter] entries";
             const INFO_FILTERED = " (filtered from [rtotal] total entries)";
+            const DEFAULT_DIR = "asc";
             const RDIR = {"asc" : "desc", "desc": "asc"};
             const SORT = "sort";
             const ODD = "odd";
@@ -92,7 +98,8 @@ cm.dataTable = (function () {
 
             function drawOrder(order) {
                 let url = new URL(window.location.href);
-                let index, dir, sort = null;
+                let dir = DEFAULT_DIR;
+                let index, sort = null;
 
                 for (let i = 0; i < order.length; i++) {
                     sort = SORT + "[" + i + "]";
@@ -128,14 +135,14 @@ cm.dataTable = (function () {
                 let page_next = page + 1;
 
                 url.searchParams.set("page", page_prev);
-                prev = '<li>' + (
+                let prev = '<li>' + (
                     page <= 1 || page > page_tot
                         ? '<span class="prev">Previous</span>'
                         : '<a href="' + url.toString() + '" class="prev">Previous</a>'
                 ) + '</li>';
 
                 url.searchParams.set("page", page_next);
-                next = '<li>' + (
+                let next = '<li>' + (
                     page < 1 || page >= page_tot
                         ? '<span class="next">Next</span>'
                         : '<a href="' + url.toString() + '" class="next">Next</a>'
@@ -189,26 +196,57 @@ cm.dataTable = (function () {
 
             function drawBody(TH, tBody) {
                 if(response.data.length) {
-
                     let columns = {};
-
                     for (let i = 0; i < TH.length; i++) {
                         columns[TH[i].getAttribute("data-id")] = TH[i].classList.contains(SORT);
                     }
 
                     let TR = '';
+                    let tplButton = dt.querySelector(".dt-btn");
+                    let recordKey = tBody.getAttribute("data-key");
                     for (let i = 0; i < response.data.length; i++) {
-                        TR += '<tr class="' + (i % 2 === 0 ? ODD : EVEN) + '">';
-                        for (const property in columns) {
-                            TR += '<td' + (columns[property] ? ' class="' + SORT + '"' : '') + '>' + (response.data[i][property] || "") + '</td>';
+                        let attrId = null;
+                        let buttons = null;
+                        if(recordKey && response.keys && response.keys[i]) {
+                            attrId = ' data-id="' + response.keys[i] + '"';
+                            buttons = drawButton(tplButton, recordKey, response.keys[i]);
                         }
-                        TR += '<tr>';
+
+                        TR += '<tr' + attrId + ' class="' + (i % 2 === 0 ? ODD : EVEN) + '">';
+                        for (const column in columns) {
+                            TR += '<td' + (columns[column] ? ' class="' + SORT + '"' : '') + '>' + (response.data[i][column] || "") + '</td>';
+                        }
+                        TR += buttons;
+                        TR += '</tr>';
                     }
 
                     tBody.innerHTML = TR;
+
+                    cm.guiInit(tBody);
                 } else {
                     drawBodyEmpty(TH, tBody, "Try to Change Page!");
                 }
+            }
+
+            function drawButton(tplButton, recordKey, recordId) {
+                function updateLinksInHTML(html) {
+                    //let regex = /href\s*=\s*"([^"?#]*)(?:\?([^"#]*)&?)?(#[^"]*)?"/gi;
+                    let regex = /href\s*=\s*"([^"]*)"/gi;
+                    let link;
+
+                    while ((link = regex.exec(html)) !== null) {
+                        let url = new URL(link[1], top.location.href);
+                        url.searchParams.set(recordKey, recordId);
+                        if (url.searchParams.has("redirect")) {
+                            url.searchParams.set("redirect", window.location.pathname + window.location.search + window.location.hash);
+                        }
+                        html = html.replace(link[1], url.toString());
+                    }
+
+                    return html;
+                }
+
+                return '<td>' + updateLinksInHTML(tplButton.innerHTML.replace("({'", "({'" + recordKey + "':'" + recordId + "','")) + '</td>';
             }
 
             function drawBodyEmpty(TH, tBody, message) {
@@ -216,22 +254,43 @@ cm.dataTable = (function () {
             }
 
             if(response) {
-                drawOrder(dt.querySelectorAll("THEAD TH a"));
-                drawBody(dt.querySelectorAll("THEAD TH"), dt.querySelector("TBODY"));
-                drawInfo(dt.querySelectorAll("." + settings.class.info), dt.querySelector("." + settings.class.length + " SELECT").value);
-                drawPage(dt.querySelectorAll("." + settings.class.paginate), dt.querySelector("." + settings.class.length + " SELECT").value);
+                drawBody(dt.querySelectorAll("THEAD TH[data-id]"), dt.querySelector("TBODY"));
+                //recordUrl();
             } else {
                 response = {
                     recordsFiltered : 0,
                     recordsTotal : 0
                 };
 
-                drawOrder(dt.querySelectorAll("THEAD TH a"));
                 drawBodyEmpty(dt.querySelectorAll("THEAD TH"), dt.querySelector("TBODY"));
-                drawInfo(dt.querySelectorAll("." + settings.class.info), dt.querySelector("." + settings.class.length + " SELECT").value);
-                drawPage(dt.querySelectorAll("." + settings.class.paginate), dt.querySelector("." + settings.class.length + " SELECT").value);
+            }
+
+            drawOrder(dt.querySelectorAll("THEAD TH a"));
+            drawInfo(dt.querySelectorAll("." + settings.class.info), dt.querySelector("." + settings.class.length + " SELECT").value);
+            drawPage(dt.querySelectorAll("." + settings.class.paginate), dt.querySelector("." + settings.class.length + " SELECT").value);
+
+        }
+
+        function recordUrl() {
+            let tbody       = dt.querySelector("TBODY");
+            let recordUrl   = tbody.getAttribute("data-url");
+            let recordKey   = tbody.getAttribute("data-key");
+
+            if(recordUrl && recordKey) {
+                let nodes = dt.querySelectorAll("TBODY TR[data-key]")
+                for (let i = 0; i < nodes.length; i++) {
+                    nodes[i].style["cursor"] = "pointer";
+                    nodes[i].addEventListener("click", function (e) {
+                        e.preventDefault();
+
+                        window.location.href = recordUrl + "?" + recordKey + "=" + this.getAttribute("data-id") + "&redirect=" + encodeURIComponent(window.location.pathname + window.location.search + window.location.hash );
+                    });
+                }
             }
         }
+
+       //recordUrl();
+
 
 
         addListener("SELECT[name='length']", "change", function(self) {
@@ -249,7 +308,7 @@ cm.dataTable = (function () {
 
         return {
             "run" : function(name, value) {
-                run(dt, url(name, value));
+                run(url(name, value));
             }
         };
     }
@@ -261,9 +320,7 @@ cm.dataTable = (function () {
         }
     }
 
-    document.addEventListener("DOMContentLoaded", function() {
-        guiInit();
-    });
+    cm.onReady(guiInit);
 
     return self;
 })();

@@ -41,6 +41,7 @@ interface Constant
     public const FTYPE_DATE                                                 = "date";
     public const FTYPE_NUMBER                                               = "number";
     public const FTYPE_TIMESTAMP                                            = "timestamp";
+    public const FTYPE_TIMESTAMP_MICRO                                      = "timestampmicro";
     public const FTYPE_PRIMARY                                              = "primary";
     public const FTYPE_STRING                                               = "string";
     public const FTYPE_CHAR                                                 = "char";
@@ -49,6 +50,7 @@ interface Constant
     public const FTYPE_ARRAY_JSON                                           = "json";
     public const FTYPE_NUMBER_BIG                                           = "bigint";
     public const FTYPE_NUMBER_FLOAT                                         = "float";
+    public const FTYPE_NUMBER_DOUBLE                                        = "double";
 
     public const FTYPE_NUMBER_DECIMAN                                       = "currency";
 

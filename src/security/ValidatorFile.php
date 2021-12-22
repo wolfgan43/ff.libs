@@ -561,7 +561,7 @@ class ValidatorFile
                         $error[]                                            = $names[$index] . ": MimeType not allowed. The permitted values are [" . $mimetype_allowed . "]";
                     }
                     if (!self::checkMimeType($type, pathinfo($names[$index], PATHINFO_EXTENSION))) {
-                        $error[]                                            = $names[$index] . ": MimeType Wrong (" . $type . ")";
+                        $error[]                                            = $names[$index] . ": Wrong MimeType (" . $type . ")";
                     }
                     if (!self::checkMagicBytes($files[$index], $type)) {
                         $error[]                                            = $names[$index] . ": type mismatch";

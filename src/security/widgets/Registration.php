@@ -94,9 +94,6 @@ class Registration extends Widget
             $response                   = $this->api($config->api->registration, (array)$this->request);
             if (User::isLogged()) {
                 $this->welcome();
-                /*$response->set("welcome", Welcome::toArray([
-                    "redirect"          => $config->redirect
-                ]));*/
             } elseif ($response->get("activation")) {
                 $response->set("confirm", Activation::toArray([
                     "redirect"          => $config->redirect,

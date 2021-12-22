@@ -86,7 +86,7 @@ abstract class Mailer
      */
     public static function getInstance(string $template = null)
     {
-        if (!self::$singletons[$template]) {
+        if (!isset(self::$singletons[$template])) {
             self::$singletons[$template]   = (
                 $template
                 ? new MailerTemplate($template)
@@ -208,8 +208,8 @@ abstract class Mailer
     /**
      * @param string $attach
      * @param null|string $name
-     * @param null|string $mime
-     * @param null|string $encoded
+     * @param string $mime
+     * @param string $encoded
      * @return Mailer
      * @throws Exception
      */
@@ -396,11 +396,11 @@ abstract class Mailer
     private function phpmailer()
     {
         try {
-            $mail = new PHPMailer();
+            $mail                                               = new PHPMailer();
             $mail->SetLanguage($this->lang);
-            $mail->Subject = $this->processSubject();
-            $mail->CharSet = $this->charset;
-            $mail->Encoding = $this->encoding;
+            $mail->Subject                                      = $this->processSubject();
+            $mail->CharSet                                      = $this->charset;
+            $mail->Encoding                                     = $this->encoding;
 
 
             if ($this->adapter->driver == "smtp") {
@@ -409,23 +409,23 @@ abstract class Mailer
                 $mail->IsMail();
             }
 
-            $mail->Host = $this->adapter->host;
-            $mail->SMTPAuth = $this->adapter->auth;
-            $mail->Username = $this->adapter->username;
-            $mail->Port = $this->adapter->port;
-            $mail->Password = $this->adapter->password;
-            $mail->SMTPSecure = $this->adapter->secure;
-            $mail->SMTPAutoTLS = $this->adapter->autoTLS;
+            $mail->Host                                         = $this->adapter->host;
+            $mail->SMTPAuth                                     = $this->adapter->auth;
+            $mail->Username                                     = $this->adapter->username;
+            $mail->Port                                         = $this->adapter->port;
+            $mail->Password                                     = $this->adapter->password;
+            $mail->SMTPSecure                                   = $this->adapter->secure;
+            $mail->SMTPAutoTLS                                  = $this->adapter->autoTLS;
             if (!$mail->SMTPSecure) {
-                $mail->SMTPSecure = "none";
+                $mail->SMTPSecure                               = "none";
             }
 
-            $mail->FromName = $this->fromName;
-            $mail->From = (
-                strpos($this->adapter->username, "@") === false
-                ? $this->fromEmail
-                : $this->adapter->username
-            );
+            $mail->FromName                                     = $this->fromName;
+            $mail->From                                         = (
+            strpos($this->adapter->username, "@") === false
+                                                                    ? $this->fromEmail
+                                                                    : $this->adapter->username
+                                                                );
             if ($this->adapter->username != $this->fromEmail) {
                 $mail->AddReplyTo($this->fromEmail, $this->fromName);
             }
@@ -447,9 +447,9 @@ abstract class Mailer
             }
 
             $mail->IsHTML(true);
-            $mail->AllowEmpty = true;
-            $mail->Body = $this->processBody();
-            $mail->AltBody = $this->processBodyAlt();
+            $mail->AllowEmpty                                   = true;
+            $mail->Body                                         = $this->processBody();
+            $mail->AltBody                                      = $this->processBodyAlt();
             /*
              * Images
              */

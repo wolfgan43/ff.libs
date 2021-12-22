@@ -34,7 +34,6 @@ define("SITE_PATH", !empty($_SERVER["DOCUMENT_ROOT"]) ? str_replace(rtrim($_SERV
  */
 class Constant
 {
-    const NAME_SPACE                        = __NAMESPACE__ . '\\';
     const CONFIG_PATHS                      = array(
         self::CONFIG_FF_PATH                => array("flag" => 8, "filter" => array("xml", "map"))
     );
@@ -133,7 +132,7 @@ class Constant
      */
     const LOCALE_ACCEPTED_LANGS             = ["en"];
     const LOCALE_LANG_CODE                  = "en";
-    const LOCALE_COUNTRY_CODE               = "IT";
+    const LOCALE_COUNTRY_CODE               = "GB";
     const LOCALE_TIME_ZONE                  = "Europe/Rome";
     const LOCALE_TIME_LOC                   = "+1000";
 

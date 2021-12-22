@@ -161,7 +161,7 @@ abstract class Controller
         $this->authorization                    = $page->getAuthorization();
         $this->script_path                      = $page->script_path;
         $this->path_info                        = $page->path_info;
-        $this->isXhr                            = $page->isXhr;
+        $this->isXhr                            = $page->isAjax();
 
         $this->config                           = $config;
         $this->response                         = new DataResponse();
@@ -452,10 +452,11 @@ abstract class Controller
      * @param string $content
      * @param string|null $location
      * @return $this
+     * @throws Exception
      */
     public function addJavascriptEmbed(string $content, string $location = null) : self
     {
-        if(!$location && Kernel::$Environment::ASSET_LOCATION_DEFAULT == self::ASSET_LOCATION_DEFER) {
+        if (!$location && Kernel::$Environment::ASSET_LOCATION_DEFAULT == self::ASSET_LOCATION_DEFER) {
             $this->addJavascript("data:text/javascript;base64," . base64_encode($content), self::ASSET_LOCATION_DEFER);
         } else {
             $this->adapter->js_embed[$content] = $location ?? Kernel::$Environment::ASSET_LOCATION_DEFAULT;
@@ -529,7 +530,7 @@ abstract class Controller
      * @param string|null $msg
      * @return $this
      */
-    public function error(int $status, string $msg = null) : self
+    protected function error(int $status, string $msg = null) : self
     {
         $this->debug($msg);
 
@@ -546,6 +547,18 @@ abstract class Controller
      */
     public function display(string $method = null) : DataAdapter
     {
+        if ($this->error) {
+            if ($this->isXhr) {
+                return $this->response()->error($this->http_status_code, $this->error);
+            } elseif (!empty(static::ERROR_VIEW)) {
+                $this->{static::ERROR_VIEW}();
+
+                return $this->layout();
+            } else {
+                throw new Exception($this->error, $this->http_status_code);
+            }
+        }
+
         if ($this->isXhr && !empty($this->request->component)) {
             $component = explode(":", $this->request->component, 2);
             if (class_exists($component[0])) {
@@ -560,14 +573,7 @@ abstract class Controller
         try {
             $this->render($method);
         } catch (\Exception $e) {
-            /*if ($e->getCode() >= 500) {
-                throw new \Exception($e->getMessage(), $e->getCode());
-            }*/
-
             $this->error($e->getCode(), $e->getMessage());
-            if (!$this->view) {
-                $this->{static::ERROR_VIEW ?? $this->route}();
-            }
         }
 
         if ($this->isXhr) {
@@ -581,15 +587,32 @@ abstract class Controller
             );
         }
 
-        if ($this->contentEmpty) {
-            if ($this->error && !$this->view) {
-                $this->{static::ERROR_VIEW ?? $this->route}();
+        if ($this->error) {
+            if (!empty(static::ERROR_VIEW)) {
+                $this->view = null;
+                $this->{static::ERROR_VIEW}();
+            } elseif (!$this->view) {
+                $this->{$this->route}();
+            } else {
+                throw new Exception($this->error, $this->http_status_code);
             }
-            $this->assign(self::TPL_VAR_DEFAULT, $this->view);
+        }
 
+        return $this->layout();
+    }
+
+    /**
+     * @return DataHtml
+     * @throws Exception
+     */
+    private function layout() : DataHtml
+    {
+        if ($this->contentEmpty) {
             if (!$this->view) {
                 throw new Exception(self::ERROR_PAGE_NOT_FOUND, self::ERROR_PAGE_NOT_FOUND_CODE);
             }
+
+            $this->assign(self::TPL_VAR_DEFAULT, $this->view);
         }
 
         if ($this->http_status_code >= 400 && $this->layoutException) {
@@ -609,16 +632,20 @@ abstract class Controller
     }
 
     /**
+     * @param int $status
+     * @param string|null $msg
      * @return DataAdapter
      * @throws Exception
      */
-    public function displayException() : DataAdapter
+    public function displayException(int $status, string $msg = null) : DataAdapter
     {
         if ($this->layoutException) {
             $this->adapter->layout = $this->layoutException;
         }
 
-        return $this->display();
+        return $this
+            ->error($status, $msg)
+            ->display();
     }
 
     /**

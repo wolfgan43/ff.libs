@@ -35,7 +35,8 @@ class Schema
 {
     use Mapping;
 
-    private const TYPE = [
+    /**
+    TYPE = [
         "markdown",
         "select",
         "list",
@@ -66,7 +67,7 @@ class Schema
         "readonly",
         "bool",
     ];
-
+     */
     private const DEFAULT_TYPE = "string";
 
     public $collection      = null;

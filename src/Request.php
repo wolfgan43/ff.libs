@@ -25,11 +25,11 @@
  */
 namespace phpformsframework\libs;
 
+use hcore\libs\Env;
 use phpformsframework\libs\dto\RequestPage;
 use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\util\ServerManager;
 use phpformsframework\libs\util\TypesConverter;
-use phpformsframework\libs\Exception;
 
 /**
  * Class Page
@@ -469,16 +469,22 @@ class Request implements Configurable, Dumpable
         //todo: remove TRACE request method
         //todo: remove serverSignature
         header_remove("X-Powered-By");
-        header("Vary: Accept-Encoding" . ($origin ? ", Origin" : ""));
+        header("Vary: Accept-Encoding"              . ($origin ? ", Origin" : ""));
 
-
-        header('X-Content-Type-Options: nosniff');
-        header('X-XSS-Protection: 1; mode=block');
-        header('Access-Control-Allow-Headers: DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,content-type');
+        header('X-Content-Type-Options: '           . Env::get("CONTENT_TYPE_OPTIONS"));
+        header('X-XSS-Protection: '                 . Env::get("XSS_PROTECTION"));
+        header('Access-Control-Allow-Headers: '     . Env::get("ACCESS_CONTROL_ALLOW_HEADERS"));
 
         if ($this->isHTTPS()) {
-            header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
+            header('Strict-Transport-Security: '    . Env::get("STRICT_TRANSPORT_SECURITY"));
         }
+
+        header('X-Frame-Options: '                  . Env::get("FRAME_OPTIONS"));
+        header('Referrer-Policy: '                  . Env::get("REFERRER_POLICY"));
+        header('Expect-CT: '                        . Env::get("EXPECT_CT"));
+
+        //header('Content-Security-Policy: '                . Env::get("CONTENT_SECURITY_POLICY"));
+        //header('Permissions-Policy: '                     . Env::get("PERMISSIONS_POLICY"));
 
         switch ($this->requestMethod()) {
             case self::METHOD_OPTIONS:
@@ -487,8 +493,9 @@ class Request implements Configurable, Dumpable
                     $this->page->method == self::METHOD_HEAD
                         ? self::METHOD_GET . ", " . self::METHOD_POST
                         : $this->page->method
-                    ));
+                ));
                 $this->corsPreflight($origin);
+                http_response_code(204);
                 exit;
             case self::METHOD_GET:
             case self::METHOD_POST:
@@ -526,11 +533,7 @@ class Request implements Configurable, Dumpable
                 } elseif (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'])) {
                     header("Access-Control-Allow-Headers: {$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']}");
                 }
-                header('Access-Control-Max-Age: ' . (
-                    isset($access_control["max-age"])
-                        ? $access_control["max-age"]
-                        : 3600
-                    ));
+                header('Access-Control-Max-Age: ' . $access_control["max-age"] ?? 3600);
                 header("Content-Type: text/plain");
             } elseif (!isset(self::$access_control)) {
                 $this->corsFree($origin);
@@ -665,6 +668,19 @@ class Request implements Configurable, Dumpable
     }
 
     /**
+     * @return array
+     */
+    private function phpInput() : array
+    {
+        $input = file_get_contents('php://input');
+        if ($this->contentEncoding() == "gzip") {
+            $input = gzdecode($input);
+        }
+
+        return (array) json_decode($input, true);
+    }
+
+    /**
      * @param string|null $method
      * @return array
      */
@@ -675,8 +691,8 @@ class Request implements Configurable, Dumpable
                 $req                                                                            =  $_GET + (
                     $this->isFormData()
                         ? $_POST
-                        : (array) json_decode(file_get_contents('php://input'), true)
-                    );
+                        : $this->phpInput()
+                );
                 break;
             case self::METHOD_GET:
             case self::METHOD_PUT:

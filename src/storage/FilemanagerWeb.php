@@ -45,6 +45,7 @@ class FilemanagerWeb implements Dumpable
     use AdapterManager;
 
     private const ERROR_FILE_FORBIDDEN                                  = "failed to open stream: check verify ssl connection also";
+    private const ERROR_FILE_EMPTY                                      = "response is empty";
 
     private static $cache                                               = null;
 
@@ -93,21 +94,21 @@ class FilemanagerWeb implements Dumpable
      * @param string|null $username
      * @param string|null $password
      * @param array|null $headers
-     * @return stdClass|array|null
+     * @return stdClass
      * @throws Exception
      * @todo da tipizzare
      */
-    public static function fileGetContentsJson(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null)
+    public static function fileGetContentsJson(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : stdClass
     {
         $rawdata                                    = self::fileGetContents($url, $params, $method, $timeout, $user_agent, $cookie, $username, $password, $headers);
+        if ($rawdata === "") {
+            return new stdClass();
+        }
+
         $res                                        = json_decode($rawdata);
         if (json_last_error() != JSON_ERROR_NONE) {
             Debug::set($rawdata, $method . "::response " . $url . "::rawdata");
-            if (empty($rawdata)) {
-                throw new Exception("Response is Empty", 406);
-            } else {
-                throw new Exception("Response is not a valid JSON: " . json_last_error_msg(), 406);
-            }
+            throw new Exception("Response is not a valid JSON (detail in response::rawdata): " . json_last_error_msg(), 406);
         }
 
         return $res;
@@ -140,6 +141,20 @@ class FilemanagerWeb implements Dumpable
             "headers" => self::parseResponseHeaders($response_headers),
             "content" => self::$cache["response"][$location][$key]
         );
+    }
+
+    /**
+     * @param string $filename
+     * @param string $data
+     * @return false
+     */
+    public static function filePutContents(string $filename, string $data) : bool
+    {
+        if (!Dir::checkDiskPath(dirname($filename))) {
+            return false;
+        }
+
+        return file_put_contents($filename, $data);
     }
 
     /**
@@ -235,8 +250,9 @@ class FilemanagerWeb implements Dumpable
 
         $content                            = @file_get_contents($path, false, $context);
         if ($content === false) {
-            Debug::set($path ?: "empty", self::ERROR_FILE_FORBIDDEN);
-            throw new Exception(self::ERROR_FILE_FORBIDDEN, 403);
+            throw new Exception(error_get_last()["message"] ?? self::ERROR_FILE_FORBIDDEN, 406);
+        } elseif(empty($content) && strpos($http_response_header[0] ?? "", " 204 ") === false) {
+            throw new Exception(self::ERROR_FILE_EMPTY . " " . $http_response_header[0], 406);
         }
 
         Normalize::removeBom($content);

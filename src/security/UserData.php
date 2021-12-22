@@ -25,7 +25,6 @@
  */
 namespace phpformsframework\libs\security;
 
-use phpformsframework\libs\storage\Media;
 use phpformsframework\libs\storage\Model;
 use phpformsframework\libs\storage\OrmItem;
 use phpformsframework\libs\Exception;

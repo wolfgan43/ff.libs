@@ -215,7 +215,8 @@ class Router implements Configurable, Dumpable
      */
     private static function execute(string $script) : void
     {
-        if (!Autoloader::loadScript($script)) {
+        ob_start();
+        if (!Autoloader::loadScript($script) && empty(ob_get_length())) {
             Response::sendError("404");
         }
         exit;
@@ -394,7 +395,6 @@ class Router implements Configurable, Dumpable
      * @param string $method
      * @param array $params
      * @return dto\DataAdapter
-     * @throws Exception
      */
     private static function caller(string $class_name, string $method, array $params) : dto\DataAdapter
     {
@@ -406,6 +406,7 @@ class Router implements Configurable, Dumpable
                     $output                                         = (new $class_name())->$method(...$params);
                 }
             } catch (\Exception $e) {
+                Debug::setBackTrace($e->getTrace());
                 Response::sendError($e->getCode(), $e->getMessage());
             }
         } elseif (is_callable($method)) {

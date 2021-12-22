@@ -38,14 +38,14 @@ let cm = (function () {
                 "action"        : "cm-action"
             },
             "tpl"				:
-                '<div class="cm-modal cm-open" style="position: fixed;top: 0;right: 0;bottom: 0;left: 0;padding: 3% 0;overflow: hidden;background: rgba(0,0,0,.6);">    ' +
-                '   <div class="cm-modal-dialog" style="position: relative;margin: 0 auto;width: 600px;background: black;">' +
+                '<div class="cm-modal cm-open" style="position: fixed;inset:0;display:flex;align-items: center;justify-content: center;overflow: hidden;background: rgba(0,0,0,.6);">    ' +
+                '   <div class="cm-modal-dialog" style="position: relative;min-width: 600px;background: black;">' +
                 '       <div class="cm-modal-header" style="padding: 15px 30px;background: #cacaca;">' +
                 '           <h2 class="cm-modal-title"></h2>' +
                 '           <p class="cm-modal-description"></p>' +
                 '           <button class="cm-modal-close cm-close" type="button" style="position: absolute;top: 10px;right: 10px;padding: 5px;border: 0;cursor: pointer;z-index: 1">X</button>' +
                 '       </div>        ' +
-                '       <div class="cm-modal-body" style="padding: 30px 30px;"></div>' +
+                '       <div class="cm-modal-body" style="max-height: 70vh;overflow: auto;padding: 30px 30px;"></div>' +
                 '       <div class="cm-modal-footer cm-action" style="padding: 15px 30px;background: #fff;text-align: right;"></div>' +
                 '   </div>' +
                 '</div>',
@@ -761,7 +761,7 @@ let cm = (function () {
 					}
 
                     privates.$container.classList.add(settings.modal.open);
-                    privates.$container.style["display"] = "block";
+                    privates.$container.style["visibility"] = "visible";
 
 					if (privates.events.open) {
 						privates.events.open({
@@ -775,7 +775,7 @@ let cm = (function () {
 					}
 
                     privates.$container.classList.remove(settings.modal.open);
-                    privates.$container.style["display"] = "none";
+                    privates.$container.style["visibility"] = "hidden";
 
                     this.error.hide();
                 },

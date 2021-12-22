@@ -96,11 +96,10 @@ class ApiJsonWsp extends ApiAdapter
     /**
      * @param array|null $params
      * @param array|null $headers
-     * @return stdClass|array|null
+     * @return stdClass
      * @throws Exception
-     * @todo da tipizzare
      */
-    protected function get(array $params = null, array $headers = null)
+    protected function get(array $params = null, array $headers = null) : stdClass
     {
         $this->protocol         = $this->protocol();
 

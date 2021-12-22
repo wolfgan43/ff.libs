@@ -63,19 +63,19 @@ class DataTablePlugin extends DataTable
 
         $columns = null;
         $columns_json = [];
-        foreach ($this->schema->columns as $column) {
+        foreach ($this->columns as $column) {
             $columns                    .= '<th>' . $column . '</th>';
             $columns_json[]["data"]     = $column;
         }
 
         $rows = null;
-        foreach ($this->dataTable->getAllArray() as $record) {
+        foreach ($this->dataTable->toArray() as $record) {
             $rows                       .= '<tr><td>' . implode('</td><td>', $record). '</td></tr>';
         }
 
         $this->jsEmbed($search, $order, $columns_json);
 
-        return '<table class="dt-table" data-component="' . $this->id . '">
+        return '<table class="dt-table" data-component="' . $this->getName() . '">
             <thead>
                 <tr>' . $columns . '</tr>
             </thead>
@@ -132,7 +132,7 @@ class DataTablePlugin extends DataTable
                     dataType : "json"
                 },
                 columns: ' . json_encode($columns). ',
-                deferLoading: ' . $this->records . '
+                deferLoading: ' . $this->records_filtered . '
             });
         }, 1000);';
     }

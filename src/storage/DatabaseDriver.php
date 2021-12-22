@@ -156,11 +156,11 @@ abstract class DatabaseDriver implements Constant
     abstract public function getInsertID() : ?string;
 
     /**
-     * @param string|int|float|null $DataValue
-     * @return string|null
+     * @param bool|float|int|string|array $DataValue
+     * @return bool|float|int|string|array
      * @todo da tipizzare
      */
-    abstract protected function toSqlEscape($DataValue = null);
+    abstract protected function toSqlEscape($DataValue);
 
     /**
      * @param string $msg
@@ -182,12 +182,14 @@ abstract class DatabaseDriver implements Constant
                 : static::PREFIX
             );
 
-        $this->connect(
-            Constant($bucket . "NAME"),
-            Constant($bucket . "HOST"),
-            Constant($bucket . "USER"),
-            Constant($bucket . "SECRET")
-        );
+        if(($host = Constant($bucket . "HOST")) && ($name = Constant($bucket . "NAME"))) {
+            $this->connect(
+                $name,
+                $host,
+                Constant($bucket . "USER"),
+                Constant($bucket . "SECRET")
+            );
+        }
     }
 
     /**
@@ -199,13 +201,14 @@ abstract class DatabaseDriver implements Constant
     }
 
     /**
-     * @param mixed $mixed
+     * @param string|int|float|array|object|DateTime|Data $mixed
      * @param string $type
+     * @param bool $castResult
      * @return mixed
      * @throws Exception
      * @todo da tipizzare
      */
-    public function toSql($mixed, string $type = self::FTYPE_STRING)
+    public function toSql($mixed, string $type = self::FTYPE_STRING, bool $castResult = false)
     {
         if (is_array($mixed)) {
             $res = $this->toSqlArray($type, $mixed);
@@ -220,9 +223,14 @@ abstract class DatabaseDriver implements Constant
                 default:
                     $res = $this->toSqlObject($mixed);
             }
+        } elseif ($type == self::FTYPE_PRIMARY) {
+            $res = $this->convertID($mixed);
+        } elseif ($castResult) {
+            $res = $this->toSqlString($this->toSqlStringCast($type, $mixed));
         } else {
-            $res = $this->toSqlString($type, $mixed);
+            $res = $this->toSqlString($mixed);
         }
+
         return $res;
     }
 
@@ -233,14 +241,14 @@ abstract class DatabaseDriver implements Constant
      */
     private function toSqlData(Data $Data) : ?string
     {
-        return $this->toSqlString(self::FTYPE_STRING, $Data->getValue($Data->data_type, $this->locale));
+        return $this->toSqlString($Data->getValue($Data->data_type, $this->locale));
     }
 
     /**
      * todo da tipizzare
      * @param array $Array
      * @param string $type
-     * @return string|array|null
+     * @return string|array
      */
     protected function toSqlArray(string $type, array $Array)
     {
@@ -260,15 +268,26 @@ abstract class DatabaseDriver implements Constant
             case self::FTYPE_ARRAY_OF_NUMBER:
             case self::FTYPE_ARRAY_INCREMENTAL:
             default:
-                $value = array_map(function ($value) use ($Array) {
-                    if (is_array($value)) {
-                        $this->errorHandler("Multidimensional Array not managed: " . json_encode($Array));
-                    }
-                    return $this->toSqlEscape($value);
-                }, $Array);
+                if ($this->toSqlArrayMulti($Array)) {
+                    $this->errorHandler("Multidimensional Array not managed: " . json_encode($Array));
+                }
+                $value = $this->toSqlEscape($Array);
         }
-
         return $value;
+    }
+
+    /**
+     * @param array $Array
+     * @return bool
+     */
+    private function toSqlArrayMulti(array $Array) : bool
+    {
+        foreach ($Array as $v) {
+            if (is_array($v)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -278,7 +297,7 @@ abstract class DatabaseDriver implements Constant
      */
     private function toSqlObject(object $Object) : ?string
     {
-        return $this->toSqlString(self::FTYPE_STRING, serialize($Object));
+        return $this->toSqlString(serialize($Object));
     }
 
     /**
@@ -289,59 +308,67 @@ abstract class DatabaseDriver implements Constant
     private function toSqlDateTime(DateTime $Object) : ?string
     {
         //@todo to implement
-        return $this->toSqlString(self::FTYPE_STRING, $Object->format('Y-M-d H:m:s'));
+        return $this->toSqlString($Object->format('Y-M-d H:m:s'));
+    }
+
+    /**
+     * @param bool|float|int|string $value
+     * @return bool|float|int|string
+     * @throws Exception
+     * @todo da tipizzare
+     */
+    protected function toSqlString($value)
+    {
+        return $this->toSqlEscape($value);
     }
 
     /**
      * @param string $type
-     * @param string|int|float|null $value
-     * @return string|int|float|null
+     * @param bool|float|int|string $value
+     * @return bool|float|int|string
      * @throws Exception
      * @todo da tipizzare
      * @todo i cast int e fload danno problemi con numeri enormi.
      */
-    protected function toSqlString(string $type, $value = null)
+    protected function toSqlStringCast(string $type, $value)
     {
-        if ($value !== null) {
-            switch ($type) {
-                case self::FTYPE_PRIMARY:
-                    $value = $this->convertID($value);
-                    break;
-                case self::FTYPE_BOOLEAN:
-                case self::FTYPE_BOOL:
-                    $value = (bool) $value;
-                    break;
-                case self::FTYPE_NUMBER:
-                case self::FTYPE_NUMBER_BIG:
-                case self::FTYPE_NUMBER_DECIMAN:
-                case self::FTYPE_TIMESTAMP:
-                    $value = (
-                        strlen($value)
-                        ? (int) $value
-                        : 0
-                    );
-                    break;
-                case self::FTYPE_NUMBER_FLOAT:
-                    $value = (
-                        strlen($value)
-                        ? (float) $value
-                        : 0
-                    );
-                    break;
-                case self::FTYPE_DATE:
-                case self::FTYPE_TIME:
-                case self::FTYPE_DATE_TIME:
-                    $value = (
-                        strlen($value)
-                        ? $this->toSqlEscape((new Data($value, $type))->getValue($type, $this->locale))
-                        : Data::getEmpty($type, $this->locale)
-                    );
-                    break;
-                default:
-                    $value = $this->toSqlEscape($value);
-            }
+        switch ($type) {
+            case self::FTYPE_BOOLEAN:
+            case self::FTYPE_BOOL:
+                $res = (bool) $value;
+                break;
+            case self::FTYPE_NUMBER:
+            case self::FTYPE_NUMBER_BIG:
+            case self::FTYPE_NUMBER_DECIMAN:
+            case self::FTYPE_TIMESTAMP:
+            case self::FTYPE_TIMESTAMP_MICRO:
+                $res = (
+                    strlen($value)
+                    ? (int) $value
+                    : 0
+                );
+                break;
+            case self::FTYPE_NUMBER_FLOAT:
+            case self::FTYPE_NUMBER_DOUBLE:
+                $res = (
+                    strlen($value)
+                    ? (float) $value
+                    : 0
+                );
+                break;
+            case self::FTYPE_DATE:
+            case self::FTYPE_TIME:
+            case self::FTYPE_DATE_TIME:
+                $res = (
+                    strlen($value)
+                    ? (new Data($value, $type))->getValue($type, $this->locale)
+                    : Data::getEmpty($type, $this->locale)
+                );
+                break;
+            default:
+                $res = $value;
         }
 
-        return $value;
+        return $res;
     }
 }

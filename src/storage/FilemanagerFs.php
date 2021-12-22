@@ -40,6 +40,8 @@ class FilemanagerFs
 {
     use AdapterManager;
 
+    private const ERROR_FILE_FORBIDDEN                                  = ": forbidden";
+
     /**
      * @param string $file_path
      * @return string
@@ -49,7 +51,7 @@ class FilemanagerFs
     {
         $content = @file_get_contents($file_path);
         if ($content === false) {
-            throw new Exception($file_path . " forbidden", 403);
+            throw new Exception(error_get_last()["message"] ?? ($file_path . self::ERROR_FILE_FORBIDDEN), 403);
         }
 
         return $content;
@@ -78,6 +80,7 @@ class FilemanagerFs
 
         return file_put_contents($filename, $data);
     }
+
     /**
      * @param string $fileType
      * @return FilemanagerAdapter

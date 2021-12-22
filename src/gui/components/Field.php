@@ -124,7 +124,7 @@ class Field
         return new static($name, [
             "tag"               => "textarea",
             "template"          => "textarea",
-            "validator"         => "markdown",
+            "validator"         => "text",
         ]);
     }
 
@@ -1011,7 +1011,7 @@ class Field
     }
 
     /**
-     * @param string|int|float|bool $value
+     * @param bool|float|int|string $value
      * @return string
      */
     public function convert($value) : string
@@ -1111,7 +1111,7 @@ class Field
     {
         $fields                                 = null;
         $orm                                    = Orm::getInstance($collection, $table);
-        $key                                    = $id ?? $orm->informationSchema($table)->key;
+        $key                                    = $id ?? $orm->primaryKey($table);
 
         if (strpos($display_fields, "[") === false) {
             $fields                             = [$key, $display_fields];

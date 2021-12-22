@@ -275,7 +275,6 @@ class Data
         if (!$data_type) {
             $data_type = $this->data_type;
         }
-
         if ($data_type == self::TYPE_TEXT) {
             return $this->value_text;
         }
@@ -311,7 +310,7 @@ class Data
             return true;
         }
 
-        $dataLang = $this->getAdapter($locale);
+        $dataLang = $this->getAdapter($locale ?? $this->locale);
         $funcname = $this->getFunc(self::FUNC_CHECK, $data_type);
 
         return $dataLang->$funcname($raw_value);

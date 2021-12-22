@@ -27,8 +27,11 @@ namespace phpformsframework\libs\security;
 
 use phpformsframework\libs\Configurable;
 use phpformsframework\libs\Dir;
+use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\Response;
+use phpformsframework\libs\security\widgets\Login;
+use phpformsframework\libs\util\ServerManager;
 use phpformsframework\libs\util\TypesConverter;
 use phpformsframework\libs\dto\ConfigRules;
 use phpformsframework\libs\Exception;
@@ -40,11 +43,16 @@ use phpformsframework\libs\Exception;
 class Buckler implements Configurable
 {
     use TypesConverter;
+    use ServerManager;
 
+    //Error messages
     private const SERVER_BUSY                                   = "server busy";
     private const ERROR_BUCKET                                  = "firewall";
-    private static $rules                                       = null;
 
+    private const ACCESS_SESSION                                = "session";
+    private const ACCESS_PUBLIC                                 = "public";
+
+    private static $rules                                       = null;
 
     /**
      * @access private
@@ -210,4 +218,45 @@ class Buckler implements Configurable
      * {
      * }
      */
+
+    /**
+     * @throws Exception
+     */
+    public static function onPageLoad(Kernel $app) : void
+    {
+        //@todo da spostare la logica nel router. Aggiungere maintenance come tipo di access.
+        if (!$app::$Page->accept_path_info && $app::$Page->path_info) {
+            Response::sendError(404, "Page not Found");
+        }
+
+        if ($app::$Page->vpn && $app::$Page->vpn != self::remoteAddr()) {
+            Response::sendError(401, "Access denied for ip: " . self::remoteAddr());
+        }
+
+        //@todo da fare controllo acl della pagina
+        if ($app::$Page->access == self::ACCESS_SESSION && !User::isLogged() /*$aclVerify = !User::alcVerify($app::$Page->acl))*/) {
+            if ($app::$Page->script_path === "/assets") {
+
+            } else {
+                $login = new Login();
+
+                Response::send($login->display());
+            }
+        }
+
+        if ($app::$Page->csrf) {
+            if (empty($_SERVER["HTTP_X_CSRF_TOKEN"])) {
+                setcookie("csrf", Validator::csrf(self::serverAddr() . $app::$Page->path_info));
+            } elseif (Validator::csrf(self::serverAddr() . $app::$Page->path_info) !== $_SERVER["HTTP_X_CSRF_TOKEN"]) {
+                Response::sendError(403, "CSRF validation failed.");
+            }
+        } elseif (isset($_COOKIE["csrf"])) {
+            unset($_COOKIE["csrf"]);
+            setcookie('csrf', null, -1);
+        }
+
+        if (is_callable($app::$Page->onLoad)) {
+            ($app::$Page->onLoad)();
+        }
+    }
 }

@@ -33,6 +33,7 @@ use phpformsframework\libs\Dumpable;
 use phpformsframework\libs\storage\dto\OrmResults;
 use phpformsframework\libs\Exception;
 use phpformsframework\libs\storage\dto\Schema;
+use phpformsframework\libs\util\TypesConverter;
 use stdClass;
 
 /**
@@ -41,6 +42,8 @@ use stdClass;
  */
 class Model implements Configurable, Dumpable
 {
+    use TypesConverter;
+
     private const ERROR_BUCKET                                                          = Orm::ERROR_BUCKET;
 
     private const ERROR_MODEL_NOT_FOUND                                                 = "Model not Found";
@@ -73,7 +76,7 @@ class Model implements Configurable, Dumpable
     /**
      * @var Schema
      */
-    private $schema                                                                     = null;
+    public $schema                                                                      = null;
     private $name                                                                       = null;
 
     private $logical_fields                                                             = null;
@@ -103,12 +106,12 @@ class Model implements Configurable, Dumpable
      * @todo da valutare poiche da problemi di omonimia. Se mai usata da togliere $collection_or_model
      * @param string|null $collection_or_model
      */
-    public function __construct(string $collection_or_model = null, string $view = null)
+    public function __construct(string $collection_or_model = null)
     {
         $this->name                                                                     = $collection_or_model;
 
         if (isset(self::$models[$collection_or_model])) {
-            $this->schema                                                               = new Schema(self::$models[$collection_or_model . DIRECTORY_SEPARATOR . $view] ?? self::$models[$collection_or_model]);
+            $this->schema                                                               = new Schema(self::$models[$collection_or_model]);
             $this->collection                                                           = $this->schema->collection;
             $this->table                                                                = $this->schema->table;
         } else {
@@ -202,7 +205,7 @@ class Model implements Configurable, Dumpable
     {
         $select                                                                         = (
             $this->select ?? $this->schema->read ?? []
-            ) + $this->selectJoin;
+        ) + $this->selectJoin;
 
         return $this->getOrm()->read($select, $this->setWhere($where), $sort, 1, $offset, false);
     }
@@ -277,11 +280,12 @@ class Model implements Configurable, Dumpable
 
     /**
      * @param string|null $table_name
+     * @param string|null $collection
      * @return stdClass
      */
-    public function dtdStore(string $table_name = null, string $collection = null) : stdClass
+    public function dtd(string $table_name = null, string $collection = null) : stdClass
     {
-        return (object) Orm::getInstance($collection ?? $this->collection)->dtd($table_name ?? $this->table);
+        return (object) Orm::dtd($collection ?? $this->collection, $table_name ?? $this->table);
     }
 
     /**
@@ -291,7 +295,7 @@ class Model implements Configurable, Dumpable
      */
     public function informationSchema(string $table = null, string $collection = null) : ?stdClass
     {
-        return Orm::getInstance($collection ?? $this->collection)->informationSchema($table ?? $this->table);
+        return Orm::informationSchema($collection ?? $this->collection, $table ?? $this->table);
     }
     /**
      * @return string|null
@@ -338,31 +342,7 @@ class Model implements Configurable, Dumpable
     private function fill(array $model, array $request) : array
     {
         if (!empty($request)) {
-            $request_key                                                                = array();
-            $request_value                                                              = array();
-            foreach ($request as $key => $value) {
-                if (is_array($value)) {
-                    $value                                                              = json_encode($value);
-                }
-
-                $request_key[]                                                          = '$' . $key . "#";
-                $request_key[]                                                          = '$' . $key . " ";
-                $request_value[]                                                        = $value . "#";
-                $request_value[]                                                        = $value . " ";
-            }
-
-            $prototype                                                                  = str_replace(
-                $request_key,
-                $request_value,
-                implode("#", $model) . "#"
-            );
-            $prototype = preg_replace('/\$[a-zA-Z]+/', "", $prototype);
-
-
-            $model                                                                      = array_combine(
-                array_keys($model),
-                explode("#", substr($prototype, 0, -1))
-            );
+            $model = $this->mergeRequest($model, $request);
         }
 
         return array_filter($model);
@@ -390,7 +370,7 @@ class Model implements Configurable, Dumpable
     }
 
     /**
-     * @param array|null $fields
+     * @param array $fields
      * @param string|null $table_name
      * @return array
      */
@@ -399,7 +379,7 @@ class Model implements Configurable, Dumpable
         $res                                                                            = [];
         if ($table_name) {
             $errors                                                                     = null;
-            $dtd                                                                        = self::dtdStore($table_name);
+            $dtd                                                                        = $this->dtd($table_name);
             foreach ($fields as $field => $value) {
                 if (is_array($value) && !isset($dtd->$field)) {
                     $res                                                                = array_merge($res, self::fieldSet($value, $field));
@@ -483,7 +463,7 @@ class Model implements Configurable, Dumpable
         } elseif (!empty($model_attr->extends)) {
             return true;
         } elseif (empty($model_attr->table) || empty($model_attr->collection)) {
-            Exception::warning("Model attribute: 'collection' and 'table' are required", static::ERROR_BUCKET);
+            Error::registerWarning("Model attribute: 'collection' and 'table' are required", static::ERROR_BUCKET);
             return null;
         } else {
             $schema                                                                             = [];
@@ -498,7 +478,7 @@ class Model implements Configurable, Dumpable
             if (!isset($model[self::FIELD][0])) {
                 $model[self::FIELD]                                                             = array($model[self::FIELD]);
             }
-            $prefix                                                                             = $schema[self::COLLECTION] . self::DOT . $schema[self::TABLE] . self::DOT;
+            $prefix                                                                             = $schema[self::COLLECTION] . self::DOT;
             foreach ($model[self::FIELD] as $field) {
                 $attr                                                                           = Config::getXmlAttr($field);
                 $orm_field                                                                      = array_search($attr->name, $extend[self::READ] ?? []) ?: $prefix . ($attr->db ?? $attr->name);

@@ -299,7 +299,7 @@ class MySqli extends DatabaseDriver
         $this->buffered_affected_rows = @mysqli_affected_rows($this->link_id);
         $this->buffered_insert_id = @mysqli_insert_id($this->link_id);
 
-        return true;
+        return $this->buffered_affected_rows || $this->buffered_insert_id;
     }
 
     /**
@@ -530,42 +530,54 @@ class MySqli extends DatabaseDriver
     }
 
     /**
-     * @param string|int|float|null $DataValue
-     * @return string|null
+     * @param bool|float|int|string|array $DataValue
+     * @return string
      * @todo da tipizzare
      */
-    protected function toSqlEscape($DataValue = null) : ?string
+    protected function toSqlEscape($DataValue) : string
     {
-        return mysqli_real_escape_string($this->link_id, str_replace("`", "", $DataValue));
+        return mysqli_real_escape_string($this->link_id, str_replace("`", "", is_array($DataValue) ? implode(",", $DataValue) : $DataValue));
     }
 
     /**
      * @param string|null $value
      * @return string
+     * @throws Exception
      */
-    protected function convertID(string $value = null) : ?string
+    protected function convertID(string $value = null) : string
     {
-        return $value;
+        return $this->toSqlString($value);
+    }
+
+    /**
+     * @param bool|float|int|string $value
+     * @return string
+     * @throws Exception
+     */
+    protected function toSqlString($value): string
+    {
+        return $this->tpSqlEscaper(parent::toSqlString($value));
     }
 
     /**
      * @param string $type
-     * @param string|null $value
-     * @return string|null
+     * @param bool|float|int|string $value
+     * @return bool|float|int|string
      * @throws Exception
      */
-    protected function toSqlString(string $type, $value = null): ?string
+    protected function toSqlStringCast(string $type, $value)
     {
         if ($type == self::FTYPE_BOOLEAN || $type == self::FTYPE_BOOL) {
-            return $this->tpSqlEscaper((int) (bool) $value);
+            return (int) (bool) $value;
         }
-        return $this->tpSqlEscaper(parent::toSqlString($type, $value));
+
+        return parent::toSqlStringCast($type, $value);
     }
 
     /**
      * @param string $type
      * @param array $Array
-     * @return string|null
+     * @return string
      */
     protected function toSqlArray(string $type, array $Array): string
     {
@@ -574,7 +586,7 @@ class MySqli extends DatabaseDriver
             return $this->toSqlArray2String($value);
         }
 
-        return $this->tpSqlEscaper($value);
+        return $this->tpSqlEscaper(str_replace(self::SEP, "'" . self::SEP . "'", $value));
     }
 
     /**
@@ -585,6 +597,10 @@ class MySqli extends DatabaseDriver
     {
         $res = [];
         foreach ($values as $value) {
+            if (is_null($value)) {
+                continue;
+            }
+
             $res[] = (
                 is_bool($value) || is_int($value)
                 ? $value
@@ -598,7 +614,7 @@ class MySqli extends DatabaseDriver
      * @param string|null $value
      * @return string
      */
-    private function tpSqlEscaper(string $value = null) : string
+    private function tpSqlEscaper(string $value) : string
     {
         return "'" . $value . "'";
     }

@@ -134,13 +134,13 @@ class Orm extends Mappable
     }
 
     /**
-     * @param string|null $prefix
+     * @param string|null $prefix_connection
      * @return DatabaseDriver
      */
-    public static function noSql(string $prefix = null) : DatabaseDriver
+    public static function noSql(string $prefix_connection = null) : DatabaseDriver
     {
         $class_name = __NAMESPACE__ . "\\drivers\\MongoDB";
-        return new $class_name($prefix);
+        return new $class_name($prefix_connection);
     }
 
     /**
@@ -161,13 +161,60 @@ class Orm extends Mappable
      */
     public static function &getInstance(string $collection, string $mainTable = null, string $mapClass = null) : self
     {
+        return self::orm($collection)
+            ->setMainTable($mainTable)
+            ->setMapClass($mapClass);
+    }
+
+    /**
+     * @param string $collection
+     * @param string|null $table
+     * @return stdClass|null
+     */
+    public static function informationSchema(string $collection, string $table = null) : ?stdClass
+    {
+        $orm                                                                                = self::orm($collection);
+
+        if (!$table) {
+            $table                                                                          = $orm->main_table;
+        }
+
+        if (!isset($orm->struct[$table])) {
+            return null;
+        }
+
+        return (object) [
+            "collection"    => $orm->collection,
+            "table"         => $table,
+            "dtd"           => $orm->struct[$table],
+            "schema"        => $orm->tables[$table],
+            "relationship"  => $orm->relationship[$table]  ?? [],
+            "indexes"       => $orm->indexes[$table]       ?? [],
+            "key"           => $orm->primaryKey($table)
+        ];
+    }
+
+    /**
+     * @param string $collection
+     * @param string $table
+     * @return array|null
+     */
+    public static function dtd(string $collection, string $table) : ?array
+    {
+        return self::orm($collection)->struct[$table] ?? null;
+    }
+
+    /**
+     * @param string $collection
+     * @return Orm
+     */
+    private static function orm(string $collection) : Orm
+    {
         if (!isset(self::$singleton[$collection])) {
             self::$singleton[$collection]                                                   = new Orm($collection);
         }
 
-        return self::$singleton[$collection]
-            ->setMainTable($mainTable)
-            ->setMapClass($mapClass);
+        return self::$singleton[$collection];
     }
 
     /**
@@ -188,11 +235,11 @@ class Orm extends Mappable
      */
     private function &setMainTable(string $main_table = null) : self
     {
-        if ($main_table && isset($this->tables[$main_table])) {
-            $this->main_table                                                               = $main_table;
-        } else {
-            $this->main_table                                                               = $this->default_table;
-        }
+        $this->main_table                                                               = (
+            $main_table && isset($this->tables[$main_table])
+            ? $main_table
+            : $this->default_table
+        );
 
         return $this;
     }
@@ -313,20 +360,12 @@ class Orm extends Mappable
 
     /**
      * @param string $table
-     * @return array|null
+     * @return string|null
      */
-    public function dtd(string $table) : ?array
-    {
-        return $this->struct[$table] ?? null;
-    }
-
-    /**
-     * @param string $table
-     * @return stdClass|null
-     */
-    public function informationSchema(string $table) : ?stdClass
+    public function primaryKey(string $table) : ?string
     {
         static $keys        = null;
+
         if (!isset($this->struct[$table])) {
             return null;
         }
@@ -335,15 +374,7 @@ class Orm extends Mappable
             $keys[$table]   = array_search(Database::FTYPE_PRIMARY, $this->struct[$table]);
         }
 
-        return (object) [
-            "collection"    => $this->collection,
-            "table"         => $table,
-            "dtd"           => $this->struct[$table],
-            "schema"        => $this->tables[$table],
-            "relationship"  => $this->relationship[$table]  ?? [],
-            "indexes"       => $this->indexes[$table]       ?? [],
-            "key"           => $keys[$table]
-        ];
+        return $keys[$table];
     }
 
     /**
@@ -516,64 +547,51 @@ class Orm extends Mappable
         if ($single_service) {
             $this->setCount($this->getDataSingle($this->services_by_data->last, $this->services_by_data->last_table, $limit, $offset, $calc_found_rows));
         } else {
-            $countRunner                                                                    = $this->throwRunnerSubs(true);
-            while ($this->throwRunner($limit, $offset, $calc_found_rows) > 0) {
-                $countRunner++;
-            }
+            $this->throwRunnerSubs(true);
+            $this->throwRunnerMain($limit, $offset, $calc_found_rows);
+            $this->throwRunnerSubs();
+            $this->throwRunnerMain($limit, $offset, $calc_found_rows);
         }
     }
 
     /**
+     * Run Main query if where isset
      * @param int|null $limit
      * @param int|null $offset
      * @param bool $calc_found_rows
-     * @return int
+     * @return void
      * @throws Exception
      */
-    private function throwRunner(int $limit = null, int $offset = null, bool $calc_found_rows = false) : int
+    private function throwRunnerMain(int $limit = null, int $offset = null, bool $calc_found_rows = false) : void
     {
-        $counter = 0;
-
-        /**
-         * Run Main query if where isset
-         */
         if (!$this->main->runned) {
             $this->setCount($this->getData($this->main, $this->main->service, $this->main->def->mainTable, $limit, $offset, $calc_found_rows));
-            $this->main->runned                                                             = true;
-            $counter++;
+            $this->main->runned         = true;
         }
-
-        $counter += $this->throwRunnerSubs();
-
-        return $counter;
     }
 
     /**
+     * Run Sub query if where isset
      * @param bool $unique
-     * @return int
+     * @return void
      * @throws Exception
      */
-    private function throwRunnerSubs(bool $unique = false) : int
+    private function throwRunnerSubs(bool $unique = false) : void
     {
-        $counter = 0;
-        /**
-         * Run Sub query if where isset
-         */
         if (!empty($this->subs)) {
             foreach ($this->subs as $controller => $tables) {
-                foreach ($tables as $table => &$sub) {
+                foreach ($tables as $table => $sub) {
                     if (!$sub->runned && !empty($sub->where)
-                        && (!$unique || $sub->uniqueIndex())
+                        && (!$unique || empty($this->main->where) || $sub->uniqueIndex())
                     ) {
-                        $this->getData($sub, $controller, $table);
-                        $sub->runned = true;
-                        $counter++;
+                        $sub->runned            = true;
+                        if (!$this->getData($sub, $controller, $table) && $unique && empty($this->main->where) && !$this->main->runned) {
+                            $this->main->runned = true;
+                        }
                     }
                 }
             }
         }
-
-        return $counter;
     }
 
     /**
@@ -591,7 +609,7 @@ class Orm extends Mappable
         $main_table                                                                         = $this->main_table;
         $Orm                                                                                = $this->getModel($controller);
         $regs                                                                               = $Orm
-                                                                                                ->setStorage($data->def)
+                                                                                                ->setStorage($data->getDef(false))
                                                                                                 ->read(
                                                                                                     $data->select(true),
                                                                                                     $data->where(self::$logical_fields),
@@ -742,9 +760,8 @@ class Orm extends Mappable
     {
         $data                                                                               = $this->subs[$controller][$table] ?? $this->main;
         if ($data) {
-            $data->setControl(true);
             $regs                                                                           = $this->getModel($data->getController($controller))
-                                                                                                ->setStorage($data->def)
+                                                                                                ->setStorage($data->getDef(false)) //@todo: da mettere a true
                                                                                                 ->read(
                                                                                                     $data->select(true),
                                                                                                     $data->where(self::$logical_fields),
@@ -753,6 +770,7 @@ class Orm extends Mappable
                                                                                                     $offset,
                                                                                                     $calc_found_rows
                                                                                                 );
+
             $count                                                                          = $regs[self::COUNT];
             if (!empty($regs[self::RESULT])) {
                 $this->result[$data->def->mainTable]                                        = $regs[self::RESULT];
@@ -921,7 +939,7 @@ class Orm extends Mappable
      */
     private function setResultKeys(OrmQuery $data, string $key = null) : void
     {
-        if (!empty($key)) {
+        if ($key !== null) {
             if (is_array($key)) {
                 foreach ($key as $k) {
                     $this->result_keys[$data->table][]                                      = [$data->def->key_primary => $k];
@@ -1284,7 +1302,7 @@ class Orm extends Mappable
             if (!isset($ref->where[$field])) {
                 $ref->where[$field]                                                         = (
                     count($keys) == 1
-                    ? $keys[0]
+                    ? $keys[key($keys)] //$keys[0] TODO da verificare
                     : $keys
                 );
             } elseif (is_array($ref->where[$field])) {

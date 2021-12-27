@@ -154,11 +154,11 @@ class ImageCanvas
         }
         
         $this->cvs_res = @imagecreatetruecolor($this->cvs_res_dim_x, $this->cvs_res_dim_y);
-        imagealphablending($this->cvs_res, true);
-        imagesavealpha($this->cvs_res, true);
-        imageinterlace($this->cvs_res, true);
+        if ($this->cvs_res) {
+            imagealphablending($this->cvs_res, true);
+            imagesavealpha($this->cvs_res, true);
+            imageinterlace($this->cvs_res, true);
 
-        if (is_resource($this->cvs_res) == 1) {
             $color_transparent = null;
             if (strlen($this->cvs_res_transparent_color_hex) == 6) {
                 $color_transparent = imagecolorallocate(
@@ -166,7 +166,7 @@ class ImageCanvas
                     hexdec(substr($this->cvs_res_transparent_color_hex, 0, 2)),
                     hexdec(substr($this->cvs_res_transparent_color_hex, 2, 2)),
                     hexdec(substr($this->cvs_res_transparent_color_hex, 4, 2))
-                                                        );
+                );
 
                 imagecolortransparent($this->cvs_res, $color_transparent);
             }
@@ -181,7 +181,7 @@ class ImageCanvas
                         hexdec(substr($this->cvs_res_background_color_hex, 2, 2)),
                         hexdec(substr($this->cvs_res_background_color_hex, 4, 2)),
                         $this->cvs_res_background_color_alpha
-                                                                );
+                    );
                 }
             } else {
                 $color_background = imagecolorallocatealpha(
@@ -190,7 +190,7 @@ class ImageCanvas
                     0,
                     0,
                     $this->cvs_res_background_color_alpha
-                                                            );
+                );
             }
             imagefill($this->cvs_res, 0, 0, $color_background);
 
@@ -239,7 +239,7 @@ class ImageCanvas
                                     0,
                                     $watermark_dim->x,
                                     $watermark_dim->y
-                                                    );
+                                );
 
                                 @imagedestroy($src_res);
                             }

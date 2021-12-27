@@ -104,6 +104,7 @@ class User extends App
 
     /**
      * @return Session
+     * @throws Exception
      */
     private static function session() : Session
     {

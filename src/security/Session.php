@@ -202,6 +202,10 @@ class Session
 
         return $dataResponse;
     }
+
+    /**
+     *
+     */
     public function destroy() : void
     {
         @session_unset();
@@ -292,16 +296,24 @@ class Session
         return $valid_session;
     }
 
+    /**
+     * @param string|null $name
+     */
     private function setSessionName(string $name = null) : void
     {
         $this->session_name = $name ?? Kernel::$Environment::SESSION_NAME ?? session_name();
         session_name($this->session_name);
     }
 
+    /**
+     * @param string|null $path
+     */
     private function setSessionPath(string $path = null) : void
     {
         $this->session_save_path = $path ?? Kernel::$Environment::SESSION_SAVE_PATH ?? session_save_path() ?? sys_get_temp_dir();
-        session_save_path($this->session_save_path);
+        if (empty(@session_save_path($this->session_save_path))) {
+            die("Unable to Write Session Save Path: " . $this->session_save_path);
+        }
     }
 
     /**

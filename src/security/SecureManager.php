@@ -34,10 +34,10 @@ use stdClass;
 trait SecureManager
 {
     /**
-     * @return UserData|null
+     * @return UserData
      * @throws Exception
      */
-    private static function getUser() : ?UserData
+    private static function getUser() : UserData
     {
         return User::get();
     }

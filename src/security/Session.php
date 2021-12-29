@@ -307,12 +307,13 @@ class Session
 
     /**
      * @param string|null $path
+     * @throws Exception
      */
     private function setSessionPath(string $path = null) : void
     {
         $this->session_save_path = $path ?? Kernel::$Environment::SESSION_SAVE_PATH ?? session_save_path() ?? sys_get_temp_dir();
         if (empty(@session_save_path($this->session_save_path))) {
-            die("Unable to Write Session Save Path: " . $this->session_save_path);
+            throw new Exception("Unable to Write Session Save Path: " . $this->session_save_path, 500);
         }
     }
 

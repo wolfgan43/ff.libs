@@ -53,16 +53,16 @@ class User extends App
     }
 
     /**
-     * @return UserData|null
+     * @return UserData
      * @throws Exception
      */
-    public static function get() : ?UserData
+    public static function get() : UserData
     {
         if (!self::$user && self::session()->verify(true)) {
             self::$user                                         = UserData::load(self::session()->get(self::USER_LABEL));
         }
 
-        return self::$user;
+        return self::$user ?? new UserData();
     }
 
     /**
@@ -86,20 +86,21 @@ class User extends App
     }
 
     /**
-     * @param string|null $acl_required
+     * @param string $acl_required
      * @return bool
      * @throws Exception
      */
-    public static function alcVerify(string $acl_required = null) : bool
+    public static function alcVerify(string $acl_required) : bool
     {
-        if (($user = self::get())) {
+        $user = self::get();
+        if ($user->isStored()) {
             $user_acl   = explode(",", $user->acl);
             $acls       = explode(",", $acl_required);
 
             return !empty(array_intersect($acls, $user_acl));
         }
 
-        return !empty($user) && empty($acl_required);
+        return false;
     }
 
     /**

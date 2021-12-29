@@ -25,7 +25,7 @@
  */
 namespace phpformsframework\libs;
 
-use phpformsframework\libs\security\SecureManager;
+use phpformsframework\libs\security\User;
 use phpformsframework\libs\storage\FilemanagerFs;
 use phpformsframework\libs\util\ServerManager;
 
@@ -35,7 +35,6 @@ use phpformsframework\libs\util\ServerManager;
  */
 class Log
 {
-    use SecureManager;
     use ServerManager;
 
     public const CLASS_SEP                                      = "->";
@@ -240,11 +239,7 @@ class Log
      */
     public static function extend(int $type = null, string $bucket = null, string $format = null, bool $unalterable = null, callable $write_if = null, bool $override = null): array
     {
-        $rule = (
-            isset(self::$rules[$type])
-            ? self::$rules[$type]
-            : self::$rules[self::TYPE_DEFAULT]
-        );
+        $rule = self::$rules[$type] ?? self::$rules[self::TYPE_DEFAULT];
         $name = $rule["bucket"];
 
         if ($bucket) {
@@ -311,23 +306,26 @@ class Log
     /**
      * @return string
      */
-    protected static function getUserInfo(): ?string
+    protected static function getUserInfo(): string
     {
         try {
-            $res = self::getUser()->uuid ?? null;
+            $res = User::get()->uuid;
         } catch (\Exception $e) {
             $res = null;
         }
 
-        if (!$res) {
-            $res = (
-                isset($_COOKIE[session_name()])
-                ? "user"
-                : "guest"
-            );
-        }
+        return $res ?? self::defaultUser();
+    }
 
-        return $res;
+    /**
+     * @return string
+     */
+    private static function defaultUser() : string
+    {
+        return (isset($_COOKIE[session_name()])
+            ? "user"
+            : "guest"
+        );
     }
 
     /**
@@ -683,11 +681,7 @@ class Log
     private static function fetch(string $content, string $routine = null, string $action = null, int $status = null) : string
     {
         $microtime  = explode(".", microtime(true));
-        $micro      = (
-            isset($microtime[1])
-                        ? $microtime[1]
-                        : 0
-                    );
+        $micro      = $microtime[1] ?? 0;
         return str_replace(
             [
                 "ROUTINE",

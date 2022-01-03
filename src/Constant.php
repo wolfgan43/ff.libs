@@ -96,15 +96,15 @@ class Constant
     const LIBS_PATH                         = DIRECTORY_SEPARATOR . self::RESOURCE_LIBS;
     const CACHE_PATH                        = DIRECTORY_SEPARATOR . self::RESOURCE_CACHE;
     const UPLOAD_PATH                       = DIRECTORY_SEPARATOR . self::RESOURCE_UPLOADS;
-    const THEME_PATH                        = DIRECTORY_SEPARATOR . self::RESOURCE_THEMES;
+    const THEME_PATH                        = DIRECTORY_SEPARATOR . self::THEME_NAME;
 
     /**
      * Project settings
      */
     const PROJECT_DOCUMENT_ROOT             = DIRECTORY_SEPARATOR . self::RESOURCE_APP;
     const PROJECT_DISK_PATH                 = self::DISK_PATH . self::PROJECT_DOCUMENT_ROOT;
-    const PROJECT_ASSETS_DISK_PATH          = self::PROJECT_DISK_PATH . self::THEME_PATH . DIRECTORY_SEPARATOR . self::THEME_NAME . DIRECTORY_SEPARATOR . self::RESOURCE_ASSETS . DIRECTORY_SEPARATOR . "dist";
-    const PROJECT_THEME_DISK_PATH           = self::PROJECT_DISK_PATH . self::THEME_PATH . DIRECTORY_SEPARATOR . self::THEME_NAME;
+    const PROJECT_ASSETS_DISK_PATH          = self::PROJECT_DISK_PATH . DIRECTORY_SEPARATOR . self::RESOURCE_THEMES . self::THEME_PATH . DIRECTORY_SEPARATOR . self::RESOURCE_ASSETS . DIRECTORY_SEPARATOR . "dist";
+    const PROJECT_THEME_DISK_PATH           = self::PROJECT_DISK_PATH . DIRECTORY_SEPARATOR . self::RESOURCE_THEMES . self::THEME_PATH;
 
     const VENDOR_LIBS_DIR                   = self::LIBS_PATH . DIRECTORY_SEPARATOR . "phpformsframework" . DIRECTORY_SEPARATOR . "libs";
 

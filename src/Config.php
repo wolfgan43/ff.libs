@@ -44,7 +44,6 @@ class Config implements Dumpable
     public const ERROR_BUCKET                                               = "config";
 
     private const APP_BASE_NAME                                             = Constant::RESOURCE_APP;
-    private const LIBS_BASE_NAME                                            = "libs-base";
     private const LIBS_NAME                                                 = "libs";
 
     private const SCHEMA_CONF                                               = "config";
@@ -180,7 +179,7 @@ class Config implements Dumpable
         Debug::stopWatch(self::SCHEMA_CONF . "/" . self::SCHEMA_DIRSTRUCT);
 
         $config                                                             = self::rawData(self::SCHEMA_DIRSTRUCT, true);
-        $scans                                                              = [self::LIBS_BASE_NAME => [], self::LIBS_NAME => [], self::APP_BASE_NAME => []];
+        $scans                                                              = [self::LIBS_NAME => [], self::APP_BASE_NAME => []];
         $dirs                                                               =& $config["dir"];
         if (!empty($dirs)) {
             foreach ($dirs as $dir) {
@@ -189,20 +188,26 @@ class Config implements Dumpable
                     continue;
                 }
 
-                $dir_attr["path"]                                           = str_replace("[PROJECT_DOCUMENT_ROOT]", Kernel::$Environment::PROJECT_DOCUMENT_ROOT, $dir_attr["path"]);
+                $dir_attr["path"]                                           = str_replace(
+                    [
+                        "[PROJECT_DOCUMENT_ROOT]",
+                        "[THEME_PATH]"
+                    ],
+                    [
+                        Kernel::$Environment::PROJECT_DOCUMENT_ROOT,
+                        Kernel::$Environment::THEME_PATH
+                    ],
+                    $dir_attr["path"]
+                );
 
                 $dir_key                                                    = $dir_attr["type"];
                 if (isset($dir_attr["scan"])) {
-                    $scan_type                                              = self::APP_BASE_NAME;
                     $scan_path                                              = str_replace("[LIBS_PATH]", Constant::LIBS_PATH, $dir_attr["path"]);
-
-                    if ($scan_path != $dir_attr["path"]) {
-                        $scan_type                                          = (
-                            strpos($scan_path, Constant::LIBS_FF_PATH) === false
-                            ? self::LIBS_NAME
-                            : self::LIBS_BASE_NAME
-                        );
-                    }
+                    $scan_type = (
+                        $scan_path == $dir_attr["path"]
+                        ? self::APP_BASE_NAME
+                        : self::LIBS_NAME
+                    );
 
                     $scans[$scan_type][$scan_path]                          = $dir_attr["scan"];
                     continue;
@@ -221,7 +226,7 @@ class Config implements Dumpable
                 }
             }
 
-            self::$dirstruct_scan                                           = $scans[self::LIBS_BASE_NAME] + $scans[self::LIBS_NAME] + $scans[self::APP_BASE_NAME];
+            self::$dirstruct_scan                                           = $scans;
         }
 
         Debug::stopWatch(self::SCHEMA_CONF . "/" . self::SCHEMA_DIRSTRUCT);

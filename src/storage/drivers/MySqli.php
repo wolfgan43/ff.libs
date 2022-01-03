@@ -48,8 +48,6 @@ class MySqli extends DatabaseDriver
     public const ENGINE             = "sql";
     protected const PREFIX          = "MYSQL_DATABASE_";
 
-    private const SEP               = ",";
-
     public $charset			        = "utf8";
 
     public $persistent				= false;
@@ -611,7 +609,7 @@ class MySqli extends DatabaseDriver
     }
 
     /**
-     * @param string|null $value
+     * @param string $value
      * @return string
      */
     private function tpSqlEscaper(string $value) : string

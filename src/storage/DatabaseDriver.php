@@ -42,6 +42,7 @@ abstract class DatabaseDriver implements Constant
 
     protected const MAX_NUMROWS             = DatabaseAdapter::MAX_NUMROWS;
     protected const PREFIX                  = null;
+    protected const SEP                     = ",";
 
     protected $locale                       = "ISO9075";
 
@@ -180,9 +181,9 @@ abstract class DatabaseDriver implements Constant
             $prefix && defined(Kernel::$Environment . '::' . $prefix . "NAME")
                 ? $prefix
                 : static::PREFIX
-            );
+        );
 
-        if(($host = Constant($bucket . "HOST")) && ($name = Constant($bucket . "NAME"))) {
+        if (($host = Constant($bucket . "HOST")) && ($name = Constant($bucket . "NAME"))) {
             $this->connect(
                 $name,
                 $host,
@@ -210,9 +211,7 @@ abstract class DatabaseDriver implements Constant
      */
     public function toSql($mixed, string $type = self::FTYPE_STRING, bool $castResult = false)
     {
-        if (is_array($mixed)) {
-            $res = $this->toSqlArray($type, $mixed);
-        } elseif (is_object($mixed)) {
+        if (is_object($mixed)) {
             switch (get_class($mixed)) {
                 case DateTime::class:
                     $res = $this->toSqlDateTime($mixed);
@@ -224,7 +223,13 @@ abstract class DatabaseDriver implements Constant
                     $res = $this->toSqlObject($mixed);
             }
         } elseif ($type == self::FTYPE_PRIMARY) {
-            $res = $this->convertID($mixed);
+            $res = (
+                is_array($mixed)
+                ? implode(static::SEP, array_map(function ($value) {
+                    return $this->convertID($value);
+                }, $mixed))
+                : $this->convertID($mixed)
+            );
         } elseif ($castResult) {
             $res = $this->toSqlString($this->toSqlStringCast($type, $mixed));
         } else {
@@ -258,11 +263,6 @@ abstract class DatabaseDriver implements Constant
                 break;
             case self::FTYPE_OBJECT:
                 $value = $this->toSqlEscape(serialize($Array));
-                break;
-            case self::FTYPE_PRIMARY:
-                $value = array_map(function ($value) {
-                    return $this->convertID($value);
-                }, $Array);
                 break;
             case self::FTYPE_ARRAY:
             case self::FTYPE_ARRAY_OF_NUMBER:

@@ -14,7 +14,7 @@
         "tpl"
       ],
       "prototype" : "defaultname",
-      "rootshift": 1,
+      "rootshift": 0,
       "exclude" : [
         "layouts",
         "email",

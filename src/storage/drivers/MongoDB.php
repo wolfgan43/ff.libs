@@ -550,11 +550,30 @@ class MongoDB extends DatabaseDriver
     }
 
     /**
-     * @param array $keys
-     * @return array|null
+     * @param array|null $keys
+     * @return array
      */
-    public function getUpdatedIDs(array $keys) : ?array
+    public function getUpdatedIDs(array $keys = null) : array
     {
+        if (!$keys) {
+            return [];
+        }
+
+        return array_map(function ($value) {
+            return (string) $value;
+        }, $keys);
+    }
+
+    /**
+     * @param array|null $keys
+     * @return array
+     */
+    public function getDeletedIDs(array $keys = null) : array
+    {
+        if (!$keys) {
+            return [];
+        }
+
         return array_map(function ($value) {
             return (string) $value;
         }, $keys);

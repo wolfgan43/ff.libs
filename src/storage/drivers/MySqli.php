@@ -229,14 +229,15 @@ class MySqli extends DatabaseDriver
      */
     public function insert(DatabaseQuery $query) : bool
     {
-        $query_string                   = "INSERT INTO " .  $query->from . "
-                                            (
-                                                " . $query->insert["head"] . "
-                                            ) VALUES (
-                                                " . $query->insert["body"] . "
-                                            )";
+        $this->execute("INSERT INTO " .  $query->from . "
+            (
+                " . $query->insert["head"] . "
+            ) VALUES (
+                " . $query->insert["body"] . "
+            )
+        ");
 
-        return $this->execute($query_string);
+        return (bool) ($this->buffered_insert_id = @mysqli_insert_id($this->link_id));
     }
 
     /**
@@ -246,15 +247,17 @@ class MySqli extends DatabaseDriver
      */
     public function update(DatabaseQuery $query) : bool
     {
-        $query_string                   = "UPDATE " . $query->from . " SET 
-                                                " . $query->update .
-                                                (
-                                                    $query->where
-                                                    ? " WHERE " . $query->where
-                                                    : null
-                                                );
+        $this->execute(
+            "UPDATE " . $query->from . " SET 
+            " . $query->update .
+            (
+                $query->where
+                ? " WHERE " . $query->where
+                : null
+            )
+        );
 
-        return $this->execute($query_string);
+        return (bool) ($this->buffered_affected_rows = @mysqli_affected_rows($this->link_id));
     }
 
     /**
@@ -264,22 +267,24 @@ class MySqli extends DatabaseDriver
      */
     public function delete(DatabaseQuery $query) : bool
     {
-        $query_string                   = "DELETE FROM " .  $query->from . "  
-                                            WHERE " . $query->where;
+        $this->execute(
+            "DELETE FROM " .  $query->from . "  
+            WHERE " . $query->where
+        );
 
-        return $this->execute($query_string);
+        return (bool) $this->query_id;
     }
 
     /**
      * Esegue una query senza restituire un recordset
      * @param string $query_string
-     * @return bool
+     * @return void
      * @throws Exception
      */
-    private function execute(string $query_string) : bool
+    private function execute(string $query_string) : void
     {
         if (!$this->link_id && !$this->connect()) {
-            return false;
+            return;
         }
 
         $this->cacheSetProcess($query_string);
@@ -293,11 +298,6 @@ class MySqli extends DatabaseDriver
         if ($this->checkError()) {
             $this->errorHandler("Invalid SQL: " . $query_string);
         }
-
-        $this->buffered_affected_rows = @mysqli_affected_rows($this->link_id);
-        $this->buffered_insert_id = @mysqli_insert_id($this->link_id);
-
-        return $this->buffered_affected_rows || $this->buffered_insert_id;
     }
 
     /**
@@ -506,12 +506,21 @@ class MySqli extends DatabaseDriver
     }
 
     /**
-     * @param array $keys
-     * @return array|null
+     * @param array|null $keys
+     * @return array
      */
-    public function getUpdatedIDs(array $keys) : ?array
+    public function getUpdatedIDs(array $keys = null) : array
     {
-        return $keys;
+        return $keys ?? [];
+    }
+
+    /**
+     * @param array|null $keys
+     * @return array
+     */
+    public function getDeletedIDs(array $keys = null) : array
+    {
+        return $keys ?? [];
     }
 
     /**

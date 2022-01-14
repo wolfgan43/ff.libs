@@ -159,7 +159,7 @@ class FilemanagerFs
         if (!file_exists($file_disk_path)) {
             self::makeDir($file_disk_path);
 
-            return touch($file_disk_path);
+            return @touch($file_disk_path);
         }
 
         return true;

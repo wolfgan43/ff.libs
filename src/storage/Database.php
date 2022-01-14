@@ -149,11 +149,11 @@ class Database implements Constant
      * @return array|null
      * @throws Exception
      */
-    public function write(array $insert, array $set, array $where, string $table_name = null) : ?array
+    public function upsert(array $insert, array $set, array $where, string $table_name = null) : ?array
     {
         //@todo da alterare la cache in funzione dei dati inseriti
         foreach ($this->adapters as $adapter_name => $adapter) {
-            $this->result[$adapter_name]                                    = $adapter->write($insert, $set, $where, $table_name);
+            $this->result[$adapter_name]                                    = $adapter->upsert($insert, $set, $where, $table_name);
         }
         return $this->getResult();
     }

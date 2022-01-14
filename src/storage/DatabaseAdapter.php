@@ -248,13 +248,13 @@ abstract class DatabaseAdapter implements Constant
      * @return array|null
      * @throws Exception
      */
-    public function write(array $insert, array $set, array $where, string $table_name = null) : ?array
+    public function upsert(array $insert, array $set, array $where, string $table_name = null) : ?array
     {
         if (empty($insert) || empty($set) || empty($where)) {
             throw new Exception(self::ERROR_WRITE_IS_EMPTY, 500);
         }
 
-        return $this->processWrite($this->getQueryWrite($insert, $set, $where, $table_name));
+        return $this->processUpsert($this->getQueryUpsert($insert, $set, $where, $table_name));
     }
 
     /**
@@ -513,33 +513,49 @@ abstract class DatabaseAdapter implements Constant
 
     /**
      * @param DatabaseQuery $query
-     * @return array|null
+     * @return array
      */
-    private function processInsert(DatabaseQuery $query) : ?array
+    private function processInsert(DatabaseQuery $query) : array
     {
-        $res                                            = null;
-        if ($this->driver->insert($query)) {
-            $res                                        = array(
-                                                            self::INDEX_PRIMARY => array(
-                                                                $this->def->key_primary => $this->driver->getInsertID()
-                                                            )
-                                                        );
-        }
-
-        return $res;
+        return array(
+            self::INDEX_PRIMARY => array(
+                $this->def->key_primary => (
+                    $this->driver->insert($query)
+                    ? $this->driver->getInsertID()
+                    : null
+                )
+            )
+        );
     }
 
     /**
      * @param DatabaseQuery $query
-     * @return array|null
+     * @return array
      */
-    private function processUpdate(DatabaseQuery $query) : ?array
+    private function processUpdate(DatabaseQuery $query) : array
     {
         return array(
             self::INDEX_PRIMARY => array(
                 $this->def->key_primary => (
                     $this->driver->update($query)
-                    ? ""
+                    ? $this->driver->getUpdatedIDs()
+                    : null
+                )
+            )
+        );
+    }
+
+    /**
+     * @param DatabaseQuery $query
+     * @return array
+     */
+    private function processDelete(DatabaseQuery $query) : array
+    {
+        return array(
+            self::INDEX_PRIMARY => array(
+                $this->def->key_primary => (
+                    $this->driver->delete($query)
+                    ? $this->driver->getDeletedIDs()
                     : null
                 )
             )
@@ -549,27 +565,9 @@ abstract class DatabaseAdapter implements Constant
     /**
      * @param DatabaseQuery $query
      * @return array|null
-     */
-    private function processDelete(DatabaseQuery $query) : ?array
-    {
-        $res                                            = null;
-        if ($this->driver->delete($query)) {
-            $res                                        = array(
-                                                            self::INDEX_PRIMARY => array(
-                                                                $this->def->key_primary => null
-                                                            )
-                                                        );
-        }
-
-        return $res;
-    }
-
-    /**
-     * @param DatabaseQuery $query
-     * @return array|null
      * @throws Exception
      */
-    private function processWrite(DatabaseQuery $query) : ?array
+    private function processUpsert(DatabaseQuery $query) : ?array
     {
         //todo: da valutare se usare REPLACE INTO. Necessario test benckmark
         $res                                            = null;
@@ -580,7 +578,7 @@ abstract class DatabaseAdapter implements Constant
             $keys                                       = array_column((array) $this->driver->getRecordset(), $this->key_name);
         }
 
-        if (count($keys)) {
+        if (!empty($keys)) {
             $query_update                               = clone $query;
 
             if ($this->driver->update($query_update)) {
@@ -725,11 +723,11 @@ abstract class DatabaseAdapter implements Constant
      * @return DatabaseQuery
      * @throws Exception
      */
-    private function getQueryWrite(array $insert, array $set, array $where, string $table_name = null) : DatabaseQuery
+    private function getQueryUpsert(array $insert, array $set, array $where, string $table_name = null) : DatabaseQuery
     {
         $query = $this->getQuery(self::ACTION_WRITE, $table_name);
 
-        $query->insert          = $this->queryInsert($insert);
+        $query->insert          = $this->queryInsert(array_replace($where, $insert));
         $query->update          = $this->queryUpdate($set);
         $query->where           = $this->queryWhere($where);
 

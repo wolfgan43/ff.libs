@@ -49,8 +49,7 @@ class Router implements Configurable, Dumpable
     private const CALLER_DEFAULT                            = "display";
 
     private const ERROR_RESPONSE_NO_INSTANCEOF              = "Response must be an instance of dto\DataAdapter";
-    private const ERROR_RESPONSE_IS_NULL                    = "Response is null";
-
+    private const ERROR_RESPONSE_IS_NULL                    = "Controller not Implemented";
 
     private static $cache                                   = array();
 

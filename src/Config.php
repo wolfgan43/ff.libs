@@ -226,7 +226,7 @@ class Config implements Dumpable
                 }
             }
 
-            self::$dirstruct_scan                                           = $scans;
+            self::$dirstruct_scan                                           = $scans[self::LIBS_NAME] + $scans[self::APP_BASE_NAME];
         }
 
         Debug::stopWatch(self::SCHEMA_CONF . "/" . self::SCHEMA_DIRSTRUCT);

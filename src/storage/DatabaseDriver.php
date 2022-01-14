@@ -146,10 +146,16 @@ abstract class DatabaseDriver implements Constant
     abstract public function getFieldset() : array;
 
     /**
-     * @param array $keys
-     * @return array|null
+     * @param array|null $keys
+     * @return array
      */
-    abstract public function getUpdatedIDs(array $keys) : ?array;
+    abstract public function getUpdatedIDs(array $keys = null) : array;
+
+    /**
+     * @param array|null $keys
+     * @return array
+     */
+    abstract public function getDeletedIDs(array $keys = null) : array;
 
     /**
      * @return string|null
@@ -190,6 +196,8 @@ abstract class DatabaseDriver implements Constant
                 Constant($bucket . "USER"),
                 Constant($bucket . "SECRET")
             );
+        } else {
+            die("Missing Database Connection Params: " . $bucket . "HOST, " . $bucket . "NAME, [...]");
         }
     }
 
@@ -211,7 +219,17 @@ abstract class DatabaseDriver implements Constant
      */
     public function toSql($mixed, string $type = self::FTYPE_STRING, bool $castResult = false)
     {
-        if (is_object($mixed)) {
+        if ($type == self::FTYPE_PRIMARY) {
+            $res = (
+                is_array($mixed)
+                ? implode(static::SEP, array_map(function ($value) {
+                    return $this->convertID($value);
+                }, $mixed))
+                : $this->convertID($mixed)
+            );
+        } elseif (is_array($mixed)) {
+            $res = $this->toSqlArray($type, $mixed);
+        } elseif (is_object($mixed)) {
             switch (get_class($mixed)) {
                 case DateTime::class:
                     $res = $this->toSqlDateTime($mixed);
@@ -222,14 +240,6 @@ abstract class DatabaseDriver implements Constant
                 default:
                     $res = $this->toSqlObject($mixed);
             }
-        } elseif ($type == self::FTYPE_PRIMARY) {
-            $res = (
-                is_array($mixed)
-                ? implode(static::SEP, array_map(function ($value) {
-                    return $this->convertID($value);
-                }, $mixed))
-                : $this->convertID($mixed)
-            );
         } elseif ($castResult) {
             $res = $this->toSqlString($this->toSqlStringCast($type, $mixed));
         } else {

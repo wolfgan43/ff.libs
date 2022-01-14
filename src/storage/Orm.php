@@ -288,6 +288,7 @@ class Orm extends Mappable
     private function getStruct(string $table_name) : OrmDef
     {
         $def                                                                                = new OrmDef($this->main_table);
+
         $def->table                                                                         = $this->extractData($this->tables, $table_name, "tables");
         $def->struct                                                                        = $this->extractData($this->struct, $table_name, "struct");
         $def->indexes                                                                       = $this->extractData($this->indexes, $table_name);
@@ -489,7 +490,7 @@ class Orm extends Mappable
      * @return OrmResults
      * @throws Exception
      */
-    public function write(array $where, array $set = null, array $insert = null) : OrmResults
+    public function upsert(array $where, array $set = null, array $insert = null) : OrmResults
     {
         $this->cacheRequest(self::ACTION_WRITE, [$where, $set, $insert]);
 
@@ -906,7 +907,7 @@ class Orm extends Mappable
             /**
              * UpSert
              */
-            $regs                                                                           = $storage->write(
+            $regs                                                                           = $storage->upsert(
                 $data->insert,
                 $data->set,
                 $data->where,
@@ -937,10 +938,16 @@ class Orm extends Mappable
      * @param OrmQuery $data
      * @param string|null $key
      */
-    private function setResultKeys(OrmQuery $data, string $key = null) : void
+    /**
+     * @param OrmQuery $data
+     * @param string|array|null $key
+     */
+    private function setResultKeys(OrmQuery $data, $key = null) : void
     {
         if ($key !== null) {
-            if (is_array($key)) {
+            if (empty($key)) {
+                $this->result_keys[$data->table][]                                          = [$data->def->key_primary => ""];
+            } elseif (is_array($key)) {
                 foreach ($key as $k) {
                     $this->result_keys[$data->table][]                                      = [$data->def->key_primary => $k];
                 }
@@ -1245,7 +1252,6 @@ class Orm extends Mappable
                 }
 
                 $subs = $this->getSubs($service, $table);
-
                 if (!isset($subs->def->struct[$parts[$fIndex]])) {
                     if ($scope == self::SCOPE_SELECT && $parts[$fIndex] == "*") {
                         if (is_array($subs->def->struct)) {

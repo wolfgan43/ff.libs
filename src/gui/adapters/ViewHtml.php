@@ -202,6 +202,7 @@ class ViewHtml implements ViewAdapter
         if ($rc && $matches) {
             $this->DVars = array_fill_keys($matches[1], []);
 
+            $theme_disk_path = Kernel::$Environment::getThemeDiskPath();
             $views = Resource::views($this->widget);
             $translation = new stdClass();
             foreach ($this->DVars as $nName => $count) {
@@ -212,7 +213,7 @@ class ViewHtml implements ViewAdapter
                 } elseif (substr($nName, 0, 7) == "include" && substr_count($nName, '"') == 2) {
                     $view                                   =  explode('"', $nName)[1];
 
-                    $template                               = $views[str_replace(self::TPL_NORMALIZE, '', $view)] ?? str_replace('$theme_path', Kernel::$Environment::PROJECT_THEME_DISK_PATH, $view);
+                    $template                               = $views[str_replace(self::TPL_NORMALIZE, '', $view)] ?? str_replace('$theme_path', $theme_disk_path, $view);
 
                     $include                                = (new self($this->widget, $this->cache))->include($template);
                     $this->cache[$template]                 = filemtime($template);

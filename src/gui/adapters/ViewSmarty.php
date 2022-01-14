@@ -64,7 +64,7 @@ class ViewSmarty extends Smarty implements ViewAdapter
     {
         parent::__construct();
 
-        $this->template_dir             = Kernel::$Environment::PROJECT_THEME_DISK_PATH;
+        $this->template_dir             = Kernel::$Environment::getThemeDiskPath();
         $this->compile_dir              = Kernel::$Environment::CACHE_DISK_PATH . static::VIEW_PATH . 'templates_c';
         $this->config_dir               = Kernel::$Environment::CACHE_DISK_PATH . static::VIEW_PATH . 'configs';
         $this->cache_dir                = Kernel::$Environment::CACHE_DISK_PATH . static::VIEW_PATH . 'cache';
@@ -116,8 +116,6 @@ class ViewSmarty extends Smarty implements ViewAdapter
     public function display($template = null, $cache_id = null, $compile_id = null, $parent = null) : string
     {
         $this->registered_plugins       = $this->getComponents();
-
-        $this->assign("theme_path", Kernel::$Environment::PROJECT_THEME_DISK_PATH);
 
         $this->setAssignDefault();
         $this->assign(Resource::views($this->widget));

@@ -489,8 +489,9 @@ class ControllerHtml extends ControllerAdapter
             $tpl_vars = [];
             if (preg_match_all('/{include file="\$theme_path(.+)"}/i', $layout, $tpl_vars)) {
                 if (!empty($tpl_vars[1])) {
+                    $theme_disk_path = Kernel::$Environment::getThemeDiskPath();
                     foreach ($tpl_vars[1] as $i => $tpl_var) {
-                        $content_file = Kernel::$Environment::PROJECT_THEME_DISK_PATH . $tpl_var;
+                        $content_file = $theme_disk_path . $tpl_var;
                         if ($content = FilemanagerFs::fileGetContents($content_file)) {
                             $layout_files[$content_file] = filemtime($content_file);
                             $layout = str_replace($tpl_vars[0][$i], $content, $layout);

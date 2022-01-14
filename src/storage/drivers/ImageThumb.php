@@ -35,7 +35,7 @@ use phpformsframework\libs\storage\Media;
  */
 class ImageThumb extends ImageRender
 {
-    private const IMAGES_DISK_PATH              = Constant::LIBS_FF_DISK_PATH . self::RENDER_ASSETS_PATH . DIRECTORY_SEPARATOR . Constant::RESOURCE_ASSET_IMAGES;
+    private const IMAGES_DISK_PATH              = Constant::FRAMEWORK_DISK_PATH . self::RENDER_ASSETS_PATH . DIRECTORY_SEPARATOR . Constant::RESOURCE_ASSET_IMAGES;
 
     public $icon_path 			                = null;
     private $icons = array(

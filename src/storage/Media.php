@@ -85,7 +85,6 @@ class Media implements Configurable
     private const RENDER_ASSETS_PATH                                        = DIRECTORY_SEPARATOR . Constant::RESOURCE_ASSETS;
     private const RENDER_WIDGET_PATH                                        = DIRECTORY_SEPARATOR . Constant::RESOURCE_WIDGETS;
     private const RENDER_IMAGE_PATH                                         = DIRECTORY_SEPARATOR . Constant::RESOURCE_ASSET_IMAGES;
-    private const PROJECT_ASSETS_DISK_PATH                                  = Constant::PROJECT_ASSETS_DISK_PATH;
     private const MIMETYPE                                                  = ValidatorFile::MIMETYPE;
 
     private const MIMETYPE_DEFAULT                                          = "text/plain";
@@ -738,6 +737,8 @@ class Media implements Configurable
     private function process(string $mode = null) : bool
     {
         if ($this->pathinfo->render == static::RENDER_ASSETS_PATH) {
+            $assets_disk_path = Kernel::$Environment::getAssetDiskPath();
+
             if ($this->staticProcess($mode)) {
                 $final_file = $this->processFinalFile();
                 if ($final_file) {
@@ -745,10 +746,10 @@ class Media implements Configurable
                 }
             } elseif ($this->isImage()) {
                 Response::redirect($this->getIconPath("noimg"), 302);
-            } elseif (file_exists(self::PROJECT_ASSETS_DISK_PATH . $this->pathinfo->orig)) {
-                $this->saveFromOriginal(self::PROJECT_ASSETS_DISK_PATH . $this->pathinfo->orig, $this->basepathCache() . $this->pathinfo->orig);
-                $this->sendHeaders(self::PROJECT_ASSETS_DISK_PATH . $this->pathinfo->orig, $this->headers);
-                readfile(self::PROJECT_ASSETS_DISK_PATH . $this->pathinfo->orig);
+            } elseif (file_exists($assets_disk_path . $this->pathinfo->orig)) {
+                $this->saveFromOriginal($assets_disk_path . $this->pathinfo->orig, $this->basepathCache() . $this->pathinfo->orig);
+                $this->sendHeaders($assets_disk_path . $this->pathinfo->orig, $this->headers);
+                readfile($assets_disk_path . $this->pathinfo->orig);
                 exit;
             }
         } else {

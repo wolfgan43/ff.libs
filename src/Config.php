@@ -195,7 +195,7 @@ class Config implements Dumpable
                     ],
                     [
                         Kernel::$Environment::PROJECT_DOCUMENT_ROOT,
-                        Kernel::$Environment::THEME_PATH
+                        Kernel::$Environment::getThemePath()
                     ],
                     $dir_attr["path"]
                 );

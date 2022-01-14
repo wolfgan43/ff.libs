@@ -35,10 +35,10 @@ define("SITE_PATH", !empty($_SERVER["DOCUMENT_ROOT"]) ? str_replace(rtrim($_SERV
 class Constant
 {
     const CONFIG_PATHS                      = array(
-        self::CONFIG_FF_PATH                => array("flag" => 8, "filter" => array("xml", "map"))
+        self::FRAMEWORK_PATH . DIRECTORY_SEPARATOR . self::RESOURCE_CONF            => array("flag" => 8, "filter" => array("xml", "map"))
     );
     const CONFIG_APP_PATHS                  = array(
-        self::PROJECT_DOCUMENT_ROOT . DIRECTORY_SEPARATOR . self::RESOURCE_CONF => array("flag" => 4, "filter" => array("xml", "map"))
+        self::PROJECT_DOCUMENT_ROOT . DIRECTORY_SEPARATOR . self::RESOURCE_CONF     => array("flag" => 4, "filter" => array("xml", "map"))
     );
     const DOCUMENT_ROOT                     = DOCUMENT_ROOT;
     const SITE_PATH                         = SITE_PATH;
@@ -96,23 +96,18 @@ class Constant
     const LIBS_PATH                         = DIRECTORY_SEPARATOR . self::RESOURCE_LIBS;
     const CACHE_PATH                        = DIRECTORY_SEPARATOR . self::RESOURCE_CACHE;
     const UPLOAD_PATH                       = DIRECTORY_SEPARATOR . self::RESOURCE_UPLOADS;
-    const THEME_PATH                        = DIRECTORY_SEPARATOR . self::THEME_NAME;
+
+    const FRAMEWORK_PATH                    = self::LIBS_PATH . DIRECTORY_SEPARATOR . "phpformsframework" . DIRECTORY_SEPARATOR . "libs";
 
     /**
      * Project settings
      */
     const PROJECT_DOCUMENT_ROOT             = DIRECTORY_SEPARATOR . self::RESOURCE_APP;
     const PROJECT_DISK_PATH                 = self::DISK_PATH . self::PROJECT_DOCUMENT_ROOT;
-    const PROJECT_ASSETS_DISK_PATH          = self::PROJECT_DISK_PATH . DIRECTORY_SEPARATOR . self::RESOURCE_THEMES . self::THEME_PATH . DIRECTORY_SEPARATOR . self::RESOURCE_ASSETS . DIRECTORY_SEPARATOR . "dist";
-    const PROJECT_THEME_DISK_PATH           = self::PROJECT_DISK_PATH . DIRECTORY_SEPARATOR . self::RESOURCE_THEMES . self::THEME_PATH;
-
-    const VENDOR_LIBS_DIR                   = self::LIBS_PATH . DIRECTORY_SEPARATOR . "phpformsframework" . DIRECTORY_SEPARATOR . "libs";
 
     const DISK_PATH                         = self::DOCUMENT_ROOT;
     const LIBS_DISK_PATH                    = self::DOCUMENT_ROOT . self::LIBS_PATH;
-    const LIBS_FF_PATH                      = DIRECTORY_SEPARATOR . "phpformsframework" . DIRECTORY_SEPARATOR . "libs";
-    const LIBS_FF_DISK_PATH                 = self::LIBS_DISK_PATH . self::LIBS_FF_PATH;
-    const CONFIG_FF_PATH                    = self::VENDOR_LIBS_DIR . DIRECTORY_SEPARATOR . self::RESOURCE_CONF;
+    const FRAMEWORK_DISK_PATH               = self::DISK_PATH . self::FRAMEWORK_PATH;
     const CACHE_DISK_PATH                   = self::DISK_PATH . self::CACHE_PATH;
     const UPLOAD_DISK_PATH                  = self::DISK_PATH . self::UPLOAD_PATH;
 
@@ -237,4 +232,39 @@ class Constant
      */
     const PHP_EXT                           = "php";
     const ENCODING                          = "utf-8";
+
+    /**
+     * @return string|null
+     */
+    public static function getThemePath() : ?string
+    {
+        return (!empty(static::THEME_NAME)
+            ? DIRECTORY_SEPARATOR . static::THEME_NAME
+            : null
+        );
+    }
+
+    /**
+     * @return string
+     */
+    public static function getThemeDiskPath() : string
+    {
+        return self::PROJECT_DISK_PATH . DIRECTORY_SEPARATOR . self::RESOURCE_THEMES . self::getThemePath();
+    }
+
+    /**
+     * @return string
+     */
+    public static function getAssetPath() : string
+    {
+        return DIRECTORY_SEPARATOR . self::RESOURCE_THEMES . self::getThemePath() . DIRECTORY_SEPARATOR . self::RESOURCE_ASSETS . DIRECTORY_SEPARATOR . "dist";
+    }
+
+    /**
+     * @return string
+     */
+    public static function getAssetDiskPath() : string
+    {
+        return self::getThemeDiskPath() . DIRECTORY_SEPARATOR . self::RESOURCE_ASSETS . DIRECTORY_SEPARATOR . "dist";
+    }
 }

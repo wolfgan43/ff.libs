@@ -38,7 +38,7 @@ abstract class ImageRender
 
     protected const RENDER_ASSETS_PATH          = DIRECTORY_SEPARATOR . Constant::RESOURCE_ASSETS;
 
-    private const FONTS_DISK_PATH               = Constant::LIBS_FF_DISK_PATH . self::RENDER_ASSETS_PATH . DIRECTORY_SEPARATOR . Constant::RESOURCE_ASSET_FONTS;
+    private const FONTS_DISK_PATH               = Constant::FRAMEWORK_DISK_PATH . self::RENDER_ASSETS_PATH . DIRECTORY_SEPARATOR . Constant::RESOURCE_ASSET_FONTS;
 
     // PUBLIC
     public $new_res_max_x						= null;

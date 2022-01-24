@@ -266,12 +266,17 @@ class Model implements Configurable, Dumpable
     }
 
     /**
-     * @param array|null $convertTo
-     * @param array|null $convertIn
+     * @param array $convertTo
+     * @param array $convertIn
      * @return Schema
+     * @throws Exception
      */
-    public function schema(array $convertTo = null, array $convertIn = null) : Schema
+    public function schema(array $convertTo = [], array $convertIn = []) : Schema
     {
+        if (!$this->schema) {
+            throw new Exception(self::ERROR_MODEL_NOT_FOUND . ": " . $this->name, 501);
+        }
+
         $this->schema->to = $convertTo;
         $this->schema->in = $convertIn;
 
@@ -478,10 +483,10 @@ class Model implements Configurable, Dumpable
             if (!isset($model[self::FIELD][0])) {
                 $model[self::FIELD]                                                             = array($model[self::FIELD]);
             }
-            $prefix                                                                             = $schema[self::COLLECTION] . self::DOT;
+
             foreach ($model[self::FIELD] as $field) {
                 $attr                                                                           = Config::getXmlAttr($field);
-                $orm_field                                                                      = array_search($attr->name, $extend[self::READ] ?? []) ?: $prefix . ($attr->db ?? $attr->name);
+                $orm_field                                                                      = array_search($attr->name, $extend[self::READ] ?? []) ?: self::dbField($attr->db ?? $attr->name, $schema);
                 if (!isset($attr->name) || isset($schema[self::READ][$orm_field])) {
                     continue;
                 }
@@ -556,5 +561,22 @@ class Model implements Configurable, Dumpable
         self::$models[$schema_name]                                                             = $schema;
 
         return false;
+    }
+
+    /**
+     * @param string $name
+     * @param array $schema
+     * @return string
+     */
+    private static function dbField(string $name, array $schema) : string
+    {
+        switch (substr_count($name, self::DOT)) {
+            case 0:
+                return $schema[self::COLLECTION] . self::DOT . $schema[self::TABLE] . self::DOT . $name;
+            case 1:
+                return $schema[self::COLLECTION] . self::DOT . $name;
+            default:
+                return $name;
+        }
     }
 }

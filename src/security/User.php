@@ -25,7 +25,6 @@
  */
 namespace phpformsframework\libs\security;
 
-use phpformsframework\libs\App;
 use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\Exception;
 
@@ -33,7 +32,7 @@ use phpformsframework\libs\Exception;
  * Class User
  * @package phpformsframework\libs\security
  */
-class User extends App
+class User
 {
     private const ERROR_USER_NOT_FOUND                          = "Wrong user or Password";
     private const USER_LABEL                                    = "user";
@@ -86,6 +85,14 @@ class User extends App
     }
 
     /**
+     * @return string|null
+     */
+    public static function accessToken() : ?string
+    {
+        return null;
+    }
+
+    /**
      * @param string $acl_required
      * @return bool
      * @throws Exception
@@ -123,8 +130,12 @@ class User extends App
     {
         $user                                                   = new UserData(["username" => $username, "password" => $secret]);
         if (!$user->isStored()) {
-            self::throwError(401, self::ERROR_USER_NOT_FOUND);
+            throw new Exception(self::ERROR_USER_NOT_FOUND, 401);
         }
+
+        $user->login_at                                         = time();
+        $user->apply();
+
         return $user;
     }
 

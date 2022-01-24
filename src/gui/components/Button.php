@@ -58,7 +58,7 @@ class Button
     private $label                  = null;
     private $icon                   = null;
     private $placeholder            = null;
-    private $jsCallback             = null;
+    private $onClick                = null;
 
     private $url                    = null;
     private $tag                    = self::TAG_LINK;
@@ -66,78 +66,18 @@ class Button
     private $xhr                    = self::XHR_NONE;
     private $redirect               = null;
     private $params                 = [];
+    private $hide                   = false;
 
     /**
      * @param string $id
-     * @param string|null $jsCallback
-     * @return Button
+     * @param array $params
+     * @return static
      */
-    public static function primary(string $id, string $jsCallback = null) : self
-    {
-        return (new static($id, $jsCallback))
-            ->type(static::TYPE_PRIMARY);
-    }
-
-    /**
-     * @param string $id
-     * @param string|null $jsCallback
-     * @return Button
-     */
-    public static function secondary(string $id, string $jsCallback = null) : self
-    {
-        return (new static($id, $jsCallback))
-            ->type(static::TYPE_SECONDARY);
-    }
-
-    /**
-     * @param string $id
-     * @param string|null $jsCallback
-     * @return Button
-     */
-    public static function success(string $id, string $jsCallback = null) : self
-    {
-        return (new static($id, $jsCallback))
-            ->type(static::TYPE_SUCCESS);
-    }
-
-    /**
-     * @param string $id
-     * @param string|null $jsCallback
-     * @return Button
-     */
-    public static function danger(string $id, string $jsCallback = null) : self
-    {
-        return (new static($id, $jsCallback))
-            ->type(static::TYPE_DANGER);
-    }
-
-    /**
-     * @param string $id
-     * @param string|null $jsCallback
-     * @return Button
-     */
-    public static function warning(string $id, string $jsCallback = null) : self
-    {
-        return (new static($id, $jsCallback))
-            ->type(static::TYPE_WARNING);
-    }
-
-    /**
-     * @param string $id
-     * @param string|null $jsCallback
-     * @return Button
-     */
-    public static function info(string $id, string $jsCallback = null) : self
-    {
-        return (new static($id, $jsCallback))
-            ->type(static::TYPE_INFO);
-    }
-
     public static function create(string $id, array $params) : self
     {
         $button = new static($id);
         foreach ($params as $property => $value) {
-            $button->$property($value);
+            $button->$property = $value;
         }
 
         return $button;
@@ -145,12 +85,10 @@ class Button
 
     /**
      * @param string $id
-     * @param string|null $jsCallback
      */
-    public function __construct(string $id, string $jsCallback = null)
+    public function __construct(string $id)
     {
         $this->id                   = $id;
-        $this->jsCallback           = $jsCallback;
     }
 
     /**
@@ -189,6 +127,10 @@ class Button
         return $this;
     }
 
+    /**
+     * @param string $class
+     * @return $this
+     */
     public function icon(string $class) : self
     {
         $this->icon                 = $class;
@@ -213,6 +155,16 @@ class Button
     }
 
     /**
+     * @param string $jsCallback
+     * @return $this
+     */
+    public function onClick(string $jsCallback) : self
+    {
+        $this->onClick              = $jsCallback;
+
+        return $this;
+    }
+    /**
      * @param string $url
      * @return $this
      */
@@ -223,9 +175,23 @@ class Button
         return $this;
     }
 
+    /**
+     * @param array $params
+     * @return $this
+     */
     public function params(array $params) : self
     {
         $this->params = $params;
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function hide(bool $hide = true) : self
+    {
+        $this->hide = $hide;
 
         return $this;
     }
@@ -271,34 +237,131 @@ class Button
         return $this;
     }
 
-
-    public function display(array $params = [], bool $isXhr = false) : string
+    /**
+     * @param array $params
+     * @param bool $isXhr
+     * @return string|null
+     */
+    public function display(array $params = [], bool $isXhr = false) : ?string
     {
-        return '<' . $this->tag . $this->parseClass($isXhr ? " " . self::XHR_MODAL : null) . $this->parseHref((bool) ($this->xhr ?? $isXhr), $params) . $this->parsePlaceholder() . $this->parseClick($params) . '>' . $this->parseIcon() . $this->parseLabel() .'</' . $this->tag . '>';
+        return ($this->hide
+            ? null
+            : '<' . $this->tag . $this->parseClass($isXhr ? " " . self::XHR_MODAL : null) . $this->parseHref((bool) ($this->xhr ?? $isXhr), $params) . $this->parsePlaceholder() . $this->parseClick($params) . '>' . $this->parseIcon() . $this->parseLabel() .'</' . $this->tag . '>'
+        );
     }
 
-    public function displayAjaxModal(array $params = []) : string
+    /**
+     * @param array $params
+     * @return string|null
+     */
+    public function displayAjaxModal(array $params = []) : ?string
     {
-        return '<' . $this->tag . $this->parseClass(" " . self::XHR_MODAL) . $this->parseHref(true, $params) . $this->parsePlaceholder() . $this->parseClick($params) . '>' . $this->parseIcon() . $this->parseLabel() .'</' . $this->tag . '>';
+        return ($this->hide
+            ? null
+            : '<' . $this->tag . $this->parseClass(" " . self::XHR_MODAL) . $this->parseHref(true, $params) . $this->parsePlaceholder() . $this->parseClick($params) . '>' . $this->parseIcon() . $this->parseLabel() .'</' . $this->tag . '>'
+        );
     }
 
-    public function displayAjaxRequest(array $params = []) : string
+    /**
+     * @param array $params
+     * @return string|null
+     */
+    public function displayAjaxRequest(array $params = []) : ?string
     {
-        return '<' . $this->tag . $this->parseClass(" " . self::XHR_REQUEST) . $this->parseHref(true, $params) . $this->parsePlaceholder() . $this->parseClick($params) . '>' . $this->parseIcon() . $this->parseLabel() .'</' . $this->tag . '>';
+        return ($this->hide
+            ? null
+            : '<' . $this->tag . $this->parseClass(" " . self::XHR_REQUEST) . $this->parseHref(true, $params) . $this->parsePlaceholder() . $this->parseClick($params) . '>' . $this->parseIcon() . $this->parseLabel() .'</' . $this->tag . '>'
+        );
     }
 
-    public function displayTpl(bool $isXhr = false) : string
+    /**
+     * @param bool $isXhr
+     * @return string|null
+     */
+    public function displayTpl(bool $isXhr = false) : ?string
     {
-        return '<' . $this->tag . $this->parseClass($isXhr ? " " . self::XHR_MODAL : null) . $this->parseHref((bool) ($this->xhr ?? $isXhr)) . $this->parsePlaceholder() . $this->parseClick() . '>' . $this->parseIcon() . $this->parseLabel() .'</' . $this->tag . '>';
+        return ($this->hide
+            ? null
+            : '<' . $this->tag . $this->parseClass($isXhr ? " " . self::XHR_MODAL : null) . $this->parseHref((bool) ($this->xhr ?? $isXhr)) . $this->parsePlaceholder() . $this->parseClick() . '>' . $this->parseIcon() . $this->parseLabel() .'</' . $this->tag . '>'
+        );
     }
 
-    private function type(string $type) : self
+    /**
+     * @param string $class
+     * @return $this
+     */
+    public function type(string $class) : self
     {
-        $this->type = $type;
+        $this->type = $class;
 
         return $this;
     }
 
+    /**
+     * @return $this
+     */
+    public function typePrimary() : self
+    {
+        $this->type = static::TYPE_PRIMARY;
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function typeSecondary() : self
+    {
+        $this->type = static::TYPE_SECONDARY;
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function typeInfo() : self
+    {
+        $this->type = static::TYPE_INFO;
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function typeDanger() : self
+    {
+        $this->type = static::TYPE_DANGER;
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function typeWarning() : self
+    {
+        $this->type = static::TYPE_WARNING;
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function typeSuccess() : self
+    {
+        $this->type = static::TYPE_SUCCESS;
+
+        return $this;
+    }
+
+    /**
+     * @param bool $isXhr
+     * @param array $params
+     * @return string|null
+     */
     private function parseHref(bool $isXhr, array $params = []) : ?string
     {
         return ($this->tag == self::TAG_LINK
@@ -326,6 +389,12 @@ class Button
         return $this->pathinfo() . "/" . $this->id;
     }
 
+    /**
+     * @param string $url
+     * @param array $params
+     * @param bool $isXhr
+     * @return string|null
+     */
     private function parseUrlWithQuery(string $url, array $params, bool $isXhr) : ?string
     {
         $params = $params + $this->params;
@@ -335,19 +404,24 @@ class Button
         }
 
         return $url . (
-            $params
+            !empty($params)
             ?  (strpos($url, "?") === false ? "?" : "&") . http_build_query($params)
             : null
         );
     }
 
-
-
+    /**
+     * @param string|null $xhr
+     * @return string
+     */
     private function parseClass(string $xhr = null) : string
     {
         return ' class="' . $this->type . ($this->xhr ?? $xhr) . '"';
     }
 
+    /**
+     * @return string|null
+     */
     private function parseIcon() : ?string
     {
         return ($this->icon
@@ -356,6 +430,9 @@ class Button
         );
     }
 
+    /**
+     * @return string|null
+     */
     private function parsePlaceholder() : ?string
     {
         return ($this->placeholder
@@ -364,23 +441,34 @@ class Button
         );
     }
 
+    /**
+     * @return string|null
+     */
     private function parseLabel() : ?string
     {
         return $this->label ?? (!$this->icon ? $this->id : null);
     }
 
-    private function parseClick(array $params = null) : ?string
+    /**
+     * @param array $params
+     * @return string|null
+     */
+    private function parseClick(array $params = []) : ?string
     {
-        return ($this->jsCallback
-            ? ' onclick="' . str_replace(['"', '();'], ['&quot;', ''], $this->jsCallback) . '(' . $this->callbackParams($params) . ');'. '"'
+        return ($this->onClick
+            ? ' onclick="' . str_replace(['"', '();'], ['&quot;', ''], $this->onClick) . '(' . $this->callbackParams($params) . ');'. '"'
             : null
         );
     }
 
-    private function callbackParams(array $params = null) : ?string
+    /**
+     * @param array $params
+     * @return string|null
+     */
+    private function callbackParams(array $params) : ?string
     {
-        $params = ($params ?? []) + $this->params;
-        return ($params
+        $params = $params + $this->params;
+        return (!empty($params)
             ? str_replace('"', "'", json_encode($params))
             : null
         );

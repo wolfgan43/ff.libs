@@ -71,8 +71,8 @@ class DataTable
     protected const CONVERT_BY_TYPE     = [
                                             "image"     => [
                                                 "callback"  => "imageTag",
-                                                "width"     => 100,
-                                                "height"    => 100,
+                                                "width"     => 50,
+                                                "height"    => 50,
                                                 "default"   => "noimg"
                                             ],
                                             "datetime"  => [],
@@ -82,19 +82,28 @@ class DataTable
                                             "currency"  => []
                                         ];
     protected const BUTTONS             = [
-                                            "addnew"    => [
-                                                "type"          => Button::TYPE_PRIMARY,
-                                                "label"         => "AddNew",
-                                                "icon"          => "fa fa-plus"
+                                            "header" => [
+                                                "addnew"    => [
+                                                    "type"          => Button::TYPE_PRIMARY,
+                                                    "label"         => "AddNew",
+                                                    "icon"          => "fa fa-plus",
+                                                    "url"           => "addnew"
+                                                ]
                                             ],
-                                            "modify"    => [
-                                                "placeholder"   => "Modify",
-                                                "icon"          => "fa fa-pencil-alt"
+                                            "record" => [
+                                                "modify"    => [
+                                                    "placeholder"   => "Modify",
+                                                    "icon"          => "fa fa-pencil-alt",
+                                                    "url"           => "modify"
+                                                ],
+                                                "delete"    => [
+                                                    "placeholder"   => "Delete",
+                                                    "icon"          => "fa fa-trash",
+                                                    "url"           => "delete",
+                                                    "hide"          => true
+                                                ]
                                             ],
-                                            "delete"    => [
-                                                "placeholder"   => "Delete",
-                                                "icon"          => "fa fa-trash"
-                                            ]
+                                            "footer" => []
                                         ];
 
     protected const TEMPLATE_CLASS      = [];
@@ -113,7 +122,7 @@ class DataTable
     private const DATA_SOURCE_SQL       = "sql";
     private const DATA_SOURCE_NOSQL     = "nosql";
 
-    public $template                    = '
+    private $template                    = '
                                             <div class="dt-header"> 
                                                 [TITLE][ACTION_HEADER]
                                             </div>
@@ -153,7 +162,10 @@ class DataTable
     public $displayTablePaginate        = true;
     public $displayTablePaginateInfo    = true;
 
-    public $xhr                         = false;
+    private $xhr                        = null;
+    private $xhrSearch                  = null;
+    private $xhrSort                    = null;
+    private $xhrPagination              = null;
 
     public $lengths                     = [10, 25, 50];
 
@@ -167,8 +179,6 @@ class DataTable
     protected $dataTable                = null;
 
     protected $id                       = null;
-    protected $columns                  = [];
-    protected $properties               = [];
     protected $dtd                      = null;
 
     /**
@@ -184,11 +194,14 @@ class DataTable
      */
     private $buttonsFooter              = [];
 
+    /**
+     * @var DataTableColumn[]
+     */
+    private $columns                    = [];
+
     protected $draw                     = null;
     protected $start                    = null;
     protected $length                   = null;
-    protected $records_filtered         = null;
-    protected $records_total            = null;
     protected $search                   = null;
     protected $sort                     = null;
 
@@ -199,7 +212,6 @@ class DataTable
     protected $style                    = [];
     protected $js_embed                 = null;
 
-    protected $record_url               = null;
     protected $record_key               = null;
 
     private $dataSource                 = self::DATA_SOURCE_ARRAY;
@@ -216,11 +228,26 @@ class DataTable
         $component = explode(":", $model, 2);
 
         $dt->id = $component[0];
-        if(!empty($component[1])) {
+        if (!empty($component[1])) {
             $dt->dataSource = $component[1];
         }
 
         return $dt->dataTable();
+    }
+
+    /**
+     * @param bool $ajax
+     * @param string|null $template
+     */
+    public function __construct(bool $ajax = true, string $template = null)
+    {
+        $this->xhr                      = $ajax;
+        $this->xhrSearch                = $ajax;
+        $this->xhrSort                  = $ajax;
+        $this->xhrPagination            = $ajax;
+        if ($template) {
+            $this->template = $template;
+        }
     }
 
     public function sourceOrm(string $model) : self
@@ -279,24 +306,47 @@ class DataTable
     {
         $this->dataTable                = $this->dataTable();
 
-        $this->pages                    = ceil($this->records_filtered / $this->length);
+        $this->pages                    = ceil($this->dataTable->recordsFiltered / $this->length);
         $this->page                     = floor($this->start / $this->length) + 1;
 
         return new DataHtml($this->toArray());
     }
 
-    public function displayAddNew(bool $show = true) : ?Button
+    /**
+     * @param string $id
+     * @return Button
+     */
+    public function buttonHeader(string $id) : Button
     {
-        return $this->setButton($this->buttonsHeader, $show, "addnew");
-    }
-    public function displayEdit(bool $show = true) : ?Button
-    {
-        return $this->setButton($this->buttonsRecord, $show, "modify");
+        return $this->button($this->buttonsHeader, $id);
     }
 
-    public function displayDelete(bool $show = true) : ?Button
+    /**
+     * @param string $id
+     * @return Button
+     */
+    public function buttonRecord(string $id) : Button
     {
-        return $this->setButton($this->buttonsRecord, $show, "delete");
+        return $this->button($this->buttonsRecord, $id);
+    }
+
+    /**
+     * @param string $id
+     * @return Button
+     */
+    public function buttonFooter(string $id) : Button
+    {
+        return $this->button($this->buttonsFooter, $id);
+    }
+
+    /**
+     * @param string $id
+     * @param array $params
+     * @return DataTableColumn|null
+     */
+    public function column(string $id, array $params = []) : ?DataTableColumn
+    {
+        return $this->columns[$id] ?? ($this->columns[$id] = DataTableColumn::create($id, $params));
     }
 
     /**
@@ -325,27 +375,68 @@ class DataTable
         return $this->setPropertyHtml($this->description, $translate, $encode);
     }
 
-    public function record(string $key, bool $modal = null, string $url = null) : self
+    /**
+     * @param string $key
+     * @param bool|null $modal
+     * @return $this
+     */
+    public function record(string $key = self::RECORD_KEY, bool $modal = null) : self
     {
         $this->record_key       = $key;
-        if ($url) {
-            $this->record_url   = $url . DIRECTORY_SEPARATOR;
-        }
 
-        $addnew = $this->setButton($this->buttonsHeader, true, "addnew")
-            ->url($this->record_url . "addnew");
-        $modify = $this->setButton($this->buttonsRecord, true, "modify")
-            ->url($this->record_url . "modify");
-
-        if ($modal === true) {
-            $addnew->ajaxModal();
-            $modify->ajaxModal();
-        } elseif ($modal === false) {
-            $addnew->ajaxNone();
-            $modify->ajaxNone();
+        foreach (static::BUTTONS as $location => $buttons) {
+            foreach ($buttons as $id => $params) {
+                $button = $this->button($this->{"buttons" . ucfirst($location)}, $id, $params);
+                if ($modal === true) {
+                    $button->ajaxModal();
+                } elseif ($modal === false) {
+                    $button->ajaxNone();
+                }
+            }
         }
 
         return $this;
+    }
+
+    /**
+     * @param bool $ajax
+     * @return $this
+     */
+    public function ajaxSearch(bool $ajax) : self
+    {
+        $this->xhrSearch = $ajax;
+
+        return $this;
+    }
+    /**
+     * @param bool $ajax
+     * @return $this
+     */
+    public function ajaxSort(bool $ajax) : self
+    {
+        $this->xhrSort = $ajax;
+
+        return $this;
+    }
+    /**
+     * @param bool $ajax
+     * @return $this
+     */
+    public function ajaxPagination(bool $ajax) : self
+    {
+        $this->xhrPagination = $ajax;
+
+        return $this;
+    }
+    /**
+     * @param array $actions
+     * @param string $id
+     * @param array $params
+     * @return Button|null
+     */
+    private function button(array &$actions, string $id, array $params = []) : ?Button
+    {
+        return $actions[$id] ?? ($actions[$id] = Button::create($id, $params));
     }
 
     /**
@@ -364,73 +455,6 @@ class DataTable
             $property               = htmlspecialchars($property);
         }
         return $this;
-    }
-
-    /**
-     * @param array $actions
-     * @param bool $display
-     * @param string $id
-     * @return Button|null
-     */
-    private function setButton(array &$actions, bool $display, string $id) : ?Button
-    {
-        if ($display) {
-            return $actions[$id] ?? ($actions[$id] = Button::create($id, static::BUTTONS[$id]));
-        } else {
-            unset($actions[$id]);
-        }
-
-        return null;
-    }
-
-    /**
-     * @param string $name
-     * @param string|null $type
-     * @param string|null $jsCallback
-     * @return Button
-     */
-    public function addButtonHeader(string $name, string $type = null, string $jsCallback = null) : Button
-    {
-        $this->addButton($this->buttonsHeader, $name, $type, $jsCallback);
-
-        return $this->buttonsHeader[$name];
-    }
-
-    /**
-     * @param string $name
-     * @param string|null $type
-     * @param string|null $jsCallback
-     * @return Button
-     */
-    public function addButtonRecord(string $name, string $type = null, string $jsCallback = null) : Button
-    {
-        $this->addButton($this->buttonsRecord, $name, $type, $jsCallback);
-
-        return $this->buttonsRecord[$name];
-    }
-
-    /**
-     * @param string $name
-     * @param string|null $type
-     * @param string|null $jsCallback
-     * @return Button
-     */
-    public function addButtonFooter(string $name, string $type = null, string $jsCallback = null) : Button
-    {
-        $this->addButton($this->buttonsFooter, $name, $type, $jsCallback);
-
-        return $this->buttonsFooter[$name];
-    }
-
-    /**
-     * @param array $buttons
-     * @param string $id
-     * @param string|null $type
-     * @param string|null $jsCallback
-     */
-    private function addButton(array &$buttons, string $id, string $type = null, string $jsCallback = null)
-    {
-        $buttons[$id] = Button::$type($id, $jsCallback);
     }
 
     /**
@@ -495,44 +519,42 @@ class DataTable
         $db                             = new Model($this->id);
 
         $schema                         = $db->schema(static::CONVERT_BY_TYPE);
-        $this->columns                  = $schema->columns;
-        $this->properties               = $schema->properties;
+
+        foreach ($schema->properties as $key => $params) {
+            $this->column($key, $params);
+        }
+
         $this->dtd                      = $db->dtd();
 
         $where = null;
         $sort = null;
 
         if ($this->search) {
-            $where = ['$or' => array_fill_keys($this->columns, ['$regex' => "*" . $this->search . "*"])];
+            $where = ['$or' => array_fill_keys($schema->columns, ['$regex' => "*" . $this->search . "*"])];
         }
 
         foreach ($this->sort as $i => $dir) {
-            if (isset($this->columns[$i])) {
-                $sort[$this->columns[$i]] = $dir;
+            if (isset($schema->columns[$i])) {
+                $sort[$schema->columns[$i]] = $dir;
             }
         }
 
         if (!$sort) {
             $this->sort[self::DEFAULT_SORT] = self::DEFAULT_SORT_DIR;
-            $sort[$this->columns[self::DEFAULT_SORT]] = self::DEFAULT_SORT_DIR;
+            $sort[$schema->columns[self::DEFAULT_SORT]] = self::DEFAULT_SORT_DIR;
         }
         $records = $db->read($where, $sort, $this->length, $this->start);
 
-        $this->records_filtered = $records->countTotal();
-        $this->records_total = (
-            !empty($this->search)
-            ? $db->count()
-            : $this->records_filtered
-        );
-
-        return $records->toDataTable(function (OrmResults $results, DataTableResponse $dataTableResponse) {
+        return $records->toDataTable(function (OrmResults $results, DataTableResponse $dataTableResponse) use ($schema, $db) {
             $dataTableResponse->draw                = $this->draw + 1;
-            $dataTableResponse->columns             = $this->columns;
-            $dataTableResponse->properties          = $this->properties;
+            $dataTableResponse->columns             = $schema->columns;
+            $dataTableResponse->properties          = $schema->properties;
             if ($dataTableResponse->recordsFiltered) {
-                $dataTableResponse->recordsTotal    = $this->search ? $this->records_total : null;
+                if (!empty($this->search)) {
+                    $dataTableResponse->recordsTotal = $db->count();
+                }
 
-                if (!empty($this->key)) {
+                if (!empty($this->record_key)) {
                     $dataTableResponse->keys        = $results->keys($this->record_key);
                 }
             }
@@ -550,15 +572,7 @@ class DataTable
             throw new Exception($this->id . ":apiSource require DataTableResponse", 501);
         }
 
-        $this->columns          = $response->columns();
-        $this->properties       = $response->properties;
         $this->dtd              = null;
-        $this->records_filtered = $response->recordsFiltered;
-        $this->records_total    = (
-            !empty($this->search)
-            ? $response->recordsTotal
-            : $this->records_filtered
-        );
 
         return $response;
     }
@@ -569,12 +583,10 @@ class DataTable
     }
     private function sqlSource() : DataTableResponse
     {
-
     }
 
     private function nosqlSource() : DataTableResponse
     {
-
     }
 
     /**
@@ -594,6 +606,10 @@ class DataTable
         ];
     }
 
+    /**
+     * @param string $html
+     * @return string
+     */
     private function setClass(string $html) : string
     {
         return (empty(static::TEMPLATE_CLASS)
@@ -606,6 +622,9 @@ class DataTable
         );
     }
 
+    /**
+     * @return string|null
+     */
     private function xhrClass() : ?string
     {
         return ($this->xhr
@@ -671,6 +690,7 @@ class DataTable
             : null
         );
     }
+
     /**
      * @return string|null
      */
@@ -755,7 +775,6 @@ class DataTable
 
     /**
      * @return string|null
-     * @throws Exception
      */
     private function tableHead() : ?string
     {
@@ -772,10 +791,7 @@ class DataTable
         $record = null;
         if ($this->xhr) {
             if ($this->record_key) {
-                $record .= ' data-key="' . ($this->record_key ?? static::RECORD_KEY) . '"';
-            }
-            if ($this->record_url) {
-                $record .= ' data-url="' . $this->record_url . '"';
+                $record .= ' data-key="' . $this->record_key . '"';
             }
         }
 
@@ -790,16 +806,15 @@ class DataTable
     {
         return '<tbody' . $this->parseRecordAttr() . '>'
             . (
-                $this->records_filtered && $this->start <= $this->records_filtered
+                $this->dataTable->recordsFiltered && $this->start <= $this->dataTable->recordsFiltered
                 ? $this->tableRows()
-                : '<tr><td class="dt-empty" colspan="' . count($this->columns) . '">' . Translator::getWordByCode("No matching records found") . '</td></tr>'
+                : '<tr><td class="dt-empty" colspan="' . count($this->dataTable->columns) . '">' . Translator::getWordByCode("No matching records found") . '</td></tr>'
             )
             . '</tbody>';
     }
 
     /**
      * @return string|null
-     * @throws Exception
      */
     private function tableFoot() : ?string
     {
@@ -855,32 +870,31 @@ class DataTable
      */
     private function tablePaginateInfo() : ?string
     {
-        if ($this->start > $this->records_filtered || !$this->records_filtered) {
+        if ($this->start > $this->dataTable->recordsFiltered || !$this->dataTable->recordsFiltered) {
             $start = 0;
             $length = 0;
         } else {
             $length = (
-                $this->start + $this->length > $this->records_filtered
-                ? $this->records_filtered
+                $this->start + $this->length > $this->dataTable->recordsFiltered
+                ? $this->dataTable->recordsFiltered
                 : $this->start + $this->length
             );
             $start = $this->start + 1;
         }
 
         $total = (
-            $this->records_filtered != $this->records_total
-            ? ' (' . Translator::getWordByCode("filtered from") . ' '  . $this->records_total . ' ' . Translator::getWordByCode("total entries") . ')'
+            $this->dataTable->recordsFiltered != $this->dataTable->recordsTotal
+            ? ' (' . Translator::getWordByCode("filtered from") . ' '  . $this->dataTable->recordsTotal . ' ' . Translator::getWordByCode("total entries") . ')'
             : null
         );
         return ($this->displayTablePaginateInfo
-            ? '<div class="dataTable-info">' . Translator::getWordByCode("Showing") . ' ' . $start . ' ' . Translator::getWordByCode("to") . ' ' . $length . ' ' . Translator::getWordByCode("of") . ' ' . $this->records_filtered . ' ' . Translator::getWordByCode("entries") . $total . '</div>'
+            ? '<div class="dataTable-info">' . Translator::getWordByCode("Showing") . ' ' . $start . ' ' . Translator::getWordByCode("to") . ' ' . $length . ' ' . Translator::getWordByCode("of") . ' ' . $this->dataTable->recordsFiltered . ' ' . Translator::getWordByCode("entries") . $total . '</div>'
             : null
         );
     }
 
     /**
      * @return string
-     * @throws Exception
      */
     private function tableColumns() : string
     {
@@ -889,7 +903,12 @@ class DataTable
             $this->sort[self::DEFAULT_SORT] = self::DEFAULT_SORT_DIR;
         }
 
-        foreach ($this->columns as $i => $column) {
+        foreach ($this->dataTable->columns as $i => $column) {
+            if (empty($this->column($column)->display(""))) { //da sistemare sistemando il metodo qui sotto anche
+                unset($this->dataTable->columns[$i]);
+                continue;
+            }
+
             if ($this->displayTableSort) {
                 if (isset($this->sort[$i])) {
                     $dir = self::DIR[$this->sort[$i]] ?? self::DEFAULT_SORT_DIR;
@@ -900,9 +919,9 @@ class DataTable
                     $class = null;
                 }
 
-                $columns .= '<th data-id="' . $column . '"' . $class . '><a href="' . $this->getUrl(self::TC_SORT, [$i => $rdir]) . '">' . ($this->properties->$column["label"] ?? Translator::getWordByCode($column)) . '</a></th>';
+                $columns .= '<th data-id="' . $column . '"' . $class . '>' . $this->column($column)->display($this->getUrl(self::TC_SORT, [$i => $rdir])) . '</th>';
             } else {
-                $columns .= '<th>' . $column . '</th>';
+                $columns .= '<th><span>' . $column . '</span></th>';
             }
         }
 
@@ -969,7 +988,7 @@ class DataTable
         $row = null;
         $i = 0;
         foreach ($record as $field => $value) {
-            if (in_array($field, $this->columns)) {
+            if (in_array($field, $this->dataTable->columns)) {
                 $row .= '<td' . $this->tableRowClass($field, $i) . '>' . $value . '</td>';
                 $i++;
             }
@@ -985,7 +1004,7 @@ class DataTable
      */
     private function tableRowClass(string $field, int $i) : ?string
     {
-        $class = trim((isset($this->dtd->$field) && $this->dtd->$field != "string" ? $this->dtd->$field : null) . (isset($this->sort[$i]) ? ' ' . self::TC_SORT : null));
+        $class = trim($this->column($field)->getType("string") . (isset($this->sort[$i]) ? ' ' . self::TC_SORT : null));
 
         return ($class
             ? ' class="' . $class . '"'

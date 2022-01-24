@@ -49,7 +49,7 @@ abstract class ApiAdapter
 
     protected const NAMESPACE_DATARESPONSE                              = App::NAME_SPACE . "dto\\";
     protected const REQUEST_TIMEOUT                                     = 10;
-    protected const PROTOCOL                                            = "https://";
+    protected const PROTOCOL_SECURE                                     = "https://";
 
     protected const ERROR_RESPONSE_INVALID_FORMAT                       = "Response Invalid Format";
 
@@ -81,13 +81,13 @@ abstract class ApiAdapter
     abstract protected function get(array $params = null, array $headers = null) : stdClass;
 
     /**
-     * @return array
+     * @return array|null
      */
     abstract protected function preflight() : ?array;
 
     /**
      * @param string $method
-     * @return array
+     * @return array|null
      */
     abstract protected function getResponseSchema(string $method) : ?array;
 
@@ -126,7 +126,6 @@ abstract class ApiAdapter
         Debug::stopWatch("api/remote/preflight");
 
         $endpoint                                                       = $this->endpoint();
-
         if (!isset(self::$preflight)) {
             self::$preflight                                            = Buffer::cache(self::ERROR_BUCKET)->get("preflight");
         }
@@ -170,13 +169,15 @@ abstract class ApiAdapter
         $class_name                                                     = static::NAMESPACE_DATARESPONSE . "DataTableResponse";
         return new $class_name();
     }
+
     /**
      * @param array|null $params
      * @param array|null $headers
+     * @param string|null $method
      * @return DataAdapter
      * @throws Exception
      */
-    public function send(array $params = null, array $headers = null) : DataAdapter
+    public function send(array $params = null, array $headers = null, string $method = null) : DataAdapter
     {
         Debug::stopWatch("api/remote");
 
@@ -184,7 +185,8 @@ abstract class ApiAdapter
         $response                                                       = null;
         $dataResponse                                                   = $this->dataResponse();
         if ($this->endpoint) {
-            $headers                                                     = $this->getHeader($headers);
+            $this->request_method                                       = strtoupper($method);
+            $headers                                                    = $this->getHeader($headers);
             try {
                 $response                                               = $this->getMock() ?? $this->get($params, $headers);
             } catch (\Exception $e) {

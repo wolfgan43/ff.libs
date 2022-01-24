@@ -154,7 +154,7 @@ class ApiSoap extends ApiAdapter
     protected function get(array $params = null, array $headers = null) : stdClass
     {
         $response                                                       = new stdClass();
-        $this->protocol                                                 = self::PROTOCOL;
+        $this->protocol                                                 = self::PROTOCOL_SECURE;
         $this->request_method                                           = self::REQUEST_METHOD;
 
         $this->loadClient();

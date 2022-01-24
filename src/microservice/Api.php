@@ -25,8 +25,10 @@
  */
 namespace phpformsframework\libs\microservice;
 
+use phpformsframework\libs\dto\DataAdapter;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\microservice\adapters\ApiAdapter;
+use phpformsframework\libs\security\User;
 use phpformsframework\libs\util\AdapterManager;
 use phpformsframework\libs\Exception;
 
@@ -42,27 +44,81 @@ class Api
     public const ADAPTER_SOAP               = "Soap";
     public const ADAPTER_WSP                = "JsonWsp";
 
-    protected const CLASSNAME              = __CLASS__;
+    private $headers                        = [
+                                                "Accept" => "application/json"
+                                            ];
 
     /**
      * Api constructor.
-     * @param $url
+     * @param string $url
+     * @param array $headers
      * @param string|null $apiAdapter
      */
-    public function __construct($url, string $apiAdapter = null)
+    public function __construct(string $url, array $headers = [], string $apiAdapter = null)
     {
-        $this->setAdapter($apiAdapter ?? Kernel::$Environment::MICROSERVICE_ADAPTER, [$url], static::CLASSNAME);
+        $this->headers                      = array_replace($this->headers, $headers);
+
+        $this->setAdapter($apiAdapter ?? Kernel::$Environment::MICROSERVICE_ADAPTER, [$url]);
     }
 
     /**
-     * @param string $method
+     * @param string|null $accessToken
+     * @return $this
+     */
+    public function authorization(string $accessToken = null) : self
+    {
+        $this->headers['Authorization']     = $accessToken ?? User::accessToken();
+
+        return $this;
+    }
+
+    /**
      * @param array $params
-     * @param array $heaers
-     * @return object
+     * @return DataAdapter
      * @throws Exception
      */
-    public function send(string $method, array $params, array $heaers) : object
+    public function get(array $params = []) : DataAdapter
     {
-        return $this->adapter->send($method, $params, $heaers);
+        return $this->adapter->send($params, $this->headers, "GET");
+    }
+
+    /**
+     * @param array $params
+     * @return DataAdapter
+     * @throws Exception
+     */
+    public function post(array $params = []) : DataAdapter
+    {
+        return $this->adapter->send($params, $this->headers, "POST");
+    }
+
+    /**
+     * @param array $params
+     * @return DataAdapter
+     * @throws Exception
+     */
+    public function put(array $params = []) : DataAdapter
+    {
+        return $this->adapter->send($params, $this->headers, "PUT");
+    }
+
+    /**
+     * @param array $params
+     * @return DataAdapter
+     * @throws Exception
+     */
+    public function patch(array $params = []) : DataAdapter
+    {
+        return $this->adapter->send($params, $this->headers, "PATCH");
+    }
+
+    /**
+     * @param array $params
+     * @return DataAdapter
+     * @throws Exception
+     */
+    public function delete(array $params = []) : DataAdapter
+    {
+        return $this->adapter->send($params, $this->headers, "DELETE");
     }
 }

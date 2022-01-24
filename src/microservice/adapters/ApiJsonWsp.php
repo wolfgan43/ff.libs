@@ -80,16 +80,15 @@ class ApiJsonWsp extends ApiAdapter
     }
 
     /**
-     * @return array
+     * @return array|null
      * @throws Exception
      */
     public function preflight() : ?array
     {
-        $this->request_method = Request::METHOD_HEAD;
         return FilemanagerWeb::fileGetContentsWithHeaders(
             $this->endpoint(),
             null,
-            $this->request_method
+            Request::METHOD_HEAD
         );
     }
 
@@ -101,14 +100,10 @@ class ApiJsonWsp extends ApiAdapter
      */
     protected function get(array $params = null, array $headers = null) : stdClass
     {
-        $this->protocol         = $this->protocol();
-
-        $discover               = $this->discover($this->requestMethod());
-        $this->request_method   = $discover["Access-Control-Allow-Methods"];
-        if (isset($discover["Strict-Transport-Security"])) {
-            $this->protocol     = self::PROTOCOL;
+        $this->protocol                         = $this->protocol();
+        if (!$this->request_method) {
+            $this->request_method               = $this->method();
         }
-
         if (!in_array($this->request_method, self::METHOD_ALLOWED)) {
             throw new Exception(self::ERROR_METHOD_NOT_SUPPORTED, 501);
         }
@@ -128,10 +123,21 @@ class ApiJsonWsp extends ApiAdapter
 
     /**
      * @param string $method
-     * @return array
+     * @return array|null
      */
     protected function getResponseSchema(string $method) : ?array
     {
         return null;
+    }
+
+    private function method() : string
+    {
+        $request_method         = $this->requestMethod();
+        $discover               = $this->discover($request_method);
+        if (isset($discover["Strict-Transport-Security"])) {
+            $this->protocol     = self::PROTOCOL_SECURE;
+        }
+
+        return $discover["Access-Control-Allow-Methods"] ?? $request_method;
     }
 }

@@ -185,7 +185,7 @@ class FilemanagerWeb implements Dumpable
     {
         $params                             = self::getQueryByUrl($url, $params);
         $key                                = $url;
-        if (count($params)) {
+        if (!empty($params)) {
             $key                            .= "?" . http_build_query($params);
             if ($method != Request::METHOD_POST) {
                 $url                        = $key;

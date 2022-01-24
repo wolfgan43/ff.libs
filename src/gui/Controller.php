@@ -34,7 +34,10 @@ use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\Env;
 use phpformsframework\libs\international\InternationalManager;
 use phpformsframework\libs\Kernel;
+use phpformsframework\libs\microservice\Api;
 use phpformsframework\libs\Response;
+use phpformsframework\libs\security\User;
+use phpformsframework\libs\security\UserData;
 use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\storage\FilemanagerFs;
 use phpformsframework\libs\storage\Media;
@@ -198,6 +201,25 @@ abstract class Controller
         }
 
         return Env::get($key);
+    }
+
+    /**
+     * @return UserData
+     * @throws Exception
+     */
+    protected function userSession() : UserData
+    {
+        return User::get();
+    }
+
+    /**
+     * @param string $api_path
+     * @param array $headers
+     * @return Api
+     */
+    protected function api(string $api_path, array $headers = []) : Api
+    {
+        return new Api($api_path, $headers);
     }
 
     /**

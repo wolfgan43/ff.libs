@@ -266,7 +266,7 @@ class Media implements Configurable
         } elseif (strpos($arrFile->dirname, static::RENDER_ASSETS_PATH) !== false && ($asset_path = self::ext2dirBucket(Constant::RESOURCE_ASSETS, $arrFile))) {
             $showfiles                                              = Constant::SITE_PATH . static::RENDER_ASSETS_PATH;
             $arrFile->dirname                                       = DIRECTORY_SEPARATOR . $asset_path;
-        } elseif(strpos($arrFile->dirname, Constant::UPLOAD_PATH) === 0) {
+        } elseif (strpos($arrFile->dirname, Constant::UPLOAD_PATH) === 0) {
             $arrFile->dirname                                       = substr($arrFile->dirname, strlen(Constant::UPLOAD_PATH));
         }
 
@@ -522,7 +522,7 @@ class Media implements Configurable
                 throw new Exception("Icon " . $filename . " not found", 404);
             }
             $this->resolveSrcPath();
-            if($this->mode) {
+            if ($this->mode) {
                 $basename = pathinfo($abs_path, PATHINFO_FILENAME) . "-" . $this->mode . "." . pathinfo($abs_path, PATHINFO_EXTENSION);
             } else {
                 $basename                                           = basename($abs_path);
@@ -542,9 +542,9 @@ class Media implements Configurable
             }
             $res                                                    = (
                 $abs
-                                                                        ? $abs_path
-                                                                        : Constant::SITE_PATH . static::RENDER_ASSETS_PATH . static::RENDER_IMAGE_PATH . DIRECTORY_SEPARATOR . basename($abs_path)
-                                                                    );
+                ? $abs_path
+                : Constant::SITE_PATH . static::RENDER_ASSETS_PATH . static::RENDER_IMAGE_PATH . DIRECTORY_SEPARATOR . basename($abs_path)
+            );
         }
 
         return $res;
@@ -558,11 +558,7 @@ class Media implements Configurable
     {
         $mode                                                       = null;
         $source                                                     = explode(".", strrev($basename), 2);
-        $filename                                                   = strrev(
-            isset($source[1])
-                                                                        ? $source[1]
-                                                                        : $source[0]
-                                                                    );
+        $filename                                                   = strrev($source[1] ?? $source[0]);
         $arrFilename   			                                    = explode("-", $filename);
 
         $offset                                                     = count($arrFilename) - 1;
@@ -939,7 +935,7 @@ class Media implements Configurable
 
     /**
      * @param string|null $file_stored
-     * @return string
+     * @return string|null
      */
     private function getFinalFile(string &$file_stored = null) : ?string
     {
@@ -994,7 +990,7 @@ class Media implements Configurable
                 !empty($params->force_icon)
                                                                         ? Constant::DISK_PATH . $params->force_icon
                                                                         : $this->basepath . $this->filesource
-                                                                    );
+            );
 
             if ($params->resize && $params->mode != "crop") {
                 $params->max_x                                      = $params->dim_x;
@@ -1027,7 +1023,7 @@ class Media implements Configurable
                 is_dir($this->basepath . $this->filesource)
                                                                         ? $params->enable_thumb_word_dir
                                                                         : $params->enable_thumb_word_file
-                                                                    );
+            );
         } else {
             if ($params->dim_x == 0) {
                 $params->dim_x                                      = null;
@@ -1149,7 +1145,7 @@ class Media implements Configurable
 
     /**
      * @param string $mode
-     * @return stdClass
+     * @return stdClass|null
      */
     private function getModeWizard(string $mode) : ?stdClass
     {
@@ -1242,17 +1238,14 @@ class Media implements Configurable
             if (!$this->final) {
                 $this->makeFinalFile($filename);
             }
+
             if ($this->final) {
                 $final_file_stored                                  = null;
                 $final_file                                         = $this->getFinalFile($final_file_stored);
 
                 $modeCurrent                                        = $this->getMode();
-
                 if (!Kernel::useCache() && !$modeCurrent) {
-                    return ($this->isImage()
-                        ? $this->getIconPath(basename($this->filesource), true)
-                        : $this->basepath . $this->filesource
-                    );
+                    return $this->basepath . $this->filesource;
                 }
 
                 if (is_array($modeCurrent)) {
@@ -1260,14 +1253,9 @@ class Media implements Configurable
                         $this->createImage($modeCurrent);
                         Hook::handle(self::HOOK_ON_AFTER_CREATE, $final_file);
                     }
-                } elseif (!$modeCurrent && is_file($this->basepath . $this->filesource)) {
+                } elseif (!$modeCurrent) {
                     if (!Buffer::cacheIsValid($this->basepath . $this->filesource, $final_file_stored)) {
                         $this->saveFromOriginal($this->basepath . $this->filesource, $final_file);
-                    }
-                } elseif ($this->isImage()) {
-                    $icon                                           = $this->getIconPath(basename($this->filesource), true);
-                    if (!Buffer::cacheIsValid($this->basepath . $this->filesource, $final_file_stored) && $icon) {
-                        $this->saveFromOriginal($icon, $final_file);
                     }
                 } else {
                     $final_file                                     = null;
@@ -1308,11 +1296,7 @@ class Media implements Configurable
     private function setNoImg(string $mode = null, string $icon_name = null) : bool
     {
         if (!$icon_name) {
-            $icon_name                                              = (
-                isset($this->pathinfo->extension)
-                ? $this->pathinfo->extension
-                : $this->pathinfo->basename
-            );
+            $icon_name                                              = $this->pathinfo->extension ?? $this->pathinfo->basename;
         }
         if (!$mode) {
             $mode                                                   = $this->getModeByNoImg($this->pathinfo->basename);
@@ -1363,10 +1347,7 @@ class Media implements Configurable
         $source->extension 	                                        = $sep;
         $source->filename 	                                        = $file[0];
 
-        return ($mode
-            ? $mode
-            : $file[1]
-        );
+        return ($mode ?: $file[1]);
     }
 
     /**

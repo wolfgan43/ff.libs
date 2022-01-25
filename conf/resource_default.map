@@ -47,7 +47,8 @@
         "svg",
         "jpeg",
         "gif"
-      ]
+      ],
+      "prototype" : "defaultname"
     },
     "fonts": {
       "flag": 4,
@@ -59,7 +60,8 @@
         "ttf",
         "woff",
         "woff2"
-      ]
+      ],
+      "prototype" : "defaultname"
     },
     "widgets": {
       "flag": 8,

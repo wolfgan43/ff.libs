@@ -36,6 +36,7 @@ class User
 {
     private const ERROR_USER_NOT_FOUND                          = "Wrong user or Password";
     private const USER_LABEL                                    = "user";
+    private const TOKEN_LABEL                                   = "token";
 
     /**
      * @var UserData
@@ -73,9 +74,11 @@ class User
     {
         if (self::session()->verify()) {
             self::session()->set(self::USER_LABEL, $user->toArray());
-            self::$user                                         = $user;
+            if (isset($user->token)) {
+                self::session()->set(self::TOKEN_LABEL, $user->token);
+            }
+            self::$user                                         = UserData::load(self::session()->get(self::USER_LABEL));
         }
-
         return self::$user;
     }
 

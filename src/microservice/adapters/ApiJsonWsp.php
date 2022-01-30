@@ -25,8 +25,8 @@
  */
 namespace phpformsframework\libs\microservice\adapters;
 
+use phpformsframework\libs\microservice\Api;
 use phpformsframework\libs\util\ServerManager;
-use phpformsframework\libs\Request;
 use phpformsframework\libs\storage\FilemanagerWeb;
 use phpformsframework\libs\Exception;
 use stdClass;
@@ -39,16 +39,7 @@ class ApiJsonWsp extends ApiAdapter
 {
     use ServerManager;
 
-    private const METHOD_ALLOWED                    = [
-                                                        Request::METHOD_GET,
-                                                        Request::METHOD_POST,
-                                                        Request::METHOD_PUT,
-                                                        Request::METHOD_PATCH,
-                                                        Request::METHOD_DELETE
-                                                    ];
-
     protected const ERROR_RESPONSE_INVALID_FORMAT   = "Response is not a valid Json";
-    private const ERROR_METHOD_NOT_SUPPORTED        = "Request Method not Supported";
 
     protected $user_agent                           = null;
     protected $cookie                               = null;
@@ -87,25 +78,22 @@ class ApiJsonWsp extends ApiAdapter
     {
         return FilemanagerWeb::fileGetContentsWithHeaders(
             $this->endpoint(),
-            null,
-            Request::METHOD_HEAD
+            [],
+            Api::METHOD_HEAD
         );
     }
 
     /**
-     * @param array|null $params
-     * @param array|null $headers
+     * @param array $params
+     * @param array $headers
      * @return stdClass
      * @throws Exception
      */
-    protected function get(array $params = null, array $headers = null) : stdClass
+    protected function get(array $params = [], array $headers = []) : stdClass
     {
         $this->protocol                         = $this->protocol();
         if (!$this->request_method) {
             $this->request_method               = $this->method();
-        }
-        if (!in_array($this->request_method, self::METHOD_ALLOWED)) {
-            throw new Exception(self::ERROR_METHOD_NOT_SUPPORTED, 501);
         }
 
         return FilemanagerWeb::fileGetContentsJson(
@@ -117,7 +105,7 @@ class ApiJsonWsp extends ApiAdapter
             $this->cookie,
             $this->http_auth_username,
             $this->http_auth_secret,
-            $this->getHeader($headers)
+            $headers
         );
     }
 

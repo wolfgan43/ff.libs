@@ -105,10 +105,10 @@ trait StorageManager
 
     /**
      * @param string $url
-     * @param array|null $params
+     * @param array $params
      * @return array
      */
-    private static function getQueryByUrl(string &$url, array $params = null) : array
+    private static function getQueryByUrl(string &$url, array $params = []) : array
     {
         return FilemanagerWeb::getQueryByUrl($url, $params);
     }

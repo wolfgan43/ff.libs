@@ -222,6 +222,10 @@ abstract class Controller
         return new Api($api_path, $headers);
     }
 
+    protected function redirectBack() : void
+    {
+        $this->redirect($this->request->redirect ?? dirname($this->script_path));
+    }
     /**
      * Utility Builder
      * ------------------------------------------------------------------------

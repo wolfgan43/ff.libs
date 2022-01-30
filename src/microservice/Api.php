@@ -28,6 +28,7 @@ namespace phpformsframework\libs\microservice;
 use phpformsframework\libs\dto\DataAdapter;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\microservice\adapters\ApiAdapter;
+use phpformsframework\libs\Request;
 use phpformsframework\libs\security\User;
 use phpformsframework\libs\util\AdapterManager;
 use phpformsframework\libs\Exception;
@@ -41,12 +42,72 @@ class Api
 {
     use AdapterManager;
 
-    public const ADAPTER_SOAP               = "Soap";
-    public const ADAPTER_WSP                = "JsonWsp";
+    public const ADAPTER_SOAP                   = "Soap";
+    public const ADAPTER_WSP                    = "JsonWsp";
 
-    private $headers                        = [
-                                                "Accept" => "application/json"
-                                            ];
+    public const METHOD_HEAD                    = Request::METHOD_HEAD;
+    public const METHOD_GET                     = Request::METHOD_GET;
+    public const METHOD_POST                    = Request::METHOD_POST;
+    public const METHOD_PUT                     = Request::METHOD_PUT;
+    public const METHOD_PATCH                   = Request::METHOD_PATCH;
+    public const METHOD_DELETE                  = Request::METHOD_DELETE;
+
+    private const METHOD_DEFAULT                = Request::METHOD_GET;
+    private const METHOD_ALLOWED                = [
+        Request::METHOD_GET,
+        Request::METHOD_POST,
+        Request::METHOD_PUT,
+        Request::METHOD_PATCH,
+        Request::METHOD_DELETE
+    ];
+    private const ERROR_METHOD_NOT_SUPPORTED    = "Request Method not Supported";
+
+    public $url                                 = null;
+
+    private $method                             = null;
+    private $params                             = [];
+    private $headers                            = [
+        "Accept" => "application/json"
+    ];
+
+    public static function isAllowedMethod(string $method) : bool
+    {
+        if (!in_array($method, Api::METHOD_ALLOWED)) {
+            throw new Exception(self::ERROR_METHOD_NOT_SUPPORTED, 501);
+        }
+        return true;
+    }
+
+    /**
+     * @param string $method
+     * @param string $url
+     * @param array $params
+     * @param array $headers
+     * @return DataAdapter
+     * @throws Exception
+     */
+    public static function request(string $method, string $url, array $params = [], array $headers = []) : DataAdapter
+    {
+        return (new Api($url, $headers))
+            ->method($method)
+            ->send($params);
+    }
+
+    /**
+     * @param string $method
+     * @param string $url
+     * @param array $params
+     * @param array $headers
+     * @return DataAdapter
+     * @throws Exception
+     */
+    public static function requestWithAuth(string $method, string $url, array $params = [], array $headers = []) : DataAdapter
+    {
+        return (new Api($url, $headers))
+            ->method($method)
+            ->authorization()
+            ->send($params);
+    }
 
     /**
      * Api constructor.
@@ -56,9 +117,10 @@ class Api
      */
     public function __construct(string $url, array $headers = [], string $apiAdapter = null)
     {
+        $this->url                          = $url;
         $this->headers                      = array_replace($this->headers, $headers);
 
-        $this->setAdapter($apiAdapter ?? Kernel::$Environment::MICROSERVICE_ADAPTER, [$url]);
+        $this->setAdapter($apiAdapter ?? Kernel::$Environment::MICROSERVICE_ADAPTER, [$this->url]);
     }
 
     /**
@@ -67,7 +129,35 @@ class Api
      */
     public function authorization(string $accessToken = null) : self
     {
-        $this->headers['Authorization']     = $accessToken ?? User::accessToken();
+        if (($token = $accessToken ?? User::accessToken())) {
+            $this->headers['Authorization']     = $token;
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param string $method
+     * @return $this
+     * @throws Exception
+     */
+    public function method(string $method) : self
+    {
+        $method = strtoupper($method);
+        if ($this->isAllowedMethod($method)) {
+            $this->method = $method;
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param array $params
+     * @return $this
+     */
+    public function params(array $params) : self
+    {
+        $this->params = $params;
 
         return $this;
     }
@@ -77,9 +167,20 @@ class Api
      * @return DataAdapter
      * @throws Exception
      */
+    public function send(array $params = []) : DataAdapter
+    {
+        return $this->adapter->send($this->params + $params, $this->headers, $this->method ?? self::METHOD_DEFAULT);
+    }
+
+    /**
+     * @param array $params
+     * @return DataAdapter
+     * @throws Exception
+     */
     public function get(array $params = []) : DataAdapter
     {
-        return $this->adapter->send($params, $this->headers, "GET");
+        return $this->method(Request::METHOD_GET)
+            ->send($params);
     }
 
     /**
@@ -89,7 +190,8 @@ class Api
      */
     public function post(array $params = []) : DataAdapter
     {
-        return $this->adapter->send($params, $this->headers, "POST");
+        return $this->method(Request::METHOD_POST)
+            ->send($params);
     }
 
     /**
@@ -99,7 +201,8 @@ class Api
      */
     public function put(array $params = []) : DataAdapter
     {
-        return $this->adapter->send($params, $this->headers, "PUT");
+        return $this->method(Request::METHOD_PUT)
+            ->send($params);
     }
 
     /**
@@ -109,7 +212,8 @@ class Api
      */
     public function patch(array $params = []) : DataAdapter
     {
-        return $this->adapter->send($params, $this->headers, "PATCH");
+        return $this->method(Request::METHOD_PATCH)
+            ->send($params);
     }
 
     /**
@@ -119,6 +223,7 @@ class Api
      */
     public function delete(array $params = []) : DataAdapter
     {
-        return $this->adapter->send($params, $this->headers, "DELETE");
+        return $this->method(Request::METHOD_DELETE)
+            ->send($params);
     }
 }

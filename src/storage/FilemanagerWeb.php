@@ -72,7 +72,7 @@ class FilemanagerWeb implements Dumpable
      * @return string
      * @throws Exception
      */
-    public static function fileGetContents(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : string
+    public static function fileGetContents(string $url, array $params = [], string $method = Request::METHOD_POST, int $timeout = 10, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = []) : string
     {
         $key                                        = self::normalizeUrlAndParams($method, $url, $params);
         $context                                    = self::streamContext($params, $method, $timeout, $user_agent, $cookie, $username, $password, $headers);
@@ -86,19 +86,19 @@ class FilemanagerWeb implements Dumpable
 
     /**
      * @param string $url
-     * @param array|null $params
+     * @param array $params
      * @param string $method
      * @param int $timeout
      * @param string|null $user_agent
      * @param array|null $cookie
      * @param string|null $username
      * @param string|null $password
-     * @param array|null $headers
+     * @param array $headers
      * @return stdClass
      * @throws Exception
      * @todo da tipizzare
      */
-    public static function fileGetContentsJson(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : stdClass
+    public static function fileGetContentsJson(string $url, array $params = [], string $method = Request::METHOD_POST, int $timeout = 10, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = []) : stdClass
     {
         $rawdata                                    = self::fileGetContents($url, $params, $method, $timeout, $user_agent, $cookie, $username, $password, $headers);
         if ($rawdata === "") {
@@ -116,18 +116,18 @@ class FilemanagerWeb implements Dumpable
 
     /**
      * @param string $url
-     * @param array|null $params
+     * @param array $params
      * @param string $method
      * @param int $timeout
      * @param string|null $user_agent
      * @param array|null $cookie
      * @param string|null $username
      * @param string|null $password
-     * @param array|null $headers
+     * @param array $headers
      * @return array|null
      * @throws Exception
      */
-    public static function fileGetContentsWithHeaders(string $url, array $params = null, string $method = Request::METHOD_POST, int $timeout = 10, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null) : ?array
+    public static function fileGetContentsWithHeaders(string $url, array $params = [], string $method = Request::METHOD_POST, int $timeout = 10, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = []) : ?array
     {
         $response_headers                           = array();
         $key                                        = self::normalizeUrlAndParams($method, $url, $params);
@@ -159,10 +159,10 @@ class FilemanagerWeb implements Dumpable
 
     /**
      * @param string $url
-     * @param array|null $params
-     * @return array|null
+     * @param array $params
+     * @return array
      */
-    public static function getQueryByUrl(string &$url, array $params = null) : array
+    public static function getQueryByUrl(string &$url, array $params = []) : array
     {
         $url_params                         = array();
         if (strpos($url, "?") !== false) {
@@ -172,16 +172,16 @@ class FilemanagerWeb implements Dumpable
                 parse_str($query[1], $url_params);
             }
         }
-        return array_replace((array) $params, $url_params);
+        return array_replace($params, $url_params);
     }
 
     /**
      * @param string $method
      * @param string $url
-     * @param array|null $params
+     * @param array $params
      * @return string
      */
-    private static function normalizeUrlAndParams(string $method, string &$url, array &$params = null) : string
+    private static function normalizeUrlAndParams(string $method, string &$url, array &$params = []) : string
     {
         $params                             = self::getQueryByUrl($url, $params);
         $key                                = $url;
@@ -265,17 +265,17 @@ class FilemanagerWeb implements Dumpable
     }
 
     /**
-     * @param array|null $params
+     * @param array $params
      * @param string $method
      * @param int $timeout
      * @param string|null $user_agent
      * @param array|null $cookie
      * @param string|null $username
      * @param string|null $password
-     * @param array|null $headers
+     * @param array $headers
      * @return resource
      */
-    private static function streamContext(array $params = null, string $method = Request::METHOD_POST, int $timeout = 60, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = null)
+    private static function streamContext(array $params = [], string $method = Request::METHOD_POST, int $timeout = 60, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = [])
     {
         if (!$username) {
             $username                       = Kernel::$Environment::HTTP_AUTH_USERNAME;
@@ -288,9 +288,9 @@ class FilemanagerWeb implements Dumpable
         }
 
         $headers                            = (
-            $headers
-            ? array_combine(array_keys($headers), explode("&", str_replace("=", ": ", http_build_query($headers))))
-            : array()
+            !empty($headers)
+            ? array_combine(array_keys($headers), explode("&", str_replace("=", ": ", urldecode(http_build_query($headers)))))
+            : []
         );
 
         if ($username) {

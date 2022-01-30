@@ -29,7 +29,7 @@ use phpformsframework\libs\dto\DataHtml;
 use phpformsframework\libs\dto\DataTableResponse;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Kernel;
-use phpformsframework\libs\microservice\adapters\ApiJsonWsp;
+use phpformsframework\libs\microservice\Api;
 use phpformsframework\libs\storage\dto\OrmResults;
 use phpformsframework\libs\storage\Model;
 use phpformsframework\libs\Exception;
@@ -119,6 +119,7 @@ class DataTable
     private const DATA_SOURCE_ORM       = "orm";
     private const DATA_SOURCE_API       = "api";
     private const DATA_SOURCE_ARRAY     = "array";
+    private const DATA_SOURCE_TABLE     = "datatable";
     private const DATA_SOURCE_SQL       = "sql";
     private const DATA_SOURCE_NOSQL     = "nosql";
 
@@ -179,7 +180,6 @@ class DataTable
     protected $dataTable                = null;
 
     protected $id                       = null;
-    protected $dtd                      = null;
 
     /**
      * @var Button[]
@@ -250,6 +250,10 @@ class DataTable
         }
     }
 
+    /**
+     * @param string $model
+     * @return $this
+     */
     public function sourceOrm(string $model) : self
     {
         $this->dataSource               = self::DATA_SOURCE_ORM;
@@ -258,14 +262,23 @@ class DataTable
         return $this;
     }
 
-    public function sourceApi(string $model) : self
+    /**
+     * @param string $model
+     * @param array $headers
+     * @return Api
+     */
+    public function sourceApi(string $model, array $headers = []) : Api
     {
         $this->dataSource               = self::DATA_SOURCE_API;
-        $this->id                       = $model;
+        $this->id                       = new Api($model, $headers);
 
-        return $this;
+        return $this->id;
     }
 
+    /**
+     * @param array $data
+     * @return $this
+     */
     public function sourceArray(array $data) : self
     {
         /**
@@ -277,6 +290,23 @@ class DataTable
 
         return $this;
     }
+
+    /**
+     * @param DataTableResponse $data
+     * @return $this
+     */
+    public function sourceDataTable(DataTableResponse $data) : self
+    {
+        $this->dataSource               = self::DATA_SOURCE_TABLE;
+        $this->dataTable                = $data;
+
+        return $this;
+    }
+
+    /**
+     * @param string $query
+     * @return $this
+     */
     public function sourceSql(string $query) : self
     {
         /**
@@ -287,6 +317,11 @@ class DataTable
 
         return $this;
     }
+
+    /**
+     * @param array $query
+     * @return $this
+     */
     public function sourceNoSql(array $query) : self
     {
         /**
@@ -496,6 +531,10 @@ class DataTable
         return $this->dataSource();
     }
 
+    /**
+     * @return DataTableResponse
+     * @throws Exception
+     */
     private function dataSource() : dataTableResponse
     {
         switch ($this->dataSource) {
@@ -505,6 +544,8 @@ class DataTable
                 return $this->apiSource();
             case self::DATA_SOURCE_ARRAY:
                 return $this->arraySource();
+            case self::DATA_SOURCE_TABLE:
+                return $this->dataTable;
             case self::DATA_SOURCE_SQL:
                 return $this->sqlSource();
             case self::DATA_SOURCE_NOSQL:
@@ -514,6 +555,10 @@ class DataTable
         }
     }
 
+    /**
+     * @return DataTableResponse
+     * @throws Exception
+     */
     private function ormSource() : DataTableResponse
     {
         $db                             = new Model($this->id);
@@ -524,41 +569,26 @@ class DataTable
             $this->column($key, $params);
         }
 
-        $this->dtd                      = $db->dtd();
-
         $where = null;
-        $sort = null;
-
         if ($this->search) {
             $where = ['$or' => array_fill_keys($schema->columns, ['$regex' => "*" . $this->search . "*"])];
         }
 
-        foreach ($this->sort as $i => $dir) {
-            if (isset($schema->columns[$i])) {
-                $sort[$schema->columns[$i]] = $dir;
-            }
-        }
+        return $db->read($where, $this->order(), $this->length, $this->start)
+            ->toDataTable(function (OrmResults $results, DataTableResponse $dataTableResponse) use ($schema, $db) {
+                $dataTableResponse->draw                = $this->draw + 1;
+                $dataTableResponse->columns             = $schema->columns;
+                $dataTableResponse->properties          = $schema->properties;
+                if ($dataTableResponse->recordsFiltered) {
+                    if (!empty($this->search)) {
+                        $dataTableResponse->recordsTotal = $db->count();
+                    }
 
-        if (!$sort) {
-            $this->sort[self::DEFAULT_SORT] = self::DEFAULT_SORT_DIR;
-            $sort[$schema->columns[self::DEFAULT_SORT]] = self::DEFAULT_SORT_DIR;
-        }
-        $records = $db->read($where, $sort, $this->length, $this->start);
-
-        return $records->toDataTable(function (OrmResults $results, DataTableResponse $dataTableResponse) use ($schema, $db) {
-            $dataTableResponse->draw                = $this->draw + 1;
-            $dataTableResponse->columns             = $schema->columns;
-            $dataTableResponse->properties          = $schema->properties;
-            if ($dataTableResponse->recordsFiltered) {
-                if (!empty($this->search)) {
-                    $dataTableResponse->recordsTotal = $db->count();
+                    if (!empty($this->record_key)) {
+                        $dataTableResponse->keys        = $results->keys($this->record_key);
+                    }
                 }
-
-                if (!empty($this->record_key)) {
-                    $dataTableResponse->keys        = $results->keys($this->record_key);
-                }
-            }
-        });
+            });
     }
 
     /**
@@ -567,12 +597,10 @@ class DataTable
      */
     protected function apiSource() : DataTableResponse
     {
-        $response               = (new ApiJsonWsp($this->id))->send($this->search);
+        $response                   = $this->id->post($this->apiRequestParams());
         if (!$response instanceof DataTableResponse) {
-            throw new Exception($this->id . ":apiSource require DataTableResponse", 501);
+            throw new Exception($this->id->url . ": sourceApi require DataTableResponse", 501);
         }
-
-        $this->dtd              = null;
 
         return $response;
     }
@@ -587,6 +615,38 @@ class DataTable
 
     private function nosqlSource() : DataTableResponse
     {
+    }
+
+    /**
+     * @return array
+     */
+    protected function apiRequestParams() : array
+    {
+        return [
+            "search"    => ["value" => $this->search],
+            "order"     => $this->order(),
+            "start"     => $this->start,
+            "length"    => $this->length,
+            "key"       => $this->record_key,
+            "discover"  => $this->xhr
+        ];
+    }
+
+    /**
+     * @return array
+     */
+    private function order() : array
+    {
+        foreach ($this->sort as $column => $dir) {
+            $order[] = ["column" => $column, "dir" => $dir];
+        }
+
+        if (empty($order)) {
+            $this->sort[self::DEFAULT_SORT] = self::DEFAULT_SORT_DIR;
+            $order[] = ["column" => self::DEFAULT_SORT, "dir" => self::DEFAULT_SORT_DIR];
+        }
+
+        return $order;
     }
 
     /**
@@ -778,7 +838,7 @@ class DataTable
      */
     private function tableHead() : ?string
     {
-        return ($this->displayTableHead
+        return ($this->displayTableHead && !empty($this->dataTable->columns)
             ?   '<thead>' .
                     $this->tableColumns() .
                 '</thead>'
@@ -808,7 +868,7 @@ class DataTable
             . (
                 $this->dataTable->recordsFiltered && $this->start <= $this->dataTable->recordsFiltered
                 ? $this->tableRows()
-                : '<tr><td class="dt-empty" colspan="' . count($this->dataTable->columns) . '">' . Translator::getWordByCode("No matching records found") . '</td></tr>'
+                : '<tr><td class="dt-empty" colspan="' . count($this->dataTable->columns()) . '">' . Translator::getWordByCode("No matching records found") . '</td></tr>'
             )
             . '</tbody>';
     }
@@ -818,7 +878,7 @@ class DataTable
      */
     private function tableFoot() : ?string
     {
-        return ($this->displayTableFoot
+        return ($this->displayTableFoot && !empty($this->dataTable->columns)
             ?   '<tfoot>' .
                     $this->tableColumns() .
                 '</tfoot>'

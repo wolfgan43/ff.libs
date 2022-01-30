@@ -134,8 +134,9 @@ class ApiSoap extends ApiAdapter
 
         return $this->client;
     }
+
     /**
-     * @return array
+     * @return array|null
      */
     public function preflight() : ?array
     {
@@ -146,12 +147,12 @@ class ApiSoap extends ApiAdapter
 
 
     /**
-     * @param array|null $params
-     * @param array|null $headers
+     * @param array $params
+     * @param array $headers
      * @return stdClass
      * @throws Exception
      */
-    protected function get(array $params = null, array $headers = null) : stdClass
+    protected function get(array $params = [], array $headers = []) : stdClass
     {
         $response                                                       = new stdClass();
         $this->protocol                                                 = self::PROTOCOL_SECURE;
@@ -363,21 +364,21 @@ class ApiSoap extends ApiAdapter
     }
 
     /**
-     * @param array|null $headers
+     * @param array $headers
      * @return stdClass|null
      */
-    private function getSoapHeader(array $headers = null) : ?SoapHeader
+    private function getSoapHeader(array $headers = []) : ?SoapHeader
     {
         return ($this->header_namespace
-            ? new SoapHeader($this->header_namespace, $this->header_name, $this->getHeader($headers), true)
+            ? new SoapHeader($this->header_namespace, $this->header_name, $headers ?: null, true)
             : null
         );
     }
 
     /**
-     * @param array|null $headers
+     * @param array $headers
      */
-    private function setSoapHeader(array $headers = null) : void
+    private function setSoapHeader(array $headers = []) : void
     {
         $requestHeaders                                                 = $this->getSoapHeader($headers);
         if ($requestHeaders) {

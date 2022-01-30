@@ -29,10 +29,10 @@ use phpformsframework\libs\Configurable;
 use phpformsframework\libs\Dir;
 use phpformsframework\libs\dto\ConfigRules;
 use phpformsframework\libs\Dumpable;
+use phpformsframework\libs\Exception;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\util\Normalize;
 use phpformsframework\libs\util\ServerManager;
-use phpformsframework\libs\microservice\adapters\ApiJsonWsp;
 use phpformsframework\libs\security\UUID;
 
 /**
@@ -113,6 +113,7 @@ class Gateway implements Configurable, Dumpable
 
     /**
      * @return array
+     * @throws Exception
      */
     public function discover()
     {
@@ -173,13 +174,12 @@ class Gateway implements Configurable, Dumpable
             $discover["scopes-require-client"]  = $this->request->scopes_require_client ?? $discover["scopes-require-client"];
             $discover["scopes-require-user"]    = $this->request->scopes_require_user   ?? $discover["scopes-require-user"];
             $discover["grant-types"]            = (
-            empty($discover["scopes-require-user"])
+                empty($discover["scopes-require-user"])
                 ? "client"
                 : "client,password"
             );
 
-            $api                                = new ApiJsonWsp($this->request->registrar . static::API_CLIENT_SIGNUP);
-            $response                           = $api->send($discover, []);
+            Api::request("POST", $this->request->registrar . static::API_CLIENT_SIGNUP, $discover);
         }
 
         $discover["client-secret"]              = "*****************";

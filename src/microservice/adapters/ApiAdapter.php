@@ -73,15 +73,16 @@ abstract class ApiAdapter
     protected $requests                                                 = [];
 
     /**
-     * @param array|null $params
-     * @param array|null $headers
+     * @param array $params
+     * @param array $headers
      * @return stdClass
      * @throws Exception
      */
-    abstract protected function get(array $params = null, array $headers = null) : stdClass;
+    abstract protected function get(array $params = [], array $headers = []) : stdClass;
 
     /**
      * @return array|null
+     * @throws Exception
      */
     abstract protected function preflight() : ?array;
 
@@ -101,7 +102,7 @@ abstract class ApiAdapter
     {
         $this->action                                                   = $method;
 
-        return $this->send($arguments[0], $arguments[1] ?? null);
+        return $this->send($arguments[0]?? [], $arguments[1] ?? []);
     }
 
     /**
@@ -132,8 +133,16 @@ abstract class ApiAdapter
 
         if (!isset(self::$preflight[$endpoint])) {
             $cache                                                      = Buffer::cache(self::ERROR_BUCKET);
-            self::$preflight[$endpoint]                                 = $this->preflight();
-
+            try {
+                self::$preflight[$endpoint]                             = $this->preflight();
+            } catch (Exception $e) {
+                self::$preflight[$endpoint]                             = [
+                    "error" => [
+                        "message"   => $e->getMessage(),
+                        "code"      => $e->getCode()
+                    ]
+                ];
+            }
             $cache->set("preflight", self::$preflight);
         }
 
@@ -171,13 +180,13 @@ abstract class ApiAdapter
     }
 
     /**
-     * @param array|null $params
-     * @param array|null $headers
+     * @param array $params
+     * @param array $headers
      * @param string|null $method
      * @return DataAdapter
      * @throws Exception
      */
-    public function send(array $params = null, array $headers = null, string $method = null) : DataAdapter
+    public function send(array $params = [], array $headers = [], string $method = null) : DataAdapter
     {
         Debug::stopWatch("api/remote");
 
@@ -185,7 +194,7 @@ abstract class ApiAdapter
         $response                                                       = null;
         $dataResponse                                                   = $this->dataResponse();
         if ($this->endpoint) {
-            $this->request_method                                       = strtoupper($method);
+            $this->request_method                                       = $method;
             $headers                                                    = $this->getHeader($headers);
             try {
                 $response                                               = $this->getMock() ?? $this->get($params, $headers);
@@ -326,11 +335,11 @@ abstract class ApiAdapter
     }
 
     /**
-     * @param array|null $params
+     * @param array $headers
      * @return array
      */
-    protected function getHeader(array $params = null) : array
+    private function getHeader(array $headers = []) : array
     {
-        return array_replace_recursive($this->headers, (array) $params);
+        return array_replace_recursive($this->headers, $headers);
     }
 }

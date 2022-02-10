@@ -46,10 +46,13 @@ class Router implements Configurable, Dumpable
     const PRIORITY_BOTTOM 		                            = 6;
     const PRIORITY_DEFAULT 		                            = Router::PRIORITY_NORMAL;
 
-    private const CALLER_DEFAULT                            = "display";
+    public const CALLER_CLASS                               = 'phpformsframework\\libs\\gui\\Controller';
+    public const CALLER_METHOD                              = "display";
 
     private const ERROR_RESPONSE_NO_INSTANCEOF              = "Response must be an instance of dto\DataAdapter";
     private const ERROR_RESPONSE_IS_NULL                    = "Controller not Implemented";
+
+    private const HOOK_ON_AFTER_RUN                         = "App::afterRun";
 
     private static $cache                                   = array();
 
@@ -157,27 +160,24 @@ class Router implements Configurable, Dumpable
 
     /**
      * @param string|null $path
-     * @throws Exception
      */
     public static function run(string $path = null) : void
     {
         if ($rule = self::find($path)) {
             $destination                                    = $rule["destination"];
 
-            if ($destination) {
-                if (is_array($destination)) {
-                    Response::send(self::caller($destination["obj"], $destination["method"] ?? self::CALLER_DEFAULT, self::replaceMatches($rule["matches"], $destination["params"] ?? [])));
-                } elseif ($rule["redirect"]) {
-                    Response::redirect(self::replaceMatches($rule["matches"], $destination), $rule["redirect"]);
-                } elseif (is_numeric($destination) || ctype_digit($destination)) {
-                    Response::sendError($destination);
-                } else {
-                    self::runWebRoot($destination);
-                }
+            if (is_array($destination)) {
+                Response::send(self::caller($destination["obj"], $destination["method"], self::replaceMatches($rule["matches"], $destination["params"] ?? [])));
+            } elseif ($rule["redirect"]) {
+                Response::redirect(self::replaceMatches($rule["matches"], $destination), $rule["redirect"]);
+            } elseif (is_numeric($destination) || ctype_digit($destination)) {
+                Response::sendError($destination);
             }
-        } else {
-            self::runWebRoot(self::pathinfo());
         }
+
+        Hook::handle(self::HOOK_ON_AFTER_RUN);
+
+        self::runWebRoot($destination ?? self::pathinfo());
 
         Response::sendError();
     }
@@ -287,7 +287,7 @@ class Router implements Configurable, Dumpable
     {
         $key = rtrim(rtrim(rtrim(ltrim($source, "^"), "$"), "*"), DIRECTORY_SEPARATOR);
         if (strpos($key, "*") === false && strpos($key, "+") === false && strpos($key, "(") === false && strpos($key, "[") === false) {
-            self::$routes[$key] = $rule;
+            self::$routes[$key ?: DIRECTORY_SEPARATOR] = $rule;
             return true;
         }
 
@@ -351,9 +351,9 @@ class Router implements Configurable, Dumpable
         Debug::stopWatch("router/process");
 
         $res                                            = null;
-        $matches                                        = array();
+        $matches                                        = [];
         $match_path                                     = null;
-        $tmp_path                                       = rtrim($path, DIRECTORY_SEPARATOR);
+        $tmp_path                                       = rtrim($path, DIRECTORY_SEPARATOR) ?: DIRECTORY_SEPARATOR;
         do {
             if (isset(self::$routes[$tmp_path])) {
                 if (!$match_path) {
@@ -365,13 +365,15 @@ class Router implements Configurable, Dumpable
                 }
             }
             $tmp_path                                   = dirname($tmp_path);
-        } while (!empty($tmp_path) && $tmp_path != DIRECTORY_SEPARATOR);
+        } while ($tmp_path != DIRECTORY_SEPARATOR && $tmp_path = dirname($tmp_path));
 
         if ($res) {
             $res["path"]                                = $match_path;
-            if (isset($res["source"]) && preg_match(self::regexp($res["source"]), $path, $matches)) {
-                $res["matches"]                         = $matches;
-            }
+            $res["matches"]                             = (
+            isset($res["source"]) && preg_match(self::regexp($res["source"]), $path, $matches)
+                ? $matches
+                : []
+            );
         } elseif (is_array(self::$rules)) {
             self::sort();
             foreach (self::$rules as $rule) {
@@ -398,18 +400,21 @@ class Router implements Configurable, Dumpable
     private static function caller(string $class_name, string $method, array $params) : dto\DataAdapter
     {
         $output                                                     = null;
-        if ($class_name) {
-            try {
-                self::setRunner($class_name);
-                if ($method && !is_array($method)) {
-                    $output                                         = (new $class_name())->$method(...$params);
+        try {
+            if (is_subclass_of($class_name, self::CALLER_CLASS)) {
+                if (!empty($method)) {
+                    $params[]                                   = $method;
                 }
-            } catch (\Exception $e) {
-                Debug::setBackTrace($e->getTrace());
-                Response::sendError($e->getCode(), $e->getMessage());
+                $method                                         = self::CALLER_METHOD;
             }
-        } elseif (is_callable($method)) {
-            $output                                                 = $method(...$params);
+
+            self::setRunner($class_name);
+            if ($method && !is_array($method)) {
+                $output                                         = (new $class_name())->$method(...$params);
+            }
+        } catch (\Exception $e) {
+            Debug::setBackTrace($e->getTrace());
+            Response::sendError($e->getCode(), $e->getMessage());
         }
 
         if (!$output) {

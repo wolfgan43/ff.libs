@@ -258,9 +258,10 @@ abstract class ApiAdapter
      * @param string $method
      * @param array|null $params
      * @param array|null $headers
-     * @param stdClass|null $debug
+     * @param stdClass|array|null $debug
+     * @todo da tipizzare
      */
-    private function debug(string $method, array $params = null, array $headers = null, stdClass $debug = null) : void
+    private function debug(string $method, array $params = null, array $headers = null, $debug = null) : void
     {
         App::debug([
             "method"                                                    => $method,
@@ -281,7 +282,6 @@ abstract class ApiAdapter
     {
         $schema                                                         = null;
         if ($this->mockEnabled) {
-
             $method                                                     = $this->action ?? parse_url($this->endpoint(), PHP_URL_PATH);
 
             $schema                                                     = $this->getResponseSchema($method);

@@ -89,10 +89,14 @@ class User
 
     /**
      * @return string|null
+     * @throws Exception
      */
     public static function accessToken() : ?string
     {
-        return null;
+        return (self::session()->verify(true)
+            ? (self::session()->get(self::TOKEN_LABEL)["access"] ?? null)
+            : null
+        );
     }
 
     /**

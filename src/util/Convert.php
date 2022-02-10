@@ -75,7 +75,26 @@ class Convert
             $height = ' height="' . $properties->height . '"';
         }
 
-        return '<img src="' . Media::getUrl($value, $mode) . '" alt="' . basename($value) . '"' . $width . $height . ' />';
+        $filename = pathinfo($value, PATHINFO_FILENAME);
+        $alt = (
+            !empty($properties->alt)
+            ? $properties->alt . " "
+            : null
+        ) . $filename;
+
+        $class = (
+            !empty($properties->class)
+            ? 'class="' . $properties->class . '"'
+            : null
+        );
+
+        $title = (
+            !empty($properties->title)
+            ? 'title="' . $properties->title . " " . $filename . '"'
+            : null
+        );
+
+        return '<img src="' . Media::getUrl(($properties->host ?? null) . $value, $mode) . '" alt="' . $alt . '"' . $width . $height . $class . $title . ' />';
     }
 
     /**
@@ -93,7 +112,7 @@ class Convert
             $mode   = $properties->width . (self::IMAGE_RESIZE[$properties->resize ?? null] ?? self::DEFAULT_IMAGE_RESIZE) . $properties->height;
         }
 
-        return Media::getUrl($value, $mode);
+        return Media::getUrl(($properties->host ?? null) . $value, $mode);
     }
 
     /**

@@ -76,10 +76,13 @@ class Schema
     public $id              = null;
     public $columns         = null;
     public $dtd             = null;
+    public $source          = null;
     public $mock            = null;
     public $read            = null;
     public $insert          = null;
     public $properties      = null;
+
+    public $addit_fields    = [];
 
     /**
      * @var callable[]

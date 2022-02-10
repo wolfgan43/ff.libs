@@ -195,40 +195,45 @@ class ViewHtml implements ViewAdapter
      */
     private function getDVars(string $content) : string
     {
-        $content = preg_replace(self::REGEXP_STRIP, '{$1}', $content);
+        $content                                            = preg_replace(self::REGEXP_STRIP, '{$1}', $content);
 
-        $matches = null;
-        $rc = preg_match_all(static::REGEXP, $content, $matches);
+        $matches                                            = null;
+        $rc                                                 = preg_match_all(static::REGEXP, $content, $matches);
         if ($rc && $matches) {
-            $this->DVars = array_fill_keys($matches[1], []);
+            $DVars                                          = array_fill_keys($matches[1], []);
 
-            $theme_disk_path = Kernel::$Environment::getThemeDiskPath();
-            $views = Resource::views($this->widget);
-            $translation = new stdClass();
-            foreach ($this->DVars as $nName => $count) {
+            $theme_disk_path                                = Kernel::$Environment::getThemeDiskPath();
+            $views                                          = Resource::views($this->widget);
+            $translation                                    = new stdClass();
+            foreach ($DVars as $nName => $count) {
                 if (substr($nName, 0, 1) == "_") {
                     $translation->key[]                     = "{" . $nName . "}";
                     $translation->value[]                   = Translator::getWordByCode(substr($nName, 1));
-                    unset($this->DVars[$nName]);
+                    unset($DVars[$nName]);
                 } elseif (substr($nName, 0, 7) == "include" && substr_count($nName, '"') == 2) {
-                    $view                                   =  explode('"', $nName)[1];
+                    $template_file                          =  explode('"', $nName)[1];
+                    $template                               = $views[str_replace(self::TPL_NORMALIZE, '', $template_file)] ?? str_replace('$theme_path', $theme_disk_path, $template_file);
 
-                    $template                               = $views[str_replace(self::TPL_NORMALIZE, '', $view)] ?? str_replace('$theme_path', $theme_disk_path, $view);
+                    $view                                   = new self($this->widget, $this->cache);
+                    $include                                = $view->include($template);
+                    $this->DVars                            = array_replace($this->DVars, $view->DVars);
+                    $this->DBlockVars                       = array_replace($this->DBlockVars, $view->DBlockVars);
 
-                    $include                                = (new self($this->widget, $this->cache))->include($template);
                     $this->cache[$template]                 = filemtime($template);
 
                     $content                                = str_replace("{" . $nName . "}", $include, $content);
                 } elseif (strpos($nName, "::") !== false) {
                     $component                              = explode("::", $nName);
 
-                    $this->DVars[$component[0]][$nName]     = $component[1];
-                    unset($this->DVars[$nName]);
+                    $DVars[$component[0]][$nName]           = $component[1];
+                    unset($DVars[$nName]);
                 }
             }
             if (isset($translation->key)) {
                 $content = str_replace($translation->key, $translation->value, $content);
             }
+
+            $this->DVars                                    = array_replace($this->DVars, $DVars);
         }
 
         return $content;
@@ -388,7 +393,6 @@ class ViewHtml implements ViewAdapter
     public function display() : string
     {
         $this->setAssignDefault();
-
         foreach (array_intersect_key(Resource::components(), $this->DVars)  as $key => $component) {
             /**
              * @var Controller $controller
@@ -417,7 +421,6 @@ class ViewHtml implements ViewAdapter
         if (!($content = FilemanagerFs::fileGetContents($template_path))) {
             throw new Exception("Unable to find the template: " . $template_path, 500);
         }
-
         return $this->getDVars($content);
     }
 

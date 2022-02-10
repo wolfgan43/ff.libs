@@ -253,7 +253,7 @@ class FilemanagerScan implements Dumpable
      */
     private static function scanIsInvalidItem(stdClass $file_info, stdClass $opt = null) : bool
     {
-        if (!empty($opt->filter) && !in_array($file_info->extension, $opt->filter)) {
+        if (empty($file_info->extension) || (!empty($opt->filter) && !in_array($file_info->extension, $opt->filter))) {
             return true;
         }
         if (!empty($opt->name) && !in_array($file_info->basename, $opt->name)) {

@@ -619,7 +619,6 @@ class Config implements Dumpable
 
         if (!empty($config["page"])) {
             foreach ($config["page"] as $page) {
-                $params                                                                 = array();
                 $attr                                                                   = Dir::getXmlAttr($page);
                 $key                                                                    = $attr["path"] ?? $attr["source"];
 
@@ -627,40 +626,63 @@ class Config implements Dumpable
                     continue;
                 }
 
+                $source                                                                 = null;
+                $params                                                                 = [];
+
+                /**
+                 * accept_path_info
+                 */
+                if (substr($key, -1) === "*") {
+                    $attr["accept_path_info"]                                           = true;
+                    $key                                                                = substr($key, 0,-1);
+                }
+
+                /**
+                 * path2params anonymous
+                 * @todo da finire la cattura delle * all'interno del path della rotta
+                 */
+                if (($star_count = substr_count($key, "*")) > 0) {
+                    //$source                                                         = str_replace("*", "(.*)", $key);
+                    $key                                                                = explode("*", $key, 2)[0];
+                    for ($i = 1; $i <= $star_count; $i++) {
+                    //    $params[] = '$' . $i;
+                    }
+                }
+
+                $key                                                                    = rtrim($key, DIRECTORY_SEPARATOR) ?: DIRECTORY_SEPARATOR;
+
+                /**
+                 * path2params
+                 */
+                if ($key != DIRECTORY_SEPARATOR && preg_match_all('#/{([^/]*)}#i', $key, $vars)) {
+                    $regexp                                                             = '#^' . str_replace($vars[0], "(?:/([^/]+))?", $key) . '#i';
+                    $key                                                                = str_replace($vars[0], "", $key) ?: DIRECTORY_SEPARATOR;
+                    $path2params[$key]                                                  = [
+                                                                                            "matches"   => $vars[1],
+                                                                                            "regexp"    => $regexp
+                                                                                        ];
+                }
+
                 unset($page["@attributes"]);
                 unset($attr["source"]);
                 unset($attr["path"]);
 
-                if ($key != DIRECTORY_SEPARATOR && preg_match_all('#/{([^/]*)}#i', $key, $params)) {
-                    $regexp                                                             = '#^' . str_replace($params[0], "(?:/([^/]+))?", $key) . '$#i';
-                    $key                                                                = str_replace($params[0], "", $key);
-                    $path2params[$key]                                                  = [
-                                                                                            "matches"   => $params[1],
-                                                                                            "regexp"    => $regexp
-                                                                                        ];
-                }
+                /**
+                 * Controller
+                 */
                 if (isset($attr["controller"])) {
-                    $controller                                                         = explode("::", $attr["controller"]);
-                    $router[$key]                                                       = [
-                                                                                            "destination"   => [
-                                                                                                "obj"       => $controller[0],
-                                                                                                "method"    => null,
-                                                                                                "params"    => (empty($controller[1]) ? [] : [$controller[1]])
-                                                                                            ]
-                                                                                        ];
-                } elseif (isset($attr[self::SCHEMA_ENGINE])) {
-                    if (isset(self::$engine[$attr[self::SCHEMA_ENGINE]])) {
-                        $router[$key]                                                   = self::$engine[$attr[self::SCHEMA_ENGINE]][self::SCHEMA_ROUTER];
-                    } else {
-                        $controller                                                         = explode("::", $attr[self::SCHEMA_ENGINE]);
-                        $router[$key]                                                       = [
-                            "destination"   => [
-                                "obj"       => $controller[0],
-                                "method"    => (empty($controller[1]) ? null : $controller[1]),
-                                "params"    => null
-                            ]
-                        ];
+                    if (isset($source)) {
+                        $router[$key]["source"]                                         = $source;
                     }
+
+                    $controller                                                         = explode("::", $attr["controller"], 2);
+                    $router[$key]["destination"]                                        = [
+                                                                                            "obj"       => $controller[0],
+                                                                                            "method"    => $controller[1] ?? "",
+                                                                                            "params"    => $params
+                                                                                        ];
+                } elseif (isset($attr[self::SCHEMA_ENGINE]) && isset(self::$engine[$attr[self::SCHEMA_ENGINE]])) {
+                    $router[$key]                                                       = self::$engine[$attr[self::SCHEMA_ENGINE]][self::SCHEMA_ROUTER];
                 } elseif (!isset($router[$key])) {
                     $router[$key]                                                       = null;
                 }

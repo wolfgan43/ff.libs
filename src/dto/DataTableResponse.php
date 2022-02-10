@@ -43,10 +43,13 @@ class DataTableResponse extends DataResponse
     public $recordsTotal        = 0;
     public $recordsFiltered     = 0;
 
-    public function __construct(array $data = array())
+    private $key                = null;
+
+    public function __construct(array $data = [], string $key = null)
     {
         parent::__construct($data);
 
+        $this->key              = $key;
         $this->draw             = 1;
         $this->recordsTotal     = count($data);
         $this->recordsFiltered  = $this->recordsTotal;
@@ -93,11 +96,49 @@ class DataTableResponse extends DataResponse
         return $this->columns ?? array_keys($this->data[0] ?? []);
     }
 
+    public function sort(int $index, string $dir) : self
+    {
+        $this->setColumns();
+
+        $column = $this->columns[$index];
+        usort($this->data, function ($a, $b) use ($column, $dir) {
+            return ($dir == "desc"
+                ? $a[$column] < $b[$column]
+                : $a[$column] > $b[$column]
+            );
+        });
+
+        return $this;
+    }
+
+    public function toArray(): array
+    {
+        $this->setKeys();
+
+        return parent::toArray();
+    }
+
     /**
      * @return array|stdClass
      */
     public function toObject()
     {
+        $this->setKeys();
+
         return parent::toObject() ?? [];
+    }
+
+    private function setKeys() : void
+    {
+        if (!empty($this->key)) {
+            $this->keys = $this->getColumn($this->key);
+        }
+    }
+
+    private function setColumns() : void
+    {
+        if (empty($this->columns) && !empty($this->data[0])) {
+            $this->columns = array_keys($this->data[0]);
+        }
     }
 }

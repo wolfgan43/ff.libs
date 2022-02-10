@@ -144,12 +144,12 @@ final class MailerTemplate extends Mailer
                     });
             }
 
-            $this->tpl_html = new View($this->tpl_html_path);
+            $this->tpl_html = View::fetchFile($this->tpl_html_path);
 
             if (is_file(dirname($this->tpl_html_path) . "/default.txt")) {
                 $this->tpl_text_path = dirname($this->tpl_html_path) . "/default.txt";
 
-                $this->tpl_text = new View($this->tpl_text_path);
+                $this->tpl_text = View::fetchFile($this->tpl_text_path);
             }
         } else {
             throw new Exception("Template not found" . (Kernel::$Environment::DEBUG ? ": " . $this->tpl_html_path : ""), 404);

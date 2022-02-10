@@ -26,7 +26,6 @@
 namespace phpformsframework\libs\gui\adapters;
 
 use phpformsframework\libs\Autoloader;
-use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\Constant;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dir;
@@ -35,6 +34,7 @@ use phpformsframework\libs\gui\Controller;
 use phpformsframework\libs\gui\ControllerAdapter;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\international\Locale;
+use phpformsframework\libs\Response;
 use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\storage\FilemanagerFs;
 use phpformsframework\libs\storage\Media;
@@ -48,10 +48,8 @@ use phpformsframework\libs\Exception;
  */
 class ControllerHtml extends ControllerAdapter
 {
-    private const METHOD_DEFAULT                = Controller::METHOD_DEFAULT;
-
     private const TPL_VAR_PREFIX                = '$';
-    private const TPL_VAR_DEFAULT               = "content";
+    private const LAYOUT_EXCEPTION              = "none";
 
     private const MAP_PREFIX                    = "layout";
     private const STATUS_OK                     = 0;
@@ -244,7 +242,7 @@ class ControllerHtml extends ControllerAdapter
             $this->title
                                                     ? $this->title
                                                     : $this->getTileDefault()
-                                                );
+        );
         if ($include_appname && Kernel::$Environment::APPNAME) {
             $res                                .= " - " . Kernel::$Environment::APPNAME;
         }
@@ -268,7 +266,7 @@ class ControllerHtml extends ControllerAdapter
             $this->description
                                                     ? $this->description
                                                     : $this->getTitle(false)
-                                                );
+        );
 
 
         return self::NEWLINE . '<meta name="description" content="' . $res . '" />';
@@ -469,112 +467,19 @@ class ControllerHtml extends ControllerAdapter
      */
     private function parseLayout() : string
     {
-        if (!$this->layout) {
-            return self::parseLayoutVars("{" . self::TPL_VAR_PREFIX . self::TPL_VAR_DEFAULT . "}");
+        if (!$this->layout || $this->layout === self::LAYOUT_EXCEPTION) {
+            return implode(self::NEWLINE, $this->contents);
         } elseif (strpos($this->layout, "<") === 0) {
-            return self::parseLayoutVars($this->layout);
-        }
-
-        Debug::stopWatch("layout/" . $this->layout);
-
-        $cache = Buffer::cache("layout");
-        $res = $cache->get($this->layout);
-        if (!$res) {
-            $views = [];
-            $layout_file = Resource::get($this->layout, Resource::TYPE_LAYOUTS);
-            if (!$layout_file || !($layout = FilemanagerFs::fileGetContents($layout_file))) {
-                throw new Exception("Layout not Found: " . $this->layout, 500);
-            }
-
-            $tpl_vars = [];
-            if (preg_match_all('/{include file="\$theme_path(.+)"}/i', $layout, $tpl_vars)) {
-                if (!empty($tpl_vars[1])) {
-                    $theme_disk_path = Kernel::$Environment::getThemeDiskPath();
-                    foreach ($tpl_vars[1] as $i => $tpl_var) {
-                        $content_file = $theme_disk_path . $tpl_var;
-                        if ($content = FilemanagerFs::fileGetContents($content_file)) {
-                            $layout_files[$content_file] = filemtime($content_file);
-                            $layout = str_replace($tpl_vars[0][$i], $content, $layout);
-                        } else {
-                            throw new Exception("Layout include not Found: " . $tpl_var, 500);
-                        }
-                    }
-                }
-            }
-
-            $layout = preg_replace(
-                '/{include file="[.\/]*([\w\/]+).*"}/i',
-                '{' . self::TPL_VAR_PREFIX . '$1}',
-                $layout
-            );
-
-            foreach (Resource::views() as $key => $view) {
-                $tpl_key = '{' . self::TPL_VAR_PREFIX . $key . '}';
-
-                if (strpos($layout, $tpl_key) !== false) {
-                    if ($content = $this->getHtml($view)) {
-                        $layout_files[$view] = filemtime($view);
-                        $views[$tpl_key] = $content;
-                        $layout = str_replace($tpl_key, $content, $layout);
-                    } else {
-                        throw new Exception("Layout include not Found: " . $key, 500);
-                    }
-                }
-            }
-
-            $layout_files[$layout_file] = filemtime($layout_file);
-
-            $cache->set($this->layout, [
-                "layout"    => $layout,
-                "views"     => $views
-            ], $layout_files);
+            return View::fetchContent($this->layout)
+                ->html();
+        } elseif (($layout_file = Resource::get($this->layout, Resource::TYPE_LAYOUTS))) {
+            return View::fetchFile($layout_file)
+                ->assign($this->contents)
+                ->html();
         } else {
-            $layout         = $res["layout"];
-            $views          = $res["views"];
+            Response::sendErrorPlain("Layout not Found: " . $this->layout, 500);
+            exit;
         }
-
-
-        if (!empty($override = array_intersect_key($views, $this->contents))) {
-            $layout = str_replace(
-                $override,
-                array_intersect_key($this->contents, $views),
-                $layout
-            );
-        }
-
-        Debug::stopWatch("layout/" . $this->layout);
-
-        return self::parseLayoutVars($layout);
-    }
-
-    /**
-     * @param string $layout
-     * @return string
-     * @throws Exception
-     */
-    private function parseLayoutVars(string $layout) : string
-    {
-        $this->setAssignDefault();
-        $layout = str_replace(
-            array_keys($this->contents),
-            array_values($this->contents),
-            $layout
-        );
-
-
-        foreach (Resource::components() as $key => $component) {
-            $tpl_key = "{" . $key . "}";
-            if (strpos($layout, $tpl_key) !== false) {
-                /**
-                 * @var Controller $controller
-                 */
-                $controller = (new $component());
-
-                $layout = str_replace($tpl_key, $controller->html(self::METHOD_DEFAULT), $layout);
-            }
-        }
-
-        return self::NEWLINE . $layout;
     }
 
     /**
@@ -742,13 +647,5 @@ class ControllerHtml extends ControllerAdapter
         $this->error = $error;
 
         return $this;
-    }
-
-    /**
-     * @throws Exception
-     */
-    private function setAssignDefault() : void
-    {
-        $this->assign("site_path", Kernel::$Environment::SITE_PATH);
     }
 }

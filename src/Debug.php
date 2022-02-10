@@ -579,6 +579,12 @@ class Debug
         vertical-align: text-top;
         max-width: 50vw;
     }
+    .x-debugger a {
+        color: #007bff;
+    }
+    .x-debugger h5 {
+        color: #333;
+    }
     </style>';
 
     $js = '<script type="text/javascript">' . "

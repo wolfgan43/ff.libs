@@ -42,6 +42,12 @@ interface ViewAdapter
     public function fetch(string $template_disk_path) : ViewAdapter;
 
     /**
+     * @param string $content
+     * @return $this
+     */
+    public function fetchContent(string $content) : ViewAdapter;
+
+    /**
      * @param array|string $tpl_var
      * @param mixed|null $value
      * @return $this

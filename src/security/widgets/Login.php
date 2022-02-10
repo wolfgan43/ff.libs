@@ -26,7 +26,6 @@
 namespace phpformsframework\libs\security\widgets;
 
 use phpformsframework\libs\gui\Widget;
-use phpformsframework\libs\security\SecureManager;
 use phpformsframework\libs\security\widgets\helpers\CommonTemplate;
 use phpformsframework\libs\security\User;
 use phpformsframework\libs\Exception;
@@ -38,7 +37,6 @@ use phpformsframework\libs\Exception;
 class Login extends Widget
 {
     use CommonTemplate;
-    use SecureManager;
 
     protected $requiredJs           = ["cm"];
 
@@ -48,11 +46,8 @@ class Login extends Widget
     protected function get(): void
     {
         if (User::isLogged()) {
-            $config                 = $this->getConfig();
-            $this->replaceWith(Logout::class, [
-                "error"             => $config->error,
-                "redirect"          => $config->redirect
-            ]);
+            $config = $this->getConfig();
+            $this->redirect($this->request->redirect ?? $this->getWebUrl($config->logout_path));
         } else {
             $view                   = $this->view("index");
             $config                 = $view->getConfig();
@@ -111,7 +106,10 @@ class Login extends Widget
      */
     protected function post(): void
     {
-        if (isset($this->request->identifier, $this->request->password)) {
+        if (User::isLogged()) {
+            $config = $this->getConfig();
+            $this->redirect($this->request->redirect ?? $this->getWebUrl($config->logout_path));
+        } elseif (isset($this->request->identifier, $this->request->password)) {
             User::login($this->request->identifier, $this->request->password, $this->request->permanent ?? null);
 
             $this->welcome();

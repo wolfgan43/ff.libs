@@ -86,14 +86,13 @@ class UserData extends OrmItem
     /**
      * @param int $width
      * @param int $height
-     * @return UserData
+     * @param string|null $default
+     * @return string
      * @throws Exception
      */
-    public function setAvatar(int $width = self::AVATAR_WIDTH, int $height = self::AVATAR_HEIGHT) : self
+    public function getAvatar(int $width = self::AVATAR_WIDTH, int $height = self::AVATAR_HEIGHT, string $default = null) : string
     {
-        $this->avatar = Convert::image($this->avatar ?? self::AVATAR_DEFAULT, (object) ["width" => $width, "height" => $height]);
-
-        return $this;
+        return Convert::image($this->avatar ?: $default ?: self::AVATAR_DEFAULT, (object) ["width" => $width, "height" => $height]);
     }
 
     /**

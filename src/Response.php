@@ -178,9 +178,13 @@ error was encountered while trying to use an ErrorDocument to handle the request
         }
     }
 
+    /**
+     * @param string|null $msg
+     * @param int|null $code
+     */
     public static function sendErrorPlain(string $msg = null, int $code = null) : void
     {
-        self::httpCode($code);
+        self::httpCode($code ?? 500);
         die($msg ?? "Unknown Error");
     }
 

@@ -28,6 +28,7 @@ namespace phpformsframework\libs\security\widgets;
 use phpformsframework\libs\gui\Widget;
 use phpformsframework\libs\security\User;
 use phpformsframework\libs\security\widgets\helpers\CommonTemplate;
+use phpformsframework\libs\util\ServerManager;
 use phpformsframework\libs\Exception;
 
 /**
@@ -37,6 +38,7 @@ use phpformsframework\libs\Exception;
 class Logout extends Widget
 {
     use CommonTemplate;
+    use ServerManager;
 
     protected $requiredJs           = ["cm"];
 
@@ -46,6 +48,9 @@ class Logout extends Widget
     protected function get(): void
     {
         if (User::isLogged()) {
+            if (empty($this->request->redirect) && ($referer = $this->referer(PHP_URL_PATH))) {
+                $this->redirect($this->script_path . "?redirect=" . urlencode($referer));
+            }
             $view = $this->view();
             $config = $view->getConfig();
 
@@ -56,18 +61,32 @@ class Logout extends Widget
             $this->setLogo($view, $config);
         } else {
             $config = $this->getConfig();
-            $this->redirect($this->getWebUrl($config->login_path));
+            $this->redirect($this->request->redirect ?? $this->getWebUrl($config->login_path));
         }
     }
 
+    /**
+     * @throws Exception
+     */
     protected function post(): void
     {
-        User::logout();
+        if (User::isLogged()) {
+            User::logout();
 
-        $view = $this->view("thankyou");
-        $config = $view->getConfig();
+            $view = $this->view("thankyou");
+            $config = $view->getConfig();
+            $this->setLogo($view, $config);
 
-        $view->assign("login_path", $config->login_path);
+            $view->assign("login_path", $config->login_path);
+            $this->addJavascriptEmbed('
+                setTimeout(function() {
+                    window.location.href = "' . ($this->request->redirect ?? DIRECTORY_SEPARATOR) . '";
+                }, 1000);
+            ');
+        } else {
+            $config = $this->getConfig();
+            $this->redirect($this->request->redirect ?? $this->getWebUrl($config->login_path));
+        }
     }
 
     protected function put(): void

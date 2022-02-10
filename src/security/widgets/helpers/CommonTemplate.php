@@ -89,10 +89,9 @@ trait CommonTemplate
     private function displayUser(View $view)
     {
         $user = User::get();
-        if ($user->isStored()) {
-            $view->assign("user_name", $user->username);
-            $view->assign("user_email", $user->email);
-            $view->assign("user_avatar", $user->setAvatar()->avatar);
-        }
+
+        $view->assign("user_name", $user->display_name);
+        $view->assign("user_email", $user->email);
+        $view->assign("user_avatar", $user->getAvatar());
     }
 }

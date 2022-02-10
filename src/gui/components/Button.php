@@ -287,12 +287,12 @@ class Button
     }
 
     /**
-     * @param string $class
+     * @param string $classes
      * @return $this
      */
-    public function type(string $class) : self
+    public function class(string $classes) : self
     {
-        $this->type = $class;
+        $this->type = $classes;
 
         return $this;
     }

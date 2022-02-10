@@ -54,7 +54,7 @@ abstract class Controller
     use InternationalManager;
     use ClassDetector;
 
-    protected const LAYOUT                      = self::LAYOUT_DEFAULT;
+    protected const LAYOUT                      = null;
     protected const TEMPLATE_ENGINE             = null;
     protected const CONTROLLER_ENGINE           = "html";
     protected const CONTROLLER_TYPE             = "responsive";
@@ -70,7 +70,6 @@ abstract class Controller
     private const TPL_VAR_PREFIX                = '$';
     private const CONTROLLER_PREFIX             = "controller";
 
-    private const LAYOUT_DEFAULT                = '<main>{' . self::TPL_VAR_PREFIX . 'content}</main>';
     private const TPL_NORMALIZE                 = ['../', '.tpl'];
 
     private const ERROR_PAGE_NOT_FOUND_CODE         = 404;
@@ -119,6 +118,11 @@ abstract class Controller
      * @todo da trovare un modo per renderla private
      */
     protected $view                             = null;
+
+    /**
+     * @var View[]
+     */
+    private $views                              = null;
 
     abstract protected function get()           : void;
     abstract protected function post()          : void;
@@ -681,6 +685,7 @@ abstract class Controller
      */
     public function html(string $method = null) : ?string
     {
+        $this->view = null;
         $this->render($method);
         return ($this->view
             ? $this->view->html()
@@ -804,25 +809,29 @@ abstract class Controller
 
     /**
      * @param string|null $template_name
-     * @param bool $include_assets
+     * @param bool $include_template_assets
      * @return View
      * @throws Exception
      * @todo da gestire il tema
      */
-    private function loadView(string $template_name = null, bool $include_assets = true) : View
+    private function loadView(string $template_name = null, bool $include_template_assets = true) : View
     {
         $template                       = $this->getTemplateName($template_name);
-        if (!($file_path = Resource::get(str_replace(self::TPL_NORMALIZE, '', $template), Resource::TYPE_VIEWS))) {
-            throw new Exception("View not Found: " . $template . " in " . static::class, 500);
+        if (!isset($this->views[$template])) {
+            if (!($file_path = Resource::get(str_replace(self::TPL_NORMALIZE, '', $template), Resource::TYPE_VIEWS))) {
+                throw new Exception("View not Found: " . $template . " in " . static::class, 500);
+            }
+
+            if ($include_template_assets) {
+                $this->addStylesheet($template);
+                $this->addJavascript($template);
+            }
+
+            $this->views[$template] = View::fetchFile($file_path, static::TEMPLATE_ENGINE, $this)
+                ->assign($this->assigns);
         }
 
-        if ($include_assets) {
-            $this->addStylesheet($template);
-            $this->addJavascript($template);
-        }
-
-        return $this->view              = (new View($file_path, static::TEMPLATE_ENGINE, $this))
-                                            ->assign($this->assigns);
+        return $this->view              =& $this->views[$template];
     }
 
     /**

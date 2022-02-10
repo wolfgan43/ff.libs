@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\storage\drivers;
 
+use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\storage\FilemanagerFs;
 use phpformsframework\libs\Exception;
@@ -254,9 +255,17 @@ class ImageCanvas
         FilemanagerFs::makeDir($filename);
         switch ($this->format) {
             case "jpg":
+                if (Kernel::$Environment::DEBUG) {
+                    header("Content-Type: image/jpg");
+                    imagejpeg($this->cvs_res);
+                    imagedestroy($this->cvs_res);
+                    exit;
+                }
+
                 if ($filename === null) {
                     header("Content-Type: image/jpg");
                 }
+
                 if (!is_writable(dirname($filename)) || imagejpeg($this->cvs_res, $filename) === false) {
                     Log::warning($filename, "unable2write");
                     throw new Exception("Unable to Write", 500);
@@ -267,10 +276,16 @@ class ImageCanvas
 
             case "png":
             default:
+                if (Kernel::$Environment::DEBUG) {
+                    header("Content-Type: image/png");
+                    imagepng($this->cvs_res);
+                    imagedestroy($this->cvs_res);
+                    exit;
+                }
+
                 if ($filename === null) {
                     header("Content-Type: image/png");
                 }
-
                 if (!is_writable(dirname($filename)) || imagepng($this->cvs_res, $filename) === false) {
                     Log::warning($filename, "unable2write");
                     throw new Exception("Unable to Write", 500);

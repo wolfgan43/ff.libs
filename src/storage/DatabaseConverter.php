@@ -44,6 +44,8 @@ class DatabaseConverter
     private $to                         = [];
     private $in                         = [];
 
+    private $addit_fields               = [];
+
     /**
      * @param OrmDef $def
      * @param Schema|null $schema
@@ -53,24 +55,22 @@ class DatabaseConverter
     {
         $this->def                      = $def;
         if ($schema) {
+            $this->addit_fields         = $schema->addit_fields;
+
             foreach ($schema->onRead as $field => $hook) {
-                $this->add($this->to, $field, $hook, $schema->properties[$field]);
+                $this->add($this->to, $field, $this->getStructField($schema->source[$field]), $hook, $schema->properties[$field]);
             }
             foreach ($schema->onWrite as $field => $hook) {
-                $this->add($this->in, $field, $hook, $schema->properties[$field]);
+                $this->add($this->in, $field, $this->getStructField($schema->source[$field]), $hook, $schema->properties[$field]);
             }
             foreach ($schema->columns as $field) {
-                if (!isset($schema->dtd[$field])) {
-                    continue;
-                }
-
                 $type = $schema->dtd[$field];
 
                 if (isset($schema->to[$type])) {
-                    $this->add($this->to, $field, $schema->to[$type]["callback"] ?? $type, array_replace($schema->to[$type], $schema->properties[$field] ?? []));
+                    $this->add($this->to, $field, $this->getStructField($schema->source[$field]), $schema->to[$type]["callback"] ?? $type, array_replace($schema->to[$type], $schema->properties[$field] ?? []));
                 }
                 if (isset($schema->in[$type])) {
-                    $this->add($this->in, $field, $schema->in[$type]["callback"] ?? $type, array_replace($schema->in[$type], $schema->properties[$field] ?? []));
+                    $this->add($this->in, $field, $this->getStructField($schema->source[$field]), $schema->in[$type]["callback"] ?? $type, array_replace($schema->in[$type], $schema->properties[$field] ?? []));
                 }
             }
         }
@@ -115,6 +115,10 @@ class DatabaseConverter
      */
     public function to(array $record) : array
     {
+        foreach ($this->addit_fields as $key => $source) {
+            $record[$key] = $record[$source];
+        }
+
         foreach ($this->to as $field => $params) {
             if (($value = $record[$field] ?? $params->properties->default ?? null)) {
                 $record[$field] = ($params->callback)($value, $params->properties);
@@ -188,9 +192,9 @@ class DatabaseConverter
                 }
 
                 if ($op === "to" && $field_output) {
-                    $this->add($this->to, $field_output, substr($cast, 2), $params);
+                    $this->add($this->to, $field_output, $this->getStructField($field_output), substr($cast, 2), $params);
                 } elseif ($op === "in" && $field_db) {
-                    $this->add($this->in, $field_db, substr($cast, 2), $params);
+                    $this->add($this->in, $field_db, $this->getStructField($field_db), substr($cast, 2), $params);
                 } else {
                     throw new Exception($cast . " is not a valid function", 500);
                 }
@@ -201,11 +205,12 @@ class DatabaseConverter
     /**
      * @param array $ref
      * @param string $field
+     * @param string $dbType
      * @param string $func
      * @param array|null $params
      * @throws Exception
      */
-    private function add(array &$ref, string $field, string $func, array $params = null) : void
+    private function add(array &$ref, string $field, string $dbType, string $func, array $params = null) : void
     {
         if (!isset($ref[$field])) {
             if (is_callable(Convert::class . "::" . $func)) {
@@ -216,7 +221,7 @@ class DatabaseConverter
                 throw new Exception("Function " . $func . " not implemented for " . __CLASS__, "501");
             }
 
-            $params["dbType"]   = $this->def->struct[$field];
+            $params["dbType"]   = $dbType;
             $ref[$field]        = (object) [
                 "callback"      => $callback,
                 "properties"    => (object) $params

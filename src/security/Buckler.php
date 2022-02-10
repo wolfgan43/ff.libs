@@ -240,7 +240,7 @@ class Buckler implements Configurable
             } else {
                 $login = new Login();
 
-                Response::send($login->display());
+                Response::send($login->displayException(200));
             }
         }
 

@@ -51,19 +51,49 @@ class View
     private $config                                 = null;
 
     /**
-     * View constructor.
      * @param string $template_disk_path
      * @param string|null $templateAdapter
      * @param Controller|null $controller
      * @param string|null $widget
      * @param stdClass|null $config
+     * @return static
      */
-    public function __construct(string $template_disk_path, string $templateAdapter = null, Controller $controller = null, string $widget = null, stdClass $config = null)
+    public static function fetchFile(string $template_disk_path, string $templateAdapter = null, Controller $controller = null, string $widget = null, stdClass $config = null)
+    {
+        $view = new static($templateAdapter, $controller, $widget, $config);
+        $view->adapter->fetch($template_disk_path);
+
+        return $view;
+    }
+
+    /**
+     * @param string $content
+     * @param string|null $templateAdapter
+     * @param Controller|null $controller
+     * @param string|null $widget
+     * @param stdClass|null $config
+     * @return static
+     */
+    public static function fetchContent(string $content, string $templateAdapter = null, Controller $controller = null, string $widget = null, stdClass $config = null)
+    {
+        $view = new static($templateAdapter, $controller, $widget, $config);
+        $view->adapter->fetchContent($content);
+
+        return $view;
+    }
+
+    /**
+     * View constructor.
+     * @param string|null $templateAdapter
+     * @param Controller|null $controller
+     * @param string|null $widget
+     * @param stdClass|null $config
+     */
+    public function __construct(string $templateAdapter = null, Controller $controller = null, string $widget = null, stdClass $config = null)
     {
         $this->config                               = $config;
         $this->controller                           =& $controller;
         $this->setAdapter($templateAdapter ?? Kernel::$Environment::TEMPLATE_ADAPTER, [$widget]);
-        $this->adapter->fetch($template_disk_path);
     }
 
     /**

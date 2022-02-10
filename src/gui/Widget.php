@@ -43,6 +43,11 @@ abstract class Widget extends Controller
     private $config                                 = [];
 
     /**
+     * @var View
+     */
+    private $views                                  = null;
+
+    /**
      * Widget constructor.
      * @param array|null $config
      */
@@ -142,29 +147,40 @@ abstract class Widget extends Controller
      * @return View
      * @throws Exception
      */
+    private function loadView(string $template_name = null, bool $include_template_assets = true) : View
+    {
+        $template                                   = $template_name ?? self::VIEW_DEFAULT;
+        if (!isset($this->views[$template])) {
+            $resources                              = $this->getResources();
+
+            if (empty($resources->tpl[$template])) {
+                throw new Exception("Template: " . $template . " not found for Widget " . $this->class_name, 404);
+            }
+
+            if ($include_template_assets) {
+                if (!empty($resources->js[$template])) {
+                    $this->requiredJs[]             = $resources->js[$template];
+                }
+                if (!empty($resources->css[$template])) {
+                    $this->requiredCss[]            = $resources->css[$template];
+                }
+            }
+
+            $this->views[$template]                 = View::fetchFile($resources->tpl[$template], static::TEMPLATE_ENGINE, $this, $this->class_name, $this->config($resources->cfg[$template] ?? null));
+        }
+
+        return $this->view                          =& $this->views;
+    }
+
+    /**
+     * @param string|null $template_name
+     * @param bool $include_template_assets
+     * @return View
+     * @throws Exception
+     */
     protected function view(string $template_name = null, bool $include_template_assets = true) : View
     {
-        if (!empty($this->view)) {
-            return $this->view;
-        }
-
-        $template                                   = $template_name ?? self::VIEW_DEFAULT;
-        $resources                                  = $this->getResources();
-
-        if (empty($resources->tpl[$template])) {
-            throw new Exception("Template: " . $template . " not found for Widget " . $this->class_name, 404);
-        }
-
-        if ($include_template_assets) {
-            if (!empty($resources->js[$template])) {
-                $this->requiredJs[]                 = $resources->js[$template];
-            }
-            if (!empty($resources->css[$template])) {
-                $this->requiredCss[]                = $resources->css[$template];
-            }
-        }
-
-        return $this->view = new View($resources->tpl[$template], static::TEMPLATE_ENGINE, $this, $this->class_name, $this->config($resources->cfg[$template] ?? null));
+        return $this->view ?? $this->loadView($template_name, $include_template_assets);
     }
 
     /**

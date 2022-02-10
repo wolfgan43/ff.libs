@@ -506,26 +506,30 @@ class DataTable
      */
     protected function dataTable() : DataTableResponse
     {
-        $this->request                  = Kernel::$Page->getRequest();
+        $this->request                          = Kernel::$Page->getRequest();
 
-        $request                        = (object)$this->request;
-        $this->draw                     = $request->draw ?? 1;
+        $request                                = (object)$this->request;
+        $this->draw                             = $request->draw ?? 1;
         if (isset($request->key)) {
-            $this->record_key           = $request->key;
+            $this->record_key                   = $request->key;
         }
         if (isset($request->search)) {
-            $this->search               = $request->search["value"] ?? $request->search;
+            $this->search                       = $request->search["value"] ?? $request->search;
         }
 
-        $this->sort                     = (array)($request->sort ?? []);
+        if (empty($request->sort)) {
+            $this->sort[self::DEFAULT_SORT]     = self::DEFAULT_SORT_DIR;
+        } else {
+            $this->sort                         = (array) $request->sort;
+        }
 
-        $this->length                   = (int)($request->length ?? self::RECORD_LIMIT);
+        $this->length                           = (int)($request->length ?? self::RECORD_LIMIT);
         if ($this->length < 1) {
-            $this->start                = self::RECORD_LIMIT;
+            $this->start                        = self::RECORD_LIMIT;
         }
-        $this->start                    = (int)($request->start ?? ($this->length * (((int)($request->page ?? 1)) - 1)));
+        $this->start                            = (int)($request->start ?? ($this->length * (((int)($request->page ?? 1)) - 1)));
         if ($this->start < 0) {
-            $this->start                = 0;
+            $this->start                        = 0;
         }
 
         return $this->dataSource();
@@ -533,26 +537,17 @@ class DataTable
 
     /**
      * @return DataTableResponse
-     * @throws Exception
      */
     private function dataSource() : dataTableResponse
     {
-        switch ($this->dataSource) {
-            case self::DATA_SOURCE_ORM:
-                return $this->ormSource();
-            case self::DATA_SOURCE_API:
-                return $this->apiSource();
-            case self::DATA_SOURCE_ARRAY:
-                return $this->arraySource();
-            case self::DATA_SOURCE_TABLE:
-                return $this->dataTable;
-            case self::DATA_SOURCE_SQL:
-                return $this->sqlSource();
-            case self::DATA_SOURCE_NOSQL:
-                return $this->nosqlSource();
-            default:
-                throw new Exception("dataTable source type: " . $this->dataSource . " not implemented", 501);
+        $dataTable                      = $this->{$this->dataSource . "Source"}();
+        if (empty($dataTable->columns)) {
+            $dataTable->columns         = $dataTable->columns();
         }
+        if (empty($dataTable->keys) && !empty($this->record_key)) {
+            $dataTable->keys            = $dataTable->getColumn($this->record_key);
+        }
+        return $dataTable;
     }
 
     /**
@@ -605,10 +600,20 @@ class DataTable
         return $response;
     }
 
+    /**
+     * @return DataTableResponse
+     */
     private function arraySource() : DataTableResponse
     {
-        return new DataTableResponse($this->records);
+        $dataTable                  = new DataTableResponse($this->records, $this->record_key);
+
+        foreach ($this->sort as $i => $dir) {
+            $dataTable->sort($i, $dir);
+            break;
+        }
+        return $dataTable;
     }
+
     private function sqlSource() : DataTableResponse
     {
     }
@@ -642,7 +647,6 @@ class DataTable
         }
 
         if (empty($order)) {
-            $this->sort[self::DEFAULT_SORT] = self::DEFAULT_SORT_DIR;
             $order[] = ["column" => self::DEFAULT_SORT, "dir" => self::DEFAULT_SORT_DIR];
         }
 
@@ -959,10 +963,6 @@ class DataTable
     private function tableColumns() : string
     {
         $columns = null;
-        if (empty($this->sort)) {
-            $this->sort[self::DEFAULT_SORT] = self::DEFAULT_SORT_DIR;
-        }
-
         foreach ($this->dataTable->columns as $i => $column) {
             if (empty($this->column($column)->display(""))) { //da sistemare sistemando il metodo qui sotto anche
                 unset($this->dataTable->columns[$i]);

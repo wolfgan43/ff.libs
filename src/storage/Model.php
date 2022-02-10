@@ -57,6 +57,8 @@ class Model implements Configurable, Dumpable
     private const INSERT                                                                = "insert";
     private const MOCK                                                                  = "mock";
     private const DTD                                                                   = "dtd";
+    private const SOURCE                                                                = "source";
+    private const ADDIT_FIELDS                                                          = "addit_fields";
     private const HOOKS_READ                                                            = "onRead";
     private const HOOKS_WRITE                                                           = "onWrite";
     private const PROPERTIES                                                            = "properties";
@@ -468,8 +470,7 @@ class Model implements Configurable, Dumpable
         } elseif (!empty($model_attr->extends)) {
             return true;
         } elseif (empty($model_attr->table) || empty($model_attr->collection)) {
-            Error::registerWarning("Model attribute: 'collection' and 'table' are required", static::ERROR_BUCKET);
-            return null;
+            throw new Exception("Model attribute: 'collection' and 'table' are required", 500);
         } else {
             $schema                                                                             = [];
             $schema_name                                                                        = $model_attr->name ?? $model_attr->table;
@@ -486,8 +487,9 @@ class Model implements Configurable, Dumpable
 
             foreach ($model[self::FIELD] as $field) {
                 $attr                                                                           = Config::getXmlAttr($field);
-                $orm_field                                                                      = array_search($attr->name, $extend[self::READ] ?? []) ?: self::dbField($attr->db ?? $attr->name, $schema);
-                if (!isset($attr->name) || isset($schema[self::READ][$orm_field])) {
+                $source                                                                         = $attr->db ?? $attr->name;
+                $orm_field                                                                      = array_search($attr->name, $extend[self::READ] ?? []) ?: self::dbField($source, $schema);
+                if (!isset($attr->name)) {
                     continue;
                 }
 
@@ -498,6 +500,11 @@ class Model implements Configurable, Dumpable
                  */
                 $schema[self::COLUMNS][]                                                        = $key;
                 $schema[self::DTD][$key]                                                        = $attr->type ?? $extend[self::DTD][$key] ?? self::DEFAULT_FIELD_TYPE;
+                $schema[self::SOURCE][$key]                                                     = $source;
+
+                if (isset($schema[self::READ][$orm_field])) {
+                    $schema[self::ADDIT_FIELDS][$key]                                           = $source;
+                }
 
                 /**
                  * Mock
@@ -509,7 +516,7 @@ class Model implements Configurable, Dumpable
                 /**
                  * Read and Insert
                  */
-                $schema[self::READ][$orm_field]                                                 = $key;
+                $schema[self::READ][$orm_field]                                                 = $source;
                 if (isset($attr->request)) {
                     $schema[self::INSERT][$orm_field]                                           = $attr->request;
                 } elseif (isset($extend[self::INSERT][$orm_field])) {

@@ -18,7 +18,7 @@
                         <p class="text-muted mb-4">{_Click the button to sign out.}</p>
                     </div>
 
-                    <form method="post" class="cm-xhr">
+                    <form method="post" class="cm-xhr" data-component="#logout-box">
                         <!--BeginSezError-->
                         <div class="alert alert-warning">{error}</div>
                         <!--EndSezError-->

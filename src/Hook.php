@@ -95,10 +95,10 @@ class Hook implements Configurable, Dumpable
     /**
      * AddHook
      * @param string $name
-     * @param callable $func
+     * @param string $func
      * @param int $priority
      */
-    public static function register(string $name, callable $func, int $priority = self::HOOK_PRIORITY_NORMAL) : void
+    public static function register(string $name, string $func, int $priority = self::HOOK_PRIORITY_NORMAL) : void
     {
         self::addCallback($name, $func, $priority);
     }
@@ -106,34 +106,30 @@ class Hook implements Configurable, Dumpable
     /**
      * AddHook
      * @param string $name
-     * @param callable $func
+     * @param string $func
      * @param int $priority
      */
-    public static function registerOnce(string $name, callable $func, int $priority = self::HOOK_PRIORITY_NORMAL) : void
+    public static function registerOnce(string $name, string $func, int $priority = self::HOOK_PRIORITY_NORMAL) : void
     {
         self::addCallback($name, $func, $priority, true);
     }
 
     /**
      * @param $name
-     * @param callable $func
+     * @param string $func
      * @param int $priority
      * @param bool $override
      */
-    private static function addCallback($name, callable $func, int $priority = self::HOOK_PRIORITY_NORMAL, bool $override = false) : void
+    private static function addCallback($name, string $func, int $priority = self::HOOK_PRIORITY_NORMAL, bool $override = false) : void
     {
-        if (is_callable($func)) {
-            if (!isset(self::$events[$name])) {
-                self::$events[$name]                                                    = [];
-            }
+        if (!isset(self::$events[$name])) {
+            self::$events[$name]                                                    = [];
+        }
 
-            if ($override) {
-                self::$events[$name]                                                    = array($priority => $func);
-            } else {
-                self::$events[$name][$priority + count((array)self::$events[$name])]    = $func;
-            }
+        if ($override) {
+            self::$events[$name]                                                    = array($priority => $func);
         } else {
-            Exception::warning($name . " not is a function: " . $func, static::ERROR_BUCKET);
+            self::$events[$name][$priority + count(self::$events[$name])]           = $func;
         }
     }
 
@@ -152,6 +148,9 @@ class Hook implements Configurable, Dumpable
         if (!empty(self::$events[$name])) {
             ksort(self::$events[$name], SORT_NUMERIC);
             foreach (self::$events[$name] as $func) {
+                if (!is_callable($func)) {
+                    Response::sendErrorPlain($func . " is not callable");
+                }
                 $res[]                                                              = $func($ref, $params);
             }
         }

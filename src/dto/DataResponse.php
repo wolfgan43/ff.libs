@@ -128,11 +128,7 @@ class DataResponse extends DataAdapter
      */
     public function get(string $key)
     {
-        $res = (
-            isset($this->data[$key])
-            ? $this->data[$key]
-            : null
-        );
+        $res = $this->data[$key] ?? null;
 
         return (is_array($res) && !isset($res[0])
             ? (object) $res

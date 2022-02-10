@@ -27,14 +27,10 @@ namespace phpformsframework\libs\dto;
 
 use phpformsframework\libs\Mappable;
 use phpformsframework\libs\Request;
-use phpformsframework\libs\Response;
-use phpformsframework\libs\security\User;
 use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\security\ValidatorFile;
-use phpformsframework\libs\security\widgets\Login;
 use phpformsframework\libs\util\ServerManager;
 use phpformsframework\libs\util\TypesConverter;
-use phpformsframework\libs\Exception;
 use stdClass;
 
 /**
@@ -47,6 +43,7 @@ class RequestPage extends Mappable
     use Exceptionable { error as private setErrorDefault; }
     use ServerManager;
 
+    private const LAYOUT_EXCEPTION          = "none";
     private const ERROR_IS_REQUIRED         = " is required";
 
     public const REQUEST_RAWDATA            = "rawdata";
@@ -70,7 +67,7 @@ class RequestPage extends Mappable
 
     public $isXhr                           = null;     //gestito in self (impostato nel costruttore)
     public $layout                          = null;     //gestito in controller
-    public $layout_exception                = null;     //gestito in controller
+    public $layout_exception                = self::LAYOUT_EXCEPTION;     //gestito in controller
     public $layout_type                     = null;     //gestito in controller
     public $title                           = null;     //gestito in controller
     public $access                          = null;     //gestito in self && api
@@ -144,11 +141,11 @@ class RequestPage extends Mappable
 
         $this->rules                = $rules;
         $this->script_path          = $script_path;
-        $this->path_info            = preg_replace('#^' . $script_path . '#i', "", $orig_path_info, 1);
+        $this->path_info            = $this->path_info ?? preg_replace('#^' . $script_path . '#i', "", $orig_path_info, 1);
         $this->setPattern($config, $patterns);
 
         if (($config["layout"] ?? null) != ($config["layout_exception"] ?? null) && empty($pages[$script_path]["config"]["layout"])) {
-            $config["layout"] = $config["layout_exception"];
+            $config["layout"] = $config["layout_exception"] ?? self::LAYOUT_EXCEPTION;
         }
 
         return $config;
@@ -169,6 +166,7 @@ class RequestPage extends Mappable
         if ($path2params) {
             foreach ($path2params as $page_path => $params) {
                 if (preg_match($params["regexp"], $path_info, $matches)) {
+                    $this->path_info    = substr($path_info, strlen($matches[0]));
                     unset($matches[0]);
                     $i = 0;
                     foreach ($matches as $value) {
@@ -181,7 +179,7 @@ class RequestPage extends Mappable
             }
         }
 
-        return $path_info;
+        return $path_info ?: DIRECTORY_SEPARATOR;
     }
 
     /**

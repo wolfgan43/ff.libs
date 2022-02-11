@@ -94,6 +94,34 @@ class ViewHtml implements ViewAdapter
     }
 
     /**
+     * @param string $content
+     * @param string|null $root_element
+     * @return ViewAdapter
+     * @throws Exception
+     */
+    public function fetchContent(string $content, string $root_element = null) : ViewAdapter
+    {
+        if ($root_element !== null) {
+            $this->root_element = $root_element;
+        }
+
+        if (!$content) {
+            throw new Exception("template empty", 500);
+        }
+
+        $this->DBlocks[$this->root_element] = $this->getDVars($content);
+        $nName = $this->nextDBlockName($this->root_element);
+        while ($nName != "") {
+            $this->setBlock($this->root_element, $nName);
+            $nName = $this->nextDBlockName($this->root_element);
+        }
+
+        Hook::handle(self::HOOK_ON_FETCH_CONTENT, $this);
+
+        return $this;
+    }
+
+    /**
      * @param string $name
      * @return bool
      */
@@ -161,31 +189,6 @@ class ViewHtml implements ViewAdapter
         Hook::handle(self::HOOK_ON_FETCH_CONTENT, $this);
 
         Debug::stopWatch("tpl/" . $tpl_name);
-    }
-
-    /**
-     * @param string $content
-     * @param string|null $root_element
-     * @throws Exception
-     */
-    public function fetchContent(string $content, string $root_element = null) : void
-    {
-        if ($root_element !== null) {
-            $this->root_element = $root_element;
-        }
-
-        if (!$content) {
-            throw new Exception("template empty", 500);
-        }
-
-        $this->DBlocks[$this->root_element] = $this->getDVars($content);
-        $nName = $this->nextDBlockName($this->root_element);
-        while ($nName != "") {
-            $this->setBlock($this->root_element, $nName);
-            $nName = $this->nextDBlockName($this->root_element);
-        }
-
-        Hook::handle(self::HOOK_ON_FETCH_CONTENT, $this);
     }
 
     /**

@@ -48,7 +48,6 @@ use phpformsframework\libs\Exception;
  */
 class ControllerHtml extends ControllerAdapter
 {
-    private const TPL_VAR_PREFIX                = '$';
     private const LAYOUT_EXCEPTION              = "none";
 
     private const MAP_PREFIX                    = "layout";
@@ -456,7 +455,7 @@ class ControllerHtml extends ControllerAdapter
      */
     private function setContent(string $key, string $content = null) : self
     {
-        $this->contents['{' . self::TPL_VAR_PREFIX . $key . '}']      = $content;
+        $this->contents[$key]      = $content;
 
         return $this;
     }

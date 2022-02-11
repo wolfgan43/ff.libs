@@ -44,6 +44,8 @@ class FilemanagerWeb implements Dumpable
 {
     use AdapterManager;
 
+    private const MAX_REQUEST_SIZE                                      = 255;
+
     private const ERROR_FILE_FORBIDDEN                                  = "failed to open stream: check verify ssl connection also";
     private const ERROR_FILE_EMPTY                                      = "response is empty";
 
@@ -61,20 +63,23 @@ class FilemanagerWeb implements Dumpable
 
     /**
      * @param string $url
-     * @param array|null $params
+     * @param array $params
      * @param string $method
      * @param int $timeout
      * @param string|null $user_agent
      * @param array|null $cookie
      * @param string|null $username
      * @param string|null $password
-     * @param array|null $headers
+     * @param array $headers
      * @return string
      * @throws Exception
      */
     public static function fileGetContents(string $url, array $params = [], string $method = Request::METHOD_POST, int $timeout = 10, string $user_agent = null, array $cookie = null, string $username = null, string $password = null, array $headers = []) : string
     {
         $key                                        = self::normalizeUrlAndParams($method, $url, $params);
+        if (($length = strlen($url)) > self::MAX_REQUEST_SIZE) {
+            throw new Exception("Request GET too large: " . $length . " (limit is " . self::MAX_REQUEST_SIZE . " chars) url: " . $url, 500);
+        }
         $context                                    = self::streamContext($params, $method, $timeout, $user_agent, $cookie, $username, $password, $headers);
         $location                                   = self::getUrlLocation($url);
 

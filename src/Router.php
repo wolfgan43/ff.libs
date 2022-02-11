@@ -364,7 +364,6 @@ class Router implements Configurable, Dumpable
                     break;
                 }
             }
-            $tmp_path                                   = dirname($tmp_path);
         } while ($tmp_path != DIRECTORY_SEPARATOR && $tmp_path = dirname($tmp_path));
 
         if ($res) {

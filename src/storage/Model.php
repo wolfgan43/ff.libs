@@ -30,6 +30,7 @@ use phpformsframework\libs\Configurable;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\dto\ConfigRules;
 use phpformsframework\libs\Dumpable;
+use phpformsframework\libs\Response;
 use phpformsframework\libs\storage\dto\OrmResults;
 use phpformsframework\libs\Exception;
 use phpformsframework\libs\storage\dto\Schema;
@@ -57,11 +58,11 @@ class Model implements Configurable, Dumpable
     private const INSERT                                                                = "insert";
     private const MOCK                                                                  = "mock";
     private const DTD                                                                   = "dtd";
-    private const SOURCE                                                                = "source";
-    private const ADDIT_FIELDS                                                          = "addit_fields";
+    private const PROTOTYPE                                                             = "source";
     private const HOOKS_READ                                                            = "onRead";
     private const HOOKS_WRITE                                                           = "onWrite";
     private const PROPERTIES                                                            = "properties";
+    private const REPLACE                                                               = "replace";
     private const OPTION                                                                = "option";
     private const DOT                                                                   = ".";
     private const SELECT_ALL                                                            = ".*";
@@ -443,6 +444,7 @@ class Model implements Configurable, Dumpable
 
     /**
      * @param array $models
+     * @throws Exception
      */
     private static function loadModels(array $models) : void
     {
@@ -457,6 +459,11 @@ class Model implements Configurable, Dumpable
         }
     }
 
+    /**
+     * @param array $model
+     * @param bool|null $isExtend
+     * @return bool|null
+     */
     private static function loadModel(array $model, bool $isExtend = null) : ?bool
     {
         $model_attr                                                                             = Config::getXmlAttr($model);
@@ -470,7 +477,7 @@ class Model implements Configurable, Dumpable
         } elseif (!empty($model_attr->extends)) {
             return true;
         } elseif (empty($model_attr->table) || empty($model_attr->collection)) {
-            throw new Exception("Model attribute: 'collection' and 'table' are required", 500);
+            Response::sendErrorPlain("Model attribute: 'collection' and 'table' are required", 500);
         } else {
             $schema                                                                             = [];
             $schema_name                                                                        = $model_attr->name ?? $model_attr->table;
@@ -494,17 +501,15 @@ class Model implements Configurable, Dumpable
                 }
 
                 $key                                                                            = $attr->name;
-
+                if(isset($schema[self::PROTOTYPE][$key])) {
+                    Response::sendErrorPlain($key . " already set in model: " . $schema_name);
+                }
                 /**
                  * Columns and Dtd
                  */
                 $schema[self::COLUMNS][]                                                        = $key;
                 $schema[self::DTD][$key]                                                        = $attr->type ?? $extend[self::DTD][$key] ?? self::DEFAULT_FIELD_TYPE;
-                $schema[self::SOURCE][$key]                                                     = $source;
-
-                if (isset($schema[self::READ][$orm_field])) {
-                    $schema[self::ADDIT_FIELDS][$key]                                           = $source;
-                }
+                $schema[self::PROTOTYPE][$key]                                                  = $source;
 
                 /**
                  * Mock
@@ -556,8 +561,36 @@ class Model implements Configurable, Dumpable
                     $schema[self::HOOKS_WRITE][$key]                                            = $extend[self::HOOKS_WRITE][$key];
                 }
 
-                unset($attr->db, $attr->mock, $attr->request, $attr->onProcessField);
+                /**
+                 * Replaces
+                 */
+                $replaces                                                                       = [];
+                if (isset($attr->default)) {
+                    $replaces[""]                                                               = $attr->default;
+                    $replaces["0"]                                                              = $attr->default;
+                }
+                if (!empty($field[self::REPLACE])) {
+                    if (!isset($field[self::REPLACE][0])) {
+                        $field[self::REPLACE]                                                   = array($field[self::REPLACE]);
+                    }
 
+                    foreach($field[self::REPLACE] AS $replace) {
+                        $replace_attr                                                           = Config::getXmlAttr($replace);
+                        if(isset($replace_attr->value, $replace_attr->with)) {
+                            $replaces[$replace_attr->value]                                     = $replace_attr->with;
+                        }
+                    }
+                }
+
+                if (!empty($replaces) || !empty($extend[self::REPLACE][$key])) {
+                    $schema[self::REPLACE][$key]                                                = array_replace($extend[self::REPLACE][$key] ?? [], $replaces);
+                }
+
+                unset($attr->db, $attr->mock, $attr->request, $attr->onProcessField, $attr->default);
+
+                /**
+                 * Properties
+                 */
                 $properties                                                                     = (array) $attr;
                 if (!empty($properties) || !empty($extend[self::PROPERTIES][$key])) {
                     $schema[self::PROPERTIES][$key]                                             = array_replace($extend[self::PROPERTIES][$key] ?? [], $properties);
@@ -575,15 +608,23 @@ class Model implements Configurable, Dumpable
      * @param array $schema
      * @return string
      */
-    private static function dbField(string $name, array $schema) : string
+    private static function dbField(string &$name, array $schema) : string
     {
         switch (substr_count($name, self::DOT)) {
             case 0:
-                return $schema[self::COLLECTION] . self::DOT . $schema[self::TABLE] . self::DOT . $name;
+                $res = $schema[self::COLLECTION] . self::DOT . $schema[self::TABLE] . self::DOT . $name;
+                break;
             case 1:
-                return $schema[self::COLLECTION] . self::DOT . $name;
+                $res = $schema[self::COLLECTION] . self::DOT . $name;
+                $name = substr($name, strripos($name, self::DOT) + 1);
+                break;
+            case 2:
+                $res = $name;
+                $name = substr($name, strripos($name, self::DOT) + 1);
+                break;
             default:
-                return $name;
+                Response::sendErrorPlain($name . " syntax error. ");
         }
+        return $res;
     }
 }

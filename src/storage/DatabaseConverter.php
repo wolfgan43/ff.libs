@@ -40,11 +40,11 @@ class DatabaseConverter
      * @var OrmDef
      */
     private $def                        = null;
-
     private $to                         = [];
     private $in                         = [];
-
-    private $addit_fields               = [];
+    private $replace                    = null;
+    private $prototype                  = [];
+    private $fields                     = [];
 
     /**
      * @param OrmDef $def
@@ -55,25 +55,45 @@ class DatabaseConverter
     {
         $this->def                      = $def;
         if ($schema) {
-            $this->addit_fields         = $schema->addit_fields;
+            $this->replace              = $schema->replace;
+            $this->prototype            = $schema->prototype;
 
             foreach ($schema->onRead as $field => $hook) {
-                $this->add($this->to, $field, $this->getStructField($schema->source[$field]), $hook, $schema->properties[$field]);
+                $this->add($this->to, $field, $this->getStructField($this->prototype[$field]), $hook, $schema->properties[$field]);
             }
             foreach ($schema->onWrite as $field => $hook) {
-                $this->add($this->in, $field, $this->getStructField($schema->source[$field]), $hook, $schema->properties[$field]);
+                $this->add($this->in, $field, $this->getStructField($this->prototype[$field]), $hook, $schema->properties[$field]);
             }
             foreach ($schema->columns as $field) {
                 $type = $schema->dtd[$field];
 
                 if (isset($schema->to[$type])) {
-                    $this->add($this->to, $field, $this->getStructField($schema->source[$field]), $schema->to[$type]["callback"] ?? $type, array_replace($schema->to[$type], $schema->properties[$field] ?? []));
+                    $this->add($this->to, $field, $this->getStructField($this->prototype[$field]), $schema->to[$type]["callback"] ?? $type, array_replace($schema->to[$type], $schema->properties[$field] ?? []));
                 }
                 if (isset($schema->in[$type])) {
-                    $this->add($this->in, $field, $this->getStructField($schema->source[$field]), $schema->in[$type]["callback"] ?? $type, array_replace($schema->in[$type], $schema->properties[$field] ?? []));
+                    $this->add($this->in, $field, $this->getStructField($this->prototype[$field]), $schema->in[$type]["callback"] ?? $type, array_replace($schema->in[$type], $schema->properties[$field] ?? []));
                 }
             }
         }
+    }
+
+    /**
+     * @param array $fields
+     * @param bool $sort
+     * @return $this
+     */
+    public function fields(array $fields, bool $sort = false) : self
+    {
+        $this->fields = (
+            empty($this->prototype)
+            ? $fields
+            : array_intersect($this->prototype, $fields)
+        );
+        if ($sort) {
+            ksort($this->fields);
+        }
+
+        return $this;
     }
 
     /**
@@ -115,17 +135,20 @@ class DatabaseConverter
      */
     public function to(array $record) : array
     {
-        foreach ($this->addit_fields as $key => $source) {
-            $record[$key] = $record[$source];
-        }
+        $res = [];
+        foreach ($this->fields as $keyfield => $dbField) {
+            $res[$keyfield] = $record[$dbField] ?? null;
 
-        foreach ($this->to as $field => $params) {
-            if (($value = $record[$field] ?? $params->properties->default ?? null)) {
-                $record[$field] = ($params->callback)($value, $params->properties);
+            if (isset($this->replace[$keyfield]) && isset($this->replace[$keyfield][$res[$keyfield]])) {
+                $res[$keyfield] = $this->replace[$keyfield][$res[$keyfield]];
+            }
+
+            if (isset($this->to[$keyfield])) {
+                $res[$keyfield] = ($this->to[$keyfield]->callback)($res[$keyfield], $this->to[$keyfield]->properties);
             }
         }
 
-        return $record;
+        return $res;
     }
 
     /**
@@ -135,12 +158,6 @@ class DatabaseConverter
     {
         return !empty($this->to);
     }
-
-
-
-    /*********************+
-     * SET
-     */
 
     /**
      * @param string $subject

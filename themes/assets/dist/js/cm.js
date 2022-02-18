@@ -12,6 +12,7 @@ let cm = (function () {
     const _ERROR                = "error";
     const _DATA                 = "data";
     const _LOADED               = "-loaded";
+    const _LAZY                 = ".lazy";
 
     let cache                   = {};
     let settings = {
@@ -78,6 +79,20 @@ let cm = (function () {
         };
 
         return null !== document.querySelector(type + "[" + ATTR[type] + "^='" + resource.split("?")[0] + "']");
+    };
+
+    let lazy = function() {
+        const io = new IntersectionObserver((entries) =>
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    const image = entry.target;
+                    image.src = image.dataset.src;
+                    io.unobserve(image);
+                }
+            })
+        );
+
+        document.querySelectorAll(_LAZY).forEach((element) => io.observe(element));
     };
 
     let self = {
@@ -795,6 +810,7 @@ let cm = (function () {
 
     self.onReady(function() {
         self.guiInit();
+        lazy();
     });
 
     return self;

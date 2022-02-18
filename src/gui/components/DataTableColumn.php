@@ -34,15 +34,17 @@ use phpformsframework\libs\international\Translator;
  */
 class DataTableColumn
 {
-    private const TYPE_STRING = 'string';
+    private const TYPE_STRING   = 'string';
 
-    private $id             = null;
+    private $id                 = null;
 
-    private $type           = self::TYPE_STRING;
-    private $label          = null;
-    private $sort           = true;
-    private $placeholder    = null;
-    private $hide           = false;
+    private $type               = self::TYPE_STRING;
+    private $label              = null;
+    private $icon               = null;
+    private $sort               = true;
+    private $sort_callback      = null;
+    private $placeholder        = null;
+    private $hide               = false;
 
     /**
      * @param string $id
@@ -51,9 +53,9 @@ class DataTableColumn
      */
     public static function create(string $id, array $params) : self
     {
-        $column = new static($id);
+        $column                     = new static($id);
         foreach ($params as $property => $value) {
-            $column->$property = $value;
+            $column->$property      = $value;
         }
 
         return $column;
@@ -116,11 +118,13 @@ class DataTableColumn
 
     /**
      * @param bool $enable
+     * @param callable|null $callback
      * @return $this
      */
-    public function sort(bool $enable = true) : self
+    public function sort(bool $enable = true, callable $callback = null) : self
     {
-        $this->sort = $enable;
+        $this->sort             = $enable;
+        $this->sort_callback    = $callback;
 
         return $this;
     }
@@ -137,6 +141,14 @@ class DataTableColumn
     }
 
     /**
+     * @return bool
+     */
+    public function isHidden() : bool
+    {
+        return $this->hide;
+    }
+
+    /**
      * @param string $exclude
      * @return string|null
      */
@@ -148,6 +160,11 @@ class DataTableColumn
         );
     }
 
+    /**
+     * @param string $url
+     * @return string|null
+     * @throws Exception
+     */
     public function display(string $url) : ?string
     {
         return ($this->hide
@@ -155,12 +172,29 @@ class DataTableColumn
             : $this->parse($url)
         );
     }
+
+    /**
+     * @param string $url
+     * @return string
+     * @throws Exception
+     */
     private function parse(string $url) : string
     {
         $label = $this->label ?? Translator::getWordByCode($this->id);
         return ($this->sort
-            ? '<a href="' . $url . '">' . $label . '</a>'
+            ? '<a href="' . $url . '">' . $this->parseIcon() . $label . '</a>'
             : '<span>' . $label . '</span>'
+        );
+    }
+
+    /**
+     * @return string|null
+     */
+    private function parseIcon() : ?string
+    {
+        return ($this->icon
+            ? '<i class="' . $this->icon .'"></i>'
+            : null
         );
     }
 }

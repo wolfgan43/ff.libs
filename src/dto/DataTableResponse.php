@@ -91,11 +91,36 @@ class DataTableResponse extends DataResponse
         return array_column($this->data ?? [], $name);
     }
 
+    /**
+     * @return array
+     */
     public function columns() : array
     {
-        return $this->columns ?? array_keys($this->data[0] ?? []);
+        $this->setColumns();
+
+        return $this->columns;
     }
 
+    /**
+     * @param string $search
+     * @return $this
+     */
+    public function search(string $search) : self
+    {
+        $this->data = array_values(array_filter($this->data, function ($record) use ($search) {
+            return !empty(preg_grep('/' . preg_quote($search) . '/i', $record));
+        }));
+
+        $this->recordsFiltered = count($this->data);
+
+        return $this;
+    }
+
+    /**
+     * @param int $index
+     * @param string $dir
+     * @return $this
+     */
     public function sort(int $index, string $dir) : self
     {
         $this->setColumns();
@@ -111,6 +136,21 @@ class DataTableResponse extends DataResponse
         return $this;
     }
 
+    /**
+     * @param int $start
+     * @param int $length
+     * @return $this
+     */
+    public function splice(int $start, int $length) : self
+    {
+        $this->data = array_splice($this->data, $start, $length);
+
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
     public function toArray(): array
     {
         $this->setKeys();

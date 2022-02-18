@@ -396,6 +396,10 @@ class ViewHtml implements ViewAdapter
     public function display() : string
     {
         $this->setAssignDefault();
+
+        /**
+         * Components
+         */
         foreach (array_intersect_key(Resource::components(), $this->DVars)  as $key => $component) {
             /**
              * @var Controller $controller
@@ -410,8 +414,61 @@ class ViewHtml implements ViewAdapter
             }
         }
 
+        /**
+         * AutoTpl
+         */
+        foreach (array_diff_key($this->DBlockVars, $this->ParsedBlocks) as $key => $DBlockVars) {
+            $lowerKey = strtolower($key);
+            if (isset($this->ParsedBlocks[$lowerKey])) {
+                if (is_array($this->ParsedBlocks[$lowerKey])) {
+                    $this->ParsedBlocks[$key] = $this->proceedAutoTpl($key, $this->ParsedBlocks[$lowerKey]);
+                    if (isset($this->DBlockVars[$key . "Index"])) {
+                        $this->ParsedBlocks[$key . "Index"] = $this->proceedAutoTpl($key . "Index", $this->ParsedBlocks[$lowerKey]);
+                    }
+                } elseif (!empty($this->ParsedBlocks[$lowerKey])) {
+                    $this->ParsedBlocks[$key] = $this->proceedTpl($key);
+                }
+            }
+        }
         $this->parse($this->root_element);
         return $this->getBlockContent($this->root_element);
+    }
+
+    /**
+     * @param string $sTplName
+     * @param array $blocks
+     * @return string|null
+     */
+    private function proceedAutoTpl(string $sTplName, array $blocks) : ?string
+    {
+        $res = null;
+        $vars = $this->DBlockVars[$sTplName];
+        $sTpl = $this->DBlocks[$sTplName];
+        foreach ($blocks as $i => $block) {
+            $search_for = [];
+            $replace_with = [];
+            foreach ($vars as $value) {
+                $search_for[] = "{" . $value . "}";
+                if (isset($block[$value])) {
+                    $replace_with[] = $block[$value];
+                } elseif (isset($this->ParsedBlocks[$value])) {
+                    $replace_with[] = $this->ParsedBlocks[$value];
+                } elseif ($i === 0 && strpos($value, ":first=") !== false) {
+                    $replace_with[] = explode("=", $value, 2)[1];
+                } elseif ($i === count($blocks) -1 && strpos($value, ":last=") !== false) {
+                    $replace_with[] = explode("=", $value, 2)[1];
+                } elseif (strpos($value, ":" . $i . "=") !== false) {
+                    $replace_with[] = explode("=", $value, 2)[1];
+                } elseif (strpos($value, ":index") !== false) {
+                    $replace_with[] = $i;
+                } else {
+                    $replace_with[] = "";
+                }
+            }
+            $res .= str_replace($search_for, $replace_with, $sTpl);
+        }
+
+        return $res;
     }
 
     /**
@@ -514,6 +571,8 @@ class ViewHtml implements ViewAdapter
                         } else {
                             throw new Exception("bad value into template", 500);
                         }
+                    } elseif (is_array($this->ParsedBlocks[$value])) {
+                        $replace_with[] = null;
                     } else {
                         $replace_with[] = $this->ParsedBlocks[$value];
                     }

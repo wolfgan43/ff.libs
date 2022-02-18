@@ -111,8 +111,6 @@ abstract class DatabaseAdapter implements Constant
      */
     protected $driver                   = null;
 
-    protected $prototype                = [];
-
     /**
      * @var DatabaseConverter
      */
@@ -189,7 +187,7 @@ abstract class DatabaseAdapter implements Constant
      * @param int|null $offset
      * @param bool $calc_found_rows
      * @param string|null $table_name
-     * @return array|null
+     * @return array
      * @throws Exception
      */
     public function read(array $fields, array $where = null, array $sort = null, int $limit = null, int $offset = null, bool $calc_found_rows = false, string $table_name = null) : array
@@ -329,7 +327,7 @@ abstract class DatabaseAdapter implements Constant
      */
     protected function fields2output(array $record) : array
     {
-        return $this->converter->to(array_intersect_key($record, $this->prototype));
+        return $this->converter->to($record);
     }
 
     /**
@@ -364,11 +362,7 @@ abstract class DatabaseAdapter implements Constant
             $res[$name]                 = $value;
         }
 
-        if (empty($this->def->table["preserve_columns_order"])) {
-            ksort($res);
-        }
-
-        $this->prototype                = $res;
+        $this->converter->fields($res, empty($this->def->table["preserve_columns_order"]));
 
         return $res + $this->index2query;
     }

@@ -61,7 +61,6 @@ class DataTable
     private const TC_XHR                = "cm-xhr";
     private const TC_MODAL              = "cm-modal";
 
-    private const DEFAULT_SORT          = "0";
     private const DEFAULT_SORT_DIR      = "asc";
 
     private const RECORD_LIMIT          = 25;
@@ -203,7 +202,7 @@ class DataTable
     protected $start                    = null;
     protected $length                   = null;
     protected $search                   = null;
-    protected $sort                     = null;
+    protected $sort                     = [];
 
     private $request                    = null;
     private $pages                      = null;
@@ -216,10 +215,13 @@ class DataTable
 
     private $dataSource                 = self::DATA_SOURCE_ARRAY;
     private $records                    = [];
+
+    private $default_sort               = null;
+    private $default_sort_dir           = null;
+
     /**
      * @param string $model
      * @return DataTableResponse
-     * @throws Exception
      */
     public static function xhr(string $model): DataTableResponse
     {
@@ -434,6 +436,19 @@ class DataTable
     }
 
     /**
+     * @param string $column_name
+     * @param string $dir
+     * @return $this
+     */
+    public function sortBy(string $column_name, string $dir = self::DEFAULT_SORT_DIR) : self
+    {
+        $this->default_sort     = strtolower($column_name);
+        $this->default_sort_dir = $dir;
+
+        return $this;
+    }
+
+    /**
      * @param bool $ajax
      * @return $this
      */
@@ -502,7 +517,6 @@ class DataTable
 
     /**
      * @return DataTableResponse
-     * @throws Exception
      */
     protected function dataTable() : DataTableResponse
     {
@@ -517,9 +531,7 @@ class DataTable
             $this->search                       = $request->search["value"] ?? $request->search;
         }
 
-        if (empty($request->sort)) {
-            $this->sort[self::DEFAULT_SORT]     = self::DEFAULT_SORT_DIR;
-        } else {
+        if (!empty($request->sort)) {
             $this->sort                         = (array) $request->sort;
         }
 
@@ -556,9 +568,9 @@ class DataTable
      */
     private function ormSource() : DataTableResponse
     {
-        $db                             = new Model($this->id);
+        $db                                             = new Model($this->id);
 
-        $schema                         = $db->schema(static::CONVERT_BY_TYPE);
+        $schema                                         = $db->schema(static::CONVERT_BY_TYPE);
 
         foreach ($schema->properties as $key => $params) {
             $this->column($key, $params);
@@ -569,7 +581,18 @@ class DataTable
             $where = ['$or' => array_fill_keys($schema->columns, ['$regex' => "*" . $this->search . "*"])];
         }
 
-        return $db->read($where, $this->order(), $this->length, $this->start)
+        $sort = null;
+        foreach ($this->sort as $i => $dir) {
+            if (isset($schema->columns[$i])) {
+                $sort[$schema->columns[$i]] = $dir;
+            }
+        }
+
+        if (empty($sort) && !empty($this->default_sort)) {
+            $sort[$this->default_sort] = $this->default_sort_dir;
+        }
+
+        return $db->read($where, $sort, $this->length, $this->start)
             ->toDataTable(function (OrmResults $results, DataTableResponse $dataTableResponse) use ($schema, $db) {
                 $dataTableResponse->draw                = $this->draw + 1;
                 $dataTableResponse->columns             = $schema->columns;
@@ -603,14 +626,26 @@ class DataTable
     /**
      * @return DataTableResponse
      */
+    /**
+     * @return DataTableResponse
+     */
     private function arraySource() : DataTableResponse
     {
         $dataTable                  = new DataTableResponse($this->records, $this->record_key);
+        if (isset($this->search)) {
+            $dataTable->search($this->search);
+        }
+
+        if (empty($this->sort) && !empty($this->default_sort)) {
+            $this->sort[array_search($this->default_sort, array_map('strtolower', $dataTable->columns()))] = $this->default_sort_dir;
+        }
 
         foreach ($this->sort as $i => $dir) {
             $dataTable->sort($i, $dir);
             break;
         }
+        $dataTable->splice($this->start, $this->length);
+
         return $dataTable;
     }
 
@@ -642,12 +677,13 @@ class DataTable
      */
     private function order() : array
     {
+        $order = [];
         foreach ($this->sort as $column => $dir) {
             $order[] = ["column" => $column, "dir" => $dir];
         }
 
-        if (empty($order)) {
-            $order[] = ["column" => self::DEFAULT_SORT, "dir" => self::DEFAULT_SORT_DIR];
+        if (empty($order) && !empty($this->default_sort)) {
+            $order[$this->default_sort] = $this->default_sort_dir;
         }
 
         return $order;
@@ -872,7 +908,7 @@ class DataTable
             . (
                 $this->dataTable->recordsFiltered && $this->start <= $this->dataTable->recordsFiltered
                 ? $this->tableRows()
-                : '<tr><td class="dt-empty" colspan="' . count($this->dataTable->columns()) . '">' . Translator::getWordByCode("No matching records found") . '</td></tr>'
+                : '<tr><td class="dt-empty" colspan="' . count($this->dataTable->columns ?? []) . '">' . Translator::getWordByCode("No matching records found") . '</td></tr>'
             )
             . '</tbody>';
     }
@@ -964,24 +1000,24 @@ class DataTable
     {
         $columns = null;
         foreach ($this->dataTable->columns as $i => $column) {
-            if (empty($this->column($column)->display(""))) { //da sistemare sistemando il metodo qui sotto anche
+            if ($this->column($column)->isHidden()) {
                 unset($this->dataTable->columns[$i]);
                 continue;
             }
 
             if ($this->displayTableSort) {
                 if (isset($this->sort[$i])) {
-                    $dir = self::DIR[$this->sort[$i]] ?? self::DEFAULT_SORT_DIR;
-                    $rdir = self::RDIR[$dir];
+                    $dir    = self::DIR[$this->sort[$i]] ?? $this->default_sort_dir;
+                    $rdir   = self::RDIR[$dir];
                     $class  = ' class="dataTable-sorter ' . $dir . '"';
                 } else {
-                    $rdir = self::DEFAULT_SORT_DIR;
-                    $class = null;
+                    $rdir   = $this->default_sort_dir;
+                    $class  = null;
                 }
 
-                $columns .= '<th data-id="' . $column . '"' . $class . '>' . $this->column($column)->display($this->getUrl(self::TC_SORT, [$i => $rdir])) . '</th>';
+                $columns    .= '<th data-id="' . $column . '"' . $class . '>' . $this->column($column)->display($this->getUrl(self::TC_SORT, [$i => $rdir])) . '</th>';
             } else {
-                $columns .= '<th><span>' . $column . '</span></th>';
+                $columns    .= '<th><span>' . $column . '</span></th>';
             }
         }
 

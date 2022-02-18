@@ -47,7 +47,7 @@ class DataTablePlugin extends DataTable
     protected function html() : string
     {
         $order = [];
-        foreach ($this->sort ?? [] as $sort => $dir) {
+        foreach ($this->sort as $sort => $dir) {
             $order[] = [$sort, $dir];
         }
 
@@ -57,13 +57,13 @@ class DataTablePlugin extends DataTable
             : []
         );
 
-        foreach ($this->sort ?? [] as $sort => $dir) {
+        foreach ($this->sort as $sort => $dir) {
             $order[] = [$sort, $dir];
         }
 
         $columns = null;
         $columns_json = [];
-        foreach ($this->columns as $column) {
+        foreach ($this->dataTable->columns as $column) {
             $columns                    .= '<th>' . $column . '</th>';
             $columns_json[]["data"]     = $column;
         }

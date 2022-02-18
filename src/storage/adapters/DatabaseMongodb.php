@@ -145,18 +145,4 @@ class DatabaseMongodb extends DatabaseAdapter
             $record                                     = $this->fields2output($record);
         }
     }
-
-    /**
-     * @param array $record
-     * @return array
-     */
-    protected function fields2output(array $record) : array
-    {
-        $record = parent::fields2output($record);
-        if (count($record) != count($this->prototype)) {
-            $record = $record + array_fill_keys(array_keys(array_diff_key($this->prototype, $record)), null);
-        }
-
-        return $record;
-    }
 }

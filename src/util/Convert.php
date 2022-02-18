@@ -64,7 +64,7 @@ class Convert
      */
     public static function imageTag(string $value, stdClass $properties = null) : string
     {
-        $value = self::encode($value);
+        $value = str_replace([" ", '"'], ["+", '%22'], $value);
 
         $mode   = null;
         $width  = null;
@@ -105,7 +105,7 @@ class Convert
      */
     public static function image(string $value, stdClass $properties = null) : string
     {
-        $value = self::encode($value);
+        $value = str_replace([" ", '"'], ["+", '%22'], $value);
 
         $mode   = null;
         if (!empty($properties->width) && !empty($properties->height)) {

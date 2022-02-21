@@ -107,7 +107,7 @@ class RequestPage extends Mappable
     {
         parent::__construct($this->setRules($this->findEnvByPathInfo($path_info, $path2params), $pages, $patterns));
 
-        $this->isXhr               = self::isXhr();
+        $this->isXhr                = self::isXhr();
         $this->method               = (
             $this->method
             ? strtoupper($this->method)
@@ -158,11 +158,7 @@ class RequestPage extends Mappable
      */
     private function findEnvByPathInfo(string $path_info, array $path2params = null): string
     {
-        $path_info                      = rtrim($path_info, "/");
-        if (!$path_info) {
-            $path_info                  = DIRECTORY_SEPARATOR;
-        }
-
+        $path_info                      = rtrim($path_info, DIRECTORY_SEPARATOR) ?: DIRECTORY_SEPARATOR;
         if ($path2params) {
             foreach ($path2params as $page_path => $params) {
                 if (preg_match($params["regexp"], $path_info, $matches)) {
@@ -173,7 +169,9 @@ class RequestPage extends Mappable
                         $this->path2params[$params["matches"][$i]] = $value;
                         $i++;
                     }
-                    $path_info          = $page_path;
+                    if ($page_path != DIRECTORY_SEPARATOR) {
+                        $path_info      = $page_path;
+                    }
                     break;
                 }
             }

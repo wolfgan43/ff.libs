@@ -65,12 +65,12 @@ class OrmModel
             throw new Exception("missing relation Field: " . $informationSchema->table . " in Class " . get_class($ref) . " for Model: " . $model_name, 500);
         }
 
-        if ($rawdata) {
-            $this->fill($rawdata);
-        }
-
         if (!empty($ref->{$informationSchema->table})) {
             $this->read([$informationSchema->key => $ref->{$informationSchema->table}]);
+        }
+
+        if ($rawdata) {
+            $this->fill($rawdata);
         }
 
         $this->relationshipKey                                                  =& $ref->{$informationSchema->table};

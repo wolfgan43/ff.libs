@@ -58,7 +58,7 @@ class Model implements Configurable, Dumpable
     private const INSERT                                                                = "insert";
     private const MOCK                                                                  = "mock";
     private const DTD                                                                   = "dtd";
-    private const PROTOTYPE                                                             = "source";
+    private const PROTOTYPE                                                             = "protoype";
     private const HOOKS_READ                                                            = "onRead";
     private const HOOKS_WRITE                                                           = "onWrite";
     private const PROPERTIES                                                            = "properties";
@@ -238,7 +238,12 @@ class Model implements Configurable, Dumpable
      */
     public function update(array $set, array $where = null) : OrmResults
     {
-        return $this->getOrm()->update($this->fieldSet($set, $this->table), $where);
+        $update                                                                         = (
+            $this->schema
+            ? $this->fill($this->schema->insert, $set)
+            : $this->fieldSet($set, $this->table)
+        );
+        return $this->getOrm()->update($update, $where);
     }
 
     /**

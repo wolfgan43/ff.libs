@@ -199,6 +199,19 @@ class Api
      * @return DataAdapter
      * @throws Exception
      */
+    public function postJson(array $params = []) : DataAdapter
+    {
+        $this->headers["Content-type"] = "application/json";
+
+        return $this->method(Request::METHOD_POST)
+            ->send($params);
+    }
+
+    /**
+     * @param array $params
+     * @return DataAdapter
+     * @throws Exception
+     */
     public function put(array $params = []) : DataAdapter
     {
         return $this->method(Request::METHOD_PUT)

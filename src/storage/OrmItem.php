@@ -739,22 +739,29 @@ abstract class OrmItem
 
     /**
      * @return DataResponse
+     * @throws Exception
      * @todo da tipizzare
      */
-    public function toDataResponse()
+    public function toDataResponse(string $model_name = null, array $rawdata = null)
     {
         $response = new DataResponse($this->getPublicVars());
         if (!$this->recordKey) {
             $response->error(404, $this->db->getName() . " not stored");
         }
 
+        if ($model_name && ($model = $this->extend($model_name, $rawdata)) && $rawdata) {
+            $model->apply();
+        }
+
         if ($this->model) {
             $response->set($this->model, $this->models[$this->model]->toArray());
         }
-
         return $response;
     }
 
+    /**
+     * @return array
+     */
     public function toArray() : array
     {
         return $this->fieldSetPurged(array_fill_keys(static::DATARESPONSE, true));

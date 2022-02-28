@@ -162,7 +162,7 @@ class DataTable
     public $displayTablePaginate        = true;
     public $displayTablePaginateInfo    = true;
 
-    private $xhr                        = null;
+    protected $xhr                      = null;
     private $xhrSearch                  = null;
     private $xhrSort                    = null;
     private $xhrPagination              = null;

@@ -41,6 +41,7 @@ use phpformsframework\libs\storage\Media;
 use phpformsframework\libs\gui\Resource;
 use phpformsframework\libs\gui\View;
 use phpformsframework\libs\Exception;
+use phpformsframework\libs\util\ServerManager;
 
 /**
  * Class PageHtml
@@ -48,6 +49,8 @@ use phpformsframework\libs\Exception;
  */
 class ControllerHtml extends ControllerAdapter
 {
+    use ServerManager;
+
     private const LAYOUT_EXCEPTION              = "none";
 
     private const MAP_PREFIX                    = "layout";
@@ -71,6 +74,7 @@ class ControllerHtml extends ControllerAdapter
     private $preconnect                         = [];
     private $cache_time                         = null;
 
+    public $canonicalUrl                        = null;
     public $title                               = null;
     public $description                         = null;
     public $css                                 = [];
@@ -237,15 +241,22 @@ class ControllerHtml extends ControllerAdapter
      */
     private function getTitle(bool $include_appname = true) : string
     {
-        $res                                    = (
-            $this->title
-                                                    ? $this->title
-                                                    : $this->getTileDefault()
-        );
+        $res                                    = $this->title ?: $this->getTileDefault();
         if ($include_appname && Kernel::$Environment::APPNAME) {
             $res                                .= " - " . Kernel::$Environment::APPNAME;
         }
         return $res;
+    }
+
+    /**
+     * @return string|null
+     */
+    private function parseCanonicalUrl() : ?string
+    {
+        return (!empty($this->canonicalUrl) || empty($this->error)
+            ? self::NEWLINE . '<link rel="canonical" href="' . ($this->canonicalUrl ?: $this->canonicalUrl()) . '" />'
+            : null
+        );
     }
 
     /**
@@ -261,12 +272,7 @@ class ControllerHtml extends ControllerAdapter
      */
     private function parseDescription() : string
     {
-        $res                                    = (
-            $this->description
-                                                    ? $this->description
-                                                    : $this->getTitle(false)
-        );
-
+        $res                                    = $this->description ?: $this->getTitle(false);
 
         return self::NEWLINE . '<meta name="description" content="' . $res . '" />';
     }
@@ -417,7 +423,7 @@ class ControllerHtml extends ControllerAdapter
 
     /**
      * @param string $location
-     * @return string
+     * @return string|null
      */
     private function parseJs(string $location) : ?string
     {
@@ -489,6 +495,7 @@ class ControllerHtml extends ControllerAdapter
     {
         return /** @lang text */ '<' . self::HEAD_TAG . '>'
             . $this->parseEncoding()
+            . $this->parseCanonicalUrl()
             . $this->parseTitle()
             . $this->parseDescription()
             . $this->parseMeta()

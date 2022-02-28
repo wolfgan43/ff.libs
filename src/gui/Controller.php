@@ -235,6 +235,16 @@ abstract class Controller
      * ------------------------------------------------------------------------
      */
 
+    /**
+     * @param string $url_with_http
+     * @return $this
+     */
+    protected function setCanonicalUrl(string $url_with_http) : self
+    {
+        $this->adapter->canonicalUrl            = $url_with_http;
+
+        return $this;
+    }
 
     /**
      * @param string $title

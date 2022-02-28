@@ -113,6 +113,14 @@ trait ServerManager
     }
 
     /**
+     * @return string
+     */
+    private static function canonicalUrl() : string
+    {
+        return self::protocolHost() . self::requestURI();
+    }
+
+    /**
      * @param string|null $phpurl_part
      * @return string|null
      */

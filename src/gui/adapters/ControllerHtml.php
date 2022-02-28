@@ -51,6 +51,8 @@ class ControllerHtml extends ControllerAdapter
 {
     use ServerManager;
 
+    protected const SEO_DESCRIPTION_LIMIT       = 260;
+
     private const LAYOUT_EXCEPTION              = "none";
 
     private const MAP_PREFIX                    = "layout";
@@ -227,12 +229,9 @@ class ControllerHtml extends ControllerAdapter
     /**
      * @return string
      */
-    private function getTileDefault(): string
+    private function getTitleDefault(): string
     {
-        return ($this->path_info && $this->path_info != DIRECTORY_SEPARATOR
-            ? ucfirst(basename($this->path_info))
-            : static::TITLE_DEFAULT
-        );
+        return ucwords($this->error ?: basename($this->pathInfo()) ?: static::TITLE_DEFAULT);
     }
 
     /**
@@ -241,11 +240,19 @@ class ControllerHtml extends ControllerAdapter
      */
     private function getTitle(bool $include_appname = true) : string
     {
-        $res                                    = $this->title ?: $this->getTileDefault();
+        $res                                    = $this->title ?: $this->getTitleDefault();
         if ($include_appname && Kernel::$Environment::APPNAME) {
             $res                                .= " - " . Kernel::$Environment::APPNAME;
         }
         return $res;
+    }
+
+    /**
+     * @return string
+     */
+    private function getDescriptionDefault() : string
+    {
+        return trim(preg_replace("/\s+/", " ", strip_tags($this->contents[Controller::TPL_VAR_DEFAULT] ?? "")));
     }
 
     /**
@@ -272,9 +279,7 @@ class ControllerHtml extends ControllerAdapter
      */
     private function parseDescription() : string
     {
-        $res                                    = $this->description ?: $this->getTitle(false);
-
-        return self::NEWLINE . '<meta name="description" content="' . $res . '" />';
+        return self::NEWLINE . '<meta name="description" content="' . substr($this->description ?: $this->getDescriptionDefault(), 0, static::SEO_DESCRIPTION_LIMIT) . '" />';
     }
 
     /**
@@ -631,7 +636,7 @@ class ControllerHtml extends ControllerAdapter
     {
         return [
             "pathname"          => $this->path_info,
-            "title"             => $this->title ?? $this->getTileDefault(),
+            "title"             => $this->title ?? $this->getTitleDefault(),
             "description"       => $this->description,
             "css"               => $this->css,
             "style"             => $this->style,

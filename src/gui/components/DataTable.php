@@ -413,6 +413,17 @@ class DataTable
     }
 
     /**
+     * @param int $record_per_page
+     * @return $this
+     */
+    public function limit(int $record_per_page) : self
+    {
+        $this->length = $record_per_page;
+
+        return $this;
+    }
+
+    /**
      * @param string $key
      * @param bool|null $modal
      * @return $this
@@ -535,7 +546,7 @@ class DataTable
             $this->sort                         = (array) $request->sort;
         }
 
-        $this->length                           = (int)($request->length ?? self::RECORD_LIMIT);
+        $this->length                           = (int)($request->length ?? $this->length ?? self::RECORD_LIMIT);
         if ($this->length < 1) {
             $this->start                        = self::RECORD_LIMIT;
         }

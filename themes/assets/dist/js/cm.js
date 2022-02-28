@@ -776,7 +776,7 @@ let cm = (function () {
 					}
 
                     privates.$container.classList.add(settings.modal.open);
-                    privates.$container.style["visibility"] = "visible";
+                    privates.$container.style["display"] = "block";
 
 					if (privates.events.open) {
 						privates.events.open({
@@ -790,7 +790,7 @@ let cm = (function () {
 					}
 
                     privates.$container.classList.remove(settings.modal.open);
-                    privates.$container.style["visibility"] = "hidden";
+                    privates.$container.style["display"] = "none";
 
                     this.error.hide();
                 },

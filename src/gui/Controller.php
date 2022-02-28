@@ -66,8 +66,6 @@ abstract class Controller
     protected const TPL_ENGINE_SMARTY           = "Smarty";
     protected const TPL_ENGINE_BLADE            = "Blade";
 
-    protected const TPL_VAR_DEFAULT             = "content";
-    private const TPL_VAR_PREFIX                = '$';
     private const CONTROLLER_PREFIX             = "controller";
 
     private const TPL_NORMALIZE                 = ['../', '.tpl'];
@@ -79,7 +77,8 @@ abstract class Controller
     private const COMPONENT_DATA_RECORD         = 'dr';
     private const COMPONENT_DATA_FIELD          = 'df';
 
-    public const METHOD_DEFAULT                = "get";
+    public const TPL_VAR_DEFAULT                = "content";
+    public const METHOD_DEFAULT                 = "get";
 
     /**
      * @var ControllerAdapter

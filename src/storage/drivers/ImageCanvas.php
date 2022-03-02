@@ -275,7 +275,6 @@ class ImageCanvas
                 break;
 
             case "png":
-            default:
                 if (Kernel::$Environment::DEBUG) {
                     header("Content-Type: image/png");
                     imagepng($this->cvs_res);
@@ -287,6 +286,24 @@ class ImageCanvas
                     header("Content-Type: image/png");
                 }
                 if (!is_writable(dirname($filename)) || imagepng($this->cvs_res, $filename) === false) {
+                    Log::warning($filename, "unable2write");
+                    throw new Exception("Unable to Write", 500);
+                } else {
+                    chmod($filename, 0664);
+                }
+            default:
+                if (Kernel::$Environment::DEBUG) {
+                    header("Content-Type: image/webp");
+                    imagewebp($this->cvs_res);
+                    imagedestroy($this->cvs_res);
+                    exit;
+                }
+
+                if ($filename === null) {
+                    header("Content-Type: image/webp");
+                }
+
+                if (!is_writable(dirname($filename)) || imagewebp($this->cvs_res, $filename) === false) {
                     Log::warning($filename, "unable2write");
                     throw new Exception("Unable to Write", 500);
                 } else {

@@ -451,7 +451,7 @@ class ViewHtml implements ViewAdapter
                 $search_for[] = "{" . $value . "}";
                 if (isset($block[$value])) {
                     $replace_with[] = $block[$value];
-                } elseif (isset($this->ParsedBlocks[$value])) {
+                } elseif (isset($this->ParsedBlocks[$value]) && !isset($this->ParsedBlocks[$value][0]) && !is_array($this->ParsedBlocks[$value][0])) {
                     $replace_with[] = $this->ParsedBlocks[$value];
                 } elseif ($i === 0 && strpos($value, ":first=") !== false) {
                     $replace_with[] = explode("=", $value, 2)[1];

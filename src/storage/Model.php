@@ -58,7 +58,7 @@ class Model implements Configurable, Dumpable
     private const INSERT                                                                = "insert";
     private const MOCK                                                                  = "mock";
     private const DTD                                                                   = "dtd";
-    private const PROTOTYPE                                                             = "protoype";
+    private const PROTOTYPE                                                             = "prototype";
     private const HOOKS_READ                                                            = "onRead";
     private const HOOKS_WRITE                                                           = "onWrite";
     private const PROPERTIES                                                            = "properties";

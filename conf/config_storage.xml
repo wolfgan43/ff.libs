@@ -2,6 +2,8 @@
 <configdata>
     <env>
         <DATABASE_MAX_RECURSION value="100" />
+        <MEDIA_FORCE_FORMAT value="webp" />
+        <MEDIA_AUTO_RENDER_LIMIT value="null" />
     </env>
     <pages>
         <page path="/media"     engine="media" validate_url="false" />

@@ -261,7 +261,7 @@ class ControllerHtml extends ControllerAdapter
     private function parseCanonicalUrl() : ?string
     {
         return (!empty($this->canonicalUrl) || empty($this->error)
-            ? self::NEWLINE . '<link rel="canonical" href="' . ($this->canonicalUrl ?: $this->canonicalUrl()) . '" />'
+            ? self::NEWLINE . '<link rel="canonical" href="' . ($this->canonicalUrl ?: htmlspecialchars(urldecode($this->canonicalUrl()))) . '" />'
             : null
         );
     }

@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\storage;
 
+use phpformsframework\libs\Env;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\cache\Buffer;
 use phpformsframework\libs\Config;
@@ -400,6 +401,10 @@ class Media implements Configurable
             $schema                                                 = array();
             foreach ($rawdata as $thumb) {
                 $attr                                               = Dir::getXmlAttr($thumb);
+                if (empty($attr["name"])) {
+                    continue;
+                }
+
                 $key                                                = $attr["name"];
                 unset($attr["name"]);
                 $schema[$key]                                       = $attr;
@@ -736,12 +741,22 @@ class Media implements Configurable
             $assets_disk_path = Kernel::$Environment::getAssetDiskPath();
 
             if ($this->staticProcess($mode)) {
+                if (!empty($this->mode) &&
+                    !empty(Env::get("MEDIA_AUTO_RENDER_LIMIT")) &&
+                    array_search($this->mode, explode(",", Env::get("MEDIA_AUTO_RENDER_LIMIT"))) === false
+                ) {
+                    Response::httpCode(404);
+                }
+
                 $final_file = $this->processFinalFile();
                 if ($final_file) {
                     $this->readfile($final_file);
                 }
             } elseif ($this->isImage()) {
-                Response::redirect($this->getIconPath("noimg"), 302);
+                $final_file = $this->getIconPath("noimg", true);
+                if ($final_file) {
+                    $this->readfile($final_file, 404);
+                }
             } elseif (file_exists($assets_disk_path . $this->pathinfo->orig)) {
                 $this->saveFromOriginal($assets_disk_path . $this->pathinfo->orig, $this->basepathCache() . $this->pathinfo->orig);
                 $this->sendHeaders($assets_disk_path . $this->pathinfo->orig, $this->headers);
@@ -1053,7 +1068,7 @@ class Media implements Configurable
 
         $cCanvas->cvs_res_background_color_hex 			            = $params->bgcolor_csv;
         $cCanvas->cvs_res_background_color_alpha 		            = $params->alpha_new;
-        $cCanvas->format 								            = $params->format;
+        $cCanvas->format 								            = Env::get("MEDIA_FORCE_FORMAT") ?: $params->format;
 
         $cThumb                                                     = new ImageThumb($params->dim_x, $params->dim_y);
         $cThumb->new_res_max_x 							            = $params->max_x;

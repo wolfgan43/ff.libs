@@ -19,7 +19,7 @@
                         <!--EndSezDescription-->
                     </div>
 
-                    <form action="javascript:void(0);" onsubmit="hcore.security.recoverConfirm('{recover_url}', '{redirect_url}');" >
+                    <form method="post" class="cm-xhr" data-component="#recover-box">
                         <!--BeginSezError-->
                         <div class="alert alert-warning">{error}</div>
                         <!--EndSezError-->

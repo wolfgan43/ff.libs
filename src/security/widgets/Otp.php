@@ -58,8 +58,10 @@ class Otp extends Widget
             );
         }
 
-        $view->assign("help_mail", $config->help_mail ?? "support@" . $_SERVER['HTTP_HOST']);
-        $view->assign("otp_url", $this->getWebUrl($this->script_path));
+        if (empty($config->help_mail)) {
+            $config->help_mail = "support@" . $_SERVER['HTTP_HOST'];
+        }
+        $view->assign($config);
 
         $this->setError($view);
         $this->setLogo($view, $config);

@@ -38,14 +38,28 @@ class Login extends Widget
 {
     use CommonTemplate;
 
+    protected const USER_CLASS      = "phpformsframework\libs\security\User";
+
     protected $requiredJs           = ["cm"];
+
+    /**
+     * @var User
+     */
+    private $user                   = null;
+
+    public function __construct(array $config = null)
+    {
+        parent::__construct($config);
+
+        $this->user                     = static::USER_CLASS;
+    }
 
     /**
      * @throws Exception
      */
     protected function get(): void
     {
-        if (User::isLogged()) {
+        if ($this->user::isLogged()) {
             $config = $this->getConfig();
             $this->redirect($this->request->redirect ?? $this->getWebUrl($config->logout_path));
         } else {
@@ -106,16 +120,18 @@ class Login extends Widget
      */
     protected function post(): void
     {
-        if (User::isLogged()) {
+        if ($this->user::isLogged()) {
             $config = $this->getConfig();
             $this->redirect($this->request->redirect ?? $this->getWebUrl($config->logout_path));
         } elseif (isset($this->request->identifier, $this->request->password)) {
-            User::login($this->request->identifier, $this->request->password, $this->request->permanent ?? null);
-
-            $this->welcome();
+            $response = $this->user::login($this->request->identifier, $this->request->password, $this->request->permanent ?? null);
+            if (!$response->isError()) {
+                $this->replaceWith(Welcome::class);
+            } elseif ($response->isError(409) && !empty($config->activation_path)) {
+                $response->set("error_link", $this->getWebUrl($config->activation_path));
+            }
         } else {
             $this->error(400, "missing identifier or password");
-            $this->get();
         }
     }
 
@@ -132,16 +148,5 @@ class Login extends Widget
     protected function patch(): void
     {
         // TODO: Implement patch() method.
-    }
-
-    /**
-     * @throws Exception
-     */
-    private function welcome(): void
-    {
-        $view       = $this->view("welcome");
-        $config     = $view->getConfig();
-        $this->displayUser($view);
-        $this->setLogo($view, $config);
     }
 }

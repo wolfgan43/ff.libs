@@ -25,7 +25,6 @@
  */
 namespace phpformsframework\libs\security\widgets;
 
-use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\gui\Widget;
 use phpformsframework\libs\security\User;
 use phpformsframework\libs\security\widgets\helpers\CommonTemplate;
@@ -40,7 +39,21 @@ class Registration extends Widget
 {
     use CommonTemplate;
 
+    protected const USER_CLASS      = "phpformsframework\libs\security\User";
+
     protected $requiredJs           = ["cm"];
+
+    /**
+     * @var User
+     */
+    private $user                   = null;
+
+    public function __construct(array $config = null)
+    {
+        parent::__construct($config);
+
+        $this->user                 = static::USER_CLASS;
+    }
 
     /**
      * @throws Exception
@@ -50,9 +63,7 @@ class Registration extends Widget
         $view                       = $this->view("index");
         $config                     = $view->getConfig();
 
-        if (!empty($this->request->model) && $model = Model::columns($this->request->model)) {
-            $config->registration_path .= DIRECTORY_SEPARATOR . $this->request->model;
-
+        if (!empty($this->request->model) && ($model = Model::columns($this->request->model))) {
             foreach ($model as $field_name) {
                 $view->assign("field_name", $field_name);
                 $view->assign("field_label", $this->translate($field_name));
@@ -71,8 +82,6 @@ class Registration extends Widget
             }
         }
 
-        $view->assign("registration_url", $this->getWebUrl($config->registration_path));
-
         $this->setError($view);
         $this->setLogo($view, $config);
         $this->setHeader($view, $config);
@@ -83,26 +92,22 @@ class Registration extends Widget
      */
     protected function post(): void
     {
-        $config                         = $this->getConfig();
-
-        if (!$this->request->password) {
-            $response = new DataResponse();
-            $response->set("confirm", Activation::toArray([
-                "redirect"              => $config->redirect
-            ], $this->method));
+        if (!empty($this->request->code)) {
+            $this->replaceWith(Activation::class, null, "post");
+        } elseif ($this->request->password && $this->request->password != $this->request->confirm_password) {
+            $this->error(400, "Password Don't Match");
         } else {
-            $response                   = $this->api($config->api->registration, (array)$this->request);
+            $response                   = $this->user::signUp((array)$this->request, $this->request->model);
             if (User::isLogged()) {
-                $this->welcome();
+                $this->replaceWith(Welcome::class);
             } elseif ($response->get("activation")) {
-                $response->set("confirm", Activation::toArray([
-                    "redirect"          => $config->redirect,
-                    "response"          => (new DataResponse())->fillObject($response->get("activation"))
-                ], $this->method));
+                Activation::setOtpToken($response->get("activation")->token);
+                $this->replaceWith(Activation::class, null, "post");
+            } else {
+                $config = $this->getConfig();
+                $this->redirect($this->request->redirect ?? $this->getWebUrl($config->login_path));
             }
         }
-
-        $this->send($response);
     }
 
     protected function put(): void
@@ -118,16 +123,5 @@ class Registration extends Widget
     protected function patch(): void
     {
         // TODO: Implement patch() method.
-    }
-
-    /**
-     * @throws Exception
-     */
-    private function welcome(): void
-    {
-        $view       = $this->view("welcome");
-        $config     = $view->getConfig();
-        $this->displayUser($view);
-        $this->setLogo($view, $config);
     }
 }

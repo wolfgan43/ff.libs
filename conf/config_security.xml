@@ -53,7 +53,8 @@
             <get name="model"                           />
             <get name="referral"                        />
 
-            <post name="identifier"                     validator="username"    />
+            <post name="model"                                                  />
+            <post name="identifier"                                             />
             <post name="password"                       validator="password"    />
             <post name="email"                          validator="email"       />
             <post name="tel"                            validator="tel"         />
@@ -61,7 +62,7 @@
 
             <post name="code"                           validator="totp"        />
         </page>
-        <page path="/otp" controller="phpformsframework\libs\security\widgets\Otp"                              csrf="true">
+        <page path="/otp" controller="phpformsframework\libs\security\widgets\Otp"                              csrf="true"     access="public">
             <post name="code"                           validator="totp"        />
         </page>
     </pages>

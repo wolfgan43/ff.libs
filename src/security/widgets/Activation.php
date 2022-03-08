@@ -26,8 +26,10 @@
 namespace phpformsframework\libs\security\widgets;
 
 use phpformsframework\libs\gui\Widget;
+use phpformsframework\libs\security\User;
 use phpformsframework\libs\security\widgets\helpers\CommonTemplate;
 use phpformsframework\libs\Exception;
+use phpformsframework\libs\util\Cookie;
 
 /**
  * Class Activation
@@ -37,13 +39,44 @@ class Activation extends Widget
 {
     use CommonTemplate;
 
-    protected $requiredJs           = ["cm"];
+    protected const ERROR_VIEW              = "displayError";
+    protected const USER_CLASS              = "phpformsframework\libs\security\User";
+    protected const ACTIVATION_EXPIRATION   = 60 * 5;
+
+    protected $requiredJs                   = ["cm"];
+
+    /**
+     * @var User
+     */
+    private $user                           = null;
+
+    public static function setOtpToken(string $token) : void
+    {
+        Cookie::create("activation", $token, time() + self::ACTIVATION_EXPIRATION);
+    }
+
+    public function __construct(array $config = null)
+    {
+        parent::__construct($config);
+
+        $this->user                         = static::USER_CLASS;
+    }
+
+    /**
+     * @throws Exception
+     */
+    protected function displayError(): void
+    {
+        $this->render("index");
+    }
 
     /**
      * @throws Exception
      */
     protected function get(): void
     {
+        Cookie::destroy("activation");
+
         $this->render("index");
     }
 
@@ -52,21 +85,25 @@ class Activation extends Widget
      */
     protected function post(): void
     {
-        $config                     = $this->getConfig();
-
-        if ($this->request->code) {
-            $response               = $this->api($config->api->activate, null, ["Authorization" => $this->authorization . ":" . $this->request->code]);
-            $response->set("confirm", $this->snippet("success"));
+        $authorization              = Cookie::get("activation");
+        if (!empty($authorization)) {
+            if (!empty($this->request->code)) {
+                $this->user::activationComplete($authorization, $this->request->code);
+                $this->success();
+            } else {
+                $this->otp();
+            }
+        } elseif (!empty($this->request->identifier)) {
+            $response               = $this->user::activationRequest($this->request->identifier);
+            if ($response->get("token")) {
+                $this->setOtpToken($response->get("token"));
+                $this->otp();
+            } else {
+                $this->wait();
+            }
         } else {
-            $response               = $config->response ?? $this->api($config->api->requestActivation . $this->path_info, ["identifier" => $this->request->identifier]);
-            $response->set("confirm", (
-                $response->get("token")
-                ? $this->otp()
-                : $this->snippet("wait")
-            ));
+            $this->error(500, "Service not available");
         }
-
-        $this->send($response);
     }
 
     protected function put(): void
@@ -85,12 +122,11 @@ class Activation extends Widget
     }
 
     /**
-     * @return array
      * @throws Exception
      */
-    protected function otp() : array
+    protected function otp() : void
     {
-        return Otp::toArray([], "get");
+        $this->replaceWith(Otp::class, null, "get");
     }
 
     /**
@@ -113,13 +149,15 @@ class Activation extends Widget
      * @param string $method
      * @throws Exception
      */
-    private function render(string $method) : void
+    protected function render(string $method) : void
     {
         $view                       = $this->view($method);
         $config                     = $view->getConfig();
 
-        $view->assign("help_mail", $config->help_mail ?? "support@" . $_SERVER['HTTP_HOST']);
-        $view->assign("activation_url", $this->getWebUrl($this->script_path . $this->path_info));
+        if (empty($config->help_mail)) {
+            $config->help_mail = "support@" . $_SERVER['HTTP_HOST'];
+        }
+        $view->assign($config);
 
         $this->setError($view);
         $this->setLogo($view, $config);

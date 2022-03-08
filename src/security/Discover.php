@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\security;
 
+use phpformsframework\libs\util\Cookie;
 use phpformsframework\libs\util\ServerManager;
 
 /**
@@ -275,7 +276,7 @@ class Discover
                 if ($visitor["last_update"] + (60 * 60 * 24) < time()) {
                     $visitor["last_update"] = time();
 
-                    setcookie("_uv", implode(".", $visitor), $long_time);
+                    Cookie::create("_uv", implode(".", $visitor), $long_time);
                 }
             } else {
                 $access = explode("E", hexdec(md5(
@@ -289,7 +290,7 @@ class Discover
                     "created"       => time(),
                     "last_update"   => time()
                 );
-                setcookie("_uv", implode(".", $visitor), $long_time);
+                Cookie::create("_uv", implode(".", $visitor), $long_time);
             }
         }
 

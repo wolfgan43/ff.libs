@@ -37,7 +37,7 @@ class Recover extends Widget
 {
     use CommonTemplate;
 
-    protected $requiredJs           = ["cm", "recover"];
+    protected $requiredJs           = ["cm"];
     protected $requiredCss          = ["recover"];
 
     /**
@@ -67,34 +67,27 @@ class Recover extends Widget
                 throw new Exception("Recover request not supported", 501);
             }
             $response = $this->api($config->api->{"recover_" . $action}, ["identifier" => $this->request->identifier]);
-
-            $response->set("confirm", (
-                $response->get("token")
-                ? $this->snippet("confirm")
-                : $this->snippet("wait")
-            ));
+            if ($response->get("token")) {
+                $this->confirm($action);
+            } else {
+                $this->wait($action);
+            }
         }
-
-        $this->send($response);
     }
 
     /**
      * @throws Exception
      */
-    protected function confirm() : void
+    protected function confirm(string $action) : void
     {
-        $action                     = $this->request->action;
-
         $this->render($action . "_confirm");
     }
 
     /**
      * @throws Exception
      */
-    protected function wait() : void
+    protected function wait(string $action) : void
     {
-        $action                     = $this->request->action;
-
         $this->render($action . "_wait");
     }
 
@@ -111,8 +104,10 @@ class Recover extends Widget
         $view                       = $this->view($method);
         $config                     = $view->getConfig();
 
-        $view->assign("help_mail", $config->help_mail ?? "support@" . $_SERVER['HTTP_HOST']);
-        $view->assign("recover_url", $this->getWebUrl($this->script_path . $this->path_info));
+        if (empty($config->help_mail)) {
+            $config->help_mail = "support@" . $_SERVER['HTTP_HOST'];
+        }
+        $view->assign($config);
 
         $this->setError($view);
         $this->setLogo($view, $config);

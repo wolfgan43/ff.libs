@@ -382,6 +382,8 @@ class ViewHtml implements ViewAdapter
         if (is_array($tpl_var)) {
             //@todo da togliere e inserire nella view principale
             $this->ParsedBlocks             = array_replace($this->ParsedBlocks, $tpl_var);
+        } elseif(is_object($tpl_var)) {
+            $this->ParsedBlocks             = array_replace($this->ParsedBlocks, (array) $tpl_var);
         } else {
             $this->ParsedBlocks[$tpl_var]   = $value;
         }

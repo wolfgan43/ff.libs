@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\security;
 
+use phpformsframework\libs\dto\DataAdapter;
 use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\Exception;
 
@@ -150,16 +151,13 @@ class User
      * @param string $username
      * @param string $secret
      * @param bool|null $permanent
-     * @return DataResponse
+     * @return DataAdapter
      * @throws Exception
      */
-    public static function login(string $username, string $secret, bool $permanent = null) : DataResponse
+    public static function login(string $username, string $secret, bool $permanent = null) : DataAdapter
     {
         $user                                                   = static::check($username, $secret);
         $response                                               = self::session()->create($permanent, $user->acl);
-
-        $user->login_at                                         = time();
-        $user->apply();
 
         self::set($user);
 
@@ -168,12 +166,67 @@ class User
 
     /**
      * @return DataResponse
+     * @throws Exception
      */
-    public static function logout() : DataResponse
+    public static function logout() : DataAdapter
     {
         self::session()->destroy();
         self::$user                                             = null;
 
+        return new DataResponse();
+    }
+
+    /**
+     * @param string $identifier
+     * @return DataAdapter
+     */
+    public static function activationRequest(string $identifier) : DataAdapter
+    {
+        //todo da finire
+        return new DataResponse();
+    }
+
+    /**
+     * @param string $token
+     * @param string $otp
+     * @return DataAdapter
+     */
+    public static function activationComplete(string $token, string $otp) : DataAdapter
+    {
+        //todo da finire
+
+        return new DataResponse();
+    }
+
+    /**
+     * @return DataAdapter
+     */
+    public static function recoverRequest() : DataAdapter
+    {
+        //todo da finire
+
+        return new DataResponse();
+    }
+
+    /**
+     * @return DataAdapter
+     */
+    public static function recoverChange() : DataAdapter
+    {
+        //todo da finire
+
+        return new DataResponse();
+    }
+
+    /**
+     * @param array $request
+     * @param string|null $model
+     * @return DataAdapter
+     */
+    public static function signUp(array $request, string $model = null) : DataAdapter
+    {
+        //todo da finire
+        
         return new DataResponse();
     }
 }

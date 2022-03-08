@@ -29,7 +29,7 @@ use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\Hook;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\storage\FilemanagerFs;
-use phpformsframework\libs\util\ServerManager;
+use phpformsframework\libs\util\Cookie;
 use phpformsframework\libs\Exception;
 use stdClass;
 
@@ -39,8 +39,6 @@ use stdClass;
  */
 class Session
 {
-    use ServerManager;
-
     private const ERROR_SESSION_INVALID                         = "Invalid Session";
     private const ERROR_SESSION_HEADER_SENT                     = "Error: Session header already sent";
 
@@ -48,8 +46,6 @@ class Session
     private const HOOK_ON_AFTER_CREATE                          = "Session::onAfterCreate";
     private const HOOK_ON_AFTER_DESTROY                         = "Session::onAfterDestroy";
     private const HOOK_ON_AFTER_CHECK                           = "Session::onAfterCheck";
-
-    private const COOKIE_EXPIRE                                 = 60 * 60 * 24 * 365;
 
     private const GROUP_LABEL                                   = "group";
     private const SESSION_PREFIX_FILE_LABEL                     = "sess_";
@@ -167,15 +163,19 @@ class Session
     public function create(bool $permanent = null, string $acl = null) : DataResponse
     {
         $dataResponse                                           = new DataResponse();
-        $invalid_session                                        = false;
-        $permanent                                              = $permanent ?? Kernel::$Environment::SESSION_PERMANENT;
-        $domain                                                 = $this->getPrimaryDomain();
+        $params = (object) [
+            "invalidSession"    => false,
+            "acl"               => $acl,
+            "lifetime"          => (
+                $permanent ?? Kernel::$Environment::SESSION_PERMANENT
+                ? time() + Cookie::EXPIRATION_LONG
+                : null
+            )
+        ];
 
-        Hook::handle(self::HOOK_ON_BEFORE_CREATE, $invalid_session, array(
-            "domain"    => $domain,
-            "permanent" => $permanent
-        ));
-        if ($invalid_session) {
+        Hook::handle(self::HOOK_ON_BEFORE_CREATE, $params);
+
+        if ($params->invalidSession) {
             return $dataResponse->error(401, self::ERROR_SESSION_INVALID);
         }
 
@@ -186,13 +186,12 @@ class Session
         $this->sessionStart(true);
 
         Hook::handle(self::HOOK_ON_AFTER_CREATE, $this->session_id);
-
         /*
          * Set Cookie
          */
-        $this->cookieCreate($this->session_name, $this->session_id, $permanent);
-        if ($acl) {
-            $this->cookieCreate(self::GROUP_LABEL, $acl, $permanent);
+        Cookie::create($this->session_name, $this->session_id, $params->lifetime);
+        if ($params->acl) {
+            Cookie::create(self::GROUP_LABEL, $params->acl, $params->lifetime);
         }
 
         $dataResponse->set("session", array(
@@ -214,8 +213,8 @@ class Session
         $this->session_started                                  = false;
         header_remove("Set-Cookie");
 
-        $this->cookieDestroy($this->session_name);
-        $this->cookieDestroy(self::GROUP_LABEL);
+        Cookie::destroy($this->session_name);
+        Cookie::destroy(self::GROUP_LABEL);
 
         Hook::handle(self::HOOK_ON_AFTER_DESTROY);
     }
@@ -307,60 +306,13 @@ class Session
 
     /**
      * @param string|null $path
+     * @throws Exception
      */
     private function setSessionPath(string $path = null) : void
     {
         $this->session_save_path = $path ?? Kernel::$Environment::SESSION_SAVE_PATH ?? sys_get_temp_dir() ?? session_save_path();
         if (@session_save_path($this->session_save_path) === false) {
-            die("Unable to Write Session Save Path: '" . $this->session_save_path . "'");
+            die("Unable to Write Session Save Path: " . $this->session_save_path);
         }
-    }
-
-    /**
-     * @param string $name
-     * @param string $value
-     * @param bool $permanent
-     */
-    private function cookieCreate(string $name, string $value, bool $permanent) : void
-    {
-        $sessionCookie                                          = (object) session_get_cookie_params();
-        $lifetime                                               = (
-            $permanent
-            ? time() + self::COOKIE_EXPIRE
-            : $sessionCookie->lifetime
-        );
-
-        setcookie($name, $value, $lifetime, $sessionCookie->path, $sessionCookie->domain, $this->isHTTPS(), Kernel::$Environment::SESSION_COOKIE_HTTPONLY);
-        $_COOKIE[$name]                                         = $value;
-    }
-
-    /**
-     * @param string $name
-     */
-    private function cookieDestroy(string $name) : void
-    {
-        $secure                                                 = $this->isHTTPS();
-        $sessionCookie                                          = (object) session_get_cookie_params();
-
-        setcookie($name, false, $sessionCookie->lifetime, $sessionCookie->path, $sessionCookie->domain, $secure, Kernel::$Environment::SESSION_COOKIE_HTTPONLY);
-        setcookie($name, false, $sessionCookie->lifetime, $sessionCookie->path, $this->hostname(), $secure, Kernel::$Environment::SESSION_COOKIE_HTTPONLY);
-        setcookie($name, false, $sessionCookie->lifetime, $sessionCookie->path, '.' . $this->getPrimaryDomain(), $secure, Kernel::$Environment::SESSION_COOKIE_HTTPONLY);
-
-        unset($_COOKIE[$name]);
-    }
-
-    /**
-     * @return string|null
-     */
-    private function getPrimaryDomain() : ?string
-    {
-        $regs                                               = array();
-        if (preg_match('/(?P<domain>[a-z0-9][a-z0-9\-]{1,63}\.[a-z.]{2,6})$/i', $this->hostname(), $regs)) {
-            $domain_name                                    = $regs['domain'];
-        } else {
-            $domain_name                                    = $this->hostname();
-        }
-
-        return $domain_name;
     }
 }

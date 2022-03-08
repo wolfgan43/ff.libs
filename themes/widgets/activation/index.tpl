@@ -19,13 +19,13 @@
                         <!--EndSezDescription-->
                     </div>
 
-                    <form action="javascript:void(0);" onsubmit="hcore.security.activation('{activation_url}', '{redirect_url}');" >
+                    <form method="post" class="cm-xhr" data-component="#activation-box">
                         <!--BeginSezError-->
                         <div class="alert alert-warning">{error}</div>
                         <!--EndSezError-->
                         <div class="form-group">
-                            <label for="username">{_Email}</label>
-                            <input id="username" class="form-control" name="username" type="email" required="required" placeholder="{_Email}">
+                            <label for="identifier">{_Email}</label>
+                            <input id="identifier" class="form-control" name="identifier" type="email" required="required" placeholder="{_Email}">
                         </div>
 
                         <div class="form-group mb-0 text-center">

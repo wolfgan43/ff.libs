@@ -20,9 +20,8 @@
                     </div>
                 </div> <!-- end card-body -->
                 <div class="card-footer">
-                    <div class="col-12 text-center mt-2">
-                        <span>{_Check your Junk Mail folder if yuou don't find our mail. If you need help contact us: }<a href='mailto:{help_mail}'>{help_mail}</a>
-                        </span>
+                    <div class="form-group mb-0 text-center">
+                        <a class="btn btn-primary" href="{login_path}">Login</a>
                     </div>
                 </div>
             </div>

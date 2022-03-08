@@ -1,5 +1,6 @@
 let cm = (function () {
     const _PATHNAME             = "pathname";
+    const _ALERT                = "alert";
     const _CSS                  = "css";
     const _STYLE                = "style";
     const _JS                   = "js";
@@ -68,7 +69,9 @@ let cm = (function () {
                 '<button id="{bt_id}" type="button" class="btn">{label}</button>',
         },
         "tokens"                : {
-            "error"             : "alert alert-danger"
+            "error"             : "alert alert-danger",
+            "success"           : "alert alert-success",
+            "info"              : "alert alert-primary"
         }
     };
 
@@ -112,7 +115,7 @@ let cm = (function () {
 				});
 			}
 		},
-        "error" : (function(container, selector) {
+        "alertBox" : (function(container, selector) {
             function wrapper() {
                 let errorClass = selector || settings.class.error;
                 if (!container.querySelector("." + errorClass)) {
@@ -124,16 +127,29 @@ let cm = (function () {
                 return container.querySelector("." + errorClass);
             }
 
+            function alertBox(type, errorMessage) {
+                let error = document.createElement("DIV");
+
+                error.className = type;
+                error.innerHTML = errorMessage;
+                wrapper().appendChild(error);
+            }
+
             return {
-                "set" : function(errorMessage) {
+                "error" : function(errorMessage) {
                     console.error(errorMessage);
-
                     this.clear();
-                    let error = document.createElement("DIV");
-
-                    error.className = settings.tokens.error;
-                    error.innerHTML = errorMessage;
-                    wrapper().appendChild(error);
+                    alertBox(settings.tokens.error, errorMessage);
+                },
+                "success" : function(errorMessage) {
+                    console.log(errorMessage);
+                    this.clear();
+                    alertBox(settings.tokens.success, errorMessage);
+                },
+                "info" : function(errorMessage) {
+                    console.info(errorMessage);
+                    this.clear();
+                    alertBox(settings.tokens.info, errorMessage);
                 },
                 "clear" : function() {
                     wrapper().innerHTML = "";
@@ -330,13 +346,17 @@ let cm = (function () {
                     e.preventDefault();
 
                     let self = this;
+                    cm.alertBox(self).clear();
                     self.style["opacity"] = "0.8";
                     cm.api.post(self.action, new FormData(self))
                         .then(function(dataResponse) {
                             cm.inject(dataResponse, self.getAttribute("data-component"));
+                            if (dataResponse[_ALERT]) {
+                                cm.alertBox(self).success(dataResponse[_ALERT]);
+                            }
                         })
                         .catch(function(errorMessage) {
-                            cm.error(self).set(errorMessage);
+                            cm.alertBox(self).error(errorMessage);
                         })
                         .finally(function() {
                             self.style["opacity"] = null;
@@ -761,13 +781,13 @@ let cm = (function () {
 							return;
 						}
 
-						cm.error(privates.$container.querySelector("." + settings.modal.body), settings.modal.error).set(message);
+						cm.alertBox(privates.$container.querySelector("." + settings.modal.body), settings.modal.error).error(message);
                     },
                     "hide" : function() {
 						if (!privates.$container) {
 							return;
 						}
-                        cm.error(privates.$container.querySelector("." + settings.modal.body), settings.modal.error).clear();
+                        cm.alertBox(privates.$container.querySelector("." + settings.modal.body), settings.modal.error).clear();
                     }
                 },
                 "show" : function show() {

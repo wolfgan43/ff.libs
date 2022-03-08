@@ -19,13 +19,13 @@
                         <!--EndSezDescription-->
                     </div>
 
-                    <form action="javascript:void(0);" onsubmit="hcore.security.registration('{registration_url}', '{redirect_url}');">
+                    <form method="post" class="cm-xhr" data-component="#registration-box">
                         <!--BeginSezError-->
                         <div class="alert alert-warning">{error}</div>
                         <!--EndSezError-->
                         <div class="form-group">
                             <label for="username">{_Username}</label>
-                            <input class="form-control" name="username" type="text" id="username" required="required" placeholder="{_Enter your email or username or tel}">
+                            <input id="username" class="form-control" name="identifier" type="text" required="required" placeholder="{_Enter your email or username or tel}">
                         </div>
 
                         <div class="form-group">
@@ -34,8 +34,8 @@
                         </div>
 
                         <div class="form-group" >
-                            <label for="username">{_Password confirm}</label>
-                            <input id="username" class="form-control" type="password" placeholder="{_Confirm password}*" name='confirm-password' required="required"/>
+                            <label for="cpassword">{_Password confirm}</label>
+                            <input id="cpassword" class="form-control" type="password" placeholder="{_Confirm password}*" name='confirm-password' required="required"/>
                         </div>
 
                         <!--BeginSezEmail-->

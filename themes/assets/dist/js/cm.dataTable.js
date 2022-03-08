@@ -55,11 +55,11 @@ cm.dataTable = (function () {
                 dt.style["opacity"] = "0.5";
                 cm.api.search(api.toString())
                     .then(function(response) {
-                        cm.error(dt).clear();
+                        cm.alertBox(dt).clear();
                         draw(response);
                     })
                     .catch(function(errorMessage) {
-                        cm.error(dt).set(errorMessage);
+                        cm.alertBox(dt).error(errorMessage);
                     })
                     .finally(function() {
                         dt.style["opacity"] = null;
@@ -154,7 +154,7 @@ cm.dataTable = (function () {
                     pages += '<li>' + (
                         i === page
                             ? '<span class="page">' + i + '</span>'
-                            : '<a href="' + url.toString() + '" class="page' + (i === page ? " current" : "") + '">' + i + '</a>'
+                            : '<a href="' + url.toString() + '" class="page' + '">' + i + '</a>'
                     ) + '</li>';
                 }
 

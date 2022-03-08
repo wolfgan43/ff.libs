@@ -31,6 +31,7 @@ use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\Response;
 use phpformsframework\libs\security\widgets\Login;
+use phpformsframework\libs\util\Cookie;
 use phpformsframework\libs\util\ServerManager;
 use phpformsframework\libs\util\TypesConverter;
 use phpformsframework\libs\dto\ConfigRules;
@@ -246,13 +247,12 @@ class Buckler implements Configurable
 
         if ($app::$Page->csrf) {
             if (empty($_SERVER["HTTP_X_CSRF_TOKEN"])) {
-                setcookie("csrf", Validator::csrf(self::serverAddr() . $app::$Page->path_info));
+                Cookie::create("csrf", Validator::csrf(self::serverAddr() . $app::$Page->path_info));
             } elseif (Validator::csrf(self::serverAddr() . $app::$Page->path_info) !== $_SERVER["HTTP_X_CSRF_TOKEN"]) {
                 Response::sendError(403, "CSRF validation failed.");
             }
         } elseif (isset($_COOKIE["csrf"])) {
-            unset($_COOKIE["csrf"]);
-            setcookie('csrf', null, -1);
+            Cookie::destroy("csrf");
         }
 
         if (is_callable($app::$Page->onLoad)) {

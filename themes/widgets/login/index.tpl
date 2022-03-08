@@ -41,7 +41,7 @@
                     <!--BeginSezStayConnect-->
                     <div class="form-group mb-3">
                         <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="stayconnected" name="stayconnected" value="1">
+                            <input type="checkbox" class="custom-control-input" id="stayconnected" name="permanent" value="1">
                             <label class="custom-control-label" for="stayconnected">{_Remember me}</label>
                         </div>
                     </div>

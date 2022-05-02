@@ -30,12 +30,12 @@
 
                         <div class="form-group">
                             <label for="password">{_Password}</label>
-                            <input id="password" class="form-control" name="password" type="password" required="required" placeholder="{_Enter your password}">
+                            <input id="password" class="form-control" type="password" placeholder="{_Enter your password}" name="password" required="required" autocomplete="off" />
                         </div>
 
                         <div class="form-group" >
                             <label for="cpassword">{_Password confirm}</label>
-                            <input id="cpassword" class="form-control" type="password" placeholder="{_Confirm password}*" name='confirm-password' required="required"/>
+                            <input id="cpassword" class="form-control" type="password" placeholder="{_Confirm password}*" name='confirm-password' required="required" autocomplete="off" />
                         </div>
 
                         <!--BeginSezEmail-->

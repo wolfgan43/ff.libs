@@ -1,0 +1,9 @@
+{
+   "title":"Recover Email",
+   "description":"Your email account has been changed!",
+   "redirect": "\/login",
+   "logo": "100x50",
+   "logo_path": null,
+   "login_path": "\/login",
+   "help_mail": null
+}

@@ -334,6 +334,8 @@ class FilemanagerWeb implements Dumpable
                 ? http_build_query($params)
                 : json_encode($params)
             );
+
+            $headers["Content-Length"]      = "Content-Length: " . strlen($opts["http"]["content"]);
         }
 
         if ($user_agent) {

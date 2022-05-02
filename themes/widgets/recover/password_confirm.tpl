@@ -23,21 +23,21 @@
                         <!--BeginSezError-->
                         <div class="alert alert-warning">{error}</div>
                         <!--EndSezError-->
-                        <div class="form-group" >
+                        <div class="form-group">
                             <label for="password">{_New password}</label>
-                            <input id="password" class="form-control" type="password" placeholder="{_Insert a new password}*" name='password' required="required"/>
+                            <input id="password" class="form-control" type="password" placeholder="{_Insert a new password}*" name='password' required="required" autocomplete="off" />
                         </div>
 
                         <div class="form-group" >
-                            <label for="confirm-password">{_New password confirm}</label>
-                            <input id="confirm-password" class="form-control" type="password" placeholder="{_Confirm new password}*" name='confirm-password' required="required"/>
+                            <label for="cpassword">{_New password confirm}</label>
+                            <input id="cpassword" class="form-control" type="password" placeholder="{_Confirm new password}*" name='confirm-password' required="required" autocomplete="off" />
                         </div>
 
                         <div class="form-group">
-                            <label for="code-confirm">{_Code}</label>
-                            <input id="code-confirm" class="form-control" name="code-confirm" type="number" required="required" placeholder="{_Insert your code}">
+                            <label for="ccode">{_Code}</label>
+                            <input id="ccode" class="form-control" type="number" placeholder="{_Insert your code}" name="code-confirm" required="required" autocomplete="off" />
 
-                            <a class="resend-code" href="javascript:void(0);" onclick="hcore.security.recover('{recover_url}', '{redirect_url}', true);">Resend code</a>
+                            <a class="resend-code cm-xhr" href="{resend_code}">Resend code</a>
                         </div>
 
                         <div class="form-group mb-0 text-center">

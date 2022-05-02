@@ -58,14 +58,13 @@ abstract class MessengerAdapter
      */
     public function __construct()
     {
-
         try {
             $env                                            = Kernel::$Environment;
             $prefix                                         = $env . '::' . (
                 defined($env . '::' . static::PREFIX . "_SMS_SID")
                     ? static::PREFIX . "_SMS_"
                     : "SMS_"
-                );
+            );
 
             $this->sid                                      = constant($prefix . "SID");
             $this->token                                    = constant($prefix . "TOKEN");

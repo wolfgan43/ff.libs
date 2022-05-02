@@ -629,4 +629,12 @@ class RequestPage extends Mappable
     {
         return $this->isXhr || $this->accept() == "application/json";
     }
+
+    /**
+     * @return string
+     */
+    public function urlReferer() : string
+    {
+        return $this->referer() ?? dirname($this->script_path);
+    }
 }

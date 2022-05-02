@@ -106,6 +106,17 @@ class ViewSmarty extends Smarty implements ViewAdapter
     }
 
     /**
+     * @param string $content
+     * @return ViewAdapter
+     */
+    public function fetchContent(string $content): ViewAdapter
+    {
+        // TODO: Implement fetchContent() method.
+
+        return $this;
+    }
+
+    /**
      * @param null $template
      * @param null $cache_id
      * @param null $compile_id
@@ -173,5 +184,14 @@ class ViewSmarty extends Smarty implements ViewAdapter
     private function setAssignDefault() : void
     {
         $this->assign("site_path", Kernel::$Environment::SITE_PATH);
+    }
+
+    /**
+     * @param string|null $lang_code
+     * @return $this
+     */
+    public function setLang(string $lang_code = null) : ViewAdapter
+    {
+        return $this;
     }
 }

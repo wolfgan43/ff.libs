@@ -32,6 +32,7 @@ use phpformsframework\libs\gui\Controller;
 use phpformsframework\libs\gui\Resource;
 use phpformsframework\libs\gui\View;
 use phpformsframework\libs\Hook;
+use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\storage\FilemanagerFs;
@@ -49,10 +50,10 @@ class ViewHtml implements ViewAdapter
 
     protected const APPLET                      = '/\{\[(.+)\]\}/U';
 
+    private const ERROR_LANG_NOT_VALID          = "lang not valid";
     private const HOOK_ON_FETCH_CONTENT         = 'View::onFetchContent';
     private const TPL_NORMALIZE                 = ['../', '.tpl'];
 
-    //private static $cache                       = null;
 
     public $root_element						= "main";
 
@@ -69,6 +70,7 @@ class ViewHtml implements ViewAdapter
 
     private $cache                              = [];
     private $widget                             = null;
+    private $lang				                = null;
 
     /**
      * @var bool|string[strip|strong_strip|minify]
@@ -136,7 +138,7 @@ class ViewHtml implements ViewAdapter
      */
     private function loadFile(string $template_path) : void
     {
-        $tpl_name = Translator::infoLangCode() . "-" . str_replace(
+        $tpl_name = Translator::infoLangCode($this->lang) . "-" . str_replace(
             [
                 Constant::DISK_PATH . "/",
                 "_",
@@ -160,7 +162,7 @@ class ViewHtml implements ViewAdapter
             $this->cache = [
                 $template_path  => filemtime($template_path)
             ];
-            if ($cache_file = Translator::infoCacheFile()) {
+            if ($cache_file = Translator::infoCacheFile($this->lang)) {
                 $this->cache[$cache_file] = filemtime($cache_file);
             }
 
@@ -211,7 +213,7 @@ class ViewHtml implements ViewAdapter
             foreach ($DVars as $nName => $count) {
                 if (substr($nName, 0, 1) == "_") {
                     $translation->key[]                     = "{" . $nName . "}";
-                    $translation->value[]                   = Translator::getWordByCode(substr($nName, 1));
+                    $translation->value[]                   = Translator::getWordByCode(substr($nName, 1), $this->lang);
                     unset($DVars[$nName]);
                 } elseif (substr($nName, 0, 7) == "include" && substr_count($nName, '"') == 2) {
                     $template_file                          =  explode('"', $nName)[1];
@@ -605,5 +607,20 @@ class ViewHtml implements ViewAdapter
     private function setAssignDefault() : void
     {
         $this->assign("site_path", Kernel::$Environment::SITE_PATH);
+    }
+
+    /**
+     * @param string|null $lang_code
+     * @return ViewHtml
+     * @throws Exception
+     */
+    public function setLang(string $lang_code = null) : ViewAdapter
+    {
+        if ($lang_code && !Locale::isAcceptedLanguage($lang_code)) {
+            throw new Exception(self::ERROR_LANG_NOT_VALID, 400);
+        }
+        $this->lang                        = $lang_code;
+
+        return $this;
     }
 }

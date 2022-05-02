@@ -49,7 +49,6 @@ class ViewBlade extends BladeOne implements ViewAdapter
 {
     const VIEW_PATH                     = DIRECTORY_SEPARATOR . "blade";
 
-
     private $tpl_file                   = null;
     private $widget                     = null;
 
@@ -100,6 +99,17 @@ class ViewBlade extends BladeOne implements ViewAdapter
     }
 
     /**
+     * @param string $content
+     * @return ViewAdapter
+     */
+    public function fetchContent(string $content): ViewAdapter
+    {
+        // TODO: Implement fetchContent() method.
+
+        return $this;
+    }
+
+    /**
      * @return string
      * @throws Exception
      */
@@ -119,5 +129,14 @@ class ViewBlade extends BladeOne implements ViewAdapter
     {
         // TODO: Implement parse() method.
         return false;
+    }
+
+    /**
+     * @param string|null $lang_code
+     * @return $this
+     */
+    public function setLang(string $lang_code = null) : ViewAdapter
+    {
+        return $this;
     }
 }

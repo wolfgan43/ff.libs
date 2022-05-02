@@ -181,26 +181,22 @@ abstract class OrmItem
      * @param int|null $limit
      * @param int|null $offset
      * @param int|null $draw
-     * @param string|array|null $toDataResponse
+     * @param null $model_name
      * @return DataTableResponse
      * @throws Exception
      * @todo da tipizzare
      */
-    public static function search(array $query = null, array $order = null, int $limit = null, int $offset = null, int $draw = null, $toDataResponse = null)
+    public static function search(array $query = null, array $order = null, int $limit = null, int $offset = null, int $draw = null, $model_name = null)
     {
         $dataTableResponse                                                      = new DataTableResponse();
         $item                                                                   = new static();
 
         $where                                                                  = null;
         if (is_array($query)) {
-            $dtd                                                                = $item->db->dtd();
             foreach ($query as $key => $value) {
                 if (isset(self::LOGICAL_OPERATORS[$key])) {
                     $where[$key]                                                = $value;
                     continue;
-                }
-                if (!isset($dtd->$key)) {
-                    throw new Exception("Field " . $key . " not found in table " . $item::TABLE . " (" . $item::COLLECTION . ")", 500);
                 }
 
                 if (is_array($value)) {
@@ -247,9 +243,19 @@ abstract class OrmItem
             }
         }
 
-        $toDataResponse                                                         = $toDataResponse ?? $item::DATARESPONSE;
-        if (!empty($toDataResponse) && !is_array($toDataResponse) && !($toDataResponse = Model::columns($toDataResponse))) {
-            throw new Exception("Model not found", 404);
+        $toDataResponse = $item::DATARESPONSE;
+        if (!empty($model_name)) {
+            foreach (Model::columns($model_name) as $dbField => $keyField) {
+                $toDataResponse[$dbField] = $keyField;
+                if (isset($where[$keyField])) {
+                    $where[$dbField] = $where[$keyField];
+                    unset($where[$keyField]);
+                }
+                if (isset($sort[$keyField])) {
+                    $sort[$dbField] = $sort[$keyField];
+                    unset($sort[$keyField]);
+                }
+            }
         }
 
         $recordset                                                              = $item->db
@@ -349,20 +355,10 @@ abstract class OrmItem
      */
     public function &extend(string $model_name = null, array $fill = null) : ?OrmModel
     {
-        /*** TEST
-        $user = new UserData(["ID" => 1]);
-        print_r($user->toDataResponse());
-
-        $user = new Model("user");
-        $res = $user->read(["ID" => 1]);
-        print_r($res->get(0)->toDataResponse());
-        die();
-        */
-
         $this->model                                                            = $model_name;
         $this->models[$this->model]                                             = (
             $this->model
-            ? new OrmModel($this->model, $this, $fill)
+            ? new OrmModel($this->model, $this->primaryIndexes, $fill)
             : null
         );
 
@@ -449,7 +445,7 @@ abstract class OrmItem
             empty($dtd->dataResponse)
                                                                     ? array_intersect_key(get_class_vars($mapClass), $informationSchema->dtd)
                                                                     : array_fill_keys($dtd->dataResponse, true)
-                                                                );
+        );
         $rel->indexes                                           = null;
         $rel->indexes_primary                                   = null;
 
@@ -744,7 +740,7 @@ abstract class OrmItem
      */
     public function toDataResponse(string $model_name = null, array $rawdata = null)
     {
-        $response = new DataResponse($this->getPublicVars());
+        $response = new DataResponse($this->toArray());
         if (!$this->recordKey) {
             $response->error(404, $this->db->getName() . " not stored");
         }
@@ -754,7 +750,7 @@ abstract class OrmItem
         }
 
         if ($this->model) {
-            $response->set($this->model, $this->models[$this->model]->toArray());
+            $response->set($this->models[$this->model]->schema()->table, $this->models[$this->model]->toArray());
         }
         return $response;
     }

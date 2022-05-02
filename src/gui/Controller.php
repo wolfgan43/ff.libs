@@ -72,6 +72,7 @@ abstract class Controller
 
     private const ERROR_PAGE_NOT_FOUND_CODE         = 404;
     private const ERROR_PAGE_NOT_FOUND              = "Page not found";
+    private const ERROR_SERVER_NOT_AVAILABLE        = "Server not available";
     private const ERROR_COMPONENT_NOT_IMPLEMENTED   = "Component not implemented";
 
     private const COMPONENT_DATA_RECORD         = 'dr';
@@ -93,6 +94,7 @@ abstract class Controller
     protected $script_path                      = null;
     protected $path_info                        = null;
     protected $isXhr                            = null;
+    protected $referer                          = null;
 
     protected $error                            = null;
 
@@ -162,12 +164,13 @@ abstract class Controller
 
         $this->class_name                       = str_replace(self::CONTROLLER_PREFIX, "", strtolower($this->getClassName()));
         $this->method                           = $page->method;
-        $this->request                          = (object) $page->getRequest();
+        $this->request                          = $this->encodeEntities($page->getRequest());
         $this->headers                          = (object) $page->getHeaders();
         $this->authorization                    = $page->getAuthorization();
         $this->script_path                      = $page->script_path;
         $this->path_info                        = $page->path_info;
         $this->isXhr                            = $page->isAjax();
+        $this->referer                          = $page->urlReferer();
 
         $this->config                           = $config;
         $this->response                         = new DataResponse();
@@ -175,8 +178,7 @@ abstract class Controller
         $this->layoutException                  = $page->layout_exception;
 
         if (!empty($page->status)) {
-            $this->error                        = $page->error;
-            $this->http_status_code             = $page->status;
+            $this->error($page->status, $page->error, false);
         }
 
         $adapter                                = static::CONTROLLER_ENGINE ?? Kernel::$Environment::CONTROLLER_ADAPTER;
@@ -225,10 +227,21 @@ abstract class Controller
         return new Api($api_path, $headers);
     }
 
-    protected function redirectBack() : void
+    /**
+     * @param bool $close
+     * @param string|null $callback
+     * @param array|null $params
+     * @throws Exception
+     */
+    protected function redirectBack(bool $close = false, string $callback = null, array $params = null) : void
     {
-        $this->redirect($this->request->redirect ?? dirname($this->script_path));
+        if (($close || $callback) && $this->isXhr) {
+            $this->send(["close" => $close, "callback" => $callback, "params" => $params]);
+        } else {
+            $this->redirect($this->request->redirect ?? $this->referer);
+        }
     }
+
     /**
      * Utility Builder
      * ------------------------------------------------------------------------
@@ -569,12 +582,18 @@ abstract class Controller
      * @param string|null $msg
      * @return $this
      */
-    protected function error(int $status, string $msg = null) : self
+    protected function error(int $status, string $msg = null, bool $debug = true) : self
     {
-        $this->debug($msg);
-
         $this->http_status_code     = $status;
-        $this->error                = $msg;
+        $this->error                = (
+            $status < 500
+            ? $msg
+            : self::ERROR_SERVER_NOT_AVAILABLE
+        );
+
+        if ($debug) {
+            $this->debug($this->error, $msg);
+        }
 
         return $this;
     }
@@ -745,6 +764,9 @@ abstract class Controller
         return $this;
     }
 
+    /**
+     * @return View
+     */
     protected function default() : View
     {
         $this->{$this->route}();
@@ -752,9 +774,14 @@ abstract class Controller
         return $this->view;
     }
 
-    protected function debug(string $msg = null) : self
+    /**
+     * @param string $msg
+     * @param string|null $debug
+     * @return $this
+     */
+    protected function debug(string $msg, string $debug = null) : self
     {
-        $this->adapter->debug($msg);
+        $this->adapter->debug($msg, $debug);
 
         return $this;
     }
@@ -836,7 +863,7 @@ abstract class Controller
                 $this->addJavascript($template);
             }
 
-            $this->views[$template] = View::fetchFile($file_path, static::TEMPLATE_ENGINE, $this)
+            $this->views[$template] = View::fetchFile($file_path, null, static::TEMPLATE_ENGINE, $this)
                 ->assign($this->assigns);
         }
 
@@ -920,5 +947,27 @@ abstract class Controller
         $this->requiredJs       = [];
         $this->requiredCss      = [];
         $this->requiredFonts    = [];
+    }
+
+    /**
+     * @param array $params
+     * @return object
+     */
+    public static function encodeEntities(array $params) : object
+    {
+        foreach ($params as $i => $param) {
+            if ($param === null || is_object($param)) {
+                $params[$i] = null;
+                continue;
+            }
+
+            $params[$i] = (
+                is_array($param)
+                ? self::encodeEntities($param)
+                : ControllerAdapter::encodeEntity($param)
+            );
+        }
+
+        return (object) $params;
     }
 }

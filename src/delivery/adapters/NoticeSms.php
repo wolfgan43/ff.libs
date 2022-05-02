@@ -27,6 +27,7 @@ namespace phpformsframework\libs\delivery\adapters;
 
 use phpformsframework\libs\delivery\NoticeAdapter;
 use phpformsframework\libs\dto\DataError;
+use phpformsframework\libs\Exception;
 use phpformsframework\libs\security\Validator;
 use phpformsframework\libs\delivery\drivers\Messenger;
 
@@ -50,6 +51,7 @@ class NoticeSms extends NoticeAdapter
     /**
      * @param string $message
      * @return DataError
+     * @throws Exception
      */
     public function send(string $message) : DataError
     {
@@ -63,6 +65,7 @@ class NoticeSms extends NoticeAdapter
      * @param array|null $fields
      * @param string|null $template
      * @return DataError
+     * @throws Exception
      */
     public function sendLongMessage(string $title, array $fields = null, string $template = null) : DataError
     {
@@ -73,10 +76,11 @@ class NoticeSms extends NoticeAdapter
 
     /**
      * @return DataError
+     * @throws Exception
      */
     protected function process() : DataError
     {
-        return Messenger::getInstance($this->connection_service)
+        return Messenger::getInstance($this->connection_service, $this->lang)
             ->setConnection($this->connection)
             ->setFrom($this->fromKey, $this->fromLabel)
             ->addAddresses($this->recipients)

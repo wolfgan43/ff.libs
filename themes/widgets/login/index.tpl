@@ -19,7 +19,7 @@
                     <!--EndSezDescription-->
                 </div>
 
-                <form method="post" class="cm-xhr">
+                <form method="post" class="cm-xhr" data-component="#login-box">
                     <!--BeginSezError-->
                     <div class="alert alert-warning">{error}</div>
                     <!--EndSezError-->
@@ -27,8 +27,8 @@
                         <!--BeginSezRecoverAccount-->
                         <a href="{recover_account_url}" class="text-muted float-right" tabindex="-1"><small>{_Forgot your account?}</small></a>
                         <!--EndSezRecoverAccount-->
-                        <label for="emailaddress">{_Account}</label>
-                        <input class="form-control" name="identifier" type="text" id="emailaddress" required="required" placeholder="{_Enter your email or username or tel}" autocomplete="username">
+                        <label for="identifier">{_Account}</label>
+                        <input id="identifier" class="form-control" type="text" placeholder="{_Enter your email or username or tel}" name="identifier" required="required" autocomplete="username">
                     </div>
 
                     <div class="form-group">
@@ -36,7 +36,7 @@
                         <a href="{recover_password_url}" class="text-muted float-right" tabindex="-1"><small>{_Forgot your password?}</small></a>
                         <!--EndSezRecoverPassword-->
                         <label for="password">{_Password}</label>
-                        <input class="form-control" name="password" type="password" required="required" id="password" placeholder="{_Enter your password}" autocomplete="current-password">
+                        <input id="password" class="form-control" type="password" placeholder="{_Enter your password}" name="password" required="required" autocomplete="current-password" />
                     </div>
                     <!--BeginSezStayConnect-->
                     <div class="form-group mb-3">
@@ -92,7 +92,7 @@
             <!--BeginSezRegistration-->
             <div class="card-footer">
                 <div class="col-12 text-center mt-2">
-                    <p class="text-muted">{_Don't have an account?}<a href="{registration_url}" class="text-dark ml-1"><strong>{_Sign Up}</strong></a></p>
+                    <p class="text-muted">{_Dont have an account?}<a href="{registration_url}" class="text-dark ml-1"><strong>{_Sign Up}</strong></a></p>
                 </div>
             </div>
             <!--EndSezRegistration-->

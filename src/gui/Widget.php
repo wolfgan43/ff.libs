@@ -166,7 +166,7 @@ abstract class Widget extends Controller
                 }
             }
 
-            $this->views[$template]                 = View::fetchFile($resources->tpl[$template], static::TEMPLATE_ENGINE, $this, $this->class_name, $this->config($resources->cfg[$template] ?? null));
+            $this->views[$template]                 = View::fetchFile($resources->tpl[$template], null, static::TEMPLATE_ENGINE, $this, $this->class_name, $this->config($resources->cfg[$template] ?? null));
         }
 
         return $this->view                          =& $this->views[$template];

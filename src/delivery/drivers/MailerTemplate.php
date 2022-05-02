@@ -26,6 +26,7 @@
 namespace phpformsframework\libs\delivery\drivers;
 
 use phpformsframework\libs\Constant;
+use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\storage\FilemanagerScan;
 use phpformsframework\libs\gui\View;
@@ -62,13 +63,14 @@ final class MailerTemplate extends Mailer
     /**
      * MailerTemplate constructor.
      * @param string $template
+     * @param string|null $lang_code
      * @throws Exception
      */
-    public function __construct(string $template)
+    public function __construct(string $template, string $lang_code = null)
     {
         $this->loadTemplate($template);
 
-        parent::__construct();
+        parent::__construct($lang_code);
     }
 
     /**
@@ -80,9 +82,9 @@ final class MailerTemplate extends Mailer
     {
         $this->fields                                       = (
             is_array($fields)
-                                                                ? $fields
-                                                                : array("content" => $fields)
-                                                            );
+            ? $fields
+            : array("content" => $fields)
+        );
         return $this;
     }
 
@@ -95,7 +97,7 @@ final class MailerTemplate extends Mailer
         return str_replace(
             array_keys($this->fields),
             array_values($this->fields),
-            $this->subject
+            Translator::getWordByCode($this->subject, $this->lang)
         );
     }
 
@@ -144,12 +146,12 @@ final class MailerTemplate extends Mailer
                     });
             }
 
-            $this->tpl_html = View::fetchFile($this->tpl_html_path);
+            $this->tpl_html                     = View::fetchFile($this->tpl_html_path, $this->lang);
 
             if (is_file(dirname($this->tpl_html_path) . "/default.txt")) {
-                $this->tpl_text_path = dirname($this->tpl_html_path) . "/default.txt";
+                $this->tpl_text_path            = dirname($this->tpl_html_path) . "/default.txt";
 
-                $this->tpl_text = View::fetchFile($this->tpl_text_path);
+                $this->tpl_text                 = View::fetchFile($this->tpl_text_path, $this->lang);
             }
         } else {
             throw new Exception("Template not found" . (Kernel::$Environment::DEBUG ? ": " . $this->tpl_html_path : ""), 404);
@@ -170,11 +172,7 @@ final class MailerTemplate extends Mailer
             $group_type = array("Table" => true);
 
             foreach ($this->fields as $fields_key => $fields_value) {
-                $field_type = (
-                    isset($fields_value["settings"]["type"])
-                                ? $fields_value["settings"]["type"]
-                                : ""
-                            );
+                $field_type = $fields_value["settings"]["type"] ?? "";
                 if (is_array($fields_value) && !empty($fields_value)) {
                     $count_row = 0;
                     foreach ($fields_value as $fields_value_key => $fields_value_value) {
@@ -204,9 +202,12 @@ final class MailerTemplate extends Mailer
                         $count_row++;
                     }
                 } else {
-                    $this->tpl_html->assign($fields_key, $fields_value); //custom vars
+                    /**
+                     * Custom Vars
+                     */
+                    $this->tpl_html->assign($fields_key, $fields_value);
                     if ($this->tpl_text) {
-                        $this->tpl_text->assign($fields_key, $fields_value); //custom vars
+                        $this->tpl_text->assign($fields_key, $fields_value);
                     }
                 }
 
@@ -305,9 +306,12 @@ final class MailerTemplate extends Mailer
      */
     private function parseMailField(string $value, string $name, string $type = null, bool $skip_label = false) : void
     {
-        $this->tpl_html->assign($name, $value); //custom vars
+        /**
+         * Custom Vars
+         */
+        $this->tpl_html->assign($name, $value);
         if ($this->tpl_text) {
-            $this->tpl_text->assign($name, $value); //custom vars
+            $this->tpl_text->assign($name, $value);
         }
 
         /*
@@ -322,7 +326,10 @@ final class MailerTemplate extends Mailer
         $this->tpl_html->assign("fields_value", $this->processMailField($value, $name));
         $this->tpl_html->parse("Sez" . $type . "Field", true);
 
-        $this->tpl_html->assign(                      //custom vars
+        /**
+         * Custom Vars
+         */
+        $this->tpl_html->assign(
             $this->processMailField($name),
             $this->processMailField($value)
         );
@@ -339,7 +346,10 @@ final class MailerTemplate extends Mailer
             $this->tpl_text->assign("fields_value", $this->processMailField($value, $name));
             $this->tpl_text->parse("SezField", true);
 
-            $this->tpl_text->assign(                  //custom vars
+            /**
+             * Custom Vars
+             */
+            $this->tpl_text->assign(
                 $this->processMailField($name),
                 $this->processMailField($value)
             );
@@ -349,11 +359,15 @@ final class MailerTemplate extends Mailer
     /**
      * @param string|null $type
      * @param bool $reset_field
+     * @throws Exception
      */
     private function parseMailRow(string $type = null, bool $reset_field = false) : void
     {
+        /**
+         * Custom Vars
+         */
         $this->tpl_html->parse("Sez" . $type . "Row", false);
-        $this->tpl_html->parse("SezRow" . $type, false); //custom vars
+        $this->tpl_html->parse("SezRow" . $type, false);
 
         if ($reset_field) {
             $this->tpl_html->assign("Sez" . $type . "Field", "");
@@ -370,12 +384,10 @@ final class MailerTemplate extends Mailer
         }
     }
 
-
     /**
      * @param string $value
      * @param string|null $type
      * @return string
-     * @throws Exception
      */
     private function processMailField(string $value, string $type = null) : string
     {
@@ -403,7 +415,6 @@ final class MailerTemplate extends Mailer
      * @param string|null $alias
      * @param string|null $email_alias
      * @return string
-     * @throws Exception
      */
     private function link2TagA(string $description, string $alias = null, string $email_alias = null) : string
     {

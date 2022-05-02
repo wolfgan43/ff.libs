@@ -100,7 +100,7 @@ class Model implements Configurable, Dumpable
      */
     public static function columns(string $model_name) : ?array
     {
-        return self::$models[$model_name][self::COLUMNS] ?? null;
+        return self::$models[$model_name][self::READ] ?? null;
     }
 
 
@@ -247,6 +247,24 @@ class Model implements Configurable, Dumpable
     }
 
     /**
+     * @param array $set
+     * @param array|null $where
+     * @return OrmResults
+     * @throws Exception
+     */
+    public function upsert(array $set, array $where = null) : OrmResults
+    {
+        $update                                                                         = (
+            $this->schema
+            ? $this->fill($this->schema->insert, $set)
+            : $this->fieldSet($set, $this->table)
+        );
+        $insert = $update + $where;
+
+        return $this->getOrm()->upsert($where, $update, $insert);
+    }
+
+    /**
      * @param array $where
      * @return OrmResults
      * @throws Exception
@@ -336,14 +354,25 @@ class Model implements Configurable, Dumpable
     private function setWhere(array $where = null) : ?array
     {
         if ($where && !empty($this->table)) {
+            $dtd                                                                        = $this->dtd();
             foreach ($where as $key => $value) {
                 if (strpos($key, ".") === false) {
-                    $key = $this->table . "." . $key;
+                    $field                                                              = $key;
+                    $key                                                                = $this->table . "." . $key;
+                } else {
+                    $field                                                              = explode(".", $key);
+                    $field                                                              = array_pop($field);
                 }
+                switch ($dtd->$field ?? null) {
+                    case Constant::FTYPE_BOOLEAN:
+                    case Constant::FTYPE_BOOL:
+                        $value                                                          = (bool) $value;
+                        break;
+                    default:
+            }
                 $this->where[$key]                                                      = $value;
             }
         }
-
         return $this->where;
     }
 
@@ -372,7 +401,11 @@ class Model implements Configurable, Dumpable
             if ($fields) {
                 unset($ref[$table_name . self::SELECT_ALL]);
                 foreach ($fields as $field => $alias) {
-                    $ref[$table_name . self::DOT . (is_int($field) ? $alias : $field)]  = $alias;
+                    if (strpos($field, self::DOT) === false) {
+                        $ref[$table_name . self::DOT . (is_int($field) ? $alias : $field)] = $alias;
+                    } else {
+                        $ref[$field]                                                    = $alias;
+                    }
                 }
             } else {
                 $ref[$table_name . self::SELECT_ALL]                                    = $table_name . self::SELECT_ALL;
@@ -435,6 +468,7 @@ class Model implements Configurable, Dumpable
      * @access private
      * @param array $rawdata
      * @return array
+     * @throws Exception
      */
     public static function loadSchema(array $rawdata) : array
     {
@@ -506,7 +540,7 @@ class Model implements Configurable, Dumpable
                 }
 
                 $key                                                                            = $attr->name;
-                if(isset($schema[self::PROTOTYPE][$key])) {
+                if (isset($schema[self::PROTOTYPE][$key])) {
                     Response::sendErrorPlain($key . " already set in model: " . $schema_name);
                 }
                 /**
@@ -526,7 +560,7 @@ class Model implements Configurable, Dumpable
                 /**
                  * Read and Insert
                  */
-                $schema[self::READ][$orm_field]                                                 = $source;
+                $schema[self::READ][$orm_field]                                                 = $key;
                 if (isset($attr->request)) {
                     $schema[self::INSERT][$orm_field]                                           = $attr->request;
                 } elseif (isset($extend[self::INSERT][$orm_field])) {
@@ -579,9 +613,9 @@ class Model implements Configurable, Dumpable
                         $field[self::REPLACE]                                                   = array($field[self::REPLACE]);
                     }
 
-                    foreach($field[self::REPLACE] AS $replace) {
+                    foreach ($field[self::REPLACE] as $replace) {
                         $replace_attr                                                           = Config::getXmlAttr($replace);
-                        if(isset($replace_attr->value, $replace_attr->with)) {
+                        if (isset($replace_attr->value, $replace_attr->with)) {
                             $replaces[$replace_attr->value]                                     = $replace_attr->with;
                         }
                     }

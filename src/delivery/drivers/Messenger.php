@@ -28,6 +28,8 @@ namespace phpformsframework\libs\delivery\drivers;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\dto\DataError;
 use phpformsframework\libs\Exception;
+use phpformsframework\libs\international\Locale;
+use phpformsframework\libs\international\Translator;
 use phpformsframework\libs\Kernel;
 use phpformsframework\libs\Log;
 use phpformsframework\libs\security\Validator;
@@ -46,6 +48,7 @@ class Messenger
 
     private $to                                             = null;
     private $content                                        = null;
+    private $lang                                           = null;
 
     /**
      * @var Messenger
@@ -54,12 +57,13 @@ class Messenger
 
     /**
      * @param null|string $messengerAdapter
+     * @param string|null $lang_code
      * @return Messenger
      */
-    public static function getInstance(string $messengerAdapter = null) : self
+    public static function getInstance(string $messengerAdapter = null, string $lang_code = null) : self
     {
         if (!self::$singleton) {
-            self::$singleton = new Messenger($messengerAdapter);
+            self::$singleton = new Messenger($messengerAdapter, $lang_code);
         }
 
         return self::$singleton;
@@ -68,9 +72,11 @@ class Messenger
     /**
      * Messenger constructor.
      * @param string|null $messengerAdapter
+     * @param string|null $lang_code
      */
-    public function __construct(string $messengerAdapter = null)
+    public function __construct(string $messengerAdapter = null, string $lang_code = null)
     {
+        $this->lang = $lang_code ?? Locale::getCodeLang();
         $this->setAdapter($messengerAdapter ?? Kernel::$Environment::MESSENGER_ADAPTER);
     }
 
@@ -128,6 +134,7 @@ class Messenger
      * @param string|null $message
      * @param string|null $to
      * @return DataError
+     * @throws Exception
      */
     public function send(string $message = null, string $to = null) : DataError
     {
@@ -136,9 +143,8 @@ class Messenger
         if ($to) {
             $this->addAddress($to);
         }
-        if ($message) {
-            $this->setMessage($message);
-        }
+
+        $this->content = Translator::getWordByCode($message, $this->lang);
 
         if (Kernel::$Environment::DEBUG && $this->adapter->debug) {
             $this->addAddress($this->adapter->debug);
@@ -149,17 +155,6 @@ class Messenger
         Debug::stopWatch("messenger/send");
 
         return $this->getResult();
-    }
-
-    /**
-     * @param string $content
-     * @return Messenger
-     */
-    public function setMessage(string $content) : self
-    {
-        $this->content                                      = $content;
-
-        return $this;
     }
 
     /**
@@ -200,17 +195,13 @@ class Messenger
     public function addAddress(string $tel, string $name = null) : self
     {
         if ($tel && Validator::isTel($tel)) {
-            $name                                           = (
-                $name
-                                                                ? $name
-                                                                : $tel
-                                                            );
+            if (!$name) {
+                $name                                       = $tel;
+            }
 
             $this->to[$tel] 			                    = $name;
         }
 
         return $this;
     }
-
-
 }

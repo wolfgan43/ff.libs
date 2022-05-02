@@ -62,7 +62,7 @@ class MailerAdapter
                 defined($class_name . static::PREFIX . "_SMTP_HOST")
                     ? static::PREFIX . "_SMTP_"
                     : "SMTP_"
-                );
+            );
 
             $this->host                                     = constant($prefix . "HOST");
             $this->username                                 = constant($prefix . "USER");
@@ -81,7 +81,6 @@ class MailerAdapter
             if (defined($prefix . "DEBUG_EMAIL")) {
                 $this->debug_email                          = constant($class_name . "DEBUG_EMAIL");
             }
-
         } catch (\Exception $e) {
             throw new Exception("Mailer Params Missing: " . $e->getMessage(), $e->getCode());
         }

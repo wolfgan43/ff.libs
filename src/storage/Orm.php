@@ -75,6 +75,7 @@ class Orm extends Mappable
     private const FREL_PRIMARY                                                              = "primary";
     private const FREL_EXTERNAL                                                             = "external";
     private const FREL_CONTROLLER                                                           = "collection";
+    private const FREL_ONE_TO_ONE                                                           = "one2one";
 
     private const RESULT                                                                    = Database::RESULT;
     private const INDEX                                                                     = Database::INDEX;
@@ -548,8 +549,9 @@ class Orm extends Mappable
         if ($single_service) {
             $this->setCount($this->getDataSingle($this->services_by_data->last, $this->services_by_data->last_table, $limit, $offset, $calc_found_rows));
         } else {
-            $this->throwRunnerSubs(true);
-            $this->throwRunnerMain($limit, $offset, $calc_found_rows);
+            if (!$this->throwRunnerSubs(true)) {
+                $this->throwRunnerMain($limit, $offset, $calc_found_rows);
+            }
             $this->throwRunnerSubs();
             $this->throwRunnerMain($limit, $offset, $calc_found_rows);
         }
@@ -577,8 +579,9 @@ class Orm extends Mappable
      * @return void
      * @throws Exception
      */
-    private function throwRunnerSubs(bool $unique = false) : void
+    private function throwRunnerSubs(bool $unique = false) : int
     {
+        $counter = 0;
         if (!empty($this->subs)) {
             foreach ($this->subs as $controller => $tables) {
                 foreach ($tables as $table => $sub) {
@@ -586,13 +589,15 @@ class Orm extends Mappable
                         && (!$unique || empty($this->main->where) || $sub->uniqueIndex())
                     ) {
                         $sub->runned            = true;
-                        if (!$this->getData($sub, $controller, $table) && $unique && empty($this->main->where) && !$this->main->runned) {
+                        if (!($counter += $this->getData($sub, $controller, $table)) && $unique && empty($this->main->where) && !$this->main->runned) {
                             $this->main->runned = true;
                         }
                     }
                 }
             }
         }
+
+        return $counter;
     }
 
     /**
@@ -619,6 +624,7 @@ class Orm extends Mappable
                                                                                                     $offset,
                                                                                                     $calc_found_rows
                                                                                                 );
+
         $count                                                                              = $regs[self::COUNT];
         if (!empty($regs[self::RESULT])) {
             $thisTable                                                                      = $table;
@@ -713,7 +719,7 @@ class Orm extends Mappable
                                         if (!$oneToMany && !$manyToMany) {
                                             $this->result[$thisTable][$keyCounter][$relTable][]                             =& $this->result[$relTable][$keyParent];
                                         } else {
-                                            $this->result[$thisTable][$keyCounter][$Orm->getTableAlias($relTable)]          =& $this->result[$relTable][$keyParent];
+                                            $this->result[$thisTable][$keyCounter][$whereRef->def->table[self::TALIAS]]     =& $this->result[$relTable][$keyParent];
                                         }
                                     }
                                 } elseif ($manyToMany) {
@@ -732,8 +738,8 @@ class Orm extends Mappable
                                     unset($this->result[$thisTable][$keyCounter][$Orm->getTableAlias($relTable)]);
 
                                     foreach ($keyParents as $keyParent) {
-                                        if ($oneToMany) {
-                                            $this->result[$relTable][$keyParent][$thisTable][]                              =& $this->result[$thisTable][$keyCounter];
+                                        if ($oneToMany && empty($relation[self::FREL_ONE_TO_ONE])) {
+                                            $this->result[$relTable][$keyParent][$aliasTable][]                             =& $this->result[$thisTable][$keyCounter];
                                         } else {
                                             $this->result[$relTable][$keyParent][$aliasTable]                               =& $this->result[$thisTable][$keyCounter];
                                         }
@@ -913,11 +919,7 @@ class Orm extends Mappable
                 $data->where,
                 $data->def->table[self::TNAME]
             );
-            if (isset($regs[self::SCOPE_ACTION]) && $regs[self::SCOPE_ACTION] == self::ACTION_INSERT) {
-                $insert_key                                                                 = $regs[self::INDEX_PRIMARY][$key_name];
-            } elseif ($regs[self::SCOPE_ACTION] == self::ACTION_UPDATE) {
-                $update_key                                                                 = $regs[self::INDEX_PRIMARY][$key_name];
-            }
+            $insert_key                                                                     = $regs[self::INDEX_PRIMARY][$key_name];
         }
 
         /**
@@ -1035,9 +1037,8 @@ class Orm extends Mappable
                     $field_ext                                                              = $sub->def->relationship[$sub->def->mainTable][self::FREL_EXTERNAL]        ?? null;
                     $field_main_ext                                                         = $sub->def->relationship[$this->main->def->mainTable][self::FREL_EXTERNAL] ?? null;
 
-                    if (isset($sub->def->struct[$field_ext]) || isset($sub->def->struct[$field_main_ext])) {
-                        $this->rev[$table]                                                  = $controller;
-                    } else {
+                    $this->rev[$table]                                                      = $controller;
+                    if (!isset($sub->def->struct[$field_ext]) && !isset($sub->def->struct[$field_main_ext])) {
                         if ($cmd) {
                             $this->cmdData($cmd, $controller, $table);
                         } else {
@@ -1113,7 +1114,7 @@ class Orm extends Mappable
                 $is_single_table
                                                                                                 ? $this->services_by_data->last_table
                                                                                                 : $Orm->getMainTable()
-                                                                                            );
+            );
 
             if (isset($this->subs[$subService]) && isset($this->subs[$subService][$subTable])) {
                 $this->main                                                                 = $this->subs[$subService][$subTable];
@@ -1213,7 +1214,7 @@ class Orm extends Mappable
                             $service == $mainService && $table == $mainTable
                                                                                                 ? -2
                                                                                                 : 2
-                                                                                            );
+                        );
                         break;
                     case "2":
                         $table                                                              = $parts[0];
@@ -1221,7 +1222,7 @@ class Orm extends Mappable
                             $table == $mainTable
                                                                                                 ? -1
                                                                                                 : 1
-                                                                                            );
+                        );
                         break;
                     case "1":
                         $table                                                              = $mainTable;

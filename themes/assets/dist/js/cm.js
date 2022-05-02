@@ -177,6 +177,11 @@ let cm = (function () {
             if(dataResponse === undefined) {
                 return;
             }
+
+            if (dataResponse["callback"]) {
+                eval(dataResponse["callback"] + "(" + (dataResponse["params"] || undefined) + ")");
+            }
+
             if (typeof dataResponse[_CSS] === "object") {
                 for (let key in dataResponse[_CSS]) {
                     if (!dataResponse[_CSS].hasOwnProperty(key) || isLoadedResource(key, "link")) {
@@ -329,10 +334,17 @@ let cm = (function () {
                     e.preventDefault();
 
                     let self = this;
+                    cm.alertBox(self.parentNode).clear();
                     self.style["opacity"] = "0.8";
                     cm.api.get(this.href)
                         .then(function(dataResponse) {
                             cm.inject(dataResponse);
+                            if (dataResponse[_ALERT]) {
+                                cm.alertBox(self.parentNode).success(dataResponse[_ALERT]);
+                            }
+                        })
+                        .catch(function(errorMessage) {
+                            cm.alertBox(self.parentNode).error(errorMessage);
                         })
                         .finally(function() {
                             self.style["opacity"] = null;
@@ -714,7 +726,7 @@ let cm = (function () {
 						}
                         cm.api[method](url, method === "get" ? headers : formdata, method === "post" ? headers : undefined)
                             .then(function (dataResponse) {
-								if(dataResponse["pathname"] !== undefined && window.location.pathname === dataResponse["pathname"]) {
+								if (dataResponse["pathname"] !== undefined && window.location.pathname.replace(/\/$/, '') === dataResponse["pathname"]) {
 									cm.inject(dataResponse);
 									publics.close();
 									return;
@@ -722,6 +734,10 @@ let cm = (function () {
 
 								publics.create(Object.assign(options, {"show" : false})).then(_ => {
 									cm.inject(dataResponse, "." + settings.modal.container + " ." + settings.modal.body);
+                                    if (dataResponse["close"]) {
+                                        modal.hide();
+                                        return;
+                                    }
 
 									publics.set({
 										title : dataResponse["title"],

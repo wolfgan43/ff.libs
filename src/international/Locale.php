@@ -49,15 +49,16 @@ class Locale implements Configurable
     private static $accepted_langs                                      = [];
 
     /**
+     * @param string|null $lang_code
      * @return bool
      */
-    public static function isDefaultLang() : bool
+    public static function isDefaultLang(string $lang_code = null) : bool
     {
-        return self::$lang[self::CODE_] == self::$default[self::LANG_][self::CODE_];
+        return empty($lang_code) || $lang_code == self::$default[self::LANG_][self::CODE_] || !self::isAcceptedLanguage($lang_code);
     }
 
     /**
-     * @return string|null
+     * @return string
      */
     public static function getTimeZone() : string
     {
@@ -65,7 +66,7 @@ class Locale implements Configurable
     }
 
     /**
-     * @return string|null
+     * @return string
      */
     public static function getTimeZoneLoc() : string
     {
@@ -89,7 +90,7 @@ class Locale implements Configurable
     }
 
     /**
-     * @return string
+     * @return string|null
      */
     public static function getCodeLangDefault() : ?string
     {
@@ -287,6 +288,15 @@ class Locale implements Configurable
     }
 
     /**
+     * @param string $lang
+     * @return bool
+     */
+    public static function isAcceptedLanguage(string $lang)
+    {
+        return in_array($lang, self::$accepted_langs);
+    }
+
+    /**
      * @param string|null $lang
      * @param string|null $country
      * @return array
@@ -316,7 +326,7 @@ class Locale implements Configurable
      */
     private static function acceptLocale(bool $onlyFirst = false) : array
     {
-        $locale_accepted                                        = null;
+        $locale_accepted                                        = [];
         foreach (explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? self::get()) as $locale) {
             $pattern                                            = '/^(?P<primarytag>[a-zA-Z]{2,8})'.
                 '(?:-(?P<subtag>[a-zA-Z]{2,8}))?(?:(?:;q=)'.
@@ -353,7 +363,6 @@ class Locale implements Configurable
             if ($onlyFirst) {
                 return $locale_default;
             }
-
             $locale_accepted[$locale_default[self::LANG_] . "-" . $locale_default[self::COUNTRY_]] = $locale_default;
         }
 

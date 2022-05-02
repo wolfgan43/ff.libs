@@ -41,7 +41,9 @@ class Activation extends Widget
 
     protected const ERROR_VIEW              = "displayError";
     protected const USER_CLASS              = "phpformsframework\libs\security\User";
-    protected const ACTIVATION_EXPIRATION   = 60 * 5;
+    protected const TOKEN_EXPIRATION        = 60 * 5;
+
+    private const COOKIE_NAME               = "activation";
 
     protected $requiredJs                   = ["cm"];
 
@@ -52,7 +54,7 @@ class Activation extends Widget
 
     public static function setOtpToken(string $token) : void
     {
-        Cookie::create("activation", $token, time() + self::ACTIVATION_EXPIRATION);
+        Cookie::create(self::COOKIE_NAME, $token, time() + self::TOKEN_EXPIRATION);
     }
 
     public function __construct(array $config = null)
@@ -75,9 +77,12 @@ class Activation extends Widget
      */
     protected function get(): void
     {
-        Cookie::destroy("activation");
-
-        $this->render("index");
+        if(!empty($this->request->identifier) && $this->isXhr) {
+            $this->post();
+            $this->send(["alert" => "Otp code Sent!"]);
+        } else {
+            $this->render("index");
+        }
     }
 
     /**
@@ -85,23 +90,19 @@ class Activation extends Widget
      */
     protected function post(): void
     {
-        $authorization              = Cookie::get("activation");
-        if (!empty($authorization)) {
-            if (!empty($this->request->code)) {
-                $this->user::activationComplete($authorization, $this->request->code);
-                $this->success();
-            } else {
-                $this->otp();
-            }
-        } elseif (!empty($this->request->identifier)) {
-            $response               = $this->user::activationRequest($this->request->identifier);
+        if (!empty($this->request->identifier) && empty($this->request->code)) {
+            $response = $this->user::activationRequest($this->request->identifier);
             if ($response->get("token")) {
                 $this->setOtpToken($response->get("token"));
                 $this->otp();
             } else {
                 $this->wait();
             }
+        } elseif (!empty($authorization = Cookie::get(self::COOKIE_NAME)) && !empty($this->request->code)) {
+            $this->user::activationComplete($authorization, $this->request->code);
+            $this->success();
         } else {
+            Cookie::destroy(self::COOKIE_NAME);
             $this->error(500, "Service not available");
         }
     }
@@ -126,7 +127,7 @@ class Activation extends Widget
      */
     protected function otp() : void
     {
-        $this->replaceWith(Otp::class, null, "get");
+        $this->replaceWith(Otp::class, ["resend_code" => "/activation?identifier=" . $this->request->identifier], "get");
     }
 
     /**

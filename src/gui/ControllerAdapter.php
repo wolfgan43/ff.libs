@@ -27,6 +27,7 @@ namespace phpformsframework\libs\gui;
 
 use phpformsframework\libs\dto\DataHtml;
 use phpformsframework\libs\Mappable;
+use phpformsframework\libs\security\Buckler;
 
 /**
  * Class ControllerAdapter
@@ -55,4 +56,12 @@ abstract class ControllerAdapter extends Mappable
      */
     abstract public function assign(string $tpl_var, $content = null) : self;
 
+    /**
+     * @param string $data
+     * @return string
+     */
+    public static function encodeEntity(string $data) : string
+    {
+        return Buckler::encodeEntity($data);
+    }
 }

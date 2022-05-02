@@ -25,11 +25,11 @@
                         <!--EndSezError-->
                         <div class="form-group verify-code">
                             <label for="code">{_Code}</label>
-                            <input id="code" class="form-control" name="code" type="number" required="required" placeholder="{_Insert your code}">
-
-                            <a class="resend-code" href="javascript:void(0);" onclick="hcore.security.otp('{otp_url}','{redirect_url}', true);">{_Resend code}</a>
+                            <input id="code" class="form-control" type="number" placeholder="{_Insert your code}" name="code" required="required" autocomplete="off" />
+                            <!--BeginSezResendCode-->
+                            <a class="resend-code cm-xhr" href="{resend_code}">{_Resend code}</a>
+                            <!--EndSezResendCode-->
                         </div>
-
                         <div class="form-group mb-0 text-center">
                             <button class="btn btn-primary" type="submit">INVIA</button>
                         </div>

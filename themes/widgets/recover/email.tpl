@@ -24,8 +24,8 @@
                         <div class="alert alert-warning">{error}</div>
                         <!--EndSezError-->
                         <div class="form-group">
-                            <label for="username">{_Phone Number}</label>
-                            <input id="username" class="form-control" name="username" type="number" required="required" placeholder="{_Phone Number}">
+                            <label for="tel">{_Phone Number}</label>
+                            <input id="tel" class="form-control" name="identifier" type="number" required="required" placeholder="{_Phone Number}">
                         </div>
 
                         <div class="form-group mb-0 text-center">

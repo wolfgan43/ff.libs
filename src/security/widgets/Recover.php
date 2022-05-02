@@ -37,41 +37,77 @@ class Recover extends Widget
 {
     use CommonTemplate;
 
-    protected $requiredJs           = ["cm"];
-    protected $requiredCss          = ["recover"];
+    protected const ERROR_VIEW              = "displayError";
+    protected const USER_CLASS              = "phpformsframework\libs\security\User";
+    protected const TOKEN_EXPIRATION        = 60 * 5;
+
+    protected $requiredJs                   = ["cm"];
+    protected $requiredCss                  = ["recover"];
+
+    public static function setOtpToken(string $token) : void
+    {
+        Cookie::create("recover", $token, time() + self::TOKEN_EXPIRATION);
+    }
+
+    public function __construct(array $config = null)
+    {
+        parent::__construct($config);
+
+        $this->user                         = static::USER_CLASS;
+    }
+
+    /**
+     * @throws Exception
+     */
+    protected function displayError(): void
+    {
+        $this->verifyAction();
+
+        $this->render($this->request->action);
+    }
 
     /**
      * @throws Exception
      */
     protected function get(): void
     {
-        $this->render($this->request->action ?? null);
+        $this->verifyAction();
+
+        if (!empty($this->request->identifier) && $this->isXhr) {
+            $this->post();
+            $this->send(["alert" => "Otp code Sent!"]);
+        } else {
+            $this->render($this->request->action);
+        }
     }
 
     /**
      * @throws Exception
      */
-    protected function post(): void
+    protected function post() : void
     {
-        $action                     = $this->request->action ?? null;
-        $config                     = $this->getConfig("recover");
+        $this->verifyAction();
 
-        if (!empty($this->request->code)) {
-            if (!isset($config->api->{"change_" . $action})) {
-                throw new Exception("Recover not supported", 501);
-            }
+        $action                     = $this->request->action;
 
-            $response = $this->api($config->api->{"change_" . $action}, [$action => $this->request->value], ["Authorization" => $this->authorization . ":" . $this->request->code]);
-        } else {
-            if (!isset($config->api->{"recover_" . $action})) {
-                throw new Exception("Recover request not supported", 501);
-            }
-            $response = $this->api($config->api->{"recover_" . $action}, ["identifier" => $this->request->identifier]);
+        if (!empty($this->request->identifier) && empty($this->request->code)) {
+            $response = $this->user::{$action . "RecoverRequest"}($this->request->identifier);
             if ($response->get("token")) {
+                $this->setOtpToken($response->get("token"));
                 $this->confirm($action);
             } else {
                 $this->wait($action);
             }
+        } elseif (!empty($authorization = Cookie::get("recover")) && !empty($this->request->code)) {
+            if (isset($this->request->password, $this->request->confirm_password) && $this->request->password === $this->request->confirm_password) {
+                $this->user::{$action . "RecoverChange"}($this->request->$action, $authorization, $this->request->code);
+                $this->success($action);
+            } else {
+                $this->error(400, "Password Don't Match");
+            }
+        } else {
+            Cookie::destroy("recover");
+            $this->error(500, "Service not available");
         }
     }
 
@@ -81,6 +117,8 @@ class Recover extends Widget
     protected function confirm(string $action) : void
     {
         $this->render($action . "_confirm");
+
+        $this->view->assign("resend_code", "/recover/" . $action . "?identifier=" . $this->request->identifier);
     }
 
     /**
@@ -92,14 +130,20 @@ class Recover extends Widget
     }
 
     /**
+     * @throws Exception
+     */
+    protected function success(string $action) : void
+    {
+        $this->render($action . "_success");
+    }
+
+    /**
      * @param string|null $method
      * @throws Exception
      */
     private function render(string $method = null) : void
     {
-        if (empty($method)) {
-            throw new Exception("Recover action is empty", 501);
-        }
+        $this->verifyAction();
 
         $view                       = $this->view($method);
         $config                     = $view->getConfig();
@@ -127,5 +171,15 @@ class Recover extends Widget
     protected function patch(): void
     {
         // TODO: Implement patch() method.
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function verifyAction() : void
+    {
+        if (empty($this->request->action)) {
+            throw new Exception("Service not available", 501);
+        }
     }
 }

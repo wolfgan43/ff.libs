@@ -102,12 +102,10 @@ class Translator implements Dumpable
     }
 
     /**
-     * @param string|null $language
+     * @param string|null $lang_code
      */
-    public static function clear(string $language = null) : void
+    public static function clear(string $lang_code = null) : void
     {
-        $lang_code                                      = self::getLang($language);
-
         self::$cache[$lang_code]                        = null;
         Buffer::cache(static::CACHE_BUCKET)->clear();
     }
@@ -140,19 +138,21 @@ class Translator implements Dumpable
     }
 
     /**
+     * @param string|null $lang_code
      * @return string
      */
-    public static function infoLangCode() : string
+    public static function infoLangCode(string $lang_code = null) : string
     {
-        return self::getLang();
+        return self::getLang($lang_code);
     }
 
     /**
+     * @param string|null $lang_code
      * @return string|null
      */
-    public static function infoCacheFile() : ?string
+    public static function infoCacheFile(string $lang_code = null) : ?string
     {
-        if (($cache_file = Buffer::cache(static::CACHE_BUCKET)->getInfo(self::getLang())) && FilemanagerFs::touch($cache_file)) {
+        if (($cache_file = Buffer::cache(static::CACHE_BUCKET)->getInfo(self::getLang($lang_code))) && FilemanagerFs::touch($cache_file)) {
             return $cache_file;
         }
         return null;
@@ -160,74 +160,67 @@ class Translator implements Dumpable
 
     /**
      * @param string|null $code
-     * @param string|null $language Upper Code (es: ENG, ITA, SPA)
-     * @return string
+     * @param string|null $lang_code (es: en, it, es)
+     * @return string|null
      * @throws Exception
      */
-    public static function getWordByCode(string $code = null, string $language = null) : ?string
+    public static function getWordByCode(string $code = null, string $lang_code = null) : ?string
     {
-        if (!$code || Locale::isDefaultLang()) {
+        if (!$code || Locale::isDefaultLang($lang_code)) {
             return $code;
         }
         Debug::stopWatch("translator/" . $code);
-
-        $lang_tiny_code                                 = self::getLang($language);
-        if (self::$cache && !array_key_exists($code, self::$cache[$lang_tiny_code])) {
-            self::$cache[$lang_tiny_code][$code]        = self::getWordByCodeFromDB($code, $lang_tiny_code);
-            if (!isset(self::$cache_updated[$lang_tiny_code])) {
-                self::$cache_updated[$lang_tiny_code]   =& self::$cache[$lang_tiny_code];
+        if (empty(self::$cache[$lang_code]) || !array_key_exists($code, self::$cache[$lang_code])) {
+            self::$cache[$lang_code][$code]             = self::getWordByCodeFromDB($code, $lang_code);
+            if (!isset(self::$cache_updated[$lang_code])) {
+                self::$cache_updated[$lang_code]        =& self::$cache[$lang_code];
             }
         }
 
         Debug::stopWatch("translator/" . $code);
 
-        return self::$cache[$lang_tiny_code][$code] ?? $code;
+        return self::$cache[$lang_code][$code] ?? $code;
     }
 
     /**
      * @param string|null $code
-     * @param string|null $language Upper Code (es: ENG, ITA, SPA)
-     * @return string
-     * @throws Exception
+     * @param string|null $lang_code (es: en, it, es)
+     * @return string|null
      */
-    public static function getWordByCodeCached(string $code = null, string $language = null) : ?string
+    public static function getWordByCodeCached(string $code = null, string $lang_code = null) : ?string
     {
-        if (!$code || Locale::isDefaultLang()) {
+        if (!$code || Locale::isDefaultLang($lang_code)) {
             return $code;
         }
-        $lang_tiny_code                                 = self::getLang($language);
 
-        return self::$cache[$lang_tiny_code][$code] ?? $code;
+        return self::$cache[$lang_code][$code] ?? $code;
     }
 
     /**
      * @param string $code
-     * @param string|null $language
+     * @param string $lang_code
      * @return string|null
      * @throws Exception
      */
-    private static function getWordByCodeFromDB(string $code, string $language = null) : ?string
+    private static function getWordByCodeFromDB(string $code, string $lang_code) : ?string
     {
         $i18n                                           = null;
-        $lang                                           = self::getLang($language);
-        if ($lang) {
-            $orm                                        = self::orm("international");
-            $res                                        = $orm->readOne([
-                                                            "translations.text"
-                                                        ], [
-                                                            "translations.lang" => $lang,
-                                                            "translations.code" => substr($code, 0, 254)
-                                                        ]);
+        $orm                                            = self::orm("international");
+        $res                                            = $orm->readOne([
+                                                                "translations.text"
+                                                            ], [
+                                                                "translations.lang" => $lang_code,
+                                                                "translations.code" => substr($code, 0, 254)
+                                                            ]);
 
-            if ($res) {
-                $i18n                                   = $res->text;
-            } elseif (Kernel::$Environment::DEBUG) {
-                $orm->insert([
-                    "translations.lang"                 => $lang,
-                    "translations.code"                 => substr($code, 0, 254),
-                    "translations.created_at"           => time()
-                ]);
-            }
+        if ($res) {
+            $i18n                                       = $res->text;
+        } elseif (Kernel::$Environment::DEBUG) {
+            $orm->insert([
+                "translations.lang"                     => $lang_code,
+                "translations.code"                     => substr($code, 0, 254),
+                "translations.created_at"               => time()
+            ]);
         }
 
         return $i18n;

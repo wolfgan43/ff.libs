@@ -47,33 +47,33 @@ class OrmModel
 
     /**
      * OrmItem constructor.
-     * @param string|null $model_name
-     * @param OrmItem $ref
+     * @param string $model_name
+     * @param array $indexes
      * @param array|null $rawdata
      * @throws Exception
      */
-    public function __construct(string $model_name, OrmItem &$ref, array $rawdata = null)
+    public function __construct(string $model_name, array &$indexes, array $rawdata = null)
     {
         $this->loadModel($model_name);
 
         $informationSchema                                                      = $this->db->informationSchema();
         if (!$informationSchema) {
-            throw new Exception("information schema not found in Class " . get_class($ref) . " for Model: " . $model_name, 500);
+            throw new Exception("information schema not found for Model: " . $model_name, 500);
         }
 
-        if (!property_exists($ref, $informationSchema->table)) {
-            throw new Exception("missing relation Field: " . $informationSchema->table . " in Class " . get_class($ref) . " for Model: " . $model_name, 500);
+        if (!isset($indexes[$informationSchema->table])) {
+            $indexes[$informationSchema->table]                                 = 0;
         }
 
-        if (!empty($ref->{$informationSchema->table})) {
-            $this->read([$informationSchema->key => $ref->{$informationSchema->table}]);
+        if (!empty($indexes[$informationSchema->table])) {
+            $this->read([$informationSchema->key => $indexes[$informationSchema->table]]);
         }
 
         if ($rawdata) {
             $this->fill($rawdata);
         }
 
-        $this->relationshipKey                                                  =& $ref->{$informationSchema->table};
+        $this->relationshipKey                                                  =& $indexes[$informationSchema->table];
     }
 
     /**
@@ -87,6 +87,14 @@ class OrmModel
     }
 
     /**
+     * @return Schema
+     */
+    public function schema() : Schema
+    {
+        return  $this->db->schema;
+    }
+
+    /**
      * @todo da tipizzare
      * @param string $name
      * @param $value
@@ -96,14 +104,6 @@ class OrmModel
         if (array_key_exists($name, $this->data)) {
             $this->data[$name]                                                  = $value;
         }
-    }
-
-    /**
-     * @return Schema
-     */
-    public function schema() : Schema
-    {
-        return  $this->db->schema;
     }
 
     /**
@@ -134,7 +134,7 @@ class OrmModel
      */
     public function fill(array $fields) : self
     {
-        $this->data                                                             = array_replace($this->data, array_intersect_key($fields, $this->data));
+        $this->data                                                             = array_replace($this->data, $fields);
 
         return $this;
     }
@@ -150,13 +150,15 @@ class OrmModel
         //$this->verifyValidator($this->data);
 
         if ($this->recordKey) {
-            $this->db->update($this->data, [$this->primaryKey => $this->recordKey]);
+            $this->db->upsert($this->data, [$this->db->schema->collection . "." . $this->db->schema->table . "." . $this->primaryKey => $this->recordKey]);
         } else {
             $item                                                               = $this->db->insert($this->data);
             $this->recordKey                                                    = $item->key(0);
             $this->primaryKey                                                   = $item->getPrimaryKey();
             $this->relationshipKey                                              = $this->recordKey;
         }
+
+        $this->read([$this->db->schema->collection . "." . $this->db->schema->table . "." . $this->primaryKey => $this->recordKey]);
 
         return $this->recordKey;
     }

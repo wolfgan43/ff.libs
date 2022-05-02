@@ -52,32 +52,38 @@ class View
 
     /**
      * @param string $template_disk_path
+     * @param string|null $lang_code
      * @param string|null $templateAdapter
      * @param Controller|null $controller
      * @param string|null $widget
      * @param stdClass|null $config
      * @return static
      */
-    public static function fetchFile(string $template_disk_path, string $templateAdapter = null, Controller $controller = null, string $widget = null, stdClass $config = null)
+    public static function fetchFile(string $template_disk_path, string $lang_code = null, string $templateAdapter = null, Controller $controller = null, string $widget = null, stdClass $config = null)
     {
         $view = new static($templateAdapter, $controller, $widget, $config);
-        $view->adapter->fetch($template_disk_path);
+        $view->adapter
+            ->setLang($lang_code)
+            ->fetch($template_disk_path);
 
         return $view;
     }
 
     /**
      * @param string $content
+     * @param string|null $lang_code
      * @param string|null $templateAdapter
      * @param Controller|null $controller
      * @param string|null $widget
      * @param stdClass|null $config
      * @return static
      */
-    public static function fetchContent(string $content, string $templateAdapter = null, Controller $controller = null, string $widget = null, stdClass $config = null)
+    public static function fetchContent(string $content, string $lang_code = null, string $templateAdapter = null, Controller $controller = null, string $widget = null, stdClass $config = null)
     {
         $view = new static($templateAdapter, $controller, $widget, $config);
-        $view->adapter->fetchContent($content);
+        $view->adapter
+            ->setLang($lang_code)
+            ->fetchContent($content);
 
         return $view;
     }

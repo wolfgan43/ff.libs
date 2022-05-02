@@ -27,6 +27,8 @@ namespace phpformsframework\libs\delivery;
 
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\dto\DataResponse;
+use phpformsframework\libs\Exception;
+use phpformsframework\libs\international\Locale;
 use phpformsframework\libs\util\AdapterManager;
 
 /**
@@ -39,9 +41,11 @@ class Notice
     use AdapterManager;
 
     protected const ERROR_BUCKET                            = "delivery";
+    private const ERROR_LANG_NOT_VALID                      = "lang not valid";
 
     private static $singleton                               = null;
     private static $exTime                                  = 0;
+    private $lang                                           = null;
 
     /**
      * @return float
@@ -86,6 +90,24 @@ class Notice
     }
 
     /**
+     * @param string|null $lang_code
+     * @return Notice
+     * @throws Exception
+     */
+    public function setLang(string $lang_code = null) : self
+    {
+        if ($lang_code && !Locale::isAcceptedLanguage($lang_code)) {
+            throw new Exception(self::ERROR_LANG_NOT_VALID, 400);
+        }
+
+        foreach ($this->adapters as $adapter) {
+            $adapter->setLang($lang_code);
+        }
+
+        return $this;
+    }
+
+    /**
      * @param string $name
      * @param string $url
      * @return Notice
@@ -103,10 +125,10 @@ class Notice
     /**
      * @param string $title
      * @param array $fields
-     * @param null|string $template
+     * @param string|null $template
      * @return DataResponse
      */
-    public function sendLongMessage(string $title, array $fields, string $template = null): DataResponse
+    public function sendLongMessage(string $title, array $fields, string $template = null) : DataResponse
     {
         Debug::stopWatch(static::ERROR_BUCKET);
 
@@ -145,7 +167,4 @@ class Notice
 
         return $dataResponse;
     }
-
-
-
 }

@@ -24,8 +24,8 @@
                         <div class="alert alert-warning">{error}</div>
                         <!--EndSezError-->
                         <div class="form-group">
-                            <label for="username">{_Email}</label>
-                            <input id="username" class="form-control" name="username" type="email" required="required" placeholder="{_Email}">
+                            <label for="email">{_Email}</label>
+                            <input id="email" class="form-control" name="identifier" type="email" required="required" placeholder="{_Email}">
                         </div>
 
                         <div class="form-group mb-0 text-center">

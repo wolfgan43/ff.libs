@@ -199,22 +199,46 @@ class User
     }
 
     /**
+     * @param string $identifier
      * @return DataAdapter
      */
-    public static function recoverRequest() : DataAdapter
+    public static function emailRecoverRequest(string $identifier) : DataAdapter
     {
         //todo da finire
-
         return new DataResponse();
     }
 
     /**
+     * @param string $value
+     * @param string $token
+     * @param string $otp
      * @return DataAdapter
      */
-    public static function recoverChange() : DataAdapter
+    public static function emailRecoverChange(string $value, string $token, string $otp) : DataAdapter
     {
         //todo da finire
+        return new DataResponse();
+    }
 
+    /**
+     * @param string $identifier
+     * @return DataAdapter
+     */
+    public static function passwordRecoverRequest(string $identifier) : DataAdapter
+    {
+        //todo da finire
+        return new DataResponse();
+    }
+
+    /**
+     * @param string $value
+     * @param string $token
+     * @param string $otp
+     * @return DataAdapter
+     */
+    public static function passwordRecoverChange(string $value, string $token, string $otp) : DataAdapter
+    {
+        //todo da finire
         return new DataResponse();
     }
 

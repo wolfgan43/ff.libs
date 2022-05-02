@@ -179,6 +179,7 @@ class DataTable
     protected $dataTable                = null;
 
     protected $id                       = null;
+    private $api                        = null;
 
     /**
      * @var Button[]
@@ -272,9 +273,10 @@ class DataTable
     public function sourceApi(string $model, array $headers = []) : Api
     {
         $this->dataSource               = self::DATA_SOURCE_API;
-        $this->id                       = new Api($model, $headers);
+        $this->id                       = $model;
+        $this->api                      = new Api($this->id, $headers);
 
-        return $this->id;
+        return $this->api;
     }
 
     /**
@@ -626,9 +628,9 @@ class DataTable
      */
     protected function apiSource() : DataTableResponse
     {
-        $response                   = $this->id->post($this->apiRequestParams());
+        $response                   = $this->api->post($this->apiRequestParams());
         if (!$response instanceof DataTableResponse) {
-            throw new Exception($this->id->url . ": sourceApi require DataTableResponse", 501);
+            throw new Exception($this->id . ": sourceApi require DataTableResponse", 501);
         }
 
         return $response;
@@ -1006,6 +1008,7 @@ class DataTable
 
     /**
      * @return string
+     * @throws Exception
      */
     private function tableColumns() : string
     {

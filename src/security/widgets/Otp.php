@@ -63,6 +63,10 @@ class Otp extends Widget
         }
         $view->assign($config);
 
+        if (!empty($config->resend_code)) {
+            $this->view->assign("resend_code", $config->resend_code);
+            $this->view->parse("SezResendCode");
+        }
         $this->setError($view);
         $this->setLogo($view, $config);
         $this->setHeader($view, $config);

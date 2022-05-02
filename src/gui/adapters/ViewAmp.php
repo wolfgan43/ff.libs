@@ -34,5 +34,4 @@ class ViewAmp extends ViewHtml
     const REGEXP                                = '/<<([\w\:\=\-\|\.\s\?\!\\\'\"\,]+)>>/U';
 
     const APPLET                                = '/<<\[(.+)\]>>/U';
-    const COMMENTHTML                           = '/<<<([\w\[\]\:\=\-\|\.]+)>>>/U';
 }

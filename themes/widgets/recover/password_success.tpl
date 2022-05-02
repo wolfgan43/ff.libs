@@ -18,26 +18,10 @@
                         <p class="text-muted mb-4">{description}</p>
                         <!--EndSezDescription-->
                     </div>
-
-                    <form method="post" class="cm-xhr" data-component="#activation-box">
-                        <!--BeginSezError-->
-                        <div class="alert alert-warning">{error}</div>
-                        <!--EndSezError-->
-                        <div class="form-group">
-                            <label for="identifier">{_Email}</label>
-                            <input id="identifier" class="form-control" type="email" placeholder="{_Email}" name="identifier" required="required" />
-                        </div>
-
-                        <div class="form-group mb-0 text-center">
-                            <button class="btn btn-primary" type="submit">INVIA</button>
-                        </div>
-
-                    </form>
                 </div> <!-- end card-body -->
                 <div class="card-footer">
-                    <div class="col-12 text-center mt-2">
-                        <span>{_Check your Junk Mail folder if yuou don't find our mail. If you need help contact us: }<a href='mailto:{help_mail}'>{help_mail}</a>
-                        </span>
+                    <div class="form-group mb-0 text-center">
+                        <a class="btn btn-primary" href="{login_path}">Login</a>
                     </div>
                 </div>
             </div>

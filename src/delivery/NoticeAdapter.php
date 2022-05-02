@@ -42,6 +42,7 @@ abstract class NoticeAdapter
     protected $connection                                   = null;
     protected $fromKey                                      = null;
     protected $fromLabel                                    = null;
+    protected $lang                                         = null;
 
     /**
      * NoticeAdapter constructor.
@@ -66,8 +67,8 @@ abstract class NoticeAdapter
 
     /**
      * @param string $title
-     * @param null|array $fields
-     * @param null|string $template
+     * @param array|null $fields
+     * @param string|null $template
      * @return DataError
      */
     abstract public function sendLongMessage(string $title, array $fields = null, string $template = null) : DataError;
@@ -119,5 +120,16 @@ abstract class NoticeAdapter
         if ($this->checkRecipient($target)) {
             $this->recipients[$target]                      = ($name ? $name : $target);
         }
+    }
+
+    /**
+     * @param string|null $lang_code
+     * @return NoticeAdapter
+     */
+    public function setLang(string $lang_code = null) : self
+    {
+        $this->lang                                      = $lang_code;
+
+        return $this;
     }
 }

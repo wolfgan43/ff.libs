@@ -36,16 +36,6 @@ use phpformsframework\libs\Exception;
 class ErrorController extends Controller
 {
     private $email_support      = null;
-    private $error_code         = null;
-    private $error_message      = null;
-
-    public function error(int $status, string $msg = null): Controller
-    {
-        $this->error_code       = $status;
-        $this->error_message    = $msg;
-
-        return $this;
-    }
 
     /**
      * @param string $email
@@ -65,11 +55,11 @@ class ErrorController extends Controller
     {
         $this->addStylesheet("error");
 
-        $error = Translator::getWordByCodeCached($this->error_message);
+        $error = Translator::getWordByCodeCached($this->error);
 
         $errorView = $this->view()
-            ->assign("title", $error ?? Translator::getWordByCodeCached(Exception::getErrorMessage($this->error_code)))
-            ->assign("error_code", $this->error_code);
+            ->assign("title", $error ?? Translator::getWordByCodeCached(Exception::getErrorMessage($this->http_status_code)))
+            ->assign("error_code", $this->http_status_code);
 
         if ($this->email_support) {
             $errorView->assign("email_support", $this->email_support);

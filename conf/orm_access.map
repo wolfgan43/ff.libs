@@ -183,6 +183,11 @@
       }
     },
     "users": {
+      "anagraph": {
+        "collection": "user_anagraph",
+        "tbl": "anagraph",
+        "key": "id"
+      },
       "role" : {
         "tbl": "roles",
         "key": "name"
@@ -256,7 +261,8 @@
     },
     "users": {
       "uuid": "hardindex",
-      "domain": "hardindex"
+      "domain": "hardindex",
+      "anagraph" : "hardindex"
     },
     "users_newsletter": {
       "user_uuid" : "hardindex",

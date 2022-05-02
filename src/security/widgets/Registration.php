@@ -93,16 +93,16 @@ class Registration extends Widget
     protected function post(): void
     {
         if (!empty($this->request->code)) {
-            $this->replaceWith(Activation::class, null, "post");
+            $this->replaceWith($this->widget("Activation"), null, "post");
         } elseif ($this->request->password && $this->request->password != $this->request->confirm_password) {
             $this->error(400, "Password Don't Match");
         } else {
             $response                   = $this->user::signUp((array)$this->request, $this->request->model);
             if (User::isLogged()) {
-                $this->replaceWith(Welcome::class);
+                $this->replaceWith($this->widget("Welcome"));
             } elseif ($response->get("activation")) {
                 Activation::setOtpToken($response->get("activation")->token);
-                $this->replaceWith(Activation::class, null, "post");
+                $this->replaceWith($this->widget("Activation"), null, "post");
             } else {
                 $config = $this->getConfig();
                 $this->redirect($this->request->redirect ?? $this->getWebUrl($config->login_path));
@@ -123,5 +123,10 @@ class Registration extends Widget
     protected function patch(): void
     {
         // TODO: Implement patch() method.
+    }
+
+    protected function widget(string $class_name) : string
+    {
+        return __NAMESPACE__ . '\\' . $class_name;
     }
 }

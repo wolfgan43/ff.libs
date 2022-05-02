@@ -162,6 +162,11 @@
       "anagraph_place": {
         "external": "anagraph_id",
         "primary": "id"
+      },
+      "users": {
+        "collection": "user",
+        "external": "anagraph",
+        "primary": "id"
       }
     },
     "anagraph_type": {
@@ -171,27 +176,30 @@
       }
     },
     "anagraph_person": {
-      "anagraph": {
-        "external": "anagraph_id",
-        "primary": "id"
+      "anagraph_id" : {
+        "tbl": "anagraph",
+        "key": "id",
+        "one2one": true
       }
     },
     "anagraph_company": {
-      "anagraph": {
-        "external": "anagraph_id",
-        "primary": "id"
+      "anagraph_id" : {
+        "tbl": "anagraph",
+        "key": "id",
+        "one2one": true
       }
     },
     "anagraph_seo": {
-      "anagraph": {
-        "external": "src_id",
-        "primary": "id"
+      "anagraph_id" : {
+        "tbl": "anagraph",
+        "key": "id",
+        "one2one": true
       }
     },
     "anagraph_place": {
-      "anagraph": {
-        "external": "anagraph_id",
-        "primary": "id"
+      "anagraph_id" : {
+        "tbl": "anagraph",
+        "key": "id"
       }
     }
   },

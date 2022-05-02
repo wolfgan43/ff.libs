@@ -74,9 +74,7 @@ class NoticeEmail extends NoticeAdapter
     {
         $this->title                        = $title;
         $this->fields                       = $fields;
-
         $this->setTemplate($template);
-
         return $this->process();
     }
 
@@ -86,15 +84,22 @@ class NoticeEmail extends NoticeAdapter
      */
     private function setTemplate(string $template = null) : void
     {
-        if (!$template) {
-            throw new Exception("Template mail empty", 403);
+        if (strpos($template, DIRECTORY_SEPARATOR) !== false) {
+            $this->template = $template;
+        } elseif (!empty($template)) {
+            $template = rtrim($template, "_");
+            do {
+                if ($this->template = Resource::get($template, Resource::TYPE_EMAIL)) {
+                    break;
+                }
+                $template = (
+                    ($end = strrpos($template, "_")) !== false
+                    ? substr($template, 0, $end)
+                    : null
+                );
+            } while ($template);
         }
 
-        $this->template = (
-            strpos($template, DIRECTORY_SEPARATOR) === false
-            ? Resource::get($template, Resource::TYPE_EMAIL)
-            : $template
-        );
         if (!$this->template) {
             throw new Exception("Template mail not found: " .  $template . " (check cache also)", 404);
         }
@@ -106,7 +111,7 @@ class NoticeEmail extends NoticeAdapter
      */
     protected function process() : DataError
     {
-        return Mailer::getInstance($this->template)
+        return Mailer::getInstance($this->template, $this->lang)
             ->setSmtp($this->connection)
             ->setFrom($this->fromKey, $this->fromLabel)
             ->addAddresses($this->recipients, "to")

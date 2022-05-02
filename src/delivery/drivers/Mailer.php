@@ -48,9 +48,9 @@ abstract class Mailer
      */
     private $adapter                                        = null;
 
-    private $lang                                           = null;
     private $charset                                        = "utf8";
     private $encoding                                       = "quoted-printable";
+    protected $lang                                         = null;
 
     //header
     protected $subject                                      = null;
@@ -81,16 +81,17 @@ abstract class Mailer
 
     /**
      * @param string|null $template
-     * @return Mailer
+     * @param string|null $lang_code
+     * @return mixed|MailerSimple|MailerTemplate
      * @throws Exception
      */
-    public static function getInstance(string $template = null)
+    public static function getInstance(string $template = null, string $lang_code = null)
     {
         if (!isset(self::$singletons[$template])) {
             self::$singletons[$template]   = (
                 $template
-                ? new MailerTemplate($template)
-                : new MailerSimple()
+                ? new MailerTemplate($template, $lang_code)
+                : new MailerSimple($lang_code)
             );
         }
 
@@ -100,8 +101,9 @@ abstract class Mailer
     /**
      * Mailer constructor.
      */
-    public function __construct()
+    public function __construct(string $lang_code = null)
     {
+        $this->lang                     = $lang_code ?? Locale::getCodeLang();
         $this->setAdapter();
     }
 
@@ -163,10 +165,8 @@ abstract class Mailer
      */
     public function addAddresses(array $emails, string $type) : self
     {
-        if (is_array($emails)) {
-            foreach ($emails as $email => $name) {
-                $this->addAddress($type, $email, $name);
-            }
+        foreach ($emails as $email => $name) {
+            $this->addAddress($type, $email, $name);
         }
 
         return $this;
@@ -182,11 +182,10 @@ abstract class Mailer
     public function addAddress(string $type, string $email = null, string $name = null) : self
     {
         if ($email && Validator::isEmail($email)) {
-            $name                                           = (
-                $name
-                                                                ? $name
-                                                                : $email
-                                                            );
+            if (!$name) {
+                $name                                       = $email;
+            }
+
             switch ($type) {
                 case "to":
                     $this->to[$email] 			            = $name;
@@ -283,17 +282,6 @@ abstract class Mailer
     }
 
     /**
-     * @param string $lang
-     * @return Mailer
-     */
-    public function setLang(string $lang) : self
-    {
-        $this->lang                                         = $lang;
-
-        return $this;
-    }
-
-    /**
      * @param string $charset
      * @return Mailer
      */
@@ -361,9 +349,7 @@ abstract class Mailer
         if (!$this->fromName) {
             $this->fromName   = $this->adapter->from_name;
         }
-        if (!$this->lang) {
-            $this->lang       = Locale::getCodeLang();
-        }
+
         if ($subject) {
             $this->setSubject($subject);
         }
@@ -422,10 +408,10 @@ abstract class Mailer
 
             $mail->FromName                                     = $this->fromName;
             $mail->From                                         = (
-            strpos($this->adapter->username, "@") === false
-                                                                    ? $this->fromEmail
-                                                                    : $this->adapter->username
-                                                                );
+                strpos($this->adapter->username, "@") === false
+                ? $this->fromEmail
+                : $this->adapter->username
+            );
             if ($this->adapter->username != $this->fromEmail) {
                 $mail->AddReplyTo($this->fromEmail, $this->fromName);
             }
@@ -575,9 +561,6 @@ abstract class Mailer
         if (!$this->fromName) {
             $this->fromName   = $this->adapter->from_name;
         }
-        if (!$this->lang) {
-            $this->lang       = Locale::getCodeLang();
-        }
         if (Kernel::$Environment::DEBUG) {
             $this->addBCC($this->adapter->debug_email);
         }
@@ -598,7 +581,7 @@ abstract class Mailer
                                     , "email"   => $this->fromEmail
                                 )
                                 : null
-                            )
+            )
             , "bcc"         => $this->bcc
         );
     }

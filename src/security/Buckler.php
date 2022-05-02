@@ -259,4 +259,13 @@ class Buckler implements Configurable
             ($app::$Page->onLoad)();
         }
     }
+
+    /**
+     * @param string $data
+     * @return string
+     */
+    public static function encodeEntity(string $data) : string
+    {
+        return htmlspecialchars(urldecode($data));
+    }
 }

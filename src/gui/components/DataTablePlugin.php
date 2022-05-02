@@ -63,9 +63,12 @@ class DataTablePlugin extends DataTable
 
         $columns = null;
         $columns_json = [];
-        foreach ($this->dataTable->columns as $column) {
-            $columns                    .= '<th>' . $column . '</th>';
-            $columns_json[]["data"]     = $column;
+        foreach ($this->dataTable->columns as $i => $column) {
+            if ($this->column($column)->isHidden()) {
+                continue;
+            }
+            $columns                    .= '<th>' . $i . '</th>';
+            $columns_json[]["data"]     = $i;
         }
 
         $rows = null;

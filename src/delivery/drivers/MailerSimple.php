@@ -54,15 +54,16 @@ final class MailerSimple extends Mailer
      */
     protected function processSubject() : string
     {
-        return Translator::getWordByCode($this->subject);
+        return Translator::getWordByCode($this->subject, $this->lang);
     }
 
     /**
      * @return string|null
+     * @throws Exception
      */
     protected function processBody() : ?string
     {
-        return $this->content;
+        return Translator::getWordByCode($this->content, $this->lang);
     }
 
     /**

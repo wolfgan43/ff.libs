@@ -708,6 +708,9 @@ class Media implements Configurable
     {
         $resource                                                   = $this->staticResource($mode);
         if ($resource) {
+            if (!$this->isImage() && pathinfo($resource, PATHINFO_EXTENSION) != $this->pathinfo->extension) {
+                return false;
+            }
             $this->basepath                                         = dirname($resource);
             $this->filesource                                       = DIRECTORY_SEPARATOR . basename($resource);
             $this->mode                                             = $mode;
@@ -1259,7 +1262,7 @@ class Media implements Configurable
                 $final_file                                         = $this->getFinalFile($final_file_stored);
 
                 $modeCurrent                                        = $this->getMode();
-                if (!Kernel::useCache() && !$modeCurrent) {
+                if (Response::httpCode() >= 400 || !Kernel::useCache() || !$modeCurrent) {
                     return $this->basepath . $this->filesource;
                 }
 

@@ -120,6 +120,7 @@ class ControllerHtml extends ControllerAdapter
                                                 ];
 
     private $error                              = null;
+    private $debug                              = null;
 
     /**
      * PageHtml constructor.
@@ -231,7 +232,7 @@ class ControllerHtml extends ControllerAdapter
      */
     private function getTitleDefault(): string
     {
-        return ucwords($this->error ?: basename($this->pathInfo()) ?: static::TITLE_DEFAULT);
+        return ucwords(basename($this->pathInfo()) ?: static::TITLE_DEFAULT);
     }
 
     /**
@@ -261,7 +262,7 @@ class ControllerHtml extends ControllerAdapter
     private function parseCanonicalUrl() : ?string
     {
         return (!empty($this->canonicalUrl) || empty($this->error)
-            ? self::NEWLINE . '<link rel="canonical" href="' . ($this->canonicalUrl ?: htmlspecialchars(urldecode($this->canonicalUrl()))) . '" />'
+            ? self::NEWLINE . '<link rel="canonical" href="' . $this->encodeEntity($this->canonicalUrl ?: $this->canonicalUrl()) . '" />'
             : null
         );
     }
@@ -271,7 +272,7 @@ class ControllerHtml extends ControllerAdapter
      */
     private function parseTitle() : string
     {
-        return self::NEWLINE . '<title>' . $this->getTitle() . '</title>';
+        return self::NEWLINE . '<title>' . $this->encodeEntity($this->getTitle()) . '</title>';
     }
 
     /**
@@ -279,7 +280,7 @@ class ControllerHtml extends ControllerAdapter
      */
     private function parseDescription() : string
     {
-        return self::NEWLINE . '<meta name="description" content="' . substr($this->description ?: $this->getDescriptionDefault(), 0, static::SEO_DESCRIPTION_LIMIT) . '" />';
+        return self::NEWLINE . '<meta name="description" content="' . $this->encodeEntity(substr($this->description ?: $this->getDescriptionDefault(), 0, static::SEO_DESCRIPTION_LIMIT)) . '" />';
     }
 
     /**
@@ -523,7 +524,7 @@ class ControllerHtml extends ControllerAdapter
      */
     private function parseDebug() : string
     {
-        return self::NEWLINE . Debug::dump($this->error, true);
+        return self::NEWLINE . Debug::dump($this->debug, true);
     }
 
     /**
@@ -650,12 +651,14 @@ class ControllerHtml extends ControllerAdapter
     }
 
     /**
-     * @param string|null $error
+     * @param string $error
+     * @param string|null $debug
      * @return $this
      */
-    public function debug(string $error = null) : self
+    public function debug(string $error, string $debug = null) : self
     {
         $this->error = $error;
+        $this->debug = $debug ?? $error;
 
         return $this;
     }

@@ -25,19 +25,19 @@
                         <!--EndSezError-->
                         <div class="form-group" >
                             <label for="email">{_New email}</label>
-                            <input id="email" class="form-control" type="email" placeholder="{_Insert a new email}*" name='email' required="required"/>
+                            <input id="email" class="form-control" type="email" placeholder="{_Insert a new email}*" name='email' required="required" autocomplete="off" />
                         </div>
 
                         <div class="form-group" >
-                            <label for="confirm-email">{_New email confirm}</label>
-                            <input id="confirm-email" class="form-control" type="email" placeholder="{_Confirm new email}*" name='confirm-email' required="required"/>
+                            <label for="cemail">{_New email confirm}</label>
+                            <input id="cemail" class="form-control" type="email" placeholder="{_Confirm new email}*" name='confirm-email' required="required" autocomplete="off" />
                         </div>
 
                         <div class="form-group">
-                            <label for="code-confirm">{_Code}</label>
-                            <input id="code-confirm" class="form-control" name="code-confirm" type="number" required="required" placeholder="{_Insert your code}">
+                            <label for="ccode">{_Code}</label>
+                            <input id="ccode" class="form-control" type="number" placeholder="{_Insert your code}" name="code-confirm" required="required" autocomplete="off" />
 
-                            <a class="resend-code" href="javascript:void(0);" onclick="hcore.security.recover('{recover_url}', '{redirect_url}', true);">Resend code</a>
+                            <a class="resend-code cm-xhr" href="{resend_code}">Resend code</a>
                         </div>
 
                         <div class="form-group mb-0 text-center">

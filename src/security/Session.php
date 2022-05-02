@@ -240,9 +240,23 @@ class Session
         if ($session_valid === false) {
             $this->destroy();
             throw new Exception(self::ERROR_SESSION_INVALID, 404);
+        } elseif ($session_valid === true && $this->tokenExpired()) {
+            $this->destroy();
+            $session_valid = false;
         }
 
         return $session_valid;
+    }
+
+    /**
+     * @return bool
+     */
+    private function tokenExpired() : bool
+    {
+        return !empty($token = $this->get("token"))
+            && !empty($token["access"])
+            && !empty($token["expire"])
+            && time() > $token["expire"];
     }
 
     /**

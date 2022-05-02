@@ -344,25 +344,25 @@ abstract class DatabaseAdapter implements Constant
             $this->setIndex2Query();
         }
 
-        foreach ($fields as $name => $value) {
-            if (!isset($this->def->struct[$name])) {
+        foreach ($fields as $dbField => $keyField) {
+            if (!isset($this->def->struct[$dbField])) {
                 continue;
             }
 
-            if (is_bool($value) || $name == $value) {
-                $value                  = $name;
-                $this->converter->set($name);
+            if (is_bool($keyField) || $dbField == $keyField) {
+                $keyField                  = $dbField;
+                $this->converter->set($dbField);
             } else {
-                $this->converter->set($value, $name);
+                $this->converter->set($keyField, $dbField);
             }
 
-            if ($this->key_name != $this->def->key_primary && $name == $this->def->key_primary) {
-                $name = $this->convertKeyPrimary($name);
+            if ($this->key_name != $this->def->key_primary && $dbField == $this->def->key_primary) {
+                $dbField = $this->convertKeyPrimary($dbField);
             }
-            $res[$name]                 = $value;
+            $res[$dbField]                 = $keyField;
         }
 
-        $this->converter->fields($res, empty($this->def->table["preserve_columns_order"]));
+        $this->converter->fields(array_flip($res), empty($this->def->table["preserve_columns_order"]));
 
         return $res + $this->index2query;
     }
@@ -574,25 +574,25 @@ abstract class DatabaseAdapter implements Constant
 
         if (!empty($keys)) {
             $query_update                               = clone $query;
-
-            if ($this->driver->update($query_update)) {
-                $res                                = array(
-                                                        self::INDEX_PRIMARY => array(
-                                                            $this->def->key_primary => $this->driver->getUpdatedIDs($keys)
-                                                        ),
-                                                        "action"    => self::ACTION_UPDATE
-                                                    );
-            }
+            $this->driver->update($query_update);
+            $res                                        = array(
+                                                            self::INDEX_PRIMARY => array(
+                                                                $this->def->key_primary => $keys
+                                                            ),
+                                                            "action"    => self::ACTION_UPDATE
+                                                        );
         } elseif (!empty($query->insert)) {
             $query_insert                           = clone $query;
-            if ($this->driver->insert($query_insert)) {
-                $res                                = array(
+            $res                                    = array(
                                                         self::INDEX_PRIMARY => array(
-                                                            $this->def->key_primary => $this->driver->getInsertID()
-                                                        ),
-                                                        "action"    => self::ACTION_INSERT
+                                                            $this->def->key_primary => (
+                                                                $this->driver->insert($query_insert)
+                                                                ? $this->driver->getInsertID()
+                                                                : null
+                                                            ),
+                                                            "action"    => self::ACTION_INSERT
+                                                        )
                                                     );
-            }
         }
 
         return $res;

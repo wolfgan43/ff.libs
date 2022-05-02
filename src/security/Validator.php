@@ -119,14 +119,14 @@ class Validator
                                                                 ),
                                                                 "array"             => array(
                                                                     "filter"        => FILTER_SANITIZE_STRING,
-                                                                    "flags"         => FILTER_REQUIRE_ARRAY | FILTER_FLAG_NO_ENCODE_QUOTES | FILTER_FLAG_STRIP_LOW, //| FILTER_FLAG_STRIP_HIGH
+                                                                    "flags"         => FILTER_REQUIRE_ARRAY | FILTER_NULL_ON_FAILURE | FILTER_FLAG_NO_ENCODE_QUOTES | FILTER_FLAG_STRIP_LOW, //| FILTER_FLAG_STRIP_HIGH
                                                                     "options"       => null,
                                                                     "callback"      => "\phpformsframework\libs\security\Validator::checkSpecialChars",
                                                                     "length"        => 10240
                                                                 ),
                                                                 "arrayint"          => array(
                                                                     "filter"        => FILTER_VALIDATE_INT,
-                                                                    "flags"         => FILTER_REQUIRE_ARRAY,
+                                                                    "flags"         => FILTER_REQUIRE_ARRAY | FILTER_NULL_ON_FAILURE,
                                                                     "options"       => null,
                                                                     "length"        => 16
                                                                 ),
@@ -179,7 +179,7 @@ class Validator
                                                                 "password"          => array(
                                                                     "filter"        => FILTER_CALLBACK,
                                                                     "flags"         => null,
-                                                                    "options"       => '\phpformsframework\libs\security\Validator::checkPassword',
+                                                                    "options"       => '\phpformsframework\libs\security\Validator::isPassword',
                                                                     "length"        => 24
                                                                 ),
                                                                 "tel"               => array(
@@ -282,10 +282,11 @@ class Validator
     public static function is(&$what, string $context, string $type = null, $range = null) : DataError
     {
         if (!array_key_exists($type, self::RULES)) {
+            //@todo da gestire il default in modo dinamico. Da togliere text in virtu di string
             $type                                       = (
                 is_array($what)
                                                             ? "array"
-                                                            : "string"
+                                                            : "text"
             );
         }
         $rule                                           = (object) self::RULES[$type];
@@ -307,23 +308,31 @@ class Validator
             if ($type === "json" && is_array($what)) {
                 $type = "array";
             }
-            
             $validation                                 = filter_var($what, $rule->filter, array(
                                                             "flags"     => $rule->flags         ?? null,
                                                             "options"   => $rule->options       ?? null
                                                         ));
 
-            //workground php bug: 49510
-            if ($validation === false && $rule->filter == FILTER_VALIDATE_BOOLEAN && ($what === false || $what === "false" || $what === "0" || $what === 0 || $what === "off" || $what === "no")) {
-                $validation                             = null;
-                $what                                   = false;
+            if ($what === null) {
+                $error                                  = false;
+            } elseif ($rule->filter === FILTER_CALLBACK) {
+                $error                                  = !$validation;
+            } elseif ($type == "array"
+                || $type == "string"
+                || $type == "text"
+                || $rule->filter === FILTER_VALIDATE_BOOLEAN
+                || $rule->filter === FILTER_VALIDATE_INT
+                || $rule->filter === FILTER_VALIDATE_FLOAT
+            ) {
+                $error                                  = $validation != $what;
+            } else {
+                $error                                  = $validation !== $what;
             }
 
-            if ($validation === false) {
+            if ($validation === null || $error) {
                 $dataError->error(
                     400,
                     $context . " is not a valid " . $type
-                    . (strlen($what)    ? ": " . $what : "")
                     . ($range           ? ". The permitted values are [" . $range . "]" : "")
                 );
             } elseif (is_array($validation) && ($error  = self::isArrayAllowed($what, $type))) {
@@ -400,7 +409,7 @@ class Validator
             case "base64":
             case "base64file":
             case "base64url":
-            $value      = self::$conversion;
+                $value      = self::$conversion;
                 break;
             case "boolean":
             case "bool":

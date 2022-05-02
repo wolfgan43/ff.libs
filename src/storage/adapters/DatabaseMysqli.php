@@ -105,7 +105,7 @@ class DatabaseMysqli extends DatabaseAdapter
         } else {
             $res[$name] = implode(self::AND, $res[$name]);
             if (isset($res[self::OR][$name])) {
-                $res[$name] = "((" . $res[$name] . ")" . self::OR . "(" . str_replace(self::OR, self::AND, $res[self:: OR][$name]) . "))";
+                $res[$name] = "((" . $res[$name] . ")" . self::OR . "(" . str_replace(self::OR, self::AND, $res[self::OR][$name]) . "))";
                 unset($res[self::OR][$name]);
             }
         }
@@ -147,7 +147,7 @@ class DatabaseMysqli extends DatabaseAdapter
                     $op,
                     $struct_type,
                     $value
-                    ) . ")";
+                ) . ")";
             } else {
                 $res = $this->replacer(
                     $name,
@@ -203,9 +203,21 @@ class DatabaseMysqli extends DatabaseAdapter
                 "`" . str_replace("`", "", $name) . "`",
                 $this->driver->toSql(str_replace(array("(.*)", "(.+)", ".*", ".+", "*", "+"), "%", $value), $struct_type, $castResult),
                 $this->driver->toSql($value, $struct_type, $castResult),
-                str_replace("','", ",", $this->driver->toSql($value, $struct_type, $castResult))
+                $this->replacerComma($this->driver->toSql($value, $struct_type, $castResult))
             ),
             self::OPERATOR_COMPARISON[$op]
+        );
+    }
+
+    /**
+     * @param string $value
+     * @return string
+     */
+    private function replacerComma(string $value) : string
+    {
+        return ($value == "','"
+            ? $value
+            : str_replace("','", ",", $value)
         );
     }
 

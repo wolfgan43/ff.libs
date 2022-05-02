@@ -46,7 +46,8 @@
 
             <post name="code"                           validator="totp"        />
             <post name="identifier"                     validator="string"      />
-            <post name="value"                          validator="password"    />
+            <post name="password"                       validator="password"    />
+            <post name="email"                          validator="email"    />
         </page>
 
         <page path="/registration/{model}" controller="phpformsframework\libs\security\widgets\Registration"    csrf="true"     access="public">

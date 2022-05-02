@@ -72,4 +72,6 @@ interface ViewAdapter
      * @return bool
      */
     public function isset(string $name) : bool;
+
+    public function setLang(string $lang_code = null) : ViewAdapter;
 }

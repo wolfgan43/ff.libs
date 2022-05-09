@@ -280,7 +280,7 @@ class Locale implements Configurable
             }
         }
 
-        return $res;
+        return $res ?? self::defaultLocale();
     }
 
     /**
@@ -309,5 +309,16 @@ class Locale implements Configurable
                                                                         ? self::$locale["country"][$country_tiny_code]
                                                                         : self::$countryDefault
                                                                     );
+    }
+
+    /**
+     * @return array
+     */
+    private static function defaultLocale() : array
+    {
+        return [
+            "lang"     => self::$langDefault,
+            "country"  => self::$countryDefault
+        ];
     }
 }

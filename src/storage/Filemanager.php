@@ -89,7 +89,7 @@ class Filemanager implements Dumpable
         return array(
             "patterns"      => self::$patterns,
             "storage"       => self::$storage,
-            "contents"      => self::$cache["request"]
+            "contents"      => self::$cache["request"] ?? null
         );
     }
 

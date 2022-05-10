@@ -227,6 +227,10 @@ class Buffer implements Dumpable
      */
     private static function setStats(float $time, string $bucket, string $pkey) : void
     {
+        if(!isset(self::$stats)) {
+            self::$stats = new stdClass();
+        }
+
         self::$stats->extime[self::SEP_EXTIME . $bucket]    = $time + (self::$stats->extime[self::SEP_EXTIME . $bucket] ?? 0);
         self::$stats->extime_action[$pkey]                  = $time + (self::$stats->extime_action[$pkey] ?? 0);
         self::$stats->count[$pkey]                          = 1 + (self::$stats->count[$pkey] ?? 0);

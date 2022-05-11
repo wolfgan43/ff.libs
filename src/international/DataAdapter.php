@@ -440,7 +440,7 @@ class DataAdapter extends Mappable
      */
     public function setTimestamp(Data $oData, string $value) : void
     {
-        if (is_numeric($value) && $value > 0) {
+        if (is_numeric($value) && $value >= 0) {
             $oData->value_date_day = date("d", $value);
             $oData->value_date_month = date("m", $value);
             $oData->value_date_year = date("Y", $value);
@@ -459,7 +459,7 @@ class DataAdapter extends Mappable
      */
     public function setTimeToSec(Data $oData, string $value) : void
     {
-        if (is_numeric($value) && $value > 0) {
+        if (is_numeric($value) && $value >= 0) {
             $oData->value_date_day = intval(gmdate("d", $value));
             $oData->value_date_month = intval(gmdate("m", $value));
             $oData->value_date_year = intval(gmdate("Y", $value));

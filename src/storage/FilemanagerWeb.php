@@ -57,7 +57,7 @@ class FilemanagerWeb implements Dumpable
     public static function dump() : array
     {
         return array(
-            "loaded"           => self::$cache["request"]
+            "loaded"           => self::$cache["request"] ?? null
         );
     }
 

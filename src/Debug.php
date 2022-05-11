@@ -113,7 +113,7 @@ class Debug
 
     public static function setBackTrace(array $backtrace) : void
     {
-        if (Kernel::$Environment::PROFILING) {
+        if (Kernel::$Environment::PROFILING && empty(self::$backtrace)) {
             self::$backtrace = $backtrace;
         }
     }

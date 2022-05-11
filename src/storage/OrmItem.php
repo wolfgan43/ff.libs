@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\storage;
 
+use ArrayObject;
 use phpformsframework\libs\ClassDetector;
 use phpformsframework\libs\dto\DataResponse;
 use phpformsframework\libs\dto\DataTableResponse;
@@ -459,8 +460,11 @@ abstract class OrmItem
      */
     public function fillByObject(object $obj) : self
     {
-        $this->fill((array) $obj);
-
+        $this->fill(
+            $obj instanceof ArrayObject
+            ? $obj->getArrayCopy()
+            : (array) $obj
+        );
         return $this;
     }
 
@@ -562,7 +566,10 @@ abstract class OrmItem
 
         if ($this->recordKey) {
             if (($storedVars = array_intersect_key($this->storedData, $vars)) != $vars) {
-                $this->db->update(array_diff_assoc($vars, $storedVars), [static::TABLE . "." . $this->primaryKey => $this->recordKey]);
+                /**
+                 * phpBug 62115 Issue with method array_diff_assoc
+                 */
+                $this->db->update(@array_diff_assoc($vars, $storedVars), [static::TABLE . "." . $this->primaryKey => $this->recordKey]);
             }
         } else {
             $item                                                               = $this->db->insert(array_merge($vars, $this->primaryIndexes));
@@ -852,15 +859,15 @@ abstract class OrmItem
      */
     private function fieldSetPurged(array $fields = null) : array
     {
-        return ($fields
+        return (!empty($fields)
             ? array_intersect_key(get_object_vars($this), $fields)
-            : array_intersect_key(get_object_vars($this), $this->informationSchema->dtd)
+            : array_intersect_key(get_object_vars($this), $this->informationSchema->dtd + $this->informationSchema->relationship)
         );
     }
 
     protected function setRecordKey(string $key = null) : self
     {
-        if ($key) {
+        if (!empty($key)) {
             $this->recordKey    = $key;
             $this->primaryKey   = $this->db->informationSchema()->key;
         }

@@ -459,11 +459,13 @@ class Orm extends Mappable
      */
     public function update(array $set, array $where = null) : OrmResults
     {
-        $this->cacheRequest(self::ACTION_UPDATE, [$set, $where]);
+        if (!empty($set)) {
+            $this->cacheRequest(self::ACTION_UPDATE, [$set, $where]);
 
-        $this->set($where, $set);
+            $this->set($where, $set);
 
-        $this->cacheUpdate();
+            $this->cacheUpdate();
+        }
 
         return $this->getResult();
     }

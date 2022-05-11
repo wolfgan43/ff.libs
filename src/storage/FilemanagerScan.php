@@ -188,11 +188,6 @@ class FilemanagerScan implements Dumpable
     {
         $flags = null;
         $limit = null;
-        if (is_array($opt->filter)) {
-            $flags = GLOB_BRACE;
-            $limit = ".{" . implode(",", $opt->filter) . "}";
-            unset($opt->filter);
-        }
 
         foreach (glob($pattern . $limit, $flags) as $file) {
             if (isset($opt->exclude) && in_array(basename($file), $opt->exclude)) {

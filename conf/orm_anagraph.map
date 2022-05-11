@@ -41,7 +41,6 @@
       "id": "primary",
       "type_id": "number",
       "role_id": "number",
-      "user_uuid": "string",
       "name": "string",
       "email": "string",
       "tel": "string",
@@ -143,10 +142,6 @@
         "tbl": "anagraph_type",
         "key": "id"
       },
-      "user_uuid": {
-        "tbl": "users",
-        "key": "uuid"
-      },
       "anagraph_person": {
         "external": "anagraph_id",
         "primary": "id"
@@ -164,8 +159,8 @@
         "primary": "id"
       },
       "users": {
-        "collection": "user",
-        "external": "anagraph",
+        "collection": "access",
+        "external": "users",
         "primary": "id"
       }
     },

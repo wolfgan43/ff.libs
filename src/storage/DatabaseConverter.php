@@ -143,7 +143,7 @@ class DatabaseConverter
                 $res[$keyfield] = $this->replace[$keyfield][$res[$keyfield]];
             }
 
-            if (isset($this->to[$keyfield])) {
+            if (isset($this->to[$keyfield]) && $res[$keyfield] !== null) {
                 $res[$keyfield] = ($this->to[$keyfield]->callback)($res[$keyfield], $this->to[$keyfield]->properties);
             }
         }

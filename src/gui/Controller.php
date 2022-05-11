@@ -25,6 +25,7 @@
  */
 namespace phpformsframework\libs\gui;
 
+use ArrayObject;
 use phpformsframework\libs\ClassDetector;
 use phpformsframework\libs\Debug;
 use phpformsframework\libs\Dir;
@@ -90,6 +91,9 @@ abstract class Controller
     protected $method                           = null;
     protected $headers                          = null;
     protected $authorization                    = null;
+    /**
+     * @var ArrayObject|null
+     */
     protected $request                          = null;
     protected $script_path                      = null;
     protected $path_info                        = null;
@@ -164,7 +168,7 @@ abstract class Controller
 
         $this->class_name                       = str_replace(self::CONTROLLER_PREFIX, "", strtolower($this->getClassName()));
         $this->method                           = $page->method;
-        $this->request                          = $this->encodeEntities($page->getRequest());
+        $this->request                          = new ArrayObject($this->encodeEntities($page->getRequest()), ArrayObject::ARRAY_AS_PROPS);
         $this->headers                          = (object) $page->getHeaders();
         $this->authorization                    = $page->getAuthorization();
         $this->script_path                      = $page->script_path;
@@ -580,18 +584,19 @@ abstract class Controller
     /**
      * @param int $status
      * @param string|null $msg
+     * @param bool $debug
      * @return $this
      */
     protected function error(int $status, string $msg = null, bool $debug = true) : self
     {
         $this->http_status_code     = $status;
         $this->error                = (
-            $status < 500
+            $status < 500 || Kernel::$Environment::DEBUG
             ? $msg
             : self::ERROR_SERVER_NOT_AVAILABLE
         );
 
-        if ($debug) {
+        if ($debug && $this->error) {
             $this->debug($this->error, $msg);
         }
 
@@ -951,9 +956,9 @@ abstract class Controller
 
     /**
      * @param array $params
-     * @return object
+     * @return array
      */
-    public static function encodeEntities(array $params) : object
+    public static function encodeEntities(array $params) : array
     {
         foreach ($params as $i => $param) {
             if ($param === null || is_object($param)) {
@@ -968,6 +973,6 @@ abstract class Controller
             );
         }
 
-        return (object) $params;
+        return $params;
     }
 }

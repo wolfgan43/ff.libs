@@ -609,9 +609,9 @@ class Media implements Configurable
         $this->setPathInfo($pathinfo);
         $status                                                     = null;
         $content_type                                               = (
-            empty($this->pathinfo->extension)
+            empty($this->pathinfo["extension"])
             ? static::MIMETYPE_DEFAULT
-            : $this->getMimeByExtension($this->pathinfo->extension)
+            : $this->getMimeByExtension($this->pathinfo["extension"])
         );
 
         $res                                                        = $content_type != static::MIMETYPE_DEFAULT && $this->process();

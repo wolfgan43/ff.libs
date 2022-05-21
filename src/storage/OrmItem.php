@@ -704,7 +704,7 @@ abstract class OrmItem
                 $this->indexes                                                  = $item->indexes();
 
                 if ($record = $item->getArray(0)) {
-                    $this->storedData = json_decode(json_encode($record), true);
+                    $this->storedData                                           = json_decode(json_encode($record), true);
 
                     $this->autoMapping($record);
 

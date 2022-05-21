@@ -228,7 +228,7 @@ abstract class DatabaseDriver implements Constant
                 : $this->convertID($mixed)
             );
         } elseif (is_array($mixed)) {
-            $res = $this->toSqlArray($type, $mixed);
+            $res = $this->toSqlArray($type, $mixed, $castResult);
         } elseif (is_object($mixed)) {
             switch (get_class($mixed)) {
                 case DateTime::class:
@@ -265,7 +265,7 @@ abstract class DatabaseDriver implements Constant
      * @param string $type
      * @return string|array
      */
-    protected function toSqlArray(string $type, array $Array)
+    protected function toSqlArray(string $type, array $Array, bool $castResult = false)
     {
         switch ($type) {
             case self::FTYPE_ARRAY_JSON:

@@ -586,14 +586,18 @@ class MySqli extends DatabaseDriver
      * @param array $Array
      * @return string
      */
-    protected function toSqlArray(string $type, array $Array): string
+    protected function toSqlArray(string $type, array $Array, bool $castResult = false): string
     {
-        $value = parent::toSqlArray($type, $Array);
+        $value = parent::toSqlArray($type, $Array, $castResult);
         if (is_array($value)) {
             return $this->toSqlArray2String($value);
         }
 
-        return $this->tpSqlEscaper(str_replace(self::SEP, "'" . self::SEP . "'", $value));
+        return $this->tpSqlEscaper(
+            $castResult || $type == self::FTYPE_ARRAY_JSON
+                ? $value
+                : str_replace(self::SEP, "'" . self::SEP . "'", $value)
+        );
     }
 
     /**
@@ -650,6 +654,6 @@ class MySqli extends DatabaseDriver
     {
         $this->checkError();
 
-        throw new Exception("MySQL(" . $this->database . ") - " . $msg . " #" . $this->errno . ": " . $this->error, 500);
+        throw new Exception("MySQL(" . $this->database . ") " . "#" . $this->errno . ": " . $this->error . " - " . $msg, 500);
     }
 }

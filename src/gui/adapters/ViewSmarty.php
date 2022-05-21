@@ -23,12 +23,12 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\gui\adapters;
+namespace ff\libs\gui\adapters;
 
 if (!class_exists("Smarty")) {
     /**
      * Class ViewSmarty
-     * @package phpformsframework\libs\gui\adapters
+     * @package ff\libs\gui\adapters
      */
     class ViewSmarty
     {
@@ -36,15 +36,15 @@ if (!class_exists("Smarty")) {
     return null;
 }
 
-use phpformsframework\libs\gui\Controller;
-use phpformsframework\libs\gui\Resource;
-use phpformsframework\libs\Kernel;
+use ff\libs\gui\Controller;
+use ff\libs\gui\Resource;
+use ff\libs\Kernel;
 use Smarty;
 use SmartyException;
 
 /**
  * Class ViewSmarty
- * @package phpformsframework\libs\gui\adapters
+ * @package ff\libs\gui\adapters
  */
 class ViewSmarty extends Smarty implements ViewAdapter
 {

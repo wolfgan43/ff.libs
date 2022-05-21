@@ -23,17 +23,17 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs;
+namespace ff\libs;
 
-use phpformsframework\libs\dto\RequestPage;
-use phpformsframework\libs\international\Locale;
-use phpformsframework\libs\security\Discover;
-use phpformsframework\libs\security\Validator;
-use phpformsframework\libs\util\Normalize;
+use ff\libs\dto\RequestPage;
+use ff\libs\international\Locale;
+use ff\libs\security\Discover;
+use ff\libs\security\Validator;
+use ff\libs\util\Normalize;
 
 /**
  * Class App
- * @package phpformsframework\libs
+ * @package ff\libs
  */
 abstract class App implements Dumpable
 {

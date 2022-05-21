@@ -23,16 +23,16 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\gui;
+namespace ff\libs\gui;
 
-use phpformsframework\libs\storage\FilemanagerFs;
-use phpformsframework\libs\storage\Media;
-use phpformsframework\libs\Exception;
+use ff\libs\storage\FilemanagerFs;
+use ff\libs\storage\Media;
+use ff\libs\Exception;
 use stdClass;
 
 /**
  * Class Widget
- * @package phpformsframework\libs\gui
+ * @package ff\libs\gui
  */
 abstract class Widget extends Controller
 {

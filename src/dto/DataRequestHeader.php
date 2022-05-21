@@ -23,15 +23,15 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\dto;
+namespace ff\libs\dto;
 
-use phpformsframework\libs\Kernel;
-use phpformsframework\libs\Mappable;
-use phpformsframework\libs\Exception;
+use ff\libs\Kernel;
+use ff\libs\Mappable;
+use ff\libs\Exception;
 
 /**
  * Class DataRequestHeader
- * @package phpformsframework\libs\dto
+ * @package ff\libs\dto
  */
 class DataRequestHeader extends Mappable
 {

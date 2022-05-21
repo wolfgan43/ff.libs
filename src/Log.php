@@ -23,15 +23,15 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs;
+namespace ff\libs;
 
-use phpformsframework\libs\security\User;
-use phpformsframework\libs\storage\FilemanagerFs;
-use phpformsframework\libs\util\ServerManager;
+use ff\libs\security\User;
+use ff\libs\storage\FilemanagerFs;
+use ff\libs\util\ServerManager;
 
 /**
  * Class Log
- * @package phpformsframework\libs
+ * @package ff\libs
  */
 class Log
 {

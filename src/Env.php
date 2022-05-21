@@ -23,13 +23,13 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs;
+namespace ff\libs;
 
-use phpformsframework\libs\cache\Buffer;
+use ff\libs\cache\Buffer;
 
 /**
  * Class Env
- * @package phpformsframework\libs
+ * @package ff\libs
  */
 class Env implements Configurable
 {

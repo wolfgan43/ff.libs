@@ -23,18 +23,18 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs;
+namespace ff\libs;
 
-use phpformsframework\libs\cache\Buffer;
-use phpformsframework\libs\delivery\Notice;
-use phpformsframework\libs\gui\Resource;
-use phpformsframework\libs\storage\FilemanagerFs;
-use phpformsframework\libs\util\ServerManager;
+use ff\libs\cache\Buffer;
+use ff\libs\delivery\Notice;
+use ff\libs\gui\Resource;
+use ff\libs\storage\FilemanagerFs;
+use ff\libs\util\ServerManager;
 use ReflectionClass;
 
 /**
  * Class Debug
- * @package phpformsframework\libs
+ * @package ff\libs
  */
 class Debug
 {

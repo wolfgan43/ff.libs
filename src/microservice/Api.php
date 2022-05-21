@@ -23,19 +23,19 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\microservice;
+namespace ff\libs\microservice;
 
-use phpformsframework\libs\dto\DataAdapter;
-use phpformsframework\libs\Kernel;
-use phpformsframework\libs\microservice\adapters\ApiAdapter;
-use phpformsframework\libs\Request;
-use phpformsframework\libs\security\User;
-use phpformsframework\libs\util\AdapterManager;
-use phpformsframework\libs\Exception;
+use ff\libs\dto\DataAdapter;
+use ff\libs\Kernel;
+use ff\libs\microservice\adapters\ApiAdapter;
+use ff\libs\Request;
+use ff\libs\security\User;
+use ff\libs\util\AdapterManager;
+use ff\libs\Exception;
 
 /**
  * Class Api
- * @package phpformsframework\libs\microservice
+ * @package ff\libs\microservice
  * @property ApiAdapter $adapter
  */
 class Api

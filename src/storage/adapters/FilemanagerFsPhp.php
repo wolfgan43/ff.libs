@@ -23,15 +23,15 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\storage\adapters;
+namespace ff\libs\storage\adapters;
 
-use phpformsframework\libs\Autoloader;
-use phpformsframework\libs\Exception;
-use phpformsframework\libs\storage\FilemanagerAdapter;
+use ff\libs\Autoloader;
+use ff\libs\Exception;
+use ff\libs\storage\FilemanagerAdapter;
 
 /**
  * Class FilemanagerFsPhp
- * @package phpformsframework\libs\storage\adapters
+ * @package ff\libs\storage\adapters
  */
 class FilemanagerFsPhp extends FilemanagerAdapter
 {

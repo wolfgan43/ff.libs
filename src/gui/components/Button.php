@@ -23,15 +23,15 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\gui\components;
+namespace ff\libs\gui\components;
 
+use ff\libs\international\Translator;
+use ff\libs\util\ServerManager;
 use Exception;
-use phpformsframework\libs\international\Translator;
-use phpformsframework\libs\util\ServerManager;
 
 /**
 * Class Field
-* @package phpformsframework\libs\gui\components
+* @package ff\libs\gui\components
 */
 class Button
 {

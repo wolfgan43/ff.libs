@@ -23,19 +23,19 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\dto;
+namespace ff\libs\dto;
 
-use phpformsframework\libs\Mappable;
-use phpformsframework\libs\Request;
-use phpformsframework\libs\security\Validator;
-use phpformsframework\libs\security\ValidatorFile;
-use phpformsframework\libs\util\ServerManager;
-use phpformsframework\libs\util\TypesConverter;
+use ff\libs\Mappable;
+use ff\libs\Request;
+use ff\libs\security\Validator;
+use ff\libs\security\ValidatorFile;
+use ff\libs\util\ServerManager;
+use ff\libs\util\TypesConverter;
 use stdClass;
 
 /**
  * Class ConfigPage
- * @package phpformsframework\libs\dto
+ * @package ff\libs\dto
  */
 class RequestPage extends Mappable
 {

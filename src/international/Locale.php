@@ -23,17 +23,17 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\international;
+namespace ff\libs\international;
 
-use phpformsframework\libs\Configurable;
-use phpformsframework\libs\Debug;
-use phpformsframework\libs\Dir;
-use phpformsframework\libs\dto\ConfigRules;
-use phpformsframework\libs\Kernel;
+use ff\libs\Configurable;
+use ff\libs\Debug;
+use ff\libs\Dir;
+use ff\libs\dto\ConfigRules;
+use ff\libs\Kernel;
 
 /**
  * Class Locale
- * @package phpformsframework\libs\international
+ * @package ff\libs\international
  */
 class Locale implements Configurable
 {

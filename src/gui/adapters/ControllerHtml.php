@@ -23,29 +23,29 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\gui\adapters;
+namespace ff\libs\gui\adapters;
 
-use phpformsframework\libs\Autoloader;
-use phpformsframework\libs\Constant;
-use phpformsframework\libs\Debug;
-use phpformsframework\libs\Dir;
-use phpformsframework\libs\dto\DataHtml;
-use phpformsframework\libs\gui\Controller;
-use phpformsframework\libs\gui\ControllerAdapter;
-use phpformsframework\libs\Kernel;
-use phpformsframework\libs\international\Locale;
-use phpformsframework\libs\Response;
-use phpformsframework\libs\security\Validator;
-use phpformsframework\libs\storage\FilemanagerFs;
-use phpformsframework\libs\storage\Media;
-use phpformsframework\libs\gui\Resource;
-use phpformsframework\libs\gui\View;
-use phpformsframework\libs\Exception;
-use phpformsframework\libs\util\ServerManager;
+use ff\libs\Autoloader;
+use ff\libs\Constant;
+use ff\libs\Debug;
+use ff\libs\Dir;
+use ff\libs\dto\DataHtml;
+use ff\libs\gui\Controller;
+use ff\libs\gui\ControllerAdapter;
+use ff\libs\Kernel;
+use ff\libs\international\Locale;
+use ff\libs\Response;
+use ff\libs\security\Validator;
+use ff\libs\storage\FilemanagerFs;
+use ff\libs\storage\Media;
+use ff\libs\gui\Resource;
+use ff\libs\gui\View;
+use ff\libs\Exception;
+use ff\libs\util\ServerManager;
 
 /**
  * Class PageHtml
- * @package phpformsframework\libs\gui\adapters
+ * @package ff\libs\gui\adapters
  */
 class ControllerHtml extends ControllerAdapter
 {

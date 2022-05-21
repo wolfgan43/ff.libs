@@ -23,17 +23,17 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\storage;
+namespace ff\libs\storage;
 
-use phpformsframework\libs\storage\dto\OrmDef;
-use phpformsframework\libs\storage\dto\Schema;
-use phpformsframework\libs\util\AdapterManager;
-use phpformsframework\libs\util\TypesConverter;
-use phpformsframework\libs\Exception;
+use ff\libs\storage\dto\OrmDef;
+use ff\libs\storage\dto\Schema;
+use ff\libs\util\AdapterManager;
+use ff\libs\util\TypesConverter;
+use ff\libs\Exception;
 
 /**
  * Class Database
- * @package phpformsframework\libs\storage
+ * @package ff\libs\storage
  * @property DatabaseAdapter[] $adapters
  */
 class Database implements Constant

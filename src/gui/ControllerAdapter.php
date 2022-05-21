@@ -23,15 +23,15 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\gui;
+namespace ff\libs\gui;
 
-use phpformsframework\libs\dto\DataHtml;
-use phpformsframework\libs\Mappable;
-use phpformsframework\libs\security\Buckler;
+use ff\libs\dto\DataHtml;
+use ff\libs\Mappable;
+use ff\libs\security\Buckler;
 
 /**
  * Class ControllerAdapter
- * @package phpformsframework\libs\gui
+ * @package ff\libs\gui
  */
 abstract class ControllerAdapter extends Mappable
 {

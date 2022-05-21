@@ -23,18 +23,18 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\security;
+namespace ff\libs\security;
 
-use phpformsframework\libs\dto\DataError;
-use phpformsframework\libs\Env;
-use phpformsframework\libs\Kernel;
-use phpformsframework\libs\Request;
-use phpformsframework\libs\Exception;
+use ff\libs\dto\DataError;
+use ff\libs\Env;
+use ff\libs\Kernel;
+use ff\libs\Request;
+use ff\libs\Exception;
 use stdClass;
 
 /**
  * Class Validator
- * @package phpformsframework\libs\security
+ * @package ff\libs\security
  */
 class Validator
 {
@@ -107,21 +107,21 @@ class Validator
                                                                     "filter"        => FILTER_SANITIZE_STRING,
                                                                     "flags"         => FILTER_FLAG_STRIP_LOW,
                                                                     "options"       => null,
-                                                                    "callback"      => "\phpformsframework\libs\security\Validator::checkSpecialChars",
+                                                                    "callback"      => "\ff\libs\security\Validator::checkSpecialChars",
                                                                     "length"        => 48
                                                                 ),
                                                                 "string"            => array(
                                                                     "filter"        => FILTER_SANITIZE_STRING,
                                                                     "flags"         => FILTER_FLAG_NO_ENCODE_QUOTES | FILTER_FLAG_STRIP_LOW, //| FILTER_FLAG_STRIP_HIGH
                                                                     "options"       => null,
-                                                                    "callback"      => "\phpformsframework\libs\security\Validator::checkSpecialChars",
+                                                                    "callback"      => "\ff\libs\security\Validator::checkSpecialChars",
                                                                     "length"        => 256
                                                                 ),
                                                                 "array"             => array(
                                                                     "filter"        => FILTER_SANITIZE_STRING,
                                                                     "flags"         => FILTER_REQUIRE_ARRAY | FILTER_NULL_ON_FAILURE | FILTER_FLAG_NO_ENCODE_QUOTES | FILTER_FLAG_STRIP_LOW, //| FILTER_FLAG_STRIP_HIGH
                                                                     "options"       => null,
-                                                                    "callback"      => "\phpformsframework\libs\security\Validator::checkSpecialChars",
+                                                                    "callback"      => "\ff\libs\security\Validator::checkSpecialChars",
                                                                     "length"        => 10240
                                                                 ),
                                                                 "arrayint"          => array(
@@ -140,7 +140,7 @@ class Validator
                                                                 "slug"              => array(
                                                                     "filter"        => FILTER_CALLBACK,
                                                                     "flags"         => null,
-                                                                    "options"       => '\phpformsframework\libs\util\Normalize::urlRewrite',
+                                                                    "options"       => '\ff\libs\util\Normalize::urlRewrite',
                                                                     "normalize"     => true,
                                                                     "length"        => 128
                                                                 ),
@@ -148,7 +148,7 @@ class Validator
                                                                     "filter"        => null,
                                                                     "flags"         => null,
                                                                     "options"       => null,
-                                                                    "callback"      => "\phpformsframework\libs\security\Validator::checkSpecialCharsText",
+                                                                    "callback"      => "\ff\libs\security\Validator::checkSpecialCharsText",
                                                                     "length"        => 128000
                                                                 ),
                                                                 "texthtml"          => array(
@@ -161,83 +161,83 @@ class Validator
                                                                 "timestamp"         => array(
                                                                     "filter"        => FILTER_CALLBACK,
                                                                     "flags"         => null,
-                                                                    "options"       => '\phpformsframework\libs\security\Validator::isTimeStamp',
+                                                                    "options"       => '\ff\libs\security\Validator::isTimeStamp',
                                                                     "length"        => 10
                                                                 ),
                                                                 "timestampmicro"    => array(
                                                                     "filter"        => FILTER_CALLBACK,
                                                                     "flags"         => null,
-                                                                    "options"       => '\phpformsframework\libs\security\Validator::isTimeStampMicro',
+                                                                    "options"       => '\ff\libs\security\Validator::isTimeStampMicro',
                                                                     "length"        => 13
                                                                 ),
                                                                 "json"              => array(
                                                                     "filter"        => FILTER_CALLBACK,
                                                                     "flags"         => null,
-                                                                    "options"       => '\phpformsframework\libs\security\Validator::isJson',
+                                                                    "options"       => '\ff\libs\security\Validator::isJson',
                                                                     "length"        => 10240
                                                                 ),
                                                                 "password"          => array(
                                                                     "filter"        => FILTER_CALLBACK,
                                                                     "flags"         => null,
-                                                                    "options"       => '\phpformsframework\libs\security\Validator::isPassword',
+                                                                    "options"       => '\ff\libs\security\Validator::isPassword',
                                                                     "length"        => 24
                                                                 ),
                                                                 "tel"               => array(
                                                                     "filter"        => FILTER_CALLBACK,
                                                                     "flags"         => null,
-                                                                    "options"       => '\phpformsframework\libs\security\Validator::isTel',
+                                                                    "options"       => '\ff\libs\security\Validator::isTel',
                                                                     "length"        => 16
                                                                 ),
                                                                 "uuid"              => array(
                                                                     "filter"        => FILTER_CALLBACK,
                                                                     "flags"         => null,
-                                                                    "options"       => '\phpformsframework\libs\security\Validator::isUUID',
+                                                                    "options"       => '\ff\libs\security\Validator::isUUID',
                                                                     "length"        => 128
                                                                 ),
                                                                 "totp"              => array(
                                                                     "filter"        => FILTER_CALLBACK,
                                                                     "flags"         => null,
-                                                                    "options"       => '\phpformsframework\libs\security\Validator::isTotp',
+                                                                    "options"       => '\ff\libs\security\Validator::isTotp',
                                                                     "length"        => 7
                                                                 ),
                                                                 "token"             => array(
                                                                     "filter"        => FILTER_CALLBACK,
                                                                     "flags"         => null,
-                                                                    "options"       => '\phpformsframework\libs\security\Validator::isToken',
+                                                                    "options"       => '\ff\libs\security\Validator::isToken',
                                                                     "length"        => 2048
                                                                 ),
                                                                 "file"              => array(
                                                                     "filter"        => FILTER_CALLBACK,
                                                                     "flags"         => null,
-                                                                    "options"       => '\phpformsframework\libs\security\ValidatorFile::check',
+                                                                    "options"       => '\ff\libs\security\ValidatorFile::check',
                                                                     "length"        => 0
                                                                 ),
                                                                 "base64"            => array(
                                                                     "filter"        => null,
                                                                     "flags"         => null,
                                                                     "options"       => null,
-                                                                    "callback"      => '\phpformsframework\libs\security\Validator::checkBase64',
+                                                                    "callback"      => '\ff\libs\security\Validator::checkBase64',
                                                                     "length"        => 0
                                                                 ),
                                                                 "base64json"        => array(
                                                                     "filter"        => null,
                                                                     "flags"         => null,
                                                                     "options"       => null,
-                                                                    "callback"      => '\phpformsframework\libs\security\Validator::checkJsonBase64',
+                                                                    "callback"      => '\ff\libs\security\Validator::checkJsonBase64',
                                                                     "length"        => 0
                                                                 ),
                                                                 "base64file"        => array(
                                                                     "filter"        => null,
                                                                     "flags"         => null,
                                                                     "options"       => null,
-                                                                    "callback"      => '\phpformsframework\libs\security\Validator::checkBase64File',
+                                                                    "callback"      => '\ff\libs\security\Validator::checkBase64File',
                                                                     "length"        => 0
                                                                 ),
                                                                 "base64url"        => array(
                                                                     "filter"        => null,
                                                                     "flags"         => null,
                                                                     "options"       => null,
-                                                                    "callback"      => '\phpformsframework\libs\security\Validator::checkBase64Url',
+                                                                    "callback"      => '\ff\libs\security\Validator::checkBase64Url',
                                                                     "length"        => 0
                                                                 )
                                                             );

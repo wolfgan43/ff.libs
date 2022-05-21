@@ -23,16 +23,16 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\storage\adapters;
+namespace ff\libs\storage\adapters;
 
-use phpformsframework\libs\security\Validator;
-use phpformsframework\libs\storage\FilemanagerFs;
-use phpformsframework\libs\storage\FilemanagerAdapter;
-use phpformsframework\libs\Exception;
+use ff\libs\security\Validator;
+use ff\libs\storage\FilemanagerFs;
+use ff\libs\storage\FilemanagerAdapter;
+use ff\libs\Exception;
 
 /**
  * Class FilemanagerFsJson
- * @package phpformsframework\libs\storage\adapters
+ * @package ff\libs\storage\adapters
  */
 class FilemanagerFsJson extends FilemanagerAdapter //todo: da finire
 {

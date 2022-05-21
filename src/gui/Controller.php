@@ -23,31 +23,31 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\gui;
+namespace ff\libs\gui;
 
 use ArrayObject;
-use phpformsframework\libs\ClassDetector;
-use phpformsframework\libs\Debug;
-use phpformsframework\libs\Dir;
-use phpformsframework\libs\dto\DataAdapter;
-use phpformsframework\libs\dto\DataHtml;
-use phpformsframework\libs\dto\DataResponse;
-use phpformsframework\libs\Env;
-use phpformsframework\libs\international\InternationalManager;
-use phpformsframework\libs\Kernel;
-use phpformsframework\libs\microservice\Api;
-use phpformsframework\libs\Response;
-use phpformsframework\libs\security\User;
-use phpformsframework\libs\security\UserData;
-use phpformsframework\libs\security\Validator;
-use phpformsframework\libs\storage\FilemanagerFs;
-use phpformsframework\libs\storage\Media;
-use phpformsframework\libs\util\AdapterManager;
-use phpformsframework\libs\Exception;
+use ff\libs\ClassDetector;
+use ff\libs\Debug;
+use ff\libs\Dir;
+use ff\libs\dto\DataAdapter;
+use ff\libs\dto\DataHtml;
+use ff\libs\dto\DataResponse;
+use ff\libs\Env;
+use ff\libs\international\InternationalManager;
+use ff\libs\Kernel;
+use ff\libs\microservice\Api;
+use ff\libs\Response;
+use ff\libs\security\User;
+use ff\libs\security\UserData;
+use ff\libs\security\Validator;
+use ff\libs\storage\FilemanagerFs;
+use ff\libs\storage\Media;
+use ff\libs\util\AdapterManager;
+use ff\libs\Exception;
 
 /**
  * Class Controller
- * @package phpformsframework\libs\gui
+ * @package ff\libs\gui
  */
 abstract class Controller
 {

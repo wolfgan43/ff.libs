@@ -23,19 +23,19 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\gui;
+namespace ff\libs\gui;
 
-use phpformsframework\libs\dto\DataHtml;
-use phpformsframework\libs\dto\DataTableResponse;
-use phpformsframework\libs\Kernel;
-use phpformsframework\libs\storage\OrmItem;
-use phpformsframework\libs\util\AdapterManager;
-use phpformsframework\libs\Exception;
+use ff\libs\dto\DataHtml;
+use ff\libs\dto\DataTableResponse;
+use ff\libs\Kernel;
+use ff\libs\storage\OrmItem;
+use ff\libs\util\AdapterManager;
+use ff\libs\Exception;
 use stdClass;
 
 /**
  * Class View
- * @package phpformsframework\libs\gui
+ * @package ff\libs\gui
  * @property adapters\ViewAdapter $adapter
  */
 class View

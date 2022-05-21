@@ -23,21 +23,21 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs;
+namespace ff\libs;
 
-use phpformsframework\libs\cache\Buffer;
-use phpformsframework\libs\dto\ConfigRules;
-use phpformsframework\libs\international\Locale;
-use phpformsframework\libs\microservice\Gateway;
-use phpformsframework\libs\security\Buckler;
-use phpformsframework\libs\storage\FilemanagerFs;
-use phpformsframework\libs\storage\FilemanagerScan;
-use phpformsframework\libs\storage\Media;
-use phpformsframework\libs\storage\Model;
+use ff\libs\cache\Buffer;
+use ff\libs\dto\ConfigRules;
+use ff\libs\international\Locale;
+use ff\libs\microservice\Gateway;
+use ff\libs\security\Buckler;
+use ff\libs\storage\FilemanagerFs;
+use ff\libs\storage\FilemanagerScan;
+use ff\libs\storage\Media;
+use ff\libs\storage\Model;
 
 /**
  * Class Config
- * @package phpformsframework\libs
+ * @package ff\libs
  */
 class Config implements Dumpable
 {

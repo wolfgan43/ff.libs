@@ -23,22 +23,22 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\storage;
+namespace ff\libs\storage;
 
-use phpformsframework\libs\Debug;
-use phpformsframework\libs\Dir;
-use phpformsframework\libs\Dumpable;
-use phpformsframework\libs\Kernel;
-use phpformsframework\libs\Request;
-use phpformsframework\libs\security\Validator;
-use phpformsframework\libs\util\AdapterManager;
-use phpformsframework\libs\util\Normalize;
-use phpformsframework\libs\Exception;
+use ff\libs\Debug;
+use ff\libs\Dir;
+use ff\libs\Dumpable;
+use ff\libs\Kernel;
+use ff\libs\Request;
+use ff\libs\security\Validator;
+use ff\libs\util\AdapterManager;
+use ff\libs\util\Normalize;
+use ff\libs\Exception;
 use stdClass;
 
 /**
  * Class FilemanagerWeb
- * @package phpformsframework\libs\storage
+ * @package ff\libs\storage
  */
 class FilemanagerWeb implements Dumpable
 {

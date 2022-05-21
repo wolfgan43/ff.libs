@@ -23,11 +23,11 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\gui\components;
+namespace ff\libs\gui\components;
 
 /**
  * Class DataTablePlugin
- * @package phpformsframework\libs\gui\components
+ * @package ff\libs\gui\components
  */
 class DataTablePlugin extends DataTable
 {

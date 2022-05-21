@@ -23,16 +23,16 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\security\widgets\helpers;
+namespace ff\libs\security\widgets\helpers;
 
-use phpformsframework\libs\gui\View;
-use phpformsframework\libs\security\User;
-use phpformsframework\libs\Exception;
+use ff\libs\gui\View;
+use ff\libs\security\User;
+use ff\libs\Exception;
 use stdClass;
 
 /**
  * Trait CommonTemplate
- * @package phpformsframework\libs\security\widgets\helpers
+ * @package ff\libs\security\widgets\helpers
  */
 trait CommonTemplate
 {

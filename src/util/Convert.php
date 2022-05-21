@@ -23,19 +23,19 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\util;
+namespace ff\libs\util;
 
-use phpformsframework\libs\Constant;
-use phpformsframework\libs\international\Data;
-use phpformsframework\libs\international\Locale;
-use phpformsframework\libs\international\Translator;
-use phpformsframework\libs\storage\Media;
-use phpformsframework\libs\Exception;
+use ff\libs\Constant;
+use ff\libs\international\Data;
+use ff\libs\international\Locale;
+use ff\libs\international\Translator;
+use ff\libs\storage\Media;
+use ff\libs\Exception;
 use stdClass;
 
 /**
  * Class Convert
- * @package phpformsframework\libs\util
+ * @package ff\libs\util
  */
 class Convert
 {

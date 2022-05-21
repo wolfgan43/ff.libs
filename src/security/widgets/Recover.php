@@ -23,22 +23,22 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\security\widgets;
+namespace ff\libs\security\widgets;
 
-use phpformsframework\libs\gui\Widget;
-use phpformsframework\libs\security\widgets\helpers\CommonTemplate;
-use phpformsframework\libs\Exception;
+use ff\libs\gui\Widget;
+use ff\libs\security\widgets\helpers\CommonTemplate;
+use ff\libs\Exception;
 
 /**
  * Class Recover
- * @package phpformsframework\libs\security\widgets
+ * @package ff\libs\security\widgets
  */
 class Recover extends Widget
 {
     use CommonTemplate;
 
     protected const ERROR_VIEW              = "displayError";
-    protected const USER_CLASS              = "phpformsframework\libs\security\User";
+    protected const USER_CLASS              = "ff\libs\security\User";
     protected const TOKEN_EXPIRATION        = 60 * 5;
 
     protected $requiredJs                   = ["cm"];

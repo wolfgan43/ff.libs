@@ -23,18 +23,18 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\delivery\adapters;
+namespace ff\libs\delivery\adapters;
 
-use phpformsframework\libs\delivery\drivers\MessengerAdapter;
-use phpformsframework\libs\international\Locale;
-use phpformsframework\libs\Exception;
+use ff\libs\delivery\drivers\MessengerAdapter;
+use ff\libs\international\Locale;
+use ff\libs\Exception;
 use Twilio\Exceptions\ConfigurationException;
 use Twilio\Exceptions\TwilioException;
 use Twilio\Rest\Client;
 
 /**
  * Class MessengerTwilio
- * @package phpformsframework\libs\delivery\adapters
+ * @package ff\libs\delivery\adapters
  */
 class MessengerTwilio extends MessengerAdapter
 {

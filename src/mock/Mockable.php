@@ -23,14 +23,14 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\mock;
+namespace ff\libs\mock;
 
-use phpformsframework\libs\Kernel;
+use ff\libs\Kernel;
 use stdClass;
 
 /**
  * Trait Mockable
- * @package phpformsframework\libs\mock
+ * @package ff\libs\mock
  */
 trait Mockable
 {

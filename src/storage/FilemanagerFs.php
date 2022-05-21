@@ -23,18 +23,18 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\storage;
+namespace ff\libs\storage;
 
-use phpformsframework\libs\Constant;
-use phpformsframework\libs\Dir;
-use phpformsframework\libs\Exception;
-use phpformsframework\libs\security\Validator;
-use phpformsframework\libs\util\AdapterManager;
+use ff\libs\Constant;
+use ff\libs\Dir;
+use ff\libs\Exception;
+use ff\libs\security\Validator;
+use ff\libs\util\AdapterManager;
 use stdClass;
 
 /**
  * Class FilemanagerFs
- * @package phpformsframework\libs\storage
+ * @package ff\libs\storage
  */
 class FilemanagerFs
 {

@@ -23,24 +23,24 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\security\widgets;
+namespace ff\libs\security\widgets;
 
-use phpformsframework\libs\gui\Widget;
-use phpformsframework\libs\security\User;
-use phpformsframework\libs\security\widgets\helpers\CommonTemplate;
-use phpformsframework\libs\Exception;
-use phpformsframework\libs\util\Cookie;
+use ff\libs\gui\Widget;
+use ff\libs\security\User;
+use ff\libs\security\widgets\helpers\CommonTemplate;
+use ff\libs\Exception;
+use ff\libs\util\Cookie;
 
 /**
  * Class Activation
- * @package phpformsframework\libs\security\widgets
+ * @package ff\libs\security\widgets
  */
 class Activation extends Widget
 {
     use CommonTemplate;
 
     protected const ERROR_VIEW              = "displayError";
-    protected const USER_CLASS              = "phpformsframework\libs\security\User";
+    protected const USER_CLASS              = "ff\libs\security\User";
     protected const TOKEN_EXPIRATION        = 60 * 5;
 
     private const COOKIE_NAME               = "activation";

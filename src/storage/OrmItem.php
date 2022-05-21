@@ -23,22 +23,22 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\storage;
+namespace ff\libs\storage;
 
 use ArrayObject;
-use phpformsframework\libs\ClassDetector;
-use phpformsframework\libs\dto\DataResponse;
-use phpformsframework\libs\dto\DataTableResponse;
-use phpformsframework\libs\dto\Mapping;
-use phpformsframework\libs\security\Validator;
-use phpformsframework\libs\storage\dto\OrmResults;
-use phpformsframework\libs\util\Normalize;
-use phpformsframework\libs\Exception;
+use ff\libs\ClassDetector;
+use ff\libs\dto\DataResponse;
+use ff\libs\dto\DataTableResponse;
+use ff\libs\dto\Mapping;
+use ff\libs\security\Validator;
+use ff\libs\storage\dto\OrmResults;
+use ff\libs\util\Normalize;
+use ff\libs\Exception;
 use stdClass;
 
 /**
  * Class OrmItem
- * @package phpformsframework\libs\storage
+ * @package ff\libs\storage
  */
 abstract class OrmItem
 {

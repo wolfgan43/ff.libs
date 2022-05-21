@@ -23,13 +23,13 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\security;
+namespace ff\libs\security;
 
-use phpformsframework\libs\Exception;
+use ff\libs\Exception;
 use stdClass;
 /**
  * Trait SecureManager
- * @package phpformsframework\libs\security
+ * @package ff\libs\security
  */
 trait SecureManager
 {

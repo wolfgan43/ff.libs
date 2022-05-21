@@ -23,17 +23,17 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs;
+namespace ff\libs;
 
-use phpformsframework\libs\Env;
-use phpformsframework\libs\dto\RequestPage;
-use phpformsframework\libs\international\Locale;
-use phpformsframework\libs\util\ServerManager;
-use phpformsframework\libs\util\TypesConverter;
+use ff\libs\Env;
+use ff\libs\dto\RequestPage;
+use ff\libs\international\Locale;
+use ff\libs\util\ServerManager;
+use ff\libs\util\TypesConverter;
 
 /**
  * Class Page
- * @package phpformsframework\libs
+ * @package ff\libs
  */
 class Request implements Configurable, Dumpable
 {

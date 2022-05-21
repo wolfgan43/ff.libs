@@ -23,10 +23,10 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\microservice\adapters;
+namespace ff\libs\microservice\adapters;
 
-use phpformsframework\libs\App;
-use phpformsframework\libs\Exception;
+use ff\libs\App;
+use ff\libs\Exception;
 use SoapClient;
 use SoapHeader;
 use stdClass;
@@ -34,7 +34,7 @@ use SoapFault;
 
 /**
  * Class ApiSoap
- * @package phpformsframework\libs\microservice\adapters
+ * @package ff\libs\microservice\adapters
  */
 class ApiSoap extends ApiAdapter
 {

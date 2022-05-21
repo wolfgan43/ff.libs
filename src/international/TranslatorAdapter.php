@@ -23,13 +23,13 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\international;
+namespace ff\libs\international;
 
-use phpformsframework\libs\cache\Buffer;
+use ff\libs\cache\Buffer;
 
 /**
  * Class TranslatorAdapter
- * @package phpformsframework\libs\international
+ * @package ff\libs\international
  */
 abstract class TranslatorAdapter
 {

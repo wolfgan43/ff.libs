@@ -23,22 +23,22 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\gui;
+namespace ff\libs\gui;
 
-use phpformsframework\libs\Autoloader;
-use phpformsframework\libs\cache\Buffer;
-use phpformsframework\libs\Config;
-use phpformsframework\libs\Constant;
-use phpformsframework\libs\Debug;
-use phpformsframework\libs\Dumpable;
-use phpformsframework\libs\Mappable;
-use phpformsframework\libs\storage\FilemanagerScan;
-use phpformsframework\libs\util\ServerManager;
-use phpformsframework\libs\Exception;
+use ff\libs\Autoloader;
+use ff\libs\cache\Buffer;
+use ff\libs\Config;
+use ff\libs\Constant;
+use ff\libs\Debug;
+use ff\libs\Dumpable;
+use ff\libs\Mappable;
+use ff\libs\storage\FilemanagerScan;
+use ff\libs\util\ServerManager;
+use ff\libs\Exception;
 
 /**
  * Class Resource
- * @package phpformsframework\libs\gui
+ * @package ff\libs\gui
  */
 class Resource extends Mappable implements Dumpable
 {

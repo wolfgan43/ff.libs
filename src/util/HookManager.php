@@ -23,13 +23,13 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\util;
+namespace ff\libs\util;
 
-use phpformsframework\libs\Hook;
+use ff\libs\Hook;
 
 /**
  * Class HookManager
- * @package phpformsframework\libs\util
+ * @package ff\libs\util
  */
 trait HookManager
 {

@@ -10,7 +10,7 @@
         <page path="/assets"    engine="media" validate_url="false" />
     </pages>
     <engine>
-        <media source="(.*)" obj="phpformsframework\libs\storage\Media" method="get" params="$1" accept_path_info="true" />
+        <media source="(.*)" obj="ff\libs\storage\Media" method="get" params="$1" accept_path_info="true" />
     </engine>
     <dirs>
         <!--Project-->
@@ -31,20 +31,20 @@
 
 
         <!-- Libbase -->
-        <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/src/gui/controllers/*"             scan="controllers" />
+        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/src/gui/controllers/*"             scan="controllers" />
 
-        <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/views/*"                    scan="views" />
-        <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/email/*"                    scan="email" />
-        <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/layouts/*"                  scan="layouts" />
+        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/views/*"                    scan="views" />
+        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/email/*"                    scan="email" />
+        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/layouts/*"                  scan="layouts" />
 
-        <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/assets/dist/audio/*"        scan="audio" />
-        <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/assets/dist/css/*"          scan="css" />
-        <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/assets/dist/fonts/*"        scan="fonts" />
-        <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/assets/dist/images/*"       scan="images" />
-        <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/assets/dist/js/*"           scan="js" />
-        <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/assets/dist/video/*"        scan="video" />
+        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/assets/dist/audio/*"        scan="audio" />
+        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/assets/dist/css/*"          scan="css" />
+        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/assets/dist/fonts/*"        scan="fonts" />
+        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/assets/dist/images/*"       scan="images" />
+        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/assets/dist/js/*"           scan="js" />
+        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/assets/dist/video/*"        scan="video" />
 
-        <dir    type="gui"      path="[LIBS_PATH]/phpformsframework/libs/themes/widgets/*"                  scan="widgets" />
+        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/widgets/*"                  scan="widgets" />
 
         <dir    type="app"      name="uploads"      path="/uploads"                                         writable="true" />
 

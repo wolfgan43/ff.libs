@@ -23,14 +23,14 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs;
+namespace ff\libs;
 
-use phpformsframework\libs\util\ServerManager;
-use phpformsframework\libs\util\TypesConverter;
+use ff\libs\util\ServerManager;
+use ff\libs\util\TypesConverter;
 
 /**
  * Class Router
- * @package phpformsframework\libs
+ * @package ff\libs
  */
 class Router implements Configurable, Dumpable
 {
@@ -46,7 +46,7 @@ class Router implements Configurable, Dumpable
     const PRIORITY_BOTTOM 		                            = 6;
     const PRIORITY_DEFAULT 		                            = Router::PRIORITY_NORMAL;
 
-    public const CALLER_CLASS                               = 'phpformsframework\\libs\\gui\\Controller';
+    public const CALLER_CLASS                               = 'ff\\libs\\gui\\Controller';
     public const CALLER_METHOD                              = "display";
 
     private const ERROR_RESPONSE_NO_INSTANCEOF              = "Response must be an instance of dto\DataAdapter";

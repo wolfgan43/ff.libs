@@ -23,13 +23,13 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\util;
+namespace ff\libs\util;
 
-use phpformsframework\libs\Kernel;
+use ff\libs\Kernel;
 
 /**
  * Class Session
- * @package phpformsframework\libs\security
+ * @package ff\libs\security
  */
 class Cookie
 {

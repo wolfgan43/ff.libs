@@ -23,15 +23,15 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\util;
+namespace ff\libs\util;
 
-use phpformsframework\libs\Debug;
-use phpformsframework\libs\Dir;
-use phpformsframework\libs\Router;
+use ff\libs\Debug;
+use ff\libs\Dir;
+use ff\libs\Router;
 
 /**
  * Class Debugger
- * @package phpformsframework\libs
+ * @package ff\libs
  */
 trait Debugger
 {

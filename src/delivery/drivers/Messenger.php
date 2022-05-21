@@ -23,21 +23,21 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\delivery\drivers;
+namespace ff\libs\delivery\drivers;
 
-use phpformsframework\libs\Debug;
-use phpformsframework\libs\dto\DataError;
-use phpformsframework\libs\Exception;
-use phpformsframework\libs\international\Locale;
-use phpformsframework\libs\international\Translator;
-use phpformsframework\libs\Kernel;
-use phpformsframework\libs\Log;
-use phpformsframework\libs\security\Validator;
-use phpformsframework\libs\util\AdapterManager;
+use ff\libs\Debug;
+use ff\libs\dto\DataError;
+use ff\libs\Exception;
+use ff\libs\international\Locale;
+use ff\libs\international\Translator;
+use ff\libs\Kernel;
+use ff\libs\Log;
+use ff\libs\security\Validator;
+use ff\libs\util\AdapterManager;
 
 /**
  * Class Messenger
- * @package phpformsframework\libs\delivery\drivers
+ * @package ff\libs\delivery\drivers
  * @property MessengerAdapter $adapter
  */
 class Messenger

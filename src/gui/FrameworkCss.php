@@ -23,13 +23,13 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\gui;
+namespace ff\libs\gui;
 
-use phpformsframework\libs\Mappable;
+use ff\libs\Mappable;
 
 /**
  * Class FrameworkCss
- * @package phpformsframework\libs\gui
+ * @package ff\libs\gui
  */
 class FrameworkCss extends Mappable
 {

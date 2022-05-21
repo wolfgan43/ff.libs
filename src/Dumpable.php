@@ -23,10 +23,10 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs;
+namespace ff\libs;
 /**
  * Interface Dumpable
- * @package phpformsframework\libs
+ * @package ff\libs
  */
 interface Dumpable
 {

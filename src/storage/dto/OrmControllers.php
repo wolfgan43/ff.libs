@@ -23,11 +23,11 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\storage\dto;
+namespace ff\libs\storage\dto;
 
 /**
  * Class OrmDef
- * @package phpformsframework\libs\storage\dto
+ * @package ff\libs\storage\dto
  */
 class OrmControllers
 {

@@ -23,17 +23,17 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\delivery;
+namespace ff\libs\delivery;
 
-use phpformsframework\libs\Debug;
-use phpformsframework\libs\dto\DataResponse;
-use phpformsframework\libs\Exception;
-use phpformsframework\libs\international\Locale;
-use phpformsframework\libs\util\AdapterManager;
+use ff\libs\Debug;
+use ff\libs\dto\DataResponse;
+use ff\libs\Exception;
+use ff\libs\international\Locale;
+use ff\libs\util\AdapterManager;
 
 /**
  * Class Notice
- * @package phpformsframework\libs\delivery
+ * @package ff\libs\delivery
  * @property NoticeAdapter[] $adapters
  */
 class Notice

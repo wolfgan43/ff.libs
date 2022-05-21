@@ -23,21 +23,21 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\microservice;
+namespace ff\libs\microservice;
 
-use phpformsframework\libs\Configurable;
-use phpformsframework\libs\Dir;
-use phpformsframework\libs\dto\ConfigRules;
-use phpformsframework\libs\Dumpable;
-use phpformsframework\libs\Exception;
-use phpformsframework\libs\Kernel;
-use phpformsframework\libs\util\Normalize;
-use phpformsframework\libs\util\ServerManager;
-use phpformsframework\libs\security\UUID;
+use ff\libs\Configurable;
+use ff\libs\Dir;
+use ff\libs\dto\ConfigRules;
+use ff\libs\Dumpable;
+use ff\libs\Exception;
+use ff\libs\Kernel;
+use ff\libs\util\Normalize;
+use ff\libs\util\ServerManager;
+use ff\libs\security\UUID;
 
 /**
  * Class Gateway
- * @package phpformsframework\libs\microservice
+ * @package ff\libs\microservice
  */
 class Gateway implements Configurable, Dumpable
 {

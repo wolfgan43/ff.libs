@@ -23,19 +23,19 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\security;
+namespace ff\libs\security;
 
-use phpformsframework\libs\dto\DataResponse;
-use phpformsframework\libs\Hook;
-use phpformsframework\libs\Kernel;
-use phpformsframework\libs\storage\FilemanagerFs;
-use phpformsframework\libs\util\Cookie;
-use phpformsframework\libs\Exception;
+use ff\libs\dto\DataResponse;
+use ff\libs\Hook;
+use ff\libs\Kernel;
+use ff\libs\storage\FilemanagerFs;
+use ff\libs\util\Cookie;
+use ff\libs\Exception;
 use stdClass;
 
 /**
  * Class Session
- * @package phpformsframework\libs\security
+ * @package ff\libs\security
  */
 class Session
 {

@@ -23,21 +23,21 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\storage;
+namespace ff\libs\storage;
 
-use phpformsframework\libs\cache\Cashable;
-use phpformsframework\libs\Mappable;
-use phpformsframework\libs\storage\dto\OrmControllers;
-use phpformsframework\libs\storage\dto\OrmDef;
-use phpformsframework\libs\storage\dto\OrmQuery;
-use phpformsframework\libs\storage\dto\OrmResults;
-use phpformsframework\libs\Exception;
-use phpformsframework\libs\storage\dto\Schema;
+use fff\libs\cache\Cashable;
+use ff\libs\Mappable;
+use ff\libs\storage\dto\OrmControllers;
+use ff\libs\storage\dto\OrmDef;
+use ff\libs\storage\dto\OrmQuery;
+use ff\libs\storage\dto\OrmResults;
+use ff\libs\Exception;
+use ff\libs\storage\dto\Schema;
 use stdClass;
 
 /**
  * Class Orm
- * @package phpformsframework\libs\storage
+ * @package ff\libs\storage
  */
 class Orm extends Mappable
 {

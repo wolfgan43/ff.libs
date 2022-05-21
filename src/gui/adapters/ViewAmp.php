@@ -23,11 +23,11 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\gui\adapters;
+namespace ff\libs\gui\adapters;
 
 /**
  * Class ViewAmp
- * @package phpformsframework\libs\gui\adapters
+ * @package ff\libs\gui\adapters
  */
 class ViewAmp extends ViewHtml
 {

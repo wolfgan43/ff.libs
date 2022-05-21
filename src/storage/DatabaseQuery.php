@@ -23,11 +23,11 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\storage;
+namespace ff\libs\storage;
 
 /**
  * Class DatabaseQuery
- * @package phpformsframework\libs\storage
+ * @package ff\libs\storage
  */
 class DatabaseQuery
 {

@@ -23,9 +23,9 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\dto;
+namespace ff\libs\dto;
 
-use phpformsframework\libs\Kernel;
+use ff\libs\Kernel;
 
 /**
  * Trait Exceptionable

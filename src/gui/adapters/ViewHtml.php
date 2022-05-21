@@ -23,25 +23,25 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\gui\adapters;
+namespace ff\libs\gui\adapters;
 
-use phpformsframework\libs\cache\Buffer;
-use phpformsframework\libs\Constant;
-use phpformsframework\libs\Debug;
-use phpformsframework\libs\gui\Controller;
-use phpformsframework\libs\gui\Resource;
-use phpformsframework\libs\gui\View;
-use phpformsframework\libs\Hook;
-use phpformsframework\libs\international\Locale;
-use phpformsframework\libs\international\Translator;
-use phpformsframework\libs\Kernel;
-use phpformsframework\libs\storage\FilemanagerFs;
-use phpformsframework\libs\Exception;
+use ff\libs\cache\Buffer;
+use ff\libs\Constant;
+use ff\libs\Debug;
+use ff\libs\gui\Controller;
+use ff\libs\gui\Resource;
+use ff\libs\gui\View;
+use ff\libs\Hook;
+use ff\libs\international\Locale;
+use ff\libs\international\Translator;
+use ff\libs\Kernel;
+use ff\libs\storage\FilemanagerFs;
+use ff\libs\Exception;
 use stdClass;
 
 /**
  * Class ViewHtml
- * @package phpformsframework\libs\gui\adapters
+ * @package ff\libs\gui\adapters
  */
 class ViewHtml implements ViewAdapter
 {

@@ -23,14 +23,14 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\security;
+namespace ff\libs\security;
 
-use phpformsframework\libs\util\Cookie;
-use phpformsframework\libs\util\ServerManager;
+use ff\libs\util\Cookie;
+use ff\libs\util\ServerManager;
 
 /**
  * Class Discover
- * @package phpformsframework\libs\security
+ * @package ff\libs\security
  */
 class Discover
 {

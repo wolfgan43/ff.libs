@@ -23,7 +23,7 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\storage\drivers;
+namespace ff\libs\storage\drivers;
 
 use MongoDB\Driver\Manager;
 use MongoDB\Driver\BulkWrite;
@@ -32,10 +32,10 @@ use MongoDB\Driver\Command;
 use MongoDB\BSON\ObjectID;
 use MongoDB\Driver\Exception\Exception as MongoDB_Exception;
 use IteratorIterator;
-use phpformsframework\libs\cache\Cashable;
-use phpformsframework\libs\Exception;
-use phpformsframework\libs\storage\DatabaseDriver;
-use phpformsframework\libs\storage\DatabaseQuery;
+use ff\libs\cache\Cashable;
+use ff\libs\Exception;
+use ff\libs\storage\DatabaseDriver;
+use ff\libs\storage\DatabaseQuery;
 
 /**
  * ffDB_MongoDB è la classe preposta alla gestione della connessione con database di tipo SQL

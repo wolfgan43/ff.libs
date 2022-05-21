@@ -23,16 +23,16 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\international;
+namespace ff\libs\international;
 
-use phpformsframework\libs\Mappable;
-use phpformsframework\libs\Exception;
+use ff\libs\Mappable;
+use ff\libs\Exception;
 use stdClass;
 use DateTime;
 
 /**
  * Class DataAdapter
- * @package phpformsframework\libs\international
+ * @package ff\libs\international
  */
 class DataAdapter extends Mappable
 {

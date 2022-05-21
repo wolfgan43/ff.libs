@@ -23,16 +23,16 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\storage\adapters;
+namespace ff\libs\storage\adapters;
 
-use phpformsframework\libs\storage\DatabaseAdapter;
-use phpformsframework\libs\storage\DatabaseDriver;
-use phpformsframework\libs\storage\drivers\MySqli as sql;
-use phpformsframework\libs\Exception;
+use ff\libs\storage\DatabaseAdapter;
+use ff\libs\storage\DatabaseDriver;
+use ff\libs\storage\drivers\MySqli as sql;
+use ff\libs\Exception;
 
 /**
  * Class DatabaseMysqli
- * @package phpformsframework\libs\storage\adapters
+ * @package ff\libs\storage\adapters
  */
 class DatabaseMysqli extends DatabaseAdapter
 {

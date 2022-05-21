@@ -23,21 +23,21 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\cache;
+namespace ff\libs\cache;
 
-use phpformsframework\libs\cache\adapters\BufferAdapter;
-use phpformsframework\libs\Debug;
-use phpformsframework\libs\Dumpable;
-use phpformsframework\libs\Kernel;
-use phpformsframework\libs\Log;
-use phpformsframework\libs\Router;
-use phpformsframework\libs\util\AdapterManager;
-use phpformsframework\libs\util\TypesConverter;
+use ff\libs\cache\adapters\BufferAdapter;
+use ff\libs\Debug;
+use ff\libs\Dumpable;
+use ff\libs\Kernel;
+use ff\libs\Log;
+use ff\libs\Router;
+use ff\libs\util\AdapterManager;
+use ff\libs\util\TypesConverter;
 use stdClass;
 
 /**
  * Class Buffer
- * @package phpformsframework\libs\cache
+ * @package ff\libs\cache
  */
 class Buffer implements Dumpable
 {

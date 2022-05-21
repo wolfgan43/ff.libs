@@ -23,7 +23,7 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\cache\adapters;
+namespace ff\libs\cache\adapters;
 
 use function apc_store;
 use function apc_fetch;
@@ -32,7 +32,7 @@ use function apc_clear_cache;
 
 /**
  * Class MemApc
- * @package phpformsframework\libs\cache\adapters
+ * @package ff\libs\cache\adapters
  */
 class BufferApc extends BufferAdapter
 {

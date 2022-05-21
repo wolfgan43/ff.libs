@@ -23,16 +23,16 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\storage;
+namespace ff\libs\storage;
 
-use phpformsframework\libs\international\Data;
-use phpformsframework\libs\Exception;
+use ff\libs\international\Data;
+use ff\libs\Exception;
+use ff\libs\Kernel;
 use DateTime;
-use phpformsframework\libs\Kernel;
 
 /**
  * Class DatabaseDriver
- * @package phpformsframework\libs\storage
+ * @package ff\libs\storage
  */
 abstract class DatabaseDriver implements Constant
 {

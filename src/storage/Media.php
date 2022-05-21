@@ -23,24 +23,24 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\storage;
+namespace ff\libs\storage;
 
-use phpformsframework\libs\Env;
-use phpformsframework\libs\Kernel;
-use phpformsframework\libs\cache\Buffer;
-use phpformsframework\libs\Config;
-use phpformsframework\libs\Configurable;
-use phpformsframework\libs\Constant;
-use phpformsframework\libs\Dir;
-use phpformsframework\libs\dto\ConfigRules;
-use phpformsframework\libs\Hook;
-use phpformsframework\libs\Response;
-use phpformsframework\libs\security\ValidatorFile;
-use phpformsframework\libs\storage\drivers\ImageCanvas;
-use phpformsframework\libs\storage\drivers\ImageThumb;
-use phpformsframework\libs\gui\Resource;
-use phpformsframework\libs\util\ServerManager;
-use phpformsframework\libs\Exception;
+use ff\libs\Env;
+use ff\libs\Kernel;
+use ff\libs\cache\Buffer;
+use ff\libs\Config;
+use ff\libs\Configurable;
+use ff\libs\Constant;
+use ff\libs\Dir;
+use ff\libs\dto\ConfigRules;
+use ff\libs\Hook;
+use ff\libs\Response;
+use ff\libs\security\ValidatorFile;
+use ff\libs\storage\drivers\ImageCanvas;
+use ff\libs\storage\drivers\ImageThumb;
+use ff\libs\gui\Resource;
+use ff\libs\util\ServerManager;
+use ff\libs\Exception;
 use stdClass;
 
 /**
@@ -72,7 +72,7 @@ use stdClass;
  * @example Crop automatico: http://xoduslab.com/test/demo/domains/skeleton/static/50-100/mod_article/32/img/tiroide-malfunzionamento-esami.jpg
  * @example Da impostazioni DB (showfiles_modes): http://xoduslab.com/test/demo/domains/skeleton/static/thumb/mod_article/32/img/tiroide-malfunzionamento-esami.jpg
  * @example Cambiando il mime dell'immagine: http://xoduslab.com/test/demo/domains/skeleton/static/thumb-jpg/mod_article/32/img/tiroide-malfunzionamento-esami.png
- * @package phpformsframework\libs\storage
+ * @package ff\libs\storage
  */
 class Media implements Configurable
 {

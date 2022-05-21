@@ -23,13 +23,13 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\util;
+namespace ff\libs\util;
 
-use phpformsframework\libs\international\Time;
+use ff\libs\international\Time;
 
 /**
  * Class Normalize
- * @package phpformsframework\libs\util
+ * @package ff\libs\util
  */
 class Normalize
 {

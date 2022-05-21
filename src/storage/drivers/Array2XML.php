@@ -23,19 +23,19 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\storage\drivers;
+namespace ff\libs\storage\drivers;
 
 use DOMDocument;
 use DOMNode;
 use UnexpectedValueException;
-use phpformsframework\libs\Exception;
-use phpformsframework\libs\security\Validator;
+use ff\libs\Exception;
+use ff\libs\security\Validator;
 use function simplexml_load_string;
 use function libxml_use_internal_errors;
 
 /**
  * Class Array2XML
- * @package phpformsframework\libs\storage\drivers
+ * @package ff\libs\storage\drivers
  */
 class Array2XML
 {

@@ -23,21 +23,21 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\international;
+namespace ff\libs\international;
 
-use phpformsframework\libs\cache\Buffer;
-use phpformsframework\libs\Debug;
-use phpformsframework\libs\Dumpable;
-use phpformsframework\libs\Kernel;
-use phpformsframework\libs\Response;
-use phpformsframework\libs\storage\DatabaseManager;
-use phpformsframework\libs\storage\FilemanagerFs;
-use phpformsframework\libs\util\AdapterManager;
-use phpformsframework\libs\Exception;
+use ff\libs\cache\Buffer;
+use ff\libs\Debug;
+use ff\libs\Dumpable;
+use ff\libs\Kernel;
+use ff\libs\Response;
+use ff\libs\storage\DatabaseManager;
+use ff\libs\storage\FilemanagerFs;
+use ff\libs\util\AdapterManager;
+use ff\libs\Exception;
 
 /**
  * Class Translator
- * @package phpformsframework\libs\international
+ * @package ff\libs\international
  */
 class Translator implements Dumpable
 {

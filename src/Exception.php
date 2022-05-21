@@ -23,13 +23,13 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs;
+namespace ff\libs;
 
 use Throwable;
 
 /**
  * Class Exception
- * @package phpformsframework\libs
+ * @package ff\libs
  */
 class Exception extends \Exception
 {

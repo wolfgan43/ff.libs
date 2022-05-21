@@ -23,22 +23,22 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\microservice\adapters;
+namespace ff\libs\microservice\adapters;
 
-use phpformsframework\libs\App;
-use phpformsframework\libs\cache\Buffer;
-use phpformsframework\libs\Debug;
-use phpformsframework\libs\dto\DataAdapter;
-use phpformsframework\libs\dto\DataResponse;
-use phpformsframework\libs\dto\DataTableResponse;
-use phpformsframework\libs\international\Data;
-use phpformsframework\libs\mock\Mockable;
-use phpformsframework\libs\Exception;
+use ff\libs\App;
+use ff\libs\cache\Buffer;
+use ff\libs\Debug;
+use ff\libs\dto\DataAdapter;
+use ff\libs\dto\DataResponse;
+use ff\libs\dto\DataTableResponse;
+use ff\libs\international\Data;
+use ff\libs\mock\Mockable;
+use ff\libs\Exception;
 use stdClass;
 
 /**
  * Class ApiAdapter
- * @package phpformsframework\libs\microservice\adapters
+ * @package ff\libs\microservice\adapters
  */
 abstract class ApiAdapter
 {

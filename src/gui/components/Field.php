@@ -23,18 +23,18 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\gui\components;
+namespace ff\libs\gui\components;
 
-use phpformsframework\libs\Constant;
-use phpformsframework\libs\international\Time;
-use phpformsframework\libs\international\Translator;
-use phpformsframework\libs\security\Validator;
-use phpformsframework\libs\storage\Orm;
-use phpformsframework\libs\Exception;
+use ff\libs\Constant;
+use ff\libs\international\Time;
+use ff\libs\international\Translator;
+use ff\libs\security\Validator;
+use ff\libs\storage\Orm;
+use ff\libs\Exception;
 
 /**
  * Class Field
- * @package phpformsframework\libs\gui\components
+ * @package ff\libs\gui\components
  */
 class Field
 {

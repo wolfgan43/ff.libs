@@ -23,13 +23,13 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs;
+namespace ff\libs;
 
-use phpformsframework\libs\dto\RequestPage;
+use ff\libs\dto\RequestPage;
 
 /**
  * Class Kernel
- * @package phpformsframework\libs
+ * @package ff\libs
  */
 class Kernel
 {

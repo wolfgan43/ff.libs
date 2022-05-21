@@ -47,8 +47,8 @@
     },
     "autoload": {
         "psr-4": {
-            "phpformsframework\\libs\\": "src/",
-            "phpformsframework\\cli\\" : "cli/src/"
+            "ff\\libs\\": "src/",
+            "ff\\cli\\" : "cli/src/"
         }
     }
 }

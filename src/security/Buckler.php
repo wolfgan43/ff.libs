@@ -23,23 +23,23 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\security;
+namespace ff\libs\security;
 
-use phpformsframework\libs\Configurable;
-use phpformsframework\libs\Dir;
-use phpformsframework\libs\Kernel;
-use phpformsframework\libs\Log;
-use phpformsframework\libs\Response;
-use phpformsframework\libs\security\widgets\Login;
-use phpformsframework\libs\util\Cookie;
-use phpformsframework\libs\util\ServerManager;
-use phpformsframework\libs\util\TypesConverter;
-use phpformsframework\libs\dto\ConfigRules;
-use phpformsframework\libs\Exception;
+use ff\libs\Configurable;
+use ff\libs\Dir;
+use ff\libs\Kernel;
+use ff\libs\Log;
+use ff\libs\Response;
+use ff\libs\security\widgets\Login;
+use ff\libs\util\Cookie;
+use ff\libs\util\ServerManager;
+use ff\libs\util\TypesConverter;
+use ff\libs\dto\ConfigRules;
+use ff\libs\Exception;
 
 /**
  * Class Buckler
- * @package phpformsframework\libs\security
+ * @package ff\libs\security
  */
 class Buckler implements Configurable
 {

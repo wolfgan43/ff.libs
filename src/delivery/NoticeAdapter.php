@@ -23,13 +23,13 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\delivery;
+namespace ff\libs\delivery;
 
-use phpformsframework\libs\dto\DataError;
+use ff\libs\dto\DataError;
 
 /**
  * Class NoticeAdapter
- * @package phpformsframework\libs\delivery
+ * @package ff\libs\delivery
  */
 abstract class NoticeAdapter
 {

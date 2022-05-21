@@ -23,17 +23,17 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\microservice\adapters;
+namespace ff\libs\microservice\adapters;
 
-use phpformsframework\libs\microservice\Api;
-use phpformsframework\libs\util\ServerManager;
-use phpformsframework\libs\storage\FilemanagerWeb;
-use phpformsframework\libs\Exception;
+use ff\libs\microservice\Api;
+use ff\libs\util\ServerManager;
+use ff\libs\storage\FilemanagerWeb;
+use ff\libs\Exception;
 use stdClass;
 
 /**
  * Class ApiJsonWsp
- * @package phpformsframework\libs\microservice\adapters
+ * @package ff\libs\microservice\adapters
  */
 class ApiJsonWsp extends ApiAdapter
 {

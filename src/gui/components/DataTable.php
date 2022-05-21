@@ -23,20 +23,20 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\gui\components;
+namespace ff\libs\gui\components;
 
-use phpformsframework\libs\dto\DataHtml;
-use phpformsframework\libs\dto\DataTableResponse;
-use phpformsframework\libs\international\Translator;
-use phpformsframework\libs\Kernel;
-use phpformsframework\libs\microservice\Api;
-use phpformsframework\libs\storage\dto\OrmResults;
-use phpformsframework\libs\storage\Model;
-use phpformsframework\libs\Exception;
+use ff\libs\dto\DataHtml;
+use ff\libs\dto\DataTableResponse;
+use ff\libs\international\Translator;
+use ff\libs\Kernel;
+use ff\libs\microservice\Api;
+use ff\libs\storage\dto\OrmResults;
+use ff\libs\storage\Model;
+use ff\libs\Exception;
 
 /**
  * Class DataTable
- * @package phpformsframework\libs\gui\components
+ * @package ff\libs\gui\components
  */
 class DataTable
 {

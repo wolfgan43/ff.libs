@@ -23,15 +23,15 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\storage\drivers;
+namespace ff\libs\storage\drivers;
 
-use phpformsframework\libs\Constant;
-use phpformsframework\libs\Exception;
-use phpformsframework\libs\storage\Media;
+use ff\libs\Constant;
+use ff\libs\Exception;
+use ff\libs\storage\Media;
 
 /**
  * Class ImageThumb
- * @package phpformsframework\libs\storage\drivers
+ * @package ff\libs\storage\drivers
  */
 class ImageThumb extends ImageRender
 {

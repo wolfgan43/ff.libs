@@ -23,12 +23,12 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\gui\adapters;
+namespace ff\libs\gui\adapters;
 
 if (!class_exists("BladeOne")) {
     /**
      * Class ViewBlade
-     * @package phpformsframework\libs\gui\adapters
+     * @package ff\libs\gui\adapters
      */
     class ViewBlade
     {
@@ -36,14 +36,14 @@ if (!class_exists("BladeOne")) {
     return null;
 }
 
-use phpformsframework\libs\Constant;
-use phpformsframework\libs\Dir;
-use phpformsframework\libs\Exception;
+use ff\libs\Constant;
+use ff\libs\Dir;
+use ff\libs\Exception;
 use eftec\bladeone\BladeOne;
 
 /**
  * Class ViewBlade
- * @package phpformsframework\libs\gui\adapters
+ * @package ff\libs\gui\adapters
  */
 class ViewBlade extends BladeOne implements ViewAdapter
 {

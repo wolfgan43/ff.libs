@@ -23,14 +23,14 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\gui\components;
+namespace ff\libs\gui\components;
 
-use phpformsframework\libs\Exception;
-use phpformsframework\libs\international\Translator;
+use ff\libs\Exception;
+use ff\libs\international\Translator;
 
 /**
  * Class DataTableColumn
- * @package phpformsframework\libs\gui\components
+ * @package ff\libs\gui\components
  */
 class DataTableColumn
 {

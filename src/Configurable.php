@@ -23,13 +23,13 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs;
+namespace ff\libs;
 
 
 
 /**
  * Interface Configurable
- * @package phpformsframework\libs
+ * @package ff\libs
  */
 interface Configurable
 {

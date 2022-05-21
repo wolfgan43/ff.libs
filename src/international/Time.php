@@ -23,16 +23,16 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\international;
+namespace ff\libs\international;
 
-use phpformsframework\libs\Exception;
+use ff\libs\Exception;
 use DateTime;
 use DateInterval;
 use DateTimeZone;
 
 /**
  * Class Time
- * @package phpformsframework\libs\international
+ * @package ff\libs\international
  */
 class Time
 {

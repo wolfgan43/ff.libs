@@ -23,12 +23,12 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\storage\drivers;
+namespace ff\libs\storage\drivers;
 
-use phpformsframework\libs\cache\Cashable;
-use phpformsframework\libs\storage\DatabaseDriver;
-use phpformsframework\libs\storage\DatabaseQuery;
-use phpformsframework\libs\Exception;
+use ff\libs\cache\Cashable;
+use ff\libs\storage\DatabaseDriver;
+use ff\libs\storage\DatabaseQuery;
+use ff\libs\Exception;
 use mysqli_result;
 
 /**

@@ -23,17 +23,17 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\storage;
+namespace ff\libs\storage;
 
-use phpformsframework\libs\Constant;
-use phpformsframework\libs\Debug;
+use ff\libs\Constant;
+use ff\libs\Debug;
 
-use phpformsframework\libs\Dumpable;
+use ff\libs\Dumpable;
 use stdClass;
 
 /**
  * Class FilemanagerScan
- * @package phpformsframework\libs\storage
+ * @package ff\libs\storage
  */
 class FilemanagerScan implements Dumpable
 {

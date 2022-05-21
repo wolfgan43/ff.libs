@@ -23,14 +23,14 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs;
+namespace ff\libs;
 
-use phpformsframework\libs\cache\Buffer;
-use phpformsframework\libs\storage\FilemanagerScan;
+use ff\libs\cache\Buffer;
+use ff\libs\storage\FilemanagerScan;
 
 /**
  * Class Autoloader
- * @package phpformsframework\libs
+ * @package ff\libs
  */
 class Autoloader implements Dumpable
 {

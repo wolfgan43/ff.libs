@@ -23,16 +23,16 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\storage\drivers;
+namespace ff\libs\storage\drivers;
 
-use phpformsframework\libs\Kernel;
-use phpformsframework\libs\Log;
-use phpformsframework\libs\storage\FilemanagerFs;
-use phpformsframework\libs\Exception;
+use ff\libs\Kernel;
+use ff\libs\Log;
+use ff\libs\storage\FilemanagerFs;
+use ff\libs\Exception;
 
 /**
  * Class ImageCanvas
- * @package phpformsframework\libs\storage\drivers
+ * @package ff\libs\storage\drivers
  */
 class ImageCanvas
 {

@@ -23,18 +23,18 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs;
+namespace ff\libs;
 
-use phpformsframework\libs\dto\DataAdapter;
-use phpformsframework\libs\dto\DataError;
-use phpformsframework\libs\gui\controllers\ErrorController;
-use phpformsframework\libs\storage\drivers\Array2XML;
-use phpformsframework\libs\util\Normalize;
-use phpformsframework\libs\util\ServerManager;
+use ff\libs\dto\DataAdapter;
+use ff\libs\dto\DataError;
+use ff\libs\gui\controllers\ErrorController;
+use ff\libs\storage\drivers\Array2XML;
+use ff\libs\util\Normalize;
+use ff\libs\util\ServerManager;
 
 /**
  * Class Response
- * @package phpformsframework\libs
+ * @package ff\libs
  */
 class Response
 {

@@ -23,18 +23,18 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\delivery\adapters;
+namespace ff\libs\delivery\adapters;
 
-use phpformsframework\libs\delivery\NoticeAdapter;
-use phpformsframework\libs\dto\DataError;
-use phpformsframework\libs\security\Validator;
-use phpformsframework\libs\delivery\drivers\Mailer;
-use phpformsframework\libs\gui\Resource;
-use phpformsframework\libs\Exception;
+use ff\libs\delivery\NoticeAdapter;
+use ff\libs\dto\DataError;
+use ff\libs\security\Validator;
+use ff\libs\delivery\drivers\Mailer;
+use ff\libs\gui\Resource;
+use ff\libs\Exception;
 
 /**
  * Class NoticeEmail
- * @package phpformsframework\libs\delivery\adapters
+ * @package ff\libs\delivery\adapters
  */
 class NoticeEmail extends NoticeAdapter
 {

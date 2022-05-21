@@ -23,11 +23,11 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs;
+namespace ff\libs;
 
 /**
  * Class Hook
- * @package phpformsframework\libs
+ * @package ff\libs
  */
 class Hook implements Configurable, Dumpable
 {

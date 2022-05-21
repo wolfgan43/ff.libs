@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <configdata>
     <hooks>
-        <hook name="App::beforeRun" obj="\phpformsframework\libs\security\Buckler" method="antiVulnerabilityScanner" />
-        <hook name="App::beforeRun" obj="\phpformsframework\libs\security\Buckler" method="onPageLoad" />
+        <hook name="App::beforeRun" obj="\ff\libs\security\Buckler" method="antiVulnerabilityScanner" />
+        <hook name="App::beforeRun" obj="\ff\libs\security\Buckler" method="onPageLoad" />
     </hooks>
     <env>
         <CONTENT_TYPE_OPTIONS           value="nosniff" />
@@ -29,19 +29,19 @@
     </badpath>
     <pages>
         <!-- Widgets -->
-        <page path="/login" controller="phpformsframework\libs\security\widgets\Login"                          csrf="true"     access="public">
+        <page path="/login" controller="ff\libs\security\widgets\Login"                          csrf="true"     access="public">
             <post name="identifier" required="true"     validator="username"    />
             <post name="password"   required="true"     validator="password"    />
             <post name="permanent"                      validator="bool"        />
         </page>
-        <page path="/logout" controller="phpformsframework\libs\security\widgets\Logout"                        csrf="true">
+        <page path="/logout" controller="ff\libs\security\widgets\Logout"                        csrf="true">
         </page>
-        <page path="/activation" controller="phpformsframework\libs\security\widgets\Activation"                csrf="true"     access="public">
+        <page path="/activation" controller="ff\libs\security\widgets\Activation"                csrf="true"     access="public">
             <post name="code"                           validator="totp"        />
             <post name="identifier"                     validator="email"       />
         </page>
 
-        <page path="/recover/{action}" controller="phpformsframework\libs\security\widgets\Recover"             csrf="true"     access="public">
+        <page path="/recover/{action}" controller="ff\libs\security\widgets\Recover"             csrf="true"     access="public">
             <get name="action"                          required="true"         />
 
             <post name="code"                           validator="totp"        />
@@ -50,7 +50,7 @@
             <post name="email"                          validator="email"    />
         </page>
 
-        <page path="/registration/{model}" controller="phpformsframework\libs\security\widgets\Registration"    csrf="true"     access="public">
+        <page path="/registration/{model}" controller="ff\libs\security\widgets\Registration"    csrf="true"     access="public">
             <get name="model"                           />
             <get name="referral"                        />
 
@@ -63,13 +63,13 @@
 
             <post name="code"                           validator="totp"        />
         </page>
-        <page path="/otp" controller="phpformsframework\libs\security\widgets\Otp"                              csrf="true"     access="public">
+        <page path="/otp" controller="ff\libs\security\widgets\Otp"                              csrf="true"     access="public">
             <post name="code"                           validator="totp"        />
         </page>
     </pages>
 
     <models>
-        <model name="user" collection="access" table="users" mapclass="\phpformsframework\libs\security\UserData">
+        <model name="user" collection="access" table="users" mapclass="\ff\libs\security\UserData">
             <field name="uuid"              type="string"       db="uuid"                         request="$uuid"                  mock="fdbba8ff-86a4-442f-a3c4-ac034210b7e9" />
             <field name="username"          type="string"       db="username"                     request="$username"              mock="nobody" />
             <field name="email"             type="email"        db="email"                        request="$email"                 mock="john.doe@nobody.it" />

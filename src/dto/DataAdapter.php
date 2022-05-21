@@ -23,15 +23,15 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\dto;
+namespace ff\libs\dto;
 
-use phpformsframework\libs\Debug;
-use phpformsframework\libs\Exception;
+use ff\libs\Debug;
+use ff\libs\Exception;
 use stdClass;
 
 /**
  * Class DataAdapter
- * @package phpformsframework\libs\dto
+ * @package ff\libs\dto
  */
 abstract class DataAdapter
 {

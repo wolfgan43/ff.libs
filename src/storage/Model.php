@@ -23,23 +23,23 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\storage;
+namespace ff\libs\storage;
 
-use phpformsframework\libs\Config;
-use phpformsframework\libs\Configurable;
-use phpformsframework\libs\Debug;
-use phpformsframework\libs\dto\ConfigRules;
-use phpformsframework\libs\Dumpable;
-use phpformsframework\libs\Response;
-use phpformsframework\libs\storage\dto\OrmResults;
-use phpformsframework\libs\Exception;
-use phpformsframework\libs\storage\dto\Schema;
-use phpformsframework\libs\util\TypesConverter;
+use ff\libs\Config;
+use ff\libs\Configurable;
+use ff\libs\Debug;
+use ff\libs\dto\ConfigRules;
+use ff\libs\Dumpable;
+use ff\libs\Response;
+use ff\libs\storage\dto\OrmResults;
+use ff\libs\Exception;
+use ff\libs\storage\dto\Schema;
+use ff\libs\util\TypesConverter;
 use stdClass;
 
 /**
  * Class Model
- * @package phpformsframework\libs
+ * @package ff\libs
  */
 class Model implements Configurable, Dumpable
 {

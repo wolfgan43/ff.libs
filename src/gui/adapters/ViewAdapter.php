@@ -23,11 +23,11 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\gui\adapters;
+namespace ff\libs\gui\adapters;
 
 /**
  * Interface ViewAdapter
- * @package phpformsframework\libs\gui
+ * @package ff\libs\gui
  */
 interface ViewAdapter
 {

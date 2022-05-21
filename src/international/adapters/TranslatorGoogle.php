@@ -23,17 +23,17 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\international\adapters;
+namespace ff\libs\international\adapters;
 
-use phpformsframework\libs\international\Translator;
-use phpformsframework\libs\international\TranslatorAdapter;
-use phpformsframework\libs\security\Validator;
-use phpformsframework\libs\storage\FilemanagerWeb;
-use phpformsframework\libs\Exception;
+use ff\libs\international\Translator;
+use ff\libs\international\TranslatorAdapter;
+use ff\libs\security\Validator;
+use ff\libs\storage\FilemanagerWeb;
+use ff\libs\Exception;
 
 /**
  * Class TranslatorGoogle
- * @package phpformsframework\libs\international\adapters
+ * @package ff\libs\international\adapters
  */
 class TranslatorGoogle extends TranslatorAdapter
 {

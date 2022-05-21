@@ -23,14 +23,14 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\cache\adapters;
+namespace ff\libs\cache\adapters;
 
-use phpformsframework\libs\Kernel;
+use ff\libs\Kernel;
 use Redis as MC;
 
 /**
  * Class MemRedis
- * @package phpformsframework\libs\cache\adapters
+ * @package ff\libs\cache\adapters
  */
 class BufferRedis extends BufferAdapter
 {

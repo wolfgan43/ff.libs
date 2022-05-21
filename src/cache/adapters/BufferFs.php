@@ -23,15 +23,15 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\cache\adapters;
+namespace ff\libs\cache\adapters;
 
-use phpformsframework\libs\Autoloader;
-use phpformsframework\libs\Constant;
-use phpformsframework\libs\storage\FilemanagerFs;
+use ff\libs\Autoloader;
+use ff\libs\Constant;
+use ff\libs\storage\FilemanagerFs;
 
 /**
  * Class MemFs
- * @package phpformsframework\libs\cache\adapters
+ * @package ff\libs\cache\adapters
  */
 class BufferFs extends BufferAdapter
 {

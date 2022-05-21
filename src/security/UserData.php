@@ -23,16 +23,16 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\security;
+namespace ff\libs\security;
 
-use phpformsframework\libs\storage\Model;
-use phpformsframework\libs\storage\OrmItem;
-use phpformsframework\libs\Exception;
-use phpformsframework\libs\util\Convert;
+use ff\libs\storage\Model;
+use ff\libs\storage\OrmItem;
+use ff\libs\Exception;
+use ff\libs\util\Convert;
 
 /**
  * Class DataUser
- * @package phpformsframework\libs\dto
+ * @package ff\libs\dto
  */
 class UserData extends OrmItem
 {

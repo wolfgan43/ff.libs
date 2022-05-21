@@ -23,12 +23,12 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\microservice\adapters;
+namespace ff\libs\microservice\adapters;
 
 if (!class_exists("SoapClient")) {
     /**
      * Class SoapClientCurl
-     * @package phpformsframework\libs\microservice\adapters
+     * @package ff\libs\microservice\adapters
      */
     class SoapClientCurl
     {
@@ -36,14 +36,14 @@ if (!class_exists("SoapClient")) {
     return null;
 }
 
-use phpformsframework\libs\Kernel;
-use phpformsframework\libs\util\Normalize;
+use ff\libs\Kernel;
+use ff\libs\util\Normalize;
 use SoapClient;
 use SoapFault;
 
 /**
  * Class SoapClientCurl
- * @package phpformsframework\libs\microservice\adapters
+ * @package ff\libs\microservice\adapters
  */
 class SoapClientCurl extends SoapClient
 {

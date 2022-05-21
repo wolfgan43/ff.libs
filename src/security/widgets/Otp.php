@@ -23,14 +23,14 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\security\widgets;
+namespace ff\libs\security\widgets;
 
-use phpformsframework\libs\gui\Widget;
-use phpformsframework\libs\security\widgets\helpers\CommonTemplate;
+use ff\libs\gui\Widget;
+use ff\libs\security\widgets\helpers\CommonTemplate;
 
 /**
  * Class Otp
- * @package phpformsframework\libs\security\widgets
+ * @package ff\libs\security\widgets
  */
 class Otp extends Widget
 {

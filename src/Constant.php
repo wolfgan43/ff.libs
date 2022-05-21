@@ -23,14 +23,14 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs;
+namespace ff\libs;
 
 define("DOCUMENT_ROOT", explode(Constant::LIBS_PATH, __DIR__)[0]);
 define("SITE_PATH", !empty($_SERVER["DOCUMENT_ROOT"]) ? str_replace(rtrim($_SERVER["DOCUMENT_ROOT"], "/"), "", DOCUMENT_ROOT) : null);
 
 /**
  * Class Constant
- * @package phpformsframework\libs
+ * @package ff\libs
  */
 class Constant
 {
@@ -97,7 +97,7 @@ class Constant
     const CACHE_PATH                        = DIRECTORY_SEPARATOR . self::RESOURCE_CACHE;
     const UPLOAD_PATH                       = DIRECTORY_SEPARATOR . self::RESOURCE_UPLOADS;
 
-    const FRAMEWORK_PATH                    = self::LIBS_PATH . DIRECTORY_SEPARATOR . "phpformsframework" . DIRECTORY_SEPARATOR . "libs";
+    const FRAMEWORK_PATH                    = self::LIBS_PATH . DIRECTORY_SEPARATOR . "ff" . DIRECTORY_SEPARATOR . "libs";
 
     /**
      * Project settings

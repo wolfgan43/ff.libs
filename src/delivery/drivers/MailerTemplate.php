@@ -23,20 +23,20 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace phpformsframework\libs\delivery\drivers;
+namespace ff\libs\delivery\drivers;
 
-use phpformsframework\libs\Constant;
-use phpformsframework\libs\international\Translator;
-use phpformsframework\libs\Kernel;
-use phpformsframework\libs\storage\FilemanagerScan;
-use phpformsframework\libs\gui\View;
-use phpformsframework\libs\util\Normalize;
-use phpformsframework\libs\util\ServerManager;
-use phpformsframework\libs\Exception;
+use ff\libs\Constant;
+use ff\libs\international\Translator;
+use ff\libs\Kernel;
+use ff\libs\storage\FilemanagerScan;
+use ff\libs\gui\View;
+use ff\libs\util\Normalize;
+use ff\libs\util\ServerManager;
+use ff\libs\Exception;
 
 /**
  * Class MailerTemplate
- * @package phpformsframework\libs\delivery\drivers
+ * @package ff\libs\delivery\drivers
  */
 final class MailerTemplate extends Mailer
 {

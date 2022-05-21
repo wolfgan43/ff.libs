@@ -25,7 +25,7 @@
  */
 namespace ff\libs\storage;
 
-use fff\libs\cache\Cashable;
+use ff\libs\cache\Cashable;
 use ff\libs\Mappable;
 use ff\libs\storage\dto\OrmControllers;
 use ff\libs\storage\dto\OrmDef;

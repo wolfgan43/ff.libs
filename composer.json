@@ -1,5 +1,5 @@
 {
-    "name": "phpformsframework/libs",
+    "name": "ff/libs",
     "description": "php FormsFramework libs",
     "license": "LGPL-3.0",
     "type": "library",
@@ -47,8 +47,8 @@
     },
     "autoload": {
         "psr-4": {
-            "phpformsframework\\libs\\": "src/",
-            "phpformsframework\\cli\\" : "cli/src/"
+            "ff\\libs\\": "src/",
+            "ff\\cli\\" : "cli/src/"
         }
     }
 }

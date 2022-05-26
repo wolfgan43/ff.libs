@@ -107,21 +107,21 @@ class Validator
                                                                     "filter"        => FILTER_SANITIZE_STRING,
                                                                     "flags"         => FILTER_FLAG_STRIP_LOW,
                                                                     "options"       => null,
-                                                                    "callback"      => "\ff\libs\security\Validator::checkSpecialChars",
+                                                                    "callback"      => '\ff\libs\security\Validator::checkSpecialChars',
                                                                     "length"        => 48
                                                                 ),
                                                                 "string"            => array(
                                                                     "filter"        => FILTER_SANITIZE_STRING,
                                                                     "flags"         => FILTER_FLAG_NO_ENCODE_QUOTES | FILTER_FLAG_STRIP_LOW, //| FILTER_FLAG_STRIP_HIGH
                                                                     "options"       => null,
-                                                                    "callback"      => "\ff\libs\security\Validator::checkSpecialChars",
+                                                                    "callback"      => '\ff\libs\security\Validator::checkSpecialChars',
                                                                     "length"        => 256
                                                                 ),
                                                                 "array"             => array(
                                                                     "filter"        => FILTER_SANITIZE_STRING,
                                                                     "flags"         => FILTER_REQUIRE_ARRAY | FILTER_NULL_ON_FAILURE | FILTER_FLAG_NO_ENCODE_QUOTES | FILTER_FLAG_STRIP_LOW, //| FILTER_FLAG_STRIP_HIGH
                                                                     "options"       => null,
-                                                                    "callback"      => "\ff\libs\security\Validator::checkSpecialChars",
+                                                                    "callback"      => '\ff\libs\security\Validator::checkSpecialChars',
                                                                     "length"        => 10240
                                                                 ),
                                                                 "arrayint"          => array(
@@ -148,7 +148,7 @@ class Validator
                                                                     "filter"        => null,
                                                                     "flags"         => null,
                                                                     "options"       => null,
-                                                                    "callback"      => "\ff\libs\security\Validator::checkSpecialCharsText",
+                                                                    "callback"      => '\ff\libs\security\Validator::checkSpecialCharsText',
                                                                     "length"        => 128000
                                                                 ),
                                                                 "texthtml"          => array(

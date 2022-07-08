@@ -61,6 +61,7 @@ abstract class DatabaseAdapter implements Constant
     protected const OP_INC_DEC          = '$inc';
     protected const OP_ADD_TO_SET       = '$addToSet';
     protected const OP_SET              = '$set';
+    protected const OP_LIKE             = '$regex';
 
     private const ERROR_INSERT_IS_EMPTY = "insert is empty";
     private const ERROR_UPDATE_IS_EMPTY = "set and/or where are empty";

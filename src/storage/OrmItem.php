@@ -455,31 +455,44 @@ abstract class OrmItem
 
     /**
      * @param object $obj
-     * @return OrmItem
+     * @return void
      * @throws Exception
      */
-    public function fillByObject(object $obj) : self
+    private function fillByObject(object $obj) : void
     {
-        $this->fill(
+        $this->fillByArray(
             $obj instanceof ArrayObject
             ? $obj->getArrayCopy()
             : (array) $obj
         );
-        return $this;
     }
 
     /**
-     * @param array|null $fields
+     * @param array $array
+     * @return void
+     * @throws Exception
+     */
+    private function fillByArray(array $array) : void
+    {
+        $this->fillOneToOne($array);
+        $this->fillOneToMany($array);
+
+        $this->autoMapping($array);
+    }
+
+    /**
+     * @param array|object|null $fields
      * @return OrmItem
      * @throws Exception
      */
-    public function fill(array $fields = null) : self
+    public function fill(array|object $fields = null) : self
     {
-        if ($fields) {
-            $this->fillOneToOne($fields);
-            $this->fillOneToMany($fields);
-
-            $this->autoMapping($fields);
+        if (!empty($fields)) {
+            if(is_array($fields)) {
+                $this->fillByArray($fields);
+            } else {
+                $this->fillByObject($fields);
+            }
         }
 
         return $this;

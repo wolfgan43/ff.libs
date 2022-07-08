@@ -93,14 +93,14 @@ class FrameworkCss extends Mappable
     {
         $res = array();
 
-        if (isset($this->row[$value]) && strlen($this->row[$value])) {
+        if (!empty($this->row[$value])) {
             $res[] = $this->row[$value];
         } else {
-            if (isset($this->row["prefix"]) && strlen($this->row["prefix"])) {
+            if (!empty($this->row["prefix"])) {
                 $res[] = $this->row["prefix"];
             }
 
-            if (strlen($value)) {
+            if (!empty($value)) {
                 $res[] = $value;
             }
         }
@@ -186,7 +186,7 @@ class FrameworkCss extends Mappable
             $fluid
                                                             ? $this->container_fluid
                                                             : $this->container
-                                                        );
+        );
         if ($this->container) {
             $res[] = $containerCurrent;
         }
@@ -385,12 +385,12 @@ class FrameworkCss extends Mappable
         if (isset($this->data[$type])) {
             if (is_array($value)) {
                 foreach ($value as $subvalue) {
-                    if (isset($this->data[$type][$subvalue]) && strlen($this->data[$type][$subvalue])) {
+                    if (!empty($this->data[$type][$subvalue])) {
                         $res[$this->data[$type][$subvalue]] = true;
                     }
                 }
-            } elseif (strlen($value)) {
-                if (isset($this->data[$type][$value]) && strlen($this->data[$type][$value])) {
+            } elseif (!empty($value)) {
+                if (!empty($this->data[$type][$value])) {
                     $res[$this->data[$type][$value]]        = true;
                 }
             }
@@ -550,10 +550,10 @@ class FrameworkCss extends Mappable
                     if ($res_num !== $prev_num || $res_num == 0) {
                         $real_prefix                    = (
                             $res_num
-                                                            ? "append"
-                                                            : "hidden"
-                                                        );
-                        if (isset($arrType[$real_prefix]) && strlen($arrType[$real_prefix])) {
+                            ? "append"
+                            : "hidden"
+                        );
+                        if (!empty($arrType[$real_prefix])) {
                             $arrRes[$i]                 .= $arrType[$real_prefix];
                             if ($i == 0 && isset($arrType[$real_prefix . "-smallest"])) {
                                 $arrRes[$i]             .= $arrType[$real_prefix . "-smallest"];
@@ -567,7 +567,7 @@ class FrameworkCss extends Mappable
                             ) {
                                 $arrRes[$i]         .= $this->resolution[$i] . ($this->resolution[$i] && $res_num ? "-" : "");
                             }
-                            if (isset($arrType["prepend"]) && strlen($arrType["prepend"])) {
+                            if (!empty($arrType["prepend"])) {
                                 $arrRes[$i]             .= $arrType["prepend"];
                             }
 
@@ -630,11 +630,11 @@ class FrameworkCss extends Mappable
         $res                                            = array();
         if (is_array($value)) {
             foreach ($value as $subvalue) {
-                if (isset($data[$subvalue]) && strlen($data[$subvalue])) {
+                if (!empty($data[$subvalue])) {
                     $res[$data[$subvalue]]              = $data[$subvalue];
                 }
             }
-        } elseif (isset($data[$value]) && strlen($data[$value])) {
+        } elseif (!empty($data[$value])) {
             $res[$data[$value]]                         = $data[$value];
         }
 

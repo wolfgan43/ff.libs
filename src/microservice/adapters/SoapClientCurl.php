@@ -61,7 +61,7 @@ class SoapClientCurl extends SoapClient
      * @return string
      * @throws SoapFault
      */
-    public function __doRequest($request, $location, $action, $version, $one_way = 0)
+    public function __doRequest(string $request, string $location, string $action, int $version, bool $oneWay = false) : ?string
     {
         return $this->cUrl($request, $location, $action);
     }
@@ -73,7 +73,7 @@ class SoapClientCurl extends SoapClient
      * @return string
      * @throws SoapFault
      */
-    private function cUrl(string $requestXML, string $location, string $action) : string
+    private function cUrl(string $requestXML, string $location, string $action) : ?string
     {
         $ch = curl_init();
 
@@ -108,10 +108,7 @@ class SoapClientCurl extends SoapClient
 
         curl_close($ch);
 
-
-
-
-        return $res;
+        return $res ?: null;
     }
 
     /**

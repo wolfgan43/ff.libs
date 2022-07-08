@@ -29,6 +29,7 @@ use ff\libs\Constant;
 use ff\libs\international\Data;
 use ff\libs\international\Locale;
 use ff\libs\international\Translator;
+use ff\libs\security\Validator;
 use ff\libs\storage\Media;
 use ff\libs\Exception;
 use stdClass;
@@ -385,5 +386,17 @@ class Convert
         }
 
         return $res;
+    }
+
+    /**
+     * @param string $value
+     * @return array
+     */
+    public static function array(string $value) : array
+    {
+        return (Validator::isJson($value)
+            ? json_decode($value, true)
+            : []
+        );
     }
 }

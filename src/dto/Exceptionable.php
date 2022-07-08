@@ -25,7 +25,7 @@
  */
 namespace ff\libs\dto;
 
-use ff\libs\Kernel;
+use ff\libs\Exception;
 
 /**
  * Trait Exceptionable
@@ -55,21 +55,6 @@ trait Exceptionable
     }
 
     /**
-     * @param string|null $msg
-     */
-    private function setError(string $msg = null) : void
-    {
-        if (Kernel::$Environment::DEBUG || $this->status < 500) {
-            $this->error                        = (
-                $this->error
-                    ? $this->error . " "
-                    : ""
-                ) . $msg;
-        } else {
-            $this->error = "Internal Server Error";
-        }
-    }
-    /**
      * @param int $status
      * @param string|null $msg
      * @return $this
@@ -77,13 +62,17 @@ trait Exceptionable
     public function error(int $status, string $msg = null) : self
     {
         $this->status                       = $status;
-        $this->setError($msg);
+        $this->error                        = (
+            !empty($this->error)
+            ? $this->error . " "
+            : null
+        ) . Exception::setMessage($status, $msg);
 
         return $this;
     }
 
     /**
-     * @return string
+     * @return string|null
      */
     public function toLog() : ?string
     {

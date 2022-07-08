@@ -33,6 +33,7 @@ use ff\libs\microservice\Api;
 use ff\libs\storage\dto\OrmResults;
 use ff\libs\storage\Model;
 use ff\libs\Exception;
+use stdClass;
 
 /**
  * Class DataTable
@@ -152,6 +153,7 @@ class DataTable
                                             </div>
                                            ';
 
+
     public $displayTableHead            = true;
     public $displayTableFoot            = false;
 
@@ -211,6 +213,7 @@ class DataTable
 
     protected $style                    = [];
     protected $js_embed                 = null;
+    protected $js_tpl                   = null;
 
     protected $record_key               = null;
 
@@ -228,11 +231,13 @@ class DataTable
     {
         $dt = new static();
 
-        $component = explode(":", $model, 2);
-
-        $dt->id = $component[0];
-        if (!empty($component[1])) {
-            $dt->dataSource = $component[1];
+        $component = explode(":", $model);
+        $dataSource = array_pop($component);
+        if (empty($component)) {
+            $dt->id = $dataSource;
+        } else {
+            $dt->id = implode(":", $component);
+            $dt->dataSource = $dataSource;
         }
 
         return $dt->dataTable();
@@ -597,7 +602,7 @@ class DataTable
         $sort = null;
         foreach ($this->sort as $i => $dir) {
             if (isset($schema->columns[$i])) {
-                $sort[$schema->columns[$i]] = $dir;
+                $sort[$schema->prototype[$schema->columns[$i]]] = $dir;
             }
         }
 
@@ -636,9 +641,6 @@ class DataTable
         return $response;
     }
 
-    /**
-     * @return DataTableResponse
-     */
     /**
      * @return DataTableResponse
      */
@@ -798,7 +800,8 @@ class DataTable
             $tpl .= $button->displayTpl($this->xhr);
         }
 
-        return ($tpl
+        return $this->js_tpl . (
+            $tpl
             ? '<script class="dt-btn" type="text/x-template">' . $tpl . '</script>'
             : null
         );
@@ -888,6 +891,7 @@ class DataTable
 
     /**
      * @return string|null
+     * @throws Exception
      */
     private function tableHead() : ?string
     {
@@ -928,6 +932,7 @@ class DataTable
 
     /**
      * @return string|null
+     * @throws Exception
      */
     private function tableFoot() : ?string
     {
@@ -1025,11 +1030,11 @@ class DataTable
                     $rdir   = self::RDIR[$dir];
                     $class  = ' class="dataTable-sorter ' . $dir . '"';
                 } else {
-                    $rdir   = $this->default_sort_dir;
+                    $rdir   = self::DEFAULT_SORT_DIR;
                     $class  = null;
                 }
 
-                $columns    .= '<th data-id="' . $column . '"' . $class . '>' . $this->column($column)->display($this->getUrl(self::TC_SORT, [$i => $rdir])) . '</th>';
+                $columns    .= '<th data-id="' . $column . '"' . $class . '>' . $this->column($column)->displayLabel($this->getUrl(self::TC_SORT, [$i => $rdir])) . '</th>';
             } else {
                 $columns    .= '<th><span>' . $column . '</span></th>';
             }
@@ -1048,8 +1053,9 @@ class DataTable
     private function tableRows() : ?string
     {
         $rows = null;
+        $row = $this->row();
         foreach ($this->dataTable->toArray() as $i => $record) {
-            $rows .= '<tr' . $this->setModify($i) . ' class="' . ($i % 2 == 0 ? self::TC_ODD : self::TC_EVEN) . (isset($this->sort[$i]) ? ' ' . self::TC_SORT : null) . '">' . $this->tableRow($record) . $this->tableActions($i) . '</tr>';
+            $rows .= '<tr' . $this->setModify($i) . ' class="' . ($i % 2 == 0 ? self::TC_ODD : self::TC_EVEN) . (isset($this->sort[$i]) ? ' ' . self::TC_SORT : null) . '">' . $this->tableRow($record, $row) . $this->tableActions($i) . '</tr>';
         }
 
         return $rows;
@@ -1088,33 +1094,47 @@ class DataTable
         return $actions;
     }
 
-
     /**
-     * @param array $record
-     * @return string|null
+     * @return stdClass
      */
-    private function tableRow(array $record) : ?string
+    private function row() : stdClass
     {
-        $row = null;
-        $i = 0;
-        foreach ($record as $field => $value) {
-            if (in_array($field, $this->dataTable->columns)) {
-                $row .= '<td' . $this->tableRowClass($field, $i) . '>' . $value . '</td>';
-                $i++;
-            }
+        $fields         = [];
+        $tpl            = null;
+        $i              = 0;
+        foreach ($this->columns as $column) {
+            $tpl        .= '<td' . $this->tableRowClass($i, $column->getType("string")) . '>' . $column->displayValue() . '</td>';
+            $fields[]   = $column->id();
+            $i++;
         }
 
-        return $row;
+        if ($tpl) {
+            $this->js_tpl .= '<script class="dt-row" type="text/x-template">' . $tpl . '</script>';
+        }
+
+        return (object) [
+            "tpl"       => $tpl,
+            "fields"    => $fields
+        ];
+    }
+
+    private function tableRow(array $record, stdclass $row) : ?string
+    {
+        return str_replace(
+            $row->fields,
+            array_values($record),
+            $row->tpl
+        );
     }
 
     /**
-     * @param string $field
      * @param int $i
+     * @param string|null $type
      * @return string|null
      */
-    private function tableRowClass(string $field, int $i) : ?string
+    private function tableRowClass(int $i, string $type = null) : ?string
     {
-        $class = trim($this->column($field)->getType("string") . (isset($this->sort[$i]) ? ' ' . self::TC_SORT : null));
+        $class = trim($type . (isset($this->sort[$i]) ? ' ' . self::TC_SORT : null));
 
         return ($class
             ? ' class="' . $class . '"'
@@ -1122,6 +1142,10 @@ class DataTable
         );
     }
 
+    /**
+     * @param int $i
+     * @return string|null
+     */
     private function setModify(int $i) : ?string
     {
         return ($this->record_key && !empty($this->dataTable->keys[$i])

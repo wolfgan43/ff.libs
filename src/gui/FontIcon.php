@@ -129,7 +129,7 @@ class FontIcon extends Mappable
     {
         $res                                            = $this->icon($value, $params);
 
-        return (strlen($res)
+        return (!empty($res)
             ? '<span class="' . $res . '"></span>'
             : null
         );
@@ -150,15 +150,15 @@ class FontIcon extends Mappable
         } elseif ($value) {
             $res                                        = $this->action($params, true);
 
-            if (strlen($value)) {
+            if (!empty($value)) {
                 $res[]                                  = $this->append . $value . $this->prepend;
             }
 
             if (!empty($res)) {
-                if (strlen($this->prefix)) {
+                if (!empty($this->prefix)) {
                     $res[$this->prefix]                 = $this->prefix;
                 }
-                if (strlen($this->suffix)) {
+                if (!empty($this->suffix)) {
                     $res[$this->suffix]                 = $this->suffix;
                 }
             }
@@ -231,10 +231,10 @@ class FontIcon extends Mappable
             if (isset($this->buttons_style["color"][$type])) {
                 $res["type"]                            = $this->buttons_style["color"][$type];
             }
-            if (strlen($class)) {
+            if (!empty($class)) {
                 $res["class"]                           = $class;
             }
-            if (strlen($icon)) {
+            if (!empty($icon)) {
                 $res["icon"]                            = $this->icon($icon, $icon_params);
             }
 
@@ -248,10 +248,10 @@ class FontIcon extends Mappable
 
 
             if (!empty($res)) {
-                if (strlen($this->buttons_style["prepend"])) {
+                if (!empty($this->buttons_style["prepend"])) {
                     $res["prepend"]                     = $this->buttons_style["prepend"];
                 }
-                if (strlen($this->buttons_style["append"])) {
+                if (!empty($this->buttons_style["append"])) {
                     $res["append"]                      = $this->buttons_style["append"];
                 }
             }

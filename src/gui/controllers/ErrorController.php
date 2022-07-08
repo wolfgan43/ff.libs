@@ -27,6 +27,7 @@ namespace ff\libs\gui\controllers;
 
 use ff\libs\gui\Controller;
 use ff\libs\international\Translator;
+use ff\libs\Response;
 use ff\libs\Exception;
 
 /**
@@ -58,7 +59,7 @@ class ErrorController extends Controller
         $error = Translator::getWordByCodeCached($this->error);
 
         $errorView = $this->view()
-            ->assign("title", $error ?? Translator::getWordByCodeCached(Exception::getErrorMessage($this->http_status_code)))
+            ->assign("title", $error ?? Translator::getWordByCodeCached(Response::getStatusMessage($this->http_status_code)))
             ->assign("error_code", $this->http_status_code);
 
         if ($this->email_support) {

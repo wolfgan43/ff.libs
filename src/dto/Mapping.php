@@ -40,7 +40,7 @@ trait Mapping
             $obj = $this;
         }
 
-        foreach (array_intersect_key($this->removeNull($map), get_object_vars($obj))  as $key => $value) {
+        foreach (array_intersect_key($this->arrayFilterNull($map), get_object_vars($obj))  as $key => $value) {
             $obj->$key = $value;
         }
     }
@@ -56,12 +56,12 @@ trait Mapping
             $obj = $this;
         }
 
-        foreach ($this->removeNull($map) as $key => $value) {
+        foreach ($this->arrayFilterNull($map) as $key => $value) {
             $obj->$key = $value;
         }
     }
 
-    private function removeNull(array $map) : array
+    private function arrayFilterNull(array $map) : array
     {
         return array_filter($map, function ($var) {
             return $var !== null;

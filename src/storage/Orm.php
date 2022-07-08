@@ -1241,12 +1241,13 @@ class Orm extends Mappable
                     $this->services_by_data->last_table                                     = $table;
                 }
                 if ($fIndex === null || $fIndex < 0) {
+                    $fValue                                                                 = $parts[abs($fIndex ?? 0)];
                     $this->main->set(
                         $scope,
-                        $parts[abs($fIndex)],
+                        $fValue,
                         (
                             $alias === true && $scope == self::SCOPE_SELECT
-                            ? $parts[abs($fIndex)]
+                            ? $fValue
                             : $alias
                         ),
                         $is_or

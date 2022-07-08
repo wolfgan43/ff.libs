@@ -214,9 +214,14 @@ class Router implements Configurable, Dumpable
      */
     private static function execute(string $script) : void
     {
-        ob_start();
-        if (!Autoloader::loadScript($script) && empty(ob_get_length())) {
-            Response::sendError("404");
+        try {
+            ob_start();
+            if (!Autoloader::loadScript($script) && empty(ob_get_length())) {
+                Response::sendError("404");
+            }
+        } catch (\Exception $e) {
+            Debug::setBackTrace($e->getTrace());
+            Response::sendError($e->getCode(), $e->getMessage());
         }
         exit;
     }
@@ -405,6 +410,8 @@ class Router implements Configurable, Dumpable
                     $params[]                                   = $method;
                 }
                 $method                                         = self::CALLER_METHOD;
+            } elseif (empty($params)) {
+                $params[]                                   = Kernel::$Page->mapRequest();
             }
 
             self::setRunner($class_name);

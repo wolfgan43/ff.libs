@@ -82,4 +82,12 @@ class Dto
         }
         return $params;
     }
+
+    /**
+     * @return array
+     */
+    public function toArray() : array
+    {
+        return $this->arrayFilterNull(get_object_vars($this));
+    }
 }

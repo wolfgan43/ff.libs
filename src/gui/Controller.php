@@ -408,7 +408,9 @@ abstract class Controller
         if (strpos($filename_or_url, "data:") === 0 || Validator::isUrl($filename_or_url)) {
             $ref[$this->maskEnv($filename_or_url)]                                      = $media;
         } elseif (Validator::isFile($filename_or_url)) {
-            if (strpos($filename_or_url, DIRECTORY_SEPARATOR) === 0 && Dir::checkDiskPath($filename_or_url)) {
+            if (strpos($filename_or_url, DIRECTORY_SEPARATOR . Kernel::$Environment::RESOURCE_ASSETS) === 0 && Dir::checkDiskPath(Kernel::$Environment::getAssetDiskPath() . substr($filename_or_url, strlen(DIRECTORY_SEPARATOR . Kernel::$Environment::RESOURCE_ASSETS)))) {
+                $ref[$filename_or_url]                                                  = $media;
+            } elseif (strpos($filename_or_url, DIRECTORY_SEPARATOR) === 0 && Dir::checkDiskPath($filename_or_url)) {
                 if (filesize($filename_or_url)) {
                     $ref[Media::getUrlRelative($filename_or_url)]                       = $media;
                 }
@@ -840,39 +842,56 @@ abstract class Controller
     }
 
     /**
-     * @param string|null $template_name
-     * @return string
-     */
-    private function getTemplateName(string $template_name = null) : string
-    {
-        return $template_name ?? $this->class_name;
-    }
-
-    /**
-     * @param string|null $template_name
+     * @param string|null $template
      * @param bool $include_template_assets
      * @return View
      * @throws Exception
-     * @todo da gestire il tema
      */
-    private function loadView(string $template_name = null, bool $include_template_assets = true) : View
+    private function loadView(string $template = null, bool $include_template_assets = true) : View
     {
-        $template                       = $this->getTemplateName($template_name);
-        if (!isset($this->views[$template])) {
-            if (!($file_path = Resource::get(str_replace(self::TPL_NORMALIZE, '', $template), Resource::TYPE_VIEWS))) {
-                throw new Exception("View not Found: " . $template . " in " . static::class, 500);
-            }
-
-            if ($include_template_assets) {
-                $this->addStylesheet($template);
-                $this->addJavascript($template);
-            }
-
-            $this->views[$template] = View::fetchFile($file_path, null, static::TEMPLATE_ENGINE, $this)
-                ->assign($this->assigns);
+        $template_name = (
+            strpos($template, "<") === false
+            ? $template ?? $this->class_name
+            : $this->class_name
+        );
+        if (!isset($this->views[$template_name])) {
+            $this->views[$template_name] = (
+                strpos($template, "<") === false
+                ? $this->fetchFile($template_name, $include_template_assets)
+                : $this->fetchContent($template)
+            )->assign($this->assigns);
         }
 
-        return $this->view              =& $this->views[$template];
+        return $this->view              =& $this->views[$template_name];
+    }
+
+    /**
+     * @param string $template_name
+     * @param bool $include_template_assets
+     * @return View
+     * @throws Exception
+     */
+    private function fetchFile(string $template_name, bool $include_template_assets) : View
+    {
+        if (!($file_path = Resource::get(str_replace(self::TPL_NORMALIZE, '', $template_name), Resource::TYPE_VIEWS))) {
+            throw new Exception("View not Found: " . $template_name . " in " . static::class, 500);
+        }
+
+        if ($include_template_assets) {
+            $this->addStylesheet($template_name);
+            $this->addJavascript($template_name);
+        }
+
+        return View::fetchFile($file_path, null, static::TEMPLATE_ENGINE, $this);
+    }
+
+    /**
+     * @param string $template
+     * @return View
+     */
+    private function fetchContent(string $template) : View
+    {
+        return View::fetchContent($template, null, static::TEMPLATE_ENGINE, $this);
     }
 
     /**
@@ -919,11 +938,12 @@ abstract class Controller
         }
 
         $callback = $method ?? $this->method;
-        if (!method_exists($this, $callback)) {
+        if (!method_exists($this, $callback) && !method_exists($this, "__call")) {
             throw new Exception("Method " . $callback . " not found in class " . $this->class_name, 501);
         }
-        $this->$callback();
+
         $this->parseAssets();
+        $this->$callback();
 
         Debug::stopWatch($bucket);
     }

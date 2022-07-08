@@ -119,6 +119,8 @@ class Constant
      */
     const PROFILING                         = true;
     const DEBUG                             = true;
+    const ERROR_REPORTING                   = 499;
+    const ERROR_CONTENT_TYPE_DEFAULT        = "text/html";
     const DISABLE_CACHE                     = false;
     const CACHE_BUFFER                      = true;
 

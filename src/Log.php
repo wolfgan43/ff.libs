@@ -269,22 +269,20 @@ class Log
      */
     public static function setRoutine(string $name = null): void
     {
-        $arrRoutine = explode(".", $name, 2);
-        $bucket = (
-            isset($arrRoutine[1])
-            ? $arrRoutine[1]
-            : null
-        );
-        $const = "TYPE_" . strtoupper($arrRoutine[0]);
-        $type = (
-            defined("self::" . $const)
-            ? constant("self::" . $const)
-            : self::TYPE_DEFAULT
-        );
+        if (!empty($name)) {
+            $arrRoutine = explode(".", $name, 2);
+            $bucket = $arrRoutine[1] ?? null;
+            $const = "TYPE_" . strtoupper($arrRoutine[0]);
+            $type = (
+                defined("self::" . $const)
+                ? constant("self::" . $const)
+                : self::TYPE_DEFAULT
+            );
 
-        self::extend($type, $bucket);
+            self::extend($type, $bucket);
 
-        self::$current_routine = $name;
+            self::$current_routine = $name;
+        }
     }
 
     /**
@@ -508,7 +506,7 @@ class Log
     {
         $log_path = self::getLogDir();
         if ($log_path) {
-            $file = $log_path . DIRECTORY_SEPARATOR . str_replace(DIRECTORY_SEPARATOR, "", Kernel::$Environment::APPNAME) . "_" . date("Y-m-d") . "_" . $filename . '.' . self::LOG_EXT;
+            $file = $log_path . DIRECTORY_SEPARATOR . str_replace(DIRECTORY_SEPARATOR, "", Kernel::$Environment::APPNAME) . "_" . $filename . '.' . self::LOG_EXT;
 
             if ($override) {
                 FilemanagerFs::fsave($data, $file);
@@ -717,14 +715,14 @@ class Log
                 self::getIdentity(),
                 self::getUserInfo(),
                 Debug::exTimeApp(),
-                strftime('%d/%b/%Y'),
-                strftime('%H:%M:%S'),
-                strftime('%z'),
-                strftime('%a'),
-                strftime('%b'),
-                strftime('%d'),
+                date('d/M/Y'),
+                date('H:i:s'),
+                date('O'),
+                date('D'),
+                date('M'),
+                date('d'),
                 $micro,
-                strftime('%Y'),
+                date('Y'),
                 self::getPid(),
                 self::$current_count,
                 self::getThread(),

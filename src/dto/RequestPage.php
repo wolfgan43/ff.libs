@@ -137,7 +137,7 @@ class RequestPage extends Mappable
 
                 $rules->set($pages[$path_info]);
             }
-        } while ($path_info != DIRECTORY_SEPARATOR && $path_info = dirname($path_info));
+        } while ($path_info != DIRECTORY_SEPARATOR && $path_info != "." && $path_info = dirname($path_info));
 
         $this->rules                = $rules;
         $this->script_path          = $script_path;

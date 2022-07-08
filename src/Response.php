@@ -108,7 +108,82 @@ class Response
 
     private const HOOK_ON_BEFORE_SEND               = "Response::onBeforeSend";
 
+    private const STATUS_CODE_UNKNOWN               = "Unknown";
+    private const STATUS_CODE                       = array(
+        100 => "Continue",
+        101 => "Switching Protocols",
+        102 => "Processing",
+        103 => "Early Hints",
+        200 => "OK",
+        201 => "Created",
+        202 => "Accepted",
+        203 => "Non-Authoritative Information",
+        204 => "No Content",
+        205 => "Reset Content",
+        206 => "Partial Content",
+        207 => "Multi-Status",
+        208 => "Already Reported",
+        226 => "IM Used",
+        300 => "Multiple Choices",
+        301 => "Moved Permanently",
+        302 => "Found",
+        303 => "See Other",
+        304 => "Not Modified",
+        305 => "Use Proxy",
+        306 => "Switch Proxy",
+        307 => "Temporary Redirect",
+        308 => "Permanent Redirect",
+        400 => "Bad Request",
+        401 => "Unauthorized",
+        402 => "Payment Required",
+        403 => "Forbidden",
+        404 => "Not Found",
+        405 => "Method Not Allowed",
+        406 => "Not Acceptable",
+        407 => "Proxy Authentication Required",
+        408 => "Request Timeout",
+        409 => "Conflict",
+        410 => "Gone",
+        411 => "Length Required",
+        412 => "Precondition Failed",
+        413 => "Payload Too Large",
+        414 => "URI Too Long",
+        415 => "Unsupported Media Type",
+        416 => "Range Not Satisfiable",
+        417 => "Expectation Failed",
+        418 => "I'm a teapot",
+        421 => "Misdirected Request",
+        422 => "Unprocessable Entity",
+        423 => "Locked",
+        424 => "Failed Dependency",
+        425 => "Too Early",
+        426 => "Upgrade Required",
+        428 => "Precondition Required",
+        429 => "Too Many Requests",
+        431 => "Request Header Fields Too Large",
+        451 => "Unavailable For Legal Reasons",
+        500 => "Internal Server Error",
+        501 => "Not Implemented",
+        502 => "Bad Gateway",
+        503 => "Service Unavailable",
+        504 => "Gateway Timeout",
+        505 => "HTTP Version Not Supported",
+        506 => "Variant Also Negotiates",
+        507 => "Insufficient Storage",
+        508 => "Loop Detected",
+        510 => "Not Extended",
+        511 => "Network Authentication Required"
+    );
     private static $content_type                    = null;
+
+    /**
+     * @param int $code
+     * @return string
+     */
+    public static function getStatusMessage(int $code) : string
+    {
+        return self::STATUS_CODE[$code] ?? self::STATUS_CODE_UNKNOWN;
+    }
 
     /**
      * @param callable $func
@@ -130,44 +205,26 @@ class Response
      * @param int $code
      * @param string|null $msg
      * @return void
-     * @todo da tipizzare
      */
     public static function sendError(int $code = 404, string $msg = null) : void
     {
         switch (Kernel::$Page->accept()) {
+            case "*/*":
+                self::sendErrorDefault($code, $msg);
+                break;
             case "application/json":
             case "text/json":
                 Log::registerProcedure("Request", "validator" . Log::CLASS_SEP . "error");
-
-                $response = new DataError();
-                $response->error($code, $msg);
-                self::send($response, ["cache" => "no-cache"]);
+                self::sendErrorJsonDefault($code, $msg);
                 break;
             case "text/html":
                 Log::registerProcedure("Router", "page" . Log::CLASS_SEP . "error");
                 try {
                     self::send((new ErrorController())
-                        ->displayException($code, $msg), [], $code);
+                        ->displayException($code, \ff\libs\security\Buckler::encodeEntity($msg)), [], $code);
                 } catch (\Exception $e) {
-                    header("Content-Type: text/html");
-                    header('Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
-                    header("Pragma: no-cache");
-
-                    $status = $e->getCode();
-                    $status_message = Exception::getErrorMessage($status);
                     Debug::setBackTrace($e->getTrace());
-                    self::httpCode($status);
-                    echo '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
-<html><head>
-<title>' . $status_message . '</title>
-</head><body>
-<h1>' . $e->getMessage() . '</h1>
-<p>The requested URL ' . self::pathinfo() . ' was not found on this server.</p>
-<p>Additionally, a ' . $status_message . '
-error was encountered while trying to use an ErrorDocument to handle the request.</p>
-' . Debug::dump($e->getMessage(), true) . '
-</body></html>';
-                    exit;
+                    self::sendErrorHtmlDefault($e->getCode(), $e->getMessage(), true);
                 }
                 break;
             case "php/cli":
@@ -185,13 +242,77 @@ error was encountered while trying to use an ErrorDocument to handle the request
     public static function sendErrorPlain(string $msg = null, int $code = null) : void
     {
         self::httpCode($code ?? 500);
-        die($msg ?? "Unknown Error");
+        die($msg);
+    }
+
+    /**
+     * @param int $code
+     * @param string|null $msg
+     */
+    private static function sendErrorDefault(int $code = 404, string $msg = null) : void
+    {
+        self::sendHeaders([
+            "mimetype"  => Kernel::$Environment::ERROR_CONTENT_TYPE_DEFAULT,
+            "cache"     => "no-cache"
+        ]);
+
+        switch (Kernel::$Environment::ERROR_CONTENT_TYPE_DEFAULT) {
+            case "application/json":
+            case "text/json":
+                self::sendErrorJsonDefault($code, $msg);
+                break;
+            case "text/html":
+                self::sendErrorHtmlDefault($code, \ff\libs\security\Buckler::encodeEntity($msg));
+                break;
+            case "php/cli":
+                Debug::dump($msg);
+                break;
+            default:
+                self::sendErrorPlain($msg, $code);
+        }
+    }
+
+    private static function sendErrorJsonDefault(int $code, string $msg = null) : void
+    {
+        $response = new DataError();
+        $response->error($code, $msg);
+        self::send($response, ["cache" => "no-cache"]);
+    }
+
+    /**
+     * @param int $code
+     * @param string $msg
+     * @param bool $debug
+     * @return void
+     */
+    private static function sendErrorHtmlDefault(int $code, string $msg = null, bool $debug = false) : void
+    {
+        self::httpCode($code);
+        self::sendHeaders([
+            "mimetype"  => "text/html",
+            "cache"     => "no-cache"
+        ]);
+        $status_message = self::getStatusMessage($code);
+
+        echo '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html>
+    <head>
+        <title>' . $status_message . '</title>
+    </head>
+    <body>
+        <h1>' . trim(str_replace($code, "", $status_message))  . '</h1>
+        <p>The requested URL was not found on this server.</p>
+        <p>Additionally, a ' . $status_message . ' error was encountered while trying to use an ErrorDocument to handle the request.</p>
+    ' . ($debug ? Debug::dump($msg, true) : null) . '
+    </body>
+</html>';
+        exit;
     }
 
     /**
      * @param mixed $data
      * @param string $content_type
-     * @param array|null $headers
+     * @param array $headers
      * @param null|int $status
      * @return void
      * @throws Exception
@@ -231,8 +352,8 @@ error was encountered while trying to use an ErrorDocument to handle the request
     {
         if (is_object($data)) {
             $data                                   = get_object_vars($data);
-        } elseif (!$data) {
-            $data                                   = null;
+        } elseif (empty($data)) {
+            $data                                   = [];
         }
 
         $data                                       = Array2XML::createXML("root", $data);
@@ -276,11 +397,9 @@ error was encountered while trying to use an ErrorDocument to handle the request
     private static function isValidContentType(string $content_type) : bool
     {
         if (self::invalidAccept($content_type)) {
-            /**
-             * @todo da gestire i tipi accepted self::sendHeadersByMimeType(...)
-             */
             self::httpCode(501);
-            $message = "content type " . $content_type . " is different to http_accept: " . self::rawAccept();
+            self::sendHeaders(["mimetype" => "text/plain", "cache" => "no-cache"]);
+            $message = "content type " . $content_type . " is different to http_accept: " . \ff\libs\security\Buckler::encodeEntity(self::rawAccept());
             echo $message;
             self::endScript($message);
         }
@@ -290,7 +409,7 @@ error was encountered while trying to use an ErrorDocument to handle the request
 
     /**
      * @param DataAdapter $response
-     * @param array|null $headers
+     * @param array $headers
      * @param null|int $status
      * @return void
      */
@@ -320,7 +439,7 @@ error was encountered while trying to use an ErrorDocument to handle the request
 
     /**
      * @param string $response
-     * @param array|null $headers
+     * @param array $headers
      * @return void
      * @throws Exception
      */
@@ -400,32 +519,32 @@ error was encountered while trying to use an ErrorDocument to handle the request
      */
     public static function sendHeaders(array $params = null) : void
     {
-        $keep_alive			        = isset($params["keep_alive"])  ? $params["keep_alive"]			: null;
-        $max_age				    = isset($params["max_age"])     ? $params["max_age"]            : null;
-        $expires				    = isset($params["expires"])     ? $params["expires"]            : null;
-        $compress			        = isset($params["compress"])    ? $params["compress"]           : null;
-        $cache					    = isset($params["cache"])		? $params["cache"]				: "public";
-        $disposition			    = isset($params["disposition"])	? $params["disposition"]		: "inline";
-        $filename			        = isset($params["filename"])    ? $params["filename"]           : null;
-        $mtime			            = isset($params["mtime"])       ? $params["mtime"]              : null;
-        $mimetype			        = isset($params["mimetype"])	? $params["mimetype"]			: null;
-        $size				        = isset($params["size"])        ? $params["size"]               : null;
-        $etag				        = isset($params["etag"])		? $params["etag"]				: null;
+        $keep_alive			        = $params["keep_alive"]         ?? null;
+        $max_age				    = $params["max_age"]            ?? null;
+        $expires				    = $params["expires"]            ?? null;
+        $compress			        = $params["compress"]           ?? null;
+        $cache					    = $params["cache"]              ?? "public";
+        $disposition			    = $params["disposition"]        ?? "inline";
+        $filename			        = $params["filename"]           ?? null;
+        $mtime			            = $params["mtime"]              ?? null;
+        $mimetype			        = $params["mimetype"]           ?? null;
+        $size				        = $params["size"]               ?? null;
+        $etag				        = $params["etag"]               ?? null;
 
-        if ($size) {
+        if (!empty($size)) {
             header("Accept-Ranges: bytes");
             header("Content-Length: " . $size);
         }
 
-        if (strlen($etag)) {
+        if (!empty($etag)) {
             header("ETag: " . $etag);
         }
 
-        if (!$mimetype) {
+        if (empty($mimetype)) {
             $mimetype = Kernel::$Page->accept();
         }
 
-        if ($mimetype) {
+        if (!empty($mimetype)) {
             $content_type = $mimetype;
             if ($mimetype == "text/css" || $mimetype == "application/x-javascript") {
                 header("Vary: Accept-Encoding");
@@ -437,29 +556,29 @@ error was encountered while trying to use an ErrorDocument to handle the request
             header("Content-Type: $content_type");
         }
 
-        if ($disposition && $filename) {
+        if (!empty($disposition) && !empty($filename)) {
             $content_disposition = $disposition;
             $content_disposition .= "; filename=" . rawurlencode($filename);
             header("Content-Disposition: " . $content_disposition);
         }
 
 
-        if ($keep_alive) {
+        if (!empty($keep_alive)) {
             header("Connection: Keep-Alive");
         }
-        if ($compress) {
+        if (!empty($compress)) {
             $accept_encoding = (
                 isset($_SERVER["HTTP_ACCEPT_ENCODING"])
                 ? Normalize::string2array($_SERVER["HTTP_ACCEPT_ENCODING"])
                 : null
             );
-            if ($accept_encoding) {
+            if (!empty($accept_encoding)) {
                 if ($compress === true) {
                     $compress   = $accept_encoding[0];
                 } elseif (array_search($compress, $accept_encoding) === false) {
-                    $compress = false;
+                    $compress   = null;
                 }
-                if ($compress) {
+                if (!empty($compress)) {
                     header("Content-encoding: " . $compress);
                 }
             }
@@ -497,7 +616,7 @@ error was encountered while trying to use an ErrorDocument to handle the request
                     }
 
                     if ($max_age !== false) {
-                        if ($mtime) {
+                        if (!empty($mtime)) {
                             $mod_gmt = gmdate("D, d M Y H:i:s", $mtime) . " GMT";
                             header("Last-Modified: $mod_gmt");
                         }

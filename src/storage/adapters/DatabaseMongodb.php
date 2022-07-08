@@ -29,6 +29,7 @@ use ff\libs\storage\DatabaseAdapter;
 use ff\libs\storage\DatabaseDriver;
 use ff\libs\storage\drivers\MongoDB as nosql;
 use ff\libs\Exception;
+use MongoDB\BSON\Regex;
 
 /**
  * Class DatabaseMongodb
@@ -77,6 +78,10 @@ class DatabaseMongodb extends DatabaseAdapter
      */
     protected function convertFieldWhere(array &$res, string $name, string $or = null) : void
     {
+        if (isset($res[$name][self::OP_LIKE])) {
+            $res[$name] = new Regex(str_replace(["*", "..*"], [".*", ".*"], $res[$name][self::OP_LIKE]));
+        }
+
         if ($or) {
             $res[$or][][$name] = $res[$name];
             unset($res[$name]);

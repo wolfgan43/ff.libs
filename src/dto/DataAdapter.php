@@ -84,7 +84,12 @@ abstract class DataAdapter
         }
 
         if (($res = json_encode($vars)) === false) {
-            throw new Exception("dataAdapter: json encode Failed", 500);
+            if (isset($vars["debug"])) {
+                $vars["debug"]              = "json encode failed";
+            }
+            if (($res = json_encode($vars)) === false) {
+                $res                        = json_encode(["Error" => "json encode failed"]);
+            }
         }
 
         return $res;
@@ -150,10 +155,7 @@ abstract class DataAdapter
      */
     public function get(string $key)
     {
-        return (isset($this->$key)
-            ? $this->$key
-            : null
-        );
+        return $this->$key ?? null;
     }
 
     /**

@@ -77,17 +77,17 @@ class Dir
      * @param bool $relative
      * @return string|null
      */
-    private static function getDiskPath(string $what, string $bucket, $relative = false) : ?string
+    private static function getDiskPath(string $what, string $bucket, bool $relative = false) : ?string
     {
         $path                               = Config::getDir($what, $bucket);
         if ($path) {
             return ($relative
                 ? $path
                 : realpath(Constant::DISK_PATH . $path)
-            );
+            ) ?: null;
         } else {
             Exception::warning(self::ERROR_PATH_NOT_FOUND . $what);
-            return false;
+            return null;
         }
     }
 
@@ -107,10 +107,6 @@ class Dir
      */
     public static function getXmlAttr(array $item)
     {
-        return (
-            isset($item["@attributes"])
-            ? $item["@attributes"]
-            : $item
-        );
+        return $item["@attributes"] ?? $item;
     }
 }

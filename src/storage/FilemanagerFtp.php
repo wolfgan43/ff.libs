@@ -93,7 +93,7 @@ class FilemanagerFtp
                 $real_ftp_path = null;
 
                 foreach (explode("/", $local_path) as $curr_path) {
-                    if (strlen($curr_path)) {
+                    if (!empty($curr_path)) {
                         $ftp_path = str_replace($part_path, "", $local_path);
                         if (@ftp_chdir($conn_id, $ftp_path)) {
                             $real_ftp_path = $ftp_path;
@@ -193,7 +193,7 @@ class FilemanagerFtp
             if (!empty($handle)) {
                 foreach ($handle as $file) {
                     if (basename($file) != "." && basename($file) != "..") {
-                        if (strlen($ftp_disk_path)) {
+                        if (!empty($ftp_disk_path)) {
                             $real_file = substr($file, strlen($ftp_disk_path));
                         } else {
                             $real_file = $file;

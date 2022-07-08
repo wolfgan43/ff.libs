@@ -14,7 +14,8 @@
     "config": {
         "optimize-autoloader": true,
         "classmap-authoritative": true,
-        "apcu-autoloader": true
+        "apcu-autoloader": true,
+        "discard-changes" : true
     },
     "require": {
         "php": "^8.0",

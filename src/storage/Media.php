@@ -668,7 +668,7 @@ class Media implements Configurable
             : null
         );
 
-        return Resource::get($prefix . $resource_name, $arrDirname[1]);
+        return Resource::get($prefix . $resource_name, $arrDirname[1]) ?? self::getRealPathAsset($this->pathinfo->orig, Kernel::$Environment::getAssetDiskPath());
     }
 
     /**
@@ -741,8 +741,6 @@ class Media implements Configurable
     private function process(string $mode = null) : bool
     {
         if ($this->pathinfo->render == static::RENDER_ASSETS_PATH) {
-            $assets_disk_path = Kernel::$Environment::getAssetDiskPath();
-
             if ($this->staticProcess($mode)) {
                 if (!empty($this->mode) &&
                     !empty(Env::get("MEDIA_AUTO_RENDER_LIMIT")) &&
@@ -760,10 +758,10 @@ class Media implements Configurable
                 if ($final_file) {
                     $this->readfile($final_file, 404);
                 }
-            } elseif (file_exists($assets_disk_path . $this->pathinfo->orig)) {
-                $this->saveFromOriginal($assets_disk_path . $this->pathinfo->orig, $this->basepathCache() . $this->pathinfo->orig);
-                $this->sendHeaders($assets_disk_path . $this->pathinfo->orig, $this->headers);
-                readfile($assets_disk_path . $this->pathinfo->orig);
+            } elseif (($asset_disk_path = self::getRealPathAsset($this->pathinfo->orig, Kernel::$Environment::getAssetDiskPath()))) {
+                $this->saveFromOriginal($asset_disk_path, $this->basepathCache() . $this->pathinfo->orig);
+                $this->sendHeaders($asset_disk_path, $this->headers);
+                readfile($asset_disk_path);
                 exit;
             }
         } else {
@@ -815,12 +813,9 @@ class Media implements Configurable
         if ($this->filesource && $this->basepath && is_file($this->basepath . $this->filesource)) {
             if ($this->mode) {
                 $final_file                                         = $this->processFinalFile();
-            } else {
-                $cache_basepath                                     = $this->basepathCache();
-                if ($cache_basepath && !is_file($cache_basepath . $this->pathinfo->orig)) {
-                    $this->saveFromOriginal($this->basepath . $this->filesource, $cache_basepath . $this->pathinfo->orig);
-                    $final_file                                     = $cache_basepath . $this->pathinfo->orig;
-                }
+            } elseif (($cache_asset_disk_path = self::getRealPathAsset($this->pathinfo->orig, $this->basepathCache())) && !is_file($cache_asset_disk_path)) {
+                $this->saveFromOriginal($this->basepath . $this->filesource, $cache_asset_disk_path);
+                $final_file                                         = $cache_asset_disk_path;
             }
         }
 
@@ -866,7 +861,7 @@ class Media implements Configurable
             if (!empty($arrWmk)) {
                 foreach ($arrWmk as $arrWmk_file) {
                     $wmk_abs_file                                   = Constant::UPLOAD_DISK_PATH . $arrWmk_file;
-                    if (strlen($arrWmk_file) && is_file($wmk_abs_file)) {
+                    if (!empty($arrWmk_file) && is_file($wmk_abs_file)) {
                         $this->wmk[]["file"]                        = $wmk_abs_file;
                     }
                 }
@@ -983,177 +978,179 @@ class Media implements Configurable
      */
     private function createImage(array $params) : void
     {
-        $default_params                                             = array(
-                                                                        "dim_x"                     => null,
-                                                                        "dim_y"                     => null,
-                                                                        "resize"                    => false,
-                                                                        "when"                      => "ever",
-                                                                        "alignment"                 => "center",
-                                                                        "mode"                      => "proportional",
-                                                                        "transparent"               => true,
-                                                                        "bgcolor"                   => "FFFFFF",
-                                                                        "alpha"                     => 0,
-                                                                        "format"                    => "jpg",
-                                                                        "frame_size"                => 0,
-                                                                        "frame_color"               => "FFFFFF",
-                                                                        "wmk_enable"                => false,
-                                                                        "enable_thumb_word_dir"     => false,
-                                                                        "enable_thumb_word_file"    => false
-                                                                    );
-        $params                                                     = (object) array_replace_recursive($default_params, $params);
-        $extend                                                     = true;
+        if (Kernel::useCache()) {
+            $default_params                                             = array(
+                                                                            "dim_x"                     => null,
+                                                                            "dim_y"                     => null,
+                                                                            "resize"                    => false,
+                                                                            "when"                      => "ever",
+                                                                            "alignment"                 => "center",
+                                                                            "mode"                      => "proportional",
+                                                                            "transparent"               => true,
+                                                                            "bgcolor"                   => "FFFFFF",
+                                                                            "alpha"                     => 0,
+                                                                            "format"                    => "jpg",
+                                                                            "frame_size"                => 0,
+                                                                            "frame_color"               => "FFFFFF",
+                                                                            "wmk_enable"                => false,
+                                                                            "enable_thumb_word_dir"     => false,
+                                                                            "enable_thumb_word_file"    => false
+                                                                        );
+            $params                                                     = (object) array_replace_recursive($default_params, $params);
+            $extend                                                     = true;
 
-        if ($extend) {
-            $params->filesource                                   = (
-                !empty($params->force_icon)
-                                                                        ? Constant::DISK_PATH . $params->force_icon
-                                                                        : $this->basepath . $this->filesource
-            );
+            if ($extend) {
+                $params->filesource                                   = (
+                    !empty($params->force_icon)
+                                                                            ? Constant::DISK_PATH . $params->force_icon
+                                                                            : $this->basepath . $this->filesource
+                );
 
-            if ($params->resize && $params->mode != "crop") {
-                $params->max_x                                      = $params->dim_x;
-                $params->max_y                                      = $params->dim_y;
+                if ($params->resize && $params->mode != "crop") {
+                    $params->max_x                                      = $params->dim_x;
+                    $params->max_y                                      = $params->dim_y;
 
-                $params->dim_x                                      = null;
-                $params->dim_y                                      = null;
+                    $params->dim_x                                      = null;
+                    $params->dim_y                                      = null;
+                } else {
+                    $params->max_x                                      = null;
+                    $params->max_y                                      = null;
+                }
+
+                if ($params->format == "png" && $params->transparent) {
+                    $params->bgcolor_csv                                = $params->bgcolor;
+                    $params->alpha_csv                                  = 127;
+
+                    $params->bgcolor_new                                = $params->bgcolor;
+                    $params->alpha_new                                  = 127;
+                } else {
+                    $params->bgcolor_csv                                = null;
+                    $params->alpha_csv                                  = 0;
+
+                    $params->bgcolor_new                                = $params->bgcolor;
+                    $params->alpha_new                                  = $params->alpha;
+                }
+
+
+
+                $params->wmk_word_enable                                = (
+                    is_dir($this->basepath . $this->filesource)
+                                                                            ? $params->enable_thumb_word_dir
+                                                                            : $params->enable_thumb_word_file
+                );
             } else {
-                $params->max_x                                      = null;
-                $params->max_y                                      = null;
+                if ($params->dim_x == 0) {
+                    $params->dim_x                                      = null;
+                }
+                if ($params->dim_y == 0) {
+                    $params->dim_y                                      = null;
+                }
+                if ($params->dim_x || $params->max_x == 0) {
+                    $params->max_x                                      = null;
+                }
+                if ($params->dim_y || $params->max_y == 0) {
+                    $params->max_y                                      = null;
+                }
+
+                $params->bgcolor_csv                                    = $params->bgcolor;
+                $params->alpha_csv                                      = $params->alpha;
+                $params->bgcolor_new                                    = $params->bgcolor;
+                $params->alpha_new                                      = $params->alpha;
+                $params->filesource                                     = $this->basepath . $this->filesource;
+                $params->frame_color                                    = null;
+                $params->frame_size                                     = 0;
+                $params->wmk_method                                     = "proportional";
+                $params->wmk_word_enable                                = false;
             }
 
-            if ($params->format == "png" && $params->transparent) {
-                $params->bgcolor_csv                                = $params->bgcolor;
-                $params->alpha_csv                                  = 127;
+            $cCanvas                                                    = new ImageCanvas();
 
-                $params->bgcolor_new                                = $params->bgcolor;
-                $params->alpha_new                                  = 127;
-            } else {
-                $params->bgcolor_csv                                = null;
-                $params->alpha_csv                                  = 0;
+            $cCanvas->cvs_res_background_color_hex 			            = $params->bgcolor_csv;
+            $cCanvas->cvs_res_background_color_alpha 		            = $params->alpha_new;
+            $cCanvas->format 								            = Env::get("MEDIA_FORCE_FORMAT") ?: $params->format;
 
-                $params->bgcolor_new                                = $params->bgcolor;
-                $params->alpha_new                                  = $params->alpha;
-            }
+            $cThumb                                                     = new ImageThumb($params->dim_x, $params->dim_y);
+            $cThumb->new_res_max_x 							            = $params->max_x;
+            $cThumb->new_res_max_y 							            = $params->max_y;
+            $cThumb->src_res_path 							            = $params->filesource;
 
+            $cThumb->new_res_background_color_hex 			            = $params->bgcolor_new;
+            $cThumb->new_res_background_color_alpha			            = $params->alpha_new;
 
+            $cThumb->new_res_frame_size 					            = $params->frame_size;
+            $cThumb->new_res_frame_color_hex 				            = $params->frame_color;
 
-            $params->wmk_word_enable                                = (
-                is_dir($this->basepath . $this->filesource)
-                                                                        ? $params->enable_thumb_word_dir
-                                                                        : $params->enable_thumb_word_file
-            );
-        } else {
-            if ($params->dim_x == 0) {
-                $params->dim_x                                      = null;
-            }
-            if ($params->dim_y == 0) {
-                $params->dim_y                                      = null;
-            }
-            if ($params->dim_x || $params->max_x == 0) {
-                $params->max_x                                      = null;
-            }
-            if ($params->dim_y || $params->max_y == 0) {
-                $params->max_y                                      = null;
-            }
+            $cThumb->new_res_method 						            = $params->mode;
+            $cThumb->new_res_resize_when 					            = $params->when;
+            $cThumb->new_res_align 							            = $params->alignment;
 
-            $params->bgcolor_csv                                    = $params->bgcolor;
-            $params->alpha_csv                                      = $params->alpha;
-            $params->bgcolor_new                                    = $params->bgcolor;
-            $params->alpha_new                                      = $params->alpha;
-            $params->filesource                                     = $this->basepath . $this->filesource;
-            $params->frame_color                                    = null;
-            $params->frame_size                                     = 0;
-            $params->wmk_method                                     = "proportional";
-            $params->wmk_word_enable                                = false;
-        }
+            //Default Watermark Image
+            if ($params->wmk_enable) {
+                $cThumb_wmk                                             = new ImageThumb($params->dim_x, $params->dim_y);
+                $cThumb_wmk->new_res_max_x 					            = $params->max_x;
+                $cThumb_wmk->new_res_max_y 					            = $params->max_y;
+                $cThumb_wmk->src_res_path 					            = $params->wmk_file;
 
-        $cCanvas                                                    = new ImageCanvas();
+                $cThumb_wmk->new_res_background_color_alpha	            = "127";
 
-        $cCanvas->cvs_res_background_color_hex 			            = $params->bgcolor_csv;
-        $cCanvas->cvs_res_background_color_alpha 		            = $params->alpha_new;
-        $cCanvas->format 								            = Env::get("MEDIA_FORCE_FORMAT") ?: $params->format;
-
-        $cThumb                                                     = new ImageThumb($params->dim_x, $params->dim_y);
-        $cThumb->new_res_max_x 							            = $params->max_x;
-        $cThumb->new_res_max_y 							            = $params->max_y;
-        $cThumb->src_res_path 							            = $params->filesource;
-
-        $cThumb->new_res_background_color_hex 			            = $params->bgcolor_new;
-        $cThumb->new_res_background_color_alpha			            = $params->alpha_new;
-
-        $cThumb->new_res_frame_size 					            = $params->frame_size;
-        $cThumb->new_res_frame_color_hex 				            = $params->frame_color;
-
-        $cThumb->new_res_method 						            = $params->mode;
-        $cThumb->new_res_resize_when 					            = $params->when;
-        $cThumb->new_res_align 							            = $params->alignment;
-
-        //Default Watermark Image
-        if ($params->wmk_enable) {
-            $cThumb_wmk                                             = new ImageThumb($params->dim_x, $params->dim_y);
-            $cThumb_wmk->new_res_max_x 					            = $params->max_x;
-            $cThumb_wmk->new_res_max_y 					            = $params->max_y;
-            $cThumb_wmk->src_res_path 					            = $params->wmk_file;
-
-            $cThumb_wmk->new_res_background_color_alpha	            = "127";
-
-            $cThumb_wmk->new_res_method 				            = $params->mode;
-            $cThumb_wmk->new_res_resize_when 			            = $params->when;
-            $cThumb_wmk->new_res_align 					            = $params->wmk_alignment;
-            $cThumb_wmk->new_res_method 				            = $params->wmk_method;
-
-            $cThumb->addWatermark($cThumb_wmk);
-        }
-
-        //Multi Watermark Image
-        if (!empty($this->wmk)) {
-            foreach ($this->wmk as $wmk_file) {
-                $cThumb_wmk                                         = new ImageThumb($params->dim_x, $params->dim_y);
-                $cThumb_wmk->new_res_max_x 						    = $params->max_x;
-                $cThumb_wmk->new_res_max_y 						    = $params->max_y;
-                $cThumb_wmk->src_res_path 						    = $wmk_file->file;
-
-                $cThumb_wmk->new_res_background_color_alpha		    = "127";
-
-                $cThumb_wmk->new_res_method						    = $params->mode;
-                $cThumb_wmk->new_res_resize_when 				    = $params->when;
-                $cThumb_wmk->new_res_align 						    = $params->wmk_alignment;
-                $cThumb_wmk->new_res_method 					    = $params->wmk_method;
+                $cThumb_wmk->new_res_method 				            = $params->mode;
+                $cThumb_wmk->new_res_resize_when 			            = $params->when;
+                $cThumb_wmk->new_res_align 					            = $params->wmk_alignment;
+                $cThumb_wmk->new_res_method 				            = $params->wmk_method;
 
                 $cThumb->addWatermark($cThumb_wmk);
             }
+
+            //Multi Watermark Image
+            if (!empty($this->wmk)) {
+                foreach ($this->wmk as $wmk_file) {
+                    $cThumb_wmk                                         = new ImageThumb($params->dim_x, $params->dim_y);
+                    $cThumb_wmk->new_res_max_x 						    = $params->max_x;
+                    $cThumb_wmk->new_res_max_y 						    = $params->max_y;
+                    $cThumb_wmk->src_res_path 						    = $wmk_file->file;
+
+                    $cThumb_wmk->new_res_background_color_alpha		    = "127";
+
+                    $cThumb_wmk->new_res_method						    = $params->mode;
+                    $cThumb_wmk->new_res_resize_when 				    = $params->when;
+                    $cThumb_wmk->new_res_align 						    = $params->wmk_alignment;
+                    $cThumb_wmk->new_res_method 					    = $params->wmk_method;
+
+                    $cThumb->addWatermark($cThumb_wmk);
+                }
+            }
+
+            //Watermark Text
+            if ($params->wmk_word_enable) {
+                $cThumb->new_res_font["caption"]                        = $params->shortdesc;
+                if (preg_match('/^[A-F0-9]+$/is', strtoupper($params->word_color))) {
+                    $cThumb->new_res_font["color"]                      = $params->word_color;
+                }
+                if (is_numeric($params->word_size) && $params->word_size > 0) {
+                    $cThumb->new_res_font["size"]                       = $params->word_size;
+                }
+                if (!empty($params->word_type)) {
+                    $cThumb->new_res_font["type"]                       = $params->word_type;
+                }
+                if (!empty($params->word_align)) {
+                    $cThumb->new_res_font["align"]                      = $params->word_align;
+                }
+            }
+
+            $cCanvas->addChild($cThumb);
+
+            $final_file                                                 = $this->getFinalFile();
+
+            FilemanagerFs::makeDir(dirname($final_file), $this->basepathCache());
+
+            $cCanvas->process($final_file);
         }
-
-        //Watermark Text
-        if ($params->wmk_word_enable) {
-            $cThumb->new_res_font["caption"]                        = $params->shortdesc;
-            if (preg_match('/^[A-F0-9]+$/is', strtoupper($params->word_color))) {
-                $cThumb->new_res_font["color"]                      = $params->word_color;
-            }
-            if (is_numeric($params->word_size) && $params->word_size > 0) {
-                $cThumb->new_res_font["size"]                       = $params->word_size;
-            }
-            if (strlen($params->word_type)) {
-                $cThumb->new_res_font["type"]                       = $params->word_type;
-            }
-            if (strlen($params->word_align)) {
-                $cThumb->new_res_font["align"]                      = $params->word_align;
-            }
-        }
-
-        $cCanvas->addChild($cThumb);
-
-        $final_file                                                 = $this->getFinalFile();
-
-        FilemanagerFs::makeDir(dirname($final_file), $this->basepathCache());
-
-        $cCanvas->process($final_file);
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    private function basepathCache() : string
+    private function basepathCache() : ?string
     {
         return ($this->pathinfo->render == static::RENDER_ASSETS_PATH
             ? Dir::findCachePath(Constant::RESOURCE_CACHE_ASSETS)
@@ -1220,7 +1217,7 @@ class Media implements Configurable
      */
     private function getMode() : ?array
     {
-        if (!$this->mode) {
+        if (empty($this->mode)) {
             return null;
         }
         $setting                                                    = null;
@@ -1262,7 +1259,7 @@ class Media implements Configurable
                 $final_file                                         = $this->getFinalFile($final_file_stored);
 
                 $modeCurrent                                        = $this->getMode();
-                if (Response::httpCode() >= 400 || !Kernel::useCache() || !$modeCurrent) {
+                if (Response::httpCode() >= 400 || !Kernel::useCache()) {
                     return $this->basepath . $this->filesource;
                 }
 
@@ -1291,15 +1288,17 @@ class Media implements Configurable
      */
     private function saveFromOriginal(string $source, string $destination) : void
     {
-        FilemanagerFs::makeDir($destination, $this->basepathCache());
+        if (Kernel::useCache()) {
+            FilemanagerFs::makeDir($destination, $this->basepathCache());
 
-        if ($this->pathinfo->render == static::RENDER_ASSETS_PATH) {
-            if (!@copy($source, $destination)) {
-                throw new Exception("Copy Failed. Check read permission on: " . $source . " and if directory exist and have write permission on " . $destination, 500);
-            }
-        } else {
-            if (is_writable($source) && !@link($source, $destination)) {
-                throw new Exception("Link Failed. Check write permission on: " . $source . " and if directory exist and have write permission on " . $destination, 500);
+            if ($this->pathinfo->render == static::RENDER_ASSETS_PATH) {
+                if (!@copy($source, $destination)) {
+                    throw new Exception("Copy Failed. Check read permission on: " . $source . " and if directory exist and have write permission on " . $destination, 500);
+                }
+            } else {
+                if (is_writable($source) && !@link($source, $destination)) {
+                    throw new Exception("Link Failed. Check write permission on: " . $source . " and if directory exist and have write permission on " . $destination, 500);
+                }
             }
         }
     }
@@ -1402,5 +1401,18 @@ class Media implements Configurable
             $this->mode                                             = $mode;
             $this->filesource 				                        = $source->dirname . DIRECTORY_SEPARATOR . $source->basename;
         }
+    }
+
+    /**
+     * @param string $relative_path
+     * @param string|null $base_disk_path
+     * @return string|null
+     */
+    private static function getRealPathAsset(string $relative_path, string $base_disk_path = null) : ?string
+    {
+        return ($base_disk_path
+            ? realpath($base_disk_path . $relative_path) ?: null
+            : null
+        );
     }
 }

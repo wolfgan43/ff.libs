@@ -36,7 +36,7 @@ class DataTableResponse extends DataResponse
     public $class               = null;
 
     public $keys                = null;
-    public $columns             = null;
+    public $columns             = [];
     public $properties          = null;
 
     public $draw                = 0;

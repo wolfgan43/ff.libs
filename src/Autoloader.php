@@ -40,8 +40,7 @@ class Autoloader implements Dumpable
     private static $classes                                                 = null;
 
     /**
-     * @param array|null $paths
-     * @throws Exception
+     * @param array $paths
      */
     public static function register(array $paths)
     {

@@ -122,7 +122,7 @@ class Locale implements Configurable
     }
 
     /**
-     * @return string|null
+     * @return string
      */
     public static function get() : string
     {

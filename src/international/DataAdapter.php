@@ -424,13 +424,9 @@ class DataAdapter extends Mappable
         $value = str_replace($rule->strip_chars, "", $value);
         preg_match_all($rule->regexp, $value, $matches);
 
-        if (strlen($matches[1][0])) {
-            $oData->value_sign = true;
-        } else {
-            $oData->value_sign = false;
-        }
-        $oData->value_numeric_integer = (int) preg_replace("/[^0-9]+/", "", $matches[2][0]);
-        $oData->value_numeric_decimal = (int) preg_replace("/[^0-9]+/", "", $matches[4][0]);
+        $oData->value_sign              = !empty($matches[1][0]);
+        $oData->value_numeric_integer   = (int) preg_replace("/[^0-9]+/", "", $matches[2][0]);
+        $oData->value_numeric_decimal   = (int) preg_replace("/[^0-9]+/", "", $matches[4][0]);
     }
 
     /**

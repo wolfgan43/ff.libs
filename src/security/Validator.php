@@ -73,6 +73,12 @@ class Validator
                                                                     "options"       => array("default" => null),
                                                                     "length"        => 64
                                                                 ),
+                                                                "number"            => array(
+                                                                    "filter"        => FILTER_VALIDATE_FLOAT,
+                                                                    "flags"         => null, //FILTER_FLAG_ALLOW_THOUSAND
+                                                                    "options"       => array("default" => null),
+                                                                    "length"        => 32
+                                                                ),
                                                                 "float"             => array(
                                                                     "filter"        => FILTER_VALIDATE_FLOAT,
                                                                     "flags"         => null, //FILTER_FLAG_ALLOW_THOUSAND
@@ -104,22 +110,22 @@ class Validator
                                                                     "length"        => 256
                                                                 ),
                                                                 "username"          => array(
-                                                                    "filter"        => FILTER_SANITIZE_STRING,
+                                                                    "filter"        => FILTER_UNSAFE_RAW,
                                                                     "flags"         => FILTER_FLAG_STRIP_LOW,
                                                                     "options"       => null,
                                                                     "callback"      => '\ff\libs\security\Validator::checkSpecialChars',
                                                                     "length"        => 48
                                                                 ),
                                                                 "string"            => array(
-                                                                    "filter"        => FILTER_SANITIZE_STRING,
-                                                                    "flags"         => FILTER_FLAG_NO_ENCODE_QUOTES | FILTER_FLAG_STRIP_LOW, //| FILTER_FLAG_STRIP_HIGH
+                                                                    "filter"        => FILTER_UNSAFE_RAW,
+                                                                    "flags"         => FILTER_FLAG_STRIP_LOW,
                                                                     "options"       => null,
                                                                     "callback"      => '\ff\libs\security\Validator::checkSpecialChars',
                                                                     "length"        => 256
                                                                 ),
                                                                 "array"             => array(
-                                                                    "filter"        => FILTER_SANITIZE_STRING,
-                                                                    "flags"         => FILTER_REQUIRE_ARRAY | FILTER_NULL_ON_FAILURE | FILTER_FLAG_NO_ENCODE_QUOTES | FILTER_FLAG_STRIP_LOW, //| FILTER_FLAG_STRIP_HIGH
+                                                                    "filter"        => FILTER_UNSAFE_RAW,
+                                                                    "flags"         => FILTER_REQUIRE_ARRAY | FILTER_NULL_ON_FAILURE | FILTER_FLAG_STRIP_LOW,
                                                                     "options"       => null,
                                                                     "callback"      => '\ff\libs\security\Validator::checkSpecialChars',
                                                                     "length"        => 10240
@@ -145,8 +151,8 @@ class Validator
                                                                     "length"        => 128
                                                                 ),
                                                                 "text"              => array(
-                                                                    "filter"        => null,
-                                                                    "flags"         => null,
+                                                                    "filter"        => FILTER_UNSAFE_RAW,
+                                                                    "flags"         => FILTER_FLAG_STRIP_LOW,
                                                                     "options"       => null,
                                                                     "callback"      => '\ff\libs\security\Validator::checkSpecialCharsText',
                                                                     "length"        => 128000
@@ -281,6 +287,10 @@ class Validator
      */
     public static function is(&$what, string $context, string $type = null, $range = null) : DataError
     {
+        if ($what === null) {
+            return new DataError();
+        }
+
         if (!array_key_exists($type, self::RULES)) {
             //@todo da gestire il default in modo dinamico. Da togliere text in virtu di string
             $type                                       = (
@@ -313,9 +323,7 @@ class Validator
                                                             "options"   => $rule->options       ?? null
                                                         ));
 
-            if ($what === null) {
-                $error                                  = false;
-            } elseif ($rule->filter === FILTER_CALLBACK) {
+            if ($rule->filter === FILTER_CALLBACK) {
                 $error                                  = !$validation;
             } elseif ($type == "array"
                 || $type == "string"
@@ -471,25 +479,35 @@ class Validator
      */
     public static function checkSpecialChars($value, array $spell_check = null) : ?string
     {
-        $error                                          = null;
-        if (!$spell_check) {
-            $spell_check                                = self::SPELL_CHECK;
-        }
-        foreach ((array) $value as $key => $item) {
-            if ($item != str_replace($spell_check, "", $item)) {
-                $label = (
-                    is_numeric($key)
-                    ? self::getContextName()
-                    : $key
-                );
-                $error                                  = $label . (
+        return self::findSpecialChars((array) $value, $spell_check ?? self::SPELL_CHECK);
+    }
+
+    /**
+     * @param array $value
+     * @param array $spell_check
+     * @param string|null $label
+     * @return string|null
+     */
+    private static function findSpecialChars(array $value, array $spell_check, string $label = null) : ?string
+    {
+        $error = null;
+        foreach ($value as $key => $item) {
+            if (is_array($item)) {
+                $error  = self::findSpecialChars($item, $spell_check, "[...]");
+                break;
+            } elseif ($item != str_replace($spell_check, "", $item)) {
+                $error  = Buckler::encodeEntity(self::getContextName() . $label . "[" . $key . "]") . (
                     is_float($item)
-                        ? " is not a valid float. Max precision must be: " . ini_get("precision")
-                        : " is not a valid. " . "You can't use [" . implode(" ", $spell_check) . "]"
+                    ? " is not a valid float. Max precision must be: " . ini_get("precision")
+                    : " is not a valid. " . "You can't use [" . implode(" ", $spell_check) . "]"
                 );
+                break;
+            } elseif ($item != preg_replace('/<?[a-z\s]*>/i', "", $item)) {
+                $error  = Buckler::encodeEntity(self::getContextName() . $label . "[" . $key . "]") . " HTML entity not allowed";
                 break;
             }
         }
+
         return $error;
     }
 

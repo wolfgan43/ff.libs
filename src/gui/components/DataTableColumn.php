@@ -46,6 +46,8 @@ class DataTableColumn
     private $placeholder        = null;
     private $hide               = false;
 
+    private $tplValue           = null;
+
     /**
      * @param string $id
      * @param array $params
@@ -165,7 +167,7 @@ class DataTableColumn
      * @return string|null
      * @throws Exception
      */
-    public function display(string $url) : ?string
+    public function displayLabel(string $url) : ?string
     {
         return ($this->hide
             ? null
@@ -173,6 +175,29 @@ class DataTableColumn
         );
     }
 
+    public function displayValue() : string
+    {
+        return $this->tplValue ?? "{" . $this->id . "}";
+    }
+
+    /**
+     * @param string $tpl
+     * @return $this
+     */
+    public function tplValue(string $tpl) : self
+    {
+        $this->tplValue = $tpl;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function id() : string
+    {
+        return "{" . $this->id . "}";
+    }
     /**
      * @param string $url
      * @return string

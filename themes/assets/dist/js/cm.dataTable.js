@@ -96,6 +96,12 @@ cm.dataTable = (function () {
             const ODD = "odd";
             const EVEN = "even";
 
+            const RECORD_LIMIT = (
+                dt.querySelector("." + settings.class.length + " SELECT")
+                    ? dt.querySelector("." + settings.class.length + " SELECT").value
+                    : 25
+            );
+
             function drawOrder(order) {
                 let url = new URL(window.location.href);
                 let dir = DEFAULT_DIR;
@@ -205,17 +211,20 @@ cm.dataTable = (function () {
                     let tplButton = dt.querySelector(".dt-btn");
                     let recordKey = tBody.getAttribute("data-key");
                     for (let i = 0; i < response.data.length; i++) {
-                        let attrId = null;
-                        let buttons = null;
+                        let attrId = "";
+                        let buttons = "";
                         if(recordKey && response.keys && response.keys[i]) {
                             attrId = ' data-id="' + response.keys[i] + '"';
                             buttons = drawButton(tplButton, recordKey, response.keys[i]);
                         }
 
                         TR += '<tr' + attrId + ' class="' + (i % 2 === 0 ? ODD : EVEN) + '">';
+
+                        let tplRow = dt.querySelector(".dt-row").innerHTML;
                         for (const column in columns) {
-                            TR += '<td' + (columns[column] ? ' class="' + SORT + '"' : '') + '>' + (response.data[i][column] || "") + '</td>';
+                            tplRow = tplRow.replace("{" + column + "}", response.data[i][column] || "");
                         }
+                        TR += tplRow;
                         TR += buttons;
                         TR += '</tr>';
                     }
@@ -266,8 +275,8 @@ cm.dataTable = (function () {
             }
 
             drawOrder(dt.querySelectorAll("THEAD TH a"));
-            drawInfo(dt.querySelectorAll("." + settings.class.info), dt.querySelector("." + settings.class.length + " SELECT").value);
-            drawPage(dt.querySelectorAll("." + settings.class.paginate), dt.querySelector("." + settings.class.length + " SELECT").value);
+            drawInfo(dt.querySelectorAll("." + settings.class.info), RECORD_LIMIT);
+            drawPage(dt.querySelectorAll("." + settings.class.paginate), RECORD_LIMIT);
 
         }
 

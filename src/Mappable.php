@@ -69,7 +69,7 @@ abstract class Mappable
 
     /**
      * @param string $name
-     * @param string|null $prefix
+     * @param string $prefix
      * @return array
      */
     private function loadMap(string $name, string $prefix) : array

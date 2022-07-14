@@ -75,6 +75,22 @@ class Notice
     {
         $this->setAdapter($noticeAdapter);
     }
+
+    /**
+     * @param array $targets
+     * @return Notice
+     */
+    public function addRecipients(array $targets) : self
+    {
+        foreach ($this->adapters as $adapter) {
+            foreach ($targets as $name => $target) {
+                $adapter->addRecipient($target, is_numeric($name) ? null: $name);
+            }
+        }
+
+        return $this;
+    }
+
     /**
      * @param string $target
      * @param string|null $name
@@ -147,16 +163,17 @@ class Notice
     }
 
     /**
-     * @param string $message
+     * @param string $title
+     * @param string|null $message
      * @return DataResponse
      */
-    public function send(string $message) : DataResponse
+    public function send(string $title, string $message = null) : DataResponse
     {
         Debug::stopWatch(static::ERROR_BUCKET);
 
         $dataResponse                                       = new DataResponse();
         foreach ($this->adapters as $key => $adapter) {
-            $result                                         = $adapter->send($message);
+            $result                                         = $adapter->send($title, $message);
             $dataResponse->set($key, $result->isError());
             if ($result->isError()) {
                 $dataResponse->error($result->status, $result->error);

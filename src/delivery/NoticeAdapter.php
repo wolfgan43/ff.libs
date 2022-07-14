@@ -60,10 +60,11 @@ abstract class NoticeAdapter
     abstract public function checkRecipient(string $target) : bool;
 
     /**
-     * @param string $message
+     * @param string $title
+     * @param string|null $message
      * @return DataError
      */
-    abstract public function send(string $message) : DataError;
+    abstract public function send(string $title, string $message = null) : DataError;
 
     /**
      * @param string $title

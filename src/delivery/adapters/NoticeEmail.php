@@ -52,13 +52,15 @@ class NoticeEmail extends NoticeAdapter
     }
 
     /**
-     * @param string $message
+     * @param string $title
+     * @param string|null $message
      * @return DataError
      * @throws Exception
      */
-    public function send(string $message) : DataError
+    public function send(string $title, string $message = null) : DataError
     {
-        $this->title                        = $message;
+        $this->title                        = $title;
+        $this->fields                       = $message;
 
         return $this->process();
     }

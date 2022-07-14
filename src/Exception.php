@@ -41,16 +41,16 @@ class Exception extends \Exception
     /**
      * @param int $status
      * @param string|null $msg
-     * @return string
+     * @return string|null
      */
-    public static function setMessage(int $status, string $msg = null) : string
+    public static function setMessage(int $status, string $msg = null) : ?string
     {
         Debug::set($msg, self::ERR_ . $status);
 
         return (
-            $status <= Kernel::$Environment::ERROR_REPORTING
-            ? $msg
-            : Response::getStatusMessage($status)
+            $status > Kernel::$Environment::ERROR_REPORTING
+            ? Response::getStatusMessage($status)
+            : $msg
         );
     }
 

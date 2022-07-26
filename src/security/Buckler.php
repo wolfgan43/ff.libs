@@ -261,11 +261,15 @@ class Buckler implements Configurable
     }
 
     /**
-     * @param string $data
+     * @param string|null $data
      * @return string
      */
-    public static function encodeEntity(string $data) : string
+    public static function encodeEntity(string $data = null) : string
     {
-        return htmlspecialchars(urldecode($data));
+        return (
+            $data === null
+            ? ""
+            : htmlspecialchars(urldecode($data))
+        );
     }
 }

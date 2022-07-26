@@ -533,7 +533,7 @@ class ValidatorFile
     {
         $error                                                              = array();
 
-        if (isset($_FILES[$value])) {
+        if (isset($_FILES[$value]) && $_FILES[$value] == UPLOAD_ERR_OK) {
             $names                                                          = (array) $_FILES[$value]["name"];
             if (!empty($names)) {
                 foreach ($names as $name) {

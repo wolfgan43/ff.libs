@@ -28,6 +28,7 @@ namespace ff\libs;
 use ff\libs\dto\DataAdapter;
 use ff\libs\dto\DataError;
 use ff\libs\gui\controllers\ErrorController;
+use ff\libs\security\Buckler;
 use ff\libs\storage\drivers\Array2XML;
 use ff\libs\util\Normalize;
 use ff\libs\util\ServerManager;
@@ -221,7 +222,7 @@ class Response
                 Log::registerProcedure("Router", "page" . Log::CLASS_SEP . "error");
                 try {
                     self::send((new ErrorController())
-                        ->displayException($code, \ff\libs\security\Buckler::encodeEntity($msg)), [], $code);
+                        ->displayException($code, Buckler::encodeEntity($msg)), [], $code);
                 } catch (\Exception $e) {
                     Debug::setBackTrace($e->getTrace());
                     self::sendErrorHtmlDefault($e->getCode(), $e->getMessage(), true);
@@ -262,7 +263,7 @@ class Response
                 self::sendErrorJsonDefault($code, $msg);
                 break;
             case "text/html":
-                self::sendErrorHtmlDefault($code, \ff\libs\security\Buckler::encodeEntity($msg));
+                self::sendErrorHtmlDefault($code, Buckler::encodeEntity($msg));
                 break;
             case "php/cli":
                 Debug::dump($msg);
@@ -399,7 +400,7 @@ class Response
         if (self::invalidAccept($content_type)) {
             self::httpCode(501);
             self::sendHeaders(["mimetype" => "text/plain", "cache" => "no-cache"]);
-            $message = "content type " . $content_type . " is different to http_accept: " . \ff\libs\security\Buckler::encodeEntity(self::rawAccept());
+            $message = "content type " . $content_type . " is different to http_accept: " . Buckler::encodeEntity(self::rawAccept());
             echo $message;
             self::endScript($message);
         }

@@ -1,5 +1,5 @@
 {
-  "collection": "user",
+  "collection": "access",
   "main_table": "users",
   "adapters": {
     "mysqli": null
@@ -10,36 +10,80 @@
       "username": null,
       "password": null,
       "name": null,
-      "prefix": "USER_MYSQL_DATABASE_",
+      "prefix": "ACCESS_DATABASE_",
       "table": null,
       "key": "id",
-      "key_rel": "id_"
+      "key_rel" : "_id"
     },
     "mongodb": {
       "host": null,
       "username": null,
       "password": null,
       "name": null,
-      "prefix": "USER_MONGO_DATABASE_",
+      "prefix": "ACCESS_MONGO_DATABASE_",
       "table": null,
       "key": "id",
-      "key_rel": "id_"
+      "key_rel" : "_id"
     },
     "fs": {
       "service": "php",
-      "path": "\/cache\/user",
+      "path": "\/cache\/access",
       "name": [
         "username_slug"
       ]
     }
   },
   "struct": {
+    "clients": {
+      "id" : "primary",
+      "client_type": "string",
+      "client_id": "string",
+      "client_secret": "string",
+      "domain": "string",
+      "scopes_client" : "string",
+      "scopes_user" : "string",
+      "grant_types" : "string",
+      "redirect_uri" : "string",
+      "site_url" : "string",
+      "privacy_url" : "string"
+    },
+    "devices": {
+      "id": "primary",
+      "uuid": "string",
+      "client_id": "string",
+      "user_uuid": "string",
+      "type": "string",
+      "updated_at": "timestamp",
+      "hits": "number",
+      "ips": "text"
+    },
+    "domains" : {
+      "id": "primary",
+      "name": "string",
+      "expire": "timestamp",
+      "created_at": "timestamp",
+      "updated_at": "timestamp"
+    },
+    "roles": {
+      "id": "primary",
+      "name": "string",
+      "scopes": "string"
+    },
+    "tokens": {
+      "id": "primary",
+      "type": "string",
+      "token": "string",
+      "expire": "timestamp",
+      "client_id": "string",
+      "device_uuid": "string",
+      "user_uuid" : "string"
+    },
     "users": {
       "id": "primary",
-      "anagraph": "string",
-      "domain": "string",
       "uuid": "string",
-      "acl": "number",
+      "domain": "string",
+      "role" : "string",
+      "acl": "string",
       "expire": "timestamp",
       "status": "number",
       "username": "string",
@@ -49,94 +93,234 @@
       "tel": "string",
       "password": "string:inPassword",
       "avatar": "string",
-      "created": "timestamp",
-      "last_update": "number",
-      "last_login": "number",
+      "created_at": "timestamp",
+      "updated_at": "timestamp",
+      "login_at": "timestamp",
       "verified_email": "number",
       "verified_tel": "number",
       "locale": "string",
-      "role" : "string",
       "referral" : "string"
     },
-    "newsletter": {
-      "id": "primary",
-      "type": "string",
-      "title": "number",
-      "description": "number",
-      "created": "timestamp",
-      "domain": "string"
+    "users_newsletter" : {
+      "id" : "primary",
+      "user_uuid" : "string",
+      "newsletter_id" : "number",
+      "accepted" : "boolean",
+      "created_at": "timestamp",
+      "checksum" : "string"
     },
-    "privacy": {
-      "id": "primary",
-      "type": "string",
-      "title": "number",
-      "description": "number",
+    "users_privacy" : {
+      "id" : "primary",
+      "user_uuid" : "string",
+      "privacy_id" : "number",
+      "accepted" : "boolean",
+      "created_at": "timestamp",
+      "checksum" : "string"
+    },
+    "newsletter" : {
+      "id" : "primary",
+      "type" : "string",
+      "title" : "string",
+      "description" : "text",
+      "created_at": "timestamp",
+      "updated_at": "timestamp",
+      "domain" : "string"
+    },
+    "privacy" : {
+      "id" : "primary",
+      "type" : "string",
+      "title" : "string",
+      "description" : "text",
       "version": "number",
-      "created": "timestamp",
-      "required": "boolean",
-      "domain": "string"
-    },
-    "users_newsletter": {
-      "id": "primary",
-      "id_user": "number",
-      "id_newsletter": "number",
-      "accepted": "boolean",
-      "created": "timestamp",
-      "checksum": "string"
-    },
-    "users_privacy": {
-      "id": "primary",
-      "id_user": "number",
-      "id_privacy": "number",
-      "accepted": "boolean",
-      "created": "timestamp",
-      "checksum": "string"
+      "created_at": "timestamp",
+      "required" : "boolean",
+      "domain" : "string"
     }
   },
   "relationship": {
-    "users": {
-      "anagraph": {
-        "collection": "user_anagraph",
-        "tbl": "anagraph",
-        "key": "id"
+    "clients" : {
+      "devices": {
+        "external": "client_id",
+        "primary": "client_id"
       },
-      "users_privacy": {
-        "external": "id_user",
-        "primary": "id"
+      "tokens": {
+        "external": "client_id",
+        "primary": "client_id"
+      }
+    },
+    "devices": {
+      "client_id" : {
+        "tbl": "clients",
+        "key": "client_id"
+      },
+      "user_uuid" : {
+        "tbl": "users",
+        "key": "uuid"
+      },
+      "tokens": {
+        "external": "device_uuid",
+        "primary": "uuid"
+      }
+    },
+    "roles": {
+      "users": {
+        "external": "role",
+        "primary": "name"
+      }
+    },
+    "tokens": {
+      "client_id": {
+        "tbl": "clients",
+        "key": "client_id"
+      },
+      "user_uuid": {
+        "tbl": "users",
+        "key": "uuid"
+      },
+      "device_uuid": {
+        "tbl": "devices",
+        "key": "uuid"
+      }
+    },
+    "users": {
+      "role" : {
+        "tbl": "roles",
+        "key": "name"
+      },
+      "devices": {
+        "external": "user_uuid",
+        "primary": "uuid"
+      },
+      "tokens": {
+        "external": "user_uuid",
+        "primary": "uuid"
       },
       "users_newsletter": {
-        "external": "id_user",
+        "external": "user_uuid",
+        "primary": "uuid"
+      },
+      "users_privacy": {
+        "external": "user_uuid",
+        "primary": "uuid"
+      }
+    },
+    "users_newsletter": {
+      "user_uuid": {
+        "tbl": "users",
+        "key": "uuid"
+      },
+      "newsletter_id": {
+        "tbl": "newsletter",
+        "key": "id"
+      }
+    },
+    "newsletter": {
+      "users_newsletter": {
+        "external": "newsletter_id",
         "primary": "id"
       }
     },
     "users_privacy": {
-      "id_user": {
+      "user_uuid": {
         "tbl": "users",
+        "key": "uuid"
+      },
+      "privacy_id": {
+        "tbl": "privacy",
         "key": "id"
       }
     },
-    "users_newsletter": {
-      "id_user": {
-        "tbl": "users",
-        "key": "id"
+    "privacy": {
+      "users_privacy": {
+        "external": "privacy_id",
+        "primary": "id"
       }
     }
   },
   "indexes": {
-    "users_privacy": {
-      "id_user": "hardindex"
+    "clients": {
+      "client_id": "hardindex"
     },
-    "users_newsletter": {
-      "id_user": "hardindex"
+    "devices": {
+      "uuid": "hardindex",
+      "client_id": "hardindex",
+      "user_uuid": "hardindex"
+    },
+    "roles": {
+      "name": "hardindex"
+    },
+    "tokens": {
+      "client_id": "hardindex",
+      "user_uuid": "hardindex",
+      "device_uuid": "hardindex"
     },
     "users": {
-      "role" : "hardindex",
-      "anagraph" : "hardindex"
+      "uuid": "hardindex",
+      "domain": "hardindex"
+    },
+    "users_newsletter": {
+      "user_uuid" : "hardindex",
+      "newsletter_id" : "hardindex"
+    },
+    "users_privacy": {
+      "user_uuid" : "hardindex",
+      "privacy_id" : "hardindex"
+    },
+    "newsletter": {
+      "domain" : "hardindex"
+    },
+    "privacy": {
+      "domain" : "hardindex"
     }
   },
   "tables": {
+    "clients": {
+      "name": "access_clients",
+      "alias": "client",
+      "engine": "InnoDB",
+      "crypt": false,
+      "pairing": false,
+      "transfert": false,
+      "charset": "utf8"
+    },
+    "devices": {
+      "name": "access_devices",
+      "alias": "device",
+      "engine": "InnoDB",
+      "crypt": false,
+      "pairing": false,
+      "transfert": false,
+      "charset": "utf8"
+    },
+    "domains": {
+      "name": "access_domains",
+      "alias": "domain",
+      "engine": "InnoDB",
+      "crypt": false,
+      "pairing": false,
+      "transfert": false,
+      "charset": "utf8"
+    },
+    "roles": {
+      "name": "access_roles",
+      "alias": "role",
+      "engine": "InnoDB",
+      "crypt": false,
+      "pairing": false,
+      "transfert": false,
+      "charset": "utf8"
+    },
+    "tokens": {
+      "name": "access_tokens",
+      "alias": "token",
+      "engine": "InnoDB",
+      "crypt": false,
+      "pairing": false,
+      "transfert": false,
+      "charset": "utf8"
+    },
     "users": {
-      "name": "auth_users",
+      "name": "access_users",
       "alias": "user",
       "engine": "InnoDB",
       "crypt": false,
@@ -144,8 +328,26 @@
       "transfert": false,
       "charset": "utf8"
     },
+    "users_newsletter": {
+      "name": "access_users_newsletter",
+      "alias": "newsletter",
+      "engine": "InnoDB",
+      "crypt": false,
+      "pairing": false,
+      "transfert": false,
+      "charset": "utf8"
+    },
+    "users_privacy": {
+      "name": "access_users_privacy",
+      "alias": "privacy",
+      "engine": "InnoDB",
+      "crypt": false,
+      "pairing": false,
+      "transfert": false,
+      "charset": "utf8"
+    },
     "newsletter": {
-      "name": "auth_newsletter",
+      "name": "access_newsletter",
       "alias": "newsletter",
       "engine": "InnoDB",
       "crypt": false,
@@ -154,26 +356,8 @@
       "charset": "utf8"
     },
     "privacy": {
-      "name": "auth_privacy",
+      "name": "access_privacy",
       "alias": "privacy",
-      "engine": "InnoDB",
-      "crypt": false,
-      "pairing": false,
-      "transfert": false,
-      "charset": "utf8"
-    },
-    "users_newsletter": {
-      "name": "auth_users_newsletter",
-      "alias": "users_newsletter",
-      "engine": "InnoDB",
-      "crypt": false,
-      "pairing": false,
-      "transfert": false,
-      "charset": "utf8"
-    },
-    "users_privacy": {
-      "name": "auth_users_privacy",
-      "alias": "users_privacy",
       "engine": "InnoDB",
       "crypt": false,
       "pairing": false,

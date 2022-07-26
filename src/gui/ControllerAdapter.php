@@ -57,10 +57,10 @@ abstract class ControllerAdapter extends Mappable
     abstract public function assign(string $tpl_var, $content = null) : self;
 
     /**
-     * @param string $data
+     * @param string|null $data
      * @return string
      */
-    public static function encodeEntity(string $data) : string
+    public static function encodeEntity(string $data = null) : string
     {
         return Buckler::encodeEntity($data);
     }

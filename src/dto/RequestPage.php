@@ -144,7 +144,7 @@ class RequestPage extends Mappable
         $this->path_info            = $this->path_info ?? preg_replace('#^' . $script_path . '#i', "", $orig_path_info, 1);
         $this->setPattern($config, $patterns);
 
-        if (($config["layout"] ?? null) != ($config["layout_exception"] ?? null) && empty($pages[$script_path]["config"]["layout"])) {
+        if (empty($config["layout"])) {
             $config["layout"] = $config["layout_exception"] ?? self::LAYOUT_EXCEPTION;
         }
 

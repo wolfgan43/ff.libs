@@ -61,7 +61,7 @@ let cm = (function () {
                 "action"        : "cm-action"
             },
             "tpl"	            :
-                '<div class="cm-modal-overlay" style="position: absolute;top: 0;bottom: 0;left: 0;right: 0;opacity: 0.9;background-color: grey;display: flex;flex-direction: column;">' +
+                '<div class="cm-modal-overlay" style="position: absolute;top: 0;bottom: 0;left: 0;right: 0;background-color: grey;display: flex;flex-direction: column;">' +
                 '   <div class="cm-modal-body" style="flex-grow: 1;padding: 15px 30px;"></div>' +
                 '   <div class="cm-modal-footer cm-action" style="padding: 15px 30px;background: #fff;text-align: right;"></div>' +
                 '</div>',
@@ -487,6 +487,9 @@ let cm = (function () {
                                 ov_privates.$node.innerHTML = settings.overlay.tpl;
                                 ov_privates.$node = ov_privates.$node.firstElementChild;
                                 ov_privates.$node.prepend(privates.$container.querySelector("." + settings.modal.header.container).cloneNode(true));
+                                ov_privates.$node.querySelector("." + settings.modal.header.close).addEventListener("click", function () {
+                                    publics.close();
+                                });
 
                                 if (!nodefaultbt && (!buttons || !buttons.length)) {
                                     buttons = [];

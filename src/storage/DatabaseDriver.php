@@ -102,7 +102,7 @@ abstract class DatabaseDriver implements Constant
 
     /**
      * @param DatabaseQuery $query
-     * @param string|null $action
+     * @param string $action
      * @return array|null
      */
     abstract public function cmd(DatabaseQuery $query, string $action = self::CMD_COUNT) : ?array;

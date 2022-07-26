@@ -272,7 +272,7 @@ class MySqli extends DatabaseDriver
             WHERE " . $query->where
         );
 
-        return (bool) $this->query_id;
+        return (bool) ($this->buffered_affected_rows = @mysqli_affected_rows($this->link_id));
     }
 
     /**

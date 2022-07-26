@@ -382,15 +382,32 @@ class ViewHtml implements ViewAdapter
     public function assign($tpl_var, $value = null) : ViewAdapter
     {
         if (is_array($tpl_var)) {
-            //@todo da togliere e inserire nella view principale
-            $this->ParsedBlocks             = array_replace($this->ParsedBlocks, $tpl_var);
-        } elseif(is_object($tpl_var)) {
-            $this->ParsedBlocks             = array_replace($this->ParsedBlocks, (array) $tpl_var);
+            $this->ParsedBlocks             = array_replace($this->ParsedBlocks, $this->arrayFlatten($tpl_var));
+        } elseif (is_object($tpl_var)) {
+            $this->ParsedBlocks             = array_replace($this->ParsedBlocks, $this->arrayFlatten((array) $tpl_var));
         } else {
             $this->ParsedBlocks[$tpl_var]   = $value;
         }
 
         return $this;
+    }
+
+    /**
+     * @param array $array
+     * @param string|null $parent
+     * @return array
+     */
+    private function arrayFlatten(array $array, string $parent = null) : array
+    {
+        $result                             = [];
+        foreach ($array as $key => $value) {
+            if (is_array($value)) {
+                $result                     = array_merge($result, $this->arrayFlatten($value, $key . "."));
+            } else {
+                $result[$parent . $key]     = $value;
+            }
+        }
+        return $result;
     }
 
     /**

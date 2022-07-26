@@ -104,14 +104,10 @@ class DatabaseConverter
      */
     public function set(string &$field_output, string $field_db = null) : string
     {
-        $casts                                      = $this->converterCasts($field_output);
-        if (!$field_db) {
-            $field_db                               = $field_output;
-        }
+        $struct_type                                = $this->getStructField($field_db ?? $field_output);
+        $this->cast($struct_type, $field_output, $field_db);
 
-        $this->converterCallback($casts, $field_db, $field_output);
-
-        return $this->converterStruct($field_db, $field_output);
+        return $struct_type;
     }
 
     /**
@@ -161,11 +157,11 @@ class DatabaseConverter
 
     /**
      * @param string $subject
-     * @return array|null
+     * @return array
      */
-    private function converterCasts(string &$subject) : ?array
+    private function converterCasts(string &$subject) : array
     {
-        $casts                                      = null;
+        $casts                                      = [];
         if (strpos($subject, ":") !== false) {
             $casts                                  = explode(":", $subject);
             $subject                                = array_shift($casts);
@@ -175,43 +171,28 @@ class DatabaseConverter
     }
 
     /**
-     * @param string $field_db
-     * @param string|null $field_output
-     * @return string
-     * @throws Exception
-     */
-    private function converterStruct(string $field_db, string $field_output = null) : string
-    {
-        $struct_type                                = $this->getStructField($field_db);
-        $casts                                      = $this->converterCasts($struct_type);
-
-        $this->converterCallback($casts, $field_db, $field_output);
-
-        return $struct_type;
-    }
-
-    /**
-     * @param array|null $casts
+     * @param string $struct_type
+     * @param string $field_output
      * @param string|null $field_db
-     * @param string|null $field_output
      * @throws Exception
      */
-    private function converterCallback(array $casts = null, string $field_db = null, string $field_output  = null) : void
+    private function cast(string &$struct_type, string &$field_output, string $field_db = null) : void
     {
-        if ($casts) {
+        $casts                                      = array_merge($this->converterCasts($field_output), $this->converterCasts($struct_type));
+        if (!empty($casts)) {
             foreach ($casts as $cast) {
-                $params                                 = [];
-                $op                                     = strtolower(substr($cast, 0, 2));
+                $params                             = [];
+                $op                                 = strtolower(substr($cast, 0, 2));
                 if (strpos($cast, "(") !== false) {
                     $func = explode("(", $cast, 2);
                     $cast = $func[0];
                     $params = explode(",", rtrim($func[1], ")"));
                 }
 
-                if ($op === "to" && $field_output) {
-                    $this->add($this->to, $field_output, $this->getStructField($field_output), substr($cast, 2), $params);
-                } elseif ($op === "in" && $field_db) {
-                    $this->add($this->in, $field_db, $this->getStructField($field_db), substr($cast, 2), $params);
+                if ($op === "to" && !empty($field_output)) {
+                    $this->add($this->to, $field_output, $struct_type, substr($cast, 2), $params);
+                } elseif ($op === "in" && !empty($field_db ?? $field_output)) {
+                    $this->add($this->in, $field_db ?? $field_output, $struct_type, substr($cast, 2), $params);
                 } else {
                     throw new Exception($cast . " is not a valid function", 500);
                 }

@@ -96,6 +96,7 @@ abstract class OrmItem
     protected const CONVERSION                                                  = [];
 
     protected const DATARESPONSE                                                = [];
+    protected const SEARCH                                                      = [];
 
     /**
      * @var OrmModel[]|null
@@ -226,7 +227,7 @@ abstract class OrmItem
 
         $sort                                                                   = null;
         if (is_array($order)) {
-            $fields                                                             = $item::DATARESPONSE;
+            $fields                                                             = $item::SEARCH;
             sort($fields);
             foreach ($order as $key => $value) {
                 if (isset($value["column"])) {
@@ -244,7 +245,7 @@ abstract class OrmItem
             }
         }
 
-        $toDataResponse = $item::DATARESPONSE;
+        $toDataResponse                                                         = $item::SEARCH;
         if (!empty($model_name)) {
             foreach (Model::columns($model_name) as $dbField => $keyField) {
                 $toDataResponse[$dbField] = $keyField;
@@ -569,7 +570,7 @@ abstract class OrmItem
             $this->onInsert($this->db);
         }
 
-        $vars                                                                   = $this->fieldSetPurged();
+        $vars                                                                   = array_diff_key($this->fieldSetPurged(), $this->oneToMany);
 
         $this->applyOneToOne($vars);
 

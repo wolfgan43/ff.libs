@@ -472,7 +472,7 @@ class Orm extends Mappable
 
     /**
      * @param array $where
-     * @return OrmResults|null
+     * @return OrmResults
      * @throws Exception
      */
     public function delete(array $where) : OrmResults
@@ -909,6 +909,20 @@ class Orm extends Mappable
             /**
              * Delete
              */
+            if (!empty($data->def->relationship) && !empty(array_column($data->def->relationship, "external"))) {
+                $select = $storage->read(array_values($data->def->struct), $data->where, null, null, null, false, $data->def->table[self::TNAME]);
+                if (!empty($select["index"])) {
+                    foreach ($data->def->relationship as $table => $rel) {
+                        if (isset($rel["external"])) {
+                            Orm::getInstance($rel["collection"] ?? $modelName, $table)->update(
+                                [$rel["external"] => null],
+                                [$rel["external"] => array_column($select["index"], $rel["primary"])]
+                            );
+                        }
+                    }
+                }
+            }
+
             $regs                                                                           = $storage->delete($data->where, $data->def->table[self::TNAME]);
             $delete_key                                                                     = $regs[self::INDEX_PRIMARY][$key_name];
         } elseif (!empty($data->insert) && !empty($data->set) && !empty($data->where)) {

@@ -128,8 +128,8 @@ class DataTableResponse extends DataResponse
         $column = $this->columns[$index];
         usort($this->data, function ($a, $b) use ($column, $dir) {
             return ($dir == "desc"
-                ? $a[$column] < $b[$column]
-                : $a[$column] > $b[$column]
+                ? $b[$column] <=> $a[$column]
+                : $a[$column] <=> $b[$column]
             );
         });
 

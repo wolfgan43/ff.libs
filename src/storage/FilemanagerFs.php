@@ -59,12 +59,13 @@ class FilemanagerFs
 
     /**
      * @param string $file_path
-     * @return stdClass|null
+     * @param bool $toArray
+     * @return stdClass|array|null
      * @throws Exception
      */
-    public static function fileGetContentsJson(string $file_path) : ?stdClass
+    public static function fileGetContentsJson(string $file_path, bool $toArray = false) : stdClass|array|null
     {
-        return Validator::jsonDecode(self::fileGetContents($file_path), false);
+        return Validator::jsonDecode(self::fileGetContents($file_path), $toArray);
     }
 
     /**

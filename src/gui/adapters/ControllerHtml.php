@@ -360,7 +360,7 @@ class ControllerHtml extends ControllerAdapter
      */
     private function parsePreconnect() : string
     {
-        return implode(null, $this->preconnect);
+        return implode("", $this->preconnect);
     }
 
     /**

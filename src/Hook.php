@@ -95,10 +95,10 @@ class Hook implements Configurable, Dumpable
     /**
      * AddHook
      * @param string $name
-     * @param string $func
+     * @param string|callable $func
      * @param int $priority
      */
-    public static function register(string $name, string $func, int $priority = self::HOOK_PRIORITY_NORMAL) : void
+    public static function register(string $name, string|callable $func, int $priority = self::HOOK_PRIORITY_NORMAL) : void
     {
         self::addCallback($name, $func, $priority);
     }
@@ -106,21 +106,21 @@ class Hook implements Configurable, Dumpable
     /**
      * AddHook
      * @param string $name
-     * @param string $func
+     * @param string|callable $func
      * @param int $priority
      */
-    public static function registerOnce(string $name, string $func, int $priority = self::HOOK_PRIORITY_NORMAL) : void
+    public static function registerOnce(string $name, string|callable $func, int $priority = self::HOOK_PRIORITY_NORMAL) : void
     {
         self::addCallback($name, $func, $priority, true);
     }
 
     /**
      * @param $name
-     * @param string $func
+     * @param string|callable $func
      * @param int $priority
      * @param bool $override
      */
-    private static function addCallback($name, string $func, int $priority = self::HOOK_PRIORITY_NORMAL, bool $override = false) : void
+    private static function addCallback($name, string|callable $func, int $priority = self::HOOK_PRIORITY_NORMAL, bool $override = false) : void
     {
         if (!isset(self::$events[$name])) {
             self::$events[$name]                                                    = [];
@@ -141,7 +141,7 @@ class Hook implements Configurable, Dumpable
      * @param mixed|null $params
      * @return array|null
      */
-    public static function handle(string $name, &$ref = null, $params = null) : ?array
+    public static function handle(string $name, &$ref = null, &$params = null) : ?array
     {
         $res                                                                        = null;
 

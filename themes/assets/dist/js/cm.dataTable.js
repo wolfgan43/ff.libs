@@ -34,6 +34,12 @@ cm.dataTable = (function () {
     };
 
     function dataTable(dt) {
+        function loadJs() {
+            if(js = dt.querySelector(".dt-js")) {
+                eval(js.innerText);
+            }
+        }
+
         function url(name, value) {
             let url = new URL(window.location);
             if(value) {
@@ -102,12 +108,12 @@ cm.dataTable = (function () {
                     : 25
             );
 
-            function drawOrder(order) {
+            function drawOrder(columns) {
                 let url = new URL(window.location.href);
                 let dir = DEFAULT_DIR;
                 let index, sort = null;
 
-                for (let i = 0; i < order.length; i++) {
+                for (let i = 0; i < columns.length; i++) {
                     sort = SORT + "[" + i + "]";
                     if(url.searchParams.get(sort)) {
                         index = i;
@@ -116,18 +122,20 @@ cm.dataTable = (function () {
                         break;
                     }
                 }
-                for (let i = 0; i < order.length; i++) {
-                    sort = SORT + "[" + i + "]";
-                    order[i].parentNode.removeAttribute("class");
-                    if(i === index) {
-                        order[i].parentNode.setAttribute("class", "dataTable-sorter" + " " + dir);
-                        url.searchParams.set(sort, RDIR[dir]);
-                    } else {
-                        url.searchParams.set(sort, dir);
-                    }
+                for (let i = 0; i < columns.length; i++) {
+                    if(a = columns[i].querySelector("a")) {
+                        sort = SORT + "[" + i + "]";
+                        columns[i].removeAttribute("class");
+                        if (i === index) {
+                            columns[i].setAttribute("class", "dataTable-sorter" + " " + dir);
+                            url.searchParams.set(sort, RDIR[dir]);
+                        } else {
+                            url.searchParams.set(sort, dir);
+                        }
 
-                    order[i].href = url.toString();
-                    url.searchParams.delete(sort);
+                        a.href = url.toString();
+                        url.searchParams.delete(sort);
+                    }
                 }
             }
             function drawPage(paging, length) {
@@ -202,11 +210,6 @@ cm.dataTable = (function () {
 
             function drawBody(TH, tBody) {
                 if(response.data.length) {
-                    let columns = {};
-                    for (let i = 0; i < TH.length; i++) {
-                        columns[TH[i].getAttribute("data-id")] = TH[i].classList.contains(SORT);
-                    }
-
                     let TR = '';
                     let tplButton = dt.querySelector(".dt-btn");
                     let recordKey = tBody.getAttribute("data-key");
@@ -221,8 +224,8 @@ cm.dataTable = (function () {
                         TR += '<tr' + attrId + ' class="' + (i % 2 === 0 ? ODD : EVEN) + '">';
 
                         let tplRow = dt.querySelector(".dt-row").innerHTML;
-                        for (const column in columns) {
-                            tplRow = tplRow.replace("{" + column + "}", response.data[i][column] || "");
+                        for (const field in response.data[i]) {
+                            tplRow = tplRow.replace("{" + field + "}", response.data[i][field] || "");
                         }
                         TR += tplRow;
                         TR += buttons;
@@ -274,10 +277,11 @@ cm.dataTable = (function () {
                 drawBodyEmpty(dt.querySelectorAll("THEAD TH"), dt.querySelector("TBODY"));
             }
 
-            drawOrder(dt.querySelectorAll("THEAD TH a"));
+            drawOrder(dt.querySelectorAll("THEAD TH"));
             drawInfo(dt.querySelectorAll("." + settings.class.info), RECORD_LIMIT);
             drawPage(dt.querySelectorAll("." + settings.class.paginate), RECORD_LIMIT);
 
+            loadJs();
         }
 
         function recordUrl() {
@@ -298,7 +302,7 @@ cm.dataTable = (function () {
             }
         }
 
-       //recordUrl();
+        //recordUrl();
 
 
 
@@ -314,6 +318,8 @@ cm.dataTable = (function () {
         addListener("a.prev, a.page, a.next", "click", function(self) {
             return self.href;
         });
+
+        loadJs();
 
         return {
             "run" : function(name, value) {

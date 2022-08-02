@@ -51,6 +51,16 @@ class SoapClientCurl extends SoapClient
     private const ERROR_RESPONSE_IS_EMPTY  = 'Response is Empty';
 
     public $__action                        = null;
+    private $_login                         = null;
+    private $_password                      = null;
+
+
+    public function __construct(string $wsdl = null, array $options = [])
+    {
+        parent::__construct($wsdl, $options);
+        $this->_login                       = $options["login"]     ?? null;
+        $this->_password                    = $options["password"]  ?? null;
+    }
 
     /**
      * @param string $request
@@ -98,12 +108,13 @@ class SoapClientCurl extends SoapClient
         $res = curl_exec($ch);
         Normalize::removeBom($res);
 
+        $httpCode = curl_getinfo($ch , CURLINFO_HTTP_CODE); // this results 0 every time
         if (curl_errno($ch)) {
-            throw new SoapFault("HTTP", curl_error($ch));
+            throw new SoapFault($httpCode, curl_error($ch));
         } elseif (empty($res)) {
-            throw new SoapFault("HTTP", self::ERROR_RESPONSE_IS_EMPTY);
+            throw new SoapFault($httpCode, self::ERROR_RESPONSE_IS_EMPTY . ": " . $httpCode);
         } elseif (substr($res, 0, 1) != "<") {
-            throw new SoapFault("XML", $res);
+            throw new SoapFault($httpCode, $res);
         }
 
         curl_close($ch);

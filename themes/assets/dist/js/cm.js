@@ -106,15 +106,15 @@ let cm = (function () {
 
             return settings;
         },
-		"onReady" : function (callback) {
-			if (document.readyState !== 'loading') {
+        "onReady" : function (callback) {
+            if (document.readyState !== 'loading') {
                 callback();
-			} else {
-				document.addEventListener('DOMContentLoaded', function (event) {
+            } else {
+                document.addEventListener('DOMContentLoaded', function (event) {
                     callback(event);
-				});
-			}
-		},
+                });
+            }
+        },
         "alertBox" : (function(container, selector) {
             function wrapper() {
                 let errorClass = selector || settings.class.error;
@@ -216,7 +216,7 @@ let cm = (function () {
             }
 
             if (dataResponse[_JS_TPL] && cache[_JS_TPL + dataResponse[_PATHNAME]] === undefined) {
-               document.head.insertAdjacentHTML( 'beforeend', dataResponse[_JS_TPL]);
+                document.head.insertAdjacentHTML( 'beforeend', dataResponse[_JS_TPL]);
 
                 cache[_JS_TPL + dataResponse[_PATHNAME]] = true;
             }
@@ -462,16 +462,16 @@ let cm = (function () {
                     };
                     let ov_publics = {
                         "create": function({
-                             message,
-                             buttons,
-                             nodefaultbt = false,
-                             defaultaction,
-                             show = true, // false to open it later after open() ajax call
-                             events = {
-                                 "open"	: undefined,
-                                 "close" : undefined,
-                             }
-                        } = {}) {
+                                               message,
+                                               buttons,
+                                               nodefaultbt = false,
+                                               defaultaction,
+                                               show = true, // false to open it later after open() ajax call
+                                               events = {
+                                                   "open"	: undefined,
+                                                   "close" : undefined,
+                                               }
+                                           } = {}) {
                             return new Promise((resolve, reject) => {
                                 if (!(body = privates.$container && privates.$container.querySelector("." + settings.modal.body))) {
                                     return reject("dialog not opened");
@@ -590,126 +590,126 @@ let cm = (function () {
                     };
                     return ov_publics;
                 })(),
-				"create" : function ({
-					title,
-					description,
-					message,
-					buttons,
-					nodefaultbt = false,
-					defaultaction,
-					show = true,
-					events = {
-						"open"	: undefined,
-						"close" : undefined,
-					},
-				} = {}) {
-					return new Promise(resolve => {
-						self.onReady(function () {
-							if (privates.$container) {
-								resolve('created');
-								return;
-							}
+                "create" : function ({
+                                         title,
+                                         description,
+                                         message,
+                                         buttons,
+                                         nodefaultbt = false,
+                                         defaultaction,
+                                         show = true,
+                                         events = {
+                                             "open"	: undefined,
+                                             "close" : undefined,
+                                         },
+                                     } = {}) {
+                    return new Promise(resolve => {
+                        self.onReady(function () {
+                            if (privates.$container) {
+                                resolve('created');
+                                return;
+                            }
 
-							privates.events = events;
+                            privates.events = events;
 
-							privates.$container = document.createElement("cm-modal-dlg");
-							privates.$container.innerHTML = settings.modal.tpl;
-							privates.$container = privates.$container.firstElementChild;
+                            privates.$container = document.createElement("cm-modal-dlg");
+                            privates.$container.innerHTML = settings.modal.tpl;
+                            privates.$container = privates.$container.firstElementChild;
 
-							let close;
-							if ((close = privates.$container.querySelector("." + settings.modal.header.close))) {
-								close.addEventListener("click", function () {
-									publics.close();
-								});
-							}
+                            let close;
+                            if ((close = privates.$container.querySelector("." + settings.modal.header.close))) {
+                                close.addEventListener("click", function () {
+                                    publics.close();
+                                });
+                            }
 
-							if (!nodefaultbt && (!buttons || !buttons.length) && !close) {
-								buttons = [];
-								buttons.push({
-									"id"		: "continue",
-									"label"		: "Continua",
-									"class"		: "btn-primary",
-									"action"	: defaultaction,
-									"hide"		: true,
-								});
-							}
+                            if (!nodefaultbt && (!buttons || !buttons.length) && !close) {
+                                buttons = [];
+                                buttons.push({
+                                    "id"		: "continue",
+                                    "label"		: "Continua",
+                                    "class"		: "btn-primary",
+                                    "action"	: defaultaction,
+                                    "hide"		: true,
+                                });
+                            }
 
-							publics.set({
-								title,
-								description,
-								message,
-								buttons,
-							});
+                            publics.set({
+                                title,
+                                description,
+                                message,
+                                buttons,
+                            });
 
-							document.getElementsByTagName("body")[0].appendChild(privates.$container);
-							if (show) {
-								modal.show();
-							}
+                            document.getElementsByTagName("body")[0].appendChild(privates.$container);
+                            if (show) {
+                                modal.show();
+                            }
 
-							resolve('created');
-						});
-					});
-				},
-				"bt" : function (button) {
-					if (button.hide) {
-						publics.close();
-					}
+                            resolve('created');
+                        });
+                    });
+                },
+                "bt" : function (button) {
+                    if (button.hide) {
+                        publics.close();
+                    }
 
-					if (button.action !== undefined) {
-						button.action();
-					}
-				},
-				"set" : function ({
-					title,
-					description,
-					message,
-					buttons,
-					actions = ""
-				} = {}) {
-					if (title !== undefined) {
-						let $title = privates.$container.querySelector("." + settings.modal.header.title)
-						if ($title) {
-							$title.innerHTML = title;
-						}
-					}
+                    if (button.action !== undefined) {
+                        button.action();
+                    }
+                },
+                "set" : function ({
+                                      title,
+                                      description,
+                                      message,
+                                      buttons,
+                                      actions = ""
+                                  } = {}) {
+                    if (title !== undefined) {
+                        let $title = privates.$container.querySelector("." + settings.modal.header.title)
+                        if ($title) {
+                            $title.innerHTML = title;
+                        }
+                    }
 
-					if (description !== undefined) {
-						let $description = privates.$container.querySelector("." + settings.modal.header.description)
-						if ($description) {
-							$description.innerHTML = description;
-						}
-					}
+                    if (description !== undefined) {
+                        let $description = privates.$container.querySelector("." + settings.modal.header.description)
+                        if ($description) {
+                            $description.innerHTML = description;
+                        }
+                    }
 
-					if (message !== undefined) {
-						let $message = privates.$container.querySelector("." + settings.modal.body);
-						if ($message) {
-							$message.innerHTML = message;
-						}
-					}
+                    if (message !== undefined) {
+                        let $message = privates.$container.querySelector("." + settings.modal.body);
+                        if ($message) {
+                            $message.innerHTML = message;
+                        }
+                    }
 
-					let display_footer = false;
-					let $footer = privates.$container.querySelector("." + settings.modal.footer.container);
-					if (actions !== undefined) {
-						$footer.innerHTML = "";
-					}
+                    let display_footer = false;
+                    let $footer = privates.$container.querySelector("." + settings.modal.footer.container);
+                    if (actions !== undefined) {
+                        $footer.innerHTML = "";
+                    }
 
-					if (buttons !== undefined) {
-						display_footer = true;
-						buttons.forEach(function (v) {
-							let tmp = settings.modal.tpl_bt.replaceAll("{bt_id}", v.id).replaceAll("{label}", v.label);
+                    if (buttons !== undefined) {
+                        display_footer = true;
+                        buttons.forEach(function (v) {
+                            let tmp = settings.modal.tpl_bt.replaceAll("{bt_id}", v.id).replaceAll("{label}", v.label);
                             let $bt = document.createElement("dialog_bt");
-							$bt.innerHTML = tmp;
-							$bt = $bt.firstElementChild;
-							if (!v.id) {
-								$bt.removeAttribute("id");
-							}
-							if (v.class) {
-								$bt.classList.add(v.class);
-							}
-							$bt.addEventListener("click", publics.bt.bind(null, v));
-							privates.$container.querySelector("." + settings.modal.footer.action).appendChild($bt);
-						});
-					}
+                            $bt.innerHTML = tmp;
+                            $bt = $bt.firstElementChild;
+                            if (!v.id) {
+                                $bt.removeAttribute("id");
+                            }
+                            if (v.class) {
+                                $bt.classList.add(v.class);
+                            }
+                            $bt.addEventListener("click", publics.bt.bind(null, v));
+                            privates.$container.querySelector("." + settings.modal.footer.action).appendChild($bt);
+                        });
+                    }
 
                     if (buttons === undefined) { // check for actions embedded in the content
                         let $tmp;
@@ -719,66 +719,66 @@ let cm = (function () {
                         }
                     }
 
-					$footer.style.display = display_footer ? 'block' : 'none';
-				},
+                    $footer.style.display = display_footer ? 'block' : 'none';
+                },
                 "open" : function(url, headers = {}, method = "get", formdata = undefined, options = {}) {
                     return new Promise(function (resolve, reject) {
                         if (privates.$container) {
                             modal.error.hide();
-							privates.$container.style["opacity"] = "0.8";
-						}
+                            privates.$container.style["opacity"] = "0.8";
+                        }
                         cm.api[method](url, method === "get" ? headers : formdata, method === "post" ? headers : undefined)
                             .then(function (dataResponse) {
-								if (dataResponse["pathname"] !== undefined && window.location.pathname.replace(/\/$/, '') === dataResponse["pathname"]) {
-									cm.inject(dataResponse);
-									publics.close();
-									return;
-								}
+                                if (dataResponse["pathname"] !== undefined && window.location.pathname.replace(/\/$/, '') === dataResponse["pathname"]) {
+                                    cm.inject(dataResponse);
+                                    publics.close();
+                                    return;
+                                }
 
-								publics.create(Object.assign(options, {"show" : false})).then(_ => {
-									cm.inject(dataResponse, "." + settings.modal.container + " ." + settings.modal.body);
+                                publics.create(Object.assign(options, {"show" : false})).then(_ => {
+                                    cm.inject(dataResponse, "." + settings.modal.container + " ." + settings.modal.body);
                                     if (dataResponse["close"]) {
                                         modal.hide();
                                         return;
                                     }
 
-									publics.set({
-										title : dataResponse["title"],
-										description : dataResponse["description"],
-									});
+                                    publics.set({
+                                        title : dataResponse["title"],
+                                        description : dataResponse["description"],
+                                    });
 
-									modal.formAddListener(url, headers);
-									modal.show();
+                                    modal.formAddListener(url, headers);
+                                    modal.show();
 
-									resolve(privates.$container);
-								});
+                                    resolve(privates.$container);
+                                });
                             })
                             .catch(function (errorMessage) {
-								publics.create({"show" : false}).then(_ => {
-									modal.error.show(errorMessage);
-									modal.show();
+                                publics.create({"show" : false}).then(_ => {
+                                    modal.error.show(errorMessage);
+                                    modal.show();
 
-	                                reject(errorMessage);
-								});
-							}).finally(function () {
-								if (privates.$container) {
-									privates.$container.style["opacity"] = null;
-								}
-                            });
+                                    reject(errorMessage);
+                                });
+                            }).finally(function () {
+                            if (privates.$container) {
+                                privates.$container.style["opacity"] = null;
+                            }
+                        });
                     });
                 },
                 "close" : function() {
-					if (!privates.$container) {
-						return;
-					}
+                    if (!privates.$container) {
+                        return;
+                    }
                     modal.hide();
-					publics.overlay.close();
-					if (privates.events.close) {
-						privates.events.close();
-					}
-					privates.$container.remove();
-					privates.$container	= undefined;
-					privates.events		= undefined;
+                    publics.overlay.close();
+                    if (privates.events.close) {
+                        privates.events.close();
+                    }
+                    privates.$container.remove();
+                    privates.$container	= undefined;
+                    privates.events		= undefined;
                 },
             };
 
@@ -796,37 +796,37 @@ let cm = (function () {
                 },
                 "error" : {
                     "show" : function(message) {
-						if (!privates.$container) {
-							return;
-						}
+                        if (!privates.$container) {
+                            return;
+                        }
 
-						cm.alertBox(privates.$container.querySelector("." + settings.modal.body), settings.modal.error).error(message);
+                        cm.alertBox(privates.$container.querySelector("." + settings.modal.body), settings.modal.error).error(message);
                     },
                     "hide" : function() {
-						if (!privates.$container) {
-							return;
-						}
+                        if (!privates.$container) {
+                            return;
+                        }
                         cm.alertBox(privates.$container.querySelector("." + settings.modal.body), settings.modal.error).clear();
                     }
                 },
                 "show" : function show() {
-					if (!privates.$container) {
-						throw new Error("cm - dialog not created");
-					}
+                    if (!privates.$container) {
+                        throw new Error("cm - dialog not created");
+                    }
 
                     privates.$container.classList.add(settings.modal.open);
                     privates.$container.style["display"] = "block";
 
-					if (privates.events.open) {
-						privates.events.open({
-							"$dialog"	: privates.$container,
-						});
-					}
+                    if (privates.events.open) {
+                        privates.events.open({
+                            "$dialog"	: privates.$container,
+                        });
+                    }
                 },
                 "hide" : function () {
-					if (!privates.$container) {
-						return;
-					}
+                    if (!privates.$container) {
+                        return;
+                    }
 
                     privates.$container.classList.remove(settings.modal.open);
                     privates.$container.style["display"] = "none";
@@ -835,11 +835,11 @@ let cm = (function () {
                 },
                 "clear" : function () {
                     modal.error.hide();
-					publics.set({
-						title : "",
-						description : "",
-						message : "",
-					});
+                    publics.set({
+                        title : "",
+                        description : "",
+                        message : "",
+                    });
                 }
             }
 

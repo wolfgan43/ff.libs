@@ -186,7 +186,7 @@ class FilemanagerScan implements Dumpable
      */
     private static function glob(string $pattern, stdClass $opt = null) : void
     {
-        $flags = null;
+        $flags = 0;
         $limit = null;
 
         foreach (glob($pattern . $limit, $flags) as $file) {
@@ -319,7 +319,7 @@ class FilemanagerScan implements Dumpable
         }
 
         $defaultname = (
-            strpos($file_info->rootpathname, $file_info->extension . DIRECTORY_SEPARATOR) === 0
+            !empty($file_info->rootpathname) && strpos($file_info->rootpathname, $file_info->extension . DIRECTORY_SEPARATOR) === 0
             ? substr($file_info->rootpathname, strlen($file_info->extension . DIRECTORY_SEPARATOR))
             : $file_info->rootpathname
         );

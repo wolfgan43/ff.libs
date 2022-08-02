@@ -41,19 +41,18 @@ class DataTableColumn
     private $type               = self::TYPE_STRING;
     private $label              = null;
     private $icon               = null;
-    private $sort               = true;
-    private $sort_callback      = null;
+    private $sort               = null;
     private $placeholder        = null;
     private $hide               = false;
 
     private $tplValue           = null;
 
     /**
-     * @param string $id
+     * @param string|null $id
      * @param array $params
      * @return static
      */
-    public static function create(string $id, array $params) : self
+    public static function create(string $id = null, array $params = []) : self
     {
         $column                     = new static($id);
         foreach ($params as $property => $value) {
@@ -64,9 +63,9 @@ class DataTableColumn
     }
 
     /**
-     * @param string $id
+     * @param string|null $id
      */
-    public function __construct(string $id)
+    public function __construct(string $id = null)
     {
         $this->id                   = $id;
     }
@@ -118,15 +117,9 @@ class DataTableColumn
         return $this;
     }
 
-    /**
-     * @param bool $enable
-     * @param callable|null $callback
-     * @return $this
-     */
-    public function sort(bool $enable = true, callable $callback = null) : self
+    public function sortBy(string $key) : self
     {
-        $this->sort             = $enable;
-        $this->sort_callback    = $callback;
+        $this->sort = $key;
 
         return $this;
     }
@@ -138,6 +131,21 @@ class DataTableColumn
     public function hide(bool $hide = true) : self
     {
         $this->hide = $hide;
+
+        return $this;
+    }
+
+    /**
+     * @param string|callable $tpl
+     * @return $this
+     */
+    public function tpl(string|callable $tpl) : self
+    {
+        $this->tplValue = (
+        is_callable($tpl)
+            ? $tpl()
+            : $tpl
+        );
 
         return $this;
     }
@@ -163,11 +171,11 @@ class DataTableColumn
     }
 
     /**
-     * @param string $url
+     * @param string|null $url
      * @return string|null
      * @throws Exception
      */
-    public function displayLabel(string $url) : ?string
+    public function displayLabel(string $url = null) : ?string
     {
         return ($this->hide
             ? null
@@ -175,40 +183,52 @@ class DataTableColumn
         );
     }
 
-    public function displayValue() : string
-    {
-        return $this->tplValue ?? "{" . $this->id . "}";
-    }
-
     /**
-     * @param string $tpl
-     * @return $this
+     * @return string|null
      */
-    public function tplValue(string $tpl) : self
+    public function displayValue() : ?string
     {
-        $this->tplValue = $tpl;
-
-        return $this;
+        return $this->tplValue ?? $this->tplDefault();
     }
 
     /**
      * @return string
      */
-    public function id() : string
+    public function getID() : string
     {
-        return "{" . $this->id . "}";
+        return $this->id;
     }
+
     /**
-     * @param string $url
+     * @return string|null
+     */
+    public function getSortID() : ?string
+    {
+        return $this->sort;
+    }
+
+    /**
+     * @return string|null
+     */
+    private function tplDefault() : ?string
+    {
+        return (!empty($this->sort)
+            ? "{" . $this->sort . "}"
+            : "{" . $this->id . "}"
+        );
+    }
+
+    /**
+     * @param string|null $url
      * @return string
      * @throws Exception
      */
-    private function parse(string $url) : string
+    private function parse(string $url = null) : string
     {
         $label = $this->label ?? Translator::getWordByCode($this->id);
-        return ($this->sort
+        return ($this->sort && !empty($url)
             ? '<a href="' . $url . '">' . $this->parseIcon() . $label . '</a>'
-            : '<span>' . $label . '</span>'
+            : '<span>' . $this->parseIcon() . $label . '</span>'
         );
     }
 

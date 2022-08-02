@@ -27,6 +27,7 @@ namespace ff\libs\gui\components;
 
 use ff\libs\dto\DataHtml;
 use ff\libs\dto\DataTableResponse;
+use ff\libs\Hook;
 use ff\libs\international\Translator;
 use ff\libs\Kernel;
 use ff\libs\microservice\Api;
@@ -218,10 +219,16 @@ class DataTable
     protected $record_key               = null;
 
     private $dataSource                 = self::DATA_SOURCE_ARRAY;
+    private $fieldSource                = [];
     private $records                    = [];
 
     private $default_sort               = null;
     private $default_sort_dir           = null;
+
+    /**
+     * @var Hook
+     */
+    private $hooks                      = null;
 
     /**
      * @param string $model
@@ -233,7 +240,7 @@ class DataTable
 
         $component = explode(":", $model);
         $dataSource = array_pop($component);
-        if (empty($component)) {
+        if(empty($component)) {
             $dt->id = $dataSource;
         } else {
             $dt->id = implode(":", $component);
@@ -256,6 +263,8 @@ class DataTable
         if ($template) {
             $this->template = $template;
         }
+
+        $this->hooks                    = new Hook();
     }
 
     /**
@@ -384,13 +393,13 @@ class DataTable
     }
 
     /**
-     * @param string $id
-     * @param array $params
+     * @param string|null $id
+     * @param int|null $index
      * @return DataTableColumn|null
      */
-    public function column(string $id, array $params = []) : ?DataTableColumn
+    public function column(string $id = null, int $index = null) : ?DataTableColumn
     {
-        return $this->columns[$id] ?? ($this->columns[$id] = DataTableColumn::create($id, $params));
+        return $this->columns[($index ?? count($this->columns) + 1) - 1] = DataTableColumn::create($id);
     }
 
     /**
@@ -466,6 +475,10 @@ class DataTable
         return $this;
     }
 
+    public function js(string $embed)
+    {
+        $this->js_embed = $embed;
+    }
     /**
      * @param bool $ajax
      * @return $this
@@ -580,6 +593,18 @@ class DataTable
         return $dataTable;
     }
 
+    private function setColumns(array $properties) : array
+    {
+        $columns = [];
+        foreach ($properties as $key => $params) {
+            $this->fieldSource[] = "{" . $key . "}";
+            $columns[] = DataTableColumn::create($key, $params)
+                ->tpl("{" . $key . "}")
+                ->sortBy($key);
+        }
+
+        return $this->columns ?: $columns;
+    }
     /**
      * @return DataTableResponse
      * @throws Exception
@@ -590,9 +615,7 @@ class DataTable
 
         $schema                                         = $db->schema(static::CONVERT_BY_TYPE);
 
-        foreach ($schema->properties as $key => $params) {
-            $this->column($key, $params);
-        }
+        $this->columns                                  = $this->setColumns($schema->properties);
 
         $where = null;
         if ($this->search) {
@@ -601,8 +624,8 @@ class DataTable
 
         $sort = null;
         foreach ($this->sort as $i => $dir) {
-            if (isset($schema->columns[$i])) {
-                $sort[$schema->prototype[$schema->columns[$i]]] = $dir;
+            if ($sort_field = ($schema->prototype[$this->columns[$i]?->getSortID()] ?? null)) {
+                $sort[$sort_field] = $dir;
             }
         }
 
@@ -613,8 +636,6 @@ class DataTable
         return $db->read($where, $sort, $this->length, $this->start)
             ->toDataTable(function (OrmResults $results, DataTableResponse $dataTableResponse) use ($schema, $db) {
                 $dataTableResponse->draw                = $this->draw + 1;
-                $dataTableResponse->columns             = $schema->columns;
-                $dataTableResponse->properties          = $schema->properties;
                 if ($dataTableResponse->recordsFiltered) {
                     if (!empty($this->search)) {
                         $dataTableResponse->recordsTotal = $db->count();
@@ -638,6 +659,8 @@ class DataTable
             throw new Exception($this->id . ": sourceApi require DataTableResponse", 501);
         }
 
+        $this->columns                                  = $this->setColumns($response->properties ?? []);
+
         return $response;
     }
 
@@ -647,6 +670,8 @@ class DataTable
     private function arraySource() : DataTableResponse
     {
         $dataTable                  = new DataTableResponse($this->records, $this->record_key);
+        $this->columns              = $this->setColumns(array_fill_keys($dataTable->columns(), []));
+
         if (isset($this->search)) {
             $dataTable->search($this->search);
         }
@@ -660,6 +685,7 @@ class DataTable
             break;
         }
         $dataTable->splice($this->start, $this->length);
+
 
         return $dataTable;
     }
@@ -716,8 +742,7 @@ class DataTable
             "description"       => $this->description,
             "css"               => static::CSS,
             "style"             => $this->style,
-            "js"                => static::JS,
-            "js_embed"          => $this->js_embed
+            "js"                => static::JS
         ];
     }
 
@@ -801,8 +826,12 @@ class DataTable
         }
 
         return $this->js_tpl . (
-            $tpl
+            !empty($tpl)
             ? '<script class="dt-btn" type="text/x-template">' . $tpl . '</script>'
+            : null
+        ) . (
+            !empty($this->js_embed)
+            ? '<script class="dt-js" type="text/x-template">' . $this->js_embed . '</script>'
             : null
         );
     }
@@ -895,7 +924,7 @@ class DataTable
      */
     private function tableHead() : ?string
     {
-        return ($this->displayTableHead && !empty($this->dataTable->columns)
+        return ($this->displayTableHead && !empty($this->columns)
             ?   '<thead>' .
                     $this->tableColumns() .
                 '</thead>'
@@ -925,7 +954,7 @@ class DataTable
             . (
                 $this->dataTable->recordsFiltered && $this->start <= $this->dataTable->recordsFiltered
                 ? $this->tableRows()
-                : '<tr><td class="dt-empty" colspan="' . count($this->dataTable->columns ?? []) . '">' . Translator::getWordByCode("No matching records found") . '</td></tr>'
+                : '<tr><td class="dt-empty" colspan="' . count($this->columns) . '">' . Translator::getWordByCode("No matching records found") . '</td></tr>'
             )
             . '</tbody>';
     }
@@ -936,7 +965,7 @@ class DataTable
      */
     private function tableFoot() : ?string
     {
-        return ($this->displayTableFoot && !empty($this->dataTable->columns)
+        return ($this->displayTableFoot && !empty($this->columns)
             ?   '<tfoot>' .
                     $this->tableColumns() .
                 '</tfoot>'
@@ -1011,6 +1040,7 @@ class DataTable
         );
     }
 
+
     /**
      * @return string
      * @throws Exception
@@ -1018,9 +1048,8 @@ class DataTable
     private function tableColumns() : string
     {
         $columns = null;
-        foreach ($this->dataTable->columns as $i => $column) {
-            if ($this->column($column)->isHidden()) {
-                unset($this->dataTable->columns[$i]);
+        foreach ($this->columns as $i => $column) {
+            if ($column->isHidden()) {
                 continue;
             }
 
@@ -1034,9 +1063,9 @@ class DataTable
                     $class  = null;
                 }
 
-                $columns    .= '<th data-id="' . $column . '"' . $class . '>' . $this->column($column)->displayLabel($this->getUrl(self::TC_SORT, [$i => $rdir])) . '</th>';
+                $columns    .= '<th' . $class . '>' . $column->displayLabel($this->getUrl(self::TC_SORT, [$i => $rdir])) . '</th>';
             } else {
-                $columns    .= '<th><span>' . $column . '</span></th>';
+                $columns    .= '<th><span>' . $column->displayLabel() . '</span></th>';
             }
         }
 
@@ -1053,9 +1082,9 @@ class DataTable
     private function tableRows() : ?string
     {
         $rows = null;
-        $row = $this->row();
+        $tpl = $this->tplRow();
         foreach ($this->dataTable->toArray() as $i => $record) {
-            $rows .= '<tr' . $this->setModify($i) . ' class="' . ($i % 2 == 0 ? self::TC_ODD : self::TC_EVEN) . (isset($this->sort[$i]) ? ' ' . self::TC_SORT : null) . '">' . $this->tableRow($record, $row) . $this->tableActions($i) . '</tr>';
+            $rows .= '<tr' . $this->setModify($i) . ' class="' . ($i % 2 == 0 ? self::TC_ODD : self::TC_EVEN) . (isset($this->sort[$i]) ? ' ' . self::TC_SORT : null) . '">' . $this->tableRow($record, $tpl) . $this->tableActions($i) . '</tr>';
         }
 
         return $rows;
@@ -1095,35 +1124,30 @@ class DataTable
     }
 
     /**
-     * @return stdClass
+     * @return string
      */
-    private function row() : stdClass
+    private function tplRow() : string
     {
-        $fields         = [];
-        $tpl            = null;
-        $i              = 0;
-        foreach ($this->columns as $column) {
-            $tpl        .= '<td' . $this->tableRowClass($i, $column->getType("string")) . '>' . $column->displayValue() . '</td>';
-            $fields[]   = $column->id();
-            $i++;
+        $tpl            = "";
+        foreach ($this->columns as $i => $column) {
+            if (!$column->isHidden()) {
+                $tpl .= '<td' . $this->tableRowClass($i, $column->getType("string")) . '>' . $column->displayValue() . '</td>';
+            }
         }
 
-        if ($tpl) {
-            $this->js_tpl .= '<script class="dt-row" type="text/x-template">' . $tpl . '</script>';
-        }
+        $this->js_tpl = '<script class="dt-row" type="text/x-template">' . $tpl . '</script>';
 
-        return (object) [
-            "tpl"       => $tpl,
-            "fields"    => $fields
-        ];
+        return $tpl;
     }
 
-    private function tableRow(array $record, stdclass $row) : ?string
+    private function tableRow(array $record, string $tpl) : ?string
     {
+        $this->hooks->handle(__CLASS__ . "/" . spl_object_id($this) . "/onBeforeParseRow", $record, $tpl);
+
         return str_replace(
-            $row->fields,
+            $this->fieldSource,
             array_values($record),
-            $row->tpl
+            $tpl
         );
     }
 
@@ -1154,7 +1178,6 @@ class DataTable
         );
     }
 
-
     /**
      * @param string $name
      * @param $value
@@ -1166,5 +1189,12 @@ class DataTable
         $request[$name] = $value;
 
         return "?" . http_build_query(array_filter($request));
+    }
+
+    public function onBeforeParseRow(callable $callback)
+    {
+        $this->hooks->register(__CLASS__ . "/" . spl_object_id($this) . "/onBeforeParseRow", $callback);
+
+        return $this;
     }
 }

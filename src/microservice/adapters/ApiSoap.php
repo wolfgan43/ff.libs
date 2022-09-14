@@ -27,6 +27,7 @@ namespace ff\libs\microservice\adapters;
 
 use ff\libs\App;
 use ff\libs\Exception;
+use ff\libs\Kernel;
 use SoapClient;
 use SoapHeader;
 use stdClass;
@@ -120,7 +121,7 @@ class ApiSoap extends ApiAdapter
             try {
                 $this->client                                           = (
                     $this->connection_by_curl
-                    ? new SoapClientCurl($this->wsdl, $options)
+                    ? new SoapClientCurl($this->wsdl, $options, $this->getMockResponse())
                     : new SoapClient($this->wsdl, $options)
                 );
             } catch (SoapFault $e) {
@@ -133,6 +134,19 @@ class ApiSoap extends ApiAdapter
         ini_set('default_socket_timeout', self::REQUEST_TIMEOUT);
 
         return $this->client;
+    }
+
+    /**
+     * @return array|string|null
+     */
+    protected function getMockResponse() : array|string|null
+    {
+
+        $mock = parent::getMockResponse();
+        return (!empty($mock) && !is_array($mock)
+            ? file_get_contents(Kernel::$Environment::DISK_PATH . $mock)
+            : null
+        );
     }
 
     /**
@@ -327,7 +341,7 @@ class ApiSoap extends ApiAdapter
 
     /**
      * @param string $method
-     * @return array
+     * @return array|null
      * @throws Exception
      */
     protected function getResponseSchema(string $method) : ?array

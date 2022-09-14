@@ -634,7 +634,7 @@ class Config implements Dumpable
                  */
                 if (substr($key, -1) === "*") {
                     $attr["accept_path_info"]                                           = true;
-                    $key                                                                = substr($key, 0,-1);
+                    $key                                                                = substr($key, 0, -1);
                 }
 
                 /**
@@ -655,7 +655,12 @@ class Config implements Dumpable
                  * path2params
                  */
                 if ($key != DIRECTORY_SEPARATOR && preg_match_all('#/{([^/]*)}#i', $key, $vars)) {
-                    $regexp                                                             = '#^' . str_replace($vars[0], "(?:/([^/]+))?", $key) . '#i';
+                    $regexp                                                             = '#^' . str_replace($vars[0], "(?:/([^/]+))?", $key);
+                    $regexp                                                             .= (
+                        str_ends_with($regexp, '?')
+                        ? '#i'
+                        : '$#i'
+                    );
                     $key                                                                = str_replace($vars[0], "", $key) ?: DIRECTORY_SEPARATOR;
                     $path2params[$key]                                                  = [
                                                                                             "matches"   => $vars[1],

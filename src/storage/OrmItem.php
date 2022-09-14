@@ -45,6 +45,7 @@ abstract class OrmItem
     use ClassDetector;
     use Mapping;
     use OrmUtil;
+    use Hoockable;
 
     private const ERROR_RECORDSET_EMPTY                                         = "recordset empty";
 
@@ -131,7 +132,19 @@ abstract class OrmItem
      * @param Model $db
      * @param string $recordKey
      */
-    abstract protected function onRead($db, string $recordKey)                  : void;
+    abstract protected function onReadAfter($db, string $recordKey)                 : void;
+
+    /**
+     * @param array $record
+     * @param array $db_record
+     */
+    abstract protected function onRead(array &$record, array $db_record)        : void;
+
+    /**
+     * @param array $record
+     * @param array $db_record
+     */
+    abstract protected function onSearch(array &$record, array $db_record)      : void;
 
     /**
      * @param Model $db
@@ -151,10 +164,10 @@ abstract class OrmItem
     abstract protected function onInsert($db)                                   : void;
 
     /**
-     * @param Model $db
+     * @param array $storedData
      * @param string $recordKey
      */
-    abstract protected function onUpdate($db, string $recordKey)                : void;
+    abstract protected function onUpdate(array $storedData, string $recordKey)  : void;
 
     /**
      * @param Model $db
@@ -260,8 +273,13 @@ abstract class OrmItem
             }
         }
 
+        $item->hook()->register("onRead", function(array &$record, array $db_record) use ($item) {
+            $item->onSearch($record, $db_record);
+        });
+
         $recordset                                                              = $item->db
             ->table($item::TABLE, $toDataResponse)
+            ->setHook($item->hook)
             ->read($where, $sort, $limit, $offset);
 
         if ($recordset->countRecordset()) {
@@ -345,7 +363,7 @@ abstract class OrmItem
         } elseif ($this->isChanged()) {
             $this->onChange($this->db, $this->recordKey);
         } else {
-            $this->onRead($this->db, $this->recordKey);
+            $this->onReadAfter($this->db, $this->recordKey);
         }
     }
 
@@ -368,6 +386,17 @@ abstract class OrmItem
     }
 
     /**
+     * @param callable $callback
+     * @return $this
+     */
+    public function onBeforeParseRow(callable $callback) : self
+    {
+        $this->hook()->register("onBeforeParseRow", $callback);
+
+        return $this;
+    }
+
+    /**
      *
      * @param array|null $logical_fields
      * @throws Exception
@@ -379,6 +408,8 @@ abstract class OrmItem
         $this->db                                                               = new Model();
         $this->db->loadCollection($collection_name, $logical_fields);
         $this->db->table(static::TABLE);
+        $this->db->setHook($this->hook);
+
         $this->informationSchema                                                = $this->db->informationSchema();
         if (!$this->informationSchema) {
             throw new Exception("Table: " . static::TABLE . " not found in Colletion: " . static::COLLECTION, 501);
@@ -565,7 +596,7 @@ abstract class OrmItem
         $this->onApply($this->db, $this->recordKey);
 
         if ($this->recordKey) {
-            $this->onUpdate($this->db, $this->recordKey);
+            $this->onUpdate($this->storedData, $this->recordKey);
         } else {
             $this->onInsert($this->db);
         }
@@ -708,6 +739,10 @@ abstract class OrmItem
     private function read(array $where = null) : void
     {
         if (!empty($where)) {
+            $this->hook()->register("onRead", function(array &$record, array $db_record) {
+                $this->onRead($record, $db_record);
+            });
+
             $item                                                               = $this->db
                 ->readOne($where);
 
@@ -718,7 +753,7 @@ abstract class OrmItem
                 $this->indexes                                                  = $item->indexes();
 
                 if ($record = $item->getArray(0)) {
-                    $this->storedData                                           = json_decode(json_encode($record), true);
+                    $this->storedData = json_decode(json_encode($record), true);
 
                     $this->autoMapping($record);
 
@@ -870,12 +905,14 @@ abstract class OrmItem
     /**
      * @param array|null $fields
      * @return array
+     * @todo da verificare se serve veramente purgare tutte le info quando il dataresponse o il search non è valorizzato
+     * @todo migliorare l'hooksystem. al momento chiama sempre funzioni non valorizzate
      */
     private function fieldSetPurged(array $fields = null) : array
     {
         return (!empty($fields)
             ? array_intersect_key(get_object_vars($this), $fields)
-            : array_intersect_key(get_object_vars($this), $this->informationSchema->dtd + $this->informationSchema->relationship)
+            : array_diff_key(get_object_vars($this), get_class_vars(__CLASS__))
         );
     }
 

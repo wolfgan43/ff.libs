@@ -42,6 +42,7 @@ use stdClass;
 class Orm extends Mappable
 {
     use Cashable;
+    use Hoockable;
 
     /**
      * @var Orm[]
@@ -187,10 +188,10 @@ class Orm extends Mappable
         return (object) [
             "collection"    => $orm->collection,
             "table"         => $table,
-            "dtd"           => $orm->struct[$table],
-            "schema"        => $orm->tables[$table],
-            "relationship"  => $orm->relationship[$table]  ?? [],
-            "indexes"       => $orm->indexes[$table]       ?? [],
+            "dtd"           => $orm->struct[$table]         ?? [],
+            "schema"        => $orm->tables[$table]         ?? [],
+            "relationship"  => $orm->relationship[$table]   ?? [],
+            "indexes"       => $orm->indexes[$table]        ?? [],
             "key"           => $orm->primaryKey($table)
         ];
     }
@@ -355,7 +356,8 @@ class Orm extends Mappable
      */
     private function setStorage(OrmDef $def) : Database
     {
-        $def->table["preserve_columns_order"] = $this->preserve_columns_order;
+        $def->table["preserve_columns_order"]   = $this->preserve_columns_order;
+        $def->hook                              =& $this->hook;
 
         return Database::getInstance($this->adapters, $def, $this->schema);
     }
@@ -477,11 +479,7 @@ class Orm extends Mappable
      */
     public function delete(array $where) : OrmResults
     {
-        $this->cacheRequest(self::ACTION_DELETE, [$where]);
-
         $this->set($where);
-
-        $this->cacheUpdate();
 
         return $this->getResult();
     }
@@ -923,7 +921,12 @@ class Orm extends Mappable
                 }
             }
 
+            $this->cacheRequest(self::ACTION_DELETE, [$data->where]);
+
             $regs                                                                           = $storage->delete($data->where, $data->def->table[self::TNAME]);
+
+            $this->cacheUpdate();
+
             $delete_key                                                                     = $regs[self::INDEX_PRIMARY][$key_name];
         } elseif (!empty($data->insert) && !empty($data->set) && !empty($data->where)) {
             /**
@@ -1078,7 +1081,7 @@ class Orm extends Mappable
         $Orm                                                                                = $this->getModel($controller);
         $regs                                                                               = $Orm
                                                                                                 ->setStorage($data->def)
-                                                                                                ->cmd($command, $data->where);
+                                                                                                ->cmd($command, $data->where(self::$logical_fields));
         $this->result[$data->table]                                                         = $regs;
     }
 

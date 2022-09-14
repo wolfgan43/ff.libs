@@ -106,6 +106,19 @@ class Response
     public const NETWORK_AUTHENTICATION_REQUIRED    = 511;
 
     private const ERROR_BUCKET                      = "response";
+    private const CONTENT_TYPE_DEFAULT              = "text/plain";
+    private const CONTENT_TYPE_ACCEPTED             = [
+                                                        "text/html",
+                                                        "text/plain",
+                                                        "application/json",
+                                                        "text/json",
+                                                        "application/xml",
+                                                        "text/xml",
+                                                        "application/x-javascript",
+                                                        "application/javascript",
+                                                        "text/javascript",
+                                                        "text/css",
+                                                    ];
 
     private const HOOK_ON_BEFORE_SEND               = "Response::onBeforeSend";
 
@@ -545,9 +558,17 @@ class Response
             $mimetype = Kernel::$Page->accept();
         }
 
+        if (!in_array($mimetype, self::CONTENT_TYPE_ACCEPTED)) {
+            $mimetype               = self::CONTENT_TYPE_DEFAULT;
+        }
+
         if (!empty($mimetype)) {
-            $content_type = $mimetype;
-            if ($mimetype == "text/css" || $mimetype == "application/x-javascript") {
+            $content_type           = $mimetype;
+            if ($mimetype == "text/css"
+                || $mimetype == "application/x-javascript"
+                || $mimetype == "application/javascript"
+                || $mimetype == "text/javascript"
+            ) {
                 header("Vary: Accept-Encoding");
             } elseif ($mimetype == "text/html") {
                 $content_type .= "; charset=UTF-8";

@@ -44,6 +44,7 @@ use stdClass;
 class Model implements Configurable, Dumpable
 {
     use TypesConverter;
+    use Hoockable;
 
     private const ERROR_BUCKET                                                          = Orm::ERROR_BUCKET;
 
@@ -344,7 +345,8 @@ class Model implements Configurable, Dumpable
         return ($this->schema
             ? Orm::model($this->schema)
             : Orm::getInstance($this->collection, $this->table)
-        )->setLogicalField($this->logical_fields, true);
+        )->setLogicalField($this->logical_fields, true)
+        ->setHook($this->hook);
     }
 
     /**

@@ -144,6 +144,8 @@ class DatabaseConverter
             }
         }
 
+        $this->def->hook()->handle("onRead", $res, $record);
+
         return $res;
     }
 

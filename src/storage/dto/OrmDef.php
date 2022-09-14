@@ -26,6 +26,7 @@
 namespace ff\libs\storage\dto;
 
 use ff\libs\Exception;
+use ff\libs\Hook;
 use ff\libs\storage\Database;
 
 /**
@@ -40,6 +41,7 @@ class OrmDef
     public $indexes         = array();
     public $relationship    = array();
     public $key_primary     = null;
+    public $hook            = null;
 
     /**
      * OrmDef constructor.
@@ -59,5 +61,13 @@ class OrmDef
         if (empty($this->key_primary)) {
             throw new Exception("primary field not set in orm.map: " . $this->table["name"], 500);
         }
+    }
+
+    /**
+     * @return Hook
+     */
+    public function hook() : Hook
+    {
+        return $this->hook ?? new Hook();
     }
 }

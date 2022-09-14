@@ -25,7 +25,9 @@
  */
 namespace ff\libs\microservice\adapters;
 
+use ff\libs\Kernel;
 use ff\libs\microservice\Api;
+use ff\libs\storage\FilemanagerFs;
 use ff\libs\util\ServerManager;
 use ff\libs\storage\FilemanagerWeb;
 use ff\libs\Exception;
@@ -91,6 +93,11 @@ class ApiJsonWsp extends ApiAdapter
      */
     protected function get(array $params = [], array $headers = []) : stdClass
     {
+        $mock = parent::getMockResponse();
+        if (!empty($mock) && !is_array($mock)) {
+            return FilemanagerFs::fileGetContentsJson(Kernel::$Environment::DISK_PATH . $mock);
+        }
+
         $this->protocol                         = $this->protocol();
         if (!$this->request_method) {
             $this->request_method               = $this->method();

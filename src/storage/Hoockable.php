@@ -23,61 +23,37 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace ff\libs\mock;
+namespace ff\libs\storage;
 
-use ff\libs\Kernel;
-use stdClass;
+use ff\libs\Hook;
 
 /**
- * Trait Mockable
- * @package ff\libs\mock
+ * Trait Hoockable
+ * @package ff\libs\storage
  */
-trait Mockable
+trait Hoockable
 {
-    private $mockEnabled        = false;
-    protected $mock             = null;
+    private $hook   = null;
 
     /**
-     * @param string $name
-     * @return array|string
+     * @return Hook
      */
-    protected function mock(string $name) : array|string
+    private function hook() : Hook
     {
-        return $this->mock[$name] ?? [];
-    }
-
-    /**
-     * @param string $name
-     * @param string $param
-     * @return stdClass
-     */
-    protected function mockParam(string $name, string $param) : ?string
-    {
-        $default                = null;
-        if ($this->mockEnabled()) {
-            $default            = $this->mock($name)->$param ?? null;
+        if (empty($this->hook)) {
+            $this->hook = new Hook();
         }
 
-        return $default;
+        return $this->hook;
     }
 
     /**
-     * @return bool
+     * @param Hook $hook
+     * @return $this
      */
-    private function mockEnabled() : bool
+    public function setHook(Hook &$hook) : self
     {
-        return $this->mockEnabled ?? Kernel::$Environment::DEBUG;
-    }
-
-    /**
-     * @param bool $enable
-     * @param array $mocks
-     * @return Mockable
-     */
-    public function useMock(bool $enable, array $mocks = []) : self
-    {
-        $this->mockEnabled      = $enable;
-        $this->mock             = array_replace($this->mock, $mocks);
+        $this->hook =& $hook;
 
         return $this;
     }

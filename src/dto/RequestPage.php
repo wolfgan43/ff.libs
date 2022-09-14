@@ -73,7 +73,7 @@ class RequestPage extends Mappable
     public $access                          = null;     //gestito in self && api
     public $vpn                             = null;     //gestito in self
     public $csrf                            = null;     //gestito in self
-    public $exception                       = null;     //gestito in self
+    public $exception                       = true;     //gestito in self
 
     public $onLoad                          = null;     //gestito in self
 
@@ -221,7 +221,7 @@ class RequestPage extends Mappable
     }
 
     /**
-     * @return string
+     * @return string|null
      */
     public function getAuthorization() : ?string
     {

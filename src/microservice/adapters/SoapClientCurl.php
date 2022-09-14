@@ -51,15 +51,24 @@ class SoapClientCurl extends SoapClient
     private const ERROR_RESPONSE_IS_EMPTY  = 'Response is Empty';
 
     public $__action                        = null;
+
     private $_login                         = null;
     private $_password                      = null;
+    private $_mock_response                 = null;
 
 
-    public function __construct(string $wsdl = null, array $options = [])
+    /**
+     * @param string|null $wsdl
+     * @param array $options
+     * @param string|null $mock_response
+     * @throws SoapFault
+     */
+    public function __construct(string $wsdl = null, array $options = [], string $mock_response = null)
     {
         parent::__construct($wsdl, $options);
-        $this->_login                       = $options["login"]     ?? null;
-        $this->_password                    = $options["password"]  ?? null;
+        $this->_login                       = $options["login"] ?? null;
+        $this->_password                    = $options["password"] ?? null;
+        $this->_mock_response               = $mock_response;
     }
 
     /**
@@ -67,20 +76,20 @@ class SoapClientCurl extends SoapClient
      * @param string $location
      * @param string $action
      * @param int $version
-     * @param int $one_way
-     * @return string
+     * @param bool $oneWay
+     * @return string|null
      * @throws SoapFault
      */
     public function __doRequest(string $request, string $location, string $action, int $version, bool $oneWay = false) : ?string
     {
-        return $this->cUrl($request, $location, $action);
+        return $this->_mock_response ?? $this->cUrl($request, $location, $action);
     }
 
     /**
      * @param string $requestXML
      * @param string $location
      * @param string $action
-     * @return string
+     * @return string|null
      * @throws SoapFault
      */
     private function cUrl(string $requestXML, string $location, string $action) : ?string
@@ -108,7 +117,7 @@ class SoapClientCurl extends SoapClient
         $res = curl_exec($ch);
         Normalize::removeBom($res);
 
-        $httpCode = curl_getinfo($ch , CURLINFO_HTTP_CODE); // this results 0 every time
+        $httpCode = curl_getinfo($ch , CURLINFO_HTTP_CODE);
         if (curl_errno($ch)) {
             throw new SoapFault($httpCode, curl_error($ch));
         } elseif (empty($res)) {

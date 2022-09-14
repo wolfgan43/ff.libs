@@ -58,7 +58,7 @@ trait SecureManager
      */
     private static function setUser(stdClass $data) : UserData
     {
-        return User::set((new UserData())->fillByObject($data));
+        return User::set((new UserData())->fill($data));
     }
 
     /**

@@ -46,6 +46,24 @@ class Validator
     private const REQUEST_LIMIT                             = 1024000000;    //1024MB
     private const SPELL_CHECK                               = array("''", '""', '\\"', '\\\\', '../', './', 'file://');
     private const SPELL_CHECK_TEXT                          = array('\\"', '\\\\', '../', './', 'file://');
+    private const EXCEPTIONS                                = [
+                                                                "int"   => [
+                                                                    ''  => 0,
+                                                                ],
+                                                                "float" => [
+                                                                    ''  => 0
+                                                                ],
+                                                                "bool"  => [
+                                                                    ''  => false,
+                                                                    0   => false,
+                                                                    '0' => false,
+                                                                ],
+                                                                "boolean"  => [
+                                                                    ''  => false,
+                                                                    0   => false,
+                                                                    '0' => false,
+                                                                ]
+                                                            ];
     private const RULES                                     = array(
                                                                 "bool"              => array(
                                                                     "filter"        => FILTER_VALIDATE_BOOLEAN,
@@ -289,6 +307,8 @@ class Validator
     {
         if ($what === null) {
             return new DataError();
+        } elseif (isset(self::EXCEPTIONS[$type][$what])) {
+            $what = self::EXCEPTIONS[$type][$what];
         }
 
         if (!array_key_exists($type, self::RULES)) {
@@ -684,8 +704,8 @@ class Validator
     {
         $regex                                                              = (
             Kernel::$Environment::DEBUG
-                                                                                ? '/^([\.0-9a-z_\-\+]+)@(([0-9a-z\-]+\.)+[0-9a-z]{2,12})$/i'
-                                                                                : '/^([\.0-9a-z_\-]+)@(([0-9a-z\-]+\.)+[0-9a-z]{2,12})$/i'
+                                                                                ? '/^([\.0-9a-z_\-\+]+)@(([0-9a-z\-]+\.)+[0-9a-z\-]{2,12})$/i'
+                                                                                : '/^([\.0-9a-z_\-]+)@(([0-9a-z\-]+\.)+[0-9a-z\-]{2,12})$/i'
         );
         return (bool) preg_match($regex, $value);
     }

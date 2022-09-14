@@ -303,8 +303,8 @@ class Session
     private function checkSession() : bool
     {
         $valid_session                                          = !empty($_COOKIE[$this->session_name]) && file_exists(rtrim($this->session_save_path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . self::SESSION_PREFIX_FILE_LABEL . $_COOKIE[$this->session_name]);
-
-        Hook::handle(self::HOOK_ON_AFTER_CHECK, $valid_session, array("id" => $this->session_id, "name" => $this->session_name, "path" => $this->session_save_path));
+        $params                                                 = array("id" => $this->session_id, "name" => $this->session_name, "path" => $this->session_save_path);
+        Hook::handle(self::HOOK_ON_AFTER_CHECK, $valid_session, $params);
 
         return $valid_session;
     }

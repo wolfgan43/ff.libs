@@ -25,7 +25,6 @@
  */
 namespace ff\libs\microservice\adapters;
 
-use ff\libs\App;
 use ff\libs\cache\Buffer;
 use ff\libs\Debug;
 use ff\libs\dto\DataAdapter;
@@ -47,7 +46,7 @@ abstract class ApiAdapter
     private const ERROR_BUCKET                                          = "api";
     private const METHOD_HEAD                                           = "HEAD";
 
-    protected const NAMESPACE_DATARESPONSE                              = App::NAME_SPACE . "dto\\";
+    protected const NAMESPACE_DATARESPONSE                              = Debug::NAME_SPACE . "dto\\";
     protected const REQUEST_TIMEOUT                                     = 10;
     protected const PROTOCOL_SECURE                                     = "https://";
 
@@ -102,7 +101,7 @@ abstract class ApiAdapter
     {
         $this->action                                                   = $method;
 
-        return $this->send($arguments[0]?? [], $arguments[1] ?? []);
+        return $this->send($arguments[0] ?? [], $arguments[1] ?? []);
     }
 
     /**
@@ -156,7 +155,7 @@ abstract class ApiAdapter
             $discover["headers"]["Access-Control-Allow-Methods"] = $method;
         }
 
-        App::debug($discover, self::METHOD_HEAD . self::ERROR_REQUEST_LABEL . $endpoint);
+        Debug::set($discover, self::METHOD_HEAD . self::ERROR_REQUEST_LABEL . $endpoint);
 
         return $discover["headers"] ?? null;
     }
@@ -205,17 +204,17 @@ abstract class ApiAdapter
             self::debug($this->request_method, $params, $headers, $response->debug ?? null);
             if ($exception) {
                 /** Response Invalid Format (nojson or no object) */
-                App::debug($exception->getMessage(), $this->request_method . self::ERROR_RESPONSE_LABEL . $this->endpoint());
+                Debug::set($exception->getMessage(), $this->request_method . self::ERROR_RESPONSE_LABEL . $this->endpoint());
                 throw new Exception($exception->getMessage(), $exception->getCode());
             } elseif (empty((array) $response)) {
                 $dataResponse = $this->dataTableResponse();
             } elseif (isset($response->status, $response->error)) {
                 if ($response->status >= 400) {
                     /** Request Wrong Params */
-                    App::debug($response->error, $this->request_method . self::ERROR_RESPONSE_LABEL . $this->endpoint());
+                    Debug::set($response->error, $this->request_method . self::ERROR_RESPONSE_LABEL . $this->endpoint());
                     throw new Exception($response->error, $response->status);
                 } else {
-                    App::debug(empty($response->data) ? self::ERROR_RESPONSE_EMPTY : $response->data, $this->request_method . self::ERROR_RESPONSE_LABEL . $this->endpoint());
+                    Debug::set(empty($response->data) ? self::ERROR_RESPONSE_EMPTY : $response->data, $this->request_method . self::ERROR_RESPONSE_LABEL . $this->endpoint());
                 }
 
                 if (isset($response->draw, $response->recordsFiltered)) {
@@ -235,23 +234,30 @@ abstract class ApiAdapter
                 }
             } elseif (empty($response)) {
                 /** Response is empty */
-                App::debug(self::ERROR_RESPONSE_EMPTY, $this->request_method . self::ERROR_RESPONSE_LABEL . $this->endpoint());
+                Debug::set(self::ERROR_RESPONSE_EMPTY, $this->request_method . self::ERROR_RESPONSE_LABEL . $this->endpoint());
                 throw new Exception(self::ERROR_RESPONSE_EMPTY, 404);
             } else {
                 $dataResponse->fillObject($response);
                 $dataResponse->outputMode(true);
-                App::debug($response, $this->request_method . self::ERROR_RESPONSE_LABEL . $this->endpoint());
+                Debug::set($response, $this->request_method . self::ERROR_RESPONSE_LABEL . $this->endpoint());
             }
         } else {
             $dataResponse->error(500, self::ERROR_RESPONSE_EMPTY);
-            App::debug(self::ERROR_ENDPOINT_EMPTY, $this->request_method . self::ERROR_RESPONSE_LABEL);
+            Debug::set(self::ERROR_ENDPOINT_EMPTY, $this->request_method . self::ERROR_RESPONSE_LABEL);
         }
         return $dataResponse;
     }
 
+    /**
+     * @return string
+     */
     protected function endpoint() : string
     {
-        return $this->protocol . $this->endpoint;
+        return (
+            strpos($this->endpoint,"http") === 0
+            ? $this->endpoint
+            : $this->protocol . $this->endpoint
+        );
     }
 
     /**
@@ -263,7 +269,7 @@ abstract class ApiAdapter
      */
     private function debug(string $method, array $params = null, array $headers = null, $debug = null) : void
     {
-        App::debug([
+        Debug::set([
             "method"                                                    => $method,
             "header"                                                    => $headers,
             "body"                                                      => $params,
@@ -275,22 +281,33 @@ abstract class ApiAdapter
     }
 
     /**
-     * @return stdClass
-     * @throws Exception
+     * @return stdClass|null
      */
     private function getMock() : ?stdClass
     {
         $schema                                                         = null;
         if ($this->mockEnabled) {
             $method                                                     = $this->action ?? parse_url($this->endpoint(), PHP_URL_PATH);
-
-            $schema                                                     = $this->getResponseSchema($method);
-            if ($schema) {
-                $schema                                                 = json_decode(json_encode(array_replace_recursive($schema, $this->mock($method))));
+            if (is_array($this->mock($method))) {
+                $schema                                                 = $this->getResponseSchema($method);
+                if ($schema) {
+                    $schema                                             = json_decode(json_encode(array_replace_recursive($schema, $this->mock($method))));
+                }
             }
         }
 
         return $schema;
+    }
+
+    /**
+     * @return array|string|null
+     */
+    protected function getMockResponse() : array|string|null
+    {
+        return ($this->mockEnabled
+            ? $this->mock($this->action ?? parse_url($this->endpoint, PHP_URL_PATH))
+            : null
+        );
     }
 
     /**

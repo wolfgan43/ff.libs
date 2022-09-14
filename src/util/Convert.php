@@ -50,6 +50,25 @@ class Convert
 
     /**
      * @param string $value
+     * @return bool
+     * @todo da tipizzare
+     */
+    public static function bool($value) : bool
+    {
+        return (bool) $value;
+    }
+
+    /**
+     * @param $value
+     * @return object|array
+     */
+    public static function json($value) : object|array
+    {
+        return json_decode($value);
+    }
+
+    /**
+     * @param string $value
      * @return string
      */
     public static function encode(string $value) : string

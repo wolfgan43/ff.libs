@@ -40,6 +40,7 @@ class Debug
 {
     use ServerManager;
 
+    const NAME_SPACE                        = __NAMESPACE__ . '\\';
     const ERROR_BUCKET                      = "exception";
 
     private const MAX_PAD                   = 40;

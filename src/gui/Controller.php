@@ -942,8 +942,8 @@ abstract class Controller
             throw new Exception("Method " . $callback . " not found in class " . $this->class_name, 501);
         }
 
-        $this->parseAssets();
         $this->$callback();
+        $this->parseAssets();
 
         Debug::stopWatch($bucket);
     }

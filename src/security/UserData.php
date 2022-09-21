@@ -114,10 +114,10 @@ class UserData extends OrmItem
     }
 
     /**
-     * @param Model $db
-     * @param string $recordKey
+     * @param array $record
+     * @param array $db_record
      */
-    protected function onRead($db, string $recordKey): void
+    protected function onRead(array &$record, array $db_record): void
     {
         // TODO: Implement onRead() method.
     }
@@ -164,5 +164,23 @@ class UserData extends OrmItem
     protected function onDelete($db, string $recordKey): void
     {
         // TODO: Implement onDelete() method.
+    }
+
+    /**
+     * @param Model $db
+     * @param string $recordKey
+     */
+    protected function onReadAfter($db, string $recordKey): void
+    {
+        // TODO: Implement onReadAfter() method.
+    }
+
+    /**
+     * @param array $record
+     * @param array $db_record
+     */
+    protected function onSearch(array &$record, array $db_record): void
+    {
+        // TODO: Implement onSearch() method.
     }
 }

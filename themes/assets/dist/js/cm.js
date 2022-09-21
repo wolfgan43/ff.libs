@@ -179,7 +179,8 @@ let cm = (function () {
             }
 
             if (dataResponse["callback"]) {
-                eval(dataResponse["callback"] + "(" + (dataResponse["params"] || undefined) + ")");
+                let fn = window[dataResponse["callback"]];
+                fn((dataResponse["event"] || undefined), (dataResponse["params"] || undefined));
             }
 
             if (typeof dataResponse[_CSS] === "object") {
@@ -338,6 +339,7 @@ let cm = (function () {
                     self.style["opacity"] = "0.8";
                     cm.api.get(this.href)
                         .then(function(dataResponse) {
+                            dataResponse["event"] = e;
                             cm.inject(dataResponse);
                             if (dataResponse[_ALERT]) {
                                 cm.alertBox(self.parentNode).success(dataResponse[_ALERT]);
@@ -362,6 +364,7 @@ let cm = (function () {
                     self.style["opacity"] = "0.8";
                     cm.api.post(self.action, new FormData(self))
                         .then(function(dataResponse) {
+                            dataResponse["event"] = e;
                             cm.inject(dataResponse, self.getAttribute("data-component"));
                             if (dataResponse[_ALERT]) {
                                 cm.alertBox(self).success(dataResponse[_ALERT]);

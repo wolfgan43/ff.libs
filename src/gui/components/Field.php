@@ -485,6 +485,20 @@ class Field
      * @return static
      * @throws Exception
      */
+    public static function texthtml(string $name) : self
+    {
+        return new static($name, [
+            "tag"               => "textarea",
+            "template"          => "textarea",
+            "validator"         => "texthtml",
+        ]);
+    }
+
+    /**
+     * @param string $name
+     * @return static
+     * @throws Exception
+     */
     public static function readonly(string $name) : self
     {
         return new static($name, [

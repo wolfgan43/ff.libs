@@ -48,10 +48,10 @@ trait Hoockable
     }
 
     /**
-     * @param Hook $hook
+     * @param Hook|null $hook
      * @return $this
      */
-    public function setHook(Hook &$hook) : self
+    public function setHook(Hook &$hook = null) : self
     {
         $this->hook =& $hook;
 

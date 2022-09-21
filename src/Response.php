@@ -118,6 +118,10 @@ class Response
                                                         "application/javascript",
                                                         "text/javascript",
                                                         "text/css",
+                                                        "image/png",
+                                                        "image/svg+xml",
+                                                        "image/jpeg",
+                                                        "image/jpg",
                                                     ];
 
     private const HOOK_ON_BEFORE_SEND               = "Response::onBeforeSend";

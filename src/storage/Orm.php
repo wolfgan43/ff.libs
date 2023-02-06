@@ -428,11 +428,7 @@ class Orm extends Mappable
      */
     public function insertUnique(array $insert) : OrmResults
     {
-        $this->cacheRequest(self::ACTION_INSERT_UNIQUE, [$insert]);
-
         $this->set($insert, null, $insert);
-
-        $this->cacheUpdate();
 
         return $this->getResult();
     }
@@ -444,11 +440,7 @@ class Orm extends Mappable
      */
     public function insert(array $insert) : OrmResults
     {
-        $this->cacheRequest(self::ACTION_INSERT, [$insert]);
-
         $this->set(null, null, $insert);
-
-        $this->cacheUpdate();
 
         return $this->getResult();
     }
@@ -462,11 +454,7 @@ class Orm extends Mappable
     public function update(array $set, array $where = null) : OrmResults
     {
         if (!empty($set)) {
-            $this->cacheRequest(self::ACTION_UPDATE, [$set, $where]);
-
             $this->set($where, $set);
-
-            $this->cacheUpdate();
         }
 
         return $this->getResult();
@@ -493,11 +481,7 @@ class Orm extends Mappable
      */
     public function upsert(array $where, array $set = null, array $insert = null) : OrmResults
     {
-        $this->cacheRequest(self::ACTION_WRITE, [$where, $set, $insert]);
-
         $this->set($where, $set, $insert);
-
-        $this->cacheUpdate();
 
         return $this->getResult();
     }

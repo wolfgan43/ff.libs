@@ -148,9 +148,9 @@ class Debug
     }
     /**
      * @param string $bucket
-     * @return float|null
+     * @return float
      */
-    public static function stopWatch(string $bucket) : ?float
+    public static function stopWatch(string $bucket) : float
     {
         static $count                       = null;
 
@@ -183,7 +183,7 @@ class Debug
             return (float) self::$exTime[$key];
         } else {
             self::$startWatch[$bucket]      = microtime(true);
-            return null;
+            return 0;
         }
     }
 

@@ -658,7 +658,7 @@ abstract class OrmItem
                 );
             }
         } else {
-            $this->onInsert($this->db);
+            $this->onInsert($vars);
 
             $item                                                               = $this->db->insert(array_merge($vars, $this->primaryIndexes));
             $this->recordKey                                                    = $item->key(0);

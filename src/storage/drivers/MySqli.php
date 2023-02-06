@@ -293,27 +293,30 @@ class MySqli extends DatabaseDriver
 
     /**
      * Esegue una query senza restituire un recordset
-     * @param string $query_string
+     * @param string $query
      * @return void
      * @throws Exception
      */
-    private function execute(string $query_string) : void
+    private function execute(string $query) : void
     {
         $this->checkLinkWaitTimeout();
         if (!$this->link_id && !$this->connect()) {
             return;
         }
 
-        $this->cacheSetProcess($query_string);
+        $this->cacheSetProcess($query);
 
         $this->freeResult();
 
         $this->stopWatch(self::ERROR_BUCKET);
-        $this->query_id = @mysqli_query($this->link_id, $query_string);
+        try {
+            $this->query_id = @mysqli_query($this->link_id, $query);
+        } catch (\Exception $e) {
+        }
         $this->stopWatch(self::ERROR_BUCKET);
 
         if ($this->checkError()) {
-            $this->errorHandler("Invalid SQL: " . $query_string);
+            $this->errorHandler("Invalid SQL: " . $query);
         }
     }
 
@@ -385,10 +388,13 @@ class MySqli extends DatabaseDriver
 
         $this->freeResult();
 
-        $this->use_found_rows                               = strpos($query, " SQL_CALC_FOUND_ROWS ") !== false;
+        $this->use_found_rows = strpos($query, " SQL_CALC_FOUND_ROWS ") !== false;
 
         $this->stopWatch(self::ERROR_BUCKET);
-        $this->query_id = @mysqli_query($this->link_id, $query);
+        try {
+            $this->query_id = @mysqli_query($this->link_id, $query);
+        } catch (\Exception $e) {
+        }
         $this->stopWatch(self::ERROR_BUCKET);
 
         if (!$this->query_id || $this->checkError()) {

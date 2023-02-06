@@ -26,6 +26,7 @@
 namespace ff\libs\delivery;
 
 use ff\libs\dto\DataError;
+use ff\libs\Kernel;
 
 /**
  * Class NoticeAdapter
@@ -35,23 +36,15 @@ abstract class NoticeAdapter
 {
     const ERROR_BUCKET                                      = "delivery";
 
-    protected $recipients                                   = array();
-    protected $connection_service                           = null;
-    protected $actions                                      = array();
+    public const CHANNEL                                    = null;
 
-    protected $connection                                   = null;
-    protected $fromKey                                      = null;
-    protected $fromLabel                                    = null;
+    protected $recipients                                   = [];
+    protected $actions                                      = [];
+    protected $images                                       = [];
+    protected $from                                         = [];
+
     protected $lang                                         = null;
 
-    /**
-     * NoticeAdapter constructor.
-     * @param string|null $connection_service
-     */
-    public function __construct(string $connection_service = null)
-    {
-        $this->connection_service                           = $connection_service;
-    }
 
     /**
      * @param string $target
@@ -60,45 +53,21 @@ abstract class NoticeAdapter
     abstract public function checkRecipient(string $target) : bool;
 
     /**
-     * @param string $title
-     * @param string|null $message
+     * @param string $message
+     * @param string|null $title
      * @return DataError
      */
-    abstract public function send(string $title, string $message = null) : DataError;
 
     /**
-     * @param string $title
-     * @param array|null $fields
-     * @param string|null $template
-     * @return DataError
-     */
-    abstract public function sendLongMessage(string $title, array $fields = null, string $template = null) : DataError;
-
-    /**
-     * @return DataError
-     */
-    abstract protected function process() : DataError;
-
-    /**
-     * @param string $key
-     * @param string|null $label
+     * @param array $from
      * @return NoticeAdapter
      */
-    public function setFrom(string $key, string $label = null) : self
+    public function setFrom(array $from) : self
     {
-        $this->fromKey                                      = $key;
-        $this->fromLabel                                    = $label;
-
-        return $this;
-    }
-
-    /**
-     * @param array|null $connection
-     * @return NoticeAdapter
-     */
-    public function setConnection(array $connection = null) : self
-    {
-        $this->connection                                   = $connection;
+        $this->from = array_replace(
+            ["key" => null, "label" => null],
+            $from
+        );
 
         return $this;
     }
@@ -113,13 +82,22 @@ abstract class NoticeAdapter
     }
 
     /**
+     * @param string $path
+     * @param string $name
+     */
+    public function addImage(string $path, string $name) : void
+    {
+        $this->images[$path]                                = $name;
+    }
+
+    /**
      * @param string $target
      * @param string|null $name
      */
     public function addRecipient(string $target, string $name = null) : void
     {
         if ($this->checkRecipient($target)) {
-            $this->recipients[$target]                      = ($name ? $name : $target);
+            $this->recipients[$target]                      = ($name ?: $target);
         }
     }
 
@@ -132,5 +110,27 @@ abstract class NoticeAdapter
         $this->lang                                      = $lang_code;
 
         return $this;
+    }
+
+    /**
+     * @param string $message
+     * @param string|null $title
+     * @return DataError
+     */
+    public function send(string $message, string $title = null) : DataError
+    {
+        return $this->getDriver()
+            ->send($message, $title);
+    }
+
+    /**
+     * @return NoticeDriver
+     */
+    private function getDriver() : NoticeDriver
+    {
+        $class_name = constant(Kernel::$Environment . "::NOTICE_" . strtoupper(static::CHANNEL) . "_DRIVER");
+        $class = __NAMESPACE__ . "\\drivers\\" . $class_name;
+
+        return new $class(static::CHANNEL, $this->recipients, $this->lang, $this->from, $this->images, $this->actions);
     }
 }

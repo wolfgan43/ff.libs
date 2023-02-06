@@ -42,26 +42,67 @@ use stdClass;
 /**
  * Class ViewHtml
  * @package ff\libs\gui\adapters
+ *
+ *
+ * {Controller::get}
+ * {TopBar}
+ * {include file="../shared/footer.tpl"}
+ * {$content}
+ *
+ * <!--BeginSection-->  <!--BeginSection#2-->   [...]
+ * <!--EndSection-->    <!--EndSection#2-->     [...]
+ *
+ * {user.display_name}
+ * <!--BeginUser-->
+ * {display_name}
+ * {display_name["bob": "myCustomReplace", "carl": "MyCustomReplace2"]}
+ *
+ * {comments.first.user_uuid}
+ * {comments.last.user_uuid}
+ * {comments.1.user_uuid}
+ * {comments.2.user_uuid}
+ * {comments.n.user_uuid}
+ * {comments.count}
+ *  <!--BeginComments-->
+ *      {id}
+ *      <!--BeginId-->
+ *          if Id not null diplay this row {user.display_name}
+ *      <!--EndId-->
+ *
+ *      {index}
+ *      {count}
+ *      {first=active}
+ *      {first=end}
+ *      {odd=myClassOdd}
+ *      {even=myClassEven}
+ *      {index:1=myCustomClass1}
+ *      {index:2=myCustomClass2}
+ *      {index:n=myCustomClassN}
+ *
+ *      <!--BeginTest-->
+ *          Infinite object nested
+ *      <!--EndTest-->
+ *
+ *      <!--BeginId#2-->
+ *          if Id not null diplay this row {user.display_name}
+ *          {user.display_name["bob": "myCustomReplace", "carl": "MyCustomReplace2"]}
+ *          index: {index} of {count} comments
+ *      <!--EndId#2-->
+ *  <!--EndComments-->
+ * <!--EndUser-->
  */
 class ViewHtml implements ViewAdapter
 {
-    protected const REGEXP                      = '/\{([\w\:\=\-\|\.\s\?\!\\\'\"\,\$\/]+)\}/U';
+    protected const REGEXP                      = '/\{([\w\:\=\-\|\.\s\?\!\\\'\"\,\$\#\[\]\/]+)\}/U';
     protected const REGEXP_STRIP                = '/\{\$(.+)\}/U';
 
-    protected const APPLET                      = '/\{\[(.+)\]\}/U';
+    private const ROOT_BLOCK                    = "main";
+    private const BEGIN_TAG                     = "Begin";
+    private const END_TAG                       = "End";
 
     private const ERROR_LANG_NOT_VALID          = "lang not valid";
     private const HOOK_ON_FETCH_CONTENT         = 'View::onFetchContent';
     private const TPL_NORMALIZE                 = ['../', '.tpl'];
-
-
-    public $root_element						= "main";
-
-    public $BeginTag							= "Begin";
-    public $EndTag								= "End";
-
-    public $debug_msg							= false;
-    public $display_unparsed_sect				= false;
 
     private $DBlocks 							= [];
     private $DVars 								= [];
@@ -73,14 +114,15 @@ class ViewHtml implements ViewAdapter
     private $lang				                = null;
 
     /**
-     * @var bool|string[strip|strong_strip|minify]
+     * @var null|string[strip|stripall]
      */
-    public $minify								= false;
+    public $minify								= null;
 
-    public function __construct(string $widget = null, array &$cache = null)
+    public function __construct(string $widget = null, string $minify = null, array &$cache = null)
     {
         $this->widget                           = $widget;
         $this->cache                            =& $cache;
+        $this->minify                           = $minify;
     }
 
     /**
@@ -97,26 +139,18 @@ class ViewHtml implements ViewAdapter
 
     /**
      * @param string $content
-     * @param string|null $root_element
      * @return ViewAdapter
      * @throws Exception
      */
-    public function fetchContent(string $content, string $root_element = null) : ViewAdapter
+    public function fetchContent(string $content) : ViewAdapter
     {
-        if ($root_element !== null) {
-            $this->root_element = $root_element;
-        }
-
-        if (!$content) {
+        if (empty($content)) {
             throw new Exception("template empty", 500);
         }
 
-        $this->DBlocks[$this->root_element] = $this->getDVars($content);
-        $nName = $this->nextDBlockName($this->root_element);
-        while ($nName != "") {
-            $this->setBlock($this->root_element, $nName);
-            $nName = $this->nextDBlockName($this->root_element);
-        }
+        $this->DBlocks[self::ROOT_BLOCK] = $this->getDVars($content);
+
+        $this->setBlocks();
 
         Hook::handle(self::HOOK_ON_FETCH_CONTENT, $this);
 
@@ -140,16 +174,16 @@ class ViewHtml implements ViewAdapter
     {
         $tpl_name = Translator::infoLangCode($this->lang) . "-" . str_replace(
             [
-                Constant::DISK_PATH . "/",
-                "_",
-                "/"
+                    Constant::DISK_PATH . "/",
+                    "_",
+                    "/"
 
-            ],
+                ],
             [
-                "",
-                "-",
-                "_"
-            ],
+                    "",
+                    "-",
+                    "_"
+                ],
             $template_path
         );
 
@@ -166,26 +200,19 @@ class ViewHtml implements ViewAdapter
                 $this->cache[$cache_file] = filemtime($cache_file);
             }
 
-            $this->DBlocks[$this->root_element] = $this->include($template_path);
+            $this->DBlocks[self::ROOT_BLOCK] = $this->include($template_path);
 
-            $nName = $this->nextDBlockName($this->root_element);
-            while ($nName != "") {
-                $this->setBlock($this->root_element, $nName);
-                $this->blockVars($nName);
-                $nName = $this->nextDBlockName($this->root_element);
-            }
+            $this->setBlocks();
 
             $cache->set($tpl_name, array(
                 "DBlocks"       => $this->DBlocks,
                 "DVars"         => $this->DVars,
                 "DBlockVars"    => $this->DBlockVars,
-                "root_element"  => $this->root_element
             ), $this->cache);
         } else {
             $this->DBlocks      = $res["DBlocks"];
             $this->DVars        = $res["DVars"];
             $this->DBlockVars   = $res["DBlockVars"];
-            $this->root_element = $res["root_element"];
         }
 
         Hook::handle(self::HOOK_ON_FETCH_CONTENT, $this);
@@ -219,7 +246,7 @@ class ViewHtml implements ViewAdapter
                     $template_file                          =  explode('"', $nName)[1];
                     $template                               = $views[str_replace(self::TPL_NORMALIZE, '', $template_file)] ?? str_replace('$theme_path', $theme_disk_path, $template_file);
 
-                    $view                                   = new self($this->widget, $this->cache);
+                    $view                                   = new self($this->widget, $this->minify, $this->cache);
                     $include                                = $view->include($template);
                     $this->DVars                            = array_replace($this->DVars, $view->DVars);
                     $this->DBlockVars                       = array_replace($this->DBlockVars, $view->DBlockVars);
@@ -251,13 +278,13 @@ class ViewHtml implements ViewAdapter
     private function nextDBlockName(string $sTemplateName) : string
     {
         $sTemplate = $this->DBlocks[$sTemplateName];
-        $BTag = strpos($sTemplate, "<!--" . $this->BeginTag);
+        $BTag = strpos($sTemplate, "<!--" . self::BEGIN_TAG);
         if ($BTag === false) {
             return "";
         } else {
             $ETag = strpos($sTemplate, "-->", $BTag);
             $sName = substr($sTemplate, $BTag + 9, $ETag - ($BTag + 9));
-            if (strpos($sTemplate, "<!--" . $this->EndTag . $sName . "-->") > 0) {
+            if (strpos($sTemplate, "<!--" . self::END_TAG . $sName . "-->") > 0) {
                 return $sName;
             } else {
                 return "";
@@ -266,20 +293,22 @@ class ViewHtml implements ViewAdapter
     }
 
     /**
-     * @param string $sTplName
      * @param string $sBlockName
+     * @param string|null $sTplName
      */
-    private function setBlock(string $sTplName, string $sBlockName) : void
+    private function setBlocks(string $sBlockName = self::ROOT_BLOCK, string $sTplName = null) : void
     {
-        if (!isset($this->DBlocks[$sBlockName])) {
-            $this->DBlocks[$sBlockName] = $this->getBlock($this->DBlocks[$sTplName], $sBlockName);
+        if (!empty($sTplName)) {
+            if (!isset($this->DBlocks[$sBlockName])) {
+                $this->DBlocks[$sBlockName] = $this->getBlock($this->DBlocks[$sTplName], $sBlockName);
+            }
+            $this->DBlocks[$sTplName] = $this->replaceBlock($this->DBlocks[$sTplName], $sBlockName);
         }
-        $this->DBlocks[$sTplName] = $this->replaceBlock($this->DBlocks[$sTplName], $sBlockName);
 
         $nName = $this->nextDBlockName($sBlockName);
-
         while ($nName != "") {
-            $this->setBlock($sBlockName, $nName);
+            $this->setBlocks($nName, $sBlockName);
+            $this->blockVars($nName);
             $nName = $this->nextDBlockName($sBlockName);
         }
     }
@@ -293,8 +322,8 @@ class ViewHtml implements ViewAdapter
     {
         $alpha = strlen($sName) + 12;
 
-        $BBlock = strpos($sTemplate, "<!--" . $this->BeginTag . $sName . "-->");
-        $EBlock = strpos($sTemplate, "<!--" . $this->EndTag . $sName . "-->");
+        $BBlock = strpos($sTemplate, "<!--" . self::BEGIN_TAG . $sName . "-->");
+        $EBlock = strpos($sTemplate, "<!--" . self::END_TAG . $sName . "-->");
 
         if ($BBlock === false || $EBlock === false) {
             return "";
@@ -310,8 +339,8 @@ class ViewHtml implements ViewAdapter
      */
     private function replaceBlock(string $sTemplate, string $sName) : string
     {
-        $BBlock = strpos($sTemplate, "<!--" . $this->BeginTag . $sName . "-->");
-        $EBlock = strpos($sTemplate, "<!--" . $this->EndTag . $sName . "-->");
+        $BBlock = strpos($sTemplate, "<!--" . self::BEGIN_TAG . $sName . "-->");
+        $EBlock = strpos($sTemplate, "<!--" . self::END_TAG . $sName . "-->");
 
         if ($BBlock === false || $EBlock === false) {
             return $sTemplate;
@@ -367,8 +396,6 @@ class ViewHtml implements ViewAdapter
                 $this->ParsedBlocks[$sectionName] = $this->proceedTpl($sectionName);
             }
             return true;
-        } elseif ($this->debug_msg) {
-            echo "<br><strong>Block with name <u><span style=\\";
         }
 
         return false;
@@ -382,32 +409,14 @@ class ViewHtml implements ViewAdapter
     public function assign($tpl_var, $value = null) : ViewAdapter
     {
         if (is_array($tpl_var)) {
-            $this->ParsedBlocks             = array_replace($this->ParsedBlocks, $this->arrayFlatten($tpl_var));
+            $this->ParsedBlocks             = array_replace($this->ParsedBlocks, $tpl_var);
         } elseif (is_object($tpl_var)) {
-            $this->ParsedBlocks             = array_replace($this->ParsedBlocks, $this->arrayFlatten((array) $tpl_var));
+            $this->ParsedBlocks             = array_replace($this->ParsedBlocks, (array) $tpl_var);
         } else {
             $this->ParsedBlocks[$tpl_var]   = $value;
         }
 
         return $this;
-    }
-
-    /**
-     * @param array $array
-     * @param string|null $parent
-     * @return array
-     */
-    private function arrayFlatten(array $array, string $parent = null) : array
-    {
-        $result                             = [];
-        foreach ($array as $key => $value) {
-            if (is_array($value)) {
-                $result                     = array_merge($result, $this->arrayFlatten($value, $key . "."));
-            } else {
-                $result[$parent . $key]     = $value;
-            }
-        }
-        return $result;
     }
 
     /**
@@ -435,61 +444,7 @@ class ViewHtml implements ViewAdapter
             }
         }
 
-        /**
-         * AutoTpl
-         */
-        foreach (array_diff_key($this->DBlockVars, $this->ParsedBlocks) as $key => $DBlockVars) {
-            $lowerKey = strtolower($key);
-            if (isset($this->ParsedBlocks[$lowerKey])) {
-                if (is_array($this->ParsedBlocks[$lowerKey])) {
-                    $this->ParsedBlocks[$key] = $this->proceedAutoTpl($key, $this->ParsedBlocks[$lowerKey]);
-                    if (isset($this->DBlockVars[$key . "Index"])) {
-                        $this->ParsedBlocks[$key . "Index"] = $this->proceedAutoTpl($key . "Index", $this->ParsedBlocks[$lowerKey]);
-                    }
-                } elseif (!empty($this->ParsedBlocks[$lowerKey])) {
-                    $this->ParsedBlocks[$key] = $this->proceedTpl($key);
-                }
-            }
-        }
-        $this->parse($this->root_element);
-        return $this->getBlockContent($this->root_element);
-    }
-
-    /**
-     * @param string $sTplName
-     * @param array $blocks
-     * @return string|null
-     */
-    private function proceedAutoTpl(string $sTplName, array $blocks) : ?string
-    {
-        $res = null;
-        $vars = $this->DBlockVars[$sTplName];
-        $sTpl = $this->DBlocks[$sTplName];
-        foreach ($blocks as $i => $block) {
-            $search_for = [];
-            $replace_with = [];
-            foreach ($vars as $value) {
-                $search_for[] = "{" . $value . "}";
-                if (isset($block[$value])) {
-                    $replace_with[] = $block[$value];
-                } elseif (isset($this->ParsedBlocks[$value]) && !isset($this->ParsedBlocks[$value][0]) && !is_array($this->ParsedBlocks[$value][0])) {
-                    $replace_with[] = $this->ParsedBlocks[$value];
-                } elseif ($i === 0 && strpos($value, ":first=") !== false) {
-                    $replace_with[] = explode("=", $value, 2)[1];
-                } elseif ($i === count($blocks) -1 && strpos($value, ":last=") !== false) {
-                    $replace_with[] = explode("=", $value, 2)[1];
-                } elseif (strpos($value, ":" . $i . "=") !== false) {
-                    $replace_with[] = explode("=", $value, 2)[1];
-                } elseif (strpos($value, ":index") !== false) {
-                    $replace_with[] = $i;
-                } else {
-                    $replace_with[] = "";
-                }
-            }
-            $res .= str_replace($search_for, $replace_with, $sTpl);
-        }
-
-        return $res;
+        return $this->getRootBlock();
     }
 
     /**
@@ -506,41 +461,55 @@ class ViewHtml implements ViewAdapter
     }
 
     /**
-     * @param string $block_name
-     * @param string|null $minify
-     * @return string|null
+     * @return string
      * @throws Exception
      */
-    private function getBlockContent(string $block_name, string $minify = null) : ?string
+    private function getRootBlock() : string
     {
-        $minify = ($minify === null ? $this->minify : $minify);
+        $this->parse(self::ROOT_BLOCK);
 
-        if ($minify === false) {
-            return (isset($this->ParsedBlocks[$block_name])
-                ? $this->entitiesReplace($this->ParsedBlocks[$block_name])
-                : null
-            );
-        } elseif ($minify === "strip") {
-            return $this->entitiesReplace(preg_replace("/\n\s*/", "\n", $this->ParsedBlocks[$block_name], -1, $count));
-        } elseif ($minify === "strong_strip") {
-            return $this->entitiesReplace(preg_replace(
-                array(
-                    '/>[^\S ]+/s',  // strip whitespaces after tags, except space
-                    '/[^\S ]+</s',  // strip whitespaces before tags, except space
-                    '/(\s)+/s'       // shorten multiple whitespace sequences
-                ),
-                array(
-                    '>',
-                    '<',
-                    '\\1'
-                ),
-                $this->ParsedBlocks[$block_name],
-                -1,
-                $count
-            ));
-        } else {
-            throw new Exception("minify method not implemented", 501);
+        return $this->minify($this->ParsedBlocks[self::ROOT_BLOCK]);
+    }
+
+    /**
+     * @param string $content
+     * @return string
+     */
+    private function minify(string $content) : string
+    {
+        switch ($this->minify) {
+            case "strip":
+                $res = preg_replace("/\n\s*/", "\n", $content, -1, $count);
+                break;
+            case "stripall":
+                $res = preg_replace(
+                    array(
+                        '/>[^\S ]+/s',
+                        '/[^\S ]+</s',
+                        '/(\s)+/s'
+                    ),
+                    array(
+                        '>',
+                        '<',
+                        '\\1'
+                    ),
+                    $content
+                );
+                break;
+            default:
+                $res = $content;
         }
+
+        return $this->entitiesReplace($res);
+    }
+
+    /**
+     * @param string $text
+     * @return string
+     */
+    private function entitiesReplace(string $text) : string
+    {
+        return str_replace(array("{\\","\\}"), array("{","}"), $text);
     }
 
     /**
@@ -558,7 +527,7 @@ class ViewHtml implements ViewAdapter
         $matches = array();
         $rc = preg_match_all(static::REGEXP, $sTpl, $matches);
         if ($rc) {
-            $vars = $matches[1];
+            $vars = array_unique($matches[1]);
 
             $this->DBlockVars[$sTplName] = $vars;
 
@@ -570,53 +539,132 @@ class ViewHtml implements ViewAdapter
 
     /**
      * @param string $sTplName
+     * @param array $parsedBlocks
+     * @param int|null $index
+     * @param int|null $count
      * @return string
      * @throws Exception
      */
-    private function proceedTpl(string $sTplName) : string
+    private function proceedTpl(string $sTplName, array $parsedBlocks = [], int $index = null, int $count = null) : string
     {
         $vars = $this->blockVars($sTplName);
         $sTpl = $this->DBlocks[$sTplName];
 
-        if ($vars) {
-            $search_for = array();
-            $replace_with = array();
+        if (!empty($vars)) {
+            $search_for = [];
+            $replace_with = [];
+            $pBlocks = array_replace($this->ParsedBlocks, $parsedBlocks);
 
-            reset($vars);
             foreach ($vars as $value) {
                 $search_for[] = "{" . $value . "}";
-                if (isset($this->ParsedBlocks[$value])) {
-                    if (is_object($this->ParsedBlocks[$value])) {
-                        if ($this->ParsedBlocks[$value] instanceof View || $this->ParsedBlocks[$value] instanceof Controller) {
-                            $replace_with[] = $this->ParsedBlocks[$value]->html();
-                        } else {
-                            throw new Exception("bad value into template", 500);
-                        }
-                    } elseif (is_array($this->ParsedBlocks[$value])) {
-                        $replace_with[] = null;
-                    } else {
-                        $replace_with[] = $this->ParsedBlocks[$value];
-                    }
-                } elseif (isset($this->DBlocks[$value]) && $this->display_unparsed_sect) {
-                    $replace_with[] = $this->DBlocks[$value];
-                } else {
-                    $replace_with[] = "";
-                }
+                $replace_with[] = $pBlocks[$value]
+                    ?? $this->proceedTplParsedBlocks($value, $pBlocks, $index, $count)
+                    ?? $this->proceedTplBlockVars($value, $pBlocks)
+                    ?? "";
             }
+
             $sTpl = str_replace($search_for, $replace_with, $sTpl);
         }
         return $sTpl;
     }
 
     /**
-     * @param string $text
-     * @return string
+     * @param string $var
+     * @param $parsedBlocks
+     * @return string|null
+     * @throws Exception
      */
-    private function entitiesReplace(string $text) : string
+    private function proceedTplBlockVars(string $var, $parsedBlocks) : ?string
     {
-        return str_replace(array("{\\","\\}"), array("{","}"), $text);
+        $replace = null;
+        if (isset($this->DBlockVars[$var])) {
+            $key = strtolower(explode("#", $var)[0]);
+            if (isset($parsedBlocks[$key])) {
+                if (!is_array($parsedBlocks[$key])) {
+                    $replace = $this->proceedTpl($var, [$key => $parsedBlocks[$key]]);
+                } elseif (isset($parsedBlocks[$key][0])) {
+                    $count = count($parsedBlocks[$key]);
+                    foreach ($parsedBlocks[$key] as $index => $parsedBlock) {
+                        $replace .= $this->proceedTpl($var, $parsedBlock, $index + 1, $count);
+                    }
+                } else {
+                    $replace = $this->proceedTpl($var, $parsedBlocks[$key]);
+                }
+            }
+        }
+        return $replace;
     }
 
+    /**
+     * @param string $key
+     * @param mixed $parsedBlocks
+     * @param int|null $index
+     * @param int|null $count
+     * @return string|null
+     * @throws Exception
+     */
+    private function proceedTplParsedBlocks(string $key, $parsedBlocks, int $index = null, int $count = null) : ?string
+    {
+        $json = null;
+        $replace = null;
+        if (strpos($key, "[") !== false) {
+            $arrKey = explode("[", $key, 2);
+            $key = $arrKey[0];
+            $json = json_decode("{" . rtrim($arrKey[1], "]") . "}", true);
+        }
+
+        if (isset($parsedBlocks[$key])) {
+            if (is_object($parsedBlocks[$key])) {
+                if ($parsedBlocks[$key] instanceof View || $parsedBlocks[$key] instanceof Controller) {
+                    $replace = $parsedBlocks[$key]->html();
+                } else {
+                    throw new Exception("bad value into template", 500);
+                }
+            } elseif (!is_array($parsedBlocks[$key])) {
+                $replace = $parsedBlocks[$key];
+            }
+        } elseif ($key == "index") {
+            $replace = $index;
+        } elseif ($key == "count") {
+            $replace = $count;
+        } elseif (($index === 1 && strpos($key, "first=") === 0)
+            || ($index === $count && strpos($key, "last=") === 0)
+            || ($index % 2 !== 0 && strpos($key, "odd=") === 0)
+            || ($index % 2 === 0 && strpos($key, "even=") === 0)
+            || strpos($key, "index:" . $index . "=") === 0
+        ) {
+            $replace = explode("=", $key, 2)[1];
+        } elseif (count($key = explode(".", $key)) > 1) {
+            $replace = $this->flatCall($parsedBlocks, $key);
+        }
+
+        return $json[$replace] ?? $replace;
+    }
+
+    /**
+     * @param array $data_arr
+     * @param array $data_arr_call
+     * @return string|null
+     */
+    public function flatCall(array $data_arr, array $data_arr_call) : ?string
+    {
+        foreach ($data_arr_call as $key) {
+            if (!isset($data_arr[$key])) {
+                if ($key == "first" && isset($data_arr[0])) {
+                    $key = 0;
+                } elseif ($key == "last" && $data_arr[count($data_arr) - 1]) {
+                    $key = count($data_arr) - 1;
+                } elseif ($key == "count") {
+                    return count($data_arr);
+                } else {
+                    return null;
+                }
+            }
+            $data_arr = $data_arr[$key];
+        }
+
+        return $data_arr;
+    }
 
     /**
      *

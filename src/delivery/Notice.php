@@ -25,27 +25,42 @@
  */
 namespace ff\libs\delivery;
 
+use Exception;
+use ff\libs\Constant;
 use ff\libs\Debug;
-use ff\libs\dto\DataResponse;
-use ff\libs\Exception;
+use ff\libs\dto\DataError;
+use ff\libs\gui\Resource;
+use ff\libs\gui\View;
 use ff\libs\international\Locale;
+use ff\libs\security\Validator;
+use ff\libs\storage\FilemanagerFs;
+use ff\libs\storage\FilemanagerScan;
+use ff\libs\storage\FilemanagerWeb;
 use ff\libs\util\AdapterManager;
 
 /**
  * Class Notice
  * @package ff\libs\delivery
- * @property NoticeAdapter[] $adapters
+ * @property NoticeAdapter $adapter
  */
 class Notice
 {
     use AdapterManager;
 
     protected const ERROR_BUCKET                            = "delivery";
-    private const ERROR_LANG_NOT_VALID                      = "lang not valid";
+
+    protected const IMAGE_ALLOWED                           = ["jpg", "png", "svg", "gif"];
 
     private static $singleton                               = null;
     private static $exTime                                  = 0;
+    private $channel                                        = null;
     private $lang                                           = null;
+
+    private $title                                          = "";
+    private $params                                         = [];
+    private $from                                           = [];
+    private $actions                                        = [];
+
 
     /**
      * @return float
@@ -73,6 +88,7 @@ class Notice
      */
     public function __construct(string $noticeAdapter)
     {
+        $this->channel = $noticeAdapter;
         $this->setAdapter($noticeAdapter);
     }
 
@@ -82,10 +98,8 @@ class Notice
      */
     public function addRecipients(array $targets) : self
     {
-        foreach ($this->adapters as $adapter) {
-            foreach ($targets as $name => $target) {
-                $adapter->addRecipient($target, is_numeric($name) ? null: $name);
-            }
+        foreach ($targets as $name => $target) {
+            $this->adapter->addRecipient($target, $name);
         }
 
         return $this;
@@ -98,9 +112,19 @@ class Notice
      */
     public function addRecipient(string $target, string $name = null) : self
     {
-        foreach ($this->adapters as $adapter) {
-            $adapter->addRecipient($target, $name);
-        }
+        $this->adapter->addRecipient($target, is_numeric($name) ? null: $name);
+
+        return $this;
+    }
+
+    /**
+     * @param array $map
+     * @param array $channel
+     * @return $this
+     */
+    public function setFrom(array $map, array $channel) : self
+    {
+        $this->adapter->setFrom($channel["from"] ?: $map["from"] ?? []);
 
         return $this;
     }
@@ -108,16 +132,12 @@ class Notice
     /**
      * @param string|null $lang_code
      * @return Notice
-     * @throws Exception
      */
     public function setLang(string $lang_code = null) : self
     {
-        if ($lang_code && !Locale::isAcceptedLanguage($lang_code)) {
-            throw new Exception(self::ERROR_LANG_NOT_VALID, 400);
-        }
-
-        foreach ($this->adapters as $adapter) {
-            $adapter->setLang($lang_code);
+        if ($lang_code && Locale::isAcceptedLanguage($lang_code)) {
+            $this->adapter->setLang($lang_code);
+            $this->lang = $lang_code;
         }
 
         return $this;
@@ -130,32 +150,33 @@ class Notice
      */
     public function addAction(string $name, string $url) : self
     {
-        foreach ($this->adapters as $adapter) {
-            $adapter->addAction($name, $url);
-        }
+        $this->adapter->addAction($name, $url);
 
         return $this;
     }
 
-
     /**
-     * @param string $title
-     * @param array $fields
-     * @param string|null $template
-     * @return DataResponse
+     * @param string $template_or_message
+     * @param string|null $title
+     * @param array $params
+     * @param array $actions
+     * @return DataError
+     * @throws Exception
      */
-    public function sendLongMessage(string $title, array $fields, string $template = null) : DataResponse
+    public function send(string $template_or_message, string $title = null, array $params = [], array $actions = []) : DataError
     {
         Debug::stopWatch(static::ERROR_BUCKET);
 
-        $dataResponse                                       = new DataResponse();
-        foreach ($this->adapters as $key => $adapter) {
-            $result                                         = $adapter->sendLongMessage($title, $fields, $template);
-            $dataResponse->set($key, $result->isError());
-            if ($result->isError()) {
-                $dataResponse->error($result->status, $result->error);
-            }
+        if (empty($this->lang)) {
+            $this->setLang(Locale::getCodeLang());
         }
+
+        $this->title                                        = $title;
+        $this->params                                       = $params;
+        $this->actions                                      = $actions;
+
+        $message                                            = $this->setTemplate($template_or_message);
+        $dataResponse                                       = $this->adapter->send($message, $this->setTitle());
 
         self::$exTime = Debug::stopWatch(static::ERROR_BUCKET);
 
@@ -163,25 +184,130 @@ class Notice
     }
 
     /**
-     * @param string $title
-     * @param string|null $message
-     * @return DataResponse
+     * @param string $template_or_message
+     * @return string
+     * @throws Exception
      */
-    public function send(string $title, string $message = null) : DataResponse
+    private function setTemplate(string $template_or_message) : string
     {
-        Debug::stopWatch(static::ERROR_BUCKET);
+        $content    = $template_or_message;
+        if (Validator::isUrl($template_or_message)) {
+            $view = View::fetchContent(FilemanagerWeb::fileGetContents($template_or_message));
+        } else {
+            $template_or_message    = rtrim($template_or_message, "_");
+            do {
+                if ($view = $this->findTemplate($template_or_message)) {
+                    $this->loadImages($view);
 
-        $dataResponse                                       = new DataResponse();
-        foreach ($this->adapters as $key => $adapter) {
-            $result                                         = $adapter->send($title, $message);
-            $dataResponse->set($key, $result->isError());
-            if ($result->isError()) {
-                $dataResponse->error($result->status, $result->error);
-            }
+                    $map            = $this->findTemplateMap($view, $template_or_message);
+                    $channel        = $this->findChannel($map);
+
+                    $this->title    = $this->findTitle($channel, $map);
+                    $this->params   = array_replace($map["params"] ?? [], $channel["params"] ?? [], $this->params);
+                    $this->actions  = array_replace($map["actions"] ?? [], $channel["actions"] ?? [], $this->actions);
+                    $this->setFrom($map, $channel);
+
+                    Debug::set(basename($view), static::ERROR_BUCKET);
+                    $view = View::fetchFile($view);
+                    break;
+                }
+                $template_or_message = (
+                    ($end = strrpos($template_or_message, "_")) !== false
+                    ? substr($template_or_message, 0, $end)
+                    : null
+                );
+            } while (!empty($template_or_message));
         }
 
-        self::$exTime = Debug::stopWatch(static::ERROR_BUCKET);
+        if (empty($view)) {
+            $view = View::fetchContent($content);
+        }
 
-        return $dataResponse;
+        return $view
+                ->assign($this->params)
+                ->html();
+    }
+
+    /**
+     * @return string
+     * @throws Exception
+     */
+    private function setTitle() : string
+    {
+        return (!empty($this->title)
+            ? View::fetchContent($this->title)
+                ->assign($this->params)
+                ->html()
+            : ""
+        );
+    }
+
+    /**
+     * @param $tpl_path
+     * @return string|null
+     */
+    private function findTemplate($tpl_path) : ?string
+    {
+        return Resource::get($tpl_path . "_" . $this->lang . "_" . $this->channel, Resource::TYPE_NOTICE)
+            ?? Resource::get($tpl_path . "_" . $this->channel, Resource::TYPE_NOTICE)
+            ?? Resource::get($tpl_path . "_" . $this->lang, Resource::TYPE_NOTICE)
+            ?? Resource::get($tpl_path, Resource::TYPE_NOTICE)
+            ?? null;
+    }
+
+    /**
+     * @param array $channel
+     * @param array $map
+     * @return string
+     */
+    private function findTitle(array $channel, array $map) : string
+    {
+        if (!empty($title = $this->title ?: $channel["title"][$this->lang] ?? $map["title"][$this->lang] ?? "")) {
+            return $title;
+        } elseif (isset($channel["title"]) && !is_array($channel["title"])) {
+            return $channel["title"];
+        } elseif (isset($map["title"]) && !is_array($map["title"])) {
+            return $map["title"];
+        }
+
+        return "";
+    }
+    /**
+     * @param $tpl_path
+     * @param $tpl_name
+     * @return array
+     * @throws Exception
+     */
+    private function findTemplateMap($tpl_path, $tpl_name) : array
+    {
+        return (is_file($map_path = dirname($tpl_path) . DIRECTORY_SEPARATOR . $tpl_name . ".map")
+            ? FilemanagerFs::fileGetContentsJson($map_path, true)
+            : []
+        );
+    }
+
+    /**
+     * @param array $map
+     * @return array
+     */
+    private function findChannel(array $map) : array
+    {
+        return $map["channels"][$this->channel] ?? [];
+    }
+
+    /**
+     * @param string $tpl_file
+     */
+    private function loadImages(string $tpl_file) : void
+    {
+        $email_images_path = dirname($tpl_file) . DIRECTORY_SEPARATOR . Constant::RESOURCE_NOTICE_IMAGES;
+        if (is_dir($email_images_path)) {
+            FilemanagerScan::scan([
+                str_replace(Constant::DISK_PATH, "", $email_images_path) => [
+                    "flag" => FilemanagerScan::SCAN_FILE, "filter" => static::IMAGE_ALLOWED
+                ]], function ($image) {
+                    $this->adapter->addImage($image, $name ?? pathinfo($image, PATHINFO_FILENAME));
+                });
+        }
     }
 }

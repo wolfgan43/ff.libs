@@ -26,10 +26,7 @@
 namespace ff\libs\delivery\adapters;
 
 use ff\libs\delivery\NoticeAdapter;
-use ff\libs\dto\DataError;
-use ff\libs\Exception;
 use ff\libs\security\Validator;
-use ff\libs\delivery\drivers\Messenger;
 
 /**
  * Class NoticeSms
@@ -37,7 +34,7 @@ use ff\libs\delivery\drivers\Messenger;
  */
 class NoticeSms extends NoticeAdapter
 {
-    private $content                        = null;
+    public const CHANNEL                    = "Sms";
 
     /**
      * @param string $target
@@ -46,45 +43,5 @@ class NoticeSms extends NoticeAdapter
     public function checkRecipient(string $target) : bool
     {
         return Validator::isTel($target);
-    }
-
-    /**
-     * @param string $title
-     * @param string|null $message
-     * @return DataError
-     * @throws Exception
-     */
-    public function send(string $title, string $message = null) : DataError
-    {
-        $this->content                      = $title . $message;
-
-        return $this->process();
-    }
-
-    /**
-     * @param string $title
-     * @param array|null $fields
-     * @param string|null $template
-     * @return DataError
-     * @throws Exception
-     */
-    public function sendLongMessage(string $title, array $fields = null, string $template = null) : DataError
-    {
-        $this->content                      = $title;
-
-        return $this->process();
-    }
-
-    /**
-     * @return DataError
-     * @throws Exception
-     */
-    protected function process() : DataError
-    {
-        return Messenger::getInstance($this->connection_service, $this->lang)
-            ->setConnection($this->connection)
-            ->setFrom($this->fromKey, $this->fromLabel)
-            ->addAddresses($this->recipients)
-            ->send($this->content);
     }
 }

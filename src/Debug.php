@@ -299,7 +299,7 @@ class Debug
                 continue;
             }
 
-            $class_name = basename(str_replace("\\", "/", $trace["class"] ?? null));
+            $class_name = basename(str_replace("\\", "/", $trace["class"] ?? ""));
             if (isset($trace["file"])) {
                 $caller = $class_name . "::" . $trace["function"];
                 $pad = self::MAX_PAD - strlen($caller);
@@ -635,7 +635,9 @@ class Debug
         . '<span>Adapters ('
         . 'Template: '  . '<em>' . Kernel::$Environment::TEMPLATE_ADAPTER   . '</em>, '
         . 'DB: '        . '<em>' . Kernel::$Environment::DATABASE_ADAPTER   . '</em>, '
-        . 'Sms: '       . '<em>' . Kernel::$Environment::MESSENGER_ADAPTER  . '</em>, '
+        . 'Smtp: '      . '<em>' . Kernel::$Environment::NOTICE_SMTP_DRIVER  . '</em>, '
+        . 'Sms: '       . '<em>' . Kernel::$Environment::NOTICE_SMS_DRIVER  . '</em>, '
+        . 'Push: '      . '<em>' . Kernel::$Environment::NOTICE_PUSH_DRIVER  . '</em>, '
         . 'Translate: ' . '<em>' . Kernel::$Environment::TRANSLATOR_ADAPTER . '</em>'
         . ')</span>'
         . '<span>Cache ('

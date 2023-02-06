@@ -97,7 +97,7 @@ class View
      */
     public function __construct(string $templateAdapter = null, Controller $controller = null, string $widget = null, stdClass $config = null)
     {
-        $this->config                               = $config;
+        $this->config                               = $config ?? new stdClass();
         $this->controller                           =& $controller;
         $this->setAdapter($templateAdapter ?? Kernel::$Environment::TEMPLATE_ADAPTER, [$widget]);
     }
@@ -169,10 +169,10 @@ class View
     }
 
     /**
-     * @return object
+     * @return stdClass
      */
-    public function getConfig() : object
+    public function getConfig() : stdClass
     {
-        return $this->config ?? new stdClass();
+        return $this->config;
     }
 }

@@ -106,7 +106,7 @@ class Env implements Configurable
      */
     private static function setGlobalVars(array $vars) : void
     {
-        self::$vars                                                 = $vars + self::loadPermanent();
+        self::$vars                                                 = array_replace($vars, self::loadPermanent());
     }
 
     /**

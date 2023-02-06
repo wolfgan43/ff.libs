@@ -130,12 +130,16 @@ class RequestPage extends Mappable
 
         do {
             if (isset($pages[$path_info])) {
-                $config             = array_replace($pages[$path_info]["config"], $config);
                 if ($script_path == DIRECTORY_SEPARATOR) {
                     $script_path    = $path_info;
                 }
 
-                $rules->set($pages[$path_info]);
+                if (empty($config["map"])
+                    || (isset($pages[$path_info]["config"]["map"]) && $config["map"] == $pages[$path_info]["config"]["map"])
+                ) {
+                    $rules->set($pages[$path_info]);
+                }
+                $config             = array_replace($pages[$path_info]["config"], $config);
             }
         } while ($path_info != DIRECTORY_SEPARATOR && $path_info != "." && $path_info = dirname($path_info));
 

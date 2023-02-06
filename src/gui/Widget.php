@@ -198,20 +198,20 @@ abstract class Widget extends Controller
 
     /**
      * @param string|null $config_name
-     * @return object|null
+     * @return stdClass
      * @throws Exception
      */
-    protected function getConfig(string $config_name = null) : ?object
+    protected function getConfig(string $config_name = null) : stdClass
     {
         return $this->config($this->getResources()->cfg[$config_name ?? self::VIEW_DEFAULT] ?? null);
     }
 
     /**
      * @param string|null $file_path
-     * @return stdClass|null
+     * @return stdClass
      * @throws Exception
      */
-    private function config(string $file_path = null) : ?stdClass
+    private function config(string $file_path = null) : stdClass
     {
         static $configs                             = null;
 
@@ -226,15 +226,15 @@ abstract class Widget extends Controller
             }
         }
 
-        return $configs[$file_path] ?? null;
+        return $configs[$file_path] ?? new stdClass();
     }
 
     /**
      * @param string $file_path
-     * @return stdClass|null
+     * @return stdClass
      * @throws Exception
      */
-    private function loadConfig(string $file_path) : ?stdClass
+    private function loadConfig(string $file_path) : stdClass
     {
         return FilemanagerFs::fileGetContentsJson($file_path);
     }

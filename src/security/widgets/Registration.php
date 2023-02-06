@@ -63,7 +63,7 @@ class Registration extends Widget
         $view                       = $this->view("index");
         $config                     = $view->getConfig();
 
-        if (!empty($this->request->model) && ($model = Model::columns($this->request->model))) {
+        if (!empty($this->request->model) && !empty($model = Model::columns($this->request->model))) {
             foreach ($model as $field_name) {
                 $view->assign("field_name", $field_name);
                 $view->assign("field_label", $this->translate($field_name));

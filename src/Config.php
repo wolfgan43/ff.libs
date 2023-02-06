@@ -709,6 +709,8 @@ class Config implements Dumpable
                 $request[$key][self::SCHEMA_CONF]                                       = $attr;
             }
 
+            krsort($path2params);
+
             self::$config_data[self::SCHEMA_ROUTER][self::SCHEMA_PAGES]                 = $router;
             self::$config_data[self::SCHEMA_REQUEST]["path2params"]                     = $path2params;
             self::$config_data[self::SCHEMA_REQUEST][self::SCHEMA_PAGES]                = $request;

@@ -26,11 +26,7 @@
 namespace ff\libs\delivery\adapters;
 
 use ff\libs\delivery\NoticeAdapter;
-use ff\libs\dto\DataError;
 use ff\libs\security\Validator;
-use ff\libs\delivery\drivers\Mailer;
-use ff\libs\gui\Resource;
-use ff\libs\Exception;
 
 /**
  * Class NoticeEmail
@@ -38,9 +34,7 @@ use ff\libs\Exception;
  */
 class NoticeEmail extends NoticeAdapter
 {
-    private $title                          = null;
-    private $fields                         = null;
-    private $template                       = null;
+    public const CHANNEL                = "Smtp";
 
     /**
      * @param string $target
@@ -49,77 +43,5 @@ class NoticeEmail extends NoticeAdapter
     public function checkRecipient(string $target) : bool
     {
         return Validator::isEmail($target);
-    }
-
-    /**
-     * @param string $title
-     * @param string|null $message
-     * @return DataError
-     * @throws Exception
-     */
-    public function send(string $title, string $message = null) : DataError
-    {
-        $this->title                        = $title;
-        $this->fields                       = $message;
-
-        return $this->process();
-    }
-
-    /**
-     * @param string $title
-     * @param array|null $fields
-     * @param string|null $template
-     * @return DataError
-     * @throws Exception
-     */
-    public function sendLongMessage(string $title, array $fields = null, string $template = null) : DataError
-    {
-        $this->title                        = $title;
-        $this->fields                       = $fields;
-        $this->setTemplate($template);
-        return $this->process();
-    }
-
-    /**
-     * @param string|null $template
-     * @throws Exception
-     */
-    private function setTemplate(string $template = null) : void
-    {
-        if (strpos($template, DIRECTORY_SEPARATOR) !== false) {
-            $this->template = $template;
-        } elseif (!empty($template)) {
-            $template = rtrim($template, "_");
-            do {
-                if ($this->template = Resource::get($template, Resource::TYPE_EMAIL)) {
-                    break;
-                }
-                $template = (
-                    ($end = strrpos($template, "_")) !== false
-                    ? substr($template, 0, $end)
-                    : null
-                );
-            } while ($template);
-        }
-
-        if (!$this->template) {
-            throw new Exception("Template mail not found: " .  $template . " (check cache also)", 404);
-        }
-    }
-
-    /**
-     * @return DataError
-     * @throws Exception
-     */
-    protected function process() : DataError
-    {
-        return Mailer::getInstance($this->template, $this->lang)
-            ->setSmtp($this->connection)
-            ->setFrom($this->fromKey, $this->fromLabel)
-            ->addAddresses($this->recipients, "to")
-            ->addActions($this->actions)
-            ->setSubject($this->title)
-            ->setMessage($this->fields)
-            ->send();
     }
 }

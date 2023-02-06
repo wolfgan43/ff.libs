@@ -78,6 +78,15 @@ class Convert
 
     /**
      * @param string $value
+     * @return string
+     */
+    public static function decode(string $value) : string
+    {
+        return htmlspecialchars_decode($value, ENT_QUOTES);
+    }
+
+    /**
+     * @param string $value
      * @param stdClass|null $properties
      * @return string
      * @throws Exception

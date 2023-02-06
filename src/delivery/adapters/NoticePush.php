@@ -23,46 +23,24 @@
  *  @license http://opensource.org/licenses/lgpl-3.0.html
  *  @link https://bitbucket.org/cmsff/libs
  */
-namespace ff\libs\storage\adapters;
+namespace ff\libs\delivery\adapters;
 
-use ff\libs\security\Validator;
-use ff\libs\storage\FilemanagerFs;
-use ff\libs\storage\FilemanagerAdapter;
-use ff\libs\Exception;
+use ff\libs\delivery\NoticeAdapter;
 
 /**
- * Class FilemanagerFsJson
- * @package ff\libs\storage\adapters
+ * Class NoticeEmail
+ * @package ff\libs\delivery\adapters
  */
-class FilemanagerFsJson extends FilemanagerAdapter //todo: da finire
+class NoticePush extends NoticeAdapter
 {
-    const EXT                                                   = "json";
+    public const CHANNEL                = "Push";
 
     /**
-     * @param string $file_path
-     * @param string|null $var
-     * @return array
-     * @throws Exception
-     * @todo da tipizzare
+     * @param string $target
+     * @return bool
      */
-    protected function loadFile(string $file_path, string $var = null) : array
+    public function checkRecipient(string $target) : bool
     {
-        return Validator::jsonDecode(FilemanagerFs::fileGetContents($file_path));
-    }
-
-    /**
-     * @param array $data
-     * @param string|null $var
-     * @return string
-     */
-    protected function output(array $data, string $var = null) : string
-    {
-        $root_node                                              = (
-            $var
-            ? array($var => $data)
-            : $data
-        );
-
-        return (string) json_encode($root_node);
+        return true;
     }
 }

@@ -60,10 +60,10 @@ class FilemanagerFs
     /**
      * @param string $file_path
      * @param bool $toArray
-     * @return stdClass|array|null
+     * @return stdClass|array
      * @throws Exception
      */
-    public static function fileGetContentsJson(string $file_path, bool $toArray = false) : stdClass|array|null
+    public static function fileGetContentsJson(string $file_path, bool $toArray = false) : stdClass|array
     {
         return Validator::jsonDecode(self::fileGetContents($file_path), $toArray);
     }
@@ -83,6 +83,33 @@ class FilemanagerFs
     }
 
     /**
+     * @param $upload_dir
+     * @param $key
+     * @param bool $unique_name
+     * @return string|null
+     */
+    public static function moveUploadedFile($upload_dir, $key, bool $unique_name = false) : ?string
+    {
+        if(isset($_FILES[$key])) {
+            $upload_dir = Constant::UPLOAD_PATH . rtrim($upload_dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+            $upload_disk_path = Constant::DISK_PATH . $upload_dir;
+            if (!is_dir($upload_disk_path)) {
+                mkdir($upload_disk_path, 0775, true);
+            }
+            $filename = $_FILES[$key]["name"];
+            if ($unique_name) {
+                $filename = microtime(true) . "-" . $filename;
+            }
+
+            if (@move_uploaded_file($_FILES[$key]["tmp_name"], $upload_disk_path . $filename)) {
+                return $upload_dir . $filename;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * @param string $fileType
      * @return FilemanagerAdapter
      */
@@ -90,7 +117,6 @@ class FilemanagerFs
     {
         return self::loadAdapter($fileType);
     }
-
 
     /**
      * @param string $content

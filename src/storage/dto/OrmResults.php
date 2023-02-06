@@ -38,28 +38,29 @@ class OrmResults
 
     private const ERROR_RECORDSET_EMPTY     = "recordset empty";
 
-    private $recordset                      = array();
+    private $recordset                      = [];
     private $countRecordset                 = 0;
     private $countTotal                     = 0;
+    private $countFromDB                    = null;
 
     private $record_map_class               = null;
     private $key_name                       = null;
-    private $recordset_keys                 = null;
+    private $recordset_keys                 = [];
 
     private $filter                         = null;
     private $table                          = null;
-    private $indexes                        = null;
+    private $indexes                        = [];
 
     /**
      * OrmResult constructor.
      * @param int $count
-     * @param array|null $recordset
-     * @param array|null $indexes
+     * @param array $recordset
+     * @param array $indexes
      * @param string|null $primary_table
      * @param string|null $primary_key
      * @param string|null $record_map_class
      */
-    public function __construct(int $count, array $recordset = null, array $indexes = null, string $primary_table = null, string $primary_key = null, string $record_map_class = null)
+    public function __construct(int $count, array $recordset, array $indexes = [], string $primary_table = null, string $primary_key = null, string $record_map_class = null)
     {
         $this->key_name             = $primary_key;
         $this->countTotal           = $count;
@@ -67,16 +68,11 @@ class OrmResults
         $this->table                = $primary_table;
         $this->indexes              = $indexes;
 
-        $recordset_keys             = $indexes[$primary_table] ?? null;
+        $recordset_keys             = $indexes[$primary_table] ?? [];
 
-        $counter                    = $recordset ?? $recordset_keys;
-        $this->countRecordset       = (
-            empty($counter)
-            ? $this->countTotal
-            : count($counter)
-        );
+        $this->countRecordset       = count($recordset ?: $recordset_keys) ?: $this->countTotal;
 
-        $this->recordset            = (array) $recordset;
+        $this->recordset            = $recordset;
         $this->recordset_keys       = $recordset_keys;
     }
 
@@ -90,10 +86,17 @@ class OrmResults
 
         if ($this->countRecordset) {
             $dataTableResponse->fill($this->recordset);
+            $dataTableResponse->keys                                            = $this->recordset_keys;
+            $dataTableResponse->recordsDisplayed                                = $this->countRecordset;
             $dataTableResponse->recordsFiltered                                 = $this->countTotal;
-            $dataTableResponse->recordsTotal                                    = $this->countTotal;
+            $dataTableResponse->recordsTotal                                    = (
+                empty($this->countFromDB)
+                ? $this->countTotal
+                : call_user_func($this->countFromDB)
+            );
         } else {
-            $dataTableResponse->error(204, self::ERROR_RECORDSET_EMPTY);
+            //$dataTableResponse->error(204, self::ERROR_RECORDSET_EMPTY);
+            $dataTableResponse->error(200, self::ERROR_RECORDSET_EMPTY);
         }
 
         if ($callback) {
@@ -195,7 +198,7 @@ class OrmResults
      */
     public function keys(string $key_name = null) : array
     {
-        return array_column($this->recordset_keys ?? $this->recordset, $key_name ?? $this->key_name) ?? [];
+        return array_column($this->recordset_keys ?: $this->recordset, $key_name ?? $this->key_name) ?? [];
     }
 
     /**
@@ -268,6 +271,17 @@ class OrmResults
     public function seek(int $offset) : ?array
     {
         return $this->recordset[$offset] ?? null;
+    }
+
+    /**
+     * @param callable|null $countFunc
+     * @return $this
+     */
+    public function setCountFromDB(callable $countFunc = null) : self
+    {
+        $this->countFromDB = $countFunc;
+
+        return $this;
     }
 
     /**

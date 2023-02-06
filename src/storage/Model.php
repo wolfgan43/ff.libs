@@ -77,6 +77,8 @@ class Model implements Configurable, Dumpable
     private $select                                                                     = null;
     private $selectJoin                                                                 = [];
     private $where                                                                      = [];
+    private $where_primary                                                              = [];
+
     /**
      * @var Schema
      */
@@ -97,11 +99,11 @@ class Model implements Configurable, Dumpable
 
     /**
      * @param string $model_name
-     * @return array|null
+     * @return array
      */
-    public static function columns(string $model_name) : ?array
+    public static function columns(string $model_name) : array
     {
-        return self::$models[$model_name][self::READ] ?? null;
+        return self::$models[$model_name][self::READ] ?? [];
     }
 
 
@@ -195,7 +197,15 @@ class Model implements Configurable, Dumpable
             $this->select ?? $this->schema->read ?? []
         ) + $this->selectJoin;
 
-        return $this->getOrm()->read($select, $this->setWhere($where), $sort, $limit, $offset);
+        return $this->getOrm()
+            ->read($select, $this->setWhere($where), $sort, $limit, $offset, $limit || $offset)
+            ->setCountFromDB(
+                !empty(array_diff_key($where ?? [], $this->where_primary))
+                    ? function () {
+                        return $this->count();
+                    }
+                    : null
+            );
     }
 
     /**
@@ -221,8 +231,7 @@ class Model implements Configurable, Dumpable
      */
     public function insert(array $fields) : OrmResults
     {
-        $insert                                                                         = array_replace(
-            $this->where,
+        $insert                                                                         = (
             $this->schema
             ? $this->fill($this->schema->insert, $fields)
             : $this->fieldSet($fields, $this->table)
@@ -276,12 +285,23 @@ class Model implements Configurable, Dumpable
     }
 
     /**
+     * @param string $action
+     * @param array|null $where
+     * @return mixed
+     * @throws Exception
+     */
+    public function cmd(string $action, array $where = null)
+    {
+        return $this->getOrm()->cmd($action, $this->setWhere($where));
+    }
+
+    /**
      * @return int
      * @throws Exception
      */
     public function count() : int
     {
-        return $this->getOrm()->cmd("count");
+        return $this->getOrm()->cmd("count", $this->where_primary);
     }
 
     /**
@@ -335,6 +355,13 @@ class Model implements Configurable, Dumpable
     public function getName() : ?string
     {
         return $this->name . DIRECTORY_SEPARATOR . $this->table;
+    }
+
+    public function setWherePrimary(array $where) : self
+    {
+        $this->where_primary = $where;
+
+        return $this;
     }
 
     /**
@@ -535,7 +562,7 @@ class Model implements Configurable, Dumpable
 
             foreach ($model[self::FIELD] as $field) {
                 $attr                                                                           = Config::getXmlAttr($field);
-                $source                                                                         = $attr->db ?? $attr->name;
+                $source                                                                         = $attr->db ?: $attr->name;
                 $orm_field                                                                      = array_search($attr->name, $extend[self::READ] ?? []) ?: self::dbField($source, $schema);
                 if (!isset($attr->name)) {
                     continue;

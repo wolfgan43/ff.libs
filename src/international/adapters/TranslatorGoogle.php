@@ -52,14 +52,11 @@ class TranslatorGoogle extends TranslatorAdapter
             $res                                        = $words;
         } else {
             $res                                        = parent::translate($words, $toLang, $fromLang);
-            if (!$res) {
-                $transalted                             = FilemanagerWeb::fileGetContents("https://translation.googleapis.com/language/translate/v2?q=" . urlencode($words) . "&target=" . substr($toLang, 0, 2) . "&source=" . substr($fromLang, 0, 2) . ($this->code ? "&key=" . $this->code : ""));
-                if ($transalted) {
-                    $buffer                             = Validator::jsonDecode($transalted);
-                    if (!$buffer["error"] && $buffer["responseData"]["translatedText"]) {
-                        $res                            = $this->save($words, $toLang, $fromLang, $buffer["responseData"]["translatedText"]);
-                    }
-                }
+            if (!$res
+                && !empty($transalted = FilemanagerWeb::fileGetContentsJson("https://translation.googleapis.com/language/translate/v2?q=" . urlencode($words) . "&target=" . substr($toLang, 0, 2) . "&source=" . substr($fromLang, 0, 2) . ($this->code ? "&key=" . $this->code : "")))
+                && empty($transalted->error)
+                && !empty($transalted->responseData->translatedText)) {
+                $res                                    = $this->save($words, $toLang, $fromLang, $transalted->responseData->translatedText);
             }
         }
         return $res;

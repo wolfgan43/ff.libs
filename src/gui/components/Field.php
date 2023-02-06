@@ -109,6 +109,11 @@ class Field
     private const TAG_DEFAULT           = 'input';
     private const TEMPLATE_DEFAULT      = 'default';
     private const TEMPLATE_LABEL        = 'label';
+    private const FIELD_DEFAULT_PROPERTIES = [
+        "validator"     => "string",
+        "convert"       => null,
+        "properties"    => null,
+    ];
 
     private static $count               = 0;
     private static $count_multi         = 0;
@@ -558,17 +563,13 @@ class Field
             throw new Exception("Field name already exists: $name", 500);
         }
         self::$names[$name]                 = true;
-
         $this->name                         = $name;
-        $this->control                      = (object) $control;
+        $this->control                      = (object) array_replace(self::FIELD_DEFAULT_PROPERTIES, $control);
         if (empty($this->control->template)) {
             $this->control->template        = self::TEMPLATE_DEFAULT;
         }
         if (empty($this->control->template_class)) {
             $this->control->template_class  = $this->control->template;
-        }
-        if (empty($this->control->convert)) {
-            $this->control->convert         = null;
         }
     }
 
@@ -1072,12 +1073,20 @@ class Field
     }
 
     /**
+     * @param bool $isDisabled
+     * @return $this
+     */
+    public function isDisabled(bool $isDisabled = true) : self
+    {
+        return $this->setAttrNull("disabled", $isDisabled);
+    }
+    /**
      * @param bool $isReadOnly
      * @return $this
      */
     public function isReadOnly(bool $isReadOnly = true) : self
     {
-        return $this->setAttrNull("disabled", $isReadOnly);
+        return $this->setAttrNull("readonly", $isReadOnly);
     }
 
     /**

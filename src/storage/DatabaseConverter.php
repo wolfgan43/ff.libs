@@ -59,19 +59,19 @@ class DatabaseConverter
             $this->prototype            = $schema->prototype;
 
             foreach ($schema->onRead as $field => $hook) {
-                $this->add($this->to, $field, $this->getStructField($this->prototype[$field]), $hook, $schema->properties[$field]);
+                $this->add($this->to, $field, $this->getStructField($this->prototype[$field] ?? $field), $hook, $schema->properties[$field]);
             }
             foreach ($schema->onWrite as $field => $hook) {
-                $this->add($this->in, $field, $this->getStructField($this->prototype[$field]), $hook, $schema->properties[$field]);
+                $this->add($this->in, $field, $this->getStructField($this->prototype[$field] ?? $field), $hook, $schema->properties[$field]);
             }
             foreach ($schema->columns as $field) {
                 $type = $schema->dtd[$field];
 
                 if (isset($schema->to[$type])) {
-                    $this->add($this->to, $field, $this->getStructField($this->prototype[$field]), $schema->to[$type]["callback"] ?? $type, array_replace($schema->to[$type], $schema->properties[$field] ?? []));
+                    $this->add($this->to, $field, $this->getStructField($this->prototype[$field] ?? $field), $schema->to[$type]["callback"] ?? $type, array_replace($schema->to[$type], $schema->properties[$field] ?? []));
                 }
                 if (isset($schema->in[$type])) {
-                    $this->add($this->in, $field, $this->getStructField($this->prototype[$field]), $schema->in[$type]["callback"] ?? $type, array_replace($schema->in[$type], $schema->properties[$field] ?? []));
+                    $this->add($this->in, $field, $this->getStructField($this->prototype[$field] ?? $field), $schema->in[$type]["callback"] ?? $type, array_replace($schema->in[$type], $schema->properties[$field] ?? []));
                 }
             }
         }

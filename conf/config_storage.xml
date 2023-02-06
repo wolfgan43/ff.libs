@@ -17,7 +17,7 @@
         <dir    type="gui"      path="[PROJECT_DOCUMENT_ROOT]/controllers/*"                                scan="controllers" />
 
         <dir    type="gui"      path="[PROJECT_DOCUMENT_ROOT]/themes[THEME_PATH]/*"                         scan="views" />
-        <dir    type="gui"      path="[PROJECT_DOCUMENT_ROOT]/themes[THEME_PATH]/email/*"                   scan="email" />
+        <dir    type="gui"      path="[PROJECT_DOCUMENT_ROOT]/themes[THEME_PATH]/notice/*"                  scan="notice" />
         <dir    type="gui"      path="[PROJECT_DOCUMENT_ROOT]/themes[THEME_PATH]/layouts/*"                 scan="layouts" />
 
         <dir    type="gui"      path="[PROJECT_DOCUMENT_ROOT]/themes[THEME_PATH]/assets/dist/audio/*"       scan="audio" />
@@ -31,20 +31,20 @@
 
 
         <!-- Libbase -->
-        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/src/gui/controllers/*"             scan="controllers" />
+        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/src/gui/controllers/*"                            scan="controllers" />
 
-        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/views/*"                    scan="views" />
-        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/email/*"                    scan="email" />
-        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/layouts/*"                  scan="layouts" />
+        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/views/*"                                   scan="views" />
+        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/notice/*"                                  scan="notice" />
+        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/layouts/*"                                 scan="layouts" />
 
-        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/assets/dist/audio/*"        scan="audio" />
-        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/assets/dist/css/*"          scan="css" />
-        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/assets/dist/fonts/*"        scan="fonts" />
-        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/assets/dist/images/*"       scan="images" />
-        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/assets/dist/js/*"           scan="js" />
-        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/assets/dist/video/*"        scan="video" />
+        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/assets/dist/audio/*"                       scan="audio" />
+        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/assets/dist/css/*"                         scan="css" />
+        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/assets/dist/fonts/*"                       scan="fonts" />
+        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/assets/dist/images/*"                      scan="images" />
+        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/assets/dist/js/*"                          scan="js" />
+        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/assets/dist/video/*"                       scan="video" />
 
-        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/widgets/*"                  scan="widgets" />
+        <dir    type="gui"      path="[LIBS_PATH]/ff/libs/themes/widgets/*"                                 scan="widgets" />
 
         <dir    type="app"      name="uploads"      path="/uploads"                                         writable="true" />
 

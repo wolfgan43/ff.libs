@@ -88,8 +88,8 @@ class Orm extends Mappable
     protected $collection                                                                   = null;
     protected $main_table                                                                   = null;
 
-    protected $connectors                                                                   = array();
-    protected $adapters                                                                     = array();
+    protected $connectors                                                                   = [];
+    protected $adapters                                                                     = [];
 
     protected $struct                                                                       = null;
     protected $relationship                                                                 = null;
@@ -109,12 +109,12 @@ class Orm extends Mappable
      * @var OrmQuery[][]
      */
     private $subs                                                                           = null;
-    private $rev                                                                            = array();
-    private $rel                                                                            = array();
-    private $rel_done                                                                       = array();
+    private $rev                                                                            = [];
+    private $rel                                                                            = [];
+    private $rel_done                                                                       = [];
 
-    private $result                                                                         = array();
-    private $result_keys                                                                    = null;
+    private $result                                                                         = [];
+    private $result_keys                                                                    = [];
 
     /**
      * @var Schema
@@ -554,6 +554,7 @@ class Orm extends Mappable
             }
             $this->throwRunnerSubs();
             $this->throwRunnerMain($limit, $offset, $calc_found_rows);
+            while($this->throwRunnerSubs() > 0);
         }
     }
 
@@ -630,7 +631,7 @@ class Orm extends Mappable
             $thisTable                                                                      = $table;
             $aliasTable                                                                     = $data->def->table[self::TALIAS];
             $this->result[$thisTable]                                                       = $regs[self::RESULT];
-            $this->result_keys[$thisTable]                                                  = $regs[self::INDEX]    ?? null;
+            $this->result_keys[$thisTable]                                                  = $regs[self::INDEX]    ?? [];
             if (!empty($data->def->relationship)) {
                 foreach ($data->def->relationship as $ref => $relation) {
                     unset($whereRef);
@@ -781,7 +782,7 @@ class Orm extends Mappable
             $count                                                                          = $regs[self::COUNT];
             if (!empty($regs[self::RESULT])) {
                 $this->result[$data->def->mainTable]                                        = $regs[self::RESULT];
-                $this->result_keys[$data->def->mainTable]                                   = $regs[self::INDEX]    ?? null;
+                $this->result_keys[$data->def->mainTable]                                   = $regs[self::INDEX]    ?? [];
                 $count                                                                      = $regs[self::COUNT];
             }
         } else {
@@ -846,7 +847,10 @@ class Orm extends Mappable
             if (is_array($regs)) {
                 $this->setKeyRelationship($data, $key_name, array_column($regs[self::INDEX], $key_name), $controller);
             } else {
+                $this->cacheRequest(self::ACTION_INSERT_UNIQUE, [$data->insert]);
                 $regs                                                                       = $storage->insert($data->insert, $data->def->table[self::TNAME]);
+                $this->cacheUpdate();
+
                 if (is_array($regs)) {
                     $insert_key                                                             = $regs[self::INDEX_PRIMARY][$key_name];
                 }
@@ -855,7 +859,9 @@ class Orm extends Mappable
             /**
              * Insert
              */
+            $this->cacheRequest(self::ACTION_INSERT, [$data->insert]);
             $regs                                                                           = $storage->insert($data->insert, $data->def->table[self::TNAME]);
+            $this->cacheUpdate();
 
             if (is_array($regs)) {
                 $insert_key                                                                 = $regs[self::INDEX_PRIMARY][$key_name];
@@ -895,13 +901,19 @@ class Orm extends Mappable
             /**
              * updateAll
              */
+            $this->cacheRequest(self::ACTION_UPDATE, [$data->set, $data->where]);
             $regs                                                                           = $storage->update($data->set, $data->where, $data->def->table[self::TNAME]);
+            $this->cacheUpdate();
+
             $update_key                                                                     = $regs[self::INDEX_PRIMARY][$key_name];
         } elseif (empty($data->insert) && !empty($data->set) && !empty($data->where)) {
             /**
              * update
              */
+            $this->cacheRequest(self::ACTION_UPDATE, [$data->set, $data->where]);
             $regs                                                                           = $storage->update($data->set, $data->where, $data->def->table[self::TNAME]);
+            $this->cacheUpdate();
+
             $update_key                                                                     = $regs[self::INDEX_PRIMARY][$key_name];
         } elseif (empty($data->insert) && empty($data->set) && !empty($data->where)) {
             /**
@@ -922,9 +934,7 @@ class Orm extends Mappable
             }
 
             $this->cacheRequest(self::ACTION_DELETE, [$data->where]);
-
             $regs                                                                           = $storage->delete($data->where, $data->def->table[self::TNAME]);
-
             $this->cacheUpdate();
 
             $delete_key                                                                     = $regs[self::INDEX_PRIMARY][$key_name];
@@ -932,12 +942,15 @@ class Orm extends Mappable
             /**
              * UpSert
              */
+            $this->cacheRequest(self::ACTION_WRITE, [$data->where, $data->set, $data->insert]);
             $regs                                                                           = $storage->upsert(
                 $data->insert,
                 $data->set,
                 $data->where,
                 $data->def->table[self::TNAME]
             );
+            $this->cacheUpdate();
+
             $insert_key                                                                     = $regs[self::INDEX_PRIMARY][$key_name];
         }
 
@@ -1105,7 +1118,7 @@ class Orm extends Mappable
      */
     private function getResult() : OrmResults
     {
-        return new OrmResults($this->count, $this->result[$this->main_table] ?? null, $this->result_keys, $this->main_table, $this->main->def->key_primary, $this->map_class);
+        return new OrmResults($this->count, $this->result[$this->main_table] ?? [], $this->result_keys, $this->main_table, $this->main->def->key_primary, $this->map_class);
     }
 
     /**
@@ -1322,7 +1335,7 @@ class Orm extends Mappable
     private static function whereBuilder(OrmQuery &$ref, array $keys, string $field) : void
     {
         if (empty($ref->where)) {
-            $ref->where                                                                     = array();
+            $ref->where                                                                     = [];
         }
 
         if (!empty($keys) && empty($ref->where[$ref->def->key_primary])) {
@@ -1350,13 +1363,13 @@ class Orm extends Mappable
 
     private function clearResult() : void
     {
-        $this->rev                                                          = array();
-        $this->rel                                                          = array();
-        $this->rel_done                                                     = array();
+        $this->rev                                                          = [];
+        $this->rel                                                          = [];
+        $this->rel_done                                                     = [];
         $this->main                                                         = null;
-        $this->subs                                                         = array();
-        $this->result                                                       = array();
-        $this->result_keys                                                  = null;
+        $this->subs                                                         = [];
+        $this->result                                                       = [];
+        $this->result_keys                                                  = [];
         $this->count                                                        = 0;
         $this->services_by_data                                             = null;
     }

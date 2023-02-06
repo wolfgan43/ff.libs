@@ -25,6 +25,7 @@
  */
 namespace ff\libs\security;
 
+use ff\libs\Debug;
 use ff\libs\dto\DataError;
 use ff\libs\Env;
 use ff\libs\Kernel;
@@ -40,6 +41,7 @@ class Validator
 {
     public const REQUEST_UPLOAD_PARAM_NAME                  = "files";
     private const ERROR_NO_BASE64                           = ' is not a valid base64.';
+    private const ERROR_NO_JSON                             = 'invalid json: ';
 
     private const MEMORY_LIMIT_REQUEST                      = 11;
     private const MEMORY_LIMIT_BASE64                       = 4;
@@ -62,7 +64,10 @@ class Validator
                                                                     ''  => false,
                                                                     0   => false,
                                                                     '0' => false,
-                                                                ]
+                                                                ],
+                                                                "url"   => [
+                                                                    ''  => null
+                                                                ],
                                                             ];
     private const RULES                                     = array(
                                                                 "bool"              => array(
@@ -141,6 +146,12 @@ class Validator
                                                                     "callback"      => '\ff\libs\security\Validator::checkSpecialChars',
                                                                     "length"        => 256
                                                                 ),
+                                                                "stringhtml"        => array(
+                                                                    "filter"        => FILTER_UNSAFE_RAW,
+                                                                    "flags"         => null,
+                                                                    "options"       => null,
+                                                                    "length"        => 256
+                                                                ),
                                                                 "array"             => array(
                                                                     "filter"        => FILTER_UNSAFE_RAW,
                                                                     "flags"         => FILTER_REQUIRE_ARRAY | FILTER_NULL_ON_FAILURE | FILTER_FLAG_STRIP_LOW,
@@ -153,6 +164,13 @@ class Validator
                                                                     "flags"         => FILTER_REQUIRE_ARRAY | FILTER_NULL_ON_FAILURE,
                                                                     "options"       => null,
                                                                     "length"        => 16
+                                                                ),
+                                                                "arrayhtml"         => array(
+                                                                    "filter"        => FILTER_UNSAFE_RAW,
+                                                                    "flags"         => FILTER_REQUIRE_ARRAY | FILTER_NULL_ON_FAILURE ,
+                                                                    "options"       => null,
+                                                                    "callback"      => null,
+                                                                    "length"        => 128000
                                                                 ),
                                                                 "encode"            => array(
                                                                     "filter"        => FILTER_SANITIZE_ENCODED,
@@ -176,10 +194,10 @@ class Validator
                                                                     "length"        => 128000
                                                                 ),
                                                                 "texthtml"          => array(
-                                                                    "filter"        => FILTER_CALLBACK,
+                                                                    "filter"        => FILTER_UNSAFE_RAW,
                                                                     "flags"         => null,
-                                                                    "options"       => "nl2br",
-                                                                    "normalize"     => true,
+                                                                    "options"       => null,
+                                                                    "callback"      => null,
                                                                     "length"        => 128000
                                                                 ),
                                                                 "timestamp"         => array(
@@ -307,8 +325,12 @@ class Validator
     {
         if ($what === null) {
             return new DataError();
+        } elseif(is_array($what) || is_object($what) || is_resource($what)) {
+            $what = self::EXCEPTIONS[$type]["array"] ?? $what;
         } elseif (isset(self::EXCEPTIONS[$type][$what])) {
             $what = self::EXCEPTIONS[$type][$what];
+        } elseif (isset(self::EXCEPTIONS[$type]) && array_key_exists((string) $what, self::EXCEPTIONS[$type])) {
+            return new DataError();
         }
 
         if (!array_key_exists($type, self::RULES)) {
@@ -345,9 +367,13 @@ class Validator
 
             if ($rule->filter === FILTER_CALLBACK) {
                 $error                                  = !$validation;
-            } elseif ($type == "array"
+            } elseif (
+                $type == "array"
                 || $type == "string"
                 || $type == "text"
+                || $type == "arrayhtml"
+                || $type == "stringhtml"
+                || $type == "texthtml"
                 || $rule->filter === FILTER_VALIDATE_BOOLEAN
                 || $rule->filter === FILTER_VALIDATE_INT
                 || $rule->filter === FILTER_VALIDATE_FLOAT
@@ -391,7 +417,7 @@ class Validator
      */
     private static function isArrayAllowed($what, string $type) : ?string
     {
-        return (is_array($what) && ($type != "array" && $type != "arrayint")
+        return (is_array($what) && ($type != "array" && $type != "arrayint" && $type != "arrayhtml")
             ? self::getContextName() . " Cannot be an Array."
             : null
         );
@@ -449,7 +475,7 @@ class Validator
                 settype($value, $type);
                 // no break
             default:
-                if (!is_array($value) && !is_object($value)) {
+                if (!empty($value) && !is_array($value) && !is_object($value)) {
                     $value          = urldecode($value);
                 }
         }
@@ -467,16 +493,29 @@ class Validator
     /**
      * @param string $string
      * @param bool $toArray
-     * @return array|stdClass|null
+     * @return array|stdClass
      * @todo da tipizzare
      */
     public static function jsonDecode(string $string, bool $toArray = true)
+    {
+        return self::jsonDecodeRaw($string, $toArray) ?? ($toArray ? [] : new stdClass());
+    }
+
+    /**
+     * @param string $string
+     * @param bool $toArray
+     * @return array|stdClass|null
+     * @todo da tipizzare
+     */
+    private static function jsonDecodeRaw(string $string, bool $toArray = true)
     {
         $res                                                            = null;
         if (substr($string, 0, 1) == "{" || substr($string, 0, 1) == "[") {
             $json                                                       = json_decode($string, $toArray);
             if (json_last_error() == JSON_ERROR_NONE) {
                 $res                                                    = $json;
+            } else {
+                Debug::set($string, self::ERROR_NO_JSON);
             }
         }
 
@@ -585,7 +624,7 @@ class Validator
     private static function &convertJson(string $value) : ?array
     {
         if (!isset(self::$conversion)) {
-            self::$conversion                                               = self::jsonDecode($value);
+            self::$conversion                                               = self::jsonDecodeRaw($value);
         }
 
         return self::$conversion;

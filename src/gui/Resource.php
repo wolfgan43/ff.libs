@@ -51,7 +51,7 @@ class Resource extends Mappable implements Dumpable
     public const TYPE_ASSET_FONTS               = Constant::RESOURCE_ASSET_FONTS;
     public const TYPE_ASSET_IMAGES              = Constant::RESOURCE_ASSET_IMAGES;
 
-    public const TYPE_EMAIL                     = Constant::RESOURCE_EMAIL;
+    public const TYPE_NOTICE                    = Constant::RESOURCE_NOTICE;
     public const TYPE_LAYOUTS                   = Constant::RESOURCE_LAYOUTS;
     public const TYPE_VIEWS                     = Constant::RESOURCE_VIEWS;
     public const TYPE_CONTROLLERS               = Constant::RESOURCE_CONTROLLERS;
@@ -126,10 +126,7 @@ class Resource extends Mappable implements Dumpable
             self::$singleton = new Resource();
         }
 
-        return (isset(self::$singleton->resources[$type])
-            ? self::$singleton->resources[$type]
-            : array()
-        );
+        return self::$singleton->resources[$type] ?? [];
     }
 
     /**
@@ -218,7 +215,7 @@ class Resource extends Mappable implements Dumpable
                                                     self::TYPE_ASSET_JS         => [],
                                                     self::TYPE_ASSET_FONTS      => [],
                                                     self::TYPE_ASSET_IMAGES     => [],
-                                                    self::TYPE_EMAIL            => [],
+                                                    self::TYPE_NOTICE           => [],
                                                     self::TYPE_LAYOUTS          => [],
                                                     self::TYPE_VIEWS            => [],
                                                     self::TYPE_CONTROLLERS      => [],

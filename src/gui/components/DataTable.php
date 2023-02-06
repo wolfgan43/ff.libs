@@ -31,9 +31,11 @@ use ff\libs\Hook;
 use ff\libs\international\Translator;
 use ff\libs\Kernel;
 use ff\libs\microservice\Api;
+use ff\libs\Response;
 use ff\libs\storage\dto\OrmResults;
 use ff\libs\storage\Model;
 use ff\libs\Exception;
+use ff\libs\util\ServerManager;
 
 /**
  * Class DataTable
@@ -41,6 +43,8 @@ use ff\libs\Exception;
  */
 class DataTable
 {
+    use ServerManager;
+
     /**
      * Token Class
      */
@@ -229,24 +233,14 @@ class DataTable
      */
     private $hooks                      = null;
 
+    private static $xhrComponent        = null;
+
     /**
-     * @param string $model
-     * @return DataTableResponse
+     * @param string $component
      */
-    public static function xhr(string $model): DataTableResponse
+    public static function xhr(string $component): void
     {
-        $dt = new static();
-
-        $component = explode(":", $model);
-        $dataSource = array_pop($component);
-        if(empty($component)) {
-            $dt->id = $dataSource;
-        } else {
-            $dt->id = implode(":", $component);
-            $dt->dataSource = $dataSource;
-        }
-
-        return $dt->dataTable();
+        static::$xhrComponent = $component;
     }
 
     /**
@@ -298,12 +292,16 @@ class DataTable
      */
     public function sourceArray(array $data) : self
     {
+        static $count                   = 1;
+
         /**
          * @todo da definire il funzionamento
          */
 
         $this->dataSource               = self::DATA_SOURCE_ARRAY;
         $this->records                  = $data;
+        $this->id                       = $count;
+        $count++;
 
         return $this;
     }
@@ -357,6 +355,9 @@ class DataTable
     public function display() : DataHtml
     {
         $this->dataTable                = $this->dataTable();
+        if ($this->isXhr() && static::$xhrComponent == $this->id) {
+            Response::send($this->dataTable);
+        }
 
         $this->pages                    = ceil($this->dataTable->recordsFiltered / $this->length);
         $this->page                     = floor($this->start / $this->length) + 1;
@@ -542,7 +543,7 @@ class DataTable
      */
     protected function getName() : string
     {
-        return static::class . ":" . $this->id . ":" . $this->dataSource;
+        return static::class . ":" . $this->id;
     }
 
     /**
@@ -588,6 +589,9 @@ class DataTable
         }
         if (empty($dataTable->keys) && !empty($this->record_key)) {
             $dataTable->keys            = $dataTable->getColumn($this->record_key);
+        }
+        if (empty($this->columns)) {
+            $this->columns              = $this->setColumns($dataTable->properties ?? []);
         }
         return $dataTable;
     }

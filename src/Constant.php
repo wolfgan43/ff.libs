@@ -64,8 +64,8 @@ class Constant
     /**
      * Reference struct folder MVC
      */
-    const RESOURCE_EMAIL                    = "email";
-    const RESOURCE_EMAIL_IMAGES                 = "images";
+    const RESOURCE_NOTICE                   = "notice";
+    const RESOURCE_NOTICE_IMAGES                = "images";
     const RESOURCE_LAYOUTS                  = "layouts";
     const RESOURCE_VIEWS                    = "views";
     const RESOURCE_CONTROLLERS              = "controllers";
@@ -148,13 +148,13 @@ class Constant
     const SMTP_PORT                         = 25;
     const SMTP_SECURE                       = false;
 
-    const FROM_EMAIL                        = 'noreply@' . self::APPNAME;
-    const FROM_NAME                         = self::APPNAME;
-    const DEBUG_EMAIL                       = null;
+    const SMTP_FROM_EMAIL                   = 'noreply@' . self::APPNAME;
+    const SMTP_FROM_NAME                    = self::APPNAME;
+    const SMTP_DEBUG_EMAIL                  = null;
 
     const SMS_SID                           = null;
     const SMS_TOKEN                         = null;
-    const SMS_FROM                          = self::APPNAME;
+    const SMS_FROM_NUMBER                   = null;
 
     /**
      * Access Credential
@@ -184,9 +184,20 @@ class Constant
      */
 
     /**
+     * @var string[PhpMailer]
+     */
+    const NOTICE_SMTP_DRIVER                = "PhpMailer";
+
+    /**
      * @var string[Twilio]
      */
-    const MESSENGER_ADAPTER                 = "Twilio";
+    const NOTICE_SMS_DRIVER                 = "Twilio";
+
+    /**
+     * @var string[Firebase]
+     */
+    const NOTICE_PUSH_DRIVER                = "Firebase";
+
     /**
      * @var string[Google|Translated|Transltr]
      */

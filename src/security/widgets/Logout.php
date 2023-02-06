@@ -54,7 +54,7 @@ class Logout extends Widget
             $view = $this->view();
             $config = $view->getConfig();
 
-            $this->displayUser($view, $config);
+            $this->displayUser($view);
             $view->assign("logout_url", $this->getWebUrl($config->logout_path));
 
             $this->setError($view);
@@ -87,6 +87,15 @@ class Logout extends Widget
             $config = $this->getConfig();
             $this->redirect($this->request->redirect ?? $this->getWebUrl($config->login_path));
         }
+    }
+
+    protected function disconnect() : void
+    {
+        if (User::isLogged()) {
+            User::logout();
+        }
+
+        $this->redirect($this->request->redirect ?? DIRECTORY_SEPARATOR);
     }
 
     protected function put(): void

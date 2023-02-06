@@ -47,6 +47,7 @@ class MySqli extends DatabaseDriver
 
     public const ENGINE             = "sql";
     protected const PREFIX          = "MYSQL_DATABASE_";
+    private const WAIT_TIMEOUT      = 28000; //28800
 
     public $charset			        = "utf8";
 
@@ -56,6 +57,7 @@ class MySqli extends DatabaseDriver
      * @var \mysqli|null
      */
     protected $link_id              = null;
+    private $link_lifetime          = null;
     /**
      * @var mysqli_result|null
      */
@@ -75,6 +77,7 @@ class MySqli extends DatabaseDriver
             @mysqli_kill($link, mysqli_thread_id($link));
             @mysqli_close($link);
         }
+        self::$links = [];
     }
 
     /**
@@ -92,6 +95,7 @@ class MySqli extends DatabaseDriver
             }
         }
         $this->link_id      = null;
+        $this->link_lifetime= null;
         $this->errno        = 0;
         $this->error        = "";
     }
@@ -177,6 +181,7 @@ class MySqli extends DatabaseDriver
             $this->link_id              =& self::$links[$this->dbKey];
 
             mysqli_options($this->link_id, MYSQLI_OPT_INT_AND_FLOAT_NATIVE, true);
+            $this->link_lifetime = time();
         }
 
         return is_object($this->link_id);
@@ -267,12 +272,23 @@ class MySqli extends DatabaseDriver
      */
     public function delete(DatabaseQuery $query) : bool
     {
+        if (empty($query->where)) {
+            $this->errorHandler("where not set");
+        }
+
         $this->execute(
             "DELETE FROM " .  $query->from . "  
             WHERE " . $query->where
         );
 
         return (bool) ($this->buffered_affected_rows = @mysqli_affected_rows($this->link_id));
+    }
+
+    private function checkLinkWaitTimeout() : void
+    {
+        if ($this->link_lifetime !== null && time() - $this->link_lifetime >= self::WAIT_TIMEOUT) {
+            $this->cleanup();
+        }
     }
 
     /**
@@ -283,6 +299,7 @@ class MySqli extends DatabaseDriver
      */
     private function execute(string $query_string) : void
     {
+        $this->checkLinkWaitTimeout();
         if (!$this->link_id && !$this->connect()) {
             return;
         }
@@ -359,6 +376,7 @@ class MySqli extends DatabaseDriver
      */
     public function query($query) : bool
     {
+        $this->checkLinkWaitTimeout();
         if (!$this->link_id && !$this->connect()) {
             return false;
         }
@@ -422,6 +440,7 @@ class MySqli extends DatabaseDriver
      */
     public function multiQuery(array $queries) : ?array
     {
+        $this->checkLinkWaitTimeout();
         if (!$this->link_id && !$this->connect()) {
             return null;
         }
@@ -584,6 +603,7 @@ class MySqli extends DatabaseDriver
     /**
      * @param string $type
      * @param array $Array
+     * @param bool $castResult
      * @return string
      */
     protected function toSqlArray(string $type, array $Array, bool $castResult = false): string

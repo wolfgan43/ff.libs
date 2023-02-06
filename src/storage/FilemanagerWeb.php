@@ -244,10 +244,10 @@ class FilemanagerWeb implements Dumpable
      * @param string $path
      * @param resource|null $context
      * @param array|null $headers
-     * @return string|null
+     * @return string
      * @throws Exception
      */
-    private static function loadFile(string $path, $context = null, array &$headers = null) : ?string
+    private static function loadFile(string $path, $context = null, array &$headers = null) : string
     {
         if (Validator::is($path, $path, "url")->isError() && !Dir::checkDiskPath($path)) {
             return "";
@@ -256,7 +256,7 @@ class FilemanagerWeb implements Dumpable
         $content                            = @file_get_contents($path, false, $context);
         if ($content === false) {
             throw new Exception(error_get_last()["message"] ?? self::ERROR_FILE_FORBIDDEN, 406);
-        } elseif(empty($content) && strpos($http_response_header[0] ?? "", " 204 ") === false) {
+        } elseif (empty($content) && strpos($http_response_header[0] ?? "", " 204 ") === false) {
             throw new Exception(self::ERROR_FILE_EMPTY . " " . $http_response_header[0], 406);
         }
 

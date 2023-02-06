@@ -42,6 +42,7 @@ class DataTableResponse extends DataResponse
     public $draw                = 0;
     public $recordsTotal        = 0;
     public $recordsFiltered     = 0;
+    public $recordsDisplayed    = 0;
 
     private $key                = null;
 
@@ -51,8 +52,9 @@ class DataTableResponse extends DataResponse
 
         $this->key              = $key;
         $this->draw             = 1;
-        $this->recordsTotal     = count($data);
-        $this->recordsFiltered  = $this->recordsTotal;
+        $this->recordsDisplayed = count($data);
+        $this->recordsFiltered  = $this->recordsDisplayed;
+        $this->recordsTotal     = $this->recordsDisplayed;
     }
 
     /**
@@ -62,11 +64,12 @@ class DataTableResponse extends DataResponse
     {
         $res = [
             "draw"              => $this->draw,
-            "data"              => $this->data,
             "recordsTotal"      => $this->recordsTotal,
             "recordsFiltered"   => $this->recordsFiltered,
+            "recordsDisplayed"  => $this->recordsDisplayed,
             "error"             => $this->error,
-            "status"            => $this->status
+            "status"            => $this->status,
+            "data"              => $this->data
         ];
 
         if (!empty($this->keys)) {
@@ -146,6 +149,16 @@ class DataTableResponse extends DataResponse
         $this->data = array_splice($this->data, $start, $length);
 
         return $this;
+    }
+
+    /**
+     * @param callable $callback
+     */
+    public function each(callable $callback) : void
+    {
+        foreach ($this->data as $i => &$data) {
+            $callback($data, $this->keys[$i] ?? null);
+        }
     }
 
     /**

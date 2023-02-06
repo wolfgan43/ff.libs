@@ -627,7 +627,7 @@ abstract class Controller
         if ($this->isXhr && !empty($this->request->component)) {
             $component = explode(":", $this->request->component, 2);
             if (class_exists($component[0])) {
-                $this->send($component[0]::xhr($component[1]));
+                $component[0]::xhr($component[1]);
             } else {
                 throw new Exception(self::ERROR_COMPONENT_NOT_IMPLEMENTED, 501);
             }
@@ -842,27 +842,49 @@ abstract class Controller
     }
 
     /**
-     * @param string|null $template
+     * @param string $template
      * @param bool $include_template_assets
      * @return View
      * @throws Exception
      */
-    private function loadView(string $template = null, bool $include_template_assets = true) : View
+    private function loadView(string $template, bool $include_template_assets = true) : View
     {
-        $template_name = (
+        return (
             strpos($template, "<") === false
-            ? $template ?? $this->class_name
-            : $this->class_name
+            ? $this->loadViewFile($template, $include_template_assets)
+            : $this->loadViewContent($template)
         );
+    }
+
+    /**
+     * @param string $template_name
+     * @param bool $include_template_assets
+     * @return View
+     * @throws Exception
+     */
+    private function loadViewFile(string $template_name, bool $include_template_assets = true) : View
+    {
         if (!isset($this->views[$template_name])) {
-            $this->views[$template_name] = (
-                strpos($template, "<") === false
-                ? $this->fetchFile($template_name, $include_template_assets)
-                : $this->fetchContent($template)
-            )->assign($this->assigns);
+            $this->views[$template_name] = $this->fetchFile($template_name, $include_template_assets)
+                ->assign($this->assigns);
         }
 
         return $this->view              =& $this->views[$template_name];
+    }
+
+    /**
+     * @param string $template
+     * @return View
+     * @throws Exception
+     */
+    private function loadViewContent(string $template) : View
+    {
+        if (!isset($this->views[$this->class_name])) {
+            $this->views[$this->class_name] = $this->fetchContent($template)
+                ->assign($this->assigns);
+        }
+
+        return $this->view              =& $this->views[$this->class_name];
     }
 
     /**
@@ -902,7 +924,7 @@ abstract class Controller
      */
     protected function view(string $template_name = null, bool $include_template_assets = true) : View
     {
-        return $this->view ?? $this->loadView($template_name, $include_template_assets);
+        return $this->view ?? $this->loadView($template_name ?? $this->class_name, $include_template_assets);
     }
 
     /**

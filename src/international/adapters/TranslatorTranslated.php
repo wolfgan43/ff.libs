@@ -52,14 +52,12 @@ class TranslatorTranslated extends TranslatorAdapter
             $res                                        = $words;
         } else {
             $res                                        = parent::translate($words, $toLang, $fromLang);
-            if (!$res) {
-                $transalted                             = FilemanagerWeb::fileGetContents("http://api.mymemory.translated.net/get?q=" . urlencode($words) . "&langpair=" . $fromLang . "|" . $toLang . ($this->code ? "&key=" . $this->code : ""));
-                if ($transalted) {
-                    $buffer                             = Validator::jsonDecode($transalted);
-                    if ($buffer["responseStatus"] == 200 && $buffer["responseData"]["translatedText"]) {
-                        $res                            = $this->save($words, $toLang, $fromLang, $buffer["responseData"]["translatedText"]);
-                    }
-                }
+            if (!$res
+                && !empty($transalted = FilemanagerWeb::fileGetContentsJson("http://api.mymemory.translated.net/get?q=" . urlencode($words) . "&langpair=" . $fromLang . "|" . $toLang . ($this->code ? "&key=" . $this->code : "")))
+                && !empty($transalted->responseData->translatedText)
+                && $transalted->responseStatus == 200
+            ) {
+                $res                                    = $this->save($words, $toLang, $fromLang, $transalted->responseData->translatedText);
             }
         }
 

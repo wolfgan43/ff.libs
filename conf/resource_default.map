@@ -86,11 +86,11 @@
         "xml"
       ]
     },
-    "email": {
+    "notice": {
       "flag": 4,
-      "type": "email",
+      "type": "notice",
       "filter": [
-        "html"
+        "tpl"
       ]
     },
     "controllers" : {

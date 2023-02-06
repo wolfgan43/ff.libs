@@ -52,14 +52,10 @@ class TranslatorTransltr extends TranslatorAdapter
             $res                                        = $words;
         } else {
             $res                                        = parent::translate($words, $toLang, $fromLang);
-            if (!$res) {
-                $transalted = FilemanagerWeb::fileGetContents("http://www.transltr.org/api/translate?text=" . urlencode($words) . "&to=" . strtolower(substr($toLang, 0, 2)) . "&from=" . strtolower(substr($fromLang, 0, 2)) . ($this->code ? "&key=" . $this->code : ""));
-                if ($transalted) {
-                    $buffer                             = Validator::jsonDecode($transalted);
-                    if ($buffer["translationText"]) {
-                        $res                            = $this->save($words, $toLang, $fromLang, $buffer["translationText"]);
-                    }
-                }
+            if (!$res
+                && !empty($transalted = FilemanagerWeb::fileGetContentsJson("http://www.transltr.org/api/translate?text=" . urlencode($words) . "&to=" . strtolower(substr($toLang, 0, 2)) . "&from=" . strtolower(substr($fromLang, 0, 2)) . ($this->code ? "&key=" . $this->code : "")))
+                && !empty($transalted->translationText)) {
+                $res                                    = $this->save($words, $toLang, $fromLang, $transalted->translationText);
             }
         }
         return $res;

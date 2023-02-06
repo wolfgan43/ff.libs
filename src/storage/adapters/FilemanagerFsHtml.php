@@ -38,9 +38,9 @@ class FilemanagerFsHtml extends FilemanagerAdapter //todo: da finire
     /**
      * @param string $file_path
      * @param string|null $var
-     * @return array|null
+     * @return array
      */
-    protected function loadFile(string $file_path, string $var = null) : ?array
+    protected function loadFile(string $file_path, string $var = null) : array
     {
         // TODO: Implement load_file() method.
         return [];

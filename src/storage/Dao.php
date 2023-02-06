@@ -66,9 +66,9 @@ class Dao extends OrmItem
     }
 
     /**
-     * @param Model $db
+     * @param array $record
      */
-    protected function onInsert($db): void
+    protected function onInsert(array &$record): void
     {
     }
 
@@ -108,10 +108,10 @@ class Dao extends OrmItem
     }
 
     /**
-     * @param array $storedData
+     * @param array $record
      * @param string $recordKey
      */
-    protected function onUpdate(array $storedData, string $recordKey): void
+    protected function onUpdate(array &$record, string $recordKey): void
     {
         // TODO: Implement onUpdate() method.
     }

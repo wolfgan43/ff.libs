@@ -141,18 +141,18 @@ class UserData extends OrmItem
     }
 
     /**
-     * @param Model $db
+     * @param array $record
      */
-    protected function onInsert($db): void
+    protected function onInsert(array &$record): void
     {
         // TODO: Implement onInsert() method.
     }
 
     /**
-     * @param Model $db
+     * @param array $record
      * @param string $recordKey
      */
-    protected function onUpdate($db, string $recordKey): void
+    protected function onUpdate(array &$record, string $recordKey): void
     {
         // TODO: Implement onUpdate() method.
     }

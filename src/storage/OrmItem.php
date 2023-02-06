@@ -163,15 +163,15 @@ abstract class OrmItem
     abstract protected function onApply($db, string $recordKey = null)              : void;
 
     /**
-     * @param Model $db
+     * @param array $record
      */
-    abstract protected function onInsert($db)                                       : void;
+    abstract protected function onInsert(array &$record)                            : void;
 
     /**
-     * @param array $storedData
+     * @param array $record
      * @param string $recordKey
      */
-    abstract protected function onUpdate(array $storedData, string $recordKey)      : void;
+    abstract protected function onUpdate(array &$record, string $recordKey)         : void;
 
     /**
      * @param Model $db

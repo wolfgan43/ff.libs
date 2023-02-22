@@ -140,10 +140,10 @@ class OrmModel
     }
 
     /**
-     * @return string
+     * @return string|null
      * @throws Exception
      */
-    public function apply() : string
+    public function apply() : ?string
     {
         //$this->fieldConvert($this->data); //@todo da finire
         //$this->verifyRequire($this->data);
@@ -158,7 +158,9 @@ class OrmModel
             $this->relationshipKey                                              = $this->recordKey;
         }
 
-        $this->read([$this->db->schema->collection . "." . $this->db->schema->table . "." . $this->primaryKey => $this->recordKey]);
+        if (!empty($this->recordKey)) {
+            $this->read([$this->db->schema->collection . "." . $this->db->schema->table . "." . $this->primaryKey => $this->recordKey]);
+        }
 
         return $this->recordKey;
     }

@@ -515,6 +515,10 @@ class Response
      */
     public static function httpCode(int $code = null) : int
     {
+        if (Kernel::$Environment::DEBUG && $code > 200 && $code < 300) {
+            $code = 200;
+        }
+
         return ($code
              ? http_response_code($code)
              : http_response_code()

@@ -183,4 +183,12 @@ class UserData extends OrmItem
     {
         // TODO: Implement onSearch() method.
     }
+
+    /**
+     * @param array $fields
+     */
+    protected function onFill(array &$fields): void
+    {
+        // TODO: Implement onFill() method.
+    }
 }

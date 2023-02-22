@@ -151,6 +151,11 @@ abstract class OrmItem
     abstract protected function onSearch(array &$record, array $db_record)          : void;
 
     /**
+     * @param array $fields
+     */
+    abstract protected function onFill(array &$fields)                              : void;
+
+    /**
      * @param Model $db
      * @param string $recordKey
      */
@@ -545,6 +550,8 @@ abstract class OrmItem
      */
     private function fillByArray(array $array) : void
     {
+        $this->onFill($array);
+
         $this->fillOneToOne($array);
         $this->fillOneToMany($array);
 

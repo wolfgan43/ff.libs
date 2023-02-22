@@ -68,6 +68,7 @@ abstract class Controller
     protected const TPL_ENGINE_BLADE            = "Blade";
 
     private const CONTROLLER_PREFIX             = "controller";
+    private const CONTROLLER_TYPE_NOLIBS        = "nolibs";
 
     private const TPL_NORMALIZE                 = ['../', '.tpl'];
 
@@ -188,7 +189,7 @@ abstract class Controller
         $adapter                                = static::CONTROLLER_ENGINE ?? Kernel::$Environment::CONTROLLER_ADAPTER;
         $bucket                                 = $adapter . DIRECTORY_SEPARATOR . static::CONTROLLER_TYPE;
         if (!isset(self::$controllers[$bucket])) {
-            self::$controllers[$bucket]        = $this->setAdapter($adapter, [$this->script_path, $page->layout_type ?? static::CONTROLLER_TYPE,  $page->layout ?? static::LAYOUT]);
+            self::$controllers[$bucket]        = $this->setAdapter($adapter, [$this->script_path, $page->layout_type ?? static::CONTROLLER_TYPE ?? self::CONTROLLER_TYPE_NOLIBS,  $page->layout ?? static::LAYOUT]);
         }
 
         $this->adapter                          =& self::$controllers[$bucket];

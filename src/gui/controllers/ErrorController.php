@@ -36,7 +36,9 @@ use ff\libs\Exception;
  */
 class ErrorController extends Controller
 {
-    private $email_support      = null;
+    protected const CONTROLLER_TYPE = "nolibs";
+
+    private $email_support          = null;
 
     /**
      * @param string $email
@@ -56,10 +58,8 @@ class ErrorController extends Controller
     {
         $this->addStylesheet("error");
 
-        $error = Translator::getWordByCodeCached($this->error);
-
         $errorView = $this->view()
-            ->assign("title", $error ?? Translator::getWordByCodeCached(Response::getStatusMessage($this->http_status_code)))
+            ->assign("title", Translator::getWordByCodeCached($this->error) ?: Translator::getWordByCodeCached(Response::getStatusMessage($this->http_status_code)))
             ->assign("error_code", $this->http_status_code);
 
         if ($this->email_support) {
@@ -69,7 +69,7 @@ class ErrorController extends Controller
 
         $this
             ->assign(self::TPL_VAR_DEFAULT, $errorView)
-            ->debug($error);
+            ->debug($this->error);
     }
 
     /**

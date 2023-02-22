@@ -115,4 +115,12 @@ class Dao extends OrmItem
     {
         // TODO: Implement onUpdate() method.
     }
+
+    /**
+     * @param array $fields
+     */
+    protected function onFill(array &$fields): void
+    {
+        // TODO: Implement onFill() method.
+    }
 }

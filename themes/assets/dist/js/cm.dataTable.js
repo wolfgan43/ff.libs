@@ -40,12 +40,16 @@ cm.dataTable = (function () {
             }
         }
 
-        function url(name, value) {
+        function url(name, value, resetPage = false) {
             let url = new URL(window.location);
             if(value) {
                 url.searchParams.set(name, value);
             } else {
                 url.searchParams.delete(name);
+            }
+
+            if(resetPage) {
+                url.searchParams.delete("page");
             }
             return url.toString();
         }
@@ -307,10 +311,10 @@ cm.dataTable = (function () {
 
 
         addListener("SELECT[name='length']", "change", function(self) {
-            return url("length", self.value);
+            return url("length", self.value, true);
         });
         addListener("INPUT[name='search']", "change", function(self) {
-            return url("search", self.value);
+            return url("search", self.value, true);
         });
         addListener("THEAD TH a", "click", function(self) {
             return self.href;

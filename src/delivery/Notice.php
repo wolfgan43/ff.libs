@@ -51,14 +51,12 @@ class Notice
 
     protected const IMAGE_ALLOWED                           = ["jpg", "png", "svg", "gif"];
 
-    private static $singleton                               = null;
     private static $exTime                                  = 0;
     private $channel                                        = null;
     private $lang                                           = null;
 
     private $title                                          = "";
     private $params                                         = [];
-    private $from                                           = [];
     private $actions                                        = [];
 
 
@@ -76,10 +74,7 @@ class Notice
      */
     public static function getInstance(string $noticeAdapter) : self
     {
-        if (self::$singleton === null) {
-            self::$singleton                                = new Notice($noticeAdapter);
-        }
-        return self::$singleton;
+        return new Notice($noticeAdapter);
     }
 
     /**

@@ -284,7 +284,7 @@ class MongoDB extends DatabaseDriver
             switch ($query->action) {
                 case self::ACTION_READ:
                     if (!empty($query->select)) {
-                        $query->options["projection"]                       = $query->select;
+                        $query->options["projection"]                       = array_fill_keys($query->select, 1);
                     }
                     if (!empty($query->sort)) {
                         $query->options["sort"]                             = $query->sort;

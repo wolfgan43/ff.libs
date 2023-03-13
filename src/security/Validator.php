@@ -289,7 +289,7 @@ class Validator
                                                                 Request::METHOD_PUT     => 10240,
                                                                 Request::METHOD_PATCH   => 10240,
                                                                 Request::METHOD_POST    => 102400,
-                                                                Request::METHOD_HEAD    => 2048,
+                                                                Request::METHOD_HEAD    => 4096,
                                                                 "DEFAULT"               => 128,
                                                                 "FILES"                 => 1024000
                                                             );

@@ -62,7 +62,7 @@ class Convert
      * @param $value
      * @return object|array
      */
-    public static function json($value) : object|array
+    public static function json($value)
     {
         return json_decode($value);
     }

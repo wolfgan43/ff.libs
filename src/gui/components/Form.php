@@ -53,7 +53,7 @@ class Form
     private string $id;
     private ?Model $model;
     private string $recordKey;
-    private int|string $recordValue;
+    private $recordValue;
 
     private array $record;
     private array $fields;

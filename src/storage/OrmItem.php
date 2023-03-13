@@ -563,7 +563,7 @@ abstract class OrmItem
      * @return OrmItem
      * @throws Exception
      */
-    public function fill(array|object $fields = null) : self
+    public function fill($fields = null) : self
     {
         if (!empty($fields)) {
             if (is_array($fields)) {

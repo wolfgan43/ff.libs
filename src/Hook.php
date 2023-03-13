@@ -98,7 +98,7 @@ class Hook implements Configurable, Dumpable
      * @param string|callable $func
      * @param int $priority
      */
-    public static function register(string $name, string|callable $func, int $priority = self::HOOK_PRIORITY_NORMAL) : void
+    public static function register(string $name, $func, int $priority = self::HOOK_PRIORITY_NORMAL) : void
     {
         self::addCallback($name, $func, $priority);
     }
@@ -109,7 +109,7 @@ class Hook implements Configurable, Dumpable
      * @param string|callable $func
      * @param int $priority
      */
-    public static function registerOnce(string $name, string|callable $func, int $priority = self::HOOK_PRIORITY_NORMAL) : void
+    public static function registerOnce(string $name, $func, int $priority = self::HOOK_PRIORITY_NORMAL) : void
     {
         self::addCallback($name, $func, $priority, true);
     }
@@ -120,7 +120,7 @@ class Hook implements Configurable, Dumpable
      * @param int $priority
      * @param bool $override
      */
-    private static function addCallback($name, string|callable $func, int $priority = self::HOOK_PRIORITY_NORMAL, bool $override = false) : void
+    private static function addCallback($name, $func, int $priority = self::HOOK_PRIORITY_NORMAL, bool $override = false) : void
     {
         if (!isset(self::$events[$name])) {
             self::$events[$name]                                                    = [];

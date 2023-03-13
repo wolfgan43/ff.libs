@@ -657,7 +657,7 @@ class Config implements Dumpable
                 if ($key != DIRECTORY_SEPARATOR && preg_match_all('#/{([^/]*)}#i', $key, $vars)) {
                     $regexp                                                             = '#^' . str_replace($vars[0], "(?:/([^/]+))?", $key);
                     $regexp                                                             .= (
-                        str_ends_with($regexp, '?')
+                        substr( $regexp, -1 ) === '?'
                         ? '#i'
                         : '$#i'
                     );

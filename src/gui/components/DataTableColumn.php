@@ -139,7 +139,7 @@ class DataTableColumn
      * @param string|callable $tpl
      * @return $this
      */
-    public function tpl(string|callable $tpl) : self
+    public function tpl($tpl) : self
     {
         $this->tplValue = (
         is_callable($tpl)

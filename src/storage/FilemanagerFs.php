@@ -63,7 +63,7 @@ class FilemanagerFs
      * @return stdClass|array
      * @throws Exception
      */
-    public static function fileGetContentsJson(string $file_path, bool $toArray = false) : stdClass|array
+    public static function fileGetContentsJson(string $file_path, bool $toArray = false)
     {
         return Validator::jsonDecode(self::fileGetContents($file_path), $toArray);
     }

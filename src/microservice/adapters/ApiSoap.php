@@ -139,7 +139,7 @@ class ApiSoap extends ApiAdapter
     /**
      * @return array|string|null
      */
-    protected function getMockResponse() : array|string|null
+    protected function getMockResponse()
     {
 
         $mock = parent::getMockResponse();

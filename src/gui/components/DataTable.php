@@ -675,7 +675,7 @@ class DataTable
 
         $sort = null;
         foreach ($this->sort as $i => $dir) {
-            if ($sort_field = ($schema->prototype[$this->columns[$i]?->getSortID()] ?? null)) {
+            if ($sort_field = ($schema->prototype[$this->columns[$i]->getSortID()] ?? null)) {
                 $sort[$sort_field] = $dir;
             }
         }

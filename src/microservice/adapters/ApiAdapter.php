@@ -302,7 +302,7 @@ abstract class ApiAdapter
     /**
      * @return array|string|null
      */
-    protected function getMockResponse() : array|string|null
+    protected function getMockResponse()
     {
         return ($this->mockEnabled
             ? $this->mock($this->action ?? parse_url($this->endpoint, PHP_URL_PATH))

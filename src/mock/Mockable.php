@@ -41,7 +41,7 @@ trait Mockable
      * @param string $name
      * @return array|string
      */
-    protected function mock(string $name) : array|string
+    protected function mock(string $name)
     {
         return $this->mock[$name] ?? [];
     }

@@ -40,6 +40,13 @@ use ff\libs\util\ServerManager;
 /**
  * Class DataTable
  * @package ff\libs\gui\components
+ *
+ * Da aggiungere hideDefaultColumns
+ * da aggiungere public function template
+ * da sistmare setcolumns
+ * da fare i metodi per gestire bottoni di default hide show
+ * aggiungere tutti i metodi display
+ *
  */
 class DataTable
 {
@@ -204,6 +211,8 @@ class DataTable
      * @var DataTableColumn[]
      */
     private $columns                    = [];
+    private $columns_keys               = [];
+    private $hideDefaultColumns         = false;
 
     protected $draw                     = null;
     protected $start                    = null;
@@ -321,6 +330,7 @@ class DataTable
     /**
      * @param string $query
      * @return $this
+     * @in piu
      */
     public function sourceSql(string $query) : self
     {
@@ -336,6 +346,7 @@ class DataTable
     /**
      * @param array $query
      * @return $this
+     * @in piu
      */
     public function sourceNoSql(array $query) : self
     {
@@ -377,6 +388,7 @@ class DataTable
     /**
      * @param string $id
      * @return Button
+     * @in piu
      */
     public function buttonRecord(string $id) : Button
     {
@@ -393,13 +405,30 @@ class DataTable
     }
 
     /**
-     * @param string|null $id
-     * @param int|null $index
-     * @return DataTableColumn|null
+     * @return $this
      */
-    public function column(string $id = null, int $index = null) : ?DataTableColumn
+    public function hideDefaultColumns() : self
     {
-        return $this->columns[($index ?? count($this->columns) + 1) - 1] = DataTableColumn::create($id);
+        $this->hideDefaultColumns = true;
+
+        return $this;
+    }
+
+    /**
+     * @param string $id
+     * @param int|null $position
+     * @return DataTableColumn
+     * @throws Exception
+     */
+    public function column(string $id, int $position = null) : DataTableColumn
+    {
+        $key                                                = "{" . $id . "}";
+        if (isset($this->columns_keys[$key])) {
+            throw new Exception("Column {$id} already exists");
+        }
+
+        $this->columns_keys[$key]                           = ($position ?? count($this->columns) + 1) - 1;
+        return $this->columns[$this->columns_keys[$key]]    = DataTableColumn::create($id);
     }
 
     /**
@@ -431,6 +460,7 @@ class DataTable
     /**
      * @param int $record_per_page
      * @return $this
+     * @in piu
      */
     public function limit(int $record_per_page) : self
     {
@@ -443,6 +473,7 @@ class DataTable
      * @param string $key
      * @param bool|null $modal
      * @return $this
+     * @in piu
      */
     public function record(string $key = self::RECORD_KEY, bool $modal = null) : self
     {
@@ -466,6 +497,7 @@ class DataTable
      * @param string $column_name
      * @param string $dir
      * @return $this
+     * @in piu
      */
     public function sortBy(string $column_name, string $dir = self::DEFAULT_SORT_DIR) : self
     {
@@ -475,13 +507,21 @@ class DataTable
         return $this;
     }
 
-    public function js(string $embed)
+    /**
+     * @param string $embed
+     * @return $this
+     */
+    public function js(string $embed) : self
     {
         $this->js_embed = $embed;
+
+        return $this;
     }
+
     /**
      * @param bool $ajax
      * @return $this
+     * @in piu
      */
     public function ajaxSearch(bool $ajax) : self
     {
@@ -492,6 +532,7 @@ class DataTable
     /**
      * @param bool $ajax
      * @return $this
+     * @in piu
      */
     public function ajaxSort(bool $ajax) : self
     {
@@ -502,6 +543,7 @@ class DataTable
     /**
      * @param bool $ajax
      * @return $this
+     * @in piu
      */
     public function ajaxPagination(bool $ajax) : self
     {
@@ -548,6 +590,7 @@ class DataTable
 
     /**
      * @return DataTableResponse
+     * @in piu
      */
     protected function dataTable() : DataTableResponse
     {
@@ -583,31 +626,38 @@ class DataTable
      */
     private function dataSource() : dataTableResponse
     {
-        $dataTable                      = $this->{$this->dataSource . "Source"}();
-        if (empty($dataTable->columns)) {
-            $dataTable->columns         = $dataTable->columns();
-        }
-        if (empty($dataTable->keys) && !empty($this->record_key)) {
-            $dataTable->keys            = $dataTable->getColumn($this->record_key);
-        }
-        if (empty($this->columns)) {
-            $this->columns              = $this->setColumns($dataTable->properties ?? []);
-        }
-        return $dataTable;
+        return $this->{$this->dataSource . "Source"}();
     }
 
+    /**
+     * @param array $properties
+     * @return array
+     * @= fields
+     */
     private function setColumns(array $properties) : array
     {
-        $columns = [];
-        foreach ($properties as $key => $params) {
-            $this->fieldSource[] = "{" . $key . "}";
-            $columns[] = DataTableColumn::create($key, $params)
-                ->tpl("{" . $key . "}")
-                ->sortBy($key);
+        $i = 0;
+        foreach ($properties as $id => $params) {
+            $key                        = "{" . $id . "}";
+            $this->fieldSource[]        = $key;
+            if (!$this->hideDefaultColumns) {
+                if (isset($this->columns_keys[$key])) {
+                    continue;
+                }
+                while (isset($this->columns[$i])) {
+                    $i++;
+                }
+
+                $this->columns[$i]      = DataTableColumn::create($id, $params)
+                    ->tpl($key)
+                    ->sortBy($id);
+            }
         }
 
-        return $this->columns ?: $columns;
+        ksort($this->columns);
+        return array_values($this->columns);
     }
+
     /**
      * @return DataTableResponse
      * @throws Exception
@@ -615,9 +665,7 @@ class DataTable
     private function ormSource() : DataTableResponse
     {
         $db                                             = new Model($this->id);
-
         $schema                                         = $db->schema(static::CONVERT_BY_TYPE);
-
         $this->columns                                  = $this->setColumns($schema->properties);
 
         $where = null;
@@ -644,7 +692,7 @@ class DataTable
                         $dataTableResponse->recordsTotal = $db->count();
                     }
 
-                    if (!empty($this->record_key)) {
+                    if (isset($this->record_key)) {
                         $dataTableResponse->keys        = $results->keys($this->record_key);
                     }
                 }
@@ -663,6 +711,9 @@ class DataTable
         }
 
         $this->columns                                  = $this->setColumns($response->properties ?? []);
+        if (empty($response->keys) && isset($this->record_key)) {
+            $response->keys                             = $response->getColumn($this->record_key);
+        }
 
         return $response;
     }
@@ -693,16 +744,32 @@ class DataTable
         return $dataTable;
     }
 
+    /**
+     * @return DataTableResponse
+     */
+    private function datatableSource() : DataTableResponse
+    {
+        return $this->dataTable;
+    }
+
+    /**
+     * @return DataTableResponse
+     * @in piu
+     */
     private function sqlSource() : DataTableResponse
     {
     }
 
+    /**
+     * @return DataTableResponse
+     */
     private function nosqlSource() : DataTableResponse
     {
     }
 
     /**
      * @return array
+     * @in piu
      */
     protected function apiRequestParams() : array
     {
@@ -718,6 +785,7 @@ class DataTable
 
     /**
      * @return array
+     * @in piu
      */
     private function order() : array
     {
@@ -802,8 +870,8 @@ class DataTable
                 [
                     $this->parseTitle(),
                     $this->parseDescription(),
-                    $this->error(),
-                    $this->actions($this->buttonsHeader),
+                    $this->parseError(),
+                    $this->parseActions($this->buttonsHeader),
                     $this->tableLength(),
                     $this->tableSearch(),
                     $this->tableHead(),
@@ -811,8 +879,8 @@ class DataTable
                     $this->tableFoot(),
                     $this->tablePaginate(),
                     $this->tablePaginateInfo(),
-                    $this->footer(),
-                    $this->actions($this->buttonsFooter),
+                    $this->parseFooter(),
+                    $this->parseActions($this->buttonsFooter),
                 ],
                 $this->template
             ) . $this->jsTpl() . '</div>');
@@ -864,7 +932,7 @@ class DataTable
     /**
      * @return string|null
      */
-    private function error() : ?string
+    private function parseError() : ?string
     {
         return '<div class="' . self::TC_ERROR . '">' . $this->error . '</div>';
     }
@@ -873,16 +941,19 @@ class DataTable
      * @param Button[] $buttons
      * @return string|null
      */
-    private function actions(array $buttons) : ?string
+    private function parseActions(array $buttons) : ?string
     {
-        $actions = $this->buttons($buttons);
+        $actions = $this->parseButtons($buttons);
         return ($actions
             ? '<div class="dt-action">' . $actions . '</div>'
             : null
         );
     }
 
-    private function footer() : ?string
+    /**
+     * @return string|null
+     */
+    private function parseFooter() : ?string
     {
         return null;
     }
@@ -890,6 +961,7 @@ class DataTable
     /**
      * @return string|null
      * @throws Exception
+     * @in piu
      */
     private function tableLength() : ?string
     {
@@ -912,6 +984,7 @@ class DataTable
     /**
      * @return string|null
      * @throws Exception
+     * @in piu
      */
     private function tableSearch() : ?string
     {
@@ -924,6 +997,7 @@ class DataTable
     /**
      * @return string|null
      * @throws Exception
+     * @in piu
      */
     private function tableHead() : ?string
     {
@@ -935,11 +1009,15 @@ class DataTable
         );
     }
 
+    /**
+     * @return string|null
+     * @in piu
+     */
     private function parseRecordAttr() : ?string
     {
         $record = null;
         if ($this->xhr) {
-            if ($this->record_key) {
+            if (isset($this->record_key)) {
                 $record .= ' data-key="' . $this->record_key . '"';
             }
         }
@@ -950,6 +1028,7 @@ class DataTable
     /**
      * @return string
      * @throws Exception
+     * @in piu
      */
     private function tableBody() : string
     {
@@ -965,6 +1044,7 @@ class DataTable
     /**
      * @return string|null
      * @throws Exception
+     * @in piu
      */
     private function tableFoot() : ?string
     {
@@ -979,6 +1059,7 @@ class DataTable
     /**
      * @return string|null
      * @throws Exception
+     * @in piu
      */
     private function tablePaginate() : ?string
     {
@@ -1017,6 +1098,7 @@ class DataTable
     /**
      * @return string|null
      * @throws Exception
+     * @in piu
      */
     private function tablePaginateInfo() : ?string
     {
@@ -1047,6 +1129,7 @@ class DataTable
     /**
      * @return string
      * @throws Exception
+     * @in piu
      */
     private function tableColumns() : string
     {
@@ -1081,6 +1164,7 @@ class DataTable
 
     /**
      * @return string|null
+     * @in piu
      */
     private function tableRows() : ?string
     {
@@ -1096,15 +1180,16 @@ class DataTable
     /**
      * @param int $i
      * @return string|null
+     * @in piu
      */
     private function tableActions(int $i) : ?string
     {
         $params = [];
-        if ($this->record_key && isset($this->dataTable->keys[$i])) {
+        if (isset($this->record_key) && isset($this->dataTable->keys[$i])) {
             $params[$this->record_key] = $this->dataTable->keys[$i];
         }
 
-        $actions = $this->buttons($this->buttonsRecord, $params);
+        $actions = $this->parseButtons($this->buttonsRecord, $params);
         return ($actions
             ? '<td>' . $actions . '</td>'
             : null
@@ -1112,22 +1197,8 @@ class DataTable
     }
 
     /**
-     * @param Button[] $buttons
-     * @param array $params
-     * @return string|null
-     */
-    private function buttons(array $buttons, array $params = []) : ?string
-    {
-        $actions = null;
-        foreach ($buttons as $button) {
-            $actions .= $button->display($params, $this->xhr);
-        }
-
-        return $actions;
-    }
-
-    /**
      * @return string
+     * @in piu
      */
     private function tplRow() : string
     {
@@ -1143,6 +1214,12 @@ class DataTable
         return $tpl;
     }
 
+    /**
+     * @param array $record
+     * @param string $tpl
+     * @return string|null
+     * @in piu
+     */
     private function tableRow(array $record, string $tpl) : ?string
     {
         $this->hooks->handle(__CLASS__ . "/" . spl_object_id($this) . "/onBeforeParseRow", $record, $tpl);
@@ -1158,6 +1235,7 @@ class DataTable
      * @param int $i
      * @param string|null $type
      * @return string|null
+     * @in piu
      */
     private function tableRowClass(int $i, string $type = null) : ?string
     {
@@ -1172,19 +1250,36 @@ class DataTable
     /**
      * @param int $i
      * @return string|null
+     * @in piu
      */
     private function setModify(int $i) : ?string
     {
-        return ($this->record_key && !empty($this->dataTable->keys[$i])
+        return (isset($this->record_key) && !empty($this->dataTable->keys[$i])
             ? ' data-id="' . $this->dataTable->keys[$i] . '"'
             : null
         );
     }
 
     /**
+     * @param Button[] $buttons
+     * @param array $params
+     * @return string|null
+     */
+    private function parseButtons(array $buttons, array $params = []) : ?string
+    {
+        $actions = null;
+        foreach ($buttons as $button) {
+            $actions .= $button->display($params, $this->xhr);
+        }
+
+        return $actions;
+    }
+
+    /**
      * @param string $name
      * @param $value
      * @return string
+     * @in piu
      */
     private function getUrl(string $name, $value) : string
     {
@@ -1194,6 +1289,11 @@ class DataTable
         return "?" . http_build_query(array_filter($request));
     }
 
+    /**
+     * @param callable $callback
+     * @return $this
+     * @in piu
+     */
     public function onBeforeParseRow(callable $callback)
     {
         $this->hooks->register(__CLASS__ . "/" . spl_object_id($this) . "/onBeforeParseRow", $callback);

@@ -36,7 +36,7 @@ class DataTableColumn
 {
     private const TYPE_STRING   = 'string';
 
-    private $id                 = null;
+    private $id;
 
     private $type               = self::TYPE_STRING;
     private $label              = null;
@@ -48,11 +48,11 @@ class DataTableColumn
     private $tplValue           = null;
 
     /**
-     * @param string|null $id
+     * @param string $id
      * @param array $params
      * @return static
      */
-    public static function create(string $id = null, array $params = []) : self
+    public static function create(string $id, array $params = []) : self
     {
         $column                     = new static($id);
         foreach ($params as $property => $value) {
@@ -63,9 +63,9 @@ class DataTableColumn
     }
 
     /**
-     * @param string|null $id
+     * @param string $id
      */
-    public function __construct(string $id = null)
+    public function __construct(string $id)
     {
         $this->id                   = $id;
     }

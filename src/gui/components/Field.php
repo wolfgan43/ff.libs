@@ -45,8 +45,8 @@ class Field
 
     protected const TEMPLATE_CLASS      = [
         "select"                => [
-            "control"           => "custom-select",
-            "label"             => null
+            "control"           => "form-select",
+            "label"             => "form-label"
         ],
         "check"                 => [
             "wrapper"           => "form-check",
@@ -60,7 +60,7 @@ class Field
         ],
         "textarea"              => [
             "control"           => "form-control",
-            "label"             => null
+            "label"             => "form-label"
         ],
         "file"                  => [
             "wrapper"           => "custom-file",
@@ -69,11 +69,11 @@ class Field
         ],
         "default"               => [
             "control"           => "form-control",
-            "label"             => null,
+            "label"             => "form-label",
         ],
         "readonly"              => [
             "control"           => "form-control-plaintext",
-            "label"             => null,
+            "label"             => "form-label",
         ],
         "group"                 => [
             "wrapper"           => "input-group",
@@ -124,6 +124,26 @@ class Field
      * @return static
      * @throws Exception
      */
+    public static function number(string $name) : self
+    {
+        return self::double($name);
+    }
+
+    /**
+     * @param string $name
+     * @return static
+     * @throws Exception
+     */
+    public static function float(string $name) : self
+    {
+        return self::double($name);
+    }
+
+    /**
+     * @param string $name
+     * @return static
+     * @throws Exception
+     */
     public static function markdown(string $name) : self
     {
         return new static($name, [
@@ -135,7 +155,7 @@ class Field
 
     /**
      * @param string $name
-     * @param array|null $fill
+     * @param array $fill
      * @return Field
      * @throws Exception
      */
@@ -148,7 +168,7 @@ class Field
 
     /**
      * @param string $name
-     * @param array|null $fill
+     * @param array $fill
      * @return Field
      * @throws Exception
      */
@@ -920,7 +940,7 @@ class Field
     private function parseProperties(array $properties) : ?string
     {
         return (!empty($properties)
-            ? ' ' . str_replace('=null', '', http_build_query($properties, "", " "))
+            ? ' ' . str_replace(['=', '="null"'], ['="', ''], http_build_query($properties, "", '" ') . '"')
             : null
         );
     }
@@ -932,13 +952,14 @@ class Field
     private function parseData(array $data) : ?string
     {
         return (!empty($data)
-            ? ' data-' . str_replace(["&", "="], ["' data-", "='"], urldecode(http_build_query($data))) . "'"
+            ? ' data-' . str_replace(['&', '='], ['" data-', '="'], urldecode(http_build_query($data))) . '"'
             : null
         );
     }
 
     /**
      * @return string
+     * @throws Exception
      */
     public function display() : string
     {

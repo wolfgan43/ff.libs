@@ -180,7 +180,9 @@ class MySqli extends DatabaseDriver
             self::$links[$this->dbKey]  = $this->link_id;
             $this->link_id              =& self::$links[$this->dbKey];
 
-            mysqli_options($this->link_id, MYSQLI_OPT_INT_AND_FLOAT_NATIVE, true);
+            if (defined("MYSQLI_OPT_INT_AND_FLOAT_NATIVE")) {
+                mysqli_options($this->link_id, MYSQLI_OPT_INT_AND_FLOAT_NATIVE, true);
+            }
             $this->link_lifetime = time();
         }
 

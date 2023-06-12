@@ -129,7 +129,7 @@ class Locale implements Configurable
     public static function get(string $strLocale = null, bool $verifyAcceptedLangs = false) : array
     {
         $res = [];
-        foreach (explode(",", $strLocale ?? $_SERVER["HTTP_ACCEPT_LANGUAGE"]) as $oneLocale) {
+        foreach (explode(',', $strLocale ?? $_SERVER["HTTP_ACCEPT_LANGUAGE"] ?? "") as $oneLocale) {
             if (!empty($locale = self::getLocale($oneLocale, $verifyAcceptedLangs))) {
                 $res[] = $locale[self::LANG_] . (!empty($locale[self::COUNTRY_]) ? "-" . $locale[self::COUNTRY_] : "");
             }
@@ -277,11 +277,9 @@ class Locale implements Configurable
     private static function acceptLocale() : array
     {
         $locale = [];
-        if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
-            foreach (explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE']) as $strLocale) {
-                if (!empty($locale = self::getLocale($strLocale, true))) {
-                    break;
-                }
+        foreach (explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? "") as $strLocale) {
+            if (!empty($locale = self::getLocale($strLocale, true))) {
+                break;
             }
         }
 

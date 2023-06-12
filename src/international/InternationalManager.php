@@ -34,19 +34,23 @@ use ff\libs\Exception;
 trait InternationalManager
 {
     /**
-     * @return string
+     * @param string|null $locale
+     * @param bool $verifyAcceptedLangs
+     * @return array
      */
-    protected function locale() : string
+    protected function locale(string $locale = null, bool $verifyAcceptedLangs = false) : array
     {
-        return Locale::get();
+        return Locale::get($locale, $verifyAcceptedLangs);
     }
 
     /**
-     * @return array
+     * @param string|null $locale
+     * @param bool $verifyAcceptedLangs
+     * @return string
      */
-    protected function acceptLocale() : array
+    protected function lang(string $locale = null, bool $verifyAcceptedLangs = false) : string
     {
-        return array_keys(Locale::getAll());
+        return explode("-", Locale::get($locale, $verifyAcceptedLangs)[0])[0];
     }
 
     /**

@@ -74,9 +74,9 @@ abstract class OrmItem
 
     protected const PRIMARY_KEY                                                 = null;
     protected const JOINS                                                       = [];
+    protected const JOINS_STORABLE                                              = [];
     protected const DELETE_JOINS                                                = [];
     protected const DELETE_LOGICAL_FIELD                                        = null;
-    protected const ENABLE_UPDATE_NESTED                                        = false;
 
     protected const REQUIRED                                                    = [];
     protected const REQUIRED_SEARCH                                             = [];
@@ -190,13 +190,13 @@ abstract class OrmItem
     private static function dtd() : stdClass
     {
         return (object) [
-                "collection"        => static::COLLECTION,
-                "table"             => static::TABLE,
-                "table_read"        => static::TABLE_READ,
-                "dataResponse"      => static::DATARESPONSE,
-                "required"          => static::REQUIRED,
-                "primaryKey"        => static::PRIMARY_KEY
-            ];
+            "collection"        => static::COLLECTION,
+            "table"             => static::TABLE,
+            "table_read"        => static::TABLE_READ,
+            "dataResponse"      => static::DATARESPONSE,
+            "required"          => static::REQUIRED,
+            "primaryKey"        => static::PRIMARY_KEY
+        ];
     }
 
     /**
@@ -232,12 +232,12 @@ abstract class OrmItem
             }
         }
 
-        $item->hook()->register("onRead", function(array &$record, array $db_record) use ($item) {
+        $item->hook()->register("onRead", function (array &$record, array $db_record) use ($item) {
             $item->onSearch($record, $db_record);
         });
 
         $where_primary = array_intersect_key($where ?? [], array_fill_keys(static::REQUIRED_SEARCH, true));
-        if(!empty(static::REQUIRED_SEARCH) && empty($where_primary)) {
+        if (!empty(static::REQUIRED_SEARCH) && empty($where_primary)) {
             throw new Exception("Fields (" . implode(", ", static::REQUIRED_SEARCH) . ") are required. in table " . (static::TABLE_SEARCH ?? static::TABLE) . " for collection " . static::COLLECTION, 400);
         }
 
@@ -272,13 +272,17 @@ abstract class OrmItem
             "recordsTotal"      => $recordsTotal,
             "recordsFiltered"   => (
                 empty($query)
-                ? $recordsTotal
-                : $item->db
+                    ? $recordsTotal
+                    : $item->db
                     ->cmd("count", $where)
             )
         ]);
     }
 
+    /**
+     * @param array|null $query
+     * @return array|null
+     */
     private static function where(array $query = null) : ?array
     {
         $where                                                                      = null;
@@ -297,9 +301,9 @@ abstract class OrmItem
 
                         if (isset(self::SEARCH_OPERATORS[$op])) {
                             $value[self::SEARCH_OPERATORS[$op]]                     = (
-                            (self::SEARCH_OPERATORS[$op] == '$in' || self::SEARCH_OPERATORS[$op] == '$nin') && !is_array($subvalue)
-                                ?  explode(",", $subvalue)
-                                : $subvalue
+                                (self::SEARCH_OPERATORS[$op] == '$in' || self::SEARCH_OPERATORS[$op] == '$nin') && !is_array($subvalue)
+                                    ?  explode(",", $subvalue)
+                                    : $subvalue
                             );
                         } else {
                             $value['$in'][]                                         = $subvalue;
@@ -316,6 +320,12 @@ abstract class OrmItem
         return $where;
     }
 
+    /**
+     * @param array|null $order
+     * @param array|null $toDataResponse
+     * @return array|null
+     * @throws Exception
+     */
     private static function sort(array $order = null, array $toDataResponse = null) : ?array
     {
         $sort                                                                       = null;
@@ -338,6 +348,7 @@ abstract class OrmItem
 
         return $sort;
     }
+
     /**
      * @param array $where
      * @param bool $forse_physical
@@ -348,8 +359,8 @@ abstract class OrmItem
     {
         $item                                                                   = new static();
         $db                                                                     = $item
-                                                                                    ->db
-                                                                                    ->table(static::TABLE);
+            ->db
+            ->table($item::TABLE);
         return ($item::DELETE_LOGICAL_FIELD && !$forse_physical
             ? $db->update([$item::DELETE_LOGICAL_FIELD => true], $where)
             : $db->delete($where)
@@ -496,7 +507,7 @@ abstract class OrmItem
                         if (!property_exists($this, $property)) {
                             throw new Exception("Missing property " . $property . " on " . $this->getClassName(), 500);
                         } elseif (!is_array($this->{$property})) {
-                            $this->{$property}                                     = [];
+                            $this->{$property}                                  = [];
                         }
                     }
 
@@ -520,8 +531,8 @@ abstract class OrmItem
         $rel->informationSchema                                 = $informationSchema;
         $rel->dataResponse                                      = (
             empty($dtd->dataResponse)
-                                                                    ? array_intersect_key(get_class_vars($mapClass), $informationSchema->dtd)
-                                                                    : array_fill_keys($dtd->dataResponse, true)
+                ? array_intersect_key(get_class_vars($mapClass), $informationSchema->dtd)
+                : array_fill_keys($dtd->dataResponse, true)
         );
         $rel->indexes                                           = null;
         $rel->indexes_primary                                   = null;
@@ -563,7 +574,7 @@ abstract class OrmItem
      * @return OrmItem
      * @throws Exception
      */
-    public function fill(array|object $fields = null) : self
+    public function fill($fields = null) : self
     {
         if (!empty($fields)) {
             if (is_array($fields)) {
@@ -634,37 +645,47 @@ abstract class OrmItem
     }
 
     /**
-     * @return string
+     * @param bool $store
+     * @return string|null
      * @throws Exception
      */
-    public function apply() : string
+    public function apply(bool $store = true) : ?string
     {
         $this->db->table(static::TABLE);
 
         $this->onApply($this->db, $this->recordKey);
 
-        $vars                                                                   = array_diff_key($this->fieldSetPurged(), $this->oneToMany);
+        $properties = $this->fieldSetPurged();
+        $this->verifyRequire($properties);
 
+        $vars                                                                   = array_diff_key($properties, $this->oneToMany);
         $this->applyOneToOne($vars);
 
         //$vars = $this->fieldConvert($vars); //@todo da finire
-        $this->verifyRequire($vars);
+
         $this->verifyValidator($vars);
 
         if ($this->recordKey) {
             /**
              * phpBug 62115 Issue with method array_diff_assoc
-             * @todo da controllare array_diff_assoc($vars, $this->storedData <==> array_diff_assoc(get_object_vars($this), $this->storedData
              */
-            if (!empty(array_intersect_key(@array_diff_assoc($vars, $this->storedData), $this->informationSchema->dtd))) {
+            $data = array_intersect_key(@array_diff_assoc($vars, $this->storedData), $this->informationSchema->dtd);
+            if ($store && !empty($data)) {
                 $this->onUpdate($vars, $this->recordKey);
 
                 $this->db->update(
-                    array_intersect_key(@array_diff_assoc(get_object_vars($this), $this->storedData), $this->informationSchema->dtd),
+                    $data,
                     [static::TABLE . "." . $this->primaryKey => $this->recordKey]
                 );
             }
-        } else {
+            /*
+             * @todo da controllare array_diff_assoc($vars, $this->storedData <==> array_diff_assoc(get_object_vars($this), $this->storedData
+            if (($storedVars = array_intersect_key($this->storedData, $vars)) != $vars) {
+                $this->onUpdate($vars, $this->recordKey);
+
+                $this->db->update(@array_diff_assoc($vars, $storedVars), [static::TABLE . "." . $this->primaryKey => $this->recordKey]);
+            }*/
+        } elseif ($store) {
             $this->onInsert($vars);
 
             $item                                                               = $this->db->insert(array_merge($vars, $this->primaryIndexes));
@@ -682,6 +703,7 @@ abstract class OrmItem
 
     /**
      * @param array $vars
+     * @return void
      * @throws Exception
      */
     private function applyOneToOne(array &$vars) : void
@@ -692,23 +714,22 @@ abstract class OrmItem
         foreach ($this->oneToOne as $table => $oneToOne) {
             $relDataDB                                                          = $this->storedData[$table] ?? [];
             $relData                                                            = array_intersect_key($this->{$table}, $oneToOne->informationSchema->dtd);
-
+            $store                                                              = in_array($oneToOne->mapClass, static::JOINS_STORABLE);
             if (!empty($this->primaryIndexes[$oneToOne->dbExternal])) {
                 /**
                  * Update
                  */
                 if (empty($relDataDB[$oneToOne->primaryKey])) {
                     /**
-                     * 2+ nesting level
+                     * Update 2+ nesting level
                      */
                     $obj = new $oneToOne->mapClass([$oneToOne->dbPrimary => $this->primaryIndexes[$oneToOne->dbExternal]]);
                     if (!$obj->isStored()) {
                         throw new Exception($oneToOne->dbPrimary . " '" . $this->primaryIndexes[$oneToOne->dbExternal] . "' not found in table '" . $table . "'", 404);
                     }
-
                 } else {
                     /**
-                     * first nesting level
+                     * Insert first nesting level
                      */
                     $obj = $oneToOne->mapClass::load($relDataDB, $this->primaryIndexes[$oneToOne->dbExternal])
                         ->setIndexes($oneToOne->indexes);
@@ -724,12 +745,9 @@ abstract class OrmItem
                     }
                 }
 
-                $obj->fill(
-                    $obj::ENABLE_UPDATE_NESTED
-                        ? $this->{$table}
-                        : array_diff_key($this->{$table}, $oneToOne->informationSchema->dtd)
-                );
-                $id                                                         = $obj->apply();
+                $obj->fill($this->{$table});
+
+                $id                                                             = $obj->apply($store);
 
                 /**
                  * Update relation with new primaryKey
@@ -738,7 +756,10 @@ abstract class OrmItem
                     $vars[$oneToOne->dbExternal]                                = $id;
                 }
                 $this->{$table}                                                 = $obj->toArray();
-            } elseif(empty($relData) && empty($relDataDB)) {
+                if (in_array($table, static::REQUIRED) && empty($id)) {
+                    throw new Exception("nested " . $table . " is required but not writable. Use " . $table . " identifier instead of the object", 400);
+                }
+            } elseif (empty($relData) && empty($relDataDB)) {
                 $this->{$table}                                                 = null;
             } else {
                 if (!empty($this->{$table}[$oneToOne->primaryKey])) {
@@ -750,11 +771,7 @@ abstract class OrmItem
                         throw new Exception($oneToOne->primaryKey . " '" . $this->{$table}[$oneToOne->primaryKey] . "' not found in table '" . $table . "'", 404);
                     }
 
-                    $obj->fill(
-                        $obj::ENABLE_UPDATE_NESTED
-                            ? $this->{$table}
-                            : array_diff_key($this->{$table}, $oneToOne->informationSchema->dtd)
-                    );
+                    $obj->fill($this->{$table});
                 } else {
                     /**
                      * Insert
@@ -762,8 +779,11 @@ abstract class OrmItem
                     $obj                                                        = $oneToOne->mapClass::load($this->{$table} /*$relData*/);
                 }
 
-                $vars[$oneToOne->dbExternal]                                    = $obj->apply();
+                $vars[$oneToOne->dbExternal]                                    = $obj->apply($store);
                 $this->{$table}                                                 = $obj->toArray();
+                if (in_array($table, static::REQUIRED) && empty($vars[$oneToOne->dbExternal])) {
+                    throw new Exception("nested " . $table . " is required but not writable. Use " . $table . " identifier instead of the object", 400);
+                }
             }
 
             unset($vars[$table]);
@@ -784,7 +804,7 @@ abstract class OrmItem
             }
             $relDataDBs                                                         = $this->storedData[$table] ?? [];
             $relDatas                                                           = $this->{$table};
-
+            $store                                                              = in_array($oneToMany->mapClass, static::JOINS_STORABLE);
             foreach ($relDatas as $index => $var) {
                 if (!is_array($var)) {
                     throw new Exception("Relationship is oneToMany (" . static::TABLE . " => " . $table . "). Property '" . $table . "' must be an array of items in parent class.", 500);
@@ -809,9 +829,9 @@ abstract class OrmItem
                      * Update
                      */
                     $obj                                                        = $oneToMany->mapClass::load($relDataDB, $key)
-                                                                                    ->setIndexes($indexes);
+                        ->setIndexes($indexes);
                     $obj->fill($relData);
-                    $obj->apply();
+                    $obj->apply($store);
 
                     $this->{$table}[$index]                                     = $obj->toArray();
                 } elseif (!isset($relDataDBs[$index])) {
@@ -822,12 +842,15 @@ abstract class OrmItem
                     $indexes[$oneToMany->dbExternal]                            = $this->{static::PRIMARY_KEY} ?? $this->recordKey;
 
                     $obj                                                        = $oneToMany->mapClass::load($relData)
-                                                                                    ->setIndexes($indexes);
-                    $obj->apply();
+                        ->setIndexes($indexes);
+                    $obj->apply($store);
                     $this->{$table}[$index]                                     = $obj->toArray();
                 } else {
                     $this->{$table}[$index]                                     = array_intersect_key($this->{$table}[$index], $oneToMany->dataResponse);
                 }
+            }
+            if (in_array($table, static::REQUIRED) && empty($this->{$table})) {
+                throw new Exception("nested " . $table . " is required but not writable. Use " . $table . " identifier instead of the object", 400);
             }
         }
     }
@@ -839,7 +862,7 @@ abstract class OrmItem
     private function read(array $where = null) : void
     {
         if (!empty($where)) {
-            $this->hook()->register("onRead", function(array &$record, array $db_record) {
+            $this->hook()->register("onRead", function (array &$record, array $db_record) {
                 $this->onRead($record, $db_record);
             });
 
@@ -1019,6 +1042,10 @@ abstract class OrmItem
         );
     }
 
+    /**
+     * @param string|null $key
+     * @return $this
+     */
     protected function setRecordKey(string $key = null) : self
     {
         if (!empty($key)) {
@@ -1047,7 +1074,7 @@ abstract class OrmItem
     private function verifyRequire(array $vars) : void
     {
         $required   = array_diff_key(array_fill_keys(static::REQUIRED, true), array_filter($vars, function ($var) {
-            return $var !== null;
+            return !empty($var) || $var == "0";
         }));
 
         if (!empty($required)) {

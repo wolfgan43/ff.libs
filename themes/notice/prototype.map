@@ -1,0 +1,75 @@
+{
+  "title": "<title translate supported, {params} supported>",
+  "title": {
+    "it": "<title {params} supported>",
+    "en": "<title {params} supported>",
+    "...": "<title {params} supported>"
+  },
+  "from": {
+    "key": "<recipient>",
+    "label": "<recipient label>"
+  },
+  "params": {"key1" : "value1", "key2" : "value2", "keyN" : "valueN"},
+  "data": {
+    "defaultAction": "<default-action>",
+    "category": "<category-identifier>",
+    "args": {"arg1": "value1", "arg2": "value2", "argN": "valueN"}
+  },
+  "channels" : {
+    "email": {
+      "title": "<title translate supported, {params} supported>",
+      "title": {
+        "it": "<title {params} supported>",
+        "en": "<title {params} supported>",
+        "...": "<title {params} supported>"
+      },
+      "from": {
+        "key": "<email>",
+        "label": "<label>"
+      },
+      "params": {"key1" : "value1", "key2" : "value2", "keyN" : "valueN"},
+      "data": {
+        "images": ["<image-url-1>", "<image-url-2>", "<image-url-N>"],
+        "attachments": [{
+          "name": "<attachment-name>",
+          "path": "<attachment-path>",
+          "mime": "<attachment-mime>",
+          "encoded": "<attachment-encoded>",
+          "content": "<attachment-content>"
+        }]
+      }
+    },
+    "push": {
+      "title": "<title translate supported, {params} supported>",
+      "title": {
+        "it": "<title {params} supported>",
+        "en": "<title {params} supported>",
+        "...": "<title {params} supported>"
+      },
+      "from": {
+        "key": "<token>",
+        "label": "not supported"
+      },
+      "params": {"key1" : "value1", "key2" : "value2", "keyN" : "valueN"},
+      "data": {
+        "defaultAction": "<default-action>",
+        "category": "<category-identifier>",
+        "args": {"arg1": "value1", "arg2": "value2", "argN": "valueN"}
+      }
+    },
+    "sms": {
+      "title": "<title translate supported, {params} supported>",
+      "title": {
+        "it": "<title {params} supported>",
+        "en": "<title {params} supported>",
+        "...": "<title {params} supported>"
+      },
+      "from": {
+        "key": "<cell>",
+        "label": "<label>"
+      },
+      "params": {"key1" : "value1", "key2" : "value2", "keyN" : "valueN"},
+      "data": "not supported"
+    }
+  }
+}

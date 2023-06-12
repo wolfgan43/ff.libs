@@ -710,12 +710,17 @@ class DataTable
             throw new Exception($this->id . ": sourceApi require DataTableResponse", 501);
         }
 
-        $this->columns                                  = $this->setColumns($response->properties ?? []);
-        if (empty($response->keys) && isset($this->record_key)) {
-            $response->keys                             = $response->getColumn($this->record_key);
-        }
+        $this->setProperties($response);
 
         return $response;
+    }
+
+    protected function setProperties(DataTableResponse $response) : void
+    {
+        $this->columns                                  = $this->setColumns($response->properties ?? []);
+        if (empty($response->keys) && !empty($this->record_key)) {
+            $response->keys                             = $response->getColumn($this->record_key);
+        }
     }
 
     /**

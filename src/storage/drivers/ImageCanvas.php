@@ -40,9 +40,9 @@ class ImageCanvas
 
     public $cvs_max_dim_x					= null;
     public $cvs_max_dim_y					= null;
-    public $cvs_res_background_color_hex 	= null;
+    public $cvs_res_background_color_hex 	= "";
     public $cvs_res_background_color_alpha = 0;
-    public $cvs_res_transparent_color_hex 	= null;
+    public $cvs_res_transparent_color_hex 	= "";
     /**
      * @var string[jpg|png]
      */

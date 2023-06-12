@@ -126,25 +126,27 @@ class PhpMailer extends NoticeDriver
             $mail->AllowEmpty                                   = true;
             $mail->Body                                         = $message;
             $mail->AltBody                                      = strip_tags($message);
+
             /*
              * Images
              */
-            if (!empty($this->images)) {
-                foreach ($this->images as $path => $name) {
+            if (!empty($this->data["images"])) {
+                foreach ($this->data["images"] as $path => $name) {
                     if (strpos($mail->Body, "cid:" . basename($name)) !== false) {
                         $mail->AddEmbeddedImage($path, basename($path), $name);
                     }
                 }
             }
+
             /*
              * Attachment
              */
-            if (!empty($this->attach)) {
-                foreach ($this->attach as $attach_key => $attach_value) {
-                    if ($attach_value["path"]) {
-                        $mail->addAttachment($attach_value["path"], $attach_key, $attach_value["encoded"], $attach_value["mime"]);
-                    } elseif ($attach_value["content"]) {
-                        $mail->addStringAttachment($attach_value["content"], $attach_key, $attach_value["encoded"], $attach_value["mime"]);
+            if (!empty($this->data["attachments"])) {
+                foreach ($this->data["attachments"] as $attachment) {
+                    if (!empty($attachment["path"])) {
+                        $mail->addAttachment($attachment["path"], $attachment["name"], $attachment["encoded"], $attachment["mime"]);
+                    } elseif (!empty($attachment["content"])) {
+                        $mail->addStringAttachment($attachment["content"], $attachment["name"], $attachment["encoded"], $attachment["mime"]);
                     }
                 }
             }

@@ -45,19 +45,19 @@ abstract class ImageRender
     public $new_res_max_y						= null;
 
     public $new_res_frame_size					= 0;
-    public $new_res_frame_color_hex			    = null;
+    public $new_res_frame_color_hex			    = "";
 
-    public $new_res_transparent_color_hex		= null;
-    public $new_res_background_color_hex		= null;
+    public $new_res_transparent_color_hex		= "";
+    public $new_res_background_color_hex		= "";
     public $new_res_background_color_alpha		= 0;
 
     public $src_res_path                        = null;
-    public $src_res_transparent_color_hex	    = null;
+    public $src_res_transparent_color_hex	    = "";
     public $src_res_alpha				        = 100;
 
     public $new_res_font 						= array(
                                                     "caption" => ""
-                                                        , "color_hex" => null
+                                                        , "color_hex" => ""
                                                         , "size" => 0
                                                         , "type" => "times.ttf"
                                                         , "align" => "center"

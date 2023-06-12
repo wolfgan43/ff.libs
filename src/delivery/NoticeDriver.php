@@ -27,7 +27,7 @@ namespace ff\libs\delivery;
 
 use ff\libs\dto\DataError;
 use ff\libs\Kernel;
-use Exception;
+use ff\libs\Exception;
 
 /**
  * Class MessengerAdapter
@@ -41,8 +41,7 @@ abstract class NoticeDriver
     protected $lang                                         = null;
     protected $recipients                                   = [];
     protected $from                                         = null;
-    protected $images                                       = [];
-    protected $actions                                      = [];
+    protected $data                                         = [];
 
     /**
      * @param string $message
@@ -56,18 +55,16 @@ abstract class NoticeDriver
      * @param array $recipients
      * @param string $lang
      * @param array $from
-     * @param array $images
-     * @param array $actions
+     * @param array $data
      * @throws Exception
      */
-    public function __construct(string $channel, array $recipients, string $lang, array $from, array $images = [], array $actions = [])
+    public function __construct(string $channel, array $recipients, string $lang, array $from, array $data = [])
     {
         $this->channel                                  = strtoupper($channel);
         $this->lang                                     = $lang;
         $this->recipients                               = $recipients;
         $this->from                                     = (object) $from;
-        $this->images                                   = $images;
-        $this->actions                                  = $actions;
+        $this->data                                     = $data;
 
         $this->setConnection();
     }

@@ -39,8 +39,7 @@ abstract class NoticeAdapter
     public const CHANNEL                                    = null;
 
     protected $recipients                                   = [];
-    protected $actions                                      = [];
-    protected $images                                       = [];
+    protected $data                                         = [];
     protected $from                                         = [];
 
     protected $lang                                         = null;
@@ -53,18 +52,12 @@ abstract class NoticeAdapter
     abstract public function checkRecipient(string $target) : bool;
 
     /**
-     * @param string $message
-     * @param string|null $title
-     * @return DataError
-     */
-
-    /**
      * @param array $from
      * @return NoticeAdapter
      */
     public function setFrom(array $from) : self
     {
-        $this->from = array_replace(
+        $this->from                                         = array_replace(
             ["key" => null, "label" => null],
             $from
         );
@@ -72,13 +65,23 @@ abstract class NoticeAdapter
         return $this;
     }
 
+
+    /**
+     * @param array $data
+     */
+    public function setData(array $data) : void
+    {
+        $this->data                                         = array_replace($this->data, $data);
+    }
+
     /**
      * @param string $name
      * @param string $url
+     * @return void
      */
     public function addAction(string $name, string $url) : void
     {
-        $this->actions[$url]                                = $name;
+        $this->data["actions"][$name]                       = $url;
     }
 
     /**
@@ -87,7 +90,7 @@ abstract class NoticeAdapter
      */
     public function addImage(string $path, string $name) : void
     {
-        $this->images[$path]                                = $name;
+        $this->data["images"][$path]                        = $name;
     }
 
     /**
@@ -107,7 +110,7 @@ abstract class NoticeAdapter
      */
     public function setLang(string $lang_code = null) : self
     {
-        $this->lang                                      = $lang_code;
+        $this->lang                                         = $lang_code;
 
         return $this;
     }
@@ -131,6 +134,6 @@ abstract class NoticeAdapter
         $class_name = constant(Kernel::$Environment . "::NOTICE_" . strtoupper(static::CHANNEL) . "_DRIVER");
         $class = __NAMESPACE__ . "\\drivers\\" . $class_name;
 
-        return new $class(static::CHANNEL, $this->recipients, $this->lang, $this->from, $this->images, $this->actions);
+        return new $class(static::CHANNEL, $this->recipients, $this->lang, $this->from, $this->data);
     }
 }

@@ -58,10 +58,10 @@ trait TypesConverter
     
     /**
      * @param array $params
-     * @param array|null $request
+     * @param array $request
      * @return array
      */
-    private static function mergeRequest(array $params, array $request = null) : array
+    private static function mergeRequest(array $params, array $request) : array
     {
         $request_key            = array();
         $request_value          = array();

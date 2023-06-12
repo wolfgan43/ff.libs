@@ -30,6 +30,7 @@ use ff\libs\Debug;
 use ff\libs\Dir;
 use ff\libs\dto\ConfigRules;
 use ff\libs\Kernel;
+use ff\libs\security\Validator;
 
 /**
  * Class Locale
@@ -44,10 +45,9 @@ class Locale implements Configurable
 
     private static $lang                                                = null;
     private static $country                                             = null;
-    private static $locale                                              = null;
+    private static $locale                                              = [];
     private static $default                                             = null;
     private static $accepted_langs                                      = [];
-
     /**
      * @param string|null $lang_code
      * @return bool
@@ -110,7 +110,7 @@ class Locale implements Configurable
      */
     public static function getLangs() : array
     {
-        return self::$locale[self::LANG_];
+        return array_intersect_key(self::$locale[self::LANG_], array_flip(self::$accepted_langs));
     }
 
     /**
@@ -122,19 +122,19 @@ class Locale implements Configurable
     }
 
     /**
-     * @return string
-     */
-    public static function get() : string
-    {
-        return self::$lang[self::CODE_] . "-" . self::$country[self::CODE_];
-    }
-
-    /**
+     * @param string|null $strLocale
+     * @param bool $verifyAcceptedLangs
      * @return array
      */
-    public static function getAll() : array
+    public static function get(string $strLocale = null, bool $verifyAcceptedLangs = false) : array
     {
-        return self::acceptLocale();
+        $res = [];
+        foreach (explode(",", $strLocale ?? $_SERVER["HTTP_ACCEPT_LANGUAGE"]) as $oneLocale) {
+            if (!empty($locale = self::getLocale($oneLocale, $verifyAcceptedLangs))) {
+                $res[] = $locale[self::LANG_] . (!empty($locale[self::COUNTRY_]) ? "-" . $locale[self::COUNTRY_] : "");
+            }
+        }
+        return (empty($res) ? [self::$lang[self::CODE_] . "-" . self::$country[self::CODE_]] : $res);
     }
 
     /**
@@ -143,43 +143,33 @@ class Locale implements Configurable
      */
     public static function setByPath(string $path) : string
     {
-        $arrPathInfo                                                    = explode(DIRECTORY_SEPARATOR, trim($path, DIRECTORY_SEPARATOR), "2");
-        $lang_tiny_code                                                 = $arrPathInfo[0];
-        if (isset(self::$locale[self::LANG_][$lang_tiny_code])) {
+        $arrPathInfo                                                    = explode(DIRECTORY_SEPARATOR, trim($path, DIRECTORY_SEPARATOR), 2);
+        $lang_tiny_code                                                 = strtolower($arrPathInfo[0]);
+        if (self::set() == $lang_tiny_code) {
             $path                                                       = DIRECTORY_SEPARATOR . $arrPathInfo[1];
-            self::set($lang_tiny_code);
-        } else {
-            self::set();
         }
+
         return $path;
     }
 
     /**
-     * @param string|null $locale
+     * @return string
      */
-    public static function set(string $locale = null) : void
+    public static function set() : string
     {
         if (!empty(Kernel::$Environment::LOCALE_ACCEPTED_LANGS)) {
             self::$accepted_langs                                       = array_intersect(self::$accepted_langs, Kernel::$Environment::LOCALE_ACCEPTED_LANGS);
         }
 
-        $acceptLocale                                                   = self::getLocale($locale) ?? self::acceptLocale(true);
-        $lang_tiny_code                                                 = $acceptLocale[self::LANG_];
-        $country_tiny_code                                              = $acceptLocale[self::COUNTRY_];
-
-        if (!isset(self::$locale[self::LANG_][$lang_tiny_code])) {
-            Debug::set("Lang " . $lang_tiny_code . " accepted but missing configuration in config.xml. Add <" . $lang_tiny_code . " /> in tag <locale>", self::ERROR_BUCKET);
-
-            self::$lang                                                 = self::$default[self::LANG_];
-            self::$country                                              = self::$default[self::COUNTRY_];
-        } else {
-            self::$lang                                                 = self::$locale[self::LANG_][$lang_tiny_code];
-            self::$country                                              = self::$locale[self::COUNTRY_][$country_tiny_code] ?? self::$locale[self::COUNTRY_][self::$lang[self::COUNTRY_]];
-        }
+        $acceptLocale                                                   = self::acceptLocale() ?: self::defaultLocale();
+        self::$lang                                                     = self::$locale[self::LANG_][$acceptLocale[self::LANG_]];
+        self::$country                                                  = self::$locale[self::COUNTRY_][$acceptLocale[self::COUNTRY_]] ?? [self::CODE_ => $acceptLocale[self::COUNTRY_]];
 
         if (!self::isDefaultLang()) {
             Translator::loadLib(self::$lang[self::CODE_]);
         }
+
+        return $acceptLocale[self::LANG_];
     }
 
     /**
@@ -276,101 +266,26 @@ class Locale implements Configurable
      * @param string $lang
      * @return bool
      */
-    public static function isAcceptedLanguage(string $lang)
+    public static function isAcceptedLanguage(string $lang) : bool
     {
         return in_array($lang, self::$accepted_langs);
     }
 
     /**
-     * @param string|null $locale
-     * @return array|null
-     */
-    private static function getLocale(string $locale = null) : ?array
-    {
-        $res                                                        = null;
-        if (!empty($locale)) {
-            $arrLocale                                              = explode("-", $locale, 2);
-            if (isset(self::$locale[self::LANG_][$arrLocale[0]])) {
-                $lang                                               = $arrLocale[0];
-                $country                                            = (
-                isset($arrLocale[1]) && isset(self::$locale[self::COUNTRY_][$arrLocale[1]])
-                    ? $arrLocale[1]
-                    : null
-                );
-            }
-            if (!empty($lang) && in_array($lang, self::$accepted_langs)) {
-                $res                                                = [
-                    self::LANG_     => strtolower($lang),
-                    self::COUNTRY_  => (
-                    !empty($country)
-                        ? strtoupper($country)
-                        : self::$locale[self::LANG_][$lang][self::COUNTRY_]
-                    )
-                ];
-            }
-        }
-
-        return $res;
-    }
-
-    /**
-     * @param bool $onlyFirst
      * @return array
      */
-    private static function acceptLocale(bool $onlyFirst = false) : array
+    private static function acceptLocale() : array
     {
-        $locale_accepted                                        = [];
+        $locale = [];
         if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
-            foreach (explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE']) as $locale) {
-                $pattern                                            = '/^(?P<primarytag>[a-zA-Z]{2,8})'.
-                    '(?:-(?P<subtag>[a-zA-Z]{2,8}))?(?:(?:;q=)'.
-                    '(?P<quantifier>\d\.\d))?$/';
-
-                $splits                                             = [];
-                if (preg_match($pattern, trim($locale), $splits)) {
-                    $lang                                           = strtolower($splits["primarytag"]);
-                    if (!in_array($lang, self::$accepted_langs)) {
-                        continue;
-                    }
-
-                    $country                                        = (
-                    isset($splits["subtag"])
-                        ? strtoupper($splits["subtag"])
-                        : self::$locale[self::LANG_][$lang][self::COUNTRY_]
-                    );
-
-                    $locale_country                                 = (
-                    empty($country)
-                        ? ""
-                        : "-" . $country
-                    );
-
-                    $locale_accepted[$lang . $locale_country]        = [
-                        self::LANG_     => $lang,
-                        self::COUNTRY_  => $country
-                    ];
-
-                    if ($onlyFirst) {
-                        return $locale_accepted[$lang . $locale_country];
-                    }
+            foreach (explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE']) as $strLocale) {
+                if (!empty($locale = self::getLocale($strLocale, true))) {
+                    break;
                 }
             }
         }
 
-        if (empty($locale_accepted)) {
-            Debug::set((empty($lang) ? "Lang is null" : "Lang not accepted: " . $lang)
-                . ". Lang allowed: (" . implode(", ", self::$accepted_langs) . ")"
-                . ". Lang will be set to default: " . self::$default[self::LANG_][self::CODE_]
-                . ". Check LOCALE_ACCEPTED_LANGS in Config", self::ERROR_BUCKET);
-
-            $locale_default                                     = self::defaultLocale();
-            if ($onlyFirst) {
-                return $locale_default;
-            }
-            $locale_accepted[$locale_default[self::LANG_] . "-" . $locale_default[self::COUNTRY_]] = $locale_default;
-        }
-
-        return $locale_accepted;
+        return $locale;
     }
 
     /**
@@ -382,5 +297,39 @@ class Locale implements Configurable
             self::LANG_     => strtolower(Kernel::$Environment::LOCALE_LANG_CODE),
             self::COUNTRY_  => strtoupper(Kernel::$Environment::LOCALE_COUNTRY_CODE)
         ];
+    }
+
+    /**
+     * @param string $strLocale
+     * @param bool $strict
+     * @return array
+     */
+    private static function getLocale(string $strLocale, bool $strict = false) : array
+    {
+        $locale = [];
+        if (preg_match(Validator::LOCALE_PATTERN, trim($strLocale), $locale) && !empty($locale[self::LANG_])) {
+            if ($strict && !in_array($locale[self::LANG_], self::$accepted_langs)) {
+                Debug::set("Lang not accepted: " . $locale[self::LANG_]
+                    . ". Lang allowed: (" . implode(", ", self::$accepted_langs) . ")"
+                    . ". Lang will be set to default: " . self::$default[self::LANG_][self::CODE_]
+                    . ". Check LOCALE_ACCEPTED_LANGS in Config for enable this lang", self::ERROR_BUCKET);
+                return [];
+            }
+
+            if (empty($locale[self::COUNTRY_]) && isset(self::$locale[self::LANG_][$locale[self::LANG_]])) {
+                $locale[self::COUNTRY_] = self::$locale[self::LANG_][$locale[self::LANG_]][self::COUNTRY_];
+            }
+
+            if ($strict && !isset(self::$locale[self::LANG_][$locale[self::LANG_]])) {
+                Debug::set("Lang " . $locale[self::LANG_] . " accepted but missing configuration in config.xml. Add <" . $locale[self::LANG_] . " /> in tag <locale><lang /></locale>", self::ERROR_BUCKET);
+            }
+            if ($strict && !isset(self::$locale[self::COUNTRY_][$locale[self::COUNTRY_]])) {
+                Debug::set("Country " . $locale[self::COUNTRY_] . " accepted but missing configuration in config.xml. Add <" . $locale[self::COUNTRY_] . " /> in tag <locale><country /></locale>", self::ERROR_BUCKET);
+            }
+
+            unset($locale[0], $locale[1], $locale[2]);
+        }
+
+        return $locale;
     }
 }

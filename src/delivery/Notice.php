@@ -31,7 +31,7 @@ use ff\libs\Debug;
 use ff\libs\dto\DataError;
 use ff\libs\gui\Resource;
 use ff\libs\gui\View;
-use ff\libs\international\Locale;
+use ff\libs\international\InternationalManager;
 use ff\libs\security\Validator;
 use ff\libs\storage\FilemanagerFs;
 use ff\libs\storage\FilemanagerScan;
@@ -46,19 +46,25 @@ use ff\libs\util\AdapterManager;
 class Notice
 {
     use AdapterManager;
+    use InternationalManager;
 
     protected const ERROR_BUCKET                            = "delivery";
 
     protected const IMAGE_ALLOWED                           = ["jpg", "png", "svg", "gif"];
+    private const STRUCT                                    = [
+        "title"     => null,
+        "from"      => null,
+        "params"    => [],
+        "data"      => [],
+    ];
 
     private static $exTime                                  = 0;
     private $channel                                        = null;
+    private $locale                                         = null;
     private $lang                                           = null;
 
     private $title                                          = "";
     private $params                                         = [];
-    private $actions                                        = [];
-
 
     /**
      * @return float
@@ -93,8 +99,8 @@ class Notice
      */
     public function addRecipients(array $targets) : self
     {
-        foreach ($targets as $name => $target) {
-            $this->adapter->addRecipient($target, $name);
+        foreach ($targets as $target) {
+            $this->adapter->addRecipient($target);
         }
 
         return $this;
@@ -125,15 +131,12 @@ class Notice
     }
 
     /**
-     * @param string|null $lang_code
-     * @return Notice
+     * @param string|null $locale
+     * @return $this
      */
-    public function setLang(string $lang_code = null) : self
+    public function setLocale(string $locale = null) : self
     {
-        if ($lang_code && Locale::isAcceptedLanguage($lang_code)) {
-            $this->adapter->setLang($lang_code);
-            $this->lang = $lang_code;
-        }
+        $this->locale = $locale;
 
         return $this;
     }
@@ -151,24 +154,32 @@ class Notice
     }
 
     /**
+     * @param array $data
+     * @return $this
+     */
+    public function setData(array $data) : self
+    {
+        $this->adapter->setData($data);
+
+        return $this;
+    }
+
+    /**
      * @param string $template_or_message
      * @param string|null $title
      * @param array $params
-     * @param array $actions
      * @return DataError
      * @throws Exception
      */
-    public function send(string $template_or_message, string $title = null, array $params = [], array $actions = []) : DataError
+    public function send(string $template_or_message, string $title = null, array $params = []) : DataError
     {
         Debug::stopWatch(static::ERROR_BUCKET);
 
-        if (empty($this->lang)) {
-            $this->setLang(Locale::getCodeLang());
-        }
+        $this->lang                                         = $this->lang($this->locale, true);
+        $this->adapter->setLang($this->lang);
 
         $this->title                                        = $title;
         $this->params                                       = $params;
-        $this->actions                                      = $actions;
 
         $message                                            = $this->setTemplate($template_or_message);
         $dataResponse                                       = $this->adapter->send($message, $this->setTitle());
@@ -187,7 +198,7 @@ class Notice
     {
         $content    = $template_or_message;
         if (Validator::isUrl($template_or_message)) {
-            $view = View::fetchContent(FilemanagerWeb::fileGetContents($template_or_message));
+            $view = View::fetchContent(FilemanagerWeb::fileGetContents($template_or_message), $this->lang);
         } else {
             $template_or_message    = rtrim($template_or_message, "_");
             do {
@@ -198,29 +209,30 @@ class Notice
                     $channel        = $this->findChannel($map);
 
                     $this->title    = $this->findTitle($channel, $map);
-                    $this->params   = array_replace($map["params"] ?? [], $channel["params"] ?? [], $this->params);
-                    $this->actions  = array_replace($map["actions"] ?? [], $channel["actions"] ?? [], $this->actions);
+                    $this->params   = array_replace($map["params"], $channel["params"], $this->params);
+
+                    $this->setData(array_replace($map["data"], $channel["data"]));
                     $this->setFrom($map, $channel);
 
                     Debug::set(basename($view), static::ERROR_BUCKET);
-                    $view = View::fetchFile($view);
+                    $view = View::fetchFile($view, $this->lang);
                     break;
                 }
                 $template_or_message = (
                     ($end = strrpos($template_or_message, "_")) !== false
-                    ? substr($template_or_message, 0, $end)
-                    : null
+                        ? substr($template_or_message, 0, $end)
+                        : null
                 );
             } while (!empty($template_or_message));
         }
 
         if (empty($view)) {
-            $view = View::fetchContent($content);
+            $view = View::fetchContent($content, $this->lang);
         }
 
         return $view
-                ->assign($this->params)
-                ->html();
+            ->assign($this->params)
+            ->html();
     }
 
     /**
@@ -230,7 +242,7 @@ class Notice
     private function setTitle() : string
     {
         return (!empty($this->title)
-            ? View::fetchContent($this->title)
+            ? View::fetchContent($this->title, $this->lang)
                 ->assign($this->params)
                 ->html()
             : ""
@@ -250,18 +262,13 @@ class Notice
             ?? null;
     }
 
-    /**
-     * @param array $channel
-     * @param array $map
-     * @return string
-     */
     private function findTitle(array $channel, array $map) : string
     {
         if (!empty($title = $this->title ?: $channel["title"][$this->lang] ?? $map["title"][$this->lang] ?? "")) {
             return $title;
-        } elseif (isset($channel["title"]) && !is_array($channel["title"])) {
+        } elseif (!is_array($channel["title"])) {
             return $channel["title"];
-        } elseif (isset($map["title"]) && !is_array($map["title"])) {
+        } elseif (!is_array($map["title"])) {
             return $map["title"];
         }
 
@@ -276,18 +283,14 @@ class Notice
     private function findTemplateMap($tpl_path, $tpl_name) : array
     {
         return (is_file($map_path = dirname($tpl_path) . DIRECTORY_SEPARATOR . $tpl_name . ".map")
-            ? FilemanagerFs::fileGetContentsJson($map_path, true)
-            : []
+            ? array_replace(self::STRUCT, FilemanagerFs::fileGetContentsJson($map_path, true))
+            : self::STRUCT
         );
     }
 
-    /**
-     * @param array $map
-     * @return array
-     */
     private function findChannel(array $map) : array
     {
-        return $map["channels"][$this->channel] ?? [];
+        return array_replace(self::STRUCT, $map["channels"][$this->channel] ?? []);
     }
 
     /**
@@ -301,7 +304,7 @@ class Notice
                 str_replace(Constant::DISK_PATH, "", $email_images_path) => [
                     "flag" => FilemanagerScan::SCAN_FILE, "filter" => static::IMAGE_ALLOWED
                 ]], function ($image) {
-                    $this->adapter->addImage($image, $name ?? pathinfo($image, PATHINFO_FILENAME));
+                    $this->adapter->addImage($image, pathinfo($image, PATHINFO_FILENAME));
                 });
         }
     }

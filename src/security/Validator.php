@@ -40,6 +40,10 @@ use stdClass;
 class Validator
 {
     public const REQUEST_UPLOAD_PARAM_NAME                  = "files";
+    public const LOCALE_PATTERN                             = '/^(?P<lang>[a-z]{2})'.
+    '(?:[-_](?P<country>[A-Z]{2}))?(?:(?:;q=)'.
+    '(?P<quantifier>\d\.\d))?$/';
+    public const TIMEZONE_PATTERN                           = '/^[+-][0-9]{2}:[0-9]{2}$/';
     private const ERROR_NO_BASE64                           = ' is not a valid base64.';
     private const ERROR_NO_JSON                             = 'invalid json: ';
 
@@ -131,6 +135,20 @@ class Validator
                                                                     "flags"         => FILTER_FLAG_PATH_REQUIRED, // | FILTER_FLAG_SCHEME_REQUIRED | FILTER_FLAG_HOST_REQUIRED | FILTER_FLAG_QUERY_REQUIRED
                                                                     "options"       => array("default" => null),
                                                                     "length"        => 256
+                                                                ),
+                                                                "locale"          => array(
+                                                                    "filter"        => FILTER_UNSAFE_RAW,
+                                                                    "flags"         => FILTER_FLAG_STRIP_LOW,
+                                                                    "options"       => null,
+                                                                    "callback"      => '\ff\libs\security\Validator::checkLocale',
+                                                                    "length"        => 5
+                                                                ),
+                                                                "timezone"          => array(
+                                                                    "filter"        => FILTER_UNSAFE_RAW,
+                                                                    "flags"         => FILTER_FLAG_STRIP_LOW,
+                                                                    "options"       => null,
+                                                                    "callback"       => '\ff\libs\security\Validator::checkTimezone',
+                                                                    "length"        => 6
                                                                 ),
                                                                 "username"          => array(
                                                                     "filter"        => FILTER_UNSAFE_RAW,
@@ -539,6 +557,31 @@ class Validator
     public static function checkSpecialChars($value, array $spell_check = null) : ?string
     {
         return self::findSpecialChars((array) $value, $spell_check ?? self::SPELL_CHECK);
+    }
+
+    /**
+     * @param $value
+     * @return string|null
+     */
+    public static function checkLocale($value) : ?string
+    {
+        if (is_string($value) && preg_match(static::LOCALE_PATTERN, trim($value))) {
+            return null;
+        }
+        return "locale (" . $value . ") is not valid";
+    }
+
+    /**
+     * @param $value
+     * @return string|null
+     */
+    public static function checkTimezone($value) : ?string
+    {
+        if (is_string($value) && preg_match(static::TIMEZONE_PATTERN, trim($value))) {
+            return null;
+        }
+        return "timezone (" . $value . ") is not valid";
+
     }
 
     /**

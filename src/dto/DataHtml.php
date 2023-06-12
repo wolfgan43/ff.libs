@@ -33,6 +33,7 @@ class DataHtml extends DataAdapter
 {
     const CONTENT_TYPE = "text/html";
 
+    public $pathname                            = null;
     public $title                               = null;
     public $description                         = null;
     public $css                                 = [];

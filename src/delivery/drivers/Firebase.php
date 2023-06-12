@@ -47,18 +47,24 @@ class Firebase extends NoticeDriver
      */
     public function send(string $message, string $title = null) : DataError
     {
-        $msg = array(
-            'title'	=> $title,
-            'body' 	=> $message,
-            //'image' => 'myimage',
-        );
+        $msg                                = [
+                                                'title'	    => $title,
+                                                'body' 	    => $message,
+                                                'sound'     => 'default',
+                                                //'image'   => 'myimage',
+                                            ];
 
-        $fields = array(
-            'registration_ids'  => array_values($this->recipients),
-            'notification'	=> $msg
-        );
+        $payload                            = [
+                                                'registration_ids'  => array_values($this->recipients),
+                                                'notification'      => $msg,
+                                            ];
 
-
+        $data                               = array_filter($this->data);
+        if (!empty($this->data)) {
+            $payload['data']                = $data;
+            $payload['content_available']   = true;
+        }
+        
         $headers = array(
             'Authorization: key=' . $this->apy_key,
             'Content-Type: application/json'
@@ -71,7 +77,7 @@ class Firebase extends NoticeDriver
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($fields));
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
         $result = curl_exec($ch);
         curl_close($ch);
 

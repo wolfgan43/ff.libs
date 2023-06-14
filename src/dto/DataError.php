@@ -35,6 +35,8 @@ class DataError extends DataAdapter
 {
     const CONTENT_TYPE              = "application/json";
 
+    protected int $size = 0;
+
     /**
      * @return string
      * @throws Exception

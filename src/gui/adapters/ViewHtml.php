@@ -193,6 +193,10 @@ class ViewHtml implements ViewAdapter
 
         $res = $cache->get($tpl_name);
         if (!$res) {
+            if (!file_exists($template_path)) {
+                throw new Exception(str_replace(Constant::DISK_PATH, "", $template_path) . " not found", 500);
+            }
+
             $this->cache = [
                 $template_path  => filemtime($template_path)
             ];

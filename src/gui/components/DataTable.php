@@ -244,6 +244,7 @@ class DataTable
 
     private static $xhrComponent        = null;
 
+    private $tplRow                     = "";
     /**
      * @param string $component
      */
@@ -1037,6 +1038,7 @@ class DataTable
      */
     private function tableBody() : string
     {
+        $this->tplRow();
         return '<tbody' . $this->parseRecordAttr() . '>'
             . (
                 $this->dataTable->recordsFiltered && $this->start <= $this->dataTable->recordsFiltered
@@ -1174,9 +1176,8 @@ class DataTable
     private function tableRows() : ?string
     {
         $rows = null;
-        $tpl = $this->tplRow();
         foreach ($this->dataTable->toArray() as $i => $record) {
-            $rows .= '<tr' . $this->setModify($i) . ' class="' . ($i % 2 == 0 ? self::TC_ODD : self::TC_EVEN) . (isset($this->sort[$i]) ? ' ' . self::TC_SORT : null) . '">' . $this->tableRow($record, $tpl) . $this->tableActions($i) . '</tr>';
+            $rows .= '<tr' . $this->setModify($i) . ' class="' . ($i % 2 == 0 ? self::TC_ODD : self::TC_EVEN) . (isset($this->sort[$i]) ? ' ' . self::TC_SORT : null) . '">' . $this->tableRow($record) . $this->tableActions($i) . '</tr>';
         }
 
         return $rows;
@@ -1202,37 +1203,32 @@ class DataTable
     }
 
     /**
-     * @return string
-     * @in piu
+     * @return void
      */
-    private function tplRow() : string
+    private function tplRow() : void
     {
-        $tpl            = "";
         foreach ($this->columns as $i => $column) {
             if (!$column->isHidden()) {
-                $tpl .= '<td' . $this->tableRowClass($i, $column->getType("string")) . '>' . $column->displayValue() . '</td>';
+                $this->tplRow .= '<td' . $this->tableRowClass($i, $column->getType("string")) . '>' . $column->displayValue() . '</td>';
             }
         }
 
-        $this->js_tpl = '<script class="dt-row" type="text/x-template">' . $tpl . '</script>';
-
-        return $tpl;
+        $this->js_tpl = '<script class="dt-row" type="text/x-template">' . $this->tplRow . '</script>';
     }
 
     /**
      * @param array $record
-     * @param string $tpl
-     * @return string|null
+     * @return string
      * @in piu
      */
-    private function tableRow(array $record, string $tpl) : ?string
+    private function tableRow(array $record) : string
     {
         $this->hooks->handle(__CLASS__ . "/" . spl_object_id($this) . "/onBeforeParseRow", $record, $tpl);
 
         return str_replace(
             $this->fieldSource,
             array_values($record),
-            $tpl
+            $this->tplRow
         );
     }
 

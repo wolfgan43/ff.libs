@@ -27,13 +27,8 @@ namespace ff\libs;
 
 use ff\libs\cache\Buffer;
 use ff\libs\dto\ConfigRules;
-use ff\libs\international\Locale;
-use ff\libs\microservice\Gateway;
-use ff\libs\security\Buckler;
 use ff\libs\storage\FilemanagerFs;
 use ff\libs\storage\FilemanagerScan;
-use ff\libs\storage\Media;
-use ff\libs\storage\Model;
 
 /**
  * Class Config
@@ -310,15 +305,15 @@ class Config implements Dumpable
         return self::$config_unknown[$name] ?? null;
     }
 
-    public static function getXmlAttr(array $simple_xml, bool $toArray = false) : object
+    /**
+     * @param array $simpleXml
+     * @return object
+     */
+    public static function getXmlAttr(array $simpleXml) : object
     {
-        $attr = $simple_xml["@attributes"] ?? [];
-
-        return ($toArray
-            ? $attr
-            : (object) $attr
-        );
+        return (object) ($simpleXml["@attributes"] ?? []);
     }
+
     /**
      * @param string $namespace
      * @throws Exception
@@ -534,7 +529,7 @@ class Config implements Dumpable
                             self::loadFileXmlMergeSub($context, $config);
                     }
                 } else {
-                    self::$config_unknown[$key][]                           = $config;
+                    self::$config_unknown[$key]                           = array_replace(self::$config_unknown[$key] ?? [], $config);
                 }
             }
         } elseif ($configs === false) {
@@ -701,7 +696,10 @@ class Config implements Dumpable
                     unset($attr["priority"]);
                 }
 
-                if (isset($attr[self::SCHEMA_ENGINE]) && isset(self::$engine[$attr[self::SCHEMA_ENGINE]]) && self::$engine[$attr[self::SCHEMA_ENGINE]]["properties"]) {
+                if (isset($attr[self::SCHEMA_ENGINE])
+                    && isset(self::$engine[$attr[self::SCHEMA_ENGINE]])
+                    && self::$engine[$attr[self::SCHEMA_ENGINE]]["properties"]
+                ) {
                     $attr                                                               = array_replace(self::$engine[$attr[self::SCHEMA_ENGINE]]["properties"], $attr);
                 }
 

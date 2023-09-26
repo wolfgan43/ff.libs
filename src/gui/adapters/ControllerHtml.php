@@ -483,7 +483,7 @@ class ControllerHtml extends ControllerAdapter
         } elseif (strpos($this->layout, "<") === 0) {
             return View::fetchContent($this->layout)
                 ->html();
-        } elseif (($layout_file = Resource::get($this->layout, Resource::TYPE_LAYOUTS))) {
+        } elseif ($layout_file = Resource::get($this->layout, Resource::TYPE_LAYOUTS)) {
             return View::fetchFile($layout_file)
                 ->assign($this->contents)
                 ->html();
@@ -570,13 +570,15 @@ class ControllerHtml extends ControllerAdapter
      */
     private function parseHtml() : string
     {
+        $body = $this->parseBody();
+
         $this->renderJs($this->js);
         $this->renderJs($this->js_embed, true);
 
         return /** @lang text */ $this->doc_type ?? self::DOC_TYPE
             . self::NEWLINE . '<' . self::PAGE_TAG . $this->parseHtmlLang() . $this->parseHtmlRegion() . '>'
             . self::NEWLINE . $this->parseHead()
-            . self::NEWLINE . $this->parseBody()
+            . self::NEWLINE . $body
             . self::NEWLINE . '</' . self::PAGE_TAG .'>';
     }
 
@@ -651,11 +653,11 @@ class ControllerHtml extends ControllerAdapter
     }
 
     /**
-     * @param string $error
+     * @param string|null $error
      * @param string|null $debug
      * @return $this
      */
-    public function debug(string $error, string $debug = null) : self
+    public function debug(string $error = null, string $debug = null) : self
     {
         $this->error = $error;
         $this->debug = $debug ?? $error;

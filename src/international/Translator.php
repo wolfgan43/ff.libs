@@ -232,7 +232,7 @@ class Translator implements Dumpable
      */
     public static function getLang(string $lang_code = null) : string
     {
-        return strtolower($lang_code ?? Locale::getCodeLang());
+        return strtolower($lang_code ?? Locale::getCodeLang() ?? "");
     }
 
     /**
@@ -241,6 +241,6 @@ class Translator implements Dumpable
      */
     public static function getLangDefault(string $lang_code = null) : string
     {
-        return strtolower($lang_code ?? Locale::getCodeLangDefault());
+        return strtolower($lang_code ?? Locale::getCodeLangDefault() ?? "");
     }
 }

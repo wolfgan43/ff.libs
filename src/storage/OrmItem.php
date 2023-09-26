@@ -361,10 +361,9 @@ abstract class OrmItem
         $db                                                                     = $item
             ->db
             ->table($item::TABLE);
-        return ($item::DELETE_LOGICAL_FIELD && !$forse_physical
+        return $item::DELETE_LOGICAL_FIELD && !$forse_physical
             ? $db->update([$item::DELETE_LOGICAL_FIELD => true], $where)
-            : $db->delete($where)
-        );
+            : $db->delete($where);
     }
 
     /**
@@ -531,8 +530,8 @@ abstract class OrmItem
         $rel->informationSchema                                 = $informationSchema;
         $rel->dataResponse                                      = (
             empty($dtd->dataResponse)
-                ? array_intersect_key(get_class_vars($mapClass), $informationSchema->dtd)
-                : array_fill_keys($dtd->dataResponse, true)
+            ? array_intersect_key(get_class_vars($mapClass), $informationSchema->dtd)
+            : array_fill_keys($dtd->dataResponse, true)
         );
         $rel->indexes                                           = null;
         $rel->indexes_primary                                   = null;
@@ -677,6 +676,8 @@ abstract class OrmItem
                     $data,
                     [static::TABLE . "." . $this->primaryKey => $this->recordKey]
                 );
+            } else {
+                $this->fill($this->storedData);
             }
             /*
              * @todo da controllare array_diff_assoc($vars, $this->storedData <==> array_diff_assoc(get_object_vars($this), $this->storedData
@@ -1036,10 +1037,9 @@ abstract class OrmItem
      */
     private function fieldSetPurged(array $fields = null) : array
     {
-        return (!empty($fields)
+        return !empty($fields)
             ? array_intersect_key(get_object_vars($this), $fields)
-            : array_diff_key(get_object_vars($this), get_class_vars(__CLASS__))
-        );
+            : array_diff_key(get_object_vars($this), get_class_vars(__CLASS__));
     }
 
     /**
@@ -1075,7 +1075,7 @@ abstract class OrmItem
     {
         $required   = array_diff_key(array_fill_keys(static::REQUIRED, true), array_filter($vars, function ($var) {
             return !empty($var) || $var == "0";
-        }));
+        }), $this->oneToOne, $this->oneToMany);
 
         if (!empty($required)) {
             $this->error(array_keys($required), " are required");

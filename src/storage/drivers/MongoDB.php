@@ -536,7 +536,7 @@ class MongoDB extends DatabaseDriver
                 try {
                     $Command = new Command(array(
                         "count" => $this->query_params->from,
-                        "query" => $this->query_params->where
+                        "query" => $this->query_params->where ?: null
                     ));
                     $cursor = $this->link_id->executeCommand($this->database, $Command);
                     $this->num_rows = $cursor->toArray()[0]->n;

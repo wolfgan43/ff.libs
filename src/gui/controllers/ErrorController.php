@@ -51,7 +51,6 @@ class ErrorController extends Controller
         return $this;
     }
     /**
-     * @return mixed
      * @throws Exception
      */
     protected function get() : void
@@ -67,13 +66,10 @@ class ErrorController extends Controller
             $errorView->parse("SezButtonSupport", false);
         }
 
-        $this
-            ->assign(self::TPL_VAR_DEFAULT, $errorView)
-            ->debug($this->error);
+        $this->debug($this->error);
     }
 
     /**
-     * @return mixed
      * @throws Exception
      */
     protected function post() : void
@@ -82,7 +78,6 @@ class ErrorController extends Controller
     }
 
     /**
-     * @return mixed
      * @throws Exception
      */
     protected function put() : void
@@ -91,7 +86,6 @@ class ErrorController extends Controller
     }
 
     /**
-     * @return mixed
      * @throws Exception
      */
     protected function delete() : void
@@ -100,7 +94,6 @@ class ErrorController extends Controller
     }
 
     /**
-     * @return mixed
      * @throws Exception
      */
     protected function patch() : void

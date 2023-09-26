@@ -40,7 +40,7 @@ abstract class Widget extends Controller
 
     protected const ERROR_BUCKET                    = "widget";
 
-    private $config                                 = [];
+    protected $config                               = [];
 
     /**
      * @var View

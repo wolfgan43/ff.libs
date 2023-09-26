@@ -55,12 +55,16 @@ trait InternationalManager
 
     /**
      * @param string $code
+     * @param string|null $default
      * @param null|string $language
      * @return string|null
      * @throws Exception
      */
-    protected function translate(string $code, string $language = null) : ?string
+    protected function translate(string $code, string $default = null, string $language = null) : ?string
     {
-        return Translator::getWordByCode($code, $language);
+        $translate = Translator::getWordByCode($code, $language);
+        return $translate == $code
+            ? $default ?? $code
+            : $translate;
     }
 }

@@ -119,8 +119,8 @@ class Gateway implements Configurable, Dumpable
     {
         $aud                            = [];
         $scopes_register                = [];
-        $scopes_require_client          = [];
-        $scopes_require_user            = [];
+        $scopes_client                  = [];
+        $scopes_user                    = [];
         $grant_types                    = [];
         $modules                        = [];
         $discover                       = [
@@ -139,19 +139,19 @@ class Gateway implements Configurable, Dumpable
             $scopes_register            = array_replace($scopes_register, array_combine($scopes, $scopes));
 
             $scopes                     = $client["scopes"]["require_client"];
-            $scopes_require_client      = array_replace($scopes_require_client, array_combine($scopes, $scopes));
+            $scopes_client              = array_replace($scopes_client, array_combine($scopes, $scopes));
 
             $scopes                     = $client["scopes"]["require_user"];
-            $scopes_require_user        = array_replace($scopes_require_user, array_combine($scopes, $scopes));
+            $scopes_user                = array_replace($scopes_user, array_combine($scopes, $scopes));
 
-            $grants                     = (empty(array_filter($scopes_require_user)) ? ["client"] : ["client","password"]);
+            $grants                     = (empty(array_filter($scopes_user)) ? ["client"] : ["client","password"]);
             $grant_types                = array_replace($grant_types, array_combine($grants, $grants));
 
             $module = [
                 "client-type"                   => $client["type"],
                 "scopes-register"               => implode(",", $client["scopes"]["register"]),
-                "scopes-require-client"         => implode(",", $client["scopes"]["require_client"]),
-                "scopes-require-user"           => implode(",", $client["scopes"]["require_user"]),
+                "scopes-client"                 => implode(",", $client["scopes"]["require_client"]),
+                "scopes-user"                   => implode(",", $client["scopes"]["require_user"]),
                 "grant-types"                   => implode(",", $grants),
             ];
 
@@ -161,8 +161,8 @@ class Gateway implements Configurable, Dumpable
         $discover["aud"]                        = ucwords(implode(", ", $aud));
         $discover["client-type"]                = (empty($scopes_register) ? self::CLIENT_TYPE_PUBLIC : self::CLIENT_TYPE_CONFIDENTIAL);
         $discover["scopes-register"]            = implode(",", $scopes_register);
-        $discover["scopes-require-client"]      = implode(",", $scopes_require_client);
-        $discover["scopes-require-user"]        = implode(",", $scopes_require_user);
+        $discover["scopes-client"]              = implode(",", $scopes_client);
+        $discover["scopes-user"]                = implode(",", $scopes_user);
         $discover["grant-types"]                = implode(",", $grant_types);
         $discover["secret-uri"]                 = $this->protocolHost() . "/api/" . UUID::v5(Kernel::$Environment::APPID, __CLASS__);
         $discover["site-url"]                   = null;
@@ -171,15 +171,22 @@ class Gateway implements Configurable, Dumpable
 
         if (static::API_CLIENT_SIGNUP && !empty($this->request->registrar)) {
             $discover["domain"]                 = $this->request->domain                ?? null;
-            $discover["scopes-require-client"]  = $this->request->scopes_require_client ?? $discover["scopes-require-client"];
-            $discover["scopes-require-user"]    = $this->request->scopes_require_user   ?? $discover["scopes-require-user"];
+            $discover["scopes-client"]  = $this->request->scopes_client ?? $discover["scopes-client"];
+            $discover["scopes-user"]    = $this->request->scopes_user   ?? $discover["scopes-user"];
             $discover["grant-types"]            = (
-                empty($discover["scopes-require-user"])
+                empty($discover["scopes-user"])
                 ? "client"
                 : "client,password"
             );
-
-            Api::request("POST", $this->request->registrar . static::API_CLIENT_SIGNUP, $discover);
+            $discover = array_replace(
+                $discover,
+                Api::request(
+                    "POST",
+                    $this->request->registrar . static::API_CLIENT_SIGNUP,
+                    $discover,
+                    ["Authorization" => Kernel::$Page->getAuthorization()]
+                )->toArray()
+            );
         }
 
         $discover["client-secret"]              = "*****************";

@@ -470,7 +470,7 @@ class Media implements Configurable
     public static function getMimeByExtension(string $ext, string $default = self::MIMETYPE_DEFAULT) : string
     {
         $mime                                                       = $default;
-        if ($ext) {
+        if (!empty($ext)) {
             $ext                                                    = strtolower($ext);
             $mime_type                                              = static::MIMETYPE;
             if (isset($mime_type[$ext])) {

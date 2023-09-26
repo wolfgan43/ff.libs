@@ -197,7 +197,8 @@ cm.dataTable = (function () {
                     start = 0;
                     length = 0;
                 } else {
-                    if(start + parseInt(length) > response.recordsFiltered) {
+                    length = parseInt(length) + start;
+                    if(length > response.recordsFiltered) {
                         length = response.recordsFiltered;
                     }
                     start = start + 1;

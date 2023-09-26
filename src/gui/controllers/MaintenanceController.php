@@ -34,12 +34,9 @@ use ff\libs\Exception;
  */
 class MaintenanceController extends Controller
 {
-    /**
-     * @throws Exception
-     */
     protected function get(): void
     {
-        $this->assign(self::TPL_VAR_DEFAULT, "site under maintenance");
+        $this->assign([self::TPL_VAR_DEFAULT => "site under maintenance"]);
     }
 
     /**

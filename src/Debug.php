@@ -310,7 +310,7 @@ class Debug
             } else {
                 $operation = (
                     isset($trace["class"])
-                    ?  $class_name . $trace["type"] . $trace["function"] . '(' . json_encode($trace["args"]) . ')'
+                    ?  $class_name . $trace["type"] . $trace["function"] . '(' . json_encode($trace["args"] ?? []) . ')'
                     : $trace["function"]
                 );
 

@@ -112,7 +112,7 @@ abstract class Controller
 
     protected $http_status_code                 = null;
 
-    private $config                             = null;
+    protected $config                           = null;
     private $response                           = null;
     private $route                              = null;
 
@@ -678,7 +678,7 @@ abstract class Controller
                 throw new Exception(self::ERROR_PAGE_NOT_FOUND, self::ERROR_PAGE_NOT_FOUND_CODE);
             }
 
-            $this->assign(self::TPL_VAR_DEFAULT, $this->view);
+            $this->parseView(self::TPL_VAR_DEFAULT, $this->view);
         }
 
         if ($this->http_status_code >= 400 && $this->layoutException) {
@@ -757,11 +757,22 @@ abstract class Controller
     }
 
     /**
+     * @param array $assigns
+     * @return $this
+     */
+    public function assign(array $assigns) : self
+    {
+        $this->assigns = $assigns;
+
+        return $this;
+    }
+
+    /**
      * @param string $tpl_var
      * @param string|DataHtml|View|Controller|null $value
      * @return $this
      */
-    protected function assign(string $tpl_var, $value = null) : self
+    private function parseView(string $tpl_var, $value = null) : self
     {
         $this->adapter->assign($tpl_var, $value);
 
@@ -955,13 +966,13 @@ abstract class Controller
         $bucket = self::CONTROLLER_PREFIX . "/" . $this->class_name;
         Debug::stopWatch($bucket);
 
-        $method2lower = strtolower($this->method);
+        $method2lower = strtolower($this->method ?? "");
         if ($method && $method != $method2lower && $method2lower != self::METHOD_DEFAULT && method_exists($this, $method . $this->method)) {
             $method .= $this->method;
         }
 
         $callback = $method ?? $this->method;
-        if (!method_exists($this, $callback) && !method_exists($this, "__call")) {
+        if (empty($callback) || (!method_exists($this, $callback) && !method_exists($this, "__call"))) {
             throw new Exception("Method " . $callback . " not found in class " . $this->class_name, 501);
         }
 

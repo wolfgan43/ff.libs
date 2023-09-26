@@ -27,6 +27,7 @@ namespace ff\libs\storage\dto;
 
 use ff\libs\dto\DataTableResponse;
 use ff\libs\dto\Mapping;
+use ff\libs\Kernel;
 
 /**
  * Class OrmResult
@@ -95,8 +96,13 @@ class OrmResults
                 : call_user_func($this->countFromDB)
             );
         } else {
-            //$dataTableResponse->error(204, self::ERROR_RECORDSET_EMPTY);
-            $dataTableResponse->error(200, self::ERROR_RECORDSET_EMPTY);
+            $status = (
+                Kernel::$Environment::DEBUG
+                ? 200
+                : 204
+            );
+
+            $dataTableResponse->error($status, self::ERROR_RECORDSET_EMPTY);
         }
 
         if ($callback) {

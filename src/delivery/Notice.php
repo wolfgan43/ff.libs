@@ -262,18 +262,23 @@ class Notice
             ?? null;
     }
 
+    /**
+     * @param array $channel
+     * @param array $map
+     * @return string
+     */
     private function findTitle(array $channel, array $map) : string
     {
         if (!empty($title = $this->title ?: $channel["title"][$this->lang] ?? $map["title"][$this->lang] ?? "")) {
-            return $title;
         } elseif (!is_array($channel["title"])) {
-            return $channel["title"];
+            $title = $channel["title"];
         } elseif (!is_array($map["title"])) {
-            return $map["title"];
+            $title = $map["title"];
         }
 
-        return "";
+        return $title ?: "";
     }
+
     /**
      * @param $tpl_path
      * @param $tpl_name

@@ -809,7 +809,7 @@ class ViewHtml implements ViewAdapter
                 } elseif (isset($parsedBlocks[$key][0])) {
                     $count = count($parsedBlocks[$key]);
                     foreach ($parsedBlocks[$key] as $index => $parsedBlock) {
-                        if (!is_int($index)) {
+                        if (!is_int($index) || !is_array($parsedBlock)) {
                             continue;
                         }
                         //set parentParsedBlocks for children

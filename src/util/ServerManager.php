@@ -41,8 +41,8 @@ trait ServerManager
     {
         $isHttps =
             $_SERVER['HTTPS']
-            ?? $_SERVER['REQUEST_SCHEME']
             ?? $_SERVER['HTTP_X_FORWARDED_PROTO']
+            ?? $_SERVER['REQUEST_SCHEME']
             ?? null
         ;
         return $isHttps && (

@@ -172,13 +172,20 @@ class DataTableResponse extends DataResponse
     }
 
     /**
-     * @return array|stdClass
+     * @return array
      */
-    public function toObject()
+    public function toObject() : array
     {
         $this->setKeys();
 
-        return parent::toObject() ?? [];
+        $res = parent::toObject();
+        if (is_object($res)) {
+            return [$res];
+        } elseif (empty($res)) {
+            return [];
+        } else {
+            return $res;
+        }
     }
 
     private function setKeys() : void

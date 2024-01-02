@@ -217,7 +217,7 @@ class DataTable
     protected $draw                     = null;
     protected $start                    = null;
     protected $length                   = null;
-    protected $search                   = null;
+    protected $search                   = "";
     protected $sort                     = [];
 
     private $request                    = null;
@@ -670,7 +670,7 @@ class DataTable
         $this->columns                                  = $this->setColumns($schema->properties);
 
         $where = null;
-        if ($this->search) {
+        if (!empty($this->search)) {
             $where = ['$or' => array_fill_keys($schema->columns, ['$regex' => "*" . $this->search . "*"])];
         }
 
@@ -732,7 +732,7 @@ class DataTable
         $dataTable                  = new DataTableResponse($this->records, $this->record_key);
         $this->columns              = $this->setColumns(array_fill_keys($dataTable->columns(), []));
 
-        if (isset($this->search)) {
+        if (!empty($this->search)) {
             $dataTable->search($this->search);
         }
 

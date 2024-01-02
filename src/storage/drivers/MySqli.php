@@ -566,10 +566,15 @@ class MySqli extends DatabaseDriver
     /**
      * @param bool|float|int|string|array $DataValue
      * @return string
+     * @throws Exception
      * @todo da tipizzare
      */
     protected function toSqlEscape($DataValue) : string
     {
+        if (!$this->link_id) {
+            $this->errorHandler("toSqlEscape() called with no DB connection");
+        }
+
         return mysqli_real_escape_string($this->link_id, str_replace("`", "", is_array($DataValue) ? implode(",", $DataValue) : $DataValue));
     }
 

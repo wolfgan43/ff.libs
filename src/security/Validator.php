@@ -61,12 +61,10 @@ class Validator
                                                                 ],
                                                                 "bool"  => [
                                                                     ''  => false,
-                                                                    0   => false,
                                                                     '0' => false,
                                                                 ],
                                                                 "boolean"  => [
                                                                     ''  => false,
-                                                                    0   => false,
                                                                     '0' => false,
                                                                 ],
                                                                 "url"   => [
@@ -345,8 +343,8 @@ class Validator
             return new DataError();
         } elseif(is_array($what) || is_object($what) || is_resource($what)) {
             $what = self::EXCEPTIONS[$type]["array"] ?? $what;
-        } elseif (isset(self::EXCEPTIONS[$type][$what])) {
-            $what = self::EXCEPTIONS[$type][$what];
+        } elseif (isset(self::EXCEPTIONS[$type][(string) $what])) {
+            $what = self::EXCEPTIONS[$type][(string) $what];
         } elseif (isset(self::EXCEPTIONS[$type]) && array_key_exists((string) $what, self::EXCEPTIONS[$type])) {
             return new DataError();
         }
@@ -359,6 +357,11 @@ class Validator
                                                             : "text"
             );
         }
+
+        if ($type === "json" && is_array($what)) {
+            $type                                       = "array";
+        }
+
         $rule                                           = (object) self::RULES[$type];
 
         self::setContextName($context);
@@ -375,9 +378,6 @@ class Validator
                 return $dataError->error(413, $context . ": Memory Limit Reached. Validator is " . $type);
             }
 
-            if ($type === "json" && is_array($what)) {
-                $type = "array";
-            }
             $validation                                 = filter_var($what, $rule->filter, array(
                                                             "flags"     => $rule->flags         ?? null,
                                                             "options"   => $rule->options       ?? null

@@ -617,10 +617,14 @@ class Request implements Configurable, Dumpable
      */
     private function verifyInvalidHTTPS() : ?string
     {
-        return ($this->page->https && !isset($_SERVER["HTTPS"])
-            ? "Request Method Must Be In HTTPS"
-            : null
-        );
+        return ($this->page->https && !(
+            (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ||
+            (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) ||
+            (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ||
+            (isset($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on') ||
+            (isset($_SERVER['HTTP_FRONT_END_HTTPS']) && $_SERVER['HTTP_FRONT_END_HTTPS'] === 'on') ||
+            (strpos($_SERVER['REQUEST_URI'], 'https://') === 0)
+        ) ? "Request Method Must Be In HTTPS" : null);
     }
 
     /**

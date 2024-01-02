@@ -782,7 +782,6 @@ abstract class DatabaseAdapter implements Constant
     {
         $this->table_name                                           = null;
         $this->index2query                                          = [];
-        $this->prototype                                            = [];
     }
 
     /**

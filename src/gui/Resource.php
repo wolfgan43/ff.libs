@@ -173,6 +173,22 @@ class Resource extends Mappable implements Dumpable
         return self::$singleton->resources[$type][$name] ?? null;
     }
 
+    /**
+     * @param string $name
+     * @param string $type
+     * @return string|null
+     */
+    public static function getName(string $name, string $type) : ?string
+    {
+        if (!self::$singleton) {
+            self::$singleton = new Resource();
+        }
+
+        return isset(self::$singleton->resources[$type][$name])
+            ? $name
+            : null;
+    }
+
     public static function image(string $name) : ?string
     {
         if (!self::$singleton) {

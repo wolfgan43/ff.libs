@@ -49,6 +49,10 @@ class FilemanagerFs
      */
     public static function fileGetContents(string $file_path) : string
     {
+        if (empty($file_path)) {
+            throw new Exception("File path is empty", 500);
+        }
+
         $content = @file_get_contents($file_path);
         if ($content === false) {
             throw new Exception(error_get_last()["message"] ?? ($file_path . self::ERROR_FILE_FORBIDDEN), 403);

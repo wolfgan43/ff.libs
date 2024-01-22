@@ -1094,7 +1094,7 @@ abstract class OrmItem
         foreach ($validators as $field => $value) {
             if (is_array(static::VALIDATOR[$field])) {
                 if (isset($dtd->$field) && ($dtd->$field == Database::FTYPE_ARRAY || $dtd->$field == Database::FTYPE_ARRAY_OF_NUMBER)) {
-                    $arrField                                                   = Normalize::string2array($value);
+                    $arrField                                                   = Normalize::string2array($value ?? "");
                     if (count(array_diff($arrField, static::VALIDATOR[$field]))) {
                         $errors[]                                               = $field . " must be: [" . implode(", ", static::VALIDATOR[$field]) . "]";
                     }

@@ -189,6 +189,10 @@ class Resource extends Mappable implements Dumpable
             : null;
     }
 
+    /**
+     * @param string $name
+     * @return string|null
+     */
     public static function image(string $name) : ?string
     {
         if (!self::$singleton) {

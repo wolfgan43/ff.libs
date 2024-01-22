@@ -26,6 +26,7 @@
 namespace ff\libs\gui\controllers;
 
 use ff\libs\gui\Controller;
+use ff\libs\gui\Resource;
 use ff\libs\international\Translator;
 use ff\libs\Response;
 use ff\libs\Exception;
@@ -36,35 +37,16 @@ use ff\libs\Exception;
  */
 class ErrorController extends Controller
 {
-    protected const CONTROLLER_TYPE = "nolibs";
+    protected const ERROR_VIEW      = "get";
 
-    private $email_support          = null;
-
-    /**
-     * @param string $email
-     * @return $this
-     */
-    public function setEmailSupport(string $email) : self
-    {
-        $this->email_support    = $email;
-
-        return $this;
-    }
     /**
      * @throws Exception
      */
     protected function get() : void
     {
-        $this->addStylesheet("error");
-
-        $errorView = $this->view()
+        $this->view(Resource::getName($this->http_status_code, Resource::TYPE_VIEWS))
             ->assign("title", Translator::getWordByCodeCached($this->error) ?: Translator::getWordByCodeCached(Response::getStatusMessage($this->http_status_code)))
             ->assign("error_code", $this->http_status_code);
-
-        if ($this->email_support) {
-            $errorView->assign("email_support", $this->email_support);
-            $errorView->parse("SezButtonSupport", false);
-        }
 
         $this->debug($this->error);
     }

@@ -203,8 +203,14 @@ class ViewHtml implements ViewAdapter
 
         $res = $cache->get($tpl_name);
         if (!$res) {
+            if (file_exists($template_path)) {
+                $template_mtime = filemtime($template_path);
+            } else {
+                Buffer::cache("resource")->clear();
+                $template_mtime = 0;
+            }
             $this->cache = [
-                $template_path  => filemtime($template_path)
+                $template_path  => $template_mtime
             ];
             if ($cache_file = Translator::infoCacheFile($this->lang)) {
                 $this->cache[$cache_file] = filemtime($cache_file);

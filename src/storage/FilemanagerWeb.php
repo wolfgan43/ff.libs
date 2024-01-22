@@ -249,6 +249,10 @@ class FilemanagerWeb implements Dumpable
      */
     private static function loadFile(string $path, $context = null, array &$headers = null) : string
     {
+        if (empty($path)) {
+            throw new Exception("Url is empty", 500);
+        }
+
         if (Validator::is($path, $path, "url")->isError() && !Dir::checkDiskPath($path)) {
             return "";
         }

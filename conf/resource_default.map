@@ -34,7 +34,8 @@
       "flag": 8,
       "type": "js",
       "filter": [
-        "js"
+        "js",
+        "json"
       ],
       "prototype" : "defaultname"
     },

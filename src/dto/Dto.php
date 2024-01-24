@@ -38,6 +38,27 @@ class Dto
 
     private static $page = null;
 
+    private $data           = [];
+
+    /**
+     * @param string $name
+     * @return mixed|null
+     */
+    public function __get(string $name)
+    {
+        return $this->data[$name] ?? null;
+    }
+
+    /**
+     * @param string $name
+     * @param $value
+     * @return void
+     */
+    public function __set(string $name, $value): void
+    {
+        $this->data[$name] = $value;
+    }
+
     public function __construct(RequestPage $page, bool $fill_undefined_properties = false)
     {
         self::$page =& $page;
@@ -73,14 +94,14 @@ class Dto
     /**
      * @param array $params
      * @param array|null $request
-     * @return array
      */
-    public function fill(array $params, array $request = null) : array
+    public function fill(array $params, array $request = null) : void
     {
         if (!empty($params) && !empty($request = ($request ?? $this->getRawData()))) {
             $params = $this->mergeRequest($params, $request);
         }
-        return $params;
+
+        $this->data = array_replace($this->data, $params);
     }
 
     /**
@@ -88,6 +109,6 @@ class Dto
      */
     public function toArray() : array
     {
-        return $this->arrayFilterNull(get_object_vars($this));
+        return $this->arrayFilterNull($this->data);
     }
 }

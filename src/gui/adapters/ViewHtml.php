@@ -111,6 +111,7 @@ class ViewHtml implements ViewAdapter
     private $DBlocks 							= [];
     private $DVars 								= [];
     private $DBlockVars 					    = [];
+    private $DIncludes                          = [];
     private $ParsedBlocks 						= [];
 
     private $cache                              = [];
@@ -183,19 +184,19 @@ class ViewHtml implements ViewAdapter
     private function loadFile(string $template_path) : void
     {
         $tpl_name = Translator::infoLangCode($this->lang) . "-" . str_replace(
-            [
-                Constant::DISK_PATH . "/",
-                "_",
-                "/"
+                [
+                    Constant::DOCUMENT_ROOT . "/",
+                    "_",
+                    "/"
 
-            ],
-            [
-                "",
-                "-",
-                "_"
-            ],
-            $template_path
-        );
+                ],
+                [
+                    "",
+                    "-",
+                    "_"
+                ],
+                $template_path
+            );
 
         Debug::stopWatch("tpl/" . $tpl_name);
 
@@ -209,6 +210,7 @@ class ViewHtml implements ViewAdapter
                 Buffer::cache("resource")->clear();
                 $template_mtime = 0;
             }
+
             $this->cache = [
                 $template_path  => $template_mtime
             ];
@@ -224,11 +226,13 @@ class ViewHtml implements ViewAdapter
                 "DBlocks"       => $this->DBlocks,
                 "DVars"         => $this->DVars,
                 "DBlockVars"    => $this->DBlockVars,
+                "DIncludes"     => $this->DIncludes
             ), $this->cache);
         } else {
             $this->DBlocks      = $res["DBlocks"];
             $this->DVars        = $res["DVars"];
             $this->DBlockVars   = $res["DBlockVars"];
+            $this->DIncludes    = $res["DIncludes"];
         }
 
         Hook::handle(self::HOOK_ON_FETCH_CONTENT, $this);
@@ -250,7 +254,6 @@ class ViewHtml implements ViewAdapter
         if ($rc && $matches) {
             $DVars                                          = array_fill_keys($matches[1], []);
 
-            $theme_disk_path                                = Kernel::$Environment::getThemeDiskPath();
             $views                                          = Resource::views($this->widget);
             $translation                                    = new stdClass();
             foreach ($DVars as $nName => $count) {
@@ -259,17 +262,19 @@ class ViewHtml implements ViewAdapter
                     $translation->value[]                   = Translator::getWordByCode(substr($nName, 1), $this->lang);
                     unset($DVars[$nName]);
                 } elseif (substr($nName, 0, 7) == "include" && substr_count($nName, '"') == 2) {
-                    $template_file                          =  explode('"', $nName)[1];
-                    $template                               = $views[str_replace(self::TPL_NORMALIZE, '', $template_file)] ?? str_replace('$theme_path', $theme_disk_path, $template_file);
+                    $template_file                          = explode('"', $nName)[1];
+                    if(strpos($nName, "[") !== false) {
+                        $matches_include = [];
+                        preg_match_all(static::REGEXP, str_replace(["[", "]"], ["{", "}"], $template_file), $matches_include);
+                        $this->DIncludes[$nName]         = ["file" => $template_file, "vars" => $matches_include[1]];
+                        continue;
+                    }
 
-                    $view                                   = new self($this->widget, $this->minify, $this->cache);
-                    $include                                = $view->include($template);
-                    $this->DVars                            = array_replace($this->DVars, $view->DVars);
-                    $this->DBlockVars                       = array_replace($this->DBlockVars, $view->DBlockVars);
-
-                    $this->cache[$template]                 = filemtime($template);
-
-                    $content                                = str_replace("{" . $nName . "}", $include, $content);
+                    $content                                = str_replace(
+                        "{" . $nName . "}",
+                        $this->loadInclude($template_file, $views),
+                        $content
+                    );
                 } elseif (strpos($nName, "::")  !== false
                     || strpos($nName, "[")      !== false
                     || strpos($nName, "#")      !== false
@@ -286,6 +291,27 @@ class ViewHtml implements ViewAdapter
 
         return $content;
     }
+
+    /**
+     * @param string $template_file
+     * @param array $views
+     * @return string
+     * @throws Exception
+     */
+    private function loadInclude(string $template_file, array $views) : string
+    {
+        $template                               = $views[str_replace(self::TPL_NORMALIZE, '', $template_file)] ?? $template_file;
+
+        $view                                   = new self($this->widget, $this->minify, $this->cache);
+        $include                                = $view->include($template);
+        $this->DVars                            = array_replace($this->DVars, $view->DVars);
+        $this->DBlockVars                       = array_replace($this->DBlockVars, $view->DBlockVars);
+
+        $this->cache[$template]                 = filemtime($template);
+
+        return $include;
+    }
+
     private function getComponentParams(string $nName) : array
     {
         $config = [];
@@ -528,9 +554,29 @@ class ViewHtml implements ViewAdapter
      */
     private function getRootBlock() : string
     {
+        if(!empty($this->DIncludes)) {
+            $parsedVars = [];
+            $views = Resource::views($this->widget);
+            foreach ($this->DIncludes as $sectionName => $tpl) {
+                $search_for = [];
+                $replace_with = [];
+                foreach ($tpl["vars"] as $var) {
+                    $search_for[] = "[" . $var . "]";
+                    $replace_with[] = $parsedVars[$var] ?? ($parsedVars[$var] = $this->getNestedValue($this->ParsedBlocks, $var));
+                }
+
+                $template_file = str_replace($search_for, $replace_with, $tpl["file"]);
+                $this->assign($sectionName, $this->loadInclude($template_file, $views));
+            }
+        }
         $this->parse(self::ROOT_BLOCK);
 
         return $this->minify($this->ParsedBlocks[self::ROOT_BLOCK]);
+    }
+
+    private function getNestedValue(array $array, string $path) : string
+    {
+        return array_reduce(explode('.', $path), fn ($a, $k) => $a[$k] ?? "", $array);
     }
 
     /**
@@ -796,7 +842,6 @@ class ViewHtml implements ViewAdapter
         return $data_arr;
     }
 
-
     /**
      * @param string $var
      * @param $parsedBlocks
@@ -816,6 +861,7 @@ class ViewHtml implements ViewAdapter
                     $count = count($parsedBlocks[$key]);
                     foreach ($parsedBlocks[$key] as $index => $parsedBlock) {
                         if (!is_int($index) || !is_array($parsedBlock)) {
+                            $replace .= str_replace("{content}", $parsedBlock, $this->DBlocks[$var]);
                             continue;
                         }
                         //set parentParsedBlocks for children
@@ -845,7 +891,7 @@ class ViewHtml implements ViewAdapter
             ? ""
             : $this->proceedTpl($var, $parsedBlock, $index, $count);
     }
-    
+
     /**
      *
      */

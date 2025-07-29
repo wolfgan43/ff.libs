@@ -49,8 +49,8 @@ use stdClass;
  * {include file="../shared/footer.tpl"}
  * {$content}
  *
- * <!--BeginSection-->  <!--BeginSection#2-->   [...]
- * <!--EndSection-->    <!--EndSection#2-->     [...]
+ * <!--BeginSection-->  <!--BeginSection#2-->  <!--BeginSection.title-->  [...]
+ * <!--EndSection-->    <!--EndSection#2-->    <!--EndSection.title-->  [...]
  *
  * {user.display_name}
  * <!--BeginUser-->
@@ -852,7 +852,7 @@ class ViewHtml implements ViewAdapter
     {
         $replace = null;
         if (isset($this->DBlockVars[$var])) {
-            $params = explode("#", $var);
+            $params = explode(strpos($var, "#") !== false ? "#" : ".", $var);
             $key = strtolower($params[0]);
             if (isset($parsedBlocks[$key])) {
                 if (!is_array($parsedBlocks[$key])) {
